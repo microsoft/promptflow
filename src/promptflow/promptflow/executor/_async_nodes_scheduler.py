@@ -23,6 +23,11 @@ from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import LineExecutionTimeoutError, NoNodeExecutedError
 
 PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
+PF_ASYNC_NODE_SCHEDULER_EXECUTE_WITH_THREAD_POOL = "_pf_async_nodes_scheduler._execute_with_thread_pool"
+PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASKS = [
+    PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME,
+    PF_ASYNC_NODE_SCHEDULER_EXECUTE_WITH_THREAD_POOL,
+]
 DEFAULT_TASK_LOGGING_INTERVAL = 60
 ASYNC_DAG_MANAGER_COMPLETED = False
 
@@ -45,14 +50,16 @@ class AsyncNodesScheduler:
         nodes: List[Node],
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
-        timeout_sec: int,
+        line_timeout_sec: int,
     ) -> Tuple[dict, dict]:
-        flow_logger.info(f"Async timeout task is scheduled to wait for {timeout_sec} seconds.")
+        flow_logger.info(f"Async timeout task is scheduled to wait for {line_timeout_sec} seconds.")
 
         try:
-            return await asyncio.wait_for(self._execute_with_thread_pool(executor, nodes, inputs, context), timeout_sec)
+            return await asyncio.wait_for(
+                self._execute_with_thread_pool(executor, nodes, inputs, context), line_timeout_sec
+            )
         except asyncio.TimeoutError:
-            raise LineExecutionTimeoutError(context._line_number, timeout_sec)
+            raise LineExecutionTimeoutError(context._line_number, line_timeout_sec)
 
     async def execute(
         self,
@@ -100,9 +107,16 @@ class AsyncNodesScheduler:
         except Exception as e:
             err_msg = "Flow execution has failed."
             if isinstance(e, LineExecutionTimeoutError):
-                err_msg = f"Line execution timeout after {e.timeout_sec} seconds."
+                err_msg = f"Line execution timeout after {line_timeout_sec} seconds."
                 context.cancel_node_runs(err_msg)
-            for task in asyncio.all_tasks():
+            running_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+            node_names = ",".join(
+                task.get_name()
+                for task in running_tasks
+                if task.get_name() not in PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASKS
+            )
+            flow_logger.error(f"{err_msg} Cancelling all running nodes: {node_names}.")
+            for task in running_tasks:
                 task.cancel()
             raise e
         finally:
@@ -121,7 +135,7 @@ class AsyncNodesScheduler:
     ) -> Tuple[dict, dict]:
         # Set the name of scheduler tasks to avoid monitoring its duration
         task = asyncio.current_task()
-        task.set_name(PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME)
+        task.set_name(PF_ASYNC_NODE_SCHEDULER_EXECUTE_WITH_THREAD_POOL)
 
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
         dag_manager = DAGManager(nodes, inputs)
@@ -288,7 +302,7 @@ def monitor_long_running_coroutine(
         # get duration of running tasks
         for task in running_tasks:
             # Do not monitor the scheduler task
-            if task.get_name() == PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME:
+            if task.get_name() in PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASKS:
                 continue
             # Do not monitor sync tools, since they will run in executor thread and will
             # be monitored by RepeatLogTimer.
