@@ -1118,8 +1118,12 @@ def execute_flow(
         # (run_id_index, eg. xxx_0) for displaying the interface
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
         # persist the output to the output directory
+        if hasattr(flow_executor, "_flow"):
+            version = flow_executor._flow.version
+        else:
+            version = 1
         line_result.output = persist_multimedia_data(
-            line_result.output, base_dir=working_dir, sub_dir=output_dir, version=flow_executor._flow.version
+            line_result.output, base_dir=working_dir, sub_dir=output_dir, version=version
         )
         if run_aggregation and line_result.aggregation_inputs:
             # convert inputs of aggregation to list type
