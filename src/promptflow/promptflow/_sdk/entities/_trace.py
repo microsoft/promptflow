@@ -9,6 +9,7 @@ from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._sdk._orm.trace import Span as ORMSpan
+from promptflow._sdk._utils import flatten_span_attributes
 
 
 class Span:
@@ -75,10 +76,13 @@ class Span:
         span_dict["traceId"] = trace_id
         if parent_span_id:
             span_dict["parentSpanId"] = parent_span_id
-        content = json.dumps(span_dict)
+        span_dict["attributes"] = flatten_span_attributes(span_dict["attributes"])
         return Span(
             span_id=span_id,
+            name=obj.name,
+            span_type="Function",
             trace_id=trace_id,
+            session_id="8cffec9b-eda9-4dab-a321-4f94227c23cb",
+            content=json.dumps(span_dict),
             parent_id=parent_span_id,
-            content=content,
         )

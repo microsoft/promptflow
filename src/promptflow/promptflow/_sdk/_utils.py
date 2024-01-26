@@ -1116,3 +1116,14 @@ def pd_read_json(file) -> "DataFrame":
 
     with read_open(file) as f:
         return pd.read_json(f, orient="records", lines=True)
+
+
+def flatten_span_attributes(attributes: List[Dict]) -> Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key = attribute["key"]
+        # suppose all values are flattened here
+        # so simply regard the first value as the attribute value
+        attr_value = attribute["value"].values()[0]
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
