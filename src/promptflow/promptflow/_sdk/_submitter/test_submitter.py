@@ -425,6 +425,8 @@ class TestSubmitterViaProxy(TestSubmitter):
                     line_result_iter = async_run_allowing_running_loop(
                         get_async_result_output, line_result, generator_record
                     )
+                    print(f"{Fore.YELLOW}Bot: ", end="")
+                    print_csharp_stream_chat_output(line_result_iter, kwargs.pop("chat_output_name", None))
                     flow_outputs, node_run_infos, aggregation_inputs, run_info = self.get_async_line_result(
                         line_result_iter
                     )
@@ -455,11 +457,6 @@ class TestSubmitterViaProxy(TestSubmitter):
 
                 if allow_generator_output:
                     self._raise_error_when_test_failed(line_result, show_trace=True)
-                    show_node_log_and_output(
-                        line_result.node_run_infos, kwargs.pop("show_step_output", False), generator_record
-                    )
-                    print(f"{Fore.YELLOW}Bot: ", end="")
-                    print_csharp_stream_chat_output(line_result_iter, kwargs.pop("chat_output_name", None))
 
                 return line_result
             finally:
