@@ -43,24 +43,30 @@ class Span:
     @staticmethod
     def _from_orm_object(obj: ORMSpan) -> "Span":
         return Span(
-            span_id=obj.span_id,
+            span_id=obj.id,
+            name=obj.name,
+            span_type=obj.type,
             trace_id=obj.trace_id,
-            parent_id=obj.parent_id,
-            experiment_name=obj.experiment_name,
-            run_name=obj.run_name,
+            parent_span_id=obj.parent_span_id,
+            session_id=obj.session_id,
+            content=json.loads(obj.content),
             path=obj.path,
-            content=obj.content,
+            run=obj.run,
+            experiment=obj.experiment,
         )
 
     def _to_orm_object(self) -> ORMSpan:
         return ORMSpan(
-            span_id=self.span_id,
+            id=self.id,
+            name=self.name,
+            type=self.type,
             trace_id=self.trace_id,
-            parent_id=self.parent_id,
-            experiment_name=self.experiment_name,
-            run_name=self.run_name,
-            path=self.path,
+            parent_span_id=self.parent_span_id,
+            session_id=self.session_id,
             content=self.content,
+            path=self.path,
+            run=self.run,
+            experiment=self.experiment,
         )
 
     @staticmethod
