@@ -187,9 +187,11 @@ class TestToolsManager:
     def test_collect_tools_from_directory_keeps_keys_order(self):
         tool_yaml_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_multi_inputs_without_index"
         collected_tools = collect_tools_from_directory(tool_yaml_folder)
+        print(f"collected_tools: {collected_tools}")
+        print(f"collected_tools.keys(): {collected_tools.keys()}")
         tool = collected_tools["custom_llm_tool.TestCustomLLMTool.call"]
         expected_keys_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
-                               "stop","presence_penalty", "frequency_penalty"]
+                               "stop", "presence_penalty", "frequency_penalty"]
         assert list(tool["inputs"]) == expected_keys_order
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
