@@ -1,7 +1,6 @@
 import textwrap
 from pathlib import Path
 from unittest.mock import patch
-import sys
 
 import pytest
 from mock import MagicMock
@@ -22,8 +21,6 @@ from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
-
-sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 
 
 @pytest.mark.unittest
@@ -190,8 +187,6 @@ class TestToolsManager:
     def test_collect_tools_from_directory_keeps_keys_order(self):
         tool_yaml_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_multi_inputs_without_index"
         collected_tools = collect_tools_from_directory(tool_yaml_folder)
-        print(f"collected_tools: {collected_tools}")
-        print(f"collected_tools.keys(): {collected_tools.keys()}")
         tool = collected_tools["custom_llm_tool.TestCustomLLMTool.call"]
         expected_keys_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
                                "stop", "presence_penalty", "frequency_penalty"]
