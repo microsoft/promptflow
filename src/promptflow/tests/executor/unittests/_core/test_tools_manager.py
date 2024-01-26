@@ -185,6 +185,12 @@ class TestToolsManager:
         }
 
     def test_collect_tools_from_directory_keeps_keys_order(self):
+        """
+        Test that it can keep the order of keys when loading tools from a directory.
+        This is important because the feature automatically assigns indexes to inputs based on their order
+        in the tool's YAML, relying on ruamel.yaml's ability to maintain key order when loading a YAML file.
+        If ruamel.yaml were to break this feature, such a breaking change could be detected by this test.
+        """
         tool_yaml_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_multi_inputs_without_index"
         collected_tools = collect_tools_from_directory(tool_yaml_folder)
         tool = collected_tools["custom_llm_tool.TestCustomLLMTool.call"]

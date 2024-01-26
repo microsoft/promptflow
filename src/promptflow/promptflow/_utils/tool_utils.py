@@ -361,8 +361,8 @@ def should_preserve_tool_inputs_order(tool_type):
     """
     Currently, we only automatically add input indexes for the custom_llm tool,
     following the order specified in the tool interface or YAML.
-    This is because, as of now, only the custom_llm tool requires the order of its inputs displayed on the UI
-      to be consistent with the order in the YAML, while other types of tools do not have this requirement.
+    As of now, only the custom_llm tool requires the order of its inputs displayed on the UI
+    to be consistent with the order in the YAML, because its inputs are shown in parameter style.
     To avoid extensive changes, other types of tools will remain as they are.
     """
     return tool_type == ToolType.CUSTOM_LLM
