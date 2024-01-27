@@ -16,8 +16,9 @@ from promptflow._core._errors import UnexpectedError
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.batch._errors import ExecutorServiceUnhealthy
-from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -90,24 +91,40 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        allow_generator_output=False,
+        enable_stream_output=False,
     ) -> LineResult:
         start_time = datetime.utcnow()
         # call execution api to get line results
         url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-        headers = {"Accept": "text/event-stream"} if allow_generator_output else None
+        headers = {"Accept": "text/event-stream"} if enable_stream_output else None
 
-        if allow_generator_output:
+        if enable_stream_output:
+
+            # Todo: update logic here to only call server one time when server only return node_run_infos and
+            #  run_info once, only stream output.
             async def generator():
                 async with httpx.AsyncClient() as client:
                     async with client.stream('POST', url, json=payload, timeout=LINE_TIMEOUT_SEC,
                                              headers=headers) as response:
                         async for chunk in response.aiter_lines():
-                            data = json.loads(chunk)
-                            yield LineResult.deserialize(data)
-            return generator()
+                            chunk_data = json.loads(chunk)
+                            # only support one chat output for now
+                            output_name = list(chunk_data.get("output").keys())[0]
+                            yield chunk_data.get("output", {}).get(output_name, "")
 
+            async def get_meta_data():
+                async with httpx.AsyncClient() as client:
+                    async with client.stream('POST', url, json=payload, timeout=LINE_TIMEOUT_SEC,
+                                             headers=headers) as response:
+                        async for chunk in response.aiter_lines():
+                            chunk_data = json.loads(chunk)
+                            return chunk_data
+
+            data = await get_meta_data()
+            chat_output_name = list(data.get("output").keys())[0]
+            data["output"][chat_output_name] = generator()
+            return LineResult.deserialize(data)
         else:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)

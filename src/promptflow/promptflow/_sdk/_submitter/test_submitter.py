@@ -12,7 +12,6 @@ from colorama import Fore, init
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._submitter.utils import get_async_result_output
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
@@ -32,10 +31,10 @@ from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
-    print_csharp_stream_chat_output,
     resolve_generator,
     show_node_log_and_output,
     variant_overwrite_context,
+    get_async_result_output,
 )
 
 logger = get_cli_sdk_logger()
@@ -88,11 +87,11 @@ class TestSubmitter:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-            flow_path=self._origin_flow.code,
-            tuning_node=tuning_node,
-            variant=node_variant,
-            connections=self.flow_context.connections,
-            overrides=self.flow_context.overrides,
+                flow_path=self._origin_flow.code,
+                tuning_node=tuning_node,
+                variant=node_variant,
+                connections=self.flow_context.connections,
+                overrides=self.flow_context.overrides,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
@@ -106,7 +105,7 @@ class TestSubmitter:
                 self._node_variant = None
 
     def resolve_data(
-        self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
+            self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
     ):
         """
         Resolve input to flow/node test inputs.
@@ -198,13 +197,13 @@ class TestSubmitter:
         return flow_inputs, dependency_nodes_outputs
 
     def flow_test(
-        self,
-        inputs: Mapping[str, Any],
-        environment_variables: dict = None,
-        stream_log: bool = True,
-        allow_generator_output: bool = False,  # TODO: remove this
-        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
-        stream_output: bool = True,
+            self,
+            inputs: Mapping[str, Any],
+            environment_variables: dict = None,
+            stream_log: bool = True,
+            allow_generator_output: bool = False,  # TODO: remove this
+            connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+            stream_output: bool = True,
     ):
         from promptflow.executor.flow_executor import execute_flow
 
@@ -220,9 +219,9 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
-            stream=stream_log,
-            credential_list=credential_list,
+                file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+                stream=stream_log,
+                credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             line_result = execute_flow(
@@ -243,12 +242,12 @@ class TestSubmitter:
             return line_result
 
     def node_test(
-        self,
-        node_name: str,
-        flow_inputs: Mapping[str, Any],
-        dependency_nodes_outputs: Mapping[str, Any],
-        environment_variables: dict = None,
-        stream: bool = True,
+            self,
+            node_name: str,
+            flow_inputs: Mapping[str, Any],
+            dependency_nodes_outputs: Mapping[str, Any],
+            environment_variables: dict = None,
+            stream: bool = True,
     ):
         from promptflow.executor import FlowExecutor
 
@@ -262,9 +261,9 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
-            stream=stream,
-            credential_list=credential_list,
+                file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+                stream=stream,
+                credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
@@ -362,7 +361,8 @@ class TestSubmitter:
     @staticmethod
     def _get_generator_outputs(outputs):
         outputs = outputs or {}
-        return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+        return {key: outputs for key, output in outputs.items() if
+                isinstance(output, (GeneratorType, AsyncGeneratorType))}
 
 
 class TestSubmitterViaProxy(TestSubmitter):
@@ -370,18 +370,18 @@ class TestSubmitterViaProxy(TestSubmitter):
         super().__init__(flow, flow_context, client)
 
     def flow_test(
-        self,
-        inputs: Mapping[str, Any],
-        environment_variables: dict = None,
-        stream_log: bool = True,
-        allow_generator_output: bool = False,
-        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
-        stream_output: bool = True,
-        **kwargs,
+            self,
+            inputs: Mapping[str, Any],
+            environment_variables: dict = None,
+            stream_log: bool = True,
+            allow_generator_output: bool = False,
+            connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+            stream_output: bool = True,
+            **kwargs,
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
-
+        generator_record = {}
         if not connections:
             connections = SubmitterHelper.resolve_used_connections(
                 flow=self.flow,
@@ -402,9 +402,9 @@ class TestSubmitterViaProxy(TestSubmitter):
 
         log_path = self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log"
         with LoggerOperations(
-            file_path=log_path,
-            stream=stream_log,
-            credential_list=credential_list,
+                file_path=log_path,
+                stream=stream_log,
+                credential_list=credential_list,
         ):
             try:
                 storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
@@ -418,81 +418,45 @@ class TestSubmitterViaProxy(TestSubmitter):
                 )
 
                 line_result: LineResult = async_run_allowing_running_loop(
-                    flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
+                    flow_executor.exec_line_async, inputs, index=0, enable_stream_output=allow_generator_output
                 )
-                if allow_generator_output and isinstance(line_result, AsyncGeneratorType):
-                    generator_record = {}
-                    line_result_iter = async_run_allowing_running_loop(
-                        get_async_result_output, line_result, generator_record
-                    )
-                    print(f"{Fore.YELLOW}Bot: ", end="")
-                    print_csharp_stream_chat_output(line_result_iter, kwargs.pop("chat_output_name", None))
-                    flow_outputs, node_run_infos, aggregation_inputs, run_info = self.get_async_line_result(
-                        line_result_iter
-                    )
-                    line_result = LineResult(
-                        output=flow_outputs,
-                        aggregation_inputs=aggregation_inputs,
-                        run_info=run_info,
-                        node_run_infos=node_run_infos,
-                    )
-
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
                 )
                 if line_result.aggregation_inputs:
-                    self.resolve_aggregation_inputs(
-                        line_result.aggregation_inputs,
-                        inputs,
-                        flow_executor,
-                        line_result.node_run_infos,
-                        line_result.run_info,
+                    # Convert inputs of aggregation to list type
+                    flow_inputs = {k: [v] for k, v in inputs.items()}
+                    aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+                    aggregation_results = async_run_allowing_running_loop(
+                        flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
                     )
+                    line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                    line_result.run_info.metrics = aggregation_results.metrics
                 if isinstance(line_result.output, dict):
                     # Remove line_number from output
                     line_result.output.pop(LINE_NUMBER_KEY, None)
                     generator_outputs = self._get_generator_outputs(line_result.output)
                     if generator_outputs:
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-
-                return line_result
+                if allow_generator_output:
+                    # Since get_async_result_output need connect with server, it needs flow_executor is live, so
+                    # print chat output here
+                    print(f"{Fore.YELLOW}Bot: ", end="")
+                    print_chat_output(line_result.output[kwargs.get("output_name")], generator_record)
+                    # Convert output here since need save output to chat history. For C#, we no need resolve_generator
+                    # since output in flow_result.run_info and flow_result.node_run_infos won't be GeneratorType
+                    line_result_iter = async_run_allowing_running_loop(
+                        get_async_result_output, line_result.output[kwargs.get("output_name")], generator_record
+                    )
+                    full_response = ""
+                    for event in line_result_iter:
+                        full_response += event
+                    line_result.output[kwargs.get("output_name")] = full_response
+                    return line_result
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
 
-    @staticmethod
-    def _get_generator_outputs(outputs):
-        outputs = outputs or {}
-        return outputs
-
-    @staticmethod
-    def get_async_line_result(line_result):
-        flow_outputs = {}
-        node_run_infos = None
-        aggregation_inputs = None
-        run_info = None
-        for chunk in line_result:
-            node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
-            aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else aggregation_inputs
-            run_info = chunk.run_info if run_info is None else run_info
-            for key, value in chunk.output.items():
-                if key not in flow_outputs:
-                    flow_outputs[key] = value
-                else:
-                    flow_outputs[key] += value
-        return flow_outputs, node_run_infos, aggregation_inputs, run_info
-
-    @staticmethod
-    def resolve_aggregation_inputs(aggregation_inputs, inputs, flow_executor, node_run_infos, run_info):
-        # Convert inputs of aggregation to list type
-        flow_inputs = {k: [v] for k, v in inputs.items()}
-        aggregation_inputs = {k: [v] for k, v in aggregation_inputs.items()}
-        aggregation_results = async_run_allowing_running_loop(
-            flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
-        )
-        node_run_infos.update(aggregation_results.node_run_infos)
-        run_info.metrics = aggregation_results.metrics
-
-    def exec_with_inputs(self, inputs, allow_generator_output=False):
+    def exec_with_inputs(self, inputs, enable_stream_output=False):
         from promptflow._constants import LINE_NUMBER_KEY
 
         connections = SubmitterHelper.resolve_used_connections(
@@ -516,9 +480,9 @@ class TestSubmitterViaProxy(TestSubmitter):
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
             line_result = async_run_allowing_running_loop(
-                flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
+                flow_executor.exec_line_async, inputs, index=0, enable_stream_output=enable_stream_output
             )
-            if not isinstance(line_result, AsyncGeneratorType) and isinstance(line_result.output, dict):
+            if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
             return line_result
@@ -542,7 +506,6 @@ class TestSubmitterViaProxy(TestSubmitter):
 
         init(autoreset=True)
         chat_history = []
-        # generator_record = {}
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
         )
@@ -585,8 +548,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 allow_generator_output=True,
                 connections=connections,
                 stream_output=True,
-                show_step_output=True,
-                chat_output_name=output_name,
+                output_name=output_name
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             flow_outputs = {k: v for k, v in flow_result.output.items()}

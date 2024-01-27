@@ -81,50 +81,33 @@ def start():
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
                     full_response = f"{chat_output_name}: "
-                    if isinstance(response, AsyncGeneratorType):
-                        response_output = async_run_allowing_running_loop(
-                            get_async_result_output, response, generator_record
-                        )
-                        node_run_infos = None
-                        aggregation_inputs = None
-                        run_info = None
-                        resolved_outputs = {}
-                        for chunk in response_output:
-                            for key, value in chunk.output.items():
-                                if key not in resolved_outputs:
-                                    resolved_outputs[key] = value
-                                else:
-                                    resolved_outputs[key] += value
-                            full_response += chunk.output.get(chat_output_name, "") + " "
-                            node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
-                            aggregation_inputs = (
-                                chunk.aggregation_inputs if aggregation_inputs is None else aggregation_inputs
-                            )
-                            run_info = chunk.run_info if run_info is None else run_info
+                    prefix_length = len(full_response)
+                    chat_output = response.output[chat_output_name]
+                    if isinstance(chat_output, GeneratorType):
+                        # Simulate stream of response with milliseconds delay
+                        for chunk in get_result_output(chat_output, generator_record):
+                            full_response += chunk + " "
                             time.sleep(STREAMING_ANIMATION_TIME)
                             # Add a blinking cursor to simulate typing
                             message_placeholder.markdown(full_response + "▌")
                         message_placeholder.markdown(full_response)
-                        flow_result = LineResult(
-                            output=resolved_outputs,
-                            run_info=run_info,
-                            node_run_infos=node_run_infos,
-                            aggregation_inputs=aggregation_inputs,
-                        )
-                        post_process_dump_result(flow_result, session_state_history)
+                        response.output[chat_output_name] = full_response[prefix_length:]
+                        post_process_dump_result(response, session_state_history)
                         return
-                    else:
-                        chat_output = response.output[chat_output_name]
-                        if isinstance(chat_output, GeneratorType):
-                            # Simulate stream of response with milliseconds delay
-                            for chunk in get_result_output(chat_output, generator_record):
-                                full_response += chunk + " "
-                                time.sleep(animation_time)
-                                # Add a blinking cursor to simulate typing
-                                message_placeholder.markdown(full_response + "▌")
-                            message_placeholder.markdown(full_response)
-                            post_process_dump_result(response, session_state_history)
-                            return
+                    elif isinstance(chat_output, AsyncGeneratorType):
+                        # Simulate stream of response with milliseconds delay
+                        response_output = async_run_allowing_running_loop(
+                            get_async_result_output, chat_output, generator_record
+                        )
+                        for chunk in response_output:
+                            full_response += chunk + " "
+                            time.sleep(STREAMING_ANIMATION_TIME)
+                            # Add a blinking cursor to simulate typing
+                            message_placeholder.markdown(full_response + "▌")
+                        message_placeholder.markdown(full_response)
+                        response.output[chat_output_name] = full_response[prefix_length:]
+                        post_process_dump_result(response, session_state_history)
+                        return
 
         resolved_outputs = post_process_dump_result(response, session_state_history)
         with container:

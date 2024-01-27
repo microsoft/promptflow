@@ -310,18 +310,20 @@ def print_chat_output(output, generator_record):
             time.sleep(STREAMING_ANIMATION_TIME)
         # Print a new line at the end of the response
         print()
+    elif isinstance(output, AsyncGeneratorType):
+        from promptflow._utils.async_utils import async_run_allowing_running_loop
+        line_result_iter = async_run_allowing_running_loop(
+            get_async_result_output, output, generator_record
+        )
+
+        for event in line_result_iter:
+            print(event, end="")
+            # For better animation effects
+            time.sleep(STREAMING_ANIMATION_TIME)
+        # Print a new line at the end of the response
+        print()
     else:
         print(output)
-
-
-def print_csharp_stream_chat_output(output, chat_output_name):
-    for event in output:
-        response = event.output.get(chat_output_name, "")
-        print(response, end="")
-        # For better animation effects
-        time.sleep(STREAMING_ANIMATION_TIME)
-    # Print a new line at the end of the response
-    print()
 
 
 def get_result_output(output, generator_record):
