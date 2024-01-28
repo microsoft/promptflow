@@ -53,7 +53,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, get_authorization
+from promptflow.azure._utils.gerneral import get_authorization, get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -73,8 +73,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
-    create an :class:`~promptflow.azure.PFClient` instance that instantiates it for you and
-    attaches it as an attribute.
+    create an :class:`~promptflow.azure.PFClient` instance and this operation is available as the instance's attribute.
     """
 
     def __init__(
@@ -874,6 +873,12 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self, run: Union[str, Run], output: Optional[Union[str, Path]] = None, overwrite: Optional[bool] = False
     ) -> str:
         """Download the data of a run, including input, output, snapshot and other run information.
+
+        .. note::
+
+            After the download is finished, you can use ``pf run create --source <run-info-local-folder>``
+            to register this run as a local run record, then you can use commands like ``pf run show/visualize``
+            to inspect the run just like a run that was created from local flow.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]

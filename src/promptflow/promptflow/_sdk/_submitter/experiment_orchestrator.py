@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import subprocess
 import platform
 import signal
 import sys
@@ -13,7 +14,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-
 import psutil
 
 if not sys.stdout:
@@ -21,8 +21,9 @@ if not sys.stdout:
 if not sys.stderr:
     sys.stderr = sys.stdout
 
-from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus
+from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus, FlowRunProperties, RunTypes
 from promptflow._sdk._errors import (
+    ExperimentCommandRunError,
     ExperimentNodeRunFailedError,
     ExperimentNotFoundError,
     ExperimentValueError,
@@ -33,9 +34,15 @@ from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExp
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
 from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._submitter import RunSubmitter
+from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment
+from promptflow._sdk.operations import RunOperations
+from promptflow._sdk.operations._experiment_operations import ExperimentOperations
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -135,7 +142,13 @@ class ExperimentOrchestrator:
             """Get all in-degree nodes of this node."""
             node_names = set()
             for input_value in node.inputs.values():
-                if input_value.startswith("${") and not input_value.startswith("${data."):
+                if not isinstance(input_value, str):
+                    continue
+                if (
+                    input_value.startswith("${")
+                    and not input_value.startswith("${data.")
+                    and not input_value.startswith("${inputs.")
+                ):
                     referenced_node_name = input_value.split(".")[0].replace("${", "")
                     node_names.add(referenced_node_name)
             return node_names
@@ -321,78 +334,109 @@ class ExperimentNodeRun(Run):
         self.node_runs = node_runs
         self.run_operations = run_operations
 
-        # Use node name as prefix for run name?
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         # Config run output path to experiment output folder
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
         super().__init__(
+            # Use node name as prefix for run name?
             name=f"{node.name}_attempt{timestamp}",
             display_name=node.display_name or node.name,
             column_mapping=node.inputs,
-            variant=node.variant,
-            flow=node.path,
-            connections=node.connections,
+            variant=getattr(node, "variant", None),
+            flow=self._get_node_path(),
+            outputs=getattr(node, "outputs", None),
+            connections=getattr(node, "connections", None),
+            command=getattr(node, "command", None),
             environment_variables=node.environment_variables,
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
             **kwargs,
         )
         self._resolve_column_mapping()
-        self._resolve_data()
+        self._input_data = self._resolve_input_dirs()
         self.snapshot_id = self._calculate_snapshot()
 
     def _resolve_column_mapping(self):
         """Resolve column mapping with experiment inputs to constant values."""
-        logger.info(f"Start resolve node {self.display_name!r} column mapping.")
+        logger.info(f"Start resolve node {self.node.name!r} column mapping.")
         resolved_mapping = {}
         for name, value in self.column_mapping.items():
-            if not value.startswith("${inputs."):
+            if not isinstance(value, str) or not value.startswith("${inputs."):
                 resolved_mapping[name] = value
                 continue
             input_name = value.split(".")[1].replace("}", "")
             if input_name not in self.experiment_inputs:
                 raise ExperimentValueError(
-                    f"Node {self.display_name!r} inputs {value!r} related experiment input {input_name!r} not found."
+                    f"Node {self.node_name!r} inputs {value!r} related experiment input {input_name!r} not found."
                 )
             resolved_mapping[name] = self.experiment_inputs[input_name].default
-        logger.debug(f"Resolved node {self.display_name!r} column mapping {resolved_mapping}.")
+        logger.debug(f"Resolved node {self.node.name!r} column mapping {resolved_mapping}.")
         self.column_mapping = resolved_mapping
 
-    def _resolve_data(self):
-        """Resolve node inputs reference to run or experiment to constant values."""
-        logger.info("Start resolve node %s input dirs.", self.name)
-        # Get the node referenced data and run
-        data_name, run_name = None, None
-        data = {}
-        for value in self.column_mapping.values():
-            referenced_data, referenced_run = None, None
+    def _get_referenced_data_and_run(self) -> tuple:
+        """Get the node referenced data and runs. Format: {name: ExperimentData/ExperimentRun}"""
+        data, run = {}, {}
+        inputs_mapping = self.column_mapping
+        for value in inputs_mapping.values():
+            if not isinstance(value, str):
+                continue
             if value.startswith("${data."):
-                referenced_data = value.split(".")[1].replace("}", "")
+                name = value.split(".")[1].replace("}", "")
+                if name not in self.experiment_data:
+                    raise ExperimentValueError(
+                        f"Node {self.display_name!r} inputs {value!r} related experiment data {name!r} not found."
+                    )
+                data[name] = self.experiment_data[name]
             elif value.startswith("${"):
-                referenced_run = value.split(".")[0].replace("${", "")
-            if referenced_data:
-                if data_name and data_name != referenced_data:
+                name = value.split(".")[0].replace("${", "")
+                if name not in self.node_runs:
                     raise ExperimentValueError(
-                        f"Experiment has multiple data inputs {data_name!r} and {referenced_data!r}"
+                        f"Node {self.display_name!r} inputs {value!r} related experiment run {name!r} not found."
                     )
-                data_name = referenced_data
-            if referenced_run:
-                if run_name and run_name != referenced_run:
-                    raise ExperimentValueError(
-                        f"Experiment has multiple run inputs {run_name!r} and {referenced_run!r}"
-                    )
-                run_name = referenced_run
-            if data_name in self.experiment_data and self.experiment_data[data_name].path:
-                data.update({f"data.{data_name}": self.experiment_data[data_name].path})
-            if run_name in self.node_runs:
-                data.update(
-                    {
-                        f"{run_name}.outputs": self.run_operations._get_outputs_path(self.node_runs[run_name].name),
-                        # to align with cloud behavior, run.inputs should refer to original data
-                        f"{run_name}.inputs": self.run_operations._get_data_path(self.node_runs[run_name].name),
-                    }
-                )
-                logger.debug(f"Resolve node {self.name} referenced data {data_name!r}, run {run_name!r}.")
-        self._input_data = {k: str(Path(v).resolve()) for k, v in data.items() if v is not None}
+                run[name] = self.node_runs[name]
+        return data, run
+
+    @staticmethod
+    def resolve_binding_from_run(run_name, run, run_operations) -> dict:
+        """Return the valid binding dict based on a run."""
+        binding_dict = {
+            # to align with cloud behavior, run.inputs should refer to original data
+            f"{run_name}.inputs": run_operations._get_data_path(run),
+        }
+
+        # Update command node outputs
+        if run._outputs:
+            binding_dict.update({f"{run_name}.outputs.{name}": path for name, path in run._outputs.items()})
+        else:
+            binding_dict.update({f"{run_name}.outputs": run_operations._get_outputs_path(run)})
+        logger.debug(f"Resolved node {run_name} binding inputs {binding_dict}.")
+        return binding_dict
+
+    def _resolve_input_dirs(self):
+        logger.info("Start resolve node %s input dirs.", self.node.name)
+        # Get the node referenced data and run
+        referenced_data, referenced_run = self._get_referenced_data_and_run()
+        if len(referenced_data) > 1:
+            raise ExperimentValueError(
+                f"Experiment flow node {self.node.name!r} has multiple data inputs {referenced_data}, "
+                "only 1 is expected."
+            )
+        if len(referenced_run) > 1:
+            raise ExperimentValueError(
+                f"Experiment flow node {self.node.name!r} has multiple run inputs {referenced_run}, "
+                "only 1 is expected."
+            )
+        (data_name, data_obj) = next(iter(referenced_data.items())) if referenced_data else (None, None)
+        (run_name, run_obj) = next(iter(referenced_run.items())) if referenced_run else (None, None)
+        logger.debug(f"Resolve node {self.node.name} referenced data {data_name!r}, run {run_name!r}.")
+        # Build inputs from experiment data and run
+        result = {}
+        if data_obj:
+            result.update({f"data.{data_name}": data_obj.path})
+        if run_obj:
+            result.update(self.resolve_binding_from_run(run_name, run_obj, self.run_operations))
+        result = {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
+        logger.debug(f"Resolved node {self.node.name} input dirs {result}.")
+        return result
 
     def _calculate_snapshot(self):
         def calculate_files_content_hash(file_path):
@@ -419,26 +463,37 @@ class ExperimentNodeRun(Run):
         snapshot_content = {
             "parameter": {},
             "inputs": {key: calculate_files_content_hash(value) for key, value in self._input_data.items()},
-            "code": calculate_files_content_hash(self.node.path),
+            "code": calculate_files_content_hash(self.flow),
         }
         return hashlib.md5(json.dumps(snapshot_content, sort_keys=True).encode("utf-8")).hexdigest()
+
+    def _get_node_path(self):
+        if self.node.type == ExperimentNodeType.FLOW:
+            return self.node.path
+        elif self.node.type == ExperimentNodeType.COMMAND:
+            return self.node.code
+        elif self.node.type == ExperimentNodeType.CHAT_GROUP:
+            raise NotImplementedError("Chat group node in experiment is not supported yet.")
+        raise ExperimentValueError(f"Unknown experiment node {self.node.name!r} type {self.node.type!r}")
 
     def _run_node(self) -> Run:
         if self.node.type == ExperimentNodeType.FLOW:
             return self._run_flow_node()
-        elif self.node.type == ExperimentNodeType.CODE:
-            return self._run_script_node()
+        elif self.node.type == ExperimentNodeType.COMMAND:
+            return self._run_command_node()
         elif self.node.type == ExperimentNodeType.CHAT_GROUP:
             return self._run_chat_group_node()
         raise ExperimentValueError(f"Unknown experiment node {self.node.name!r} type {self.node.type!r}")
 
     def _run_flow_node(self):
-        logger.debug(f"Creating run {self.name}")
-        exp_node_run_submitter = FlowNodeRunSubmitter(self.run_operations)
+        logger.debug(f"Creating flow run {self.name}")
+        exp_node_run_submitter = ExperimentFlowRunSubmitter(self.run_operations)
         return exp_node_run_submitter.submit(self)
 
-    def _run_script_node(self):
-        raise NotImplementedError("Script node in experiment is not supported yet.")
+    def _run_command_node(self):
+        logger.debug(f"Creating command run {self.name}")
+        exp_command_submitter = ExperimentCommandSubmitter(self.run_operations)
+        return exp_command_submitter.submit(self)
 
     def _run_chat_group_node(self):
         raise NotImplementedError("Chat group node in experiment is not supported yet.")
@@ -469,10 +524,11 @@ class ExperimentNodeRun(Run):
         # Update exp node run record
         self.update_exp_run_node(status=ExperimentNodeRunStatus.IN_PROGRESS)
         node_run_result = self._run_node()
+        logger.info(f"Node {self.node.name} run {self.name} completed, outputs to {node_run_result._output_path}.")
         return node_run_result
 
 
-class FlowNodeRunSubmitter(RunSubmitter):
+class ExperimentFlowRunSubmitter(RunSubmitter):
     """Experiment run submitter, override some function from RunSubmitter as experiment run could be different."""
 
     @classmethod
@@ -493,6 +549,140 @@ class FlowNodeRunSubmitter(RunSubmitter):
         except Exception as e:
             run.update_exp_run_node(ExperimentNodeRunStatus.FAILED)
             raise e
+
+
+class ExperimentCommandSubmitter:
+    """Experiment command submitter, responsible for experiment command running."""
+
+    def __init__(self, run_operations: RunOperations):
+        self.run_operations = run_operations
+
+    def submit(self, run: ExperimentNodeRun, **kwargs):
+        """Submit an experiment command run.
+
+        :param run: Experiment command to submit.
+        :type run: ~promptflow.entities.Run
+        """
+        local_storage = LocalStorageOperations(run, run_mode=RunMode.SingleNode)
+        self._submit_command_run(run=run, local_storage=local_storage)
+        return self.run_operations.get(name=run.name)
+
+    def _resolve_inputs(self, run: ExperimentNodeRun):
+        """Resolve binding inputs to constant values."""
+        # e.g. "input_path": "${data.my_data}" -> "${inputs.input_path}": "real_data_path"
+        logger.info("Start resolve node %s inputs.", run.node.name)
+
+        logger.debug(f"Resolved node {run.node.name} binding inputs {run._input_data}.")
+        # resolve inputs
+        resolved_inputs = {}
+        for name, value in run.column_mapping.items():
+            if not isinstance(value, str) or not value.startswith("${"):
+                resolved_inputs[name] = value
+                continue
+            # my_input: "${run.outputs}" -> my_input: run_outputs_path
+            input_key = value.lstrip("${").rstrip("}")
+            if input_key in run._input_data:
+                resolved_inputs[name] = run._input_data[input_key]
+                continue
+            logger.warning(
+                f"Possibly invalid partial input value binding {value!r} found for node {run.node.name!r}. "
+                "Only full binding is supported for command node. For example: ${data.my_data}, ${main_node.outputs}."
+            )
+            resolved_inputs[name] = value
+        logger.debug(f"Resolved node {run.node.name} inputs {resolved_inputs}.")
+        return resolved_inputs
+
+    def _resolve_outputs(self, run: ExperimentNodeRun):
+        """Resolve outputs to real path."""
+        # e.g. "output_path": "${outputs.my_output}" -> "${outputs.output_path}": "real_output_path"
+        logger.info("Start resolve node %s outputs.", run.node.name)
+        # resolve outputs
+        resolved_outputs = {}
+        for name, value in run._outputs.items():
+            # Set default output path if user doesn't set it
+            if not value:
+                # Create default output path if user doesn't set it
+                value = run._output_path / name
+                value.mkdir(parents=True, exist_ok=True)
+                value = value.resolve().absolute().as_posix()
+                # Update default to run
+                run._outputs[name] = value
+            # Note: We will do nothing if user config the value, as we don't know it's a file or folder
+            resolved_outputs[name] = value
+        logger.debug(f"Resolved node {run.node.name} outputs {resolved_outputs}.")
+        return resolved_outputs
+
+    def _resolve_command(self, run: ExperimentNodeRun, inputs: dict, outputs: dict):
+        """Resolve command to real command."""
+        logger.info("Start resolve node %s command.", run.node.name)
+        # resolve command
+        resolved_command = run._command
+        # replace inputs
+        for name, value in inputs.items():
+            resolved_command = resolved_command.replace(f"${{inputs.{name}}}", str(value))
+        # replace outputs
+        for name, value in outputs.items():
+            resolved_command = resolved_command.replace(f"${{outputs.{name}}}", str(value))
+        logger.debug(f"Resolved node {run.node.name} command {resolved_command}.")
+        if "${" in resolved_command:
+            logger.warning(
+                f"Possibly unresolved command value binding found for node {run.node.name!r}. "
+                f"Resolved command: {resolved_command}. Please check your command again."
+            )
+        return resolved_command
+
+    def _submit_command_run(self, run: ExperimentNodeRun, local_storage: LocalStorageOperations) -> dict:
+        # resolve environment variables
+        SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
+        SubmitterHelper.init_env(environment_variables=run.environment_variables)
+
+        # resolve inputs & outputs for command preparing
+        # e.g. input_path: ${data.my_data} -> ${inputs.input_path}: real_data_path
+        inputs = self._resolve_inputs(run)
+        outputs = self._resolve_outputs(run)
+
+        # replace to command
+        command = self._resolve_command(run, inputs, outputs)
+
+        # execute command
+        status = Status.Failed.value
+        # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._dump()  # pylint: disable=protected-access
+        try:
+            return_code = ExperimentCommandExecutor.run(command=command, cwd=run.flow, local_storage=local_storage)
+            if return_code != 0:
+                raise ExperimentCommandRunError(
+                    f"Run {run.name} failed with return code {return_code}, "
+                    f"please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                )
+            status = Status.Completed.value
+        except Exception as e:
+            # when run failed in executor, store the exception in result and dump to file
+            logger.warning(f"Run {run.name} failed when executing in executor with exception {e}.")
+            # for user error, swallow stack trace and return failed run since user don't need the stack trace
+            if not isinstance(e, UserErrorException):
+                # for other errors, raise it to user to help debug root cause.
+                raise e
+        finally:
+            self.run_operations.update(
+                name=run.name,
+                status=status,
+                end_time=datetime.now(),
+            )
+
+
+class ExperimentCommandExecutor:
+    """Experiment command executor, responsible for experiment command running."""
+
+    @staticmethod
+    def run(command: str, cwd: str, local_storage: LocalStorageOperations):
+        """Start a subprocess to run the command"""
+        log_path = local_storage.logger.file_path
+        logger.info(f"Start running command {command}, log path: {log_path}.")
+        with open(log_path, "w") as log_file:
+            process = subprocess.Popen(command, stdout=log_file, stderr=log_file, shell=True, env=os.environ, cwd=cwd)
+        process.wait()
+        return process.returncode
 
 
 def add_start_orchestrator_action(subparsers):

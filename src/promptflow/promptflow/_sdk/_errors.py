@@ -179,3 +179,9 @@ class ExperimentNodeRunNotFoundError(SDKError):
     """ExpNodeRun raised if node run cannot be found."""
 
     pass
+
+
+class ExperimentCommandRunError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass

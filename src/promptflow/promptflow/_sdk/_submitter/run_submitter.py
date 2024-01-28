@@ -79,6 +79,7 @@ class RunSubmitter:
     def _submit_bulk_run(
         self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
     ) -> dict:
+        logger.info(f"Submitting run {run.name}, reach logs at {local_storage.logger.file_path}.")
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
             connections = []
