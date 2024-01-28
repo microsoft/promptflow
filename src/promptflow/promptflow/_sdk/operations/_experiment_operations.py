@@ -3,8 +3,13 @@
 # ---------------------------------------------------------
 from typing import List, Optional
 
-from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ListViewType
-from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError, ExperimentValueError
+from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, ListViewType
+from promptflow._sdk._errors import (
+    ExperimentExistsError,
+    ExperimentNotFoundError,
+    ExperimentValueError,
+    RunOperationError,
+)
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
@@ -100,4 +105,22 @@ class ExperimentOperations(TelemetryMixin):
 
         if not isinstance(name, str):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        return ExperimentOrchestrator(self._client.runs, self, experiment=self.get(name)).async_start(**kwargs)
+        experiment = self.get(name)
+        if experiment.status == ExperimentStatus.IN_PROGRESS:
+            raise RunOperationError(f"Experiment {experiment.name} is in progress.")
+        return ExperimentOrchestrator(self._client.runs, self, experiment).async_start(**kwargs)
+
+    @monitor_operation(activity_name="pf.experiment.stop", activity_type=ActivityType.PUBLICAPI)
+    def stop(self, name: str, **kwargs) -> Experiment:
+        """Stop an experiment.
+
+        :param name: Experiment name.
+        :type name: str
+        :return: Experiment object started.
+        :rtype: ~promptflow.entities.Experiment
+        """
+        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        if not isinstance(name, str):
+            raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
+        return ExperimentOrchestrator(self._client.runs, self, self.get(name)).stop()

@@ -417,3 +417,4 @@ class ExperimentNodeRunStatus(object):
     IN_PROGRESS = "InProgress"
     COMPLETED = "Completed"
     FAILED = "Failed"
+    CANCELED = "Canceled"

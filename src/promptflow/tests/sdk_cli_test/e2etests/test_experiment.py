@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from time import sleep
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
@@ -64,6 +65,12 @@ class TestExperiment:
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start(self):
+        def wait_for_experiment_terminated(experiment):
+            while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
+                experiment = client._experiments.get(experiment.name)
+                sleep(10)
+            return experiment
+
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         # Load template and create experiment
         template = load_common(ExperimentTemplate, source=template_path)
@@ -71,7 +78,8 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
-        assert exp.status == ExperimentStatus.TERMINATED
+        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+        exp = wait_for_experiment_terminated(exp)
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])

@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 import signal
 import sys
 from concurrent import futures
@@ -12,24 +13,25 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-import platform
+
 import psutil
 
 if not sys.stdout:
-    sys.stdout = open(os.devnull, 'w')
+    sys.stdout = open(os.devnull, "w")
 if not sys.stderr:
     sys.stderr = sys.stdout
 
 from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus
 from promptflow._sdk._errors import (
     ExperimentNodeRunFailedError,
-    ExperimentValueError,
     ExperimentNotFoundError,
+    ExperimentValueError,
+    RunOperationError,
 )
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
-from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
+from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment
@@ -83,7 +85,6 @@ class ExperimentOrchestrator:
         logger.info(f"Queuing experiment {self.experiment.name}.")
         self._update_orchestrator_record(status=ExperimentStatus.QUEUING)
 
-        # TODO put experiment start operation into the queue list.
         executable_path = executable_path or sys.executable
         args = [executable_path, __file__, "start", "--experiment", self.experiment.name]
         if nodes:
@@ -100,7 +101,7 @@ class ExperimentOrchestrator:
     def _update_orchestrator_record(self, status, pid=None):
         """Update orchestrator table data"""
         orm_orchestrator = ORMOrchestrator(
-            experimentName=self.experiment.name,
+            experiment_name=self.experiment.name,
             pid=pid,
             status=status,
         )
@@ -116,6 +117,7 @@ class ExperimentOrchestrator:
             status=self.experiment.status,
             last_start_time=last_start_time,
             last_end_time=last_end_time,
+            node_runs=json.dumps(self.experiment.node_runs),
         )
 
     def _start_orchestrator(self, nodes=None, from_nodes=None):
@@ -158,83 +160,125 @@ class ExperimentOrchestrator:
                 node_edges_mapping.pop(node.name)
             return next_executable_nodes
 
-        def stop_handler(signum, frame):
-            """
-            Post-processing when the experiment is canceled.
-            Terminate all executing nodes and update node status.
-            """
-            if signum == signal.SIGTERM:
-                self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
-                executor.shutdown(wait=True, cancel_futures=True)
-                for future, node_name in future_to_node:
-                    if future.cancelled():
-                        # TODO update node status
-                        pass
-                sys.exit(1)
+        def check_in_degree_node_outputs(node, node_edges_mapping):
+            in_degree_nodes = []
+            for in_degree_node, edges in node_edges_mapping.items():
+                if node in edges:
+                    in_degree_nodes.append(in_degree_node)
+            node_runs = {
+                node.name: node
+                for node in ORMExperimentNodeRun.get_node_runs_by_experiment(experiment_name=self.experiment.name)
+                if node.status == ExperimentNodeRunStatus.COMPLETED
+            }
+            is_in_degree_nodes_ready = True
+            for in_degree_node in in_degree_nodes:
+                is_in_degree_nodes_ready = in_degree_node in node_runs
+                if in_degree_node in node_runs:
+                    node_run_info = node_runs[in_degree_node]
+                    run_info_properties = json.loads(node_run_info.properties)
+                    output_path = run_info_properties.get("output_path", None)
+                    is_in_degree_nodes_ready = is_in_degree_nodes_ready and Path(output_path).exists()
+            return is_in_degree_nodes_ready
 
-        # TODO set max workers
-        with ThreadPoolExecutor(max_workers=None) as executor:
-            future_to_node = {}
+        if platform.system() != "Windows":
 
-            # Set signal handler for orchestrator
+            def stop_handler(signum, frame):
+                """
+                Post-processing when the experiment is canceled.
+                Terminate all executing nodes and update node status.
+                """
+                if signum == signal.SIGTERM:
+                    self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+                    executor.shutdown(wait=False)
+                    for future, node in future_to_node_run:
+                        if future.cancelled():
+                            # update status of running nodes to canceled.
+                            node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
+                    sys.exit(1)
+
             signal.signal(signal.SIGTERM, stop_handler)
 
-            node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
-            logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
+        # TODO set max workers
+        executor = ThreadPoolExecutor(max_workers=None)
+        future_to_node_run = {}
 
-            if from_nodes:
-                # Executed from specified nodes
-                # TODO check in-degree nodes
-                next_execute_nodes = from_nodes
-            elif nodes:
-                # Executed specified nodes
-                # TODO check in-degree nodes
-                next_execute_nodes = nodes
-            else:
-                # Execute all nodes in experiment.
-                next_execute_nodes = get_next_executable_nodes()
+        node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+        logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
 
-            while len(next_execute_nodes) != 0 or len(future_to_node) != 0:
-                for node in next_execute_nodes:
-                    # Start node execution.
-                    logger.info(f"Running node {node.name}.")
-                    exp_node_run = ExperimentNodeRun(
-                        node=node,
-                        experiment=self.experiment,
-                        node_runs=self._node_runs,
-                        run_operations=self.run_operations,
-                    )
-                    future_to_node[executor.submit(exp_node_run.submit)] = node.name
-                completed_futures, _ = futures.wait(future_to_node.keys(), return_when=futures.FIRST_COMPLETED)
-                next_execute_nodes = []
-                for future in completed_futures:
-                    try:
-                        node_name = future_to_node[future]
-                        self._node_runs[node_name] = future.result()
+        if from_nodes:
+            # Executed from specified nodes
+            # check in-degree nodes outputs exist
+            for node in from_nodes:
+                if not check_in_degree_node_outputs(node, node_edges_mapping):
+                    raise UserErrorException(f"The output of in-degree of node {node} does not exist.")
+            next_execute_nodes = from_nodes
+        elif nodes:
+            # Executed specified nodes
+            # check in-degree nodes outputs exist
+            for node in nodes:
+                if not check_in_degree_node_outputs(node, node_edges_mapping):
+                    raise UserErrorException(f"The output of in-degree of node {node} does not exist.")
+            next_execute_nodes = nodes
+        else:
+            # Execute all nodes in experiment.
+            next_execute_nodes = get_next_executable_nodes()
+
+        while len(next_execute_nodes) != 0 or len(future_to_node_run) != 0:
+            for node in next_execute_nodes:
+                # Start node execution.
+                logger.info(f"Running node {node.name}.")
+                exp_node_run = ExperimentNodeRun(
+                    node=node,
+                    experiment=self.experiment,
+                    node_runs=self._node_runs,
+                    run_operations=self.run_operations,
+                )
+                future_to_node_run[executor.submit(exp_node_run.submit)] = exp_node_run
+            completed_futures, _ = futures.wait(future_to_node_run.keys(), return_when=futures.FIRST_COMPLETED)
+            next_execute_nodes = []
+            for future in completed_futures:
+                try:
+                    node_name = future_to_node_run[future].node.name
+                    self._node_runs[node_name] = future.result()
+                    if not nodes:
                         next_execute_nodes.extend(get_next_executable_nodes(completed_node=node_name))
-                        del future_to_node[future]
-                    except Exception as e:
-                        # Handle failed execution, update orchestrator and experiment info
-                        self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
-                        raise ExperimentNodeRunFailedError(
-                            f"Node {future_to_node[future]} failed to execute with error {e}."
-                        )
-            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+                    self.experiment._append_node_run(node_name, self._node_runs[node_name])
+                    del future_to_node_run[future]
+                except Exception as e:
+                    executor.shutdown(wait=False)
+                    # Handle failed execution, update orchestrator and experiment info
+                    self.experiment._append_node_run(node_name, future_to_node_run[future])
+                    self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+                    raise ExperimentNodeRunFailedError(
+                        f"Node {future_to_node_run[future].node.name} failed to execute with error {e}."
+                    )
+        executor.shutdown(wait=False)
+        self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
 
     def stop(self):
         orchestrator = ORMOrchestrator.get(experiment_name=self.experiment.name)
-        if not orchestrator.pid:
+        if orchestrator.status in [ExperimentStatus.NOT_STARTED, ExperimentStatus.QUEUING, ExperimentStatus.TERMINATED]:
             raise UserErrorException(
                 target=ErrorTarget.CONTROL_PLANE_SDK,
                 message="Experiment cannot be stopped if it is not started.",
             )
         try:
-            os.kill(orchestrator.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            raise UserErrorException(
-                target=ErrorTarget.CONTROL_PLANE_SDK,
-                message="Experiment cannot be stopped if it is not started.",
+            process = psutil.Process(orchestrator.pid)
+            process.terminate()
+        except psutil.NoSuchProcess:
+            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+        except Exception as e:
+            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+            raise RunOperationError(
+                message=f"Experiment stopped failed with {e}",
             )
+        finally:
+            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+            if platform.system() == "Windows":
+                nodes = ORMExperimentNodeRun.get_node_runs_by_experiment(experiment_name=self.experiment.name)
+                for node in nodes or []:
+                    if node.status == ExperimentNodeRunStatus.IN_PROGRESS:
+                        node.update_status(status=ExperimentNodeRunStatus.CANCELED)
 
     @staticmethod
     def get_status(experiment_name):
@@ -252,7 +296,7 @@ class ExperimentOrchestrator:
             if orm_orchestrator.status == ExperimentStatus.IN_PROGRESS:
                 try:
                     process = psutil.Process(orm_orchestrator.pid)
-                    if experiment_name in process.cmdline():
+                    if experiment_name not in process.cmdline():
                         set_orchestrator_terminated()
                     return orm_orchestrator.status
                 except psutil.NoSuchProcess:
@@ -401,8 +445,8 @@ class ExperimentNodeRun(Run):
 
     def update_exp_run_node(self, status):
         node_run = ORMExperimentNodeRun(
-            snapshot_id=self.snapshot_id,
             run_id=self.name,
+            snapshot_id=self.snapshot_id,
             node_name=self.node.name,
             experiment_name=self.experiment.name,
             status=status,
@@ -411,13 +455,16 @@ class ExperimentNodeRun(Run):
 
     def submit(self):
         # Get snapshot id from exp_node_run
-        node_run = ORMExperimentNodeRun.get_by_snapshot_id(snapshot_id=self.snapshot_id, raise_error=False)
-        if node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
+        node_run = ORMExperimentNodeRun.get_completed_node_by_snapshot_id(
+            snapshot_id=self.snapshot_id, experiment_name=self.experiment.name, raise_error=False
+        )
+        if False and node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
             run_info = ORMRunInfo.get(node_run.run_id)
             run_info_properties = json.loads(run_info.properties)
             output_path = run_info_properties.get("output_path", None)
             if output_path and Path(output_path).exists():
                 # TODO Whether need to link used node output folder in the experiment run folder
+                logger.info("Reuse exist node run.")
                 return run_info
         # Update exp node run record
         self.update_exp_run_node(status=ExperimentNodeRunStatus.IN_PROGRESS)
