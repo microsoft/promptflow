@@ -249,6 +249,7 @@ class LineExecutionProcessPool:
         # 2. The batch run has not reached the batch timeout limit.
         while not self._batch_timeout_expired(batch_start_time):
             try:
+                self._processes_manager.ensure_healthy()
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 break
