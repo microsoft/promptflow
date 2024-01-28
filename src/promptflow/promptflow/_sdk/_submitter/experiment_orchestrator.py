@@ -5,15 +5,16 @@ import argparse
 import hashlib
 import json
 import os
-import subprocess
 import platform
 import signal
+import subprocess
 import sys
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
+
 import psutil
 
 if not sys.stdout:
@@ -21,7 +22,7 @@ if not sys.stdout:
 if not sys.stderr:
     sys.stderr = sys.stdout
 
-from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus, FlowRunProperties, RunTypes
+from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus, FlowRunProperties
 from promptflow._sdk._errors import (
     ExperimentCommandRunError,
     ExperimentNodeRunFailedError,
@@ -38,7 +39,6 @@ from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._sdk.operations import RunOperations
-from promptflow._sdk.operations._experiment_operations import ExperimentOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.run_info import Status
