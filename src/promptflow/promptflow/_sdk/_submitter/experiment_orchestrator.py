@@ -461,7 +461,7 @@ class ExperimentNodeRun(Run):
             return hashlib.md5(json.dumps(file_content, sort_keys=True).encode("utf-8")).hexdigest()
 
         snapshot_content = {
-            "parameter": {},
+            "column_mapping": self.column_mapping,
             "inputs": {key: calculate_files_content_hash(value) for key, value in self._input_data.items()},
             "code": calculate_files_content_hash(self.flow),
         }
