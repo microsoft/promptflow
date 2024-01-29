@@ -178,6 +178,7 @@ class LineExecutionProcessPool:
             self._processes_manager = SpawnProcessManager(executor_creation_func, **common_kwargs)
 
         self._processes_manager.start_processes()
+        self._processes_manager.ensure_healthy()
 
         monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._monitor_pool = monitor_pool
@@ -192,6 +193,7 @@ class LineExecutionProcessPool:
     def _get_process_info(self, index):
         start_time = time.time()
         while True:
+            self._processes_manager.ensure_healthy()
             try:
                 if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
                     raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
@@ -205,7 +207,7 @@ class LineExecutionProcessPool:
                 time.sleep(1)
                 continue
             except Exception as e:
-                bulk_logger.warning(f"Unexpected error occurred while get process info. Exception: {e}")
+                raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
 
     def _ensure_process_terminated_within_timeout(self, process_id):
         start_time = time.time()
@@ -244,6 +246,7 @@ class LineExecutionProcessPool:
         # 1. The task queue is not empty, meaning there are lines yet to be executed.
         # 2. The batch run has not reached the batch timeout limit.
         while not self._batch_timeout_expired(batch_start_time):
+            self._processes_manager.ensure_healthy()
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
@@ -495,7 +498,7 @@ class LineExecutionProcessPool:
                                 total_count=self._nlines,
                             )
                             last_log_count = current_result_count
-                            # Check every 1 second
+                        # Check every 1 second
                         async_result.wait(1)
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
                     # The exceptions raised will be re-raised by the get() method.
@@ -507,9 +510,9 @@ class LineExecutionProcessPool:
             except PromptflowException:
                 raise
             except Exception as e:
-                bulk_logger.error(f"Process {os.getpid()} failed with exception: {e}")
+                bulk_logger.error(f"ProcessPool failed with exception: {e}")
                 raise ProcessPoolError(
-                    message_format=f"Process {os.getpid()} failed with exception: {e}",
+                    message_format=f"ProcessPool failed with exception: {e}",
                     target=ErrorTarget.EXECUTOR,
                 ) from e
         return result_list

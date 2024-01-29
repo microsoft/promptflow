@@ -165,7 +165,8 @@
     "laddr",
     "nrows",
     "Dumpable",
-    "aiter"
+    "aiter",
+    "XCLASS"
   ],
   "flagWords": [
     "Prompt Flow"
