@@ -9,13 +9,18 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._core.operation_context import OperationContext
+from promptflow.executor._line_execution_process_pool import _process_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
+from ..process_utils import enable_mock_in_process
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
 
 Completion = namedtuple("Completion", ["choices"])
 Choice = namedtuple("Choice", ["delta"])
@@ -33,6 +38,26 @@ def stream_response(kwargs):
 
 def mock_stream_chat(*args, **kwargs):
     return stream_response(kwargs)
+
+
+def setup_mocks():
+    patch_targets = {
+        "openai.ChatCompletion.create": mock_stream_chat,
+        "openai.resources.chat.Completions.create": mock_stream_chat
+    }
+    for target, func in patch_targets.items():
+        patcher = patch(target, func)
+        patcher.start()
+
+
+def mock_process_wrapper(*args, **kwargs):
+    setup_mocks()
+    _process_wrapper(*args, **kwargs)
+
+
+def mock_process_manager(*args, **kwargs):
+    setup_mocks()
+    create_spawned_fork_process_manager(*args, **kwargs)
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -88,33 +113,30 @@ class TestExecutorTelemetry:
             assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
             assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name
 
-    @pytest.mark.skip(reason="Skip on Mac and Windows and Linux, patch does not work in the spawn process")
     def test_executor_openai_telemetry_with_batch_run(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
         """
-        if IS_LEGACY_OPENAI:
-            api = "openai.ChatCompletion.create"
-        else:
-            api = "openai.resources.chat.Completions.create"
-        with patch(api, new=mock_stream_chat):
-            flow_folder = "openai_chat_api_flow"
+        flow_folder = "openai_chat_api_flow"
 
-            operation_context = OperationContext.get_instance()
-            operation_context.clear()
-            # Set user-defined properties `scenario` in context
-            operation_context.scenario = "test"
+        operation_context = OperationContext.get_instance()
+        operation_context.clear()
+        # Set user-defined properties `scenario` in context
+        operation_context.scenario = "test"
 
+        with enable_mock_in_process(mock_process_wrapper, mock_process_manager):
             run_id = str(uuid.uuid4())
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
             )
-            input_dirs = {"data": get_flow_inputs_file(flow_folder)}
+            input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="stream_inputs.jsonl")}
             inputs_mapping = {"question": "${data.question}", "chat_history": "${data.chat_history}"}
             output_dir = Path(mkdtemp())
-            batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
+            bulk_result = batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
 
+            assert isinstance(bulk_result, BatchResult)
+            assert bulk_result.completed_lines == 2
             outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
             for line in outputs:
                 headers = json.loads(line.get("answer", ""))
