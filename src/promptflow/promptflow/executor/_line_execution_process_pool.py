@@ -246,8 +246,8 @@ class LineExecutionProcessPool:
         # 1. The task queue is not empty, meaning there are lines yet to be executed.
         # 2. The batch run has not reached the batch timeout limit.
         while not self._batch_timeout_expired(batch_start_time):
+            self._processes_manager.ensure_healthy()
             try:
-                self._processes_manager.ensure_healthy()
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 break
