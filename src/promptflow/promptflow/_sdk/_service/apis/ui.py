@@ -25,11 +25,22 @@ class Trace(Resource):
         args = trace_parser.parse_args()
         session_id = args.session
         parent_span_id = args.parent_id
-        print(session_id, parent_span_id)
         traces = client._traces.list(
             session_id=session_id,
             parent_span_id=parent_span_id,
         )
 
         traces_json = json.dumps([trace._content for trace in traces])
-        return Response(render_template("ui_traces.html", traces_json=traces_json), mimetype="text/html")
+        # `data` is for dummy table
+        data = [
+            {
+                "trace_id": trace.trace_id,
+                "span_id": trace.span_id,
+                "content": trace._content,
+            }
+            for trace in traces
+        ]
+        return Response(
+            render_template("ui_traces.html", traces_json=traces_json, data=data),
+            mimetype="text/html",
+        )
