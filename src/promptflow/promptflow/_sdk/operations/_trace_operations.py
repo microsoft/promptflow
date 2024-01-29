@@ -13,5 +13,5 @@ class TraceOperations:
         self,
         parent_id: typing.Optional[str] = None,
     ) -> typing.List[Span]:
-        orm_spans = ORMSpan.list()
+        orm_spans = ORMSpan.list(parent_id=parent_id)
         return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
