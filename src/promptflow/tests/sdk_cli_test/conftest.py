@@ -228,6 +228,7 @@ def recording_injection(mocker: MockerFixture):
     try:
         yield
     finally:
+        RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class
