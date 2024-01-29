@@ -5,13 +5,16 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
+  text_meta:
+    type: string
+    default: "{}"
 outputs:
   question:
     type: string
     reference: ${validate_test_question.output}
   ground_truth:
     type: string
-    reference: ${validate_ground_truth.output}
+    reference: ${validate_ground_truth.output.ground_truth}
   debug_info:
     type: string
     reference: ${generate_debug_info.output}
@@ -30,7 +33,7 @@ nodes:
     type: code
     path: validate_question_prompt.jinja2
   inputs:
-    question: ${validate_and_generate_seed_question.output}
+    question: ${validate_and_generate_seed_question.output.question}
   use_variants: false
 - name: seed_question_prompt
   type: prompt
@@ -70,7 +73,8 @@ nodes:
     connection:
     model: gpt-4
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
-    seed_question: ${validate_and_generate_seed_question.output}
+    seed_question: ${validate_and_generate_seed_question.output.question}
+    response_format: ""
   use_variants: false
 - name: validate_question_prompt
   type: prompt
@@ -111,6 +115,10 @@ nodes:
   inputs:
     question_type: ${validate_and_generate_test_question.output.question_type}
     text_trunk: ${inputs.text_chunk}
+    text_meta: ${inputs.text_meta}
+    validate_and_generate_seed_question_output: ${validate_and_generate_seed_question.output}
+    validate_and_generate_test_question_output: ${validate_and_generate_test_question.output}
+    validate_ground_truth_output: ${validate_ground_truth.output}
 - name: validate_ground_truth_prompt
   type: prompt
   source:

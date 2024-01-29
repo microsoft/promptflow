@@ -1,6 +1,6 @@
 from typing import Union
 
-from utils import is_valid_text_trunk, llm_call
+from utils import ErrorMsg, ResponseFormat, get_text_trunk_validation_res, llm_call
 
 from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -13,17 +13,23 @@ def validate_and_generate_seed_question(
     validate_text_trunk_prompt: str,
     seed_question_prompt: str,
     context: str = None,
+    response_format: str = ResponseFormat.JSON,
 ):
     """
     1. Validates the given text chunk.
     2. Generates a seed question based on the given prompts.
 
     Returns:
-        str: The generated seed question.
+        dict: The generated seed question and text trunk validation result.
     """
-    if not is_valid_text_trunk(connection, model, validate_text_trunk_prompt, context):
-        print("Skipping generating seed question due to invalid text chunk.")
-        return ""
+    validation_res = get_text_trunk_validation_res(
+        connection, model, validate_text_trunk_prompt, context, response_format
+    )
+    is_valid_text_trunk = validation_res.pass_validation
+    if not is_valid_text_trunk:
+        print(ErrorMsg.INVALID_TEXT_TRUNK)
+        print(f"yaodebug: {validation_res}")
+        return {"question": "", "validation_res": validation_res}
 
     seed_question = llm_call(connection, model, seed_question_prompt)
-    return seed_question
+    return {"question": seed_question, "validation_res": validation_res}

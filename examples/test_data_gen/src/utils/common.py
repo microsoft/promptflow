@@ -38,11 +38,13 @@ def split_document(chunk_size, documents_folder, document_node_output):
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     print("#### Start to clean the data.")
-    cleaned_data = [
-        test_data
-        for test_data in test_data_set
-        if (test_data and all(val for key, val in test_data.items() if key.lower() != "line_number"))
-    ]
+    cleaned_data = []
+
+    for test_data in test_data_set:
+        if test_data and all(
+            val and val != "(Failed)" for key, val in test_data.items() if key.lower() != "line_number"
+        ):
+            cleaned_data.append(test_data)
 
     jsonl_str = "\n".join(map(json.dumps, cleaned_data))
     with open(test_data_output_path, "wt") as text_file:

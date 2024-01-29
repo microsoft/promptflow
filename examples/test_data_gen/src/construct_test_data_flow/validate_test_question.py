@@ -1,6 +1,6 @@
 from typing import Union
 
-from utils import QuestionType, is_valid_question
+from utils import QuestionType, get_question_validation_res
 
 from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -28,7 +28,9 @@ def validate_test_question(
     # if question type is simple, the question is validated, no need to validate again.
     if question_type == QuestionType.SIMPLE:
         return question
-    is_valid_test_question = is_valid_question(connection, model, validate_question_prompt, question)
+
+    validation_res = get_question_validation_res(connection, model, validate_question_prompt, question)
+    is_valid_test_question = validation_res.pass_validation
     if not is_valid_test_question:
         print(f"Invalid test question: {question}")
         return ""
