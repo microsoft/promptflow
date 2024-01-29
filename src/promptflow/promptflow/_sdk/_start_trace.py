@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 
 import os
+import platform
+import sys
 import uuid
 
 from opentelemetry import trace
@@ -28,6 +30,7 @@ def start_trace():
     """
     # TODO: PFS liveness probe
     pfs_port = get_port_from_config()
+    _start_pfs_in_background()
     _logger.debug("PFS is serving on port %s", pfs_port)
     # provision a session
     # TODO: make this dynamic after set from our side
@@ -39,6 +42,17 @@ def start_trace():
     # print user the UI url
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
     print(f"You can view the trace from UI url: {ui_url}")
+
+
+def _start_pfs_in_background() -> None:
+    """Start a pfs process in background."""
+
+    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--force"]
+    # Start a pfs process using detach mode
+    if platform.system() == "Windows":
+        os.spawnv(os.P_DETACH, sys.executable, args)
+    else:
+        os.system(" ".join(["nohup"] + args + ["&"]))
 
 
 def _provision_session() -> str:

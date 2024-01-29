@@ -167,7 +167,8 @@
     "Dumpable",
     "XCLASS",
     "otel",
-    "OTLP"
+    "OTLP",
+    "spawnv"
   ],
   "flagWords": [
     "Prompt Flow"
