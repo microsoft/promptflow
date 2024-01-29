@@ -263,6 +263,7 @@ class ExperimentOrchestrator:
                     # Handle failed execution, update orchestrator and experiment info
                     self.experiment._append_node_run(node_name, future_to_node_run[future])
                     self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+                    logger.warning(f"Node {future_to_node_run[future].node.name} failed to execute with error {e}.")
                     raise ExperimentNodeRunFailedError(
                         f"Node {future_to_node_run[future].node.name} failed to execute with error {e}."
                     )
