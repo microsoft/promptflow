@@ -12,6 +12,10 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from promptflow._sdk._constants import TRACE_SESSION_ID_ENV_VAR
+from promptflow._sdk._service.utils.utils import get_port_from_config
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+_logger = get_cli_sdk_logger()
 
 
 def start_trace():
@@ -22,10 +26,12 @@ def start_trace():
 
     Note that this function is still under preview, and may change at any time.
     """
-    # detect PFS liveness
-    pfs_port = "55507"  # TODO: make this dynamic from PFS liveness probe
+    # TODO: PFS liveness probe
+    pfs_port = get_port_from_config()
+    _logger.debug("PFS is serving on port %s", pfs_port)
     # provision a session
     session_id = _provision_session()
+    _logger.debug("current session id is %s", session_id)
     # init the global tracer with endpoint, context (session, run, exp)
     _init_otel_trace_exporter(otlp_port=pfs_port)
     # print user the UI url
