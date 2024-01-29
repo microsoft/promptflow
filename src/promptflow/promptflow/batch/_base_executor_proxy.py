@@ -3,22 +3,23 @@
 # ---------------------------------------------------------
 
 import asyncio
-import json
+import requests
 from datetime import datetime
+import json
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import httpx
-import requests
 
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.batch._errors import ExecutorServiceUnhealthy
-from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -104,6 +105,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             def generator():
                 with requests.Session() as session:
                     response = session.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
+                    if response.status_code != 200:
+                        run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
+                        yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
                     for line in response.iter_lines():
                         chunk_data = json.loads(line)
                         # only support one chat output for now
