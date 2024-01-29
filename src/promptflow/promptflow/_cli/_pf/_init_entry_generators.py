@@ -402,7 +402,6 @@ class SetupGenerator(BaseGenerator):
 class ToolPackageUtilsGenerator(BaseGenerator):
     def __init__(self, package_name):
         self.package_name = package_name
-        self.package_uuid = str(uuid4())
 
     @property
     def tpl_file(self):
@@ -410,7 +409,7 @@ class ToolPackageUtilsGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["package_name", "package_uuid"]
+        return ["package_name"]
 
 
 class ToolReadmeGenerator(BaseGenerator):

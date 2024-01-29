@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
 import json
+import hashlib
 import logging
 import multiprocessing
 import os
@@ -1431,7 +1432,8 @@ class TestCli:
                 tools_meta = utils.list_package_tools()
                 assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
-                cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tools_meta" / f"{utils.package_uuid}.yaml"
+                cache_file_name = hashlib.sha256(Path(utils.__file__).parent.parent.as_posix().encode()).hexdigest()
+                cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tools_meta" / f"{cache_file_name}.yaml"
                 assert cache_file.exists()
 
                 with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
