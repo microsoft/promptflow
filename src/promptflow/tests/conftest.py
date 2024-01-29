@@ -52,7 +52,7 @@ def mock_build_info():
         yield m
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture
 def inject_api():
     """Inject OpenAI API during test session.
 

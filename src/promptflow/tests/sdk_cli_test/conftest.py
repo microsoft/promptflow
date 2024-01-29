@@ -12,6 +12,7 @@ from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 from sqlalchemy import create_engine
 
 from promptflow import PFClient
+from promptflow._core.openai_injector import inject_openai_api
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.app import create_app as create_serving_app
@@ -262,6 +263,8 @@ def setup_recording_injection_if_enabled():
         patcher = patch("promptflow._core.openai_injector.inject_async", inject_async_with_recording)
         patches.append(patcher)
         patcher.start()
+
+    inject_openai_api()
     return patches
 
 
