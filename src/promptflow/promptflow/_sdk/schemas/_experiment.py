@@ -56,7 +56,6 @@ class ExperimentInputSchema(metaclass=PatchedSchemaMeta):
 
 
 class ExperimentTemplateSchema(YamlFileSchema):
-    name = fields.Str()
     description = fields.Str()
     data = fields.List(NestedField(ExperimentDataSchema))  # Optional
     inputs = fields.List(NestedField(ExperimentInputSchema))  # Optional
@@ -118,6 +117,7 @@ class ExperimentTemplateSchema(YamlFileSchema):
 
 
 class ExperimentSchema(ExperimentTemplateSchema):
+    name = fields.Str()
     node_runs = fields.Dict(keys=fields.Str(), values=fields.Str())  # TODO: Revisit this
     status = fields.Str(dump_only=True)
     properties = fields.Dict(keys=fields.Str(), values=fields.Str(allow_none=True))
