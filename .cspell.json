@@ -165,7 +165,8 @@
     "laddr",
     "nrows",
     "Dumpable",
-    "spawnv"
+    "spawnv",
+    "XCLASS"
   ],
   "flagWords": [
     "Prompt Flow"
