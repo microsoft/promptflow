@@ -20,7 +20,7 @@ class CommandNodeSchema(YamlFileSchema):
     name = fields.Str(required=True)
     display_name = fields.Str()
     type = StringTransformedEnum(allowed_values=ExperimentNodeType.COMMAND, required=True)
-    code = LocalPathField(default=".")
+    code = LocalPathField()
     command = fields.Str(required=True)
     inputs = fields.Dict(keys=fields.Str)
     outputs = fields.Dict(keys=fields.Str, values=LocalPathField(allow_none=True))
