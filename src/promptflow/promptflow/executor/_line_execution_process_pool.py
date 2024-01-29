@@ -16,7 +16,7 @@ from typing import List, Optional, Union
 import psutil
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
-from promptflow._core._errors import ProcessPoolError
+from promptflow._core._errors import ProcessPoolError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
@@ -307,6 +307,12 @@ class LineExecutionProcessPool:
                         ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                         # Set is_timeout to True if the batch run exceeds the batch timeout.
                         self._is_timeout = True
+                # This branch should not be reached, add this warning for the case.
+                if ex is None:
+                    msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
+                    bulk_logger.warning(msg)
+                    ex = UnexpectedError(msg)
+
                 result = self._generate_line_result_for_exception(
                     inputs,
                     run_id,
