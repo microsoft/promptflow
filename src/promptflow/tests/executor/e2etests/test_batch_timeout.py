@@ -3,9 +3,11 @@ from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import Status
+from promptflow.executor._errors import BatchExecutionTimeoutError, LineExecutionTimeoutError
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -119,12 +121,15 @@ class TestBatchTimeout:
         assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
 
     @pytest.mark.parametrize(
-        "flow_folder",
+        "flow_folder, line_timeout_sec, batch_timeout_sec, expected_error",
         [
-            ONE_LINE_OF_BULK_TEST_TIMEOUT,
+            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, BatchExecutionTimeoutError(2, 5)),
+            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 5, LineExecutionTimeoutError(2, 3)),
+            # TODO: Will change to BatchExecutionTimeoutError after refining the implementation of batch timeout.
+            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 3, LineExecutionTimeoutError(2, 3)),
         ],
     )
-    def test_batch_timeout(self, flow_folder):
+    def test_batch_timeout(self, flow_folder, line_timeout_sec, batch_timeout_sec, expected_error):
         mem_run_storage = MemoryRunStorage()
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder),
@@ -132,7 +137,8 @@ class TestBatchTimeout:
             connections={},
             storage=mem_run_storage,
         )
-        batch_engine._batch_timeout_sec = 5
+        batch_engine._line_timeout_sec = line_timeout_sec
+        batch_engine._batch_timeout_sec = batch_timeout_sec
 
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
         output_dir = Path(mkdtemp())
@@ -145,8 +151,6 @@ class TestBatchTimeout:
         assert batch_results.total_lines == 3
         assert batch_results.completed_lines == 2
         assert batch_results.failed_lines == 1
-        # TODO: Currently, the node status is incomplete.
-        # We will assert the correct result after refining the implementation of batch timeout.
         assert batch_results.node_status == {
             "my_python_tool_with_failed_line.completed": 2,
             "my_python_tool_with_failed_line.canceled": 1,
@@ -158,13 +162,13 @@ class TestBatchTimeout:
         assert batch_results.error_summary.failed_system_error_lines == 0
         assert isinstance(batch_results.error_summary.error_list[0], LineError)
         assert batch_results.error_summary.error_list[0].line_number == 2
-        assert batch_results.error_summary.error_list[0].error["code"] == "UserError"
-        assert batch_results.error_summary.error_list[0].error["referenceCode"] == "Batch"
-        assert batch_results.error_summary.error_list[0].error["innerError"]["code"] == "BatchExecutionTimeoutError"
-        assert (
-            batch_results.error_summary.error_list[0].error["message"]
-            == "Line 2 execution terminated due to the total batch run exceeding the batch timeout (5s)."
-        )
+
+        actual_error_dict = batch_results.error_summary.error_list[0].error
+        expected_error_dict = ExceptionPresenter.create(expected_error).to_dict()
+        assert actual_error_dict["code"] == expected_error_dict["code"]
+        assert actual_error_dict["referenceCode"] == expected_error_dict["referenceCode"]
+        assert actual_error_dict["innerError"]["code"] == expected_error_dict["innerError"]["code"]
+        assert actual_error_dict["message"] == expected_error_dict["message"]
 
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 3, "Flow runs are persisted in memory storage."
