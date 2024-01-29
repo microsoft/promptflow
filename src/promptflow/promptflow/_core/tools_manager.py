@@ -12,7 +12,13 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-from promptflow._core._errors import InputTypeMismatch, MissingRequiredInputs, PackageToolNotFoundError, ToolLoadError
+from promptflow._core._errors import (
+    InputTypeMismatch,
+    InvalidSource,
+    MissingRequiredInputs,
+    PackageToolNotFoundError,
+    ToolLoadError,
+)
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -416,8 +422,19 @@ class ToolLoader:
 
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
         if node.source.path is None:
-            raise UserErrorException(f"Node {node.name} does not have source path defined.")
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load tool failed for node '{node_name}'. The source path is 'None'.",
+                node_name=node.name,
+            )
         path = node.source.path
+        if not (self._working_dir / path).is_file():
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load tool failed for node '{node_name}'. Tool file '{source_path}' can not be found.",
+                source_path=path,
+                node_name=node.name,
+            )
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")

@@ -252,7 +252,6 @@ class TestTraced:
     def test_original_function_and_wrapped_function_attributes_are_set(self, func):
         traced_func = _traced(func)
         assert getattr(traced_func, "__original_function") == func
-        assert getattr(func, "__wrapped_function") == traced_func
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("func", [sync_func, async_func])

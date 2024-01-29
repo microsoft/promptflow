@@ -6,7 +6,7 @@ import pytest
 from mock import MagicMock
 
 from promptflow import tool
-from promptflow._core._errors import InputTypeMismatch, PackageToolNotFoundError
+from promptflow._core._errors import InputTypeMismatch, InvalidSource, PackageToolNotFoundError
 from promptflow._core.tools_manager import (
     BuiltinsManager,
     ToolLoader,
@@ -123,6 +123,27 @@ class TestToolLoader:
         )
         tool = tool_loader.load_tool_for_node(node)
         assert tool.name == "sample_tool"
+
+    @pytest.mark.parametrize(
+        "source_path, error_message",
+        [
+            (None, "Load tool failed for node 'test'. The source path is 'None'."),
+            ("invalid_file.py", "Load tool failed for node 'test'. Tool file 'invalid_file.py' can not be found."),
+        ],
+    )
+    def test_load_tool_for_script_node_exception(self, source_path, error_message):
+        working_dir = Path(__file__).parent
+        tool_loader = ToolLoader(working_dir=working_dir)
+        node: Node = Node(
+            name="test",
+            tool="sample_tool",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Code, path=source_path),
+        )
+        with pytest.raises(InvalidSource) as ex:
+            tool_loader.load_tool_for_script_node(node)
+        assert str(ex.value) == error_message
 
 
 # This tool is for testing tools_manager.ToolLoader.load_tool_for_script_node

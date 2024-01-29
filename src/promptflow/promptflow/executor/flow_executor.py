@@ -13,7 +13,7 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import transpose
+from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -43,7 +43,12 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
-from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
+from promptflow.executor._errors import (
+    InvalidFlowFileError,
+    NodeOutputNotFound,
+    OutputReferenceNotExist,
+    SingleNodeValidationError,
+)
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -89,9 +94,10 @@ class FlowExecutor:
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
         *,
+        entry: Optional[str] = None,
         raise_ex: bool = False,
         working_dir=None,
-        line_timeout_sec=LINE_TIMEOUT_SEC,
+        line_timeout_sec=None,
         flow_file=None,
     ):
         """Initialize a FlowExecutor object.
@@ -111,7 +117,7 @@ class FlowExecutor:
         :param working_dir: The working directory to use for execution.
         :type working_dir: str or None
         :param line_timeout_sec: The maximum time to wait for a line of output from a node.
-        :type line_timeout_sec: int
+        :type line_timeout_sec: int or None
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
         """
@@ -128,7 +134,7 @@ class FlowExecutor:
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
-        self._line_timeout_sec = line_timeout_sec
+        self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC")
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
@@ -147,6 +153,7 @@ class FlowExecutor:
             raise ValueError(f"Failed to load custom tools for flow due to exception:\n {e}.") from e
         for node in flow.nodes:
             self._tools_manager.assert_loaded(node.name)
+        self._entry = entry
         self._raise_ex = raise_ex
         self._log_interval = 60
         self._processing_idx = None
@@ -161,11 +168,11 @@ class FlowExecutor:
         connections: dict,
         working_dir: Optional[Path] = None,
         *,
-        func: Optional[str] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        line_timeout_sec: Optional[int] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -188,28 +195,34 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        if Path(flow_file).suffix.lower() == ".py":
+        if cls._is_eager_flow_yaml(flow_file, working_dir):
+            if Path(flow_file).suffix.lower() in [".yml", ".yaml"]:
+                entry, path = cls._parse_eager_flow_yaml(flow_file, working_dir)
+                flow_file = Path(path)
+
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
-                entry_file=flow_file,
-                func=func,
+                flow_file=flow_file,
+                entry=entry,
                 working_dir=working_dir,
                 storage=storage,
             )
-        if Path(flow_file).suffix.lower() != ".yaml":
-            raise ValueError("Only support yaml or py file.")
-        flow = Flow.from_yaml(flow_file, working_dir=working_dir)
-        return cls._create_from_flow(
-            flow_file=flow_file,
-            flow=flow,
-            connections=connections,
-            working_dir=working_dir,
-            storage=storage,
-            raise_ex=raise_ex,
-            node_override=node_override,
-            line_timeout_sec=line_timeout_sec,
-        )
+        elif Path(flow_file).suffix.lower() in [".yml", ".yaml"]:
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+            return cls._create_from_flow(
+                flow_file=flow_file,
+                flow=flow,
+                connections=connections,
+                working_dir=working_dir,
+                entry=entry,
+                storage=storage,
+                raise_ex=raise_ex,
+                node_override=node_override,
+                line_timeout_sec=line_timeout_sec,
+            )
+        else:
+            raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
 
     @classmethod
     def _create_from_flow(
@@ -219,10 +232,11 @@ class FlowExecutor:
         working_dir: Optional[Path],
         *,
         flow_file: Optional[Path] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        line_timeout_sec: Optional[int] = None,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -254,6 +268,7 @@ class FlowExecutor:
             run_tracker=run_tracker,
             cache_manager=cache_manager,
             loaded_tools={r.node.name: r.callable for r in resolved_tools},
+            entry=entry,
             raise_ex=raise_ex,
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
@@ -261,6 +276,25 @@ class FlowExecutor:
         )
         logger.debug("The flow executor is initialized successfully.")
         return executor
+
+    @classmethod
+    def _is_eager_flow_yaml(cls, flow_file: Path, working_dir: Optional[Path] = None):
+        if Path(flow_file).suffix.lower() == ".py":
+            return True
+        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            flow_file = working_dir / flow_file if working_dir else flow_file
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            if "entry" in flow_dag:
+                return True
+        return False
+
+    @classmethod
+    def _parse_eager_flow_yaml(cls, flow_file: Path, working_dir: Optional[Path] = None):
+        flow_file = working_dir / flow_file if working_dir else flow_file
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        return flow_dag.get("entry", ""), flow_dag.get("path", "")
 
     @classmethod
     def load_and_exec_node(
@@ -446,45 +480,6 @@ class FlowExecutor:
         for idx, value in zip(indexes, values):
             result[idx] = value
         return result
-
-    def _exec_batch_with_process_pool(
-        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
-    ) -> List[LineResult]:
-        nlines = len(batch_inputs)
-        line_number = [
-            batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
-        ]
-        has_line_number = len(line_number) > 0
-        if not has_line_number:
-            line_number = [i for i in range(nlines)]
-
-        # TODO: Such scenario only occurs in legacy scenarios, will be deprecated.
-        has_duplicates = len(line_number) != len(set(line_number))
-        if has_duplicates:
-            line_number = [i for i in range(nlines)]
-
-        result_list = []
-
-        if self._flow_file is None:
-            error_message = "flow file is missing"
-            raise UnexpectedError(
-                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
-                error_message=error_message,
-            )
-
-        from ._line_execution_process_pool import LineExecutionProcessPool
-
-        with LineExecutionProcessPool(
-            self,
-            nlines,
-            run_id,
-            variant_id,
-            validate_inputs,
-            output_dir,
-        ) as pool:
-            result_list = pool.run(zip(line_number, batch_inputs))
-
-        return sorted(result_list, key=lambda r: r.run_info.index)
 
     def _exec_aggregation_with_bulk_results(
         self,
@@ -740,9 +735,10 @@ class FlowExecutor:
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
-    def _add_line_results(self, line_results: List[LineResult]):
-        self._run_tracker._flow_runs.update({result.run_info.run_id: result.run_info for result in line_results})
-        self._run_tracker._node_runs.update(
+    def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
+        run_tracker = run_tracker or self._run_tracker
+        run_tracker._flow_runs.update({result.run_info.run_id: result.run_info for result in line_results})
+        run_tracker._node_runs.update(
             {
                 node_run_info.run_id: node_run_info
                 for result in line_results
@@ -939,7 +935,13 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
+        return FlowNodesScheduler(
+            self._tools_manager,
+            inputs,
+            nodes,
+            self._node_concurrency,
+            context,
+        ).execute(self._line_timeout_sec)
 
     @staticmethod
     def apply_inputs_mapping(
