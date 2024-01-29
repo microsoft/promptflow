@@ -270,6 +270,7 @@ class TestLineExecutionProcessPool:
             inputs=line_inputs,
             run_id=run_id,
             index=0,
+            line_timeout_sec=600,
         )
         assert isinstance(line_result, LineResult)
 
@@ -295,6 +296,7 @@ class TestLineExecutionProcessPool:
                 inputs=line_inputs,
                 run_id=run_id,
                 index=0,
+                line_timeout_sec=600,
             )
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.error["message"] == test_error_msg
