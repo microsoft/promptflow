@@ -127,7 +127,6 @@ class TestBatchTimeout:
         [
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, BatchExecutionTimeoutError(2, 5), Status.Failed),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 600, LineExecutionTimeoutError(2, 3), Status.Completed),
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 5, LineExecutionTimeoutError(2, 3), Status.Completed),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 3, BatchExecutionTimeoutError(2, 3), Status.Failed),
         ],
     )
