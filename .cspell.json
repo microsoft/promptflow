@@ -165,6 +165,7 @@
     "laddr",
     "nrows",
     "Dumpable",
+    "XCLASS",
     "otel",
     "OTLP"
   ],

@@ -27,16 +27,14 @@ from azure.core.exceptions import HttpResponseError
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
-    FLOW_TOOLS_JSON,
     MAX_LIST_CLI_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     WORKSPACE_LINKED_DATASTORE_NAME,
     FlowType,
     ListViewType,
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
+from promptflow._sdk._utils import PromptflowIgnoreFile
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
@@ -412,11 +410,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-
-            # TODO(2567532): backend does not fully support generate flow.tools.json from blob storage yet
-            if not (Path(code.path) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON).exists():
-                generate_flow_tools_json(code.path)
-            # ignore flow.tools.json if needed (e.g. for flow run scenario)
+            # TODO(2917889): generate flow meta for eager flow
             if ignore_tools_json:
                 ignore_file = code._ignore_file
                 if isinstance(ignore_file, PromptflowIgnoreFile):
