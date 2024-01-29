@@ -271,6 +271,7 @@ class LineExecutionProcessPool:
                     self._batch_timeout_sec - (datetime.utcnow() - batch_start_time).total_seconds()
                 )
                 if remaining_execution_time <= 0:
+                    self._is_timeout = True
                     break
                 line_timeout_sec = min(line_timeout_sec, remaining_execution_time)
 
