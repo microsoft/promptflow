@@ -24,10 +24,12 @@ def start_trace():
     # detect PFS liveness
     pfs_port = "55507"  # TODO: make this dynamic from PFS liveness probe
     # provision a session
-    _provision_session()
+    session_id = _provision_session()
     # init the global tracer with endpoint, context (session, run, exp)
     _init_otel_trace_exporter(otlp_port=pfs_port)
     # print user the UI url
+    ui_url = f"http://localhost:{pfs_port}/ui/traces?session={session_id}"
+    print(f"You can view the trace from UI url: {ui_url}")
 
 
 def _provision_session() -> str:
