@@ -779,7 +779,9 @@ class FlowExecutor:
             root_run_id=run_id,
             run_id=line_run_id,
             parent_run_id=run_id,
-            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
+            # Assign inputs after validation and load_multimedia_data,
+            # incase of input is wrong and can't be persisted by storage.
+            inputs=None,
             index=line_number,
             variant_id=variant_id,
         )

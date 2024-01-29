@@ -204,6 +204,19 @@ class TestValidation:
         with pytest.raises(error_class):
             executor.exec_line(line_input)
 
+    def test_flow_run_input_assignment(self, dev_connections):
+        # Flow run -  the input is from get_partial_line_inputs()
+        flow_folder = "simple_flow_with_python_tool"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
+        invalid_input = {"num": "hello"}
+        result = executor.exec_line(invalid_input)
+        # For invalid inputs, we don't assigin them to run info.
+        assert result.run_info.inputs is None
+
+        valid_input = {"num": 22}
+        result = executor.exec_line(valid_input)
+        assert result.run_info.inputs == valid_input
+
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_msg",
         [
