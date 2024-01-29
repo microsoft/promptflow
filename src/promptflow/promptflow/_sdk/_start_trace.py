@@ -14,7 +14,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from promptflow._sdk._constants import TRACE_SESSION_ID_ENV_VAR
-from promptflow._sdk._service.utils.utils import get_port_from_config
+from promptflow._sdk._service.utils.utils import get_port_from_config, is_port_in_use
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
@@ -29,8 +29,8 @@ def start_trace():
     Note that this function is still under preview, and may change at any time.
     """
     # TODO: PFS liveness probe
-    pfs_port = get_port_from_config()
-    _start_pfs_in_background()
+    pfs_port = get_port_from_config(create_if_not_exists=True)
+    _start_pfs_in_background(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
     # provision a session
     # TODO: make this dynamic after set from our side
@@ -44,9 +44,11 @@ def start_trace():
     print(f"You can view the trace from UI url: {ui_url}")
 
 
-def _start_pfs_in_background() -> None:
+def _start_pfs_in_background(pfs_port) -> None:
     """Start a pfs process in background."""
-
+    if is_port_in_use(pfs_port):
+        _logger.debug("PFS is already serving on port %s", pfs_port)
+        return
     args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--force"]
     # Start a pfs process using detach mode
     if platform.system() == "Windows":
