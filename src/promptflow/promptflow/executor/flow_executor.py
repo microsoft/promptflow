@@ -453,24 +453,6 @@ class FlowExecutor:
         return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
 
     @property
-    def line_timeout_sec(self):
-        """Get the line execution timeout.
-
-        :return: The line execution timeout.
-        :rtype: int
-        """
-        return self._line_timeout_sec
-
-    @line_timeout_sec.setter
-    def line_timeout_sec(self, value: int):
-        """Set the line execution timeout.
-
-        :param value: The line execution timeout.
-        :type value: int
-        """
-        self._line_timeout_sec = value
-
-    @property
     def _default_inputs_mapping(self):
         return {key: f"${{data.{key}}}" for key in self._flow.inputs}
 
@@ -712,6 +694,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
+        line_timeout_sec: Optional[int] = None,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -733,6 +716,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
+        self._line_timeout_sec = line_timeout_sec or self._line_timeout_sec
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:

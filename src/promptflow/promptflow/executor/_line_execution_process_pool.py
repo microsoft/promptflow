@@ -588,13 +588,14 @@ class LineExecutionProcessPool:
             )
 
 
-def _exec_line(executor: FlowExecutor, output_queue: Queue, *, inputs: dict, run_id, index: int):
+def _exec_line(executor: FlowExecutor, output_queue: Queue, *, inputs: dict, run_id, index: int, line_timeout_sec: int):
     try:
         line_result = executor.exec_line(
             inputs=inputs,
             run_id=run_id,
             index=index,
             node_concurrency=DEFAULT_CONCURRENCY_BULK,
+            line_timeout_sec=line_timeout_sec,
         )
         if line_result is not None:
             # For eager flow, the output may be a dataclass which is not picklable, we need to convert it to dict.
@@ -676,14 +677,13 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     while True:
         try:
             inputs, line_number, run_id, line_timeout_sec = input_queue.get(timeout=1)
-            # Set line timeout for the executor
-            executor.line_timeout_sec = line_timeout_sec
             result = _exec_line(
                 executor=executor,
                 output_queue=output_queue,
                 inputs=inputs,
                 run_id=run_id,
                 index=line_number,
+                line_timeout_sec=line_timeout_sec,
             )
             output_queue.put(result)
         except queue.Empty:
