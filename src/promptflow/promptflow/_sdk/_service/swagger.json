@@ -5,6 +5,9 @@
         "/Connections/": {
             "get": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Success",
                         "schema": {
@@ -20,13 +23,9 @@
                 "parameters": [
                     {
                         "name": "working_directory",
-                        "in": "formData",
+                        "in": "query",
                         "type": "string"
                     }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
                 ],
                 "tags": [
                     "Connections"
@@ -60,34 +59,11 @@
                     "type": "string"
                 }
             ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "formData",
-                        "type": "string"
-                    }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "put": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
@@ -111,10 +87,35 @@
                     "Connections"
                 ]
             },
+            "get": {
+                "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "query",
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "delete": {
                 "responses": {
-                    "200": {
-                        "description": "Success"
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Delete connection",
@@ -125,6 +126,9 @@
             },
             "post": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
@@ -160,6 +164,9 @@
             ],
             "get": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details with secret",
                         "schema": {
@@ -172,13 +179,9 @@
                 "parameters": [
                     {
                         "name": "working_directory",
-                        "in": "formData",
+                        "in": "query",
                         "type": "string"
                     }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
                 ],
                 "tags": [
                     "Connections"
@@ -238,21 +241,6 @@
                     "type": "string"
                 }
             ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -285,6 +273,21 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -498,6 +501,51 @@
                     "Runs"
                 ]
             }
+        },
+        "/Telemetries/": {
+            "post": {
+                "responses": {
+                    "403": {
+                        "description": "Telemetry is disabled or X-Remote-User is not set.",
+                        "headers": {
+                            "x-ms-promptflow-request-id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Input payload validation failed",
+                        "headers": {
+                            "x-ms-promptflow-request-id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Create telemetry record",
+                        "headers": {
+                            "x-ms-promptflow-request-id": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "description": "Create telemetry record",
+                "operationId": "post_telemetry",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/Telemetry"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Telemetries"
+                ]
+            }
         }
     },
     "info": {
@@ -518,6 +566,10 @@
         {
             "name": "Runs",
             "description": "Runs Management"
+        },
+        {
+            "name": "Telemetries",
+            "description": "Telemetry Management"
         }
     ],
     "definitions": {
@@ -585,6 +637,93 @@
         "RunDict": {
             "additionalProperties": true,
             "type": "object"
+        },
+        "Telemetry": {
+            "required": [
+                "eventType",
+                "timestamp"
+            ],
+            "properties": {
+                "eventType": {
+                    "type": "string",
+                    "description": "The event type of the telemetry.",
+                    "example": "Start",
+                    "enum": [
+                        "Start",
+                        "End"
+                    ]
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp of the telemetry."
+                },
+                "firstCall": {
+                    "type": "boolean",
+                    "description": "Whether current activity is the first activity in the call chain.",
+                    "default": true
+                },
+                "metadata": {
+                    "$ref": "#/definitions/Metadata"
+                }
+            },
+            "type": "object"
+        },
+        "Metadata": {
+            "required": [
+                "activityName",
+                "activityType"
+            ],
+            "properties": {
+                "activityName": {
+                    "type": "string",
+                    "description": "The name of the activity.",
+                    "example": "pf.flow.test",
+                    "enum": [
+                        "pf.flow.test",
+                        "pf.flow.node_test",
+                        "pf.flow._generate_tools_meta"
+                    ]
+                },
+                "activityType": {
+                    "type": "string",
+                    "description": "The type of the activity."
+                },
+                "completionStatus": {
+                    "type": "string",
+                    "description": "The completion status of the activity.",
+                    "example": "Success",
+                    "enum": [
+                        "Success",
+                        "Failure"
+                    ]
+                },
+                "durationMs": {
+                    "type": "integer",
+                    "description": "The duration of the activity in milliseconds."
+                },
+                "errorCategory": {
+                    "type": "string",
+                    "description": "The error category of the activity."
+                },
+                "errorType": {
+                    "type": "string",
+                    "description": "The error type of the activity."
+                },
+                "errorTarget": {
+                    "type": "string",
+                    "description": "The error target of the activity."
+                },
+                "errorMessage": {
+                    "type": "string",
+                    "description": "The error message of the activity."
+                },
+                "errorDetails": {
+                    "type": "string",
+                    "description": "The error details of the activity."
+                }
+            },
+            "type": "object"
         }
     },
     "responses": {
@@ -593,6 +732,9 @@
         },
         "MaskError": {
             "description": "When any error occurs on mask"
+        },
+        "Exception": {
+            "description": "When any error occurs on the server, return a formatted error message"
         }
     }
 }
