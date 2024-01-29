@@ -7,7 +7,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import LineExecutionTimeoutError
+from promptflow.executor._errors import BatchExecutionTimeoutError, LineExecutionTimeoutError
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -123,8 +123,7 @@ class TestBatchTimeout:
     @pytest.mark.parametrize(
         "flow_folder, line_timeout_sec, batch_timeout_sec, expected_error",
         [
-            # TODO: Will change to BatchExecutionTimeoutError after refining the implementation of batch timeout.
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, LineExecutionTimeoutError(2, 5)),
+            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, BatchExecutionTimeoutError(2, 5)),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 600, LineExecutionTimeoutError(2, 3)),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 5, LineExecutionTimeoutError(2, 3)),
             # TODO: Will change to BatchExecutionTimeoutError after refining the implementation of batch timeout.
@@ -168,6 +167,7 @@ class TestBatchTimeout:
         actual_error_dict = batch_results.error_summary.error_list[0].error
         expected_error_dict = ExceptionPresenter.create(expected_error).to_dict()
         assert actual_error_dict["code"] == expected_error_dict["code"]
+        assert actual_error_dict["message"] == expected_error_dict["message"]
         assert actual_error_dict["referenceCode"] == expected_error_dict["referenceCode"]
         assert actual_error_dict["innerError"]["code"] == expected_error_dict["innerError"]["code"]
 
