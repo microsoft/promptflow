@@ -13,6 +13,7 @@ from promptflow._sdk.schemas._fields import (
     UnionField,
 )
 from promptflow._sdk.schemas._run import RunSchema
+from promptflow.errors import ValueErrorException
 
 
 class ScriptNodeSchema(metaclass=PatchedSchemaMeta):
@@ -78,7 +79,7 @@ class ExperimentTemplateSchema(YamlFileSchema):
                     ScriptNode._load_from_dict(data=node, context=self.context, additional_message="")
                 )
             else:
-                raise ValueError(f"Unknown node type {node_type} for node {node}.")
+                raise ValueErrorException(f"Unknown node type {node_type} for node {node}.")
         data["nodes"] = resolved_nodes
 
         return data

@@ -17,6 +17,7 @@ from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.errors import NotImplementedErrorException
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -32,7 +33,7 @@ class AbstractExecutorProxy:
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     @classmethod
     async def create(
@@ -45,7 +46,7 @@ class AbstractExecutorProxy:
         **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     async def destroy(self):
         """Destroy the executor"""
@@ -58,7 +59,7 @@ class AbstractExecutorProxy:
         run_id: Optional[str] = None,
     ) -> LineResult:
         """Execute a line"""
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     async def exec_aggregation_async(
         self,
@@ -67,7 +68,7 @@ class AbstractExecutorProxy:
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         """Execute aggregation nodes"""
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before execution"""
@@ -82,7 +83,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         The executor proxy calls the executor service to get the
         line results and aggregation result through this endpoint.
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     async def exec_line_async(
         self,

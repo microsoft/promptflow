@@ -11,6 +11,7 @@ import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
+from promptflow.errors import NotImplementedErrorException
 from promptflow.executor.flow_executor import FlowExecutor
 
 
@@ -69,7 +70,7 @@ class AbstractProcessManager:
         :param i: Index of the new process to start.
         :type i: int
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for new_process.")
+        raise NotImplementedErrorException("AbstractProcessManager is an abstract class, no implementation for new_process.")
 
     def restart_process(self, i):
         """
@@ -78,7 +79,7 @@ class AbstractProcessManager:
         :param i: Index of the process to restart.
         :type i: int
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for restart_process.")
+        raise NotImplementedErrorException("AbstractProcessManager is an abstract class, no implementation for restart_process.")
 
     def end_process(self, i):
         """
@@ -87,7 +88,7 @@ class AbstractProcessManager:
         :param i: Index of the process to terminate.
         :type i: int
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+        raise NotImplementedErrorException("AbstractProcessManager is an abstract class, no implementation for end_process.")
 
 
 class SpawnProcessManager(AbstractProcessManager):

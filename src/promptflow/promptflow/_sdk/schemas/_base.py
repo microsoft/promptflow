@@ -16,6 +16,7 @@ from pydash import objects
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FILE_PREFIX, PARAMS_OVERRIDE_KEY
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import ValidationException
 
 module_logger = LoggerFactory.get_logger(__name__)
 
@@ -64,7 +65,7 @@ class PathAwareSchema(PatchedBaseSchema, metaclass=PatchedSchemaMeta):
         # this will make context of all PathAwareSchema child class point to one object
         self.context = kwargs.get("context", None)
         if self.context is None or self.context.get(BASE_PATH_CONTEXT_KEY, None) is None:
-            raise Exception("Base path for reading files is required when building PathAwareSchema")
+            raise ValidationException("Base path for reading files is required when building PathAwareSchema")
         # set old base path, note it's an Path object and point to the same object with
         # self.context.get(BASE_PATH_CONTEXT_KEY)
         self.old_base_path = self.context.get(BASE_PATH_CONTEXT_KEY)
@@ -85,7 +86,7 @@ class PathAwareSchema(PatchedBaseSchema, metaclass=PatchedSchemaMeta):
                         if test_layer is None:
                             continue
                         if isinstance(test_layer, str):
-                            raise Exception(
+                            raise ValidationException(
                                 f"Cannot use '--set' on properties defined by reference strings: --set {param}"
                             )
                         test_layer = test_layer.get(layer, None)

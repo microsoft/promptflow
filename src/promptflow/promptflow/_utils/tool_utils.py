@@ -13,7 +13,7 @@ from jinja2 import Environment, meta
 
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ValueType
 from ..contracts.types import PromptTemplate
@@ -120,7 +120,7 @@ def function_to_interface(
     # Collect all inputs from class and func
     if initialize_inputs:
         if any(k for k in initialize_inputs if k in sign.parameters):
-            raise Exception(f'Duplicate inputs found from {f.__name__!r} and "__init__()"!')
+            raise ValidationException(f'Duplicate inputs found from {f.__name__!r} and "__init__()"!')
         all_inputs = {**initialize_inputs}
     enable_kwargs = any([param.kind == inspect.Parameter.VAR_KEYWORD for _, param in sign.parameters.items()])
     all_inputs.update(
@@ -342,7 +342,7 @@ def _get_function_path(function):
         func = function
         func_path = f"{function.__module__}.{function.__name__}"
     else:
-        raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
+        raise ValidationException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
 
 

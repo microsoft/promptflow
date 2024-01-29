@@ -27,7 +27,7 @@ from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._validation import ValidationResult, ValidationResultBuilder
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow.contracts.multimedia import Image
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 TOTAL_COUNT = "total_count"
 INVALID_COUNT = "invalid_count"
@@ -377,7 +377,7 @@ class ToolOperations:
 
     def _serialize_icon_data(self, icon):
         if not Path(icon).exists():
-            raise UserErrorException(f"Cannot find the icon path {icon}.")
+            raise ValidationException(f"Cannot find the icon path {icon}.")
         return self._serialize_image_data(icon)
 
     @staticmethod
@@ -473,7 +473,7 @@ class ToolOperations:
         elif isinstance(source, (str, PathLike)):
             # Validate tool script
             if not Path(source).exists():
-                raise UserErrorException(f"Cannot find the tool script {source}")
+                raise ValidationException(f"Cannot find the tool script {source}")
             # Load the module from the file path
             module_name = Path(source).stem
             spec = importlib.util.spec_from_file_location(module_name, source)
@@ -485,10 +485,10 @@ class ToolOperations:
         elif isinstance(source, ModuleType):
             # Validate package tool
             if not self._is_package_tool(source):
-                raise UserErrorException("Invalid package tool.")
+                raise ValidationException("Invalid package tool.")
             _, validate_result = self._list_tool_meta_in_package(package_name=source.__name__)
         else:
-            raise UserErrorException(
+            raise ValidationException(
                 "Provide invalid source, tool validation source supports script tool, "
                 "package tool and tool script path."
             )

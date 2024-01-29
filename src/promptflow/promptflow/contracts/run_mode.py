@@ -4,6 +4,8 @@
 
 from enum import Enum
 
+from promptflow.errors import ValueErrorException
+
 
 class RunMode(str, Enum):
     """An enumeration of possible run modes."""
@@ -23,7 +25,7 @@ class RunMode(str, Enum):
         :raises ValueError: If the value is not a valid string.
         """
         if not isinstance(value, str):
-            raise ValueError(f"Invalid value type to parse: {type(value)}")
+            raise ValueErrorException(f"Invalid value type to parse: {type(value)}")
         if value == "SingleNode":
             return RunMode.SingleNode
         elif value == "Batch":

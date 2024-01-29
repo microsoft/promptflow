@@ -10,6 +10,7 @@ from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli,
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._utils.gerneral import get_arm_token
+from promptflow.errors import ValueErrorException, NotImplementedErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -78,7 +79,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     def _extract_workspace(cls, connection_provider):
         match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, connection_provider)
         if not match or len(match.groups()) != 5:
-            raise ValueError(
+            raise ValueErrorException(
                 "Malformed connection provider string, expected azureml:/subscriptions/<subscription_id>/"
                 "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
                 f"workspaces/<workspace_name>, got {connection_provider}"
@@ -132,7 +133,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         :param name: Name of the connection.
         :type name: str
         """
-        raise NotImplementedError(
+        raise NotImplementedErrorException(
             "Delete workspace connection is not supported in promptflow, "
             "please manage it in workspace portal, az ml cli or AzureML SDK."
         )
@@ -144,7 +145,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         :param connection: Run object to create or update.
         :type connection: ~promptflow.sdk.entities._connection._Connection
         """
-        raise NotImplementedError(
+        raise NotImplementedErrorException(
             "Create or update workspace connection is not supported in promptflow, "
             "please manage it in workspace portal, az ml cli or AzureML SDK."
         )

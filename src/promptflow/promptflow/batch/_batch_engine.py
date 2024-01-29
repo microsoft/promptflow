@@ -191,7 +191,7 @@ class BatchEngine:
                     async_run_allowing_running_loop(self._executor_proxy.destroy)
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
-            if isinstance(e, PromptflowException):
+            if isinstance(e, PromptflowException):  # Need executor colleagues to modify to specific UserError or SystemError.
                 raise e
             else:
                 # for unexpected error, we need to wrap it to SystemErrorException to allow us to see the stack trace.

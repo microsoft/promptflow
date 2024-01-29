@@ -20,6 +20,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING
+from promptflow.errors import ValueErrorException
+from promptflow.exceptions import ValidationException, UserErrorException
 
 T = TypeVar("T")
 
@@ -78,7 +80,7 @@ def reverse_transpose(values: Dict[str, List]) -> List[Dict[str, Any]]:
     value_lists = list(values.values())
     _len = len(value_lists[0])
     if any(len(value_list) != _len for value_list in value_lists):
-        raise Exception(f"Value list of each key must have same length, please check {values!r}.")
+        raise ValidationException(f"Value list of each key must have same length, please check {values!r}.")
     result = []
     for i in range(_len):
         result.append({})
@@ -115,7 +117,7 @@ def try_import(module, error_message, raise_error=True):
         ex_message = f"{error_message} Root cause: {e!r}"
         logging.warning(ex_message)
         if raise_error:
-            raise Exception(ex_message)
+            raise UserErrorException(ex_message, error=e)
 
 
 def is_in_ci_pipeline():
@@ -281,7 +283,7 @@ def get_int_env_var(env_var_name, default_value=None):
 
 def prompt_y_n(msg, default=None):
     if default not in [None, "y", "n"]:
-        raise ValueError("Valid values for default are 'y', 'n' or None")
+        raise ValueErrorException("Valid values for default are 'y', 'n' or None")
     y = "Y" if default == "y" else "y"
     n = "N" if default == "n" else "n"
     while True:

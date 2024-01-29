@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from promptflow._utils.multimedia_utils import is_multimedia_dict
+from promptflow.errors import NotImplementedErrorException
 
 
 class ResourceType(Enum):
@@ -47,7 +48,7 @@ class AbstractMultimediaFormatAdapter:
 
     # Check if the original_data is a multimedia format according to the current contract version.
     def is_valid_format(self, original_data: Any):
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     def extract_info(self, original_data: Any) -> MultimediaInfo:
         """
@@ -55,14 +56,14 @@ class AbstractMultimediaFormatAdapter:
         Below is an example for the 20231201 version:
         {"data:image/jpg;path": "logo.jpg"} -> "image/jpg", "path", "logo.jpg"
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     def create_data(self, info: MultimediaInfo) -> Any:
         """
         Create multimedia data from info. Below is an example for the 20231201 version:
         "image/jpg", "path", "logo.jpg" -> {"data:image/jpg;path": "logo.jpg"}
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
 
 class MultimediaFormatAdapter20231201(AbstractMultimediaFormatAdapter):
@@ -105,7 +106,7 @@ class AbstractMultimediaInfoConverter:
         :return: The converted MultimediaInfo.
         :rtype: MultimediaInfo
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
 
 class MultimediaConverter:

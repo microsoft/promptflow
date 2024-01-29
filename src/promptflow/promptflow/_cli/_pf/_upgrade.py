@@ -5,6 +5,7 @@ from promptflow._cli._params import (
 )
 from promptflow._cli._utils import activate_action, get_cli_sdk_logger
 from promptflow._utils.utils import prompt_y_n
+from promptflow.errors import FileNotFoundException
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -126,7 +127,7 @@ def _upgrade_on_windows(yes):
     try:
         import shutil
         shutil.rmtree(msi_dir)
-    except FileNotFoundError:
+    except FileNotFoundException:
         # The folder has already been deleted. No further retry is needed.
         # errno: 2, winerror: 3, strerror: 'The system cannot find the path specified'
         pass

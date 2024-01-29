@@ -55,6 +55,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, get_authorization
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.errors import ValueErrorException, TypeErrorException
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -692,7 +693,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             if data_type == AssetTypes.URI_FOLDER and test_data and not test_data.endswith("/"):
                 test_data = test_data + "/"
         else:
-            raise ValueError(
+            raise ValueErrorException(
                 f"Local path {test_data!r} not exist. "
                 "If it's remote data, only data with azureml prefix or remote url is supported."
             )
@@ -807,7 +808,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
-            raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
+            raise TypeErrorException(f"runtime should be a string, got {type(runtime)} for {runtime}")
         return runtime, session_id
 
     def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):

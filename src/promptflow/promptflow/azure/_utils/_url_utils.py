@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 import re
 
+from promptflow.errors import ValueErrorException
+
 
 class BulkRunURL:
     """Parser for a flow run URL."""
@@ -21,7 +23,7 @@ class BulkRunURL:
                 self.flow_id = match.group(2)
                 self.bulk_test_id = match.group(3)
             else:
-                raise ValueError("Invalid flow run URL: {}".format(url))
+                raise ValueErrorException("Invalid flow run URL: {}".format(url))
 
     @classmethod
     def get_url(cls, experiment_id, flow_id, bulk_test_id, subscription_id, resource_group, workspace_name):
@@ -48,7 +50,7 @@ class BulkRunId:
                 else:
                     self.run_id = None
             else:
-                raise ValueError("Invalid flow run ID: {}".format(arm_id))
+                raise ValueErrorException("Invalid flow run ID: {}".format(arm_id))
 
     @classmethod
     def get_url(cls, experiment_id, flow_id, bulk_test_id, *, run_id=None):

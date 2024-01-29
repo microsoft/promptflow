@@ -13,6 +13,7 @@ from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.tool import ValueType
+from promptflow.errors import TypeErrorException
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
@@ -164,7 +165,7 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
             return _save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path)
-        raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
+        raise TypeErrorException(f"Not supported to dump type '{type(obj).__name__}'.")
 
     return pfbytes_file_reference_encoder
 
@@ -173,7 +174,7 @@ def default_json_encoder(obj):
     if isinstance(obj, PFBytes):
         return str(obj)
     else:
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+        raise TypeErrorException(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):

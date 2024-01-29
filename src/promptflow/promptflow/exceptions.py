@@ -7,6 +7,8 @@ import traceback
 from enum import Enum
 from functools import cached_property
 
+from azure.core.exceptions import HttpResponseError
+
 
 class ErrorCategory(str, Enum):
     USER_ERROR = "UserError"
@@ -221,6 +223,12 @@ class ValidationException(UserErrorException):
     pass
 
 
+BUILD_IN_USER_EXCEPTIONS = (
+    ImportError, AttributeError, TypeError, ValueError, NotImplementedError, ModuleNotFoundError, IndexError, KeyError,
+    KeyboardInterrupt, SystemError, SystemExit, TypeError, ValueError, FileNotFoundError, PermissionError
+)
+
+
 class _ErrorInfo:
     @classmethod
     def get_error_info(cls, e: Exception):
@@ -264,12 +272,19 @@ class _ErrorInfo:
     def _is_system_error(cls, e: Exception):
         if isinstance(e, SystemErrorException):
             return True
+        if isinstance(e, HttpResponseError):
+            status_code = str(e.status_code)
+            # Except for 429, 400-499 are all client errors.
+            if not status_code.startswith("4") and status_code != "429":
+                return True
 
         return False
 
     @classmethod
     def _is_user_error(cls, e: Exception):
         if isinstance(e, UserErrorException):
+            return True
+        if isinstance(e, BUILD_IN_USER_EXCEPTIONS):
             return True
 
         return False

@@ -12,6 +12,7 @@ from promptflow._constants import CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
 from .types import AssistantDefinition, FilePath, PromptTemplate, Secret
+from ..errors import ValueErrorException
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
@@ -122,14 +123,14 @@ class ValueType(str, Enum):
                 return v
             if isinstance(v, str) and v.lower() in {"true", "false"}:
                 return v.lower() == "true"
-            raise ValueError(f"Invalid boolean value {v!r}")
+            raise ValueErrorException(f"Invalid boolean value {v!r}")
         if self == ValueType.STRING:
             return str(v)
         if self == ValueType.LIST:
             if isinstance(v, str):
                 v = json.loads(v)
             if not isinstance(v, list):
-                raise ValueError(f"Invalid list value {v!r}")
+                raise ValueErrorException(f"Invalid list value {v!r}")
             return v
         if self == ValueType.OBJECT:
             if isinstance(v, str):
@@ -225,7 +226,7 @@ class ConnectionType:
         """
 
         if not ConnectionType.is_connection_value(connection):
-            raise ValueError(f"Invalid connection value {connection!r}")
+            raise ValueErrorException(f"Invalid connection value {connection!r}")
         return getattr(connection, CONNECTION_NAME_PROPERTY, type(connection).__name__)
 
 

@@ -12,6 +12,7 @@ from .._utils.yaml_utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._flow import Flow
+from ..errors import FileNotFoundException
 
 logger = get_cli_sdk_logger()
 
@@ -124,7 +125,7 @@ def _load_env_to_connection(
     if not name:
         raise Exception("Please specify --name when creating connection from .env.")
     if not source.exists():
-        raise FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        raise FileNotFoundException(f"File {source.absolute().as_posix()!r} not found.")
     try:
         data = dict(dotenv_values(source))
         if not data:

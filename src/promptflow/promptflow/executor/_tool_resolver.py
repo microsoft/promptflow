@@ -20,6 +20,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
+from promptflow.errors import NotImplementedErrorException
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -196,7 +197,7 @@ class ToolResolver:
                     return self._resolve_package_node(node, convert_input_types=convert_input_types)
                 elif node.source.type == ToolSourceType.Code:
                     return self._resolve_script_node(node, convert_input_types=convert_input_types)
-                raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
+                raise NotImplementedErrorException(f"Tool source type {node.source.type} for python tool is not supported yet.")
             elif node.type is ToolType.PROMPT:
                 return self._resolve_prompt_node(node)
             elif node.type is ToolType.LLM:
@@ -205,11 +206,11 @@ class ToolResolver:
                 if node.source.type == ToolSourceType.PackageWithPrompt:
                     resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
                     return self._integrate_prompt_in_package_node(resolved_tool)
-                raise NotImplementedError(
+                raise NotImplementedErrorException(
                     f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
                 )
             else:
-                raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+                raise NotImplementedErrorException(f"Tool type {node.type} is not supported yet.")
         except Exception as e:
             if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
                 raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e

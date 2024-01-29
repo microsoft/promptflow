@@ -45,6 +45,8 @@ from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
 from ..._utils.logger_utils import LoggerFactory
 from ._fileshare_storeage_helper import FlowFileStorageClient
+from ...errors import TypeErrorException, ValueErrorException
+from ...exceptions import UserErrorException
 
 module_logger = LoggerFactory.get_logger(__name__)
 
@@ -85,7 +87,7 @@ def get_datastore_info(operations: DatastoreOperations, name: str) -> Dict[str, 
             if not hasattr(credentials, "sas_token"):
                 datastore_info["credential"] = operations._credential
             else:
-                raise e
+                raise UserErrorException(message=str(e), error=e)
 
     if datastore.type == DatastoreType.AZURE_BLOB:
         datastore_info["container_name"] = str(datastore.container_name)
@@ -94,7 +96,7 @@ def get_datastore_info(operations: DatastoreOperations, name: str) -> Dict[str, 
     elif datastore.type == DatastoreType.AZURE_FILE:
         datastore_info["container_name"] = str(datastore.file_share_name)
     else:
-        raise Exception(
+        raise TypeErrorException(
             f"Datastore type {datastore.type} is not supported for uploads. "
             f"Supported types are {DatastoreType.AZURE_BLOB} and {DatastoreType.AZURE_DATA_LAKE_GEN2}."
         )
@@ -114,7 +116,7 @@ def list_logs_in_datastore(ds_info: Dict[str, str], prefix: str, legacy_log_fold
         DatastoreType.AZURE_BLOB,
         DatastoreType.AZURE_DATA_LAKE_GEN2,
     ]:
-        raise Exception("Only Blob and Azure DataLake Storage Gen2 datastores are supported.")
+        raise ValueErrorException("Only Blob and Azure DataLake Storage Gen2 datastores are supported.")
 
     storage_client = get_storage_client(
         credential=ds_info["credential"],

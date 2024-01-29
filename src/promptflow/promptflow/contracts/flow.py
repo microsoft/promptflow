@@ -20,6 +20,7 @@ from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
+from ..errors import ValueErrorException
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ class FlowInputAssignment(InputAssignment):
                 return FlowInputAssignment(
                     value=value[len(prefix) :], value_type=InputValueType.FLOW_INPUT, prefix=prefix
                 )
-        raise ValueError(f"Unexpected flow input value {value}")
+        raise ValueErrorException(f"Unexpected flow input value {value}")
 
 
 class ToolSourceType(str, Enum):
@@ -721,7 +722,7 @@ class Flow:
             node_name, input_name = key.split(".")
             node = self.get_node(node_name)
             if node is None:
-                raise ValueError(f"Cannot find node {node_name} in flow {self.name}")
+                raise ValueErrorException(f"Cannot find node {node_name} in flow {self.name}")
             # For LLM node, here we override the connection field in node
             if node.connection and input_name == "connection":
                 node.connection = value

@@ -18,6 +18,7 @@ from ..._utils.flow_utils import dump_flow_dag, load_flow_dag
 from ..._utils.logger_utils import LoggerFactory
 from .._constants._flow import ADDITIONAL_INCLUDES, DEFAULT_STORAGE, ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from .._restclient.flow.models import FlowDto
+from ...errors import ValueErrorException
 
 # pylint: disable=redefined-builtin, unused-argument, f-string-without-interpolation
 
@@ -73,7 +74,7 @@ class Flow(AdditionalIncludesMixin):
         if absolute_path.is_dir():
             absolute_path = absolute_path / DAG_FILE_NAME
         if not absolute_path.exists():
-            raise ValueError(f"Flow file {absolute_path.as_posix()} does not exist.")
+            raise ValueErrorException(f"Flow file {absolute_path.as_posix()} does not exist.")
         return absolute_path
 
     def _load_flow_yaml(self, path: Union[str, Path]) -> Dict:

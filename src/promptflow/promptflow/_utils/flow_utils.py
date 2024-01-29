@@ -10,6 +10,7 @@ from typing import Union
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.errors import FileNotFoundException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -57,7 +58,7 @@ def load_flow_dag(flow_path: Path):
     """Load flow dag from given flow path."""
     flow_path = resolve_flow_path(flow_path)
     if not flow_path.exists():
-        raise FileNotFoundError(f"Flow file {flow_path} not found")
+        raise FileNotFoundException(f"Flow file {flow_path} not found")
     with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
         flow_dag = load_yaml(f)
     return flow_path, flow_dag

@@ -5,6 +5,7 @@
 import argparse
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
+from promptflow.errors import ValueErrorException
 
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
@@ -23,8 +24,8 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
             try:
                 key, value = strip_quotation(item).split("=", 1)
                 kwargs[key] = strip_quotation(value)
-            except ValueError:
-                raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
+            except ValueErrorException:
+                raise ValueErrorException("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
         return kwargs
 
 
@@ -34,7 +35,7 @@ class FlowTestInputAction(AppendToDictAction):  # pylint: disable=protected-acce
             from promptflow._utils.load_data import load_data
 
             if not values[0].endswith(".jsonl"):
-                raise ValueError("Only support jsonl file as input.")
+                raise ValueErrorException("Only support jsonl file as input.")
             return load_data(local_path=values[0])[0]
         else:
             return super().get_action(values, option_string)

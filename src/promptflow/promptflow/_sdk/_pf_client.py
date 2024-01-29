@@ -19,6 +19,7 @@ from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
 from .operations._tool_operations import ToolOperations
+from ..errors import FileNotFoundException, ValueErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -114,11 +115,11 @@ class PFClient:
         :rtype: ~promptflow.entities.Run
         """
         if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
+            raise FileNotFoundException(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):
-            raise FileNotFoundError(f"data path {data} does not exist")
+            raise FileNotFoundException(f"data path {data} does not exist")
         if not run and not data:
-            raise ValueError("at least one of data or run must be provided")
+            raise ValueErrorException("at least one of data or run must be provided")
         # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow)

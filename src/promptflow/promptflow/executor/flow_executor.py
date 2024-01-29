@@ -40,6 +40,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.errors import ValueErrorException
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -145,12 +146,12 @@ class FlowExecutor:
                 if not self._tools_manager.loaded(node.name)
             }
             self._tools_manager.load_tools(custom_tools)
-        except PromptflowException as e:
+        except PromptflowException as e:  # Need executor colleagues to modify to specific UserError or SystemError.
             # For PromptflowException, we don't wrap it, because need generate ErrorResponse by inner exception.
             # Will try to find one common way to handle this case.
             raise e
         except Exception as e:
-            raise ValueError(f"Failed to load custom tools for flow due to exception:\n {e}.") from e
+            raise ValueErrorException(f"Failed to load custom tools for flow due to exception:\n {e}.") from e
         for node in flow.nodes:
             self._tools_manager.assert_loaded(node.name)
         self._entry = entry
@@ -546,7 +547,7 @@ class FlowExecutor:
             aggr_results = self._exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
             logger.info("Finish executing aggregation nodes.")
             return aggr_results
-        except PromptflowException as e:
+        except PromptflowException as e:  # Need executor colleagues to modify to specific UserError or SystemError.
             # For PromptflowException, we already do classification, so throw directly.
             raise e
         except Exception as e:
@@ -862,7 +863,7 @@ class FlowExecutor:
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
-        except KeyboardInterrupt as ex:
+        except KeyboardInterrupt as ex:  # Need executor colleagues to modify to specific UserError or SystemError.
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled

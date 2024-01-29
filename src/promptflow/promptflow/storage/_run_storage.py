@@ -10,6 +10,7 @@ from promptflow._utils.multimedia_utils import _process_recursively, get_file_re
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
+from promptflow.errors import NotImplementedErrorException
 
 
 class AbstractRunStorage:
@@ -19,7 +20,7 @@ class AbstractRunStorage:
         :param run_info: The run info of the node.
         :type run_info: ~promptflow.contracts.run_info.RunInfo
         """
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for persist_node_run.")
+        raise NotImplementedErrorException("AbstractRunStorage is an abstract class, no implementation for persist_node_run.")
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         """Write the flow run info to somewhere immediately after one line data is executed for the flow.
@@ -27,7 +28,7 @@ class AbstractRunStorage:
         :param run_info: The run info of the node.
         :type run_info: ~promptflow.contracts.run_info.RunInfo
         """
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for persist_flow_run.")
+        raise NotImplementedErrorException("AbstractRunStorage is an abstract class, no implementation for persist_flow_run.")
 
 
 class DummyRunStorage(AbstractRunStorage):

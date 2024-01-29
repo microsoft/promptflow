@@ -6,6 +6,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping
 from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputValueType
 from promptflow.contracts.run_info import FlowRunInfo, Status
+from promptflow.exceptions import SystemErrorException
 
 
 def apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
@@ -25,7 +26,7 @@ def handle_line_failures(run_infos: List[FlowRunInfo], raise_on_line_failure: bo
         first_fail_exception = run_infos[failed[0]].error["message"]
         if raise_on_line_failure:
             failed_msg = "Flow run failed due to the error: " + first_fail_exception
-            raise Exception(failed_msg)
+            raise SystemErrorException(failed_msg)
 
         failed_msg = (
             f"{len(failed)}/{len(run_infos)} flow run failed, indexes: [{failed_indexes}],"

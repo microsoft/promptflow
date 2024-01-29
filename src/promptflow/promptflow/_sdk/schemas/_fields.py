@@ -13,6 +13,7 @@ from marshmallow.utils import RAISE, resolve_field_instance
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.schemas._base import PathAwareSchema
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.errors import ValueErrorException, FileNotFoundException, TypeErrorException
 
 # pylint: disable=unused-argument,no-self-use,protected-access
 
@@ -133,7 +134,7 @@ class UnionField(fields.Field):
             # TODO: make serialization/de-serialization work in the same way as json schema when is_strict is True
             self.is_strict = is_strict  # S\When True, combine fields with oneOf instead of anyOf at schema generation
         except FieldInstanceResolutionError as error:
-            raise ValueError(
+            raise ValueErrorException(
                 'Elements of "union_fields" must be subclasses or ' "instances of marshmallow.base.FieldABC."
             ) from error
 
@@ -178,7 +179,7 @@ class UnionField(fields.Field):
                 return schema.deserialize(value, attr, data, **kwargs)
             except ValidationError as e:
                 errors.append(e.normalized_messages())
-            except (FileNotFoundError, TypeError) as e:
+            except (FileNotFoundException, TypeErrorException) as e:
                 errors.append([str(e)])
             finally:
                 # Revert base path to original path when job schema fail to deserialize job. For example, when load

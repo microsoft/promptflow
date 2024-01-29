@@ -45,6 +45,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
+from promptflow.errors import NotImplementedErrorException, ValueErrorException
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -388,7 +389,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _download(self, source, dest):
         # TODO: support download flow
-        raise NotImplementedError("Not implemented yet")
+        raise NotImplementedErrorException("Not implemented yet")
 
     def _resolve_arm_id_or_upload_dependencies(self, flow: Flow, ignore_tools_json=False) -> None:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
@@ -403,7 +404,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 flow._code_uploaded = True
                 return
         else:
-            raise ValueError("Path is required for flow.")
+            raise ValueErrorException("Path is required for flow.")
 
         with flow._build_code() as code:
             if code is None:
@@ -502,12 +503,12 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
                 path_uri = AzureMLDatastorePathUri(flow.path)
                 if path_uri.datastore != DEFAULT_STORAGE:
-                    raise ValueError(f"Only {DEFAULT_STORAGE} is supported as remote storage for now.")
+                    raise ValueErrorException(f"Only {DEFAULT_STORAGE} is supported as remote storage for now.")
                 flow.path = path_uri.path
                 flow._code_uploaded = True
                 return
         else:
-            raise ValueError("Path is required for flow.")
+            raise ValueErrorException("Path is required for flow.")
 
         with flow._build_code() as code:
             if code is None:
