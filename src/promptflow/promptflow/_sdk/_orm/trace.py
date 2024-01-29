@@ -19,11 +19,11 @@ Base = declarative_base()
 class Span(Base):
     __tablename__ = SPAN_TABLENAME
 
-    id = Column(TEXT, primary_key=True)
     name = Column(TEXT, nullable=False)
-    type = Column(TEXT, nullable=False)  # span type: Function/Tool/Flow/LLM/LangChain...
     trace_id = Column(TEXT, nullable=False)
+    span_id = Column(TEXT, primary_key=True)
     parent_span_id = Column(TEXT, nullable=True)
+    span_type = Column(TEXT, nullable=False)  # Function/Tool/Flow/LLM/LangChain...
     session_id = Column(TEXT, nullable=False)
     content = Column(TEXT)  # JSON string
     # prompt flow concepts
@@ -33,7 +33,7 @@ class Span(Base):
 
     __table_args__ = (
         Index("idx_span_name", "name"),
-        Index("idx_span_type", "type"),
+        Index("idx_span_span_type", "span_type"),
         Index("idx_span_session_id", "session_id"),
         Index("idx_span_run", "run"),
         Index("idx_span_experiment", "experiment"),
@@ -51,12 +51,6 @@ class Span(Base):
                 # there might be duplicate data, we silently ignore it here
                 if "UNIQUE constraint failed" not in str(e):
                     raise
-
-    @staticmethod
-    @sqlite_retry
-    def get(span_id: str) -> "Span":
-        with trace_mgmt_db_session() as session:
-            return session.query(Span).filter(Span.id == span_id).first()
 
     @staticmethod
     @sqlite_retry
