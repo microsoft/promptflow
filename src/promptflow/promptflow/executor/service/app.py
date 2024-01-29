@@ -16,9 +16,9 @@ app.include_router(execution_router)
 
 
 @app.exception_handler(Exception)
-async def exception_handler(request, ex):
-    resp = generate_error_response(ex)
-    return JSONResponse(status_code=resp.to_dict(), content=resp.response_code)
+async def exception_handler(request, exception):
+    resp = generate_error_response(exception)
+    return JSONResponse(status_code=int(resp.response_code), content=resp.to_dict())
 
 
 if __name__ == "__main__":
