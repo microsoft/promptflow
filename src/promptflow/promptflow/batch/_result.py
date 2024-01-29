@@ -84,7 +84,7 @@ class ErrorSummary:
                 for node_name, node_run_info in aggr_result.node_run_infos.items()
                 if node_run_info.status == Status.Failed
             },
-            batch_error_dict=ExceptionPresenter.create(exception).to_dict(exception) if exception else None,
+            batch_error_dict=ExceptionPresenter.create(exception).to_dict() if exception else None,
         )
         return error_summary
 
