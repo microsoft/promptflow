@@ -41,7 +41,10 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+
+logger = get_cli_sdk_logger()
 
 
 def overwrite_variant(flow_dag: dict, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
@@ -248,6 +251,14 @@ class SubmitterHelper:
         return list(connection_names)
 
     @classmethod
+    def load_and_resolve_environment_variables(cls, flow: Flow, environment_variables: dict, client=None):
+        environment_variables = ExecutableFlow.load_env_variables(
+            flow_file=flow.path, working_dir=flow.code, environment_variables_overrides=environment_variables
+        )
+        cls.resolve_environment_variables(environment_variables, client)
+        return environment_variables
+
+    @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):
         from .._pf_client import PFClient
 
@@ -255,6 +266,7 @@ class SubmitterHelper:
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
+        logger.debug("Used connection names: %s", connection_names)
         connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 

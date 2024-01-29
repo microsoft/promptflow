@@ -4,8 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._core._errors import FlowOutputUnserializable
-from promptflow._core.tool_meta_generator import PythonParsingError
+from promptflow._core._errors import FlowOutputUnserializable, InvalidSource
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -20,7 +19,6 @@ from promptflow.executor._errors import (
     InputReferenceNotFound,
     InputTypeError,
     InvalidConnectionType,
-    InvalidSource,
     NodeCircularDependency,
     NodeInputValidationError,
     NodeReferenceNotFound,
@@ -46,7 +44,7 @@ class TestValidation:
                 (
                     "Tool load failed in 'wrong_llm': "
                     "(InvalidConnectionType) Connection type CustomConnection is not supported for LLM."
-                )
+                ),
             ),
             (
                 "nodes_names_duplicated",
@@ -154,7 +152,7 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class",
         [
-            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, PythonParsingError),
+            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, InvalidSource),
         ],
     )
     def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):

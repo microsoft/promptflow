@@ -110,10 +110,7 @@ TIMESTAMP_MACRO = "${timestamp}"
 DEFAULT_VARIANT = "variant_0"
 # run visualize constants
 VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_LIB_CDN_LINK_TMPL = (
-    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
-)
-VIS_LIB_VERSION = "0.0.35"
+VIS_JS_BUNDLE_FILENAME = "bulkTestDetails.min.js"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
@@ -158,6 +155,7 @@ class RunTypes:
     BATCH = "batch"
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
+    COMMAND = "command"
 
 
 class AzureRunTypes:
@@ -244,6 +242,9 @@ class FlowRunProperties:
     NODE_VARIANT = "node_variant"
     RUN = "run"
     SYSTEM_METRICS = "system_metrics"
+    # Experiment command node fields only
+    COMMAND = "command"
+    OUTPUTS = "outputs"
 
 
 class CommonYamlFields:
@@ -401,7 +402,7 @@ class DownloadedRun:
 
 class ExperimentNodeType(object):
     FLOW = "flow"
-    CODE = "code"
+    COMMAND = "command"
 
 
 class ExperimentStatus(object):

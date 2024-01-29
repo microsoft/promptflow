@@ -6,10 +6,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .. import load_flow
 from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
@@ -34,8 +34,11 @@ class PFClient:
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
         self._runs = RunOperations()
-        self._connection_provider = None
+        self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
+        # The credential is used as an option to override
+        # DefaultAzureCredential when using workspace connection provider
+        self._credential = kwargs.get("credential", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations(client=self)
@@ -212,7 +215,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            self._connections = get_connection_operation(self._connection_provider)
+            self._connections = get_connection_operation(self._connection_provider, self._credential)
         return self._connections
 
     @property

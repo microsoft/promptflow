@@ -5,16 +5,16 @@
 import json
 import os
 import re
-from promptflow._version import VERSION
+
 from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow._sdk._serving.extension.default_extension import AppExtension
-from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
-from promptflow._sdk._serving.utils import get_pf_serving_env, normalize_connection_name, decode_dict
-
+from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
+from promptflow._sdk._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
+from promptflow._utils.retry_utils import retry
+from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
-
 
 USER_AGENT = f"promptflow-cloud-serving/{VERSION}"
 AML_DEPLOYMENT_RESOURCE_ID_REGEX = "/subscriptions/(.*)/resourceGroups/(.*)/providers/Microsoft.MachineLearningServices/workspaces/(.*)/onlineEndpoints/(.*)/deployments/(.*)"  # noqa: E501
@@ -23,6 +23,7 @@ AML_CONNECTION_PROVIDER_TEMPLATE = "azureml:/subscriptions/{}/resourceGroups/{}/
 
 class AzureMLExtension(AppExtension):
     """AzureMLExtension is used to create extension for azureml serving."""
+
     def __init__(self, logger, **kwargs):
         super().__init__(logger=logger, **kwargs)
         self.logger = logger
@@ -42,6 +43,7 @@ class AzureMLExtension(AppExtension):
         self.endpoint_name: str = None
         self.deployment_name: str = None
         self.connection_provider = None
+        self.credential = _get_managed_identity_credential_with_retry()
         if len(self.connections) == 0:
             self._initialize_connection_provider()
         # initialize metrics common dimensions if exist
@@ -55,10 +57,9 @@ class AzureMLExtension(AppExtension):
         # initialize flow monitor
         data_collector = FlowDataCollector(self.logger)
         metrics_recorder = self._get_metrics_recorder()
-        self.flow_monitor = FlowMonitor(self.logger,
-                                        self.get_flow_name(),
-                                        data_collector,
-                                        metrics_recorder=metrics_recorder)
+        self.flow_monitor = FlowMonitor(
+            self.logger, self.get_flow_name(), data_collector, metrics_recorder=metrics_recorder
+        )
 
     def get_flow_project_path(self) -> str:
         return self.project_path
@@ -98,6 +99,7 @@ class AzureMLExtension(AppExtension):
                     try:
                         # try best to convert to connection, this is only for azureml deployment.
                         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
                         conn = ArmConnectionOperations._convert_to_connection_dict(connection_name, conn_data)
                         connections[connection_name] = conn
                     except Exception as e:
@@ -112,6 +114,7 @@ class AzureMLExtension(AppExtension):
 
     def raise_ex_on_invoker_initialization_failure(self, ex: Exception):
         from promptflow.azure.operations._arm_connection_operations import UserAuthenticationError
+
         # allow lazy authentication for UserAuthenticationError
         return not isinstance(ex, UserAuthenticationError)
 
@@ -120,6 +123,9 @@ class AzureMLExtension(AppExtension):
 
     def get_metrics_common_dimensions(self):
         return self.common_dimensions
+
+    def get_credential(self):
+        return self.credential
 
     def _get_env_connections_if_exist(self):
         # For local test app connections will be set.
@@ -136,6 +142,7 @@ class AzureMLExtension(AppExtension):
         try:
             from azure.monitor.opentelemetry.exporter import AzureMonitorMetricExporter
             from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
             # check whether azure monitor instrumentation key is set
             instrumentation_key = os.getenv("AML_APP_INSIGHTS_KEY") or os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
             if instrumentation_key:
@@ -175,5 +182,21 @@ class AzureMLExtension(AppExtension):
                         self.deployment_name = match_result.group(5)
                 else:
                     # raise exception if not found any valid connection provider setting
-                    raise MissingConnectionProvider(message="Missing connection provider, please check whether 'PROMPTFLOW_CONNECTION_PROVIDER' is in your environment variable list.")  # noqa: E501
-            self.connection_provider = AML_CONNECTION_PROVIDER_TEMPLATE.format(self.subscription_id, self.resource_group, self.workspace_name)  # noqa: E501
+                    raise MissingConnectionProvider(
+                        message="Missing connection provider, please check whether 'PROMPTFLOW_CONNECTION_PROVIDER' "
+                        "is in your environment variable list."
+                    )  # noqa: E501
+            self.connection_provider = AML_CONNECTION_PROVIDER_TEMPLATE.format(
+                self.subscription_id, self.resource_group, self.workspace_name
+            )  # noqa: E501
+
+
+def _get_managed_identity_credential_with_retry(**kwargs):
+    from azure.identity import ManagedIdentityCredential
+
+    class ManagedIdentityCredentialWithRetry(ManagedIdentityCredential):
+        @retry(Exception)
+        def get_token(self, *scopes, **kwargs):
+            return super().get_token(*scopes, **kwargs)
+
+    return ManagedIdentityCredentialWithRetry(**kwargs)

@@ -17,6 +17,7 @@ logger = get_cli_sdk_logger()
 class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     def __init__(self, connection_provider, **kwargs):
         self._subscription_id, self._resource_group, self._workspace_name = self._extract_workspace(connection_provider)
+        self._credential = kwargs.pop("credential", None) or self._get_credential()
         super().__init__(
             subscription_id=self._subscription_id,
             resource_group_name=self._resource_group,
@@ -25,7 +26,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         )
         # Lazy init client as ml_client initialization require workspace read permission
         self._pfazure_client = None
-        self._credential = self._get_credential()
+        self._user_agent = kwargs.pop("user_agent", None)
 
     @property
     def _client(self):
@@ -38,13 +39,14 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
                 subscription_id=self._subscription_id,
                 resource_group_name=self._resource_group,
                 workspace_name=self._workspace_name,
+                user_agent=self._user_agent,
             )
         return self._pfazure_client
 
     @classmethod
     def _get_credential(cls):
+        from azure.ai.ml._azure_environments import AzureEnvironments, EndpointURLS, _get_cloud, _get_default_cloud_name
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
-        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
 
         if is_from_cli():
             try:

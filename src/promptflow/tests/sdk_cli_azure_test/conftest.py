@@ -13,6 +13,7 @@ from unittest.mock import patch
 import jwt
 import pytest
 from azure.core.exceptions import ResourceNotFoundError
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
@@ -224,10 +225,15 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
             **connections,
         },
     )
-    app = create_serving_app(
-        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
-        extension_type="azureml",
-    )
+    # Set credential to None for azureml extension type
+    # As we mock app in github workflow, which do not have managed identity credential
+    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    with mock.patch(func) as mock_cred_func:
+        mock_cred_func.return_value = None
+        app = create_serving_app(
+            environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+            extension_type="azureml",
+        )
     app.config.update(
         {
             "TESTING": True,
@@ -342,15 +348,17 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     yield
 
 
-@pytest.fixture
-def mock_get_user_identity_info(mocker: MockerFixture) -> None:
+@pytest.fixture(scope=package_scope_in_live_mode())
+def mock_get_user_identity_info(user_object_id: str, tenant_id: str) -> None:
     """Mock get user object id and tenant id, currently used in flow list operation."""
     if not is_live():
-        mocker.patch(
+        with patch(
             "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
-            return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
-        )
-    yield
+            return_value=(user_object_id, tenant_id),
+        ):
+            yield
+    else:
+        yield
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
@@ -394,7 +402,6 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         flow=f"{FLOWS_DIR}/hello-world",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"name": "${data.url}"},
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )

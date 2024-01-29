@@ -12,8 +12,10 @@ from azure.ai.ml._scope_dependent_operations import (
     OperationScope,
     _ScopeDependentOperations,
 )
+from azure.core.exceptions import ClientAuthenticationError
 
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_arm_token
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
@@ -91,7 +93,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         :type model: Type[msrest.serialization.Model]
         """
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.request(method, f"https://{host}{url}", headers=headers)
+        response = http_retry_wrapper(requests.request)(method, f"https://{host}{url}", headers=headers)
         message_format = (
             f"Open url {{url}} failed with status code: {response.status_code}, action: {action}, reason: {{reason}}"
         )
@@ -266,6 +268,11 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
+        except ClientAuthenticationError as e:
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+        except Exception as e:
+            raise SystemErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+
         try:
             return cls.build_connection_dict_from_rest_object(name, rest_obj)
         except Exception as e:

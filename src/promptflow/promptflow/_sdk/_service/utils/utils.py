@@ -8,12 +8,13 @@ from datetime import datetime
 from functools import wraps
 
 import psutil
-from flask import abort, request
+from flask import abort, make_response, request
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utils import read_write_by_user
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 
@@ -84,6 +85,10 @@ def get_started_service_info(port):
     return service_info
 
 
+def make_response_no_content():
+    return make_response("", 204)
+
+
 @dataclass
 class ErrorInfo:
     exception: InitVar[Exception]
@@ -132,3 +137,16 @@ class FormattedException:
             self.status_code = 404
         self.error = ErrorInfo(exception)
         self.time = datetime.now().isoformat()
+
+
+def build_pfs_user_agent():
+    extra_agent = f"local_pfs/{VERSION}"
+    if request.user_agent.string:
+        return f"{request.user_agent.string} {extra_agent}"
+    return extra_agent
+
+
+def get_client_from_request() -> "PFClient":
+    from promptflow._sdk._pf_client import PFClient
+
+    return PFClient(user_agent=build_pfs_user_agent())

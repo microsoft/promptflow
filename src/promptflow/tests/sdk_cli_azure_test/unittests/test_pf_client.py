@@ -7,6 +7,7 @@ import pytest
 from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from promptflow.exceptions import UserErrorException
 
 from ..recording_utilities import is_live
 
@@ -24,7 +25,7 @@ class TestPFClient:
         target = "promptflow._sdk._pf_client.Configuration"
         with mock.patch(target) as mocked:
             mocked.return_value.get_connection_provider.return_value = "abc"
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(UserErrorException) as e:
                 client = PFClient()
                 assert client.connections
             assert "Unsupported connection provider" in str(e.value)
