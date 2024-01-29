@@ -99,7 +99,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         headers = {"Accept": "text/event-stream"} if enable_stream_output else None
 
         if enable_stream_output:
-            # Todo: update to async, will get no result in "async for" of final_generator function in async mode
+
             def generator():
                 with httpx.Client() as client:
                     with client.stream(
