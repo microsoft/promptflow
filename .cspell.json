@@ -165,7 +165,6 @@
     "laddr",
     "nrows",
     "Dumpable",
-    "aiter",
     "XCLASS"
   ],
   "flagWords": [
