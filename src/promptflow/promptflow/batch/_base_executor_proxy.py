@@ -17,9 +17,8 @@ from promptflow._core._errors import UnexpectedError
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
-from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.batch._errors import ExecutorServiceUnhealthy
-from promptflow.contracts.run_info import FlowRunInfo, RunInfo
+from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
