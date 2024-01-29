@@ -49,7 +49,7 @@ def _start_pfs_in_background(pfs_port) -> None:
     if is_port_in_use(pfs_port):
         _logger.debug("PFS is already serving on port %s", pfs_port)
         return
-    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--force"]
+    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start"]
     # Start a pfs process using detach mode
     if platform.system() == "Windows":
         os.spawnv(os.P_DETACH, sys.executable, args)
