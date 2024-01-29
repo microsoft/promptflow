@@ -274,6 +274,7 @@ class BatchEngine:
             )
             line_results.extend(results)
         else:
+            # TODO: Enable batch timeout for other api based executor proxy
             await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
 
