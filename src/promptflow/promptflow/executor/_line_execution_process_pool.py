@@ -278,7 +278,9 @@ class LineExecutionProcessPool:
             returned_node_run_infos = {}
 
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
-            while not self._line_timeout_expired(start_time) and not self._batch_timeout_expired(batch_start_time):
+            while not self._batch_timeout_expired(batch_start_time) and not self._line_timeout_expired(
+                start_time, line_timeout_sec
+            ):
                 # Monitor process aliveness.
                 crashed = not self._is_process_alive(process_id)
                 if crashed:
@@ -304,9 +306,9 @@ class LineExecutionProcessPool:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
                 # Handle line execution timeout.
-                elif self._line_timeout_expired(start_time):
-                    bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
+                elif self._line_timeout_expired(start_time, line_timeout_sec):
+                    bulk_logger.warning(f"Line {line_number} timeout after {line_timeout_sec} seconds.")
+                    ex = LineExecutionTimeoutError(line_number, line_timeout_sec)
                 # Handle batch execution timeout.
                 elif self._batch_timeout_expired(batch_start_time):
                     bulk_logger.warning(
@@ -359,11 +361,11 @@ class LineExecutionProcessPool:
             return False
         return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
 
-    def _line_timeout_expired(self, start_time: datetime) -> bool:
+    def _line_timeout_expired(self, start_time: datetime, line_timeout_sec: datetime) -> bool:
         # Here we add more seconds because of the following reasons:
         # 1. At the last second, there would be several timeout message from exec_line.
         # 2. It may take time to create worker so actual timeout time may be longer.
-        return (datetime.utcnow() - start_time).total_seconds() > self._line_timeout_sec + 10
+        return (datetime.utcnow() - start_time).total_seconds() > line_timeout_sec + 10
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
         """Replace multimedia data in line result with string place holder to prevent OOM
