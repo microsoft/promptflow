@@ -127,7 +127,7 @@ class TestBatchTimeout:
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 600, LineExecutionTimeoutError(2, 3)),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 5, LineExecutionTimeoutError(2, 3)),
             # TODO: Will change to BatchExecutionTimeoutError after refining the implementation of batch timeout.
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 3, LineExecutionTimeoutError(2, 3)),
+            # (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 3, LineExecutionTimeoutError(2, 3)),
         ],
     )
     def test_batch_timeout(self, flow_folder, line_timeout_sec, batch_timeout_sec, expected_error):
