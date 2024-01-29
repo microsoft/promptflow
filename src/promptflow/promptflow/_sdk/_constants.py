@@ -155,6 +155,7 @@ class RunTypes:
     BATCH = "batch"
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
+    COMMAND = "command"
 
 
 class AzureRunTypes:
@@ -241,6 +242,9 @@ class FlowRunProperties:
     NODE_VARIANT = "node_variant"
     RUN = "run"
     SYSTEM_METRICS = "system_metrics"
+    # Experiment command node fields only
+    COMMAND = "command"
+    OUTPUTS = "outputs"
 
 
 class CommonYamlFields:
@@ -398,7 +402,7 @@ class DownloadedRun:
 
 class ExperimentNodeType(object):
     FLOW = "flow"
-    CODE = "code"
+    COMMAND = "command"
 
 
 class ExperimentStatus(object):
