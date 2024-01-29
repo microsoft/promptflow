@@ -340,9 +340,8 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
 
-        # If the task queue is not empty, it indicates that the exit from the while loop was due to a batch run timeout.
-        # In this case, we should set is_timeout to True.
-        if not task_queue.empty():
+        # If the while loop exits due to batch run timeout, we should set is_timeout to True.
+        if self._batch_timeout_expired(batch_start_time):
             self._is_timeout = True
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
