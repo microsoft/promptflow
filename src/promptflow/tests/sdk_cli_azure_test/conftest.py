@@ -35,6 +35,7 @@ from .recording_utilities import (
 )
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
@@ -406,6 +407,20 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )
     run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def simple_eager_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
+    """Create a simple eager run."""
+    run = pf.run(
+        flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+        data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        name=randstr("name"),
+    )
+    pf.runs.stream(run)
+    run = pf.runs.get(run)
     assert run.status == RunStatus.COMPLETED
     yield run
 
