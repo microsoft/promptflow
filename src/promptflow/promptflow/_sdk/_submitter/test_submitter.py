@@ -30,11 +30,11 @@ from ..._utils.logger_utils import get_cli_sdk_logger
 from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
+    get_result_output,
     print_chat_output,
     resolve_generator,
     show_node_log_and_output,
     variant_overwrite_context,
-    get_result_output,
 )
 
 logger = get_cli_sdk_logger()
@@ -87,11 +87,11 @@ class TestSubmitter:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-                flow_path=self._origin_flow.code,
-                tuning_node=tuning_node,
-                variant=node_variant,
-                connections=self.flow_context.connections,
-                overrides=self.flow_context.overrides,
+            flow_path=self._origin_flow.code,
+            tuning_node=tuning_node,
+            variant=node_variant,
+            connections=self.flow_context.connections,
+            overrides=self.flow_context.overrides,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
@@ -105,7 +105,7 @@ class TestSubmitter:
                 self._node_variant = None
 
     def resolve_data(
-            self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
+        self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
     ):
         """
         Resolve input to flow/node test inputs.
@@ -197,13 +197,13 @@ class TestSubmitter:
         return flow_inputs, dependency_nodes_outputs
 
     def flow_test(
-            self,
-            inputs: Mapping[str, Any],
-            environment_variables: dict = None,
-            stream_log: bool = True,
-            allow_generator_output: bool = False,  # TODO: remove this
-            connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
-            stream_output: bool = True,
+        self,
+        inputs: Mapping[str, Any],
+        environment_variables: dict = None,
+        stream_log: bool = True,
+        allow_generator_output: bool = False,  # TODO: remove this
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = True,
     ):
         from promptflow.executor.flow_executor import execute_flow
 
@@ -219,9 +219,9 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-                file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
-                stream=stream_log,
-                credential_list=credential_list,
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            stream=stream_log,
+            credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             line_result = execute_flow(
@@ -242,12 +242,12 @@ class TestSubmitter:
             return line_result
 
     def node_test(
-            self,
-            node_name: str,
-            flow_inputs: Mapping[str, Any],
-            dependency_nodes_outputs: Mapping[str, Any],
-            environment_variables: dict = None,
-            stream: bool = True,
+        self,
+        node_name: str,
+        flow_inputs: Mapping[str, Any],
+        dependency_nodes_outputs: Mapping[str, Any],
+        environment_variables: dict = None,
+        stream: bool = True,
     ):
         from promptflow.executor import FlowExecutor
 
@@ -261,9 +261,9 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-                file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
-                stream=stream,
-                credential_list=credential_list,
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+            stream=stream,
+            credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
@@ -369,16 +369,17 @@ class TestSubmitterViaProxy(TestSubmitter):
         super().__init__(flow, flow_context, client)
 
     def flow_test(
-            self,
-            inputs: Mapping[str, Any],
-            environment_variables: dict = None,
-            stream_log: bool = True,
-            allow_generator_output: bool = False,
-            connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
-            stream_output: bool = True,
+        self,
+        inputs: Mapping[str, Any],
+        environment_variables: dict = None,
+        stream_log: bool = True,
+        allow_generator_output: bool = False,
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = True,
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
+
         if not connections:
             connections = SubmitterHelper.resolve_used_connections(
                 flow=self.flow,
@@ -399,9 +400,9 @@ class TestSubmitterViaProxy(TestSubmitter):
 
         log_path = self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log"
         with LoggerOperations(
-                file_path=log_path,
-                stream=stream_log,
-                credential_list=credential_list,
+            file_path=log_path,
+            stream=stream_log,
+            credential_list=credential_list,
         ):
             try:
                 storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
@@ -435,7 +436,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     generator_outputs = self._get_generator_outputs(line_result.output)
                     if generator_outputs:
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-                    return line_result
+                return line_result
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
 
