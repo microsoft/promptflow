@@ -25,7 +25,6 @@ from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 
@@ -50,15 +49,6 @@ def mock_build_info():
         buid_info = {"build_number": f"ci-{build_number}" if build_number else "local-pytest"}
         m.setenv("BUILD_INFO", json.dumps(buid_info))
         yield m
-
-
-@pytest.fixture
-def inject_api():
-    """Inject OpenAI API during test session.
-
-    AOAI call in promptflow should involve trace logging and header injection. Inject
-    function to API call in test scenario."""
-    inject_openai_api()
 
 
 @pytest.fixture

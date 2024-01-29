@@ -1,16 +1,21 @@
 import functools
 import inspect
+from pathlib import Path
 
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 
 from .record_storage import (
+    Counter,
     RecordFileMissingException,
     RecordItemMissingException,
     RecordStorage,
+    is_live_mode,
     is_recording_mode,
     is_replaying_mode,
 )
+
+COUNT_RECORD = (Path(__file__) / "../../count.json").resolve()
 
 # recording array is a global variable to store the function names that need to be recorded
 recording_array = ["fetch_text_content_from_url", "my_python_tool"]
@@ -71,6 +76,8 @@ def call_func(func, args, kwargs):
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
+    elif is_live_mode():
+        obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
     return obj
 
 
@@ -86,6 +93,8 @@ async def call_func_async(func, args, kwargs):
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
+    elif is_live_mode():
+        obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, await func(*args, **kwargs))
     return obj
 
 

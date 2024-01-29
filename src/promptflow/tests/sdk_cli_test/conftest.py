@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from mock import mock
 from pytest_mock import MockerFixture
-from sdk_cli_azure_test.recording_utilities import is_record, is_replay
+from sdk_cli_azure_test.recording_utilities import is_live, is_record, is_replay
 from sqlalchemy import create_engine
 
 from promptflow import PFClient
@@ -22,6 +22,7 @@ from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
 from .recording_utilities import (
+    Counter,
     RecordStorage,
     inject_async_with_recording,
     inject_sync_with_recording,
@@ -230,6 +231,7 @@ def recording_injection(mocker: MockerFixture):
         yield
     finally:
         RecordStorage.get_instance().delete_lock_file()
+        Counter.get_instance().delete_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class
@@ -256,6 +258,14 @@ def setup_recording_injection_if_enabled():
             patches.append(patcher)
             patcher.start()
 
+        patcher = patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
+        patches.append(patcher)
+        patcher.start()
+
+        patcher = patch("promptflow._core.openai_injector.inject_async", inject_async_with_recording)
+        patches.append(patcher)
+        patcher.start()
+    if is_live():
         patcher = patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
         patches.append(patcher)
         patcher.start()

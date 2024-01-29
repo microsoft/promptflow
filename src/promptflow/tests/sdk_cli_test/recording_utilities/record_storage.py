@@ -180,7 +180,8 @@ class RecordCache:
         else:
             return item
 
-    def _parse_output_generator(self, output):
+    @staticmethod
+    def _parse_output_generator(output):
         """
         Special handling for generator type. Since pickle will not work for generator.
         Returns the real list for reocrding, and create a generator for original output.
@@ -224,7 +225,8 @@ class RecordCache:
             output_type = type(output).__name__
         return output_value, output_generator, output_type
 
-    def _create_output_generator(self, output, output_type):
+    @staticmethod
+    def _create_output_generator(output, output_type):
         """
         Special handling for generator type.
         Returns a generator for original output.
@@ -279,7 +281,7 @@ class RecordCache:
         output = line_record_pointer["output"]
         output_type = line_record_pointer["output_type"]
         if "generator" in output_type:
-            return self._create_output_generator(output, output_type)
+            return RecordCache._create_output_generator(output, output_type)
         else:
             return output
 
@@ -300,7 +302,7 @@ class RecordCache:
         # filter args, object at will not hash
         input_dict = self._recursive_create_hashable_args(input_dict)
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
-        output_value, output_generator, output_type = self._parse_output_generator(output)
+        output_value, output_generator, output_type = RecordCache._parse_output_generator(output)
 
         try:
             line_record_pointer = self.file_records_pointer[hash_value]
@@ -371,7 +373,8 @@ class RecordStorage:
         return self.record_cache.set_record(input_dict, output)
 
     def delete_lock_file(self):
-        self.record_cache.record_file.delete_lock_file()
+        if self.record_cache.record_file:
+            self.record_cache.record_file.delete_lock_file()
 
     @classmethod
     def get_instance(cls, record_file=None) -> "RecordStorage":
@@ -384,13 +387,67 @@ class RecordStorage:
         :rtype: RecordStorage
         """
         # if not in recording mode, return None
-        if not (is_recording_mode() or is_replaying_mode()):
+        if not (is_recording_mode() or is_replaying_mode() or is_live_mode()):
             return None
         # Create instance if not exist
+        if is_recording_mode() or is_replaying_mode():
+            if cls._instance is None:
+                if record_file is None:
+                    raise RecordFileMissingException("record_file is value None")
+                cls._instance = RecordStorage()
+            if record_file is not None:
+                cls._instance.set_file(record_file)
+        else:
+            if cls._instance is None:
+                cls._instance = RecordStorage()  # live mode return an empty record storage
+        return cls._instance
+
+
+class Counter:
+    _instance = None
+
+    def is_non_zero_file(self, fpath):
+        return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
+
+    def set_file_record_count(self, file, obj):
+        """
+        Just count how many tokens are calculated. Different from
+        openai_metric_calculator, this is directly returned from AOAI.
+        """
+        output_value, output_generator, output_type = RecordCache._parse_output_generator(obj)
+        if "generator" in output_type:
+            count = len(output_value)
+        elif hasattr(output_value, "usage") and output_value.usage and output_value.usage.total_tokens:
+            count = output_value.usage.total_tokens
+        else:
+            # This is error. Suppress it.
+            count = 0
+
+        self.file = file
+        with FileLock(str(file) + ".lock"):
+            is_non_zero_file = self.is_non_zero_file(file)
+            if is_non_zero_file:
+                with open(file, "r", encoding="utf-8") as f:
+                    number = json.load(f)
+                    number["count"] += count
+            else:
+                number = {"count": count}
+            with open(file, "w", encoding="utf-8") as f:
+                number_str = json.dumps(number, ensure_ascii=False)
+                f.write(number_str)
+
+        if "generator" in output_type:
+            return output_generator
+        else:
+            return output_value
+
+    def delete_lock_file(self):
+        lock_file = str(self.file) + ".lock"
+        if os.path.isfile(lock_file):
+            os.remove(lock_file)
+
+    @classmethod
+    def get_instance(cls) -> "Counter":
         if cls._instance is None:
-            if record_file is None:
-                raise RecordFileMissingException("record_file is value None")
-            cls._instance = RecordStorage()
-        if record_file is not None:
-            cls._instance.set_file(record_file)
+            cls._instance = Counter()
         return cls._instance
