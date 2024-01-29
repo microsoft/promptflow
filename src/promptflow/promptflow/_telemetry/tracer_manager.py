@@ -1,19 +1,34 @@
 import json
-import os
 import threading
 from typing import Sequence
 
-from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
-    ReadableSpan,
-    SimpleSpanProcessor,
-    SpanExporter,
-    SpanExportResult,
-)
+from opentelemetry.sdk.trace.export import ReadableSpan, SimpleSpanProcessor, SpanExporter, SpanExportResult
+
+
+class MemoryTraceStore:
+    def __init__(self):
+        self._spans = []
+
+    def add_spans(self, spans):
+        self._spans.extend(spans)
+
+    def get_spans_from_run_id(self, run_id: str):
+        return [span for span in self._spans if span.attributes["root_run_id"] == run_id]
+
+    def pop_spans_from_run_id(self, run_id: str):
+        spans = self.get_spans_from_run_id(run_id)
+        for span in spans:
+            self._spans.remove(span)
+        return spans
+
+    def clear(self):
+        self._spans.clear()
+
+
+trace_store = MemoryTraceStore()
 
 
 class MemoryExporter(SpanExporter):
@@ -24,12 +39,9 @@ class MemoryExporter(SpanExporter):
     spans to the console STDOUT.
     """
 
-    def __init__(self):
-        self._spans = []
-
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         print("exporting", spans)
-        self._spans.extend(spans)
+        trace_store.add_spans(spans)
         return SpanExportResult.SUCCESS
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
@@ -121,16 +133,10 @@ def get_tracer(name):
             )
             provider = TracerProvider(resource=resource)
 
-            # If a connection string is provided, add an exporter to AppInsights
-            connection_string = os.environ.get("APPINSIGHTS_CONNECTION_STRING")
-            if connection_string:
-                provider.add_span_processor(
-                    BatchSpanProcessor(AzureMonitorTraceExporter(connection_string=connection_string))
-                )
-
             # These are for test usage only. Do not use in production.
-            provider.add_span_processor(SimpleSpanProcessor(FileExporter("traces.json")))
+            # provider.add_span_processor(SimpleSpanProcessor(FileExporter("traces.json")))
             provider.add_span_processor(SimpleSpanProcessor(TreeConsoleSpanExporter()))
+            provider.add_span_processor(SimpleSpanProcessor(memory_exporter))
 
             trace.set_tracer_provider(provider)
 

@@ -199,6 +199,7 @@ class FlowRunInfo:
     system_metrics: Dict[str, Any] = None
     result: object = None
     upload_metrics: bool = False  # only set as true for root runs in bulk test mode and evaluation mode
+    traces: Optional[List[Dict[str, Any]]] = None
 
     @staticmethod
     def deserialize(data: dict) -> "FlowRunInfo":

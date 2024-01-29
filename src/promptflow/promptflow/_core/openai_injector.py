@@ -12,11 +12,12 @@ from datetime import datetime
 from importlib.metadata import version
 
 import openai
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.operation_context import OperationContext
 from promptflow.contracts.trace import Trace, TraceType
 
-from .tracer import Tracer
+from .tracer import Tracer, enrich_span_with_output, enrich_span_with_trace, tracer
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
@@ -36,6 +37,7 @@ def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
                 return await f(*args, **kwargs)
 
             all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+            all_kwargs.pop("self", None)
             for key in args_to_ignore:
                 all_kwargs.pop(key, None)
             name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
@@ -45,15 +47,22 @@ def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
                 inputs=all_kwargs,
                 start_time=datetime.utcnow().timestamp(),
             )
-            Tracer.push(trace)
-            try:
-                result = await f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
+
+            span_name = trace.name
+            with tracer.start_as_current_span(span_name) as span:
+                enrich_span_with_trace(span, trace)
+
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push(trace)
+                    output = await f(*args, **kwargs)
+                    span.set_status(StatusCode.OK)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
         return wrapped_method
 
@@ -73,6 +82,7 @@ def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
                 return f(*args, **kwargs)
 
             all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+            all_kwargs.pop("self", None)
             for key in args_to_ignore:
                 all_kwargs.pop(key, None)
             name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
@@ -82,15 +92,23 @@ def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
                 inputs=all_kwargs,
                 start_time=datetime.utcnow().timestamp(),
             )
-            Tracer.push(trace)
-            try:
-                result = f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
+
+            span_name = trace.name
+            with tracer.start_as_current_span(span_name) as span:
+                enrich_span_with_trace(span, trace)
+
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push(trace)
+                    output = f(*args, **kwargs)
+                    output = enrich_span_with_output(span, output)
+                    span.set_status(StatusCode.OK)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
         return wrapped_method
 
