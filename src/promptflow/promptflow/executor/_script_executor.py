@@ -1,4 +1,5 @@
 import asyncio
+import importlib
 import inspect
 import uuid
 from pathlib import Path
@@ -7,11 +8,12 @@ from typing import Any, Callable, Mapping, Optional
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
+from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._core.tracer import _traced, Tracer
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._result import LineResult
@@ -25,34 +27,17 @@ class ScriptExecutor(FlowExecutor):
     def __init__(
         self,
         flow_file: Path,
-        entry: str,
         connections: Optional[dict] = None,
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
-        self._flow_file = flow_file
 
-        # TODO: Refine the logic here
-        m = load_python_module_from_file(flow_file)
-        func: Callable = getattr(m, entry, None)
-        if func is None or not inspect.isfunction(func):
-            raise PythonLoadError(
-                message_format="Failed to load python function '{entry}' from file '{flow_file}'.",
-                entry=entry,
-                flow_file=flow_file,
-            )
-        # If the function is not decorated with trace, add trace for it.
-        if not hasattr(func, "__original_function"):
-            func = _traced(func)
-        inputs, _, _, _ = function_to_interface(func)
-        self._func = func
-        self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
-        self._entry = entry
-        self._is_async = inspect.iscoroutinefunction(self._func)
-        self._connections = connections
+        self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        self._initialize_function()
+        self._connections = connections
         self._storage = storage or DefaultRunStorage()
         self._flow_id = None
         self._log_interval = 60
@@ -113,3 +98,29 @@ class ScriptExecutor(FlowExecutor):
 
     def get_inputs_definition(self):
         return self._inputs
+
+    def _initialize_function(self):
+        module_name, func_name = self._parse_flow_file()
+        module = importlib.import_module(module_name)
+        func = getattr(module, func_name, None)
+        if func is None or not inspect.isfunction(func):
+            raise PythonLoadError(
+                message_format="Failed to load python function '{func_name}' from file '{module_name}'.",
+                func_name=func_name,
+                module_name=module_name,
+            )
+        # If the function is not decorated with trace, add trace for it.
+        if not hasattr(func, "__original_function"):
+            func = _traced(func)
+        self._func = func
+        inputs, _, _, _ = function_to_interface(self._func)
+        self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
+        self._is_async = inspect.iscoroutinefunction(self._func)
+        return func
+
+    def _parse_flow_file(self):
+        with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        entry = flow_dag.get("entry", "")
+        module_name, func_name = entry.split(":")
+        return module_name, func_name

@@ -46,6 +46,7 @@ def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, en
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
+    @pytest.mark.skip(reason="Won't support submitting eager flow with entry now.")
     @pytest.mark.parametrize(
         "flow_folder, entry, inputs, ensure_output",
         [
@@ -96,18 +97,25 @@ class TestEagerFlow:
         ]
     )
     def test_flow_run_with_flow_yaml(self, flow_folder, inputs, ensure_output):
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+
+        # Test submitting eager flow to script executor
+        executor = ScriptExecutor(flow_file=flow_file)
+        line_result = executor.exec_line(inputs=inputs, index=0)
+        assert isinstance(line_result, LineResult)
+        assert ensure_output(line_result.output)
+
+        # Test submitting eager flow to flow executor
         working_dir = get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT)
         os.chdir(working_dir)
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={})
         line_result = executor.exec_line(inputs=inputs, index=0)
-
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
 
     def test_exec_line_with_invalid_case(self):
-        flow_file = get_entry_file("dummy_flow_with_exception", root=EAGER_FLOW_ROOT)
-        executor = ScriptExecutor(flow_file=flow_file, entry="my_flow")
+        flow_file = get_yaml_file("dummy_flow_with_exception", root=EAGER_FLOW_ROOT)
+        executor = ScriptExecutor(flow_file=flow_file)
         line_result = executor.exec_line(inputs={"text": "text"}, index=0)
 
         assert isinstance(line_result, LineResult)
@@ -115,6 +123,7 @@ class TestEagerFlow:
         assert line_result.run_info.status == Status.Failed
         assert "dummy exception" in line_result.run_info.error["message"]
 
+    @pytest.mark.skip(reason="Won't support submitting eager flow with entry now.")
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping, entry, ensure_output",
         [
@@ -177,9 +186,8 @@ class TestEagerFlow:
     def test_batch_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
         batch_engine = BatchEngine(
-            get_entry_file(flow_folder, root=EAGER_FLOW_ROOT),
+            get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
             get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
-            entry="my_flow",
         )
         input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
         output_dir = Path(mkdtemp())

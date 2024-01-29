@@ -127,7 +127,6 @@ class LineExecutionProcessPool:
             "flow_file": flow_executor._flow_file,
             "connections": flow_executor._connections,
             "working_dir": flow_executor._working_dir,
-            "entry": flow_executor._entry,
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
         }
@@ -633,7 +632,6 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
     if isinstance(flow_executor, ScriptExecutor):
         return ScriptExecutor(
             flow_file=flow_executor._flow_file,
-            entry=flow_executor._entry,
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
             storage=storage,

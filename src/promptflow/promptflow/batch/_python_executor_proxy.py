@@ -29,12 +29,11 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
-        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
         flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, entry=entry, storage=storage, raise_ex=False
+            flow_file, connections, working_dir, storage=storage, raise_ex=False
         )
         return cls(flow_executor)
 
