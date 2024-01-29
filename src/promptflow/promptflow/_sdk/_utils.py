@@ -1123,7 +1123,7 @@ def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
     nanoseconds = int(time_unix_nano)
     seconds = nanoseconds / 1_000_000_000
     timestamp = datetime.datetime.utcfromtimestamp(seconds)
-    return timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    return timestamp.isoformat()
 
 
 def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
