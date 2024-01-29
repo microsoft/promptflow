@@ -377,6 +377,8 @@ class ToolOperations:
                                 logger.debug(f"InputSetting {k} of {input_name} will be overwrite from"
                                              f" {tool_inputs[input_name][k]} to {v}.")
                                 tool_inputs[input_name][k] = v
+                        else:
+                            tool_inputs[input_name][k] = v
                     if settings.generated_by:
                         generated_by_inputs.update(settings.generated_by._input_settings)
                 tool_inputs.update(generated_by_inputs)
