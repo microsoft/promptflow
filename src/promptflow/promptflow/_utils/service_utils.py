@@ -2,8 +2,10 @@ import contextlib
 import json
 from multiprocessing import Queue
 
+from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter, JsonSerializedPromptflowException
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import LogContext, logger
+from promptflow.executor.service.contracts.execution_request import BaseExecutionRequest
 
 
 @contextlib.contextmanager
@@ -20,6 +22,12 @@ def multi_processing_exception_wrapper(exception_queue: Queue):
         exception = JsonSerializedPromptflowException(message=message)
         exception_queue.put(exception)
         raise exception from e
+
+
+def get_log_context(request: BaseExecutionRequest):
+    run_mode = request.get_run_mode()
+    credential_list = ConnectionManager(request.connections).get_secret_list()
+    return LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
 
 
 def generate_error_response(ex):
