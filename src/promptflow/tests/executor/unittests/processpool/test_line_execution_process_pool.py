@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import sys
 import uuid
 from multiprocessing import Queue
 from pathlib import Path
@@ -13,6 +14,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
@@ -20,6 +22,7 @@ from promptflow.executor._line_execution_process_pool import (
     get_available_max_worker_count,
     log_process_status,
 )
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -186,6 +189,10 @@ def not_set_environment_in_subprocess(dev_connections):
     line_execution_process_pool = create_line_execution_process_pool(dev_connections)
     use_fork = line_execution_process_pool._use_fork
     assert use_fork == (multiprocessing.get_start_method() == "fork")
+
+
+def custom_create_spawned_fork_process_manager(*args, **kwargs):
+    create_spawned_fork_process_manager("test", *args, **kwargs)
 
 
 @pytest.mark.unittest
@@ -409,6 +416,33 @@ class TestLineExecutionProcessPool:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    @pytest.mark.skipif(sys.platform == "win32" or sys.platform == "darwin", reason="Only test on linux")
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    @patch(
+        "promptflow.executor._process_manager.create_spawned_fork_process_manager",
+        custom_create_spawned_fork_process_manager,
+    )
+    def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        run_id = str(uuid.uuid4())
+        bulk_inputs = get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        run_id = run_id or str(uuid.uuid4())
+        with pytest.raises(SpawnedForkProcessManagerStartFailure) as e:
+            with LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                None,
+            ) as pool:
+                pool.run(zip(range(nlines), bulk_inputs))
+        assert "Failed to start spawned fork process manager" in str(e.value)
 
 
 class TestGetAvailableMaxWorkerCount:
