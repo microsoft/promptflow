@@ -22,7 +22,7 @@ from promptflow.executor._line_execution_process_pool import (
     get_available_max_worker_count,
     log_process_status,
 )
-from promptflow.executor._process_manager import create_spawned_fork_process_manager_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -191,8 +191,8 @@ def not_set_environment_in_subprocess(dev_connections):
     assert use_fork == (multiprocessing.get_start_method() == "fork")
 
 
-def custom_create_spawned_fork_process_manager_wrapper(*args, **kwargs):
-    create_spawned_fork_process_manager_wrapper("test", *args, **kwargs)
+def custom_create_spawned_fork_process_manager(*args, **kwargs):
+    create_spawned_fork_process_manager("test", *args, **kwargs)
 
 
 @pytest.mark.unittest
@@ -423,8 +423,8 @@ class TestLineExecutionProcessPool:
         ],
     )
     @patch(
-        "promptflow.executor._process_manager.create_spawned_fork_process_manager_wrapper",
-        custom_create_spawned_fork_process_manager_wrapper,
+        "promptflow.executor._process_manager.create_spawned_fork_process_manager",
+        custom_create_spawned_fork_process_manager,
     )
     def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)

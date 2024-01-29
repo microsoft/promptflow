@@ -232,7 +232,7 @@ class ForkProcessManager(AbstractProcessManager):
         """
         context = multiprocessing.get_context("spawn")
         process = context.Process(
-            target=create_spawned_fork_process_manager_wrapper,
+            target=create_spawned_fork_process_manager,
             args=(
                 self._log_context_initialization_func,
                 self._current_operation_context,
@@ -397,13 +397,6 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             self.restart_process(i)
         elif control_signal == ProcessControlSignal.START:
             self.new_process(i)
-
-
-def create_spawned_fork_process_manager_wrapper(*args, **kwargs):
-    try:
-        create_spawned_fork_process_manager(*args, **kwargs)
-    except Exception as e:
-        bulk_logger.error(f"Error occurred when create spawned fork process manager: {e}")
 
 
 def create_spawned_fork_process_manager(
