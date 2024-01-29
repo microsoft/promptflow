@@ -11,7 +11,7 @@ import time
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
-from types import AsyncGeneratorType, GeneratorType
+from types import GeneratorType
 
 import pydash
 from dotenv import load_dotenv
@@ -310,18 +310,6 @@ def print_chat_output(output, generator_record):
             time.sleep(STREAMING_ANIMATION_TIME)
         # Print a new line at the end of the response
         print()
-    elif isinstance(output, AsyncGeneratorType):
-        from promptflow._utils.async_utils import async_run_allowing_running_loop
-        line_result_iter = async_run_allowing_running_loop(
-            get_async_result_output, output, generator_record
-        )
-
-        for event in line_result_iter:
-            print(event, end="")
-            # For better animation effects
-            time.sleep(STREAMING_ANIMATION_TIME)
-        # Print a new line at the end of the response
-        print()
     else:
         print(output)
 
@@ -340,26 +328,6 @@ def get_result_output(output, generator_record):
             else:
                 generator_record[output] = list(output)
                 output = generator_record[output]
-    return output
-
-
-async def get_async_result_output(output, generator_record):
-    if isinstance(output, AsyncGeneratorType):
-        if output in generator_record:
-            if hasattr(generator_record[output], "items"):
-                output = iter(generator_record[output].items)
-            else:
-                output = iter(generator_record[output])
-        else:
-            if hasattr(output.ag_frame.f_locals, "proxy"):
-                proxy = output.ag_frame.f_locals["proxy"]
-                generator_record[output] = proxy
-            else:
-                output_list = []
-                async for item in output:
-                    output_list.append(item)
-                generator_record[output] = output_list
-                output = output_list
     return output
 
 

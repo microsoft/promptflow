@@ -3,7 +3,7 @@ import os
 import time
 from copy import copy
 from pathlib import Path
-from types import AsyncGeneratorType, GeneratorType
+from types import GeneratorType
 
 import streamlit as st
 from PIL import Image
@@ -12,11 +12,9 @@ from utils import dict_iter_render_message, parse_image_content, parse_list_from
 
 from promptflow import load_flow
 from promptflow._constants import STREAMING_ANIMATION_TIME
-from promptflow._sdk._submitter.utils import get_async_result_output, get_result_output, resolve_generator
+from promptflow._sdk._submitter.utils import get_result_output, resolve_generator
 from promptflow._sdk._utils import dump_flow_result
-from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
-from promptflow.executor._result import LineResult
 
 invoker = None
 generator_record = {}
@@ -86,20 +84,6 @@ def start():
                     if isinstance(chat_output, GeneratorType):
                         # Simulate stream of response with milliseconds delay
                         for chunk in get_result_output(chat_output, generator_record):
-                            full_response += chunk + " "
-                            time.sleep(STREAMING_ANIMATION_TIME)
-                            # Add a blinking cursor to simulate typing
-                            message_placeholder.markdown(full_response + "▌")
-                        message_placeholder.markdown(full_response)
-                        response.output[chat_output_name] = full_response[prefix_length:]
-                        post_process_dump_result(response, session_state_history)
-                        return
-                    elif isinstance(chat_output, AsyncGeneratorType):
-                        # Simulate stream of response with milliseconds delay
-                        response_output = async_run_allowing_running_loop(
-                            get_async_result_output, chat_output, generator_record
-                        )
-                        for chunk in response_output:
                             full_response += chunk + " "
                             time.sleep(STREAMING_ANIMATION_TIME)
                             # Add a blinking cursor to simulate typing

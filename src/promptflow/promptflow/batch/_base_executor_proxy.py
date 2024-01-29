@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import requests
 from datetime import datetime
 import json
 from json import JSONDecodeError
@@ -100,31 +101,27 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         headers = {"Accept": "text/event-stream"} if enable_stream_output else None
 
         if enable_stream_output:
+            # Todo: update to async, will get no result in "async for" of final_generator function in async mode
+            def generator():
+                with requests.Session() as session:
+                    response = session.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
+                    for line in response.iter_lines():
+                        chunk_data = json.loads(line)
+                        # only support one chat output for now
+                        yield LineResult.deserialize(chunk_data)
 
-            # Todo: update logic here to only call server one time when server only return node_run_infos and
-            #  run_info once, only stream output.
-            async def generator():
-                async with httpx.AsyncClient() as client:
-                    async with client.stream('POST', url, json=payload, timeout=LINE_TIMEOUT_SEC,
-                                             headers=headers) as response:
-                        async for chunk in response.aiter_lines():
-                            chunk_data = json.loads(chunk)
-                            # only support one chat output for now
-                            output_name = list(chunk_data.get("output").keys())[0]
-                            yield chunk_data.get("output", {}).get(output_name, "")
+            origin_generator = generator()
+            line_result = next(origin_generator)
+            chat_output_name = list(line_result.output.keys())[0]
+            first_output = line_result.output[chat_output_name]
 
-            async def get_meta_data():
-                async with httpx.AsyncClient() as client:
-                    async with client.stream('POST', url, json=payload, timeout=LINE_TIMEOUT_SEC,
-                                             headers=headers) as response:
-                        async for chunk in response.aiter_lines():
-                            chunk_data = json.loads(chunk)
-                            return chunk_data
+            def final_generator():
+                yield first_output
+                for output in origin_generator:
+                    yield output.output[chat_output_name]
 
-            data = await get_meta_data()
-            chat_output_name = list(data.get("output").keys())[0]
-            data["output"][chat_output_name] = generator()
-            return LineResult.deserialize(data)
+            line_result.output[chat_output_name] = final_generator()
+            return line_result
         else:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
