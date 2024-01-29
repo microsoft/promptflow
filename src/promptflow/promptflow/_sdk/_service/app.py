@@ -14,6 +14,7 @@ from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.trace import api as trace_api
+from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 
@@ -36,6 +37,7 @@ def create_app():
         api.add_namespace(run_api)
         api.add_namespace(telemetry_api)
         api.add_namespace(trace_api)
+        api.add_namespace(ui_api)
         app.register_blueprint(api_v1)
 
         # Disable flask-restx set X-Fields in header. https://flask-restx.readthedocs.io/en/latest/mask.html#usage
