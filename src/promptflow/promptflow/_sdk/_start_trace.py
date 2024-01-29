@@ -7,6 +7,7 @@ import uuid
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
@@ -40,8 +41,13 @@ def _provision_session() -> str:
 
 
 def _init_otel_trace_exporter(otlp_port: str) -> None:
+    resource = Resource(
+        attributes={
+            SERVICE_NAME: "promptflow",
+        }
+    )
+    trace_provider = TracerProvider(resource=resource)
     endpoint = f"http://localhost:{otlp_port}/v1/traces"
     otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-    trace_provider = TracerProvider()
     trace_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(trace_provider)
