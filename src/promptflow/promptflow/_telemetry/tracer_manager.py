@@ -1,11 +1,22 @@
 import json
+import logging
 import threading
 from typing import Sequence
 
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ReadableSpan, SimpleSpanProcessor, SpanExporter, SpanExportResult
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+    ReadableSpan,
+    SimpleSpanProcessor,
+    SpanExporter,
+    SpanExportResult,
+)
+
+from promptflow._telemetry.mdc_exporter import MdcExporter
+
+logger = logging.getLogger(__name__)
 
 
 class MemoryTraceStore:
@@ -133,6 +144,7 @@ def get_tracer(name):
             )
             provider = TracerProvider(resource=resource)
 
+            provider.add_span_processor(BatchSpanProcessor(MdcExporter(logger=logger)))
             # These are for test usage only. Do not use in production.
             # provider.add_span_processor(SimpleSpanProcessor(FileExporter("traces.json")))
             provider.add_span_processor(SimpleSpanProcessor(TreeConsoleSpanExporter()))
