@@ -28,12 +28,12 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._experiment import (
+    CommandNodeSchema,
     ExperimentDataSchema,
     ExperimentInputSchema,
     ExperimentSchema,
     ExperimentTemplateSchema,
     FlowNodeSchema,
-    ScriptNodeSchema,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.tool import ValueType
@@ -114,7 +114,6 @@ class FlowNode(YAMLTranslatableMixin):
         self.environment_variables = environment_variables or {}
         self.connections = connections or {}
         self._properties = properties or {}
-        self._creation_context = kwargs.get("creation_context", None)
         # init here to make sure those fields initialized in all branches.
         self.path = path
         # default run name: flow directory name + timestamp
@@ -141,23 +140,52 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = saved_flow_path.resolve().absolute().as_posix()
 
 
-class ScriptNode(YAMLTranslatableMixin):
-    def __init__(self, source, inputs, name, display_name=None, runtime=None, environment_variables=None, **kwargs):
-        self.type = ExperimentNodeType.CODE
-        self.display_name = display_name
+class CommandNode(YAMLTranslatableMixin):
+    def __init__(
+        self,
+        command,
+        name,
+        inputs=None,
+        outputs=None,
+        runtime=None,
+        environment_variables=None,
+        code=None,
+        display_name=None,
+        **kwargs,
+    ):
+        self.type = ExperimentNodeType.COMMAND
         self.name = name
-        self.source = source
-        self.inputs = inputs
+        self.display_name = display_name
+        self.code = code
+        self.command = command
+        self.inputs = inputs or {}
+        self.outputs = outputs or {}
         self.runtime = runtime
         self.environment_variables = environment_variables or {}
 
     @classmethod
     def _get_schema_cls(cls):
-        return ScriptNodeSchema
+        return CommandNodeSchema
 
     def _save_snapshot(self, target):
-        # Do nothing for script node for now
-        pass
+        """Save command source to experiment snapshot."""
+        Path(target).mkdir(parents=True, exist_ok=True)
+        saved_path = Path(target) / self.name
+        if not self.code:
+            # Create an empty folder
+            saved_path.mkdir(parents=True, exist_ok=True)
+            self.code = saved_path.resolve().absolute().as_posix()
+            return
+        code = Path(self.code)
+        if not code.exists():
+            raise ExperimentValueError(f"Command node code {code} does not exist.")
+        if code.is_dir():
+            shutil.copytree(src=self.code, dst=saved_path)
+        else:
+            saved_path.mkdir(parents=True, exist_ok=True)
+            shutil.copy(src=self.code, dst=saved_path)
+        logger.debug(f"Command node source saved to {saved_path}.")
+        self.code = saved_path.resolve().absolute().as_posix()
 
 
 class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
@@ -334,9 +362,9 @@ class Experiment(ExperimentTemplate):
                 nodes.append(
                     FlowNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
-            elif node_dict["type"] == ExperimentNodeType.CODE:
+            elif node_dict["type"] == ExperimentNodeType.COMMAND:
                 nodes.append(
-                    ScriptNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
+                    CommandNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
             else:
                 raise Exception(f"Unknown node type {node_dict['type']}")

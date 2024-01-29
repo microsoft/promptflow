@@ -1,0 +1,67 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+    python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        question: What is the weather like in Boston?
+      outputs:
+        answer: '{"forecast":["sunny","windy"],"location":"Boston","temperature":"72","unit":"fahrenheit"}'
+        llm_output:
+          content: null
+          function_call:
+            name: get_current_weather
+            arguments: |-
+              {
+                "location": "Boston"
+              }
+          role: assistant
+    is_chat_history: true
+  question:
+    type: string
+    default: How about London next week?
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${run_function.output}
+    is_chat_output: true
+  llm_output:
+    type: object
+    reference: ${use_functions_with_chat_models.output}
+nodes:
+- name: run_function
+  type: python
+  source:
+    type: code
+    path: run_function.py
+  inputs:
+    response_message: ${use_functions_with_chat_models.output}
+- name: use_functions_with_chat_models
+  type: llm
+  source:
+    type: code
+    path: use_functions_with_chat_models.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    temperature: '0.7'
+    top_p: '1.0'
+    stop: ''
+    max_tokens: '256'
+    presence_penalty: '0'
+    frequency_penalty: '0'
+    logit_bias: ''
+    functions: '[{"name":"get_current_weather","description":"Get the current weather
+      in a given location","parameters":{"type":"object","properties":{"location":{"type":"string","description":"The
+      city and state, e.g. San Francisco, CA"},"unit":{"type":"string","enum":["celsius","fahrenheit"]}},"required":["location"]}},{"name":"get_n_day_weather_forecast","description":"Get
+      an N-day weather forecast","parameters":{"type":"object","properties":{"location":{"type":"string","description":"The
+      city and state, e.g. San Francisco, CA"},"format":{"type":"string","enum":["celsius","fahrenheit"],"description":"The
+      temperature unit to use. Infer this from the users location."},"num_days":{"type":"integer","description":"The
+      number of days to forecast"}},"required":["location","format","num_days"]}}]'
+    function_call: auto
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+  connection: open_ai_connection
+  api: chat
