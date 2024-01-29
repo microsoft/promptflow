@@ -588,7 +588,9 @@ class LineExecutionProcessPool:
             )
 
 
-def _exec_line(executor: FlowExecutor, output_queue: Queue, *, inputs: dict, run_id, index: int, line_timeout_sec: int):
+def _exec_line(
+    executor: FlowExecutor, output_queue: Queue, *, inputs: dict, run_id: str, index: int, line_timeout_sec: int
+):
     try:
         line_result = executor.exec_line(
             inputs=inputs,
