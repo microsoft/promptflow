@@ -128,7 +128,7 @@ class Run(YAMLTranslatableMixin):
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
-        self.type = RunTypes.BATCH
+        self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
         self.column_mapping = column_mapping
         self.display_name = display_name
@@ -181,6 +181,8 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
+        self._outputs = kwargs.get("outputs", None)
+        self._command = kwargs.get("command", None)
 
     @property
     def created_on(self) -> str:
@@ -204,6 +206,10 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.RUN] = run_name
             if self.variant:
                 result[FlowRunProperties.NODE_VARIANT] = self.variant
+            if self._command:
+                result[FlowRunProperties.COMMAND] = self._command
+            if self._outputs:
+                result[FlowRunProperties.OUTPUTS] = self._outputs
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             result = {
                 FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
@@ -245,6 +251,9 @@ class Run(YAMLTranslatableMixin):
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
+            # experiment command node only fields
+            command=properties_json.get(FlowRunProperties.COMMAND, None),
+            outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
         )
 
     @classmethod

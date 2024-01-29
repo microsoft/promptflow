@@ -522,9 +522,9 @@ class LineExecutionProcessPool:
             except PromptflowException:
                 raise
             except Exception as e:
-                bulk_logger.error(f"Process {os.getpid()} failed with exception: {e}")
+                bulk_logger.error(f"ProcessPool failed with exception: {e}")
                 raise ProcessPoolError(
-                    message_format=f"Process {os.getpid()} failed with exception: {e}",
+                    message_format=f"ProcessPool failed with exception: {e}",
                     target=ErrorTarget.EXECUTOR,
                 ) from e
         return result_list
