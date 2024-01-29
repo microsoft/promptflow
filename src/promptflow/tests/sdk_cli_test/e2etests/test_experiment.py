@@ -113,7 +113,7 @@ class TestExperiment:
         exp = client._experiments.start(exp.name)
         with pytest.raises(RunOperationError) as e:
             client._experiments.start(exp.name)
-        assert f"Experiment {exp.name} is in progress." in str(e.value)
+        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
         assert e.value.message
         assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
         exp = self.wait_for_experiment_terminated(client, exp)

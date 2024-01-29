@@ -207,6 +207,7 @@ class ExperimentOrchestrator:
                         if future.cancelled():
                             # update status of running nodes to canceled.
                             node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
+                            self.experiment.node_runs[node.name] = ORMExperimentNodeRun.get(node.run_id)
                     sys.exit(1)
 
             signal.signal(signal.SIGTERM, stop_handler)
@@ -279,19 +280,21 @@ class ExperimentOrchestrator:
             process = psutil.Process(orchestrator.pid)
             process.terminate()
         except psutil.NoSuchProcess:
-            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+            logger.debug("Experiment orchestrator process terminates abnormally.")
         except Exception as e:
-            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
             raise RunOperationError(
                 message=f"Experiment stopped failed with {e}",
             )
         finally:
-            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
             if platform.system() == "Windows":
                 nodes = ORMExperimentNodeRun.get_node_runs_by_experiment(experiment_name=self.experiment.name)
                 for node in nodes or []:
                     if node.status == ExperimentNodeRunStatus.IN_PROGRESS:
                         node.update_status(status=ExperimentNodeRunStatus.CANCELED)
+                        self.experiment.node_runs[node.name] = ORMExperimentNodeRun.get(run_id=node.run_id)
+                    else:
+                        self.experiment.node_runs[node.name] = node
+            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
 
     @staticmethod
     def get_status(experiment_name):

@@ -13,6 +13,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from typing import Dict, List
 from unittest.mock import patch
+from time import sleep
 
 import mock
 import pytest
@@ -1932,6 +1933,14 @@ class TestCli:
 
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
+
+        def wait_for_experiment_terminated(experiment_name):
+            experiment = local_client._experiments.get(experiment_name)
+            while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
+                sleep(10)
+                experiment = local_client._experiments.get(experiment_name)
+            return experiment
+
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             exp_name = str(uuid.uuid4())
@@ -1954,7 +1963,8 @@ class TestCli:
                 exp_name,
             )
             out, _ = capfd.readouterr()
-            assert ExperimentStatus.TERMINATED in out
+            assert ExperimentStatus.QUEUING in out
+            wait_for_experiment_terminated(exp_name)
             exp = local_client._experiments.get(name=exp_name)
             assert len(exp.node_runs) == 4
             assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)

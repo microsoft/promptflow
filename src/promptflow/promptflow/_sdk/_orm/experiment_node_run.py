@@ -50,6 +50,15 @@ class ExperimentNodeRun(Base):
 
     @staticmethod
     @sqlite_retry
+    def get(run_id: str, raise_error=True) -> "ExperimentNodeRun":
+        with mgmt_db_session() as session:
+            orchestrator = session.query(ExperimentNodeRun).filter(ExperimentNodeRun.run_id == run_id).first()
+            if orchestrator is None and raise_error:
+                raise ExperimentNodeRunNotFoundError(f"Not found the node run {run_id!r}.")
+            return orchestrator
+
+    @staticmethod
+    @sqlite_retry
     def get_completed_node_by_snapshot_id(
         snapshot_id: str, experiment_name: str, raise_error=True
     ) -> "ExperimentNodeRun":

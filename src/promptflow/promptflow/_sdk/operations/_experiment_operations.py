@@ -106,8 +106,9 @@ class ExperimentOperations(TelemetryMixin):
         if not isinstance(name, str):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
         experiment = self.get(name)
-        if experiment.status == ExperimentStatus.IN_PROGRESS:
-            raise RunOperationError(f"Experiment {experiment.name} is in progress.")
+        if experiment.status in [ExperimentStatus.QUEUING, ExperimentStatus.IN_PROGRESS]:
+            raise RunOperationError(
+                f"Experiment {experiment.name} is {experiment.status}, cannot be started repeatedly.")
         return ExperimentOrchestrator(self._client.runs, self, experiment).async_start(**kwargs)
 
     @monitor_operation(activity_name="pf.experiment.stop", activity_type=ActivityType.PUBLICAPI)
