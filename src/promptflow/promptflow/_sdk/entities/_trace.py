@@ -4,13 +4,11 @@
 
 import copy
 import json
-import os
 import typing
 
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
-from promptflow._sdk._constants import TRACE_SESSION_ID_ENV_VAR
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp, flatten_pb_attributes
 
@@ -127,6 +125,8 @@ class Span:
             attributes=attributes,
             resource=resource,
             span_type=attributes.get("span_type", "Function"),
-            session_id=os.getenv(TRACE_SESSION_ID_ENV_VAR),
+            # TODO: get from env when it's set from our side
+            # session_id=os.getenv(TRACE_SESSION_ID_ENV_VAR),
+            session_id="8cffec9b-eda9-4dab-a321-4f94227c23cb",
             parent_span_id=parent_span_id,
         )

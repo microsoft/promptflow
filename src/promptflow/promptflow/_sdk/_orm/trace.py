@@ -54,11 +54,14 @@ class Span(Base):
 
     @staticmethod
     @sqlite_retry
-    def list(parent_id: typing.Optional[str] = None) -> typing.List["Span"]:
+    def list(
+        session_id: typing.Optional[str] = None,
+        parent_span_id: typing.Optional[str] = None,
+    ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
-            basic_stmt = session.query(Span)
-            if parent_id is not None:
-                stmt = basic_stmt.filter(Span.parent_span_id == parent_id)
-                return [span for span in stmt.all()]
-            # TODO: refine the query condition
-            return [span for span in basic_stmt.limit(100)]
+            stmt = session.query(Span)
+            if session_id is not None:
+                stmt = stmt.filter(Span.session_id == session_id)
+            if parent_span_id is not None:
+                stmt = stmt.filter(Span.parent_span_id == parent_span_id)
+            return [span for span in stmt.all()]

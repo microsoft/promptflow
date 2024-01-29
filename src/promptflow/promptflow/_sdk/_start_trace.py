@@ -30,12 +30,14 @@ def start_trace():
     pfs_port = get_port_from_config()
     _logger.debug("PFS is serving on port %s", pfs_port)
     # provision a session
-    session_id = _provision_session()
+    # TODO: make this dynamic after set from our side
+    # session_id = _provision_session()
+    session_id = "8cffec9b-eda9-4dab-a321-4f94227c23cb"
     _logger.debug("current session id is %s", session_id)
     # init the global tracer with endpoint, context (session, run, exp)
     _init_otel_trace_exporter(otlp_port=pfs_port)
     # print user the UI url
-    ui_url = f"http://localhost:{pfs_port}/ui/traces?session={session_id}"
+    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
     print(f"You can view the trace from UI url: {ui_url}")
 
 
