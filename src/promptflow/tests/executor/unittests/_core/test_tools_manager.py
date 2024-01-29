@@ -198,6 +198,22 @@ class TestToolsManager:
                                "stop", "presence_penalty", "frequency_penalty"]
         assert list(tool["inputs"]) == expected_keys_order
 
+    def test_collect_package_tools_set_defaut_input_index(self):
+        tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
+        package_tools = collect_package_tools([tool])
+        inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
+                        "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
+
+    def test_collect_package_tools_and_connections_set_defaut_input_index(self):
+        tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
+        package_tools, _, _ = collect_package_tools_and_connections([tool])
+        inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
+                        "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
+
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
