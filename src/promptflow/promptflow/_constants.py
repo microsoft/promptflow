@@ -50,6 +50,9 @@ GET_PYPI_INTERVAL_DAY = 7
 
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 
+# trace related
+TRACE_SESSION_ID_ENV_VAR = "PF_TRACE_SESSION_ID"
+
 
 class TraceFieldName:
     NAME = "name"

@@ -133,7 +133,6 @@ TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"
-TRACE_SESSION_ID_ENV_VAR = "PF_TRACE_SESSION_ID"
 
 
 class CustomStrongTypeConnectionConfigs:
