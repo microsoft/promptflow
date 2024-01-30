@@ -406,6 +406,9 @@ class RecordStorage:
 class Counter:
     _instance = None
 
+    def __init__(self):
+        self.file = None
+
     def is_non_zero_file(self, fpath):
         return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
 
@@ -442,9 +445,10 @@ class Counter:
             return output_value
 
     def delete_lock_file(self):
-        lock_file = str(self.file) + ".lock"
-        if os.path.isfile(lock_file):
-            os.remove(lock_file)
+        if self.file:
+            lock_file = str(self.file) + ".lock"
+            if os.path.isfile(lock_file):
+                os.remove(lock_file)
 
     @classmethod
     def get_instance(cls) -> "Counter":
