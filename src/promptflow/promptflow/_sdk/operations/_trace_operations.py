@@ -9,7 +9,7 @@ from promptflow._sdk.entities._trace import Span
 
 
 class TraceOperations:
-    def list(
+    def list_spans(
         self,
         session_id: typing.Optional[str] = None,
         parent_span_id: typing.Optional[str] = None,
