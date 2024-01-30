@@ -117,7 +117,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
 
             origin_generator = generator()
             line_result = next(origin_generator)
-            if chat_output_name:
+            if chat_output_name and chat_output_name in line_result.output:
                 first_chat_output = line_result.output[chat_output_name]
 
                 def final_generator():
