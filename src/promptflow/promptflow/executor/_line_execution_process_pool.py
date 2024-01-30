@@ -130,6 +130,8 @@ class LineExecutionProcessPool:
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
         }
+        # Will set to True if the batch run is timeouted.
+        self._is_timeout = False
 
     def __enter__(self):
         manager = Manager()
@@ -189,6 +191,10 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
+    @property
+    def is_timeout(self):
+        return self._is_timeout
+
     def _get_process_info(self, index):
         start_time = time.time()
         while True:
@@ -218,7 +224,7 @@ class LineExecutionProcessPool:
     def _is_process_alive(self, process_id):
         return psutil.pid_exists(process_id)
 
-    def _handle_output_queue_messages(self, output_queue: Queue, result_list):
+    def _handle_output_queue_messages(self, output_queue: Queue, result_list: List[LineResult]):
         try:
             message = output_queue.get(timeout=1)
             if isinstance(message, LineResult):
@@ -264,6 +270,7 @@ class LineExecutionProcessPool:
                     self._batch_timeout_sec - (datetime.utcnow() - batch_start_time).total_seconds()
                 )
                 if remaining_execution_time <= 0:
+                    self._is_timeout = True
                     break
                 line_timeout_sec = min(line_timeout_sec, remaining_execution_time)
 
@@ -305,22 +312,26 @@ class LineExecutionProcessPool:
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
-                # Handle line execution timeout.
-                elif self._line_timeout_expired(start_time):
-                    bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
-                # Handle batch execution timeout.
-                elif self._batch_timeout_expired(batch_start_time):
-                    bulk_logger.warning(
-                        f"Line {line_number} execution terminated due to the total "
-                        f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
-                    )
-                    ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                 else:
-                    # This branch should not be reached, add this warning for the case.
+                    # Handle line execution timeout.
+                    if self._line_timeout_expired(start_time):
+                        bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
+                        ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
+                    # Handle batch execution timeout.
+                    if self._batch_timeout_expired(batch_start_time):
+                        bulk_logger.warning(
+                            f"Line {line_number} execution terminated due to the total "
+                            f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
+                        )
+                        ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
+                        # Set is_timeout to True if the batch run exceeds the batch timeout.
+                        self._is_timeout = True
+                # This branch should not be reached, add this warning for the case.
+                if ex is None:
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
                     bulk_logger.warning(msg)
                     ex = UnexpectedError(msg)
+
                 result = self._generate_line_result_for_exception(
                     inputs,
                     run_id,
@@ -347,6 +358,9 @@ class LineExecutionProcessPool:
                     index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
+
+        # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
+        self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)

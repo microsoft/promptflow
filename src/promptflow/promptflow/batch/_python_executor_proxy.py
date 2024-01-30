@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Tuple
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
@@ -53,7 +53,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
-    ) -> List[LineResult]:
+    ) -> Tuple[List[LineResult], bool]:
         # TODO: Refine the logic here since the script executor actually doesn't have the 'node' concept
         if isinstance(self._flow_executor, ScriptExecutor):
             run_tracker = RunTracker(self._flow_executor._storage)
@@ -83,7 +83,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
 
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results, run_tracker)
-        return line_results
+        return line_results, pool.is_timeout
 
     def get_inputs_definition(self):
         return self._flow_executor.get_inputs_definition()
