@@ -14,13 +14,13 @@ def generate_suggested_answer(
     context: str,
     generate_suggested_answer_prompt: str,
     temperature: float = 1.0,
-    max_tokens: int = 512
+    max_tokens: int = 512,
 ):
     """
-    Generates a ground truth based on the given prompts and context information.
+    Generates a suggested answer based on the given prompts and context information.
 
     Returns:
-        str: The generated ground truth.
+        str: The generated suggested answer.
     """
     if question and context:
         return llm_call(
@@ -28,6 +28,7 @@ def generate_suggested_answer(
             model_or_deployment_name,
             generate_suggested_answer_prompt,
             temperature=temperature,
-            max_tokens=max_tokens)
+            max_tokens=max_tokens,
+        )
     else:
         return ""

@@ -40,14 +40,14 @@ Enter `test_data_gen_local` folder, run below command to install required packag
   
   **Understand the prompts**
   
-  The test data generation flow contains five different prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, ground truths, etc., while validation prompts are used to verify the validity of the text trunk, generated question or ground truth.
+  The test data construction flow contains five different prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, suggested answers, etc., while validation prompts are used to verify the validity of the text trunk, generated question or answer.
   - Generation prompts
     - *generate question prompt*: frame a question based on the given text trunk.
-    - *generate ground truth prompt*: generate ground truth for the question based on the given text trunk.
+    - *generate suggested answer prompt*: generate suggested answer for the question based on the given text trunk.
   - Validation prompts
-    - *validate text trunk prompt*: validate if the given text trunk is worthy of framing a question.
+    - *score text trunk prompt*: validate if the given text trunk is worthy of framing a question. If the score is lower than score_threshold, validation fails.
     - *validate seed/test question prompt*: validate if the generated question can be clearly understood.
-    - *validate ground truth*: validate if the generated ground truth is clear and certain.
+    - *validate suggested answer*: validate if the generated suggested answer is clear and certain.
 
     If the validation fails, the corresponding output would be an empty string so that the invalid data would not be incorporated into the final test data set.
   
@@ -62,7 +62,7 @@ Enter `test_data_gen_local` folder, run below command to install required packag
     - Update the configurations in the `configs.ini` file. Here is a brief of introduction of each parameter:
       > // TODO: or move this part as comment in config ini?
       - *should_skip_doc_split*: Document split step can be reused. If you have already splitted the documents, and in next time you just want to generate the test data based on these document chunks, you can set the value as `True` to skip the document split step.
-      - *documents_folder*: the source path of text to be splitted into text trunks for question and ground truth generation.
+      - *documents_folder*: the source path of text to be splitted into text trunks for question and answer generation.
       - *document_chunk_size*: chunk size is used to determine the size of each text chunk
         > !Note: In this guidance, we leverage llama_index to do text chunking. There are two steps of document splitting:
         >

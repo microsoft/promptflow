@@ -22,11 +22,11 @@ outputs:
     type: string
     reference: ${generate_debug_info.output}
 nodes:
-- name: validate_text_trunk_prompt
+- name: score_text_trunk_prompt
   type: prompt
   source:
     type: code
-    path: validate_text_trunk_prompt.jinja2
+    path: score_text_trunk_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
@@ -61,11 +61,13 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection: open-ai-connection
+    connection:
     model_or_deployment_name: gpt-4
-    validate_text_trunk_prompt: ${validate_text_trunk_prompt.output}
+    score_text_trunk_prompt: ${score_text_trunk_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
     context: ${inputs.text_chunk}
+    score_threshold: 4
+    response_format: text
     temperature: 1
     max_tokens: 512
   use_variants: false
@@ -75,11 +77,11 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection: open-ai-connection
+    connection:
     model_or_deployment_name: gpt-4
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${validate_and_generate_seed_question.output.question}
-    response_format: ""
+    response_format: text
     temperature: 1
     max_tokens: 512
   use_variants: false
@@ -97,7 +99,7 @@ nodes:
     type: code
     path: validate_test_question.py
   inputs:
-    connection: open-ai-connection
+    connection:
     model_or_deployment_name: gpt-4
     question_info: ${validate_and_generate_test_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
@@ -110,7 +112,7 @@ nodes:
     type: code
     path: generate_suggested_answer.py
   inputs:
-    connection: open-ai-connection
+    connection:
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
     question: ${validate_test_question.output}
@@ -136,14 +138,14 @@ nodes:
     type: code
     path: validate_suggested_answer_prompt.jinja2
   inputs:
-    suggested_answer: ${generate_suggested_answer.output}
+    answer: ${generate_suggested_answer.output}
 - name: validate_suggested_answer
   type: python
   source:
     type: code
     path: validate_suggested_answer.py
   inputs:
-    connection: open-ai-connection
+    connection:
     model_or_deployment_name: gpt-4
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}

@@ -5,10 +5,10 @@ from collections import namedtuple
 import numpy as np
 import numpy.testing as npt
 from numpy.random import default_rng
-from promptflow.tools.aoai import chat as aoai_chat
-from promptflow.tools.openai import chat as openai_chat
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.tools.aoai import chat as aoai_chat
+from promptflow.tools.openai import chat as openai_chat
 
 
 class QuestionType:
@@ -30,22 +30,18 @@ class ResponseFormat:
 
 
 class ErrorMsg:
-    INVALID_JSON_FORMAT = "llm failed to return the verdict and reason in correct json format. Response: {0}"
-    INVALID_TEXT_TRUNK = "Skipping generating seed question due to invalid text chunk."
+    INVALID_JSON_FORMAT = "Invalid json format. Response: {0}"
+    INVALID_TEXT_TRUNK = "Skipping generating seed question due to invalid text chunk: {0}"
     INVALID_QUESTION = "Invalid seed question: {0}"
     INVALID_ANSWER = "Invalid answer: {0}"
 
 
-ValidationResult = namedtuple("ValidationResult", ["pass_validation", "reason_if_failed"])
+ValidationResult = namedtuple("ValidationResult", ["pass_validation", "reason"])
+ScoreResult = namedtuple("ScoreResult", ["score", "reason", "pass_validation"])
 
 
 def llm_call(
-        connection,
-        model_or_deployment_name,
-        prompt,
-        response_format=ResponseFormat.TEXT,
-        temperature=1.0,
-        max_tokens=16
+    connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=16
 ):
     response_format = "json_object" if response_format.lower() == "json" else response_format
     prompt = f"{{% raw %}}{prompt}{{% endraw %}}"
@@ -56,7 +52,7 @@ def llm_call(
             deployment_name=model_or_deployment_name,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format={"type": response_format}
+            response_format={"type": response_format},
         )
     elif isinstance(connection, OpenAIConnection):
         return openai_chat(
@@ -65,7 +61,8 @@ def llm_call(
             model=model_or_deployment_name,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format={"type": response_format})
+            response_format={"type": response_format},
+        )
 
 
 def get_question_type(testset_distribution) -> str:
@@ -77,30 +74,77 @@ def get_question_type(testset_distribution) -> str:
     return next((key for key in testset_distribution.keys() if prob <= testset_distribution[key]), QuestionType.SIMPLE)
 
 
-def get_suggested_answer_validation_res(connection, model_or_deployment_name, prompt, suggested_answer: str,
-                                        temperature: float,
-                                        max_tokens: int):
+def get_suggested_answer_validation_res(
+    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float, max_tokens: int
+):
     rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens)
     return retrieve_verdict_and_print_reason(
         rsp=rsp, validate_obj_name=ValidateObj.SUGGESTED_ANSWER, validate_obj=suggested_answer
     )
 
 
-def get_question_validation_res(connection, model_or_deployment_name, prompt, question: str,
-                                response_format: ResponseFormat, temperature: float,
-                                max_tokens: int):
+def get_question_validation_res(
+    connection,
+    model_or_deployment_name,
+    prompt,
+    question: str,
+    response_format: ResponseFormat,
+    temperature: float,
+    max_tokens: int,
+):
     rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
 
 
-def get_text_trunk_validation_res(connection, model_or_deployment_name, prompt, context: str,
-                                  response_format: ResponseFormat, temperature: float,
-                                  max_tokens: int):
+def get_text_trunk_score(
+    connection,
+    model_or_deployment_name,
+    prompt,
+    response_format: ResponseFormat,
+    score_threshold: float,
+    temperature: float,
+    max_tokens: int,
+):
     rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
-    return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.TEXT_TRUNK, validate_obj=context)
+    data = _load_json_rsp(rsp)
+    score_float = 0
+    reason = ""
+
+    if data and isinstance(data, dict) and "score" in data and "reason" in data:
+        # Extract the verdict and reason
+        score = data["score"].lower()
+        reason = data["reason"]
+        print(f"Score {ValidateObj.TEXT_TRUNK}: {score}\nReason: {reason}")
+        try:
+            score_float = float(score)
+        except ValueError:
+            reason = ErrorMsg.INVALID_JSON_FORMAT.format(rsp)
+    else:
+        reason = ErrorMsg.INVALID_JSON_FORMAT.format(rsp)
+    pass_validation = score_float >= score_threshold
+
+    return ScoreResult(score_float, reason, pass_validation)
 
 
 def retrieve_verdict_and_print_reason(rsp: str, validate_obj_name: str, validate_obj: str) -> ValidationResult:
+    data = _load_json_rsp(rsp)
+
+    if data and isinstance(data, dict) and "verdict" in data and "reason" in data:
+        # Extract the verdict and reason
+        verdict = data["verdict"].lower()
+        reason = data["reason"]
+        print(f"Is valid {validate_obj_name}: {verdict}\nReason: {reason}")
+        if verdict == "yes":
+            return ValidationResult(True, reason)
+        elif verdict == "no":
+            return ValidationResult(False, reason)
+        else:
+            print(f"Unexpected llm response to validate {validate_obj_name}: {validate_obj}")
+
+    return ValidationResult(False, ErrorMsg.INVALID_JSON_FORMAT.format(rsp))
+
+
+def _load_json_rsp(rsp: str):
     try:
         # It is possible that even the response format is required as json, the response still contains ```json\n
         rsp = re.sub(r"```json\n?|```", "", rsp)
@@ -109,19 +153,7 @@ def retrieve_verdict_and_print_reason(rsp: str, validate_obj_name: str, validate
         print(ErrorMsg.INVALID_JSON_FORMAT.format(rsp))
         data = None
 
-    if data and isinstance(data, dict) and "verdict" in data and "reason" in data:
-        # Extract the verdict and reason
-        verdict = data["verdict"].lower()
-        reason = data["reason"]
-        print(f"Is valid {validate_obj_name}: {verdict}\nReason: {reason}")
-        if verdict == "yes":
-            return ValidationResult(True, "")
-        elif verdict == "no":
-            return ValidationResult(False, reason)
-        else:
-            print(f"Unexpected llm response to validate {validate_obj_name}: {validate_obj}")
-
-    return ValidationResult(False, ErrorMsg.INVALID_JSON_FORMAT.format(rsp))
+    return data
 
 
 def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
@@ -136,17 +168,24 @@ def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
 
 
 def generate_question(
-        connection, model_or_deployment_name, question_type, seed_question, reasoning_prompt: str = None,
-        conditional_prompt: str = None, temperature: float = None,
-        max_tokens: int = None
+    connection,
+    model_or_deployment_name,
+    question_type,
+    seed_question,
+    reasoning_prompt: str = None,
+    conditional_prompt: str = None,
+    temperature: float = None,
+    max_tokens: int = None,
 ):
     if question_type == QuestionType.SIMPLE:
         return seed_question
     elif question_type == QuestionType.REASONING:
-        return llm_call(connection, model_or_deployment_name, reasoning_prompt, temperature=temperature,
-                        max_tokens=max_tokens)
+        return llm_call(
+            connection, model_or_deployment_name, reasoning_prompt, temperature=temperature, max_tokens=max_tokens
+        )
     elif question_type == QuestionType.CONDITIONAL:
-        return llm_call(connection, model_or_deployment_name, conditional_prompt, temperature=temperature,
-                        max_tokens=max_tokens)
+        return llm_call(
+            connection, model_or_deployment_name, conditional_prompt, temperature=temperature, max_tokens=max_tokens
+        )
     else:
         raise Exception("Invalid question type.")
