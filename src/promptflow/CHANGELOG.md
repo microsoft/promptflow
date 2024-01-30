@@ -9,6 +9,7 @@
 ### Bugs Fixed
 
 - [SDK/CLI] The inputs of node test allows the value of reference node output be passed directly in.
+- Fix "Without Import Data" in run visualize page when invalid JSON value exists in metrics.
 
 ### Improvements
 
