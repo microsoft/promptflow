@@ -103,7 +103,7 @@ span_model = api.model(
 
 @api.route("/list")
 class Spans(Resource):
-    @api.doc(description="List all spans")
+    @api.doc(description="List spans")
     @api.marshal_list_with(span_model)
     @api.response(code=200, description="Spans")
     def get(self):
