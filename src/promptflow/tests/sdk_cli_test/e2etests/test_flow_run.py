@@ -1227,6 +1227,29 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
+    def test_flow_with_nan_inf_metrics(self, pf: PFClient, monkeypatch) -> None:
+        # TODO: remove this patch after executor switch to default spawn
+        monkeypatch.setenv("PF_BATCH_METHOD", "spawn")
+
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow-with-nan-inf-metrics",
+            data=f"{DATAS_DIR}/numbers.jsonl",
+            column_mapping={"number": "${data.value}"},
+        )
+        pf.stream(run)
+        local_storage = LocalStorageOperations(run=run)
+        # default behavior: no special logic for nan and inf
+        metrics = local_storage.load_metrics()
+        assert isinstance(metrics["nan_metrics"], float) and np.isnan(metrics["nan_metrics"])
+        assert isinstance(metrics["inf_metrics"], float) and np.isinf(metrics["inf_metrics"])
+
+        # handles nan and inf, which is real scenario during visualize
+        metrics = local_storage.load_metrics(parse_const_as_str=True)
+        assert isinstance(metrics["nan_metrics"], str) and metrics["nan_metrics"] == "NaN"
+        assert isinstance(metrics["inf_metrics"], str) and metrics["inf_metrics"] == "Infinity"
+
+        monkeypatch.delenv("PF_BATCH_METHOD")
+
     @pytest.mark.skip("Enable this when executor change merges")
     def test_eager_flow_run_without_yaml(self, pf):
         # TODO(2898455): support this
