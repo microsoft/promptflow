@@ -51,7 +51,7 @@ def start_trace():
 def _start_pfs_in_background(pfs_port) -> None:
     """Start a pfs process in background."""
     if is_port_in_use(pfs_port):
-        _logger.debug("PFS is already serving on port %s", pfs_port)
+        _logger.warning(f"Service port {pfs_port} is used.")
         return
     args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start"]
     # Start a pfs process using detach mode
