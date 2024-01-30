@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import multiprocessing
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -24,6 +22,4 @@ async def exception_handler(request, exc):
 
 
 if __name__ == "__main__":
-    # Always use "fork" method to start subprocess when executing.
-    multiprocessing.set_start_method("fork", force=True)
     uvicorn.run("promptflow.executor._service.app:app", port=8000, reload=True)
