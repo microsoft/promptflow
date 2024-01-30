@@ -15,13 +15,12 @@ from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.trace import api as trace_api
 from promptflow._sdk._service.apis.ui import api as ui_api
-from promptflow._sdk._service.utils.utils import FormattedException, pfs_liveness_probe
+from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 
 
 def heartbeat():
     response = {"promptflow": get_promptflow_sdk_version()}
-    pfs_liveness_probe()
     return jsonify(response)
 
 

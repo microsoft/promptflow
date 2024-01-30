@@ -7,6 +7,7 @@ import platform
 import sys
 import uuid
 
+import requests
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -45,10 +46,16 @@ def start_trace():
 
 def _start_pfs_in_background(pfs_port) -> None:
     """Start a pfs process in background."""
+    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
-        return
-    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start"]
+        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
+        if response.status_code != 200:
+            _logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to force restart pfs.")
+            args += ["--force"]
+        else:
+            _logger.warning(f"Pfs service is already running on port {pfs_port}, will not restart pfs.")
+            return
     # Start a pfs process using detach mode
     if platform.system() == "Windows":
         os.spawnv(os.P_DETACH, sys.executable, args)

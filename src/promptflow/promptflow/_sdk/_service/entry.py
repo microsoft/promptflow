@@ -54,7 +54,7 @@ def add_show_status_action(subparsers):
 def start_service(args):
     port = args.port
     app, _ = create_app()
-    if port and is_port_in_use(port):
+    if port and is_port_in_use(port) and not args.force:
         app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     if not port:

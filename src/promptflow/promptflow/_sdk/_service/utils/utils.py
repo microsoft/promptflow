@@ -104,26 +104,6 @@ def make_response_no_content():
     return make_response("", 204)
 
 
-def pfs_liveness_probe():
-    """Send a probe to the specified port."""
-
-    port = get_port_from_config()
-    if port is None:
-        logger.error(f"PFS port {port} is None and not responding")
-    elif not is_port_in_use(port):
-        logger.error(f"PFS port {port} is not responding")
-    else:
-        try:
-            # Find the PID of the process that uses the port
-            proc = _get_process_by_port(port)
-            pid = proc.info["pid"]
-            # Get the process status
-            status = proc.status()
-            logger.debug(f"Process status: {status}")
-        except psutil.NoSuchProcess:
-            logger.error(f"No process with PID {pid} is running")
-
-
 @dataclass
 class ErrorInfo:
     exception: InitVar[Exception]
