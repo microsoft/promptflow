@@ -8,7 +8,6 @@ from unittest.mock import patch
 import pytest
 from mock import mock
 from pytest_mock import MockerFixture
-from sdk_cli_azure_test.recording_utilities import is_live, is_record, is_replay
 from sqlalchemy import create_engine
 
 from promptflow import PFClient
@@ -22,10 +21,13 @@ from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
 from .recording_utilities import (
-    Counter,
     RecordStorage,
+    delete_count_lock_file,
     inject_async_with_recording,
     inject_sync_with_recording,
+    is_live,
+    is_record,
+    is_replay,
     mock_tool,
     recording_array_reset,
 )
@@ -231,7 +233,7 @@ def recording_injection(mocker: MockerFixture):
         yield
     finally:
         RecordStorage.get_instance().delete_lock_file()
-        Counter.get_instance().delete_lock_file()
+        delete_count_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class

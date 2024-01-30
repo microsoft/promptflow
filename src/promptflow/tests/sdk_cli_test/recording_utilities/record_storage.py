@@ -20,15 +20,15 @@ def get_test_mode_from_environ() -> str:
     return os.getenv(ENVIRON_TEST_MODE, RecordMode.LIVE)
 
 
-def is_recording_mode() -> bool:
+def is_record() -> bool:
     return get_test_mode_from_environ() == RecordMode.RECORD
 
 
-def is_replaying_mode() -> bool:
+def is_replay() -> bool:
     return get_test_mode_from_environ() == RecordMode.REPLAY
 
 
-def is_live_mode() -> bool:
+def is_live() -> bool:
     return get_test_mode_from_environ() == RecordMode.LIVE
 
 
@@ -387,10 +387,10 @@ class RecordStorage:
         :rtype: RecordStorage
         """
         # if not in recording mode, return None
-        if not (is_recording_mode() or is_replaying_mode() or is_live_mode()):
+        if not (is_record() or is_replay() or is_live()):
             return None
         # Create instance if not exist
-        if is_recording_mode() or is_replaying_mode():
+        if is_record() or is_replay():
             if cls._instance is None:
                 if record_file is None:
                     raise RecordFileMissingException("record_file is value None")
@@ -443,12 +443,6 @@ class Counter:
             return output_generator
         else:
             return output_value
-
-    def delete_lock_file(self):
-        if self.file:
-            lock_file = str(self.file) + ".lock"
-            if os.path.isfile(lock_file):
-                os.remove(lock_file)
 
     @classmethod
     def get_instance(cls) -> "Counter":

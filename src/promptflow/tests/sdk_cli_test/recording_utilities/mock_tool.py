@@ -1,5 +1,6 @@
 import functools
 import inspect
+import os
 from pathlib import Path
 
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
@@ -10,9 +11,9 @@ from .record_storage import (
     RecordFileMissingException,
     RecordItemMissingException,
     RecordStorage,
-    is_live_mode,
-    is_recording_mode,
-    is_replaying_mode,
+    is_live,
+    is_record,
+    is_replay,
 )
 
 COUNT_RECORD = (Path(__file__) / "../../count.json").resolve()
@@ -66,36 +67,42 @@ def _replace_tool_rule(func):
 
 def call_func(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
-    if is_replaying_mode():
+    if is_replay():
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
-    elif is_recording_mode():
+    elif is_record():
         try:
             # prevent recording the same item twice
             obj = RecordStorage.get_instance().get_record(input_dict)
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
-    elif is_live_mode():
+    elif is_live():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
     return obj
 
 
 async def call_func_async(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
-    if is_replaying_mode():
+    if is_replay():
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
-    elif is_recording_mode():
+    elif is_record():
         try:
             # prevent recording the same item twice
             obj = RecordStorage.get_instance().get_record(input_dict)
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
-    elif is_live_mode():
+    elif is_live():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, await func(*args, **kwargs))
     return obj
+
+
+def delete_count_lock_file():
+    lock_file = str(COUNT_RECORD) + ".lock"
+    if os.path.isfile(lock_file):
+        os.remove(lock_file)
 
 
 def mock_tool(original_tool):

@@ -24,7 +24,7 @@ def inject_recording(f):
 
 def inject_async_with_recording(f):
     wrapper_fun = inject_operation_headers(
-        (inject_function_async(["api_key", "headers", "extra_headers"])(inject_recording(f)))
+        (inject_function_async(args_to_ignore=["api_key", "headers", "extra_headers"])(inject_recording(f)))
     )
     wrapper_fun._original = f
     return wrapper_fun
@@ -32,7 +32,7 @@ def inject_async_with_recording(f):
 
 def inject_sync_with_recording(f):
     wrapper_fun = inject_operation_headers(
-        (inject_function_sync(["api_key", "headers", "extra_headers"])(inject_recording(f)))
+        (inject_function_sync(args_to_ignore=["api_key", "headers", "extra_headers"])(inject_recording(f)))
     )
     wrapper_fun._original = f
     return wrapper_fun
