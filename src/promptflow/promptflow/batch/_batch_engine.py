@@ -42,6 +42,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import InvalidFlowFileError
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -191,22 +192,37 @@ class BatchEngine:
                         each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
                     }
                     inputs_to_run = []
+                    # TODO: Extract the logic out of flow_executor
+                    flow_executor = FlowExecutor.create(self._flow_file, self._connections, self._working_dir)
                     for i, each_line_input in enumerate(batch_inputs):
-                        previous_run_info = resume_from_run_storage.load_flow_run_info(i)
+                        previous_run_info = (
+                            resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
+                        )
                         if not previous_run_info or previous_run_info.status != Status.Completed:
                             inputs_to_run.append(each_line_input)
                         else:
-                            previous_node_run_infos = resume_from_run_storage.load_node_run_infos(i)
+                            previous_node_run_infos = (
+                                resume_from_run_storage.load_node_run_infos(i) if resume_from_run_storage else {}
+                            )
+                            # TODO: Move this logic out of FlowExecutor
+                            previous_node_outputs = {
+                                node: info.output for node, info in previous_node_run_infos.items()
+                            }
+                            aggregation_inputs = flow_executor._extract_aggregation_inputs(previous_node_outputs)
                             self._storage.persist_flow_run(previous_run_info)
                             for _, node_run_info in previous_node_run_infos.items():
                                 self._storage.persist_node_run(node_run_info)
                             previous_line_result = self._construct_line_result(
-                                previous_run_info, previous_node_run_infos, previous_run_output_dict[i]
+                                previous_run_info,
+                                previous_node_run_infos,
+                                previous_run_output_dict[i],
+                                aggregation_inputs=aggregation_inputs,
                             )
                             previous_run_results.append(previous_line_result)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
                     # run flow in batch mode
+                    # TODO: Refactor _exec_in_task so that it receives full inputs and line numbers to run
                     return async_run_allowing_running_loop(
                         self._exec_in_task,
                         inputs_to_run,
@@ -214,6 +230,7 @@ class BatchEngine:
                         output_dir,
                         raise_on_line_failure,
                         previous_run_results,
+                        batch_inputs,
                     )
                 finally:
                     async_run_allowing_running_loop(self._executor_proxy.destroy)
@@ -233,11 +250,11 @@ class BatchEngine:
                 raise unexpected_error from e
 
     # TODO: Populate aggregation inputs
-    def _construct_line_result(self, flow_run_info, node_run_infos, output) -> LineResult:
+    def _construct_line_result(self, flow_run_info, node_run_infos, output, aggregation_inputs) -> LineResult:
         """Construct LineResult from flow_run_info, node_run_infos and output"""
         return LineResult(
             output=output,
-            aggregation_inputs={},
+            aggregation_inputs=aggregation_inputs,
             run_info=flow_run_info,
             node_run_infos=node_run_infos,
         )
@@ -268,6 +285,7 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
         previous_line_results: List[LineResult] = None,
+        full_inputs: List[Dict[str, Any]] = None,
     ) -> BatchResult:
         # if the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
@@ -277,7 +295,7 @@ class BatchEngine:
             line_results.extend(previous_line_results)
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure, full_inputs)
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -298,6 +316,7 @@ class BatchEngine:
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
+        full_inputs: List[Dict[str, Any]] = None,
     ) -> BatchResult:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
@@ -325,7 +344,7 @@ class BatchEngine:
         self._persist_outputs(outputs, output_dir)
 
         # execute aggregation nodes
-        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id, full_inputs)
         # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
         self._update_aggr_result(aggr_result, aggr_exec_result)
         # summary some infos from line results and aggr results to batch result
@@ -375,6 +394,7 @@ class BatchEngine:
         batch_inputs: List[dict],
         line_results: List[LineResult],
         run_id: Optional[str] = None,
+        full_inputs: List[dict] = None,
     ) -> AggregationResult:
         if not self._is_dag_yaml_flow:
             return AggregationResult({}, {}, {})
@@ -387,7 +407,7 @@ class BatchEngine:
         run_infos = [r.run_info for r in line_results]
         succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
 
-        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
+        succeeded_batch_inputs = [full_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
             FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
         ]

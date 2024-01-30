@@ -149,6 +149,21 @@ class TestFlowRun:
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
+    def test_resume_eval_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            data=f"{DATAS_DIR}/classification_accuracy_evaluation.jsonl",
+            column_mapping={
+                "prediction": "${data.prediction}",
+                "variant_id": "${data.variant_id}",
+                "groundtruth": "${data.groundtruth}",
+            },
+            resume_from_run_name="classification_accuracy_evaluation_variant_0_20240129_225722_231100",
+        )
+
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+
     def test_local_storage_delete(self, pf):
         result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
         local_storage = LocalStorageOperations(result)
