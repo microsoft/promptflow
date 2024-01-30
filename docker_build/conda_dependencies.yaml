@@ -1,0 +1,8 @@
+name: prompt-flow-executor
+channels:
+- conda-forge
+dependencies:
+- python=3.9.16
+- pip=23.0.1
+- pip:
+  - uvicorn==0.27.0
