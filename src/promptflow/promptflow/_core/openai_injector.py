@@ -5,18 +5,16 @@
 import asyncio
 import functools
 import importlib
-import inspect
 import logging
 import os
-from datetime import datetime
 from importlib.metadata import version
 
 import openai
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.contracts.trace import Trace, TraceType
+from promptflow.contracts.trace import TraceType
 
-from .tracer import Tracer
+from .tracer import _traced_async, _traced_sync
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
@@ -24,77 +22,17 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
-    args_to_ignore = args_to_ignore or []
-    args_to_ignore = set(args_to_ignore)
+    def decorator(func):
+        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    def wrapper(f):
-        sig = inspect.signature(f).parameters
-
-        @functools.wraps(f)
-        async def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return await f(*args, **kwargs)
-
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-            Tracer.push(trace)
-            try:
-                result = await f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
-
-        return wrapped_method
-
-    return wrapper
+    return decorator
 
 
 def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
-    args_to_ignore = args_to_ignore or []
-    args_to_ignore = set(args_to_ignore)
+    def decorator(func):
+        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    def wrapper(f):
-        sig = inspect.signature(f).parameters
-
-        @functools.wraps(f)
-        def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return f(*args, **kwargs)
-
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-            Tracer.push(trace)
-            try:
-                result = f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
-
-        return wrapped_method
-
-    return wrapper
+    return decorator
 
 
 def get_aoai_telemetry_headers() -> dict:

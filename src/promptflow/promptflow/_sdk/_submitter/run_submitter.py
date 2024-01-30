@@ -62,13 +62,9 @@ class RunSubmitter:
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
-            if local_storage.eager_mode:
-                flow_obj = load_flow(source=run.flow)
-                self._submit_bulk_run(flow=flow_obj, run=run, local_storage=local_storage)
-            else:
-                # running specified variant
-                with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+            flow_obj = load_flow(source=run.flow)
+            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
     def _validate_inputs(cls, run: Run):

@@ -58,33 +58,16 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
-        if isinstance(self.flow, EagerFlow):
-            flow_content_manager = self._eager_flow_init
-        else:
-            flow_content_manager = self._dag_flow_init
-        with flow_content_manager() as submitter:
-            yield submitter
-
-    @contextlib.contextmanager
-    def _eager_flow_init(self):
+        # TODO(2901096): validate invalid configs like variant & connections
         # no variant overwrite for eager flow
         # no connection overwrite for eager flow
-        # TODO(2897147): support additional includes
-        with _change_working_dir(self.flow.code):
-            self._tuning_node = None
-            self._node_variant = None
-            yield self
-            self._dataplane_flow = None
-
-    @contextlib.contextmanager
-    def _dag_flow_init(self):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-            flow_path=self._origin_flow.code,
+            flow=self.flow,
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,

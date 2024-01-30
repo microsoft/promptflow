@@ -14,12 +14,14 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
+from promptflow import load_flow
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     LOCAL_STORAGE_BATCH_SIZE,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
+    RunInfoSources,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
 from promptflow._sdk._utils import (
@@ -217,23 +219,26 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        if run.flow:
-            try:
-                from promptflow import load_flow
-
-                flow_obj = load_flow(source=run.flow)
-                self._eager_mode = isinstance(flow_obj, EagerFlow)
-            except Exception as e:
-                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
-                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
-                self._eager_mode = False
-        else:
-            # TODO(2901279): support eager mode for run created from run folder
-            self._eager_mode = False
+        self._eager_mode = self._calculate_eager_mode(run)
 
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
+
+    @classmethod
+    def _calculate_eager_mode(cls, run: Run) -> bool:
+        if run._run_source == RunInfoSources.LOCAL:
+            try:
+                flow_obj = load_flow(source=run.flow)
+                return isinstance(flow_obj, EagerFlow)
+            except Exception as e:
+                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
+                return False
+        elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
+            return run._properties.get("azureml.promptflow.run_mode") == "Eager"
+        # TODO(2901279): support eager mode for run created from run folder
+        return False
 
     def delete(self) -> None:
         def on_rmtree_error(func, path, exc_info):

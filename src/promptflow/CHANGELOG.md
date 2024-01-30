@@ -9,6 +9,7 @@
 ### Bugs Fixed
 
 - [SDK/CLI] The inputs of node test allows the value of reference node output be passed directly in.
+- [SDK/CLI][azure] Fixed bug for cloud batch run referencing registry flow with automatic runtime.
 
 ### Improvements
 
