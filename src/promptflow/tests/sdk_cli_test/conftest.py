@@ -246,6 +246,13 @@ def recording_injection(mocker: MockerFixture):
 
 def setup_recording_injection_if_enabled():
     patches = []
+
+    def start_patches(patch_targets):
+        for target, mock_func in patch_targets.items():
+            patcher = patch(target, mock_func)
+            patches.append(patcher)
+            patcher.start()
+
     if is_replay() or is_record():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
@@ -253,28 +260,21 @@ def setup_recording_injection_if_enabled():
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
-        patch_targets = ["promptflow._core.tool.tool", "promptflow._internal.tool", "promptflow.tool"]
+        patch_targets = {
+            "promptflow._core.tool.tool": mocked_tool,
+            "promptflow._internal.tool": mocked_tool,
+            "promptflow.tool": mocked_tool,
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
 
-        for target in patch_targets:
-            patcher = patch(target, mocked_tool)
-            patches.append(patcher)
-            patcher.start()
-
-        patcher = patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
-        patches.append(patcher)
-        patcher.start()
-
-        patcher = patch("promptflow._core.openai_injector.inject_async", inject_async_with_recording)
-        patches.append(patcher)
-        patcher.start()
     if is_live():
-        patcher = patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
-        patches.append(patcher)
-        patcher.start()
-
-        patcher = patch("promptflow._core.openai_injector.inject_async", inject_async_with_recording)
-        patches.append(patcher)
-        patcher.start()
+        patch_targets = {
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
 
     inject_openai_api()
     return patches
