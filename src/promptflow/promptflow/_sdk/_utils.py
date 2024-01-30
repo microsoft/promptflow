@@ -1125,18 +1125,7 @@ def get_uuid_by_mac_id():
         node = str(uuid.getnode())
         if node == "0":
             raise ValueError("node value is 0")
-        return uuid.uuid3(uuid.NAMESPACE_OID, node)
+        return str(uuid.uuid3(uuid.NAMESPACE_OID, node))
     except Exception as e:
         logger.debug(f"get mac id error: {str(e)}")
-        return None
-
-
-def get_uuid_by_ip():
-    try:
-        ip = socket.gethostbyname(socket.gethostname())
-        if ip == "0.0.0.0":
-            raise ValueError("ip value is 0.0.0.0")
-        return uuid.uuid3(uuid.NAMESPACE_OID, ip)
-    except Exception as e:
-        logger.debug(f"get ip error: {str(e)}")
         return None
