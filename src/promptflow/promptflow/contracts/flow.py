@@ -19,7 +19,7 @@ from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
 from ._errors import FailedToImportModule
-from .tool import ConnectionType, InputDefinition, OutputDefinition, Tool, ToolType, ValueType
+from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
 
@@ -419,7 +419,8 @@ class FlowOutputDefinition:
     """
 
     type: ValueType
-    reference: InputAssignment
+    # eager flow output don't have reference
+    reference: InputAssignment = None
     description: str = ""
     evaluation_only: bool = False
     is_chat_output: bool = False
@@ -522,14 +523,14 @@ class Flow:
 
     :param id: The id of the flow.
     :type id: str
-    :param name: The name of the flow.
-    :type name: str
-    :param nodes: The nodes of the flow.
-    :type nodes: List[Node]
     :param inputs: The inputs of the flow.
     :type inputs: Dict[str, FlowInputDefinition]
     :param outputs: The outputs of the flow.
     :type outputs: Dict[str, FlowOutputDefinition]
+    :param name: The name of the flow.
+    :type name: str
+    :param nodes: The nodes of the flow.
+    :type nodes: List[Node]
     :param tools: The tools of the flow.
     :type tools: List[Tool]
     :param node_variants: The node variants of the flow.
@@ -538,17 +539,23 @@ class Flow:
     :type program_language: str
     :param environment_variables: The default environment variables of the flow.
     :type environment_variables: Dict[str, object]
+    :param entry: entry point for eager flow.
+    :type entry: str
+    :param framework: framework for C# eager flow.
+    :type framework: str
     """
 
     id: str
-    name: str
-    nodes: List[Node]
     inputs: Dict[str, FlowInputDefinition]
     outputs: Dict[str, FlowOutputDefinition]
-    tools: List[Tool]
+    name: str = None
+    nodes: List[Node] = None
+    tools: List[Tool] = None
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    entry: str = None
+    framework: str = None
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -853,22 +860,3 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
-
-
-@dataclass
-class EagerFlow:
-    # region: data plane flow definition
-    inputs: Dict[str, InputDefinition]
-    outputs: Optional[Dict[str, OutputDefinition]] = None
-    entry: str = None
-    # endregion
-
-    # region: control plan metadata, only has value when provided in flow.dag.yaml
-    name: Optional[str] = None
-    description: Optional[str] = None
-    display_name: Optional[str] = None
-    # endregion
-
-    function: Optional[str] = None
-    language: Optional[str] = None
-    framework: Optional[str] = None
