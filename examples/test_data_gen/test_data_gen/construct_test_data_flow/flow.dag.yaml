@@ -5,6 +5,7 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
+    default: asgfdsfdhgsfdh
 outputs:
   question:
     type: string
@@ -55,8 +56,8 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection:
-    model: gpt-4
+    connection: open-ai-connection
+    model: gpt-4-1106-preview
     validate_text_trunk_prompt: ${validate_text_trunk_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
     context: ${inputs.text_chunk}
@@ -67,8 +68,8 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection:
-    model: gpt-4
+    connection: open-ai-connection
+    model: gpt-4-1106-preview
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${validate_and_generate_seed_question.output}
   use_variants: false
@@ -86,8 +87,8 @@ nodes:
     type: code
     path: validate_test_question.py
   inputs:
-    connection:
-    model: gpt-4
+    connection: open-ai-connection
+    model: gpt-4-1106-preview
     question_info: ${validate_and_generate_test_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
@@ -97,10 +98,10 @@ nodes:
     type: code
     path: generate_ground_truth.py
   inputs:
-    connection:
+    connection: open-ai-connection
     context: ${inputs.text_chunk}
     generate_ground_truth_prompt: ${generate_ground_truth_prompt.output}
-    model: gpt-4
+    model: gpt-4-1106-preview
     question: ${validate_test_question.output}
   use_variants: false
 - name: generate_debug_info
@@ -124,7 +125,7 @@ nodes:
     type: code
     path: validate_ground_truth.py
   inputs:
-    connection:
-    model: gpt-4
+    connection: open-ai-connection
+    model: gpt-4-1106-preview
     ground_truth: ${generate_ground_truth.output}
     validate_ground_truth_prompt: ${validate_ground_truth_prompt.output}

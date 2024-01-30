@@ -23,6 +23,7 @@ class ValidateObj:
 
 
 def llm_call(connection, model, prompt, response_format="text"):
+    response_format = "json_object" if response_format.lower() == "json" else response_format
     if isinstance(connection, AzureOpenAIConnection):
         return aoai_chat(
             connection=connection,

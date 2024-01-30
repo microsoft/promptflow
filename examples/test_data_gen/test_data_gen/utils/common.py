@@ -22,6 +22,7 @@ def split_document(chunk_size, documents_folder, document_node_output):
     documents = SimpleDirectoryReader(
         documents_folder, recursive=True, exclude=["index.md", "README.md"], encoding="utf-8"
     ).load_data()
+    print(f"#### Collect {len(documents)} documents.")
     # Convert documents into nodes
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     documents = t.cast(t.List[LlamaindexDocument], documents)
@@ -31,7 +32,7 @@ def split_document(chunk_size, documents_folder, document_node_output):
         for doc in document_nodes:
             print(json.dumps({TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}), file=text_file)
 
-    print(f"#### End to split the documents and generate {len(document_nodes)} text chunks.")
+    print(f"#### End to split the documents and generate {len(document_nodes)} document nodes.")
 
     return str((Path(document_node_output) / "document_nodes.jsonl"))
 
@@ -48,4 +49,6 @@ def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     with open(test_data_output_path, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
-    print(f"#### Completed to generate the {len(cleaned_data)} test data and store to {test_data_output_path}.")
+    test_data_count = len(cleaned_data)
+    print(
+        f"#### Completed to clean {len(test_data_set) - test_data_count} invalid test data and collect {test_data_count} test data to {test_data_output_path}.")
