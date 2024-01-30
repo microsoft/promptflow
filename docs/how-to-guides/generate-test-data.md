@@ -1,4 +1,4 @@
-# How to construct test data based on documents
+# How to generate test data based on documents
 This guide will instruct you on how to generate test data for RAG systems utilizing existing documents.
 Previously evaluating the performance of RAG systems required the creation of test data. This could be done manually, a process that required significant time and effort, or by purchasing pre-made test data, which could be costly.
 
@@ -6,7 +6,7 @@ This test data generation process streamlines this by leveraging the capabilitie
 
 By following this guide, you will learn how to:
 1. Customize the test data generation process by tuning flow prompts.
-2. Generate high-quality test data quickly and easily by running a test data generation script.
+2. Generate test data quickly and easily by running a test data generation script.
 
 **Supported file types**
 - .md - Markdown
@@ -32,15 +32,15 @@ Enter `test_data_gen_local` folder, run below command to install required packag
   - .pdf - `pip install pypdf`
   - .ipynb - `pip install nbconvert`
 
-- Run and tune test data construction flow
-  - Navigate to the [construct_test_data_flow folder](../../examples/test_data_gen/construct_test_data_flow/). Open the `flow.dag.yaml` to understand the structure of the data flow. Fill in necessary values like connections and model/deployment name.
+- Create a test data generation flow
+  - Navigate to the [generate_test_data_flow folder](../../examples/gen_test_data/generate_test_data_flow/). Open the `flow.dag.yaml` to understand the structure of the data flow. Fill in necessary values like connections and model/deployment name.
   - Ensure the `flow.tools.json` is generated under `.promptflow` folder within the flow folder.
   - Check the guide [init-and-test-a-flow](https://microsoft.github.io/promptflow/how-to-guides/init-and-test-a-flow.html) to test the flow.
   - [*Optional*] Customize your test data generation logic. Refer to [tune-prompts-with-variants](https://microsoft.github.io/promptflow/how-to-guides/tune-prompts-with-variants.html) for more guidance. Once you updated the flow, ensure the flow can complete successfully before preceding to next steps to generate bulk data.
   
   **Understand the prompts**
   
-  The test data construction flow contains five different prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, ground truths, etc., while validation prompts are used to verify the validity of the text trunk, generated question or ground truth.
+  The test data generation flow contains five different prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, ground truths, etc., while validation prompts are used to verify the validity of the text trunk, generated question or ground truth.
   - Generation prompts
     - *generate question prompt*: frame a question based on the given text trunk.
     - *generate ground truth prompt*: generate ground truth for the question based on the given text trunk.
@@ -57,7 +57,7 @@ Enter `test_data_gen_local` folder, run below command to install required packag
   - For the `gpt-4` model with version `0613`, use the response format `text`.
   - For the `gpt-4` model with version `1106`, use the response format `json`.
 
-- Run data generation script
+## Generate test data at local
     - Enter [test_data_gen_local folder](../../examples/test_data_gen/test_data_gen_local).
     - Update the configurations in the `configs.ini` file. Here is a brief of introduction of each parameter:
       > // TODO: or move this part as comment in config ini?
@@ -79,7 +79,7 @@ Enter `test_data_gen_local` folder, run below command to install required packag
     - The generated test data will be a data jsonl file located in the path you configured in `config.ini`.
 
 
-## Cloud
+## Generate test data at cloud
 For handling larger test data, you can leverage the PRS component to run flow in pipeline.
 - Prerequisites
   Enter `test_data_gen_pipeline` folder, run below command to install required packages.
