@@ -8,9 +8,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from promptflow._utils.service_utils import generate_error_response
-from promptflow.executor.service.apis.common import router as common_router
-from promptflow.executor.service.apis.execution import router as execution_router
+from promptflow.executor._service.apis.common import router as common_router
+from promptflow.executor._service.apis.execution import router as execution_router
+from promptflow.promptflow.executor._service.utils.service_utils import generate_error_response
 
 app = FastAPI()
 app.include_router(common_router)
@@ -26,4 +26,4 @@ async def exception_handler(request, exc):
 if __name__ == "__main__":
     # Always use "fork" method to start subprocess when executing.
     multiprocessing.set_start_method("fork", force=True)
-    uvicorn.run("promptflow.executor.service.app:app", port=8000, reload=True)
+    uvicorn.run("promptflow.executor._service.app:app", port=8000, reload=True)
