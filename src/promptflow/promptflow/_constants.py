@@ -51,7 +51,27 @@ GET_PYPI_INTERVAL_DAY = 7
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 
 
-class TraceAttributeName:
+class TraceFieldName:
+    NAME = "name"
+    CONTEXT = "context"
+    KIND = "kind"
+    PARENT_ID = "parent_id"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+    ATTRIBUTES = "attributes"
+    EVENTS = "events"
+    LINKS = "links"
+    RESOURCE = "resource"
+
+
+class TraceContextFieldName:
+    TRACE_ID = "trace_id"
+    SPAN_ID = "span_id"
+    TRACE_STATE = "trace_state"
+
+
+class TraceAttributeFieldName:
     FRAMEWORK = "framework"
     SPAN_TYPE = "span_type"
     FUNCTION = "function"

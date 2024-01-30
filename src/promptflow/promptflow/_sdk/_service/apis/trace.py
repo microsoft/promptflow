@@ -4,7 +4,7 @@
 
 from flask_restx import fields
 
-from promptflow._constants import TraceAttributeName
+from promptflow._constants import TraceAttributeFieldName, TraceContextFieldName, TraceFieldName
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -19,9 +19,9 @@ trace_parser.add_argument("parent_id", type=str, required=False)
 context_model = api.model(
     "Context",
     {
-        "trace_id": fields.String(required=True),
-        "span_id": fields.String(required=True),
-        "trace_state": fields.String(required=True),
+        TraceContextFieldName.TRACE_ID: fields.String(required=True),
+        TraceContextFieldName.SPAN_ID: fields.String(required=True),
+        TraceContextFieldName.TRACE_STATE: fields.String(required=True),
     },
 )
 status_model = api.model(
@@ -33,16 +33,16 @@ status_model = api.model(
 attributes_model = api.model(
     "Attributes",
     {
-        TraceAttributeName.FRAMEWORK: fields.String(required=True, default="promptflow"),
-        TraceAttributeName.SPAN_TYPE: fields.String(required=True, default="Function"),
-        TraceAttributeName.FUNCTION: fields.String(required=True),
-        TraceAttributeName.INPUTS: fields.String(required=True),
-        TraceAttributeName.OUTPUT: fields.String(required=True),
-        TraceAttributeName.SESSION_ID: fields.String(required=True),
-        TraceAttributeName.PATH: fields.String,
-        TraceAttributeName.FLOW_ID: fields.String,
-        TraceAttributeName.RUN: fields.String,
-        TraceAttributeName.EXPERIMENT: fields.String,
+        TraceAttributeFieldName.FRAMEWORK: fields.String(required=True, default="promptflow"),
+        TraceAttributeFieldName.SPAN_TYPE: fields.String(required=True, default="Function"),
+        TraceAttributeFieldName.FUNCTION: fields.String(required=True),
+        TraceAttributeFieldName.INPUTS: fields.String(required=True),
+        TraceAttributeFieldName.OUTPUT: fields.String(required=True),
+        TraceAttributeFieldName.SESSION_ID: fields.String(required=True),
+        TraceAttributeFieldName.PATH: fields.String,
+        TraceAttributeFieldName.FLOW_ID: fields.String,
+        TraceAttributeFieldName.RUN: fields.String,
+        TraceAttributeFieldName.EXPERIMENT: fields.String,
     },
 )
 resource_attributes_model = api.model(
@@ -61,17 +61,17 @@ resource_model = api.model(
 trace_model = api.model(
     "Trace",
     {
-        "name": fields.String(required=True),
-        "context": fields.Nested(context_model, required=True),
-        "kind": fields.String(required=True),
-        "parent_id": fields.String,
-        "start_time": fields.DateTime(dt_format="iso8601"),
-        "end_time": fields.DateTime(dt_format="iso8601"),
-        "status": fields.Nested(status_model),
-        "attributes": fields.Nested(attributes_model, required=True),
-        "events": fields.List(fields.String),
-        "links": fields.List(fields.String),
-        "resource": fields.Nested(resource_model, required=True),
+        TraceFieldName.NAME: fields.String(required=True),
+        TraceFieldName.CONTEXT: fields.Nested(context_model, required=True),
+        TraceFieldName.KIND: fields.String(required=True),
+        TraceFieldName.PARENT_ID: fields.String,
+        TraceFieldName.START_TIME: fields.DateTime(dt_format="iso8601"),
+        TraceFieldName.END_TIME: fields.DateTime(dt_format="iso8601"),
+        TraceFieldName.STATUS: fields.Nested(status_model),
+        TraceFieldName.ATTRIBUTES: fields.Nested(attributes_model, required=True),
+        TraceFieldName.EVENTS: fields.List(fields.String),
+        TraceFieldName.LINKS: fields.List(fields.String),
+        TraceFieldName.RESOURCE: fields.Nested(resource_model, required=True),
     },
 )
 
