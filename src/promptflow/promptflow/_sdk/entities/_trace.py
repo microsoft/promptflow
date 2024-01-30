@@ -113,8 +113,6 @@ class Span:
         start_time = convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano)
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
         attributes = flatten_pb_attributes(span_dict["attributes"])
-        # update below to `attributes["session_id"]` after we make this mandatory
-        session_id = attributes.get("session_id", "8cffec9b-eda9-4dab-a321-4f94227c23cb")
         return Span(
             name=obj.name,
             context=context,
@@ -127,6 +125,6 @@ class Span:
             attributes=attributes,
             resource=resource,
             span_type=attributes.get("span_type", "Function"),
-            session_id=session_id,
+            session_id=attributes["session_id"],
             parent_span_id=parent_span_id,
         )
