@@ -1098,12 +1098,19 @@ def get_connection_operation(connection_provider: str, credential=None, user_age
 # extract open read/write as partial to centralize the encoding
 read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
 write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+# nan, inf and -inf are not JSON serializable according to https://docs.python.org/3/library/json.html#json.loads
+# `parse_constant` will be called to handle these values
+# similar idea for below `json_load` and its parameter `parse_const_as_str`
+json_loads_parse_const_as_str = partial(json.loads, parse_constant=lambda x: str(x))
 
 
 # extract some file operations inside this file
-def json_load(file) -> str:
+def json_load(file, parse_const_as_str: bool = False) -> str:
     with read_open(file) as f:
-        return json.load(f)
+        if parse_const_as_str is True:
+            return json.load(f, parse_constant=lambda x: str(x))
+        else:
+            return json.load(f)
 
 
 def json_dump(obj, file) -> None:

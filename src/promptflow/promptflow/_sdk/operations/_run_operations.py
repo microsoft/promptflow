@@ -295,7 +295,7 @@ class RunOperations(TelemetryMixin):
         return df
 
     @monitor_operation(activity_name="pf.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
-    def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
+    def get_metrics(self, name: Union[str, Run], **kwargs) -> Dict[str, Any]:
         """Get run metrics.
 
         :param name: name of the run.
@@ -303,11 +303,12 @@ class RunOperations(TelemetryMixin):
         :return: Run metrics.
         :rtype: Dict[str, Any]
         """
+        parse_const_as_str = kwargs.get("parse_const_as_str", False)
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
-        return local_storage.load_metrics()
+        return local_storage.load_metrics(parse_const_as_str=parse_const_as_str)
 
     def _visualize(self, runs: List[Run], html_path: Optional[str] = None) -> None:
         details: List[RunDetail] = []
@@ -338,7 +339,7 @@ class RunOperations(TelemetryMixin):
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
-                metrics=self.get_metrics(name=run.name),
+                metrics=self.get_metrics(name=run.name, parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
                 mode="eager" if local_storage.eager_mode else "",
