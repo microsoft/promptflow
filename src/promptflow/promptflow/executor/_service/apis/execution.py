@@ -19,6 +19,8 @@ router = APIRouter()
 @router.post("/execution/flow")
 async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
     OperationContext.get_instance().update(dict(request.headers))
+    # validate request
+    flow_request.validate_request()
     # resolve environment variables
     if isinstance(flow_request.environment_variables, dict):
         os.environ.update(flow_request.environment_variables)
@@ -39,6 +41,8 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
 @router.post("/execution/node")
 async def node_execution(request: Request, node_request: NodeExecutionRequest):
     OperationContext.get_instance().update(dict(request.headers))
+    # validate request
+    node_request.validate_request()
     # resolve environment variables
     if isinstance(node_request.environment_variables, dict):
         os.environ.update(node_request.environment_variables)
