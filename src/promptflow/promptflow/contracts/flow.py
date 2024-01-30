@@ -518,8 +518,8 @@ class NodeVariants:
 
 
 @dataclass
-class Flow:
-    """This class represents a flow.
+class BaseFlow:
+    """This class represents a base of flow.
 
     :param id: The id of the flow.
     :type id: str
@@ -527,6 +527,18 @@ class Flow:
     :type inputs: Dict[str, FlowInputDefinition]
     :param outputs: The outputs of the flow.
     :type outputs: Dict[str, FlowOutputDefinition]
+    """
+
+    id: str
+    inputs: Dict[str, FlowInputDefinition]
+    outputs: Dict[str, FlowOutputDefinition]
+
+
+@dataclass
+class Flow(BaseFlow):
+    """This class represents a flow.
+
+
     :param name: The name of the flow.
     :type name: str
     :param nodes: The nodes of the flow.
@@ -545,17 +557,12 @@ class Flow:
     :type framework: str
     """
 
-    id: str
-    inputs: Dict[str, FlowInputDefinition]
-    outputs: Dict[str, FlowOutputDefinition]
-    name: str = None
-    nodes: List[Node] = None
-    tools: List[Tool] = None
-    node_variants: Dict[str, NodeVariants] = None
-    program_language: str = FlowLanguage.Python
+    name: str
+    nodes: List[Node]
+    tools: List[Tool]
+    node_variants: Dict[str, NodeVariants]
     environment_variables: Dict[str, object] = None
-    entry: str = None
-    framework: str = None
+    program_language: str = FlowLanguage.Python
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -860,3 +867,27 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
+
+
+@dataclass
+class EagerFlow(BaseFlow):
+    """This class represents an eager flow.
+
+    :param entry: entry point for eager flow.
+    :type entry: str
+    :param name: The name of the flow.
+    :type name: str
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param framework: framework for C#
+    :type framework: str
+    """
+
+    entry: str
+
+    # region: control plan metadata, only has value when provided in flow.dag.yaml
+    name: Optional[str] = None
+    # endregion
+
+    program_language: str = FlowLanguage.Python
+    framework: str = None
