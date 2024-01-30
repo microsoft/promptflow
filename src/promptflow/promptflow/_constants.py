@@ -71,6 +71,10 @@ class TraceContextFieldName:
     TRACE_STATE = "trace_state"
 
 
+class TraceStatusFieldName:
+    STATUS_CODE = "status_code"
+
+
 class TraceAttributeFieldName:
     FRAMEWORK = "framework"
     SPAN_TYPE = "span_type"
@@ -82,3 +86,12 @@ class TraceAttributeFieldName:
     FLOW_ID = "flow_id"
     RUN = "run"
     EXPERIMENT = "experiment"
+
+
+class TraceResourceAttributesFieldName:
+    SERVICE_NAME = "service.name"
+
+
+class TraceResourceFieldName:
+    ATTRIBUTES = "attributes"
+    SCHEMA_URL = "schema_url"

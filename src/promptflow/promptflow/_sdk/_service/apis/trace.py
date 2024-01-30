@@ -4,7 +4,14 @@
 
 from flask_restx import fields
 
-from promptflow._constants import TraceAttributeFieldName, TraceContextFieldName, TraceFieldName
+from promptflow._constants import (
+    TraceAttributeFieldName,
+    TraceContextFieldName,
+    TraceFieldName,
+    TraceResourceAttributesFieldName,
+    TraceResourceFieldName,
+    TraceStatusFieldName,
+)
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -27,7 +34,7 @@ context_model = api.model(
 status_model = api.model(
     "StatusCode",
     {
-        "status_code": fields.String(required=True),
+        TraceStatusFieldName.STATUS_CODE: fields.String(required=True),
     },
 )
 attributes_model = api.model(
@@ -48,14 +55,14 @@ attributes_model = api.model(
 resource_attributes_model = api.model(
     "ResourceAttributes",
     {
-        "service.name": fields.String(default="promptflow"),
+        TraceResourceAttributesFieldName.SERVICE_NAME: fields.String(default="promptflow"),
     },
 )
 resource_model = api.model(
     "Resource",
     {
-        "attributes": fields.Nested(resource_attributes_model, required=True),
-        "schema_url": fields.String,
+        TraceResourceFieldName.ATTRIBUTES: fields.Nested(resource_attributes_model, required=True),
+        TraceResourceFieldName.SCHEMA_URL: fields.String,
     },
 )
 trace_model = api.model(
