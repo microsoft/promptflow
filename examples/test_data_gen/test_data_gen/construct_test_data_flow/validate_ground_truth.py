@@ -1,6 +1,6 @@
 from typing import Union
 
-from utils import is_valid_ground_truth
+from utils import ErrorMsg, get_ground_truth_validation_res
 
 from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -15,19 +15,22 @@ def validate_ground_truth(
     model: str,
     ground_truth: str,
     validate_ground_truth_prompt: str,
-) -> str:
+):
     """
     1. Validates the given ground truth.
 
     Returns:
-        str: The validated ground truth.
+        dict: The generated ground truth and its validation result.
     """
     if not ground_truth:
-        return ""
+        return {"ground_truth": "", "validation_res": None}
 
-    is_valid_gt = is_valid_ground_truth(connection, model, validate_ground_truth_prompt, ground_truth)
+    validation_res = get_ground_truth_validation_res(connection, model, validate_ground_truth_prompt, ground_truth)
+    is_valid_gt = validation_res.pass_validation
+    failed_reason = ""
     if not is_valid_gt:
-        print(f"Invalid ground truth: {ground_truth}")
-        return ""
-    else:
-        return ground_truth
+        failed_reason = ErrorMsg.INVALID_ANSWER.format(ground_truth)
+        print(failed_reason)
+        ground_truth = ""
+
+    return {"ground_truth": ground_truth, "validation_res": validation_res}
