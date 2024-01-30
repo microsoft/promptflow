@@ -672,6 +672,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
+        line_timeout_sec: Optional[int] = None,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -689,10 +690,14 @@ class FlowExecutor:
         :type node_concurrency: int
         :param allow_generator_output: Whether to allow generator output.
         :type allow_generator_output: bool
+        :param line_timeout_sec: The maximum time to wait for a line of output.
+        :type line_timeout_sec: Optional[int]
         :return: The result of executing the line.
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
+        # TODO: Pass line_timeout_sec to flow node scheduler instead of updating self._line_timeout_sec
+        self._line_timeout_sec = line_timeout_sec or self._line_timeout_sec
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:

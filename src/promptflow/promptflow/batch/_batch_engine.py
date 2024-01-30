@@ -111,9 +111,7 @@ class BatchEngine:
         self._storage = storage
         self._kwargs = kwargs
 
-        self._batch_timeout_sec = (
-            batch_timeout_sec if batch_timeout_sec else get_int_env_var("PF_BATCH_TIMEOUT_SEC", None)
-        )
+        self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
 
         # set it to True when the batch run is canceled

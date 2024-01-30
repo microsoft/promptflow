@@ -1246,6 +1246,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
         )
         assert run.status == "Completed"
+        assert "error" not in run._to_dict()
 
     def test_eager_flow_test_invalid_cases(self, pf):
         # no entry provided
@@ -1265,6 +1266,15 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             )
         assert "'path': ['Missing data for required field.']" in str(e.value)
+
+    def test_eager_flow_run_with_additional_includes(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
 
     def test_get_incomplete_run(self, local_client, pf) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

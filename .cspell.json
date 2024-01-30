@@ -164,7 +164,8 @@
     "WBITS",
     "laddr",
     "nrows",
-    "Dumpable"
+    "Dumpable",
+    "XCLASS"
   ],
   "flagWords": [
     "Prompt Flow"

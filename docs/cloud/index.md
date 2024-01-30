@@ -36,4 +36,5 @@ azureai/consume-connections-from-azure-ai
 azureai/deploy-to-azure-appservice
 azureai/use-flow-in-azure-ml-pipeline.md
 azureai/faq
+azureai/runtime-change-log.md
 ```
