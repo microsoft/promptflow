@@ -8,9 +8,9 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 
 from promptflow._core.operation_context import OperationContext
-from promptflow._utils.service_utils import get_log_context
 from promptflow.executor.flow_executor import FlowExecutor, execute_flow
 from promptflow.executor.service.contracts.execution_request import FlowExecutionRequest, NodeExecutionRequest
+from promptflow.executor.service.utils.service_utils import get_log_context
 from promptflow.storage._run_storage import DefaultRunStorage
 
 router = APIRouter()
