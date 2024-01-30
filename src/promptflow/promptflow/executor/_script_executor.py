@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
 from promptflow._core.tracer import _traced, Tracer
@@ -13,7 +12,6 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -54,7 +52,7 @@ class ScriptExecutor(FlowExecutor):
         self._connections = connections
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._storage = storage or DefaultRunStorage()
-        self._flow_id = None
+        self._flow_id = "default_flow_id"
         self._log_interval = 60
         self._line_timeout_sec = 600
 
@@ -65,14 +63,12 @@ class ScriptExecutor(FlowExecutor):
         run_id: Optional[str] = None,
         **kwargs,
     ) -> LineResult:
-        operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
         run_id = run_id or str(uuid.uuid4())
+        self._update_operation_context(run_id)
         line_run_id = run_id if index is None else f"{run_id}_{index}"
-        default_flow_id = "default_flow_id"
         run_tracker = RunTracker(self._storage)
         run_info = run_tracker.start_flow_run(
-            flow_id=default_flow_id,
+            flow_id=self._flow_id,
             root_run_id=run_id,
             run_id=line_run_id,
             parent_run_id=run_id,

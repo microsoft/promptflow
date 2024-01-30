@@ -32,6 +32,11 @@ from promptflow._sdk._utils import (
     use_customized_encryption_key,
 )
 
+# though we have removed the upper bound of SQLAlchemy version in setup.py
+# still silence RemovedIn20Warning to avoid unexpected warning message printed to users
+# for those who still use SQLAlchemy<2.0.0
+os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
+
 session_maker = None
 lock = FileLock(LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH)
 
