@@ -49,7 +49,7 @@ def get_port_from_config(create_if_not_exists=False):
 
 
 def dump_port_to_config(port):
-    # Set port to ~/.promptflow/pf.yaml, if already have a port in file , will overwrite it.
+    # Set port to ~/.promptflow/pf.port, if already have a port in file , will overwrite it.
     (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
     with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
