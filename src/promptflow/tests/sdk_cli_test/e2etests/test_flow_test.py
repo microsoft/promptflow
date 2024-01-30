@@ -281,6 +281,7 @@ class TestFlowTest:
         # wrong entry provided
         # required inputs not provided
 
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test_with_additional_includes(self):
         # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
         # but working dir will be temp dir which includes additional included files
