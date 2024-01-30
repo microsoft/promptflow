@@ -118,6 +118,25 @@ def add_experiment_start(subparsers):
     )
 
 
+
+def add_experiment_stop(subparsers):
+    epilog = """
+    Examples:
+
+    # Stop an experiment:
+    pf experiment stop -n my_experiment
+    """
+    activate_action(
+        name="stop",
+        description="Stop an experiment.",
+        epilog=epilog,
+        add_params=[add_param_name] + base_params,
+        subparsers=subparsers,
+        help_message="Stop an experiment.",
+        action_param_name="sub_action",
+    )
+
+
 def add_experiment_parser(subparsers):
     experiment_parser = subparsers.add_parser(
         "experiment",
@@ -129,6 +148,7 @@ def add_experiment_parser(subparsers):
     add_experiment_list(subparsers)
     add_experiment_show(subparsers)
     add_experiment_start(subparsers)
+    add_experiment_stop(subparsers)
     experiment_parser.set_defaults(action="experiment")
 
 
@@ -148,7 +168,7 @@ def dispatch_experiment_commands(args: argparse.Namespace):
     elif args.sub_action == "delete":
         pass
     elif args.sub_action == "stop":
-        pass
+        stop_experiment(args)
     elif args.sub_action == "test":
         pass
     elif args.sub_action == "clone":
@@ -183,4 +203,9 @@ def show_experiment(args: argparse.Namespace):
 @exception_handler("Start experiment")
 def start_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.start(args.name)
+    print(json.dumps(result._to_dict(), indent=4))
+
+@exception_handler("Stop experiment")
+def stop_experiment(args: argparse.Namespace):
+    result = _get_pf_client()._experiments.stop(args.name)
     print(json.dumps(result._to_dict(), indent=4))

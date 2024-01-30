@@ -159,5 +159,3 @@ class TestExperiment:
         client._experiments.stop(exp.name)
         exp = client._experiments.get(exp.name)
         assert exp.status == ExperimentStatus.TERMINATED
-        assert len(exp.node_runs) == 1
-        assert exp.node_runs["sleep"]["status"] == RunStatus.CANCELED

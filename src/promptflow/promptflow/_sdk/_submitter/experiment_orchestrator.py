@@ -99,10 +99,12 @@ class ExperimentOrchestrator:
         if from_node:
             args = args + ["--from-nodes"] + from_node
         # Start an orchestrator process using detach mode
+        logger.debug(f"Start experiment {self.experiment.name} in background.")
         if platform.system() == "Windows":
             os.spawnve(os.P_DETACH, executable_path, args, os.environ)
         else:
             subprocess.Popen(" ".join(["nohup"] + args + ["&"]), shell=True, env=os.environ)
+            print(" ".join(["nohup"] + args + ["&"]))
         return self.experiment
 
     def _update_orchestrator_record(self, status, pid=None):
@@ -203,7 +205,7 @@ class ExperimentOrchestrator:
                 if signum == signal.SIGTERM:
                     self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
                     executor.shutdown(wait=False)
-                    for future, node in future_to_node_run:
+                    for future, node in future_to_node_run.items():
                         if future.cancelled():
                             # update status of running nodes to canceled.
                             node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
@@ -257,8 +259,6 @@ class ExperimentOrchestrator:
                     if not nodes:
                         next_execute_nodes.extend(get_next_executable_nodes(completed_node=node_name))
                     self.experiment._append_node_run(node_name, self._node_runs[node_name])
-                    with open(Path(self._node_runs[node_name].properties["output_path"]) / "logs.txt", "r") as f:
-                        logger.info(f.read())
                     del future_to_node_run[future]
                 except Exception as e:
                     executor.shutdown(wait=False)
@@ -519,13 +519,13 @@ class ExperimentNodeRun(Run):
         node_run = ORMExperimentNodeRun.get_completed_node_by_snapshot_id(
             snapshot_id=self.snapshot_id, experiment_name=self.experiment.name, raise_error=False
         )
-        if False and node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
+        if node_run and node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
             run_info = ORMRunInfo.get(node_run.run_id)
             run_info_properties = json.loads(run_info.properties)
             output_path = run_info_properties.get("output_path", None)
             if output_path and Path(output_path).exists():
                 # TODO Whether need to link used node output folder in the experiment run folder
-                logger.info("Reuse exist node run.")
+                logger.info(f"Reuse exist node run {run_info.name} for node {self.node.name}.")
                 return run_info
         # Update exp node run record
         self.update_exp_run_node(status=ExperimentNodeRunStatus.IN_PROGRESS)

@@ -124,4 +124,5 @@ class ExperimentOperations(TelemetryMixin):
 
         if not isinstance(name, str):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        return ExperimentOrchestrator(self._client.runs, self, self.get(name)).stop()
+        ExperimentOrchestrator(self._client.runs, self, self.get(name)).stop()
+        return self.get(name)
