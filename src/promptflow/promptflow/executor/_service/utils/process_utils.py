@@ -14,7 +14,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import logger
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
-from promptflow.promptflow.executor._service.utils.service_utils import get_log_context
+from promptflow.executor._service.utils.service_utils import get_log_context
 
 
 async def invoke_function_in_process(request: BaseExecutionRequest, context_dict: dict, target_function: Callable):
