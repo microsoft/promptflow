@@ -13,6 +13,7 @@ import pydash
 from promptflow._sdk._constants import DAG_FILE_NAME, SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
+from ..._constants import FlowLanguage
 from ..._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
 from ..._utils.flow_utils import dump_flow_dag, load_flow_dag
 from ..._utils.logger_utils import LoggerFactory
@@ -212,3 +213,7 @@ class Flow(AdditionalIncludesMixin):
             "flow_portal_url": self.flow_portal_url,
         }
         return remove_empty_element_from_dict(result)
+
+    @property
+    def language(self):
+        return self._flow_dict.get("language", FlowLanguage.Python)

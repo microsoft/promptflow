@@ -30,6 +30,20 @@ class AbstractExecutorProxy:
         """Generate tool metadata file for the specified flow."""
         return cls._get_tool_metadata(flow_file, working_dir or flow_file.parent)
 
+    def _get_flow_meta(self) -> dict:
+        """Get the flow metadata from"""
+        raise NotImplementedError()
+
+    def get_inputs_definition(self) -> Mapping[str, Any]:
+        """Get the inputs definition of an eager flow"""
+        from promptflow.contracts.flow import FlowInputDefinition
+
+        flow_meta = self._get_flow_meta()
+        inputs = {}
+        for key, value in flow_meta.get("inputs", {}).items():
+            inputs[key] = FlowInputDefinition.deserialize(value)
+        return inputs
+
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
         raise NotImplementedError()

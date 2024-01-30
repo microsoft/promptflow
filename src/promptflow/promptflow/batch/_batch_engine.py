@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -100,19 +100,24 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        if self._is_eager_flow_yaml():
-            if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-                entry, path = self._parse_eager_flow_yaml()
-                self._flow_file = Path(path)
-            self._is_dag_yaml_flow = False
+
+        if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            self._is_dag_yaml_flow, self._program_language = self._parse_flow_yaml()
+        elif Path(flow_file).suffix.lower() in [".py"]:
             self._program_language = FlowLanguage.Python
-        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-            self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
-            FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-            self._is_dag_yaml_flow = True
-            self._program_language = self._flow.program_language
+            self._is_dag_yaml_flow = False
+        elif Path(flow_file).suffix.lower() in [".dll"]:
+            self._program_language = FlowLanguage.CSharp
+            self._is_dag_yaml_flow = False
         else:
             raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
+
+        if self._is_dag_yaml_flow:
+            self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+            FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            entry, path = self._parse_eager_flow_yaml()
+            self._flow_file = Path(path)
 
         self._connections = connections
         self._entry = entry
@@ -168,8 +173,8 @@ class BatchEngine:
                 try:
                     # register signal handler for python flow in the main thread
                     # TODO: For all executor proxies that are executed locally, it might be necessary to
-                    # register a signal for Ctrl+C in order to customize some actions beyond just killing
-                    # the process, such as terminating the executor service.
+                    #  register a signal for Ctrl+C in order to customize some actions beyond just killing
+                    #  the process, such as terminating the executor service.
                     if isinstance(self._executor_proxy, PythonExecutorProxy):
                         if threading.current_thread() is threading.main_thread():
                             signal.signal(signal.SIGINT, signal_handler)
@@ -400,16 +405,19 @@ class BatchEngine:
         aggr_result.node_run_infos = aggr_exec_result.node_run_infos
         aggr_result.output = aggr_exec_result.output
 
-    def _is_eager_flow_yaml(self):
-        if Path(self._flow_file).suffix.lower() == ".py":
-            return True
-        elif Path(self._flow_file).suffix.lower() in [".yaml", ".yml"]:
-            flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
-            with open(flow_file, "r", encoding="utf-8") as fin:
-                flow_dag = load_yaml(fin)
-            if "entry" in flow_dag:
-                return True
-        return False
+    def _parse_flow_yaml(self):
+        if Path(self._flow_file).suffix.lower() not in [".yaml", ".yml"]:
+            raise InvalidFlowFileError(
+                message_format="Flow file {flow_file} is not a yaml file.", flow_file=self._flow_file
+            )
+
+        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+        if "entry" in flow_dag:
+            return False, language
+        return True, language
 
     def _parse_eager_flow_yaml(self):
         flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
