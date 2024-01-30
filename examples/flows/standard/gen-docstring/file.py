@@ -3,6 +3,8 @@ import os
 from urllib.parse import urlparse
 import requests
 
+from promptflow.errors import FileNotFoundException
+
 
 class File:
     def __init__(self, source: str):
@@ -32,7 +34,7 @@ class File:
                 with open(self._path, "r") as file:
                     content = file.read()
                     return content
-            except FileNotFoundError:
+            except FileNotFoundException:
                 print(f"File not found: {self.source}")
                 return None
 
