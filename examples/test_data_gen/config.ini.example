@@ -1,8 +1,8 @@
 ; config.ini
 ; This is a sample configuration file
 
-[DEFAULT]
-; The DEFAULT section provides default values for all other sections.
+[COMMON]
+; The COMMON section provides common values for all other sections.
 ; Configure both 'document_folder' and 'document_chunk_size' if you require document splitting.
 ; However, if you wish to bypass the document split process, simply provide the 'document_node_file', which is a JSONL file.
 ; When all these parameters are configured, the system will primarily use the 'document_node_file'
