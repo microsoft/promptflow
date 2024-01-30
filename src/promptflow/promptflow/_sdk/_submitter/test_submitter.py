@@ -201,12 +201,15 @@ class TestSubmitter:
         allow_generator_output: bool = False,  # TODO: remove this
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
         from promptflow.executor.flow_executor import execute_flow
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
+        output_path = Path(kwargs.get("output_path", self.flow.code))
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -216,15 +219,15 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            file_path=output_path / PROMPT_FLOW_DIR_NAME / "flow.log",
             stream=stream_log,
             credential_list=credential_list,
         ):
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            storage = DefaultRunStorage(base_dir=output_path, sub_dir=Path(".promptflow/intermediate"))
             line_result = execute_flow(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
-                output_dir=Path(".promptflow/output"),
+                output_dir=output_path / ".promptflow/output",
                 connections=connections,
                 inputs=inputs,
                 enable_stream_output=stream_output,
@@ -374,6 +377,7 @@ class TestSubmitterViaProxy(TestSubmitter):
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY

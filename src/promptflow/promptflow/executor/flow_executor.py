@@ -949,7 +949,7 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
+        from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 
         return apply_inputs_mapping(inputs, inputs_mapping)
 

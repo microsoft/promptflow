@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CHAT_HISTORY,
     DEFAULT_ENCODING,
@@ -83,6 +84,12 @@ class FlowOperations(TelemetryMixin):
         :return: The result of flow or node
         :rtype: dict
         """
+        experiment = kwargs.get("experiment", None)
+        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            return self._client._experiments._test(
+                flow=flow, inputs=inputs, environment_variables=environment_variables, experiment=experiment
+            )
+
         result = self._test(
             flow=flow,
             inputs=inputs,
@@ -178,6 +185,7 @@ class FlowOperations(TelemetryMixin):
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
+        output_path = kwargs.get("output_path", None)
         flow = load_flow(flow, entry=entry)
 
         if isinstance(flow, EagerFlow):
@@ -241,6 +249,7 @@ class FlowOperations(TelemetryMixin):
                     stream_log=stream_log,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
+                    output_path=output_path,
                 )
 
     @staticmethod

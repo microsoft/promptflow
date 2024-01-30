@@ -1,22 +1,32 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import os
 import subprocess
+import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import ExperimentNodeType, ExperimentStatus, FlowRunProperties, RunTypes
+from promptflow._sdk._constants import (
+    PROMPT_FLOW_DIR_NAME,
+    ExperimentNodeType,
+    ExperimentStatus,
+    FlowRunProperties,
+    RunTypes,
+)
 from promptflow._sdk._errors import ExperimentCommandRunError, ExperimentHasCycle, ExperimentValueError
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._experiment import Experiment
+from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
+from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.operations import RunOperations
-from promptflow._sdk.operations._experiment_operations import ExperimentOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
+from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
@@ -28,11 +38,81 @@ logger = LoggerFactory.get_logger(name=__name__)
 class ExperimentOrchestrator:
     """Experiment orchestrator, responsible for experiment running."""
 
-    def __init__(self, run_operations: RunOperations, experiment_operations: ExperimentOperations):
-        self.run_operations = run_operations
-        self.experiment_operations = experiment_operations
-        self.run_submitter = ExperimentRunSubmitter(run_operations)
-        self.command_submitter = ExperimentCommandSubmitter(run_operations)
+    def __init__(self, client):
+        self._client = client
+        self.run_operations = self._client.runs
+        self.experiment_operations = self._client._experiments
+        self.run_submitter = ExperimentRunSubmitter(self.run_operations)
+        self.command_submitter = ExperimentCommandSubmitter(self.experiment_operations)
+
+    def test(
+        self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
+    ):
+        """Test flow in experiment.
+
+        :param flow_path: Flow to test.
+        :type flow_path: Union[str, Path]
+        :param template: Experiment template to test.
+        :type template: ~promptflow.entities.ExperimentTemplate
+        :param inputs: Input parameters for flow.
+        :type inputs: dict
+        :param environment_variables: Environment variables for flow.
+        :type environment_variables: dict
+        """
+        flow_path = Path(flow).resolve().absolute()
+        logger.info(f"Testing flow {flow_path.as_posix()} in experiment {template._base_path.absolute().as_posix()}.")
+        inputs, environment_variables = inputs or {}, environment_variables or {}
+        # Find start nodes, must be flow nodes
+        start_nodes = [
+            node
+            for node in template.nodes
+            if node.type == ExperimentNodeType.FLOW
+            and ProtectedFlow._get_flow_definition(node.path) == ProtectedFlow._get_flow_definition(flow_path)
+        ]
+        logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
+        nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
+        logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
+        # Read the first line in template data
+        test_context = ExperimentTemplateTestContext(template, environment_variables=environment_variables)
+
+        for node in nodes_to_test:
+            logger.info(f"Testing node {node.name}...")
+            inputs = {**node.inputs, **inputs} if node in start_nodes else node.inputs
+            node_result = self._test_node(node, inputs, test_context)
+            test_context.add_node_result(node.name, node_result)
+        logger.info("Testing completed.")
+        return test_context.node_results
+
+    def _test_node(self, node, inputs, test_context) -> Run:
+        if node.type == ExperimentNodeType.FLOW:
+            return self._test_flow_node(node, inputs, test_context)
+        elif node.type == ExperimentNodeType.COMMAND:
+            return self._test_command_node(node, inputs, test_context)
+        raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
+
+    def _test_flow_node(self, node, inputs, test_context):
+        # Resolve experiment related inputs
+        inputs_mapping = ExperimentHelper.resolve_column_mapping(node.name, inputs, test_context.test_inputs)
+        data, runs = ExperimentHelper.get_referenced_data_and_run(
+            node.name, inputs, test_context.test_data, test_context.node_results
+        )
+        # Add data, run inputs/outputs to binding context for inputs mapping resolve.
+        binding_context = {**{f"data.{k}": v for k, v in data.items()}, **{f"{k}.outputs": v for k, v in runs.items()}}
+        binding_context.update(**{f"{k}.inputs": test_context.node_inputs.get(k, {}) for k in runs.keys()})
+        logger.debug(f"Node {node.name!r} binding context {binding_context}.")
+        # E.g. inputs_mapping: {'url': '${data.my_data.url}'}  inputs_data: {"data.my_data": {"url": "http://abc"}}
+        inputs = apply_inputs_mapping(inputs=binding_context, inputs_mapping=inputs_mapping)
+        logger.debug(f"Resolved node {node.name!r} inputs {inputs}.")
+        test_context.add_node_inputs(node.name, inputs)
+        return self._client.flows.test(
+            flow=node.path,
+            environment_variables=test_context.environment_variables,
+            inputs=inputs,
+            output_path=test_context.output_path / node.name,
+        )
+
+    def _test_command_node(self, *args, **kwargs):
+        raise NotImplementedError
 
     def start(self, experiment: Experiment, **kwargs):
         """Start an experiment.
@@ -48,15 +128,14 @@ class ExperimentOrchestrator:
         experiment.last_start_time = datetime.utcnow().isoformat()
         experiment.last_end_time = None
         self.experiment_operations.create_or_update(experiment)
-
         # Ensure nodes order
-        resolved_nodes = self._ensure_nodes_order(experiment.nodes)
+        resolved_nodes = ExperimentHelper.resolve_nodes_to_execute(experiment)
 
         # Run nodes
         run_dict = {}
         try:
             for node in resolved_nodes:
-                logger.info(f"Running node {node.name}.")
+                logger.info(f"Running node {node.name}...")
                 run = self._run_node(node, experiment, run_dict)
                 # Update node run to experiment
                 experiment._append_node_run(node.name, run)
@@ -71,46 +150,6 @@ class ExperimentOrchestrator:
             experiment.status = ExperimentStatus.TERMINATED
             experiment.last_end_time = datetime.utcnow().isoformat()
             return self.experiment_operations.create_or_update(experiment)
-
-    def _ensure_nodes_order(self, nodes):
-        # Perform topological sort to ensure nodes order
-        resolved_nodes = []
-
-        def _prepare_edges(node):
-            node_names = set()
-            for input_value in node.inputs.values():
-                if not isinstance(input_value, str):
-                    continue
-                if (
-                    input_value.startswith("${")
-                    and not input_value.startswith("${data.")
-                    and not input_value.startswith("${inputs.")
-                ):
-                    referenced_node_name = input_value.split(".")[0].replace("${", "")
-                    node_names.add(referenced_node_name)
-            return node_names
-
-        edges = {node.name: _prepare_edges(node) for node in nodes}
-        logger.debug(f"Experiment nodes edges: {edges!r}")
-
-        while len(resolved_nodes) != len(nodes):
-            action = False
-            for node in nodes:
-                if node.name not in edges:
-                    continue
-                if len(edges[node.name]) != 0:
-                    continue
-                action = True
-                resolved_nodes.append(node)
-                del edges[node.name]
-                for referenced_nodes in edges.values():
-                    referenced_nodes.discard(node.name)
-                break
-            if not action:
-                raise ExperimentHasCycle(f"Experiment has circular dependency {edges!r}")
-
-        logger.debug(f"Experiment nodes resolved order: {[node.name for node in resolved_nodes]}")
-        return resolved_nodes
 
     def _run_node(self, node, experiment, run_dict) -> Run:
         if node.type == ExperimentNodeType.FLOW:
@@ -162,6 +201,24 @@ class ExperimentOrchestrator:
         return self.command_submitter.submit(run)
 
 
+class ExperimentTemplateTestContext:
+    def __init__(self, template: ExperimentTemplate, environment_variables):
+        self.template = template
+        self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
+        self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
+        self.environment_variables = environment_variables
+        self.test_data = ExperimentHelper.prepare_test_data(template)
+        self.test_inputs = {input.name: input.default for input in template.inputs}
+        # TODO: Update session part after test session is supported
+        self.output_path = Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
+
+    def add_node_inputs(self, name, inputs):
+        self.node_inputs[name] = inputs
+
+    def add_node_result(self, name, result):
+        self.node_results[name] = result
+
+
 class ExperimentRun(Run):
     """Experiment run, includes experiment running context, like data, inputs and runs."""
 
@@ -172,50 +229,129 @@ class ExperimentRun(Run):
         self.experiment_inputs = {input.name: input for input in experiment.inputs}
         self.experiment_runs = experiment_runs
         super().__init__(**kwargs)
-        self._resolve_column_mapping()
+        self.column_mapping = ExperimentHelper.resolve_column_mapping(
+            node_name, self.column_mapping, self.experiment_inputs
+        )
 
-    def _resolve_column_mapping(self):
-        """Resolve column mapping with experiment inputs to constant values."""
-        logger.info(f"Start resolve node {self.node_name!r} column mapping.")
-        resolved_mapping = {}
-        for name, value in self.column_mapping.items():
-            if not isinstance(value, str) or not value.startswith("${inputs."):
-                resolved_mapping[name] = value
-                continue
-            input_name = value.split(".")[1].replace("}", "")
-            if input_name not in self.experiment_inputs:
-                raise ExperimentValueError(
-                    f"Node {self.node_name!r} inputs {value!r} related experiment input {input_name!r} not found."
-                )
-            resolved_mapping[name] = self.experiment_inputs[input_name].default
-        logger.debug(f"Resolved node {self.node_name!r} column mapping {resolved_mapping}.")
-        self.column_mapping = resolved_mapping
 
-    def _get_referenced_data_and_run(self) -> tuple:
-        """Get the node referenced data and runs. Format: {name: ExperimentData/ExperimentRun}"""
+class ExperimentHelper:
+    @staticmethod
+    def prepare_test_data(template: ExperimentTemplate) -> dict:
+        """Read the first line of template data path for test."""
+        template_test_data = {}
+        for data in template.data:
+            data_line = next(iter(load_data(local_path=data.path)), None)
+            if not data_line:
+                raise ExperimentValueError(f"Experiment data {data.name!r} is empty.")
+            template_test_data[data.name] = data_line
+        return template_test_data
+
+    @staticmethod
+    def get_referenced_data_and_run(
+        node_name: str, column_mapping: dict, experiment_data: dict, experiment_runs: dict
+    ) -> tuple:
+        """Get the node referenced data and runs from dict."""
         data, run = {}, {}
-        inputs_mapping = self.column_mapping
-        for value in inputs_mapping.values():
+        for value in column_mapping.values():
             if not isinstance(value, str):
                 continue
             if value.startswith("${data."):
                 name = value.split(".")[1].replace("}", "")
-                if name not in self.experiment_data:
+                if name not in experiment_data:
                     raise ExperimentValueError(
-                        f"Node {self.display_name!r} inputs {value!r} related experiment data {name!r} not found."
+                        f"Node {node_name!r} inputs {value!r} related experiment data {name!r} not found."
                     )
-                data[name] = self.experiment_data[name]
+                data[name] = experiment_data[name]
             elif value.startswith("${"):
                 name = value.split(".")[0].replace("${", "")
-                if name not in self.experiment_runs:
+                if name not in experiment_runs:
                     raise ExperimentValueError(
-                        f"Node {self.display_name!r} inputs {value!r} related experiment run {name!r} not found."
+                        f"Node {node_name!r} inputs {value!r} related experiment run {name!r} not found."
                     )
-                run[name] = self.experiment_runs[name]
+                run[name] = experiment_runs[name]
         return data, run
 
+    @staticmethod
+    def resolve_column_mapping(node_name: str, column_mapping: dict, experiment_inputs: dict):
+        """Resolve column mapping with experiment inputs to constant values."""
+        logger.info(f"Start resolve node {node_name!r} column mapping.")
+        if not column_mapping:
+            return {}
+        resolved_mapping = {}
+        for name, value in column_mapping.items():
+            if not isinstance(value, str) or not value.startswith("${inputs."):
+                resolved_mapping[name] = value
+                continue
+            input_name = value.split(".")[1].replace("}", "")
+            if input_name not in experiment_inputs:
+                raise ExperimentValueError(
+                    f"Node {node_name!r} inputs {value!r} related experiment input {input_name!r} not found."
+                )
+            resolved_mapping[name] = experiment_inputs[input_name].default
+        logger.debug(f"Resolved node {node_name!r} column mapping {resolved_mapping}.")
+        return resolved_mapping
 
-class ExperimentRunSubmitterHelper:
+    @staticmethod
+    def resolve_nodes_to_execute(experiment, start_nodes=None):
+        """Resolve node to execute and ensure nodes order in experiment."""
+
+        def _prepare_single_node_edges(node):
+            node_names = set()
+            for input_value in node.inputs.values():
+                if not isinstance(input_value, str):
+                    continue
+                if (
+                    input_value.startswith("${")
+                    and not input_value.startswith("${data.")
+                    and not input_value.startswith("${inputs.")
+                ):
+                    referenced_node_name = input_value.split(".")[0].replace("${", "")
+                    node_names.add(referenced_node_name)
+            return node_names
+
+        def _remove_nodes_from_active_edges(nodes_to_remove):
+            for node in nodes_to_remove:
+                for referenced_nodes in active_edges.values():
+                    referenced_nodes.discard(node.name)
+                del active_edges[node.name]
+
+        def _can_remove_node(node):
+            # No start nodes specified, no edge linked, then node is available.
+            if not start_nodes:
+                if node.name in active_edges and len(active_edges[node.name]) == 0:
+                    return True
+                return False
+            # Start nodes specified, successor nodes of resolved nodes are available, edges are required.
+            if node.name not in active_edges or len(edges[node.name]) == 0:
+                return False
+            # All predecessor nodes are resolved, then node is available.
+            if all(referenced_node not in active_edges for referenced_node in edges[node.name]):
+                return True
+            return False
+
+        # Perform topological sort to ensure nodes order
+        nodes = experiment.nodes
+        resolved_nodes, start_nodes = [], start_nodes or []
+        edges = {node.name: _prepare_single_node_edges(node) for node in nodes}
+        active_edges = copy.deepcopy(edges)
+        # If start nodes specified, preprocessing them.
+        _remove_nodes_from_active_edges(start_nodes)
+        resolved_nodes.extend(start_nodes)
+        logger.debug(f"Experiment start node {[node.name for node in start_nodes]}, nodes edges: {active_edges!r}")
+
+        while True:
+            available_nodes = [node for node in nodes if _can_remove_node(node)]
+            logger.debug(f"Experiment available nodes: {[node.name for node in available_nodes]!r}")
+            if not available_nodes:
+                break
+            _remove_nodes_from_active_edges(available_nodes)
+            resolved_nodes.extend(available_nodes)
+        # If no start nodes specified, all nodes should be visited.
+        if not start_nodes and len(resolved_nodes) != len(nodes):
+            raise ExperimentHasCycle(f"Experiment has circular dependency {active_edges!r}")
+        logger.debug(f"Experiment nodes resolved: {[node.name for node in resolved_nodes]}")
+        return resolved_nodes
+
     @staticmethod
     def resolve_binding_from_run(run_name, run, run_operations) -> dict:
         """Return the valid binding dict based on a run."""
@@ -245,7 +381,9 @@ class ExperimentRunSubmitter(RunSubmitter):
         logger.info("Start resolve node %s input dirs.", run.node_name)
         logger.debug(f"Experiment context: {run.experiment_data}, {run.experiment_runs}, inputs: {run.column_mapping}")
         # Get the node referenced data and run
-        referenced_data, referenced_run = run._get_referenced_data_and_run()
+        referenced_data, referenced_run = ExperimentHelper.get_referenced_data_and_run(
+            run.node_name, run.column_mapping, run.experiment_data, run.experiment_runs
+        )
         if len(referenced_data) > 1:
             raise ExperimentValueError(
                 f"Experiment flow node {run.node_name!r} has multiple data inputs {referenced_data}, "
@@ -264,7 +402,7 @@ class ExperimentRunSubmitter(RunSubmitter):
         if data_obj:
             result.update({f"data.{data_name}": data_obj.path})
         if run_obj:
-            result.update(ExperimentRunSubmitterHelper.resolve_binding_from_run(run_name, run_obj, self.run_operations))
+            result.update(ExperimentHelper.resolve_binding_from_run(run_name, run_obj, self.run_operations))
         result = {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
         logger.debug(f"Resolved node {run.node_name} input dirs {result}.")
         return result
@@ -290,7 +428,9 @@ class ExperimentCommandSubmitter:
         """Resolve binding inputs to constant values."""
         # e.g. "input_path": "${data.my_data}" -> "${inputs.input_path}": "real_data_path"
         logger.info("Start resolve node %s inputs.", run.node_name)
-        data, runs = run._get_referenced_data_and_run()
+        data, runs = ExperimentHelper.get_referenced_data_and_run(
+            run.node_name, run.column_mapping, run.experiment_data, run.experiment_runs
+        )
         # prepare "${data.my_data}": real_data_path
         binding_dict = {"${data.%s}" % name: val.path for name, val in data.items()}
         # prepare "${run.outputs}": run_outputs_path, "${run.inputs}": run_inputs_path
@@ -298,9 +438,7 @@ class ExperimentCommandSubmitter:
             binding_dict.update(
                 {
                     "${%s}" % k: v
-                    for k, v in ExperimentRunSubmitterHelper.resolve_binding_from_run(
-                        name, val, self.run_operations
-                    ).items()
+                    for k, v in ExperimentHelper.resolve_binding_from_run(name, val, self.run_operations).items()
                 }
             )
         logger.debug(f"Resolved node {run.node_name} binding inputs {binding_dict}.")
@@ -361,7 +499,7 @@ class ExperimentCommandSubmitter:
             )
         return resolved_command
 
-    def _submit_command_run(self, run: ExperimentRun, local_storage: LocalStorageOperations) -> dict:
+    def _submit_command_run(self, run: ExperimentRun, local_storage: LocalStorageOperations):
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
@@ -379,7 +517,9 @@ class ExperimentCommandSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            return_code = ExperimentCommandExecutor.run(command=command, cwd=run.flow, local_storage=local_storage)
+            return_code = ExperimentCommandExecutor.run(
+                command=command, cwd=run.flow, log_path=local_storage.logger.file_path
+            )
             if return_code != 0:
                 raise ExperimentCommandRunError(
                     f"Run {run.name} failed with return code {return_code}, "
@@ -405,9 +545,8 @@ class ExperimentCommandExecutor:
     """Experiment command executor, responsible for experiment command running."""
 
     @staticmethod
-    def run(command: str, cwd: str, local_storage: LocalStorageOperations):
+    def run(command: str, cwd: str, log_path: Path):
         """Start a subprocess to run the command"""
-        log_path = local_storage.logger.file_path
         logger.info(f"Start running command {command}, log path: {log_path}.")
         with open(log_path, "w") as log_file:
             process = subprocess.Popen(command, stdout=log_file, stderr=log_file, shell=True, env=os.environ, cwd=cwd)
