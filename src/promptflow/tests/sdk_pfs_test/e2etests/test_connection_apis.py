@@ -45,6 +45,19 @@ class TestConnectionAPIs:
             conn_from_pfs = pfs_op.get_connection_with_secret(name=name, status_code=200).json
         assert not conn_from_pfs["secrets"]["api_key"].startswith("*")
 
+    def test_delete_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
+        len_connections = len(pfs_op.list_connections().json)
+
+        name = create_custom_connection(pf_client)
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.delete", "first_call": True},
+            ]
+        ):
+            pfs_op.delete_connection(name=name, status_code=204)
+        len_connections_after = len(pfs_op.list_connections().json)
+        assert len_connections_after == len_connections
+
     def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
         # TODO: should we record telemetry for this case?
         with check_activity_end_telemetry(expected_activities=[]):
