@@ -20,4 +20,4 @@ RUN pip install "./promptflow-0.0.1-py3-none-any.whl[executor-service]" \
 
 ENV APP_PORT 8000
 
-CMD ["sh", "-c", "uvicorn promptflow.executor._service.app:app --host 0.0.0.0 --port $APP_PORT"]
+CMD ["sh", "-c", "exec uvicorn promptflow.executor._service.app:app --host 0.0.0.0 --port $APP_PORT"]
