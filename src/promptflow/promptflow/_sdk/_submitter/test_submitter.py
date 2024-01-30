@@ -376,12 +376,18 @@ class TestSubmitterViaProxy(TestSubmitter):
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
-        **kwargs,
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
 
         generator_record = {}
+        chat_output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            ),
+            None,
+        )
         if not connections:
             connections = SubmitterHelper.resolve_used_connections(
                 flow=self.flow,
@@ -418,7 +424,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 )
 
                 line_result: LineResult = flow_executor.exec_line(
-                    inputs, index=0, enable_stream_output=allow_generator_output
+                    inputs, index=0, enable_stream_output=allow_generator_output, chat_output_name=chat_output_name
                 )
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
@@ -438,20 +444,19 @@ class TestSubmitterViaProxy(TestSubmitter):
                     generator_outputs = self._get_generator_outputs(line_result.output)
                     if generator_outputs:
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-                if allow_generator_output:
+                if allow_generator_output and chat_output_name:
                     self._raise_error_when_test_failed(line_result, show_trace=True)
                     print(f"{Fore.YELLOW}Bot: ", end="")
-                    output_name = kwargs.pop("output_name")
                     # Since streaming get_result_output need connect with server, it needs flow_executor is live, so
                     # print chat output here
-                    print_chat_output(line_result.output[output_name], generator_record)
+                    print_chat_output(line_result.output[chat_output_name], generator_record)
                     # Convert output here since need save output to chat history. For C#, we no need resolve_generator
                     # since output in flow_result.run_info and flow_result.node_run_infos won't be GeneratorType
-                    line_result_iter = get_result_output(line_result.output[output_name], generator_record)
+                    line_result_iter = get_result_output(line_result.output[chat_output_name], generator_record)
                     full_response = ""
                     for event in line_result_iter:
                         full_response += event
-                    line_result.output[output_name] = full_response
+                    line_result.output[chat_output_name] = full_response
                 return line_result
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
@@ -459,6 +464,13 @@ class TestSubmitterViaProxy(TestSubmitter):
     def exec_with_inputs(self, inputs, enable_stream_output=False):
         from promptflow._constants import LINE_NUMBER_KEY
 
+        chat_output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            ),
+            None,
+        )
         connections = SubmitterHelper.resolve_used_connections(
             flow=self.flow,
             tools_meta=CSharpExecutorProxy.get_tool_metadata(
@@ -479,7 +491,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         try:
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = flow_executor.exec_line(inputs, index=0, enable_stream_output=enable_stream_output)
+            line_result = flow_executor.exec_line(
+                inputs, index=0, enable_stream_output=enable_stream_output, chat_output_name=chat_output_name
+            )
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
@@ -506,12 +520,6 @@ class TestSubmitterViaProxy(TestSubmitter):
         chat_history = []
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
-        )
-        output_name = next(
-            filter(
-                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
-                self.dataplane_flow.outputs.keys(),
-            )
         )
 
         # Pass connections to avoid duplicate calculation (especially http call)
@@ -546,7 +554,6 @@ class TestSubmitterViaProxy(TestSubmitter):
                 allow_generator_output=True,
                 connections=connections,
                 stream_output=True,
-                output_name=output_name,
             )
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}

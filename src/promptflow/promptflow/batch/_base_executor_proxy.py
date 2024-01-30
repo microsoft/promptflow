@@ -91,12 +91,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         index: Optional[int] = None,
         run_id: Optional[str] = None,
         enable_stream_output=False,
+        **kwargs,
     ) -> LineResult:
         start_time = datetime.utcnow()
         # call execution api to get line results
         url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         headers = {"Accept": "text/event-stream"} if enable_stream_output else None
+        chat_output_name = kwargs.pop("chat_output_name", None)
 
         if enable_stream_output:
 
@@ -115,15 +117,15 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
 
             origin_generator = generator()
             line_result = next(origin_generator)
-            chat_output_name = list(line_result.output.keys())[0]
-            first_output = line_result.output[chat_output_name]
+            if chat_output_name:
+                first_chat_output = line_result.output[chat_output_name]
 
-            def final_generator():
-                yield first_output
-                for output in origin_generator:
-                    yield output.output[chat_output_name]
+                def final_generator():
+                    yield first_chat_output
+                    for output in origin_generator:
+                        yield output.output[chat_output_name]
 
-            line_result.output[chat_output_name] = final_generator()
+                line_result.output[chat_output_name] = final_generator()
             return line_result
         else:
             with httpx.Client() as client:
