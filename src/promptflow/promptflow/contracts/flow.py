@@ -19,7 +19,7 @@ from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
 from ._errors import FailedToImportModule
-from .tool import ConnectionType, Tool, ToolType, ValueType
+from .tool import ConnectionType, InputDefinition, OutputDefinition, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
 
@@ -853,3 +853,22 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
+
+
+@dataclass
+class EagerFlow:
+    # region: data plane flow definition
+    inputs: Dict[str, InputDefinition]
+    outputs: Optional[Dict[str, OutputDefinition]] = None
+    entry: str = None
+    # endregion
+
+    # region: control plan metadata, only has value when provided in flow.dag.yaml
+    name: Optional[str] = None
+    description: Optional[str] = None
+    display_name: Optional[str] = None
+    # endregion
+
+    function: Optional[str] = None
+    language: Optional[str] = None
+    framework: Optional[str] = None
