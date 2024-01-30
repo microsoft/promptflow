@@ -2,6 +2,7 @@ custom_llm_tool.TestCustomLLMTool.call:
   name: Test Custom LLM Tool
   type: custom_llm
   function: call
+  module: TestCustomLLMTool
   inputs:
     connection:
       type:

@@ -1,3 +1,4 @@
+import importlib
 import textwrap
 from pathlib import Path
 from unittest.mock import patch
@@ -10,17 +11,13 @@ from promptflow._core._errors import InputTypeMismatch, InvalidSource, PackageTo
 from promptflow._core.tools_manager import (
     BuiltinsManager,
     ToolLoader,
-    assign_tool_input_index_for_ux_order_if_needed,
     collect_package_tools,
     collect_package_tools_and_connections,
-    collect_tools_from_directory,
 )
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
-
-PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
 
 @pytest.mark.unittest
@@ -163,40 +160,29 @@ class TestToolsManager:
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
-    def test_assign_tool_input_index_for_ux_order_if_needed(self):
-        tool = {
-            'name': 'My Custom LLM Tool',
-            'type': 'custom_llm',
-            'inputs': {
-                'input2': {'type': 'string'},
-                'input1': {'type': 'string'},
-                'input3': {'type': 'string'}
-            }
-        }
-        assign_tool_input_index_for_ux_order_if_needed(tool)
-        assert tool == {
-            'name': 'My Custom LLM Tool',
-            'type': 'custom_llm',
-            'inputs': {
-                'input2': {'type': 'string', 'ui_hints': {'index': 0}},
-                'input1': {'type': 'string', 'ui_hints': {'index': 1}},
-                'input3': {'type': 'string', 'ui_hints': {'index': 2}}
-            }
-        }
+    def test_collect_package_tools_set_defaut_input_index(self, mocker, mock_entry_point):
+        entry_point = mock_entry_point
+        entry_points = (entry_point, )
+        mocker.patch("promptflow._core.tools_manager._get_entry_points_by_group", return_value=entry_points)
+        mocker.patch.object(importlib, 'import_module', return_value=MagicMock())
+        tool = "custom_llm_tool.TestCustomLLMTool.call"
+        package_tools = collect_package_tools([tool])
+        inputs_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
+                        "stop", "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
 
-    def test_collect_tools_from_directory_keeps_keys_order(self):
-        """
-        Test that it can keep the order of keys when loading tools from a directory.
-        This is important because the feature automatically assigns indexes to inputs based on their order
-        in the tool's YAML, relying on ruamel.yaml's ability to maintain key order when loading a YAML file.
-        If ruamel.yaml were to break this feature, such a breaking change could be detected by this test.
-        """
-        tool_yaml_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_multi_inputs_without_index"
-        collected_tools = collect_tools_from_directory(tool_yaml_folder)
-        tool = collected_tools["custom_llm_tool.TestCustomLLMTool.call"]
-        expected_keys_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
-                               "stop", "presence_penalty", "frequency_penalty"]
-        assert list(tool["inputs"]) == expected_keys_order
+    def test_collect_package_tools_and_connections_set_defaut_input_index(self, mocker, mock_entry_point):
+        entry_point = mock_entry_point
+        entry_points = (entry_point, )
+        mocker.patch("promptflow._core.tools_manager._get_entry_points_by_group", return_value=entry_points)
+        mocker.patch.object(importlib, 'import_module', return_value=MagicMock())
+        tool = "custom_llm_tool.TestCustomLLMTool.call"
+        package_tools, _, _ = collect_package_tools_and_connections([tool])
+        inputs_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
+                        "stop", "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]

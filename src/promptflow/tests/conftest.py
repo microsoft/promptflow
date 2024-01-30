@@ -216,3 +216,13 @@ def enable_logger_propagate():
     logger.propagate = True
     yield
     logger.propagate = original_value
+
+
+@pytest.fixture
+def mock_entry_point():
+    from executor.package_tools.custom_llm_tool_multi_inputs_without_index.list import list_package_tools
+    entry_point = MagicMock()
+    entry_point.load.return_value = list_package_tools
+    entry_point.dist.metadata.return_value = "TestCustomLLMTool"
+    entry_point.dist.version.return_value = "0.0.1"
+    return entry_point
