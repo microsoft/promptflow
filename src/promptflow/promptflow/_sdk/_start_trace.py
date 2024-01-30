@@ -36,7 +36,7 @@ def start_trace():
     _logger.debug("PFS is serving on port %s", pfs_port)
     # provision a session
     # TODO: make this dynamic after set from our side
-    session_id = _provision_session()
+    # session_id = _provision_session()
     session_id = "8cffec9b-eda9-4dab-a321-4f94227c23cb"
     _logger.debug("current session id is %s", session_id)
     # init the global tracer with endpoint, context (session, run, exp)
