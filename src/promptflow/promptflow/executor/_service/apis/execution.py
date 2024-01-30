@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import os
-from pathlib import Path
 
 from fastapi import APIRouter, Request
 
@@ -28,8 +27,8 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
     storage = DefaultRunStorage(base_dir=flow_request.working_dir, sub_dir=flow_request.output_dir)
     with get_log_context(flow_request):
         return execute_flow(
-            Path(flow_request.flow_file),
-            Path(flow_request.working_dir),
+            flow_request.flow_file,
+            flow_request.working_dir,
             flow_request.output_dir,
             flow_request.connections,
             flow_request.inputs,
@@ -50,7 +49,7 @@ async def node_execution(request: Request, node_request: NodeExecutionRequest):
     with get_log_context(node_request):
         storage = DefaultRunStorage(base_dir=node_request.working_dir, sub_dir=node_request.output_dir)
         result = FlowExecutor.load_and_exec_node(
-            Path(node_request.flow_file),
+            node_request.flow_file,
             node_request.node_name,
             flow_inputs=node_request.flow_inputs,
             dependency_nodes_outputs=node_request.dependency_nodes_outputs,

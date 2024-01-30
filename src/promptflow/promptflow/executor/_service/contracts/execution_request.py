@@ -13,9 +13,9 @@ from promptflow.executor._service._errors import FlowFilePathInvalid
 
 class BaseExecutionRequest(BaseModel):
     run_id: str
-    working_dir: str
-    flow_file: str
-    output_dir: str
+    working_dir: Path
+    flow_file: Path
+    output_dir: Path
     connections: Mapping[str, Any] = None
     environment_variables: Mapping[str, Any] = None
     log_path: str
@@ -24,8 +24,6 @@ class BaseExecutionRequest(BaseModel):
         raise NotImplementedError(f"Request type {self.__class__.__name__} is not implemented.")
 
     def validate_request(self):
-        self.working_dir = Path(self.working_dir)
-        self.flow_file = Path(self.flow_file)
         if self.flow_file.is_absolute():
             raise FlowFilePathInvalid(
                 message_format=(
