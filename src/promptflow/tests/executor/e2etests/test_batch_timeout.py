@@ -16,6 +16,7 @@ from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get
 SAMPLE_FLOW = "web_classification_no_variants"
 ONE_LINE_OF_BULK_TEST_TIMEOUT = "one_line_of_bulktest_timeout"
 ASYNC_SAMPLE_FLOW = "async_tools"
+ASYNC_SAMPLE_FLOW_WITH_SYNC_TOOL = "async_tools_with_sync_tools"
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -186,12 +187,19 @@ class TestBatchTimeout:
         assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
 
     @pytest.mark.parametrize(
-        "flow_folder",
+        "flow_folder, expected_node_status",
         [
-            ASYNC_SAMPLE_FLOW,
+            (
+                ASYNC_SAMPLE_FLOW,
+                {"async_passthrough.completed": 2, "async_passthrough1.canceled": 2, "async_passthrough2.canceled": 2},
+            ),
+            (
+                ASYNC_SAMPLE_FLOW_WITH_SYNC_TOOL,
+                {"async_passthrough.completed": 2, "async_passthrough1.canceled": 2, "sync_passthrough1.canceled": 2},
+            ),
         ],
     )
-    def test_async_batch_with_line_timeout(self, flow_folder, dev_connections):
+    def test_async_batch_with_line_timeout(self, flow_folder, expected_node_status, dev_connections):
         # set line timeout to 1 second for testing
         mem_run_storage = MemoryRunStorage()
         batch_engine = BatchEngine(
@@ -210,11 +218,7 @@ class TestBatchTimeout:
         assert batch_results.completed_lines == 0
         assert batch_results.failed_lines == 2
         assert batch_results.total_lines == 2
-        assert batch_results.node_status == {
-            "async_passthrough.completed": 2,
-            "async_passthrough1.canceled": 2,
-            "async_passthrough2.canceled": 2,
-        }
+        assert batch_results.node_status == expected_node_status
 
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 2, "Flow runs are persisted in memory storage."
