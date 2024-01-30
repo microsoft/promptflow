@@ -100,7 +100,7 @@ class ExperimentOrchestrator:
             args = args + ["--from-nodes"] + from_node
         # Start an orchestrator process using detach mode
         if platform.system() == "Windows":
-            os.spawnv(os.P_DETACH, executable_path, args)
+            os.spawnve(os.P_DETACH, executable_path, args, os.environ)
         else:
             os.system(" ".join(["nohup"] + args + ["&"]))
         return self.experiment
