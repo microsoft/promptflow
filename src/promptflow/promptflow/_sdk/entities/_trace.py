@@ -113,6 +113,8 @@ class Span:
         start_time = convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano)
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
         attributes = flatten_pb_attributes(span_dict["attributes"])
+        # update below to `attributes["session_id"]` after we make this mandatory
+        session_id = attributes.get("session_id", "8cffec9b-eda9-4dab-a321-4f94227c23cb")
         return Span(
             name=obj.name,
             context=context,
@@ -125,8 +127,6 @@ class Span:
             attributes=attributes,
             resource=resource,
             span_type=attributes.get("span_type", "Function"),
-            # TODO: get from env when it's set from our side
-            # session_id=os.getenv(TRACE_SESSION_ID_ENV_VAR),
-            session_id="8cffec9b-eda9-4dab-a321-4f94227c23cb",
+            session_id=session_id,
             parent_span_id=parent_span_id,
         )
