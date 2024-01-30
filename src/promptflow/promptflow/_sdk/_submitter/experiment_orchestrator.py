@@ -104,7 +104,6 @@ class ExperimentOrchestrator:
             os.spawnve(os.P_DETACH, executable_path, args, os.environ)
         else:
             subprocess.Popen(" ".join(["nohup"] + args + ["&"]), shell=True, env=os.environ)
-            print(" ".join(["nohup"] + args + ["&"]))
         return self.experiment
 
     def _update_orchestrator_record(self, status, pid=None):
