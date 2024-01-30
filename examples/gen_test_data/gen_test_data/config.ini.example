@@ -6,9 +6,9 @@
 ; Configure both 'document_folder' and 'document_chunk_size' if you require document splitting.
 ; However, if you wish to bypass the document split process, simply provide the 'document_node_file', which is a JSONL file.
 ; When all these parameters are configured, the system will primarily use the 'document_node_file'
-document_folder = "<your-document-folder-abspath>"
+documents_folder = "<your-document-folder-abspath>"
 document_chunk_size = 1024
-document_node_file = "<your-node-file-abspath>"
+document_nodes_file = "<your-node-file-abspath>"
 
 ; Test data gen flow configs
 flow_folder = "<your-test-data-gen-flow-folder-abspath>" ; There is must one flow.dag.yaml file under this folder as entry

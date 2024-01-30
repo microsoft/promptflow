@@ -13,18 +13,18 @@ def my_python_tool(
     text_meta: dict = None,
     validate_and_generate_seed_question_output: dict = None,
     validate_and_generate_test_question_output: dict = None,
-    validate_ground_truth_output: ValidationResult = None,
+    validate_suggested_answer_output: ValidationResult = None,
 ) -> dict:
     text_trunk_validation_res = validate_and_generate_seed_question_output["validation_res"]
     generated_seed_question = validate_and_generate_seed_question_output["question"]
     seed_question_validation_res = validate_and_generate_test_question_output["validation_res"]
-    generated_ground_truth = validate_ground_truth_output["ground_truth"]
-    ground_truth_validation_res = validate_ground_truth_output["validation_res"]
+    generated_suggested_answer = validate_suggested_answer_output["suggested_answer"]
+    suggested_answer_validation_res = validate_suggested_answer_output["validation_res"]
 
-    is_generation_success = generated_ground_truth != ""
+    is_generation_success = generated_suggested_answer != ""
     is_text_trunk_valid = text_trunk_validation_res.pass_validation if text_trunk_validation_res else None
     is_seed_question_valid = seed_question_validation_res.pass_validation if seed_question_validation_res else None
-    is_ground_truth_valid = ground_truth_validation_res.pass_validation if ground_truth_validation_res else None
+    is_suggested_answer_valid = suggested_answer_validation_res.pass_validation if suggested_answer_validation_res else None
 
     failed_step = ""
     failed_reason = ""
@@ -35,9 +35,9 @@ def my_python_tool(
         elif is_seed_question_valid is False:
             failed_step = ValidateObj.QUESTION
             failed_reason = seed_question_validation_res.reason_if_failed
-        elif is_ground_truth_valid is False:
+        elif is_suggested_answer_valid is False:
             failed_step = ValidateObj.GROUND_TRUTH
-            failed_reason = ground_truth_validation_res.reason_if_failed
+            failed_reason = suggested_answer_validation_res.reason_if_failed
 
     return {
         "question_type": question_type,
@@ -63,11 +63,11 @@ def my_python_tool(
                 else None,
             },
             # "test_question": {},  # placeholder for evolved questions like multi-context, reasoning, etc.
-            "ground_truth": {
-                "generated_ground_truth": generated_ground_truth,
-                "pass_validation": is_ground_truth_valid,
-                "reason_if_failed": ground_truth_validation_res.reason_if_failed
-                if is_ground_truth_valid is False
+            "suggested_answer": {
+                "generated_suggested_answer": generated_suggested_answer,
+                "pass_validation": is_suggested_answer_valid,
+                "reason_if_failed": suggested_answer_validation_res.reason_if_failed
+                if is_suggested_answer_valid is False
                 else None,
             },
         },

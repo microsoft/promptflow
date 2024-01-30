@@ -7,12 +7,12 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 @tool
-def generate_ground_truth(
+def generate_suggested_answer(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
     model: str,
     question: str,
     context: str,
-    generate_ground_truth_prompt: str,
+    generate_suggested_answer_prompt: str,
 ):
     """
     Generates a ground truth based on the given prompts and context information.
@@ -21,6 +21,6 @@ def generate_ground_truth(
         str: The generated ground truth.
     """
     if question and context:
-        return llm_call(connection, model, generate_ground_truth_prompt)
+        return llm_call(connection, model, generate_suggested_answer_prompt)
     else:
         return ""

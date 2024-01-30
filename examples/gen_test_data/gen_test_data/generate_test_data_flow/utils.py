@@ -22,7 +22,7 @@ class QuestionType:
 class ValidateObj:
     QUESTION = "question"
     TEXT_TRUNK = "text_trunk"
-    GROUND_TRUTH = "ground_truth"
+    SUGGESTED_ANSWER = "suggested_answer"
 
 
 class ResponseFormat:
@@ -42,6 +42,7 @@ ValidationResult = namedtuple("ValidationResult", ["pass_validation", "reason_if
 
 def llm_call(connection, model, prompt, response_format=ResponseFormat.TEXT):
     response_format = "json_object" if response_format.lower() == "json" else response_format
+    prompt = f"{{% raw %}}{prompt}{{% endraw %}}"
     if isinstance(connection, AzureOpenAIConnection):
         return aoai_chat(
             connection=connection, prompt=prompt, deployment_name=model, response_format={"type": response_format}
@@ -59,10 +60,10 @@ def get_question_type(testset_distribution) -> str:
     return next((key for key in testset_distribution.keys() if prob <= testset_distribution[key]), QuestionType.SIMPLE)
 
 
-def get_ground_truth_validation_res(connection, model, prompt, ground_truth: str):
+def get_suggested_answer_validation_res(connection, model, prompt, suggested_answer: str):
     rsp = llm_call(connection, model, prompt)
     return retrieve_verdict_and_print_reason(
-        rsp=rsp, validate_obj_name=ValidateObj.GROUND_TRUTH, validate_obj=ground_truth
+        rsp=rsp, validate_obj_name=ValidateObj.SUGGESTED_ANSWER, validate_obj=suggested_answer
     )
 
 

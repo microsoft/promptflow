@@ -8,9 +8,9 @@ from azure.identity import DefaultAzureCredential
 from promptflow import PFClient
 from promptflow.entities import Run
 
-CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.ini"))
+CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
 
-UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "test_data_gen", "utils"))
+UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "gen_test_data", "utils"))
 if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
@@ -50,9 +50,9 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
     print(f"#### Start to get batch run {base_run.name} details.")
     details = pf.get_details(base_run, all_results=True)
     question = details["outputs.question"].tolist()
-    ground_truth = details["outputs.ground_truth"].tolist()
+    suggested_answer = details["outputs.suggested_answer"].tolist()
     debug_info = details["outputs.debug_info"].tolist()
-    return [{"question": q, "ground_truth": g, "debug_info": d} for q, g, d in zip(question, ground_truth, debug_info)]
+    return [{"question": q, "suggested_answer": g, "debug_info": d} for q, g, d in zip(question, suggested_answer, debug_info)]
 
 
 def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):

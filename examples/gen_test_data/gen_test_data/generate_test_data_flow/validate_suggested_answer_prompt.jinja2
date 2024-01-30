@@ -5,7 +5,7 @@ The ground truth is not valid if the ground truth suggests that the context does
 user:
 Output a json format with the reason and verdict.
 Here are some examples:
-ground_truth:
+suggested_answer:
 The steps to build and install your tool package for use in VS Code extension are not provided in the context.
 answer:
 {
@@ -13,7 +13,7 @@ answer:
     "verdict":"no"
 }
 
-ground_truth:
+suggested_answer:
 The context does not provide specific information on what the possible provider values are in supported configs for a connection provider.
 answer:
 {
@@ -21,21 +21,21 @@ answer:
     "verdict":"no"
 }
 
-ground_truth:
+suggested_answer:
 I don't know.
 answer:
 {
-    "reason":"The ground_truth is invalid because it conveys don't know.",
+    "reason":"The suggested_answer is invalid because it conveys don't know.",
     "verdict":"no"
 }
 
-ground_truth:
+suggested_answer:
 The two essential components of an activate config in a node flow are `activate.when` and `activate.is`.
 answer:
 {
-    "reason":"The ground_truth is valid because it is clear and true.",
+    "reason":"The suggested_answer is valid because it is clear and true.",
     "verdict":"yes"
 }
 
-ground_truth:{{ground_truth}}
+suggested_answer:{{suggested_answer}}
 answer:
