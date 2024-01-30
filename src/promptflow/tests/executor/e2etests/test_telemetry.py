@@ -143,3 +143,5 @@ class TestExecutorTelemetry:
                 assert "promptflow/" in headers.get("x-ms-useragent")
                 assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
                 assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
+                assert headers.get("ms-azure-ai-promptflow-flow-id") == "default_flow_id"
+                assert headers.get("ms-azure-ai-promptflow-root-run-id") == run_id
