@@ -13,7 +13,8 @@ ENVIRONMENT_DICT_FIXED_VERSION = dict(
                 "pip": [
                     "mldesigner==0.1.0b17",
                     "llama_index",
-                    "docx2txt"
+                    "docx2txt",
+                    "promptflow"
                 ]
             },
         ],

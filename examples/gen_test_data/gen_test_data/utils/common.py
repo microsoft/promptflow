@@ -4,6 +4,7 @@ import typing as t
 from pathlib import Path
 
 from constants import DOCUMENT_NODE, TEXT_CHUNK
+from promptflow._utils.logger_utils import get_logger
 
 try:
     from llama_index import SimpleDirectoryReader
@@ -17,12 +18,12 @@ except ImportError:
 
 
 def split_document(chunk_size, documents_folder, document_node_output):
-    # load docs
-    print("#### Start to split the documents.")
+    logger = get_logger("doc.split")
+    logger.info("Start to split the documents.")
     documents = SimpleDirectoryReader(
         documents_folder, recursive=True, exclude=["index.md", "README.md"], encoding="utf-8"
     ).load_data()
-    print(f"#### Collect {len(documents)} documents.")
+    logger.info(f"Collect {len(documents)} documents.")
     # Convert documents into nodes
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     documents = t.cast(t.List[LlamaindexDocument], documents)
@@ -32,13 +33,14 @@ def split_document(chunk_size, documents_folder, document_node_output):
         for doc in document_nodes:
             print(json.dumps({TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}), file=text_file)
 
-    print(f"#### End to split the documents and generate {len(document_nodes)} document nodes.")
+    logger.info(f"End to split the documents and generate {len(document_nodes)} document nodes.")
 
     return str((Path(document_node_output) / "document_nodes.jsonl"))
 
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):
-    print("#### Start to clean the data.")
+    logger = get_logger("data.clean")
+    logger.info("Start to clean the data.")
     cleaned_data = []
 
     for test_data in test_data_set:
@@ -52,6 +54,6 @@ def clean_data_and_save(test_data_set: list, test_data_output_path: str):
         print(f"{jsonl_str}", file=text_file)
 
     test_data_count = len(cleaned_data)
-    print(
-        f"#### Completed to clean {len(test_data_set) - test_data_count} invalid test data "
+    logger.info(
+        f"Completed to clean {len(test_data_set) - test_data_count} invalid test data "
         f"and collect {test_data_count} test data to {test_data_output_path}.")

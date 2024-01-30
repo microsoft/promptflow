@@ -6,6 +6,7 @@ from azure.ai.ml import Input, MLClient, dsl, load_component
 from azure.identity import DefaultAzureCredential
 
 from promptflow import PFClient
+from promptflow._utils.logger_utils import get_logger
 from promptflow.entities import Run
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
@@ -18,6 +19,8 @@ from constants import TEXT_CHUNK, CONNECTIONS_TEMPLATE  # noqa: E402
 from common import split_document, clean_data_and_save  # noqa: E402
 from components import clean_test_data_set, document_split  # noqa: E402
 
+logger = get_logger("data.gen")
+
 
 def batch_run_flow(
         pf: PFClient,
@@ -26,7 +29,7 @@ def batch_run_flow(
         flow_batch_run_size: int,
         connection_name: str = "azure_open_ai_connection",
 ):
-    print("#### Start to submit the batch run.")
+    logger.info("Start to submit the batch run.")
     base_run = pf.run(
         flow=flow_folder,
         data=flow_input_data,
@@ -40,14 +43,13 @@ def batch_run_flow(
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
     )
-
-    print("#### Batch run is completed.")
+    logger.info("Batch run is completed.")
 
     return base_run
 
 
 def get_batch_run_output(pf: PFClient, base_run: Run):
-    print(f"#### Start to get batch run {base_run.name} details.")
+    logger.info(f"Start to get batch run {base_run.name} details.")
     details = pf.get_details(base_run, all_results=True)
     question = details["outputs.question"].tolist()
     suggested_answer = details["outputs.suggested_answer"].tolist()
@@ -75,7 +77,7 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
         "max_concurrency_per_instance",
     ]
 )
-def test_data_gen_pipeline_with_flow(
+def gen_test_data_pipeline(
         data_input: Input,
         flow_yml_path: str,
         connection_name: str,
@@ -161,7 +163,7 @@ def run_cloud(
         "max_concurrency_per_instance": prs_max_concurrency_per_instance,
     }
 
-    pipeline_with_flow = test_data_gen_pipeline_with_flow(
+    pipeline_with_flow = gen_test_data_pipeline(
         data_input=data_input,
         flow_yml_path=os.path.join(flow_folder, "flow.dag.yaml"),
         connection_name=connection_name,
@@ -170,8 +172,8 @@ def run_cloud(
         **prs_configs,
     )
     pipeline_with_flow.compute = aml_cluster
-    print("Completed to submit pipeline. Experiment Link: ",
-          ml_client.jobs.create_or_update(pipeline_with_flow).studio_url)
+    studio_url = ml_client.jobs.create_or_update(pipeline_with_flow).studio_url
+    logger.info(f"Completed to submit pipeline. Experiment Link: {studio_url}")
 
 
 if __name__ == "__main__":
