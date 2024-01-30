@@ -10,7 +10,7 @@ from constants import ENVIRONMENT_DICT_FIXED_VERSION
 @command_component(
     name="document_split",
     version="1.0.4",
-    display_name="Split documents",
+    display_name="split documents",
     description="Split documents into chunks.",
     environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
@@ -27,14 +27,13 @@ def document_split(
     Returns:
         The folder containing the split documents.
     """
-    print("files in input path: ", os.listdir(documents_folder))
     return split_document(chunk_size, documents_folder, document_node_output)
 
 
 @command_component(
     name="clean_test_data_set",
     version="1.0.4",
-    display_name="Clean dataset",
+    display_name="clean dataset",
     description="Clean test data set to remove empty lines.",
     environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
@@ -42,9 +41,7 @@ def clean_test_data_set(
         test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
 ) -> str:
     test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
-    print("test_data_file path: %s" % test_data_set_path)
 
-    print("reading file: %s ..." % test_data_set_path)
     with open(test_data_set_path, "r") as f:
         data = [json.loads(line) for line in f]
 

@@ -40,7 +40,8 @@ def split_document(chunk_size, documents_folder, document_node_output):
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     logger = get_logger("data.clean")
-    logger.info("Start to clean the data.")
+    logger.info(f"Collected {len(test_data_set)} test data after the batch run. "
+                f"Initiating data cleaning process.")
     cleaned_data = []
 
     for test_data in test_data_set:
@@ -53,7 +54,6 @@ def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     with open(test_data_output_path, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
-    test_data_count = len(cleaned_data)
     logger.info(
-        f"Completed to clean {len(test_data_set) - test_data_count} invalid test data "
-        f"and collect {test_data_count} test data to {test_data_output_path}.")
+        f"Collected {len(cleaned_data)} valid test data. "
+        f"The cleaned data has been saved to {test_data_output_path}.")
