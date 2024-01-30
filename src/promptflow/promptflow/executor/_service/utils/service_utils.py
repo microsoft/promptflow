@@ -7,7 +7,7 @@ import json
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import LogContext, logger
-from promptflow.executor.service.contracts.execution_request import BaseExecutionRequest
+from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 
 
 def get_log_context(request: BaseExecutionRequest):
