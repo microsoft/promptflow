@@ -14,6 +14,7 @@ RUN conda env create -p $CONDA_ENVIRONMENT_PATH -f conda_dependencies.yaml -q &&
     rm conda_dependencies.yaml && \
     conda clean -a -y
 
+# Install promptflow package
 COPY ./promptflow-0.0.1-py3-none-any.whl ./
 RUN pip install "./promptflow-0.0.1-py3-none-any.whl[executor-service]" \
     && rm promptflow-0.0.1-py3-none-any.whl
