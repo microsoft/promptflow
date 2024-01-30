@@ -4,7 +4,7 @@
 
 from flask_restx import fields
 
-from promptflow._constants import TraceAttributes
+from promptflow._constants import TraceAttributeName
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -27,16 +27,16 @@ status_model = api.model(
 attributes_model = api.model(
     "Attributes",
     {
-        TraceAttributes.FRAMEWORK: fields.String(required=True, default="promptflow"),
-        TraceAttributes.SPAN_TYPE: fields.String(required=True, default="Function"),
-        TraceAttributes.FUNCTION: fields.String(required=True),
-        TraceAttributes.INPUTS: fields.String(required=True),
-        TraceAttributes.OUTPUT: fields.String(required=True),
-        TraceAttributes.SESSION_ID: fields.String(required=True),
-        TraceAttributes.PATH: fields.String,
-        TraceAttributes.FLOW_ID: fields.String,
-        TraceAttributes.RUN: fields.String,
-        TraceAttributes.EXPERIMENT: fields.String,
+        TraceAttributeName.FRAMEWORK: fields.String(required=True, default="promptflow"),
+        TraceAttributeName.SPAN_TYPE: fields.String(required=True, default="Function"),
+        TraceAttributeName.FUNCTION: fields.String(required=True),
+        TraceAttributeName.INPUTS: fields.String(required=True),
+        TraceAttributeName.OUTPUT: fields.String(required=True),
+        TraceAttributeName.SESSION_ID: fields.String(required=True),
+        TraceAttributeName.PATH: fields.String,
+        TraceAttributeName.FLOW_ID: fields.String,
+        TraceAttributeName.RUN: fields.String,
+        TraceAttributeName.EXPERIMENT: fields.String,
     },
 )
 resource_attributes_model = api.model(

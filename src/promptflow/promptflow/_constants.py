@@ -51,7 +51,7 @@ GET_PYPI_INTERVAL_DAY = 7
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 
 
-class TraceAttributes:
+class TraceAttributeName:
     FRAMEWORK = "framework"
     SPAN_TYPE = "span_type"
     FUNCTION = "function"
