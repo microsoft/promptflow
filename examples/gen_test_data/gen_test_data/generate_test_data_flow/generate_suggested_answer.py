@@ -15,10 +15,10 @@ def generate_suggested_answer(
     generate_suggested_answer_prompt: str,
 ):
     """
-    Generates a ground truth based on the given prompts and context information.
+    Generates a suggested answer based on the given prompts and context information.
 
     Returns:
-        str: The generated ground truth.
+        str: The generated suggested answer.
     """
     if question and context:
         return llm_call(connection, model, generate_suggested_answer_prompt)

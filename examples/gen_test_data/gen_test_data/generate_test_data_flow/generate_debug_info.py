@@ -8,12 +8,12 @@ from promptflow import tool
 # Please update the function name/signature per need
 @tool
 def my_python_tool(
-        question_type: str,
-        text_trunk: str,
-        text_meta: dict = None,
-        validate_and_generate_seed_question_output: dict = None,
-        validate_and_generate_test_question_output: dict = None,
-        validate_suggested_answer_output: ValidationResult = None,
+    question_type: str,
+    text_trunk: str,
+    text_meta: dict = None,
+    validate_and_generate_seed_question_output: dict = None,
+    validate_and_generate_test_question_output: dict = None,
+    validate_suggested_answer_output: ValidationResult = None,
 ) -> dict:
     text_trunk_validation_res = validate_and_generate_seed_question_output["validation_res"]
     generated_seed_question = validate_and_generate_seed_question_output["question"]
@@ -24,21 +24,22 @@ def my_python_tool(
     is_generation_success = generated_suggested_answer != ""
     is_text_trunk_valid = text_trunk_validation_res.pass_validation if text_trunk_validation_res else None
     is_seed_question_valid = seed_question_validation_res.pass_validation if seed_question_validation_res else None
-    is_suggested_answer_valid = suggested_answer_validation_res.pass_validation \
-        if suggested_answer_validation_res else None
+    is_suggested_answer_valid = (
+        suggested_answer_validation_res.pass_validation if suggested_answer_validation_res else None
+    )
 
     failed_step = ""
     failed_reason = ""
     if not is_generation_success:
         if is_text_trunk_valid is False:
             failed_step = ValidateObj.TEXT_TRUNK
-            failed_reason = text_trunk_validation_res.reason_if_failed
+            failed_reason = text_trunk_validation_res.reason
         elif is_seed_question_valid is False:
             failed_step = ValidateObj.QUESTION
-            failed_reason = seed_question_validation_res.reason_if_failed
+            failed_reason = seed_question_validation_res.reason
         elif is_suggested_answer_valid is False:
-            failed_step = ValidateObj.GROUND_TRUTH
-            failed_reason = suggested_answer_validation_res.reason_if_failed
+            failed_step = ValidateObj.SUGGESTED_ANSWER
+            failed_reason = suggested_answer_validation_res.reason
 
     return {
         "question_type": question_type,
@@ -51,25 +52,20 @@ def my_python_tool(
         },
         "generation_details": {
             "text_trunk": {
+                "score": text_trunk_validation_res.score if text_trunk_validation_res else None,
+                "reason": text_trunk_validation_res.reason if text_trunk_validation_res else None,
                 "pass_validation": is_text_trunk_valid,
-                "reason_if_failed": text_trunk_validation_res.reason_if_failed
-                if is_text_trunk_valid is False
-                else None,
             },
             "seed_question": {
                 "generated_question": generated_seed_question,
                 "pass_validation": is_seed_question_valid,
-                "reason_if_failed": seed_question_validation_res.reason_if_failed
-                if is_seed_question_valid is False
-                else None,
+                "reason": seed_question_validation_res.reason if seed_question_validation_res else None,
             },
             # "test_question": {},  # placeholder for evolved questions like multi-context, reasoning, etc.
             "suggested_answer": {
                 "generated_suggested_answer": generated_suggested_answer,
                 "pass_validation": is_suggested_answer_valid,
-                "reason_if_failed": suggested_answer_validation_res.reason_if_failed
-                if is_suggested_answer_valid is False
-                else None,
+                "reason": suggested_answer_validation_res.reason if suggested_answer_validation_res else None,
             },
         },
     }

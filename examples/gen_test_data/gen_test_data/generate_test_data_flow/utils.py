@@ -30,13 +30,14 @@ class ResponseFormat:
 
 
 class ErrorMsg:
-    INVALID_JSON_FORMAT = "llm failed to return the verdict and reason in correct json format. Response: {0}"
-    INVALID_TEXT_TRUNK = "Skipping generating seed question due to invalid text chunk."
+    INVALID_JSON_FORMAT = "Invalid json format. Response: {0}"
+    INVALID_TEXT_TRUNK = "Skipping generating seed question due to invalid text chunk: {0}"
     INVALID_QUESTION = "Invalid seed question: {0}"
     INVALID_ANSWER = "Invalid answer: {0}"
 
 
-ValidationResult = namedtuple("ValidationResult", ["pass_validation", "reason_if_failed"])
+ValidationResult = namedtuple("ValidationResult", ["pass_validation", "reason"])
+ScoreResult = namedtuple("ScoreResult", ["score", "reason", "pass_validation"])
 
 
 def llm_call(connection, model, prompt, response_format=ResponseFormat.TEXT):
@@ -71,12 +72,47 @@ def get_question_validation_res(connection, model, prompt, question: str, respon
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
 
 
-def get_text_trunk_validation_res(connection, model, prompt, context: str, response_format: ResponseFormat):
+def get_text_trunk_score(connection, model, prompt, response_format: ResponseFormat, score_threshold: float):
     rsp = llm_call(connection, model, prompt, response_format)
-    return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.TEXT_TRUNK, validate_obj=context)
+    data = _load_json_rsp(rsp)
+    score_float = 0
+    reason = ""
+
+    if data and isinstance(data, dict) and "score" in data and "reason" in data:
+        # Extract the verdict and reason
+        score = data["score"].lower()
+        reason = data["reason"]
+        print(f"Score {ValidateObj.TEXT_TRUNK}: {score}\nReason: {reason}")
+        try:
+            score_float = float(score)
+        except ValueError:
+            reason = ErrorMsg.INVALID_JSON_FORMAT.format(rsp)
+    else:
+        reason = ErrorMsg.INVALID_JSON_FORMAT.format(rsp)
+    pass_validation = score_float >= score_threshold
+
+    return ScoreResult(score_float, reason, pass_validation)
 
 
 def retrieve_verdict_and_print_reason(rsp: str, validate_obj_name: str, validate_obj: str) -> ValidationResult:
+    data = _load_json_rsp(rsp)
+
+    if data and isinstance(data, dict) and "verdict" in data and "reason" in data:
+        # Extract the verdict and reason
+        verdict = data["verdict"].lower()
+        reason = data["reason"]
+        print(f"Is valid {validate_obj_name}: {verdict}\nReason: {reason}")
+        if verdict == "yes":
+            return ValidationResult(True, reason)
+        elif verdict == "no":
+            return ValidationResult(False, reason)
+        else:
+            print(f"Unexpected llm response to validate {validate_obj_name}: {validate_obj}")
+
+    return ValidationResult(False, ErrorMsg.INVALID_JSON_FORMAT.format(rsp))
+
+
+def _load_json_rsp(rsp: str):
     try:
         # It is possible that even the response format is required as json, the response still contains ```json\n
         rsp = re.sub(r"```json\n?|```", "", rsp)
@@ -85,19 +121,7 @@ def retrieve_verdict_and_print_reason(rsp: str, validate_obj_name: str, validate
         print(ErrorMsg.INVALID_JSON_FORMAT.format(rsp))
         data = None
 
-    if data and isinstance(data, dict) and "verdict" in data and "reason" in data:
-        # Extract the verdict and reason
-        verdict = data["verdict"].lower()
-        reason = data["reason"]
-        print(f"Is valid {validate_obj_name}: {verdict}\nReason: {reason}")
-        if verdict == "yes":
-            return ValidationResult(True, "")
-        elif verdict == "no":
-            return ValidationResult(False, reason)
-        else:
-            print(f"Unexpected llm response to validate {validate_obj_name}: {validate_obj}")
-
-    return ValidationResult(False, ErrorMsg.INVALID_JSON_FORMAT.format(rsp))
+    return data
 
 
 def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):

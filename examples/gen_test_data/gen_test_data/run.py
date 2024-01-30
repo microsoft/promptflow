@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 
@@ -15,19 +16,19 @@ UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "gen_test_data", "utils")
 if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
-from constants import TEXT_CHUNK, CONNECTIONS_TEMPLATE  # noqa: E402
-from common import split_document, clean_data_and_save  # noqa: E402
+from common import clean_data_and_save, split_document  # noqa: E402
 from components import clean_test_data_set, document_split  # noqa: E402
+from constants import CONNECTIONS_TEMPLATE, TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
 
 
 def batch_run_flow(
-        pf: PFClient,
-        flow_folder: str,
-        flow_input_data: str,
-        flow_batch_run_size: int,
-        connection_name: str = "azure_open_ai_connection",
+    pf: PFClient,
+    flow_folder: str,
+    flow_input_data: str,
+    flow_batch_run_size: int,
+    connection_name: str = "azure_open_ai_connection",
 ):
     logger.info("Start to submit the batch run.")
     base_run = pf.run(
@@ -38,8 +39,10 @@ def batch_run_flow(
             "PF_WORKER_COUNT": str(flow_batch_run_size),
             "PF_BATCH_METHOD": "spawn",
         },
-        connections={key: {"connection": value["connection"].format(connection_name=connection_name)}
-                     for key, value in CONNECTIONS_TEMPLATE.items()},
+        connections={
+            key: {"connection": value["connection"].format(connection_name=connection_name)}
+            for key, value in CONNECTIONS_TEMPLATE.items()
+        },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
     )
@@ -54,8 +57,10 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
     question = details["outputs.question"].tolist()
     suggested_answer = details["outputs.suggested_answer"].tolist()
     debug_info = details["outputs.debug_info"].tolist()
-    return [{"question": q, "suggested_answer": g, "debug_info": d}
-            for q, g, d in zip(question, suggested_answer, debug_info)]
+    return [
+        {"question": q, "suggested_answer": g, "debug_info": d}
+        for q, g, d in zip(question, suggested_answer, debug_info)
+    ]
 
 
 def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
@@ -78,22 +83,27 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
     ]
 )
 def gen_test_data_pipeline(
-        data_input: Input,
-        flow_yml_path: str,
-        connection_name: str,
-        should_skip_doc_split: bool,
-        chunk_size=1024,
-        instance_count=1,
-        mini_batch_size="10kb",
-        max_concurrency_per_instance=2,
+    data_input: Input,
+    flow_yml_path: str,
+    connection_name: str,
+    should_skip_doc_split: bool,
+    chunk_size=1024,
+    instance_count=1,
+    mini_batch_size="10kb",
+    max_concurrency_per_instance=2,
 ):
-    data = data_input if should_skip_doc_split else document_split(documents_folder=data_input,
-                                                                   chunk_size=chunk_size).outputs.document_node_output
+    data = (
+        data_input
+        if should_skip_doc_split
+        else document_split(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
+    )
     flow_node = load_component(flow_yml_path)(
         data=data,
         text_chunk="${data.text_chunk}",
-        connections={key: {"connection": value["connection"].format(connection_name=connection_name)}
-                     for key, value in CONNECTIONS_TEMPLATE.items()},
+        connections={
+            key: {"connection": value["connection"].format(connection_name=connection_name)}
+            for key, value in CONNECTIONS_TEMPLATE.items()
+        },
     )
 
     flow_node.mini_batch_size = mini_batch_size
@@ -104,14 +114,14 @@ def gen_test_data_pipeline(
 
 
 def run_local(
-        documents_folder,
-        document_chunk_size,
-        document_nodes_file,
-        flow_folder,
-        flow_batch_run_size,
-        connection_name,
-        output_folder,
-        should_skip_split
+    documents_folder,
+    document_chunk_size,
+    document_nodes_file,
+    flow_folder,
+    flow_batch_run_size,
+    connection_name,
+    output_folder,
+    should_skip_split,
 ):
     text_chunks_path = document_nodes_file
     inner_folder = os.path.join(output_folder, datetime.now().strftime("%b-%d-%Y-%H-%M-%S"))
@@ -131,24 +141,31 @@ def run_local(
     )
 
     test_data_set = get_batch_run_output(pf, batch_run)
+
+    # Store intermedian batch run output results
+    jsonl_str = "\n".join(map(json.dumps, test_data_set))
+    intermedian_batch_run_res = os.path.join(inner_folder, "batch-run-result.jsonl")
+    with open(intermedian_batch_run_res, "wt") as text_file:
+        print(f"{jsonl_str}", file=text_file)
+
     clean_data_output = os.path.join(inner_folder, "test-data.jsonl")
     clean_data_and_save(test_data_set, clean_data_output)
 
 
 def run_cloud(
-        documents_folder,
-        document_chunk_size,
-        document_nodes_file,
-        flow_folder,
-        connection_name,
-        subscription_id,
-        resource_group,
-        workspace_name,
-        aml_cluster,
-        prs_instance_count,
-        prs_mini_batch_size,
-        prs_max_concurrency_per_instance,
-        should_skip_split
+    documents_folder,
+    document_chunk_size,
+    document_nodes_file,
+    flow_folder,
+    connection_name,
+    subscription_id,
+    resource_group,
+    workspace_name,
+    aml_cluster,
+    prs_instance_count,
+    prs_mini_batch_size,
+    prs_max_concurrency_per_instance,
+    should_skip_split,
 ):
     ml_client = get_ml_client(subscription_id, resource_group, workspace_name)
 
@@ -185,7 +202,7 @@ if __name__ == "__main__":
             + "Please check if you are under the wrong directory or the file is missing."
         )
 
-    parser.add_argument('--cloud', action='store_true', help='cloud flag')
+    parser.add_argument("--cloud", action="store_true", help="cloud flag")
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
     parser.add_argument("--document_chunk_size", type=int, help="Document chunk size, default is 1024")
     parser.add_argument(
@@ -208,8 +225,9 @@ if __name__ == "__main__":
     parser.add_argument("--aml_cluster", help="AzureML cluster name")
     parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
     parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
-    parser.add_argument("--prs_max_concurrency_per_instance", type=int,
-                        help="Parallel run step max concurrency per instance")
+    parser.add_argument(
+        "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
+    )
     args = parser.parse_args()
 
     should_skip_split_documents = False
@@ -232,7 +250,8 @@ if __name__ == "__main__":
             args.prs_instance_count,
             args.prs_mini_batch_size,
             args.prs_max_concurrency_per_instance,
-            should_skip_split_documents)
+            should_skip_split_documents,
+        )
     else:
         run_local(
             args.documents_folder,
@@ -242,4 +261,5 @@ if __name__ == "__main__":
             args.flow_batch_run_size,
             args.connection_name,
             args.output_folder,
-            should_skip_split_documents)
+            should_skip_split_documents,
+        )
