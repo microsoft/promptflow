@@ -45,7 +45,6 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
-# TODO: will remain consistent with PF_WORKER_COUNT in the future
 DEFAULT_CONCURRENCY = 10
 
 
@@ -80,6 +79,7 @@ class BatchEngine:
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         batch_timeout_sec: Optional[int] = None,
+        worker_count: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -94,6 +94,8 @@ class BatchEngine:
         :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
         :param batch_timeout: The timeout of batch run in seconds
         :type batch_timeout: Optional[int]
+        :param worker_count: The concurrency limit of batch run
+        :type worker_count: Optional[int]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
@@ -114,6 +116,7 @@ class BatchEngine:
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -260,6 +263,7 @@ class BatchEngine:
                 run_id,
                 batch_timeout_sec=self._batch_timeout_sec,
                 line_timeout_sec=self._line_timeout_sec,
+                worker_count=self._worker_count,
             )
             line_results.extend(results)
         else:
@@ -297,7 +301,7 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        worker_count = get_int_env_var("PF_WORKER_COUNT", DEFAULT_CONCURRENCY)
+        worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
         pending = [
             asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
