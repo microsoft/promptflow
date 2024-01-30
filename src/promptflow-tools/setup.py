@@ -53,6 +53,12 @@ setup(
     ],
     python_requires="<4.0,>=3.8",
     install_requires=parse_requirements('requirements.txt'),
+    extras_require={
+        "azure": [
+            # Dependency to list deployment in aoai_gpt4v
+            "azure-mgmt-cognitiveservices==13.5.0"
+        ]
+    },
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
     entry_points={
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
