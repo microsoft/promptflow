@@ -52,7 +52,7 @@ context_model = api.model(
 status_model = api.model(
     "Status",
     {
-        SpanStatusFieldName.STATUS_CODE: fields.String(required=True),
+        SpanStatusFieldName.CODE: fields.String(required=True),
     },
 )
 attributes_model = api.model(
