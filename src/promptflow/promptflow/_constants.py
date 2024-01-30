@@ -54,7 +54,7 @@ _ENV_PF_INSTALLER = "PF_INSTALLER"
 TRACE_SESSION_ID_ENV_VAR = "PF_TRACE_SESSION_ID"
 
 
-class TraceFieldName:
+class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
     KIND = "kind"
@@ -68,17 +68,17 @@ class TraceFieldName:
     RESOURCE = "resource"
 
 
-class TraceContextFieldName:
+class SpanContextFieldName:
     TRACE_ID = "trace_id"
     SPAN_ID = "span_id"
     TRACE_STATE = "trace_state"
 
 
-class TraceStatusFieldName:
+class SpanStatusFieldName:
     STATUS_CODE = "status_code"
 
 
-class TraceAttributeFieldName:
+class SpanAttributeFieldName:
     FRAMEWORK = "framework"
     SPAN_TYPE = "span_type"
     FUNCTION = "function"
@@ -91,10 +91,10 @@ class TraceAttributeFieldName:
     EXPERIMENT = "experiment"
 
 
-class TraceResourceAttributesFieldName:
+class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
 
 
-class TraceResourceFieldName:
+class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"

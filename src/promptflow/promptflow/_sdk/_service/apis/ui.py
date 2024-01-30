@@ -25,7 +25,7 @@ class Trace(Resource):
         args = trace_parser.parse_args()
         session_id = args.session
         parent_span_id = args.parent_id
-        traces = client._traces.list(
+        traces = client._traces.list_spans(
             session_id=session_id,
             parent_span_id=parent_span_id,
         )
