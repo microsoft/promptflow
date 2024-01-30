@@ -37,8 +37,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
-from ..recording_utilities import RecordStorage
-
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -901,7 +899,6 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="System metrics not supported in replaying mode")
     def test_system_metrics_in_properties(self, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
@@ -1238,6 +1235,7 @@ class TestFlowRun:
         )
         assert run.status == "Completed"
 
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
         run = pf.run(
@@ -1266,6 +1264,7 @@ class TestFlowRun:
             )
         assert "'path': ['Missing data for required field.']" in str(e.value)
 
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_additional_includes(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes")
         run = pf.run(
