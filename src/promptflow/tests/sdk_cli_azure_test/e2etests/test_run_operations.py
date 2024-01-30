@@ -36,8 +36,19 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def create_registry_run(name: str, registry_name: str, runtime: str, pf: PFClient):
+    return pf.run(
+        flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
+        data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+        column_mapping={"name": "${data.name}"},
+        runtime=runtime,
+        name=name,
+    )
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -145,13 +156,7 @@ class TestFlowRun:
     ):
         """Test run bulk with remote registry flow."""
         name = randstr("name")
-        run = pf.run(
-            flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
-            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
-            column_mapping={"name": "${data.name}"},
-            runtime=runtime,
-            name=name,
-        )
+        run = create_registry_run(name=name, registry_name=registry_name, runtime=runtime, pf=pf)
         assert isinstance(run, Run)
         assert run.name == name
 
@@ -164,6 +169,17 @@ class TestFlowRun:
                 runtime=runtime,
                 name=name,
             )
+
+    def test_run_bulk_with_registry_flow_automatic_runtime(
+        self, pf: PFClient, randstr: Callable[[str], str], registry_name: str
+    ):
+        """Test run bulk with remote registry flow."""
+        name = randstr("name")
+        run = create_registry_run(name=name, registry_name=registry_name, runtime=None, pf=pf)
+        assert isinstance(run, Run)
+        assert run.name == name
+        run = pf.runs.stream(run=run.name)
+        assert run.status == RunStatus.COMPLETED
 
     def test_run_with_connection_overwrite(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
@@ -911,3 +927,71 @@ class TestFlowRun:
         with TemporaryDirectory() as temp:
             pf.runs.download(run=run.name, output=temp)
             assert Path(temp, run.name, "snapshot/requirements").exists()
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str], simple_eager_run: Run):
+        run = simple_eager_run
+        run = pf.runs.get(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 1
+        metrics = pf.runs.get_metrics(run)
+        assert metrics == {}
+
+        # TODO(2917923): cannot differ the two requests to run history in replay mode."
+        # run_meta_data = RunHistoryKeys.RunMetaData
+        # hidden = RunHistoryKeys.HIDDEN
+        # run_id = run.name
+        # # test archive
+        # pf.runs.archive(run=run_id)
+        # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        # assert run_data[hidden] is True
+        #
+        # # test restore
+        # pf.runs.restore(run=run_id)
+        # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        # assert run_data[hidden] is False
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
+        """Test cancel eager flow."""
+        # create a run
+        run_name = randstr("name")
+        pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/long_running",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=run_name,
+        )
+
+        pf.runs.cancel(run=run_name)
+        sleep(3)
+        run = pf.runs.get(run=run_name)
+        # the run status might still be cancel requested, but it should be canceled eventually
+        assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
+        run = simple_eager_run
+        expected_files = [
+            DownloadedRun.RUN_METADATA_FILE_NAME,
+            DownloadedRun.LOGS_FILE_NAME,
+            DownloadedRun.METRICS_FILE_NAME,
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        # test download
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run.name, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run.name, file).exists()

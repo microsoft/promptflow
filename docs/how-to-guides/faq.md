@@ -82,15 +82,15 @@ Currently, promptflow supports the following environment variables:
 
 **PF_WORKER_COUNT** 
 
-Valid for batch run only. The number of workers to use for parallel execution of the Flow.
+Effective for batch run only, count of parallel workers in batch run execution.
 
-Default value is 16. If you have large number of batch run date row count, and want more efficiency, you can increase the PF_WORKER_COUNT to improve the batch run concurrency, make it run faster.
+The default value is 4 (was 16 when promptflow<1.4.0)
 
-When you modify the concurrency, please consider 2 points:
+Please take the following points into consideration when changing it:
 
-First, the concurrency should be not bigger than your batch run data row count.  If not, meaning if the concurrency is bigger, it will run slower due to the time taken for process startup and shutdown.
+1. The concurrency should not exceed the total data rows count. Otherwise, the execution may slow down due to additional time spent on process startup and shutdown.
 
-Second, your batch run risks to fail due to rate limit of your LLM endpoint, in this case you need to set up PF_WORKER_COUNT to a smaller number. Take Azure OpenAI endpoint as example, you can go to Azure OpenAI Studio, navigate to Deployment tab, check out the capacity of your endpoints. Then you can refer to this expression to set up the concurrency.
+2. High parallelism may cause the underlying API call to reach the rate limit of your LLM endpoint. In which case you can decrease the `PF_WORKER_COUNT` or increase the rate limit. Please refer to [this doc](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/quota) on quota management. Then you can refer to this expression to set up the concurrency.
 
 ```
 PF_WORKER_COUNT <= TPM * duration_seconds / token_count / 60

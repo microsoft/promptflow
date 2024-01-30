@@ -72,6 +72,12 @@ class PFSOperations:
             assert status_code == response.status_code, response.text
         return response
 
+    def delete_connection(self, name: str, status_code=None):
+        response = self._client.delete(f"{self.CONNECTION_URL_PREFIX}/{name}", headers=self.remote_user_header())
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
     def list_connections_by_provider(self, working_dir, status_code=None):
         response = self._client.get(
             f"{self.CONNECTION_URL_PREFIX}/",
@@ -147,6 +153,12 @@ class PFSOperations:
 
     def restore_run(self, name: str, status_code=None):
         response = self._client.get(f"{self.RUN_URL_PREFIX}/{name}/restore")
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def delete_run(self, name: str, status_code=None):
+        response = self._client.delete(f"{self.RUN_URL_PREFIX}/{name}")
         if status_code:
             assert status_code == response.status_code, response.text
         return response
