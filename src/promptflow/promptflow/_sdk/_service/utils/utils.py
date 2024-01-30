@@ -55,9 +55,8 @@ def dump_port_to_config(port):
         service_config = load_yaml(f) or {}
     with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
         service_config["service"] = service_config.get("service", {})
-        if "port" in service_config["service"] and service_config["service"]["port"] != port:
-            service_config["service"]["port"] = port
-            dump_yaml(service_config, f)
+        service_config["service"]["port"] = port
+        dump_yaml(service_config, f)
 
 
 def is_port_in_use(port: int):

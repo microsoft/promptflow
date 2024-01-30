@@ -5,6 +5,7 @@
 import os
 import platform
 import sys
+import time
 import uuid
 
 import requests
@@ -19,6 +20,7 @@ from promptflow._sdk._service.utils.utils import get_port_from_config, is_port_i
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
+time_threshold = 300
 
 
 def start_trace():
@@ -34,7 +36,7 @@ def start_trace():
     _logger.debug("PFS is serving on port %s", pfs_port)
     # provision a session
     # TODO: make this dynamic after set from our side
-    # session_id = _provision_session()
+    session_id = _provision_session()
     session_id = "8cffec9b-eda9-4dab-a321-4f94227c23cb"
     _logger.debug("current session id is %s", session_id)
     # init the global tracer with endpoint, context (session, run, exp)
@@ -49,18 +51,40 @@ def _start_pfs_in_background(pfs_port) -> None:
     args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
-        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
-        if response.status_code != 200:
-            _logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to force restart pfs.")
-            args += ["--force"]
-        else:
-            _logger.warning(f"Pfs service is already running on port {pfs_port}, will not restart pfs.")
+        if _check_pfs_service_status(pfs_port) is True:
             return
+        else:
+            args += ["--force"]
     # Start a pfs process using detach mode
     if platform.system() == "Windows":
         os.spawnv(os.P_DETACH, sys.executable, args)
     else:
         os.system(" ".join(["nohup"] + args + ["&"]))
+
+    wait_time = 0
+    is_healthy = _check_pfs_service_status(pfs_port)
+    while is_healthy is False and time_threshold > wait_time:
+        _logger.info(f"Pfs service is not ready, will wait for at most {time_threshold}s.")
+        time.sleep(60)
+        wait_time += 60
+        is_healthy = _check_pfs_service_status(pfs_port)
+
+    if is_healthy is False:
+        _logger.error(f"Pfs service start failed in {pfs_port}.")
+        sys.exit(1)
+
+
+def _check_pfs_service_status(pfs_port) -> bool:
+    """Check if pfs service is running."""
+    try:
+        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
+        if response.status_code == 200:
+            _logger.info(f"Pfs service is already running on port {pfs_port}.")
+            return True
+    except Exception:  # pylint: disable=broad-except
+        pass
+    _logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to start/force restart pfs.")
+    return False
 
 
 def _provision_session() -> str:
