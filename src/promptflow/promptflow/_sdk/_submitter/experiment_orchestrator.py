@@ -73,7 +73,9 @@ class ExperimentOrchestrator:
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
         # Read the first line in template data
-        test_context = ExperimentTemplateTestContext(template, environment_variables=environment_variables)
+        test_context = ExperimentTemplateTestContext(
+            template, environment_variables=environment_variables, output_path=kwargs.get("output_path")
+        )
 
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
@@ -203,7 +205,7 @@ class ExperimentOrchestrator:
 
 
 class ExperimentTemplateTestContext:
-    def __init__(self, template: ExperimentTemplate, environment_variables):
+    def __init__(self, template: ExperimentTemplate, environment_variables, output_path=None):
         self.template = template
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
@@ -211,7 +213,9 @@ class ExperimentTemplateTestContext:
         self.test_data = ExperimentHelper.prepare_test_data(template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
         # TODO: Update session part after test session is supported
-        self.output_path = Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
+        self.output_path = (
+            output_path or Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
+        )
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs

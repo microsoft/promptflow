@@ -100,7 +100,9 @@ class ExperimentOperations(TelemetryMixin):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
         return ExperimentOrchestrator(self._client).start(self.get(name), **kwargs)
 
-    def _test(self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None):
+    def _test(
+        self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs
+    ):
         """Test flow in experiment.
 
         :param flow: Flow dag yaml file path.
@@ -116,6 +118,7 @@ class ExperimentOperations(TelemetryMixin):
         from .._submitter.experiment_orchestrator import ExperimentOrchestrator
 
         experiment_template = load_common(ExperimentTemplate, experiment)
+        output_path = kwargs.get("output_path", None)
         return ExperimentOrchestrator(client=self._client).test(
-            flow, experiment_template, inputs, environment_variables
+            flow, experiment_template, inputs, environment_variables, output_path=output_path
         )

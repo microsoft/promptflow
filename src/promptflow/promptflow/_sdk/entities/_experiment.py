@@ -236,7 +236,7 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
         """Get experiment template directory name."""
         try:
             folder_name = Path(self._base_path).resolve().absolute().name
-            return _sanitize_python_variable_name(folder_name)
+            return folder_name
         except Exception as e:
             logger.debug(f"Failed to generate template name, error: {e}, use uuid.")
             return str(uuid.uuid4())

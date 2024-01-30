@@ -1,4 +1,3 @@
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -154,9 +153,9 @@ class TestExperiment:
         assert expected_output_path.resolve().exists()
         # Assert eval metric exists
         assert (expected_output_path / "eval" / "flow.metrics.json").exists()
-        shutil.rmtree(expected_output_path)
-        # Test with default data
-        result = client.flows.test(target_flow_path, experiment=template_path)
+        # Test with default data and custom path
+        expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
+        result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
         _assert_result(result)
         assert expected_output_path.resolve().exists()
         # Assert eval metric exists

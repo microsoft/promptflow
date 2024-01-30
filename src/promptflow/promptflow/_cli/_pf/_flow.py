@@ -462,7 +462,7 @@ def _test_flow_standard(args, pf_client, inputs, environment_variables):
         allow_generator_output=False,
         stream_output=False,
         dump_test_result=True,
-        detail=args.detail,
+        output_path=args.detail,
     )
     # Print flow/node test result
     if isinstance(result, dict):
@@ -485,6 +485,7 @@ def _test_flow_experiment(args, pf_client, inputs, environment_variables):
         inputs=inputs,
         environment_variables=environment_variables,
         experiment=args.experiment,
+        output_path=args.detail,
     )
     print(json.dumps(node_results, indent=4, ensure_ascii=False))
 
