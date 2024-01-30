@@ -154,6 +154,7 @@ jobs:
         path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
+          ${{ env.testWorkingDirectory }}/tests/sdk_cli_test/count.json
 
 
   publish-test-results-sdk-cli-test:
