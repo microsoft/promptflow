@@ -39,23 +39,6 @@ class AsyncNodesScheduler:
         self._dag_manager_completed_event = threading.Event()
         self._running_tasks = {}
 
-    async def _execute(
-        self,
-        executor: ThreadPoolExecutor,
-        nodes: List[Node],
-        inputs: Dict[str, Any],
-        context: FlowExecutionContext,
-        line_timeout_sec: int,
-    ) -> Tuple[dict, dict]:
-        flow_logger.info(f"Async timeout task is scheduled to wait for {line_timeout_sec} seconds.")
-
-        try:
-            return await asyncio.wait_for(
-                self._execute_with_thread_pool(executor, nodes, inputs, context), line_timeout_sec
-            )
-        except asyncio.TimeoutError:
-            raise LineExecutionTimeoutError(context._line_number, line_timeout_sec)
-
     async def execute(
         self,
         nodes: List[Node],
@@ -97,9 +80,9 @@ class AsyncNodesScheduler:
         # See reference: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor
         try:
             if line_timeout_sec is not None:
-                outputs = await self._execute(executor, nodes, inputs, context, line_timeout_sec)
+                outputs = await self._execute_with_timeout(executor, nodes, inputs, context, line_timeout_sec)
             else:
-                outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+                outputs = await self._execute(executor, nodes, inputs, context)
         except Exception as e:
             err_msg = "Flow execution has failed."
             if isinstance(e, LineExecutionTimeoutError):
@@ -119,7 +102,22 @@ class AsyncNodesScheduler:
         executor.shutdown()
         return outputs
 
-    async def _execute_with_thread_pool(
+    async def _execute_with_timeout(
+        self,
+        executor: ThreadPoolExecutor,
+        nodes: List[Node],
+        inputs: Dict[str, Any],
+        context: FlowExecutionContext,
+        line_timeout_sec: int,
+    ) -> Tuple[dict, dict]:
+        flow_logger.info(f"Async timeout task is scheduled to wait for {line_timeout_sec} seconds.")
+
+        try:
+            return await asyncio.wait_for(self._execute(executor, nodes, inputs, context), line_timeout_sec)
+        except asyncio.TimeoutError:
+            raise LineExecutionTimeoutError(context._line_number, line_timeout_sec)
+
+    async def _execute(
         self,
         executor: ThreadPoolExecutor,
         nodes: List[Node],
