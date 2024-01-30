@@ -8,14 +8,14 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 @tool
 def validate_and_generate_seed_question(
-    connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    model_or_deployment_name: str,
-    validate_text_trunk_prompt: str,
-    seed_question_prompt: str,
-    context: str = None,
-    response_format: str = ResponseFormat.JSON,
-    temperature: float = 1.0,
-    max_tokens: int = 512
+        connection: Union[OpenAIConnection, AzureOpenAIConnection],
+        model_or_deployment_name: str,
+        validate_text_trunk_prompt: str,
+        seed_question_prompt: str,
+        context: str = None,
+        response_format: str = ResponseFormat.JSON,
+        temperature: float = 1.0,
+        max_tokens: int = 512
 ):
     """
     1. Validates the given text chunk.
@@ -25,7 +25,13 @@ def validate_and_generate_seed_question(
         dict: The generated seed question and text trunk validation result.
     """
     validation_res = get_text_trunk_validation_res(
-        connection, model_or_deployment_name, validate_text_trunk_prompt, context, response_format, temperature, max_tokens
+        connection,
+        model_or_deployment_name,
+        validate_text_trunk_prompt,
+        context,
+        response_format,
+        temperature,
+        max_tokens
     )
     is_valid_text_trunk = validation_res.pass_validation
     if not is_valid_text_trunk:

@@ -5,10 +5,10 @@ from collections import namedtuple
 import numpy as np
 import numpy.testing as npt
 from numpy.random import default_rng
-
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.tools.aoai import chat as aoai_chat
 from promptflow.tools.openai import chat as openai_chat
+
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 class QuestionType:
@@ -40,12 +40,12 @@ ValidationResult = namedtuple("ValidationResult", ["pass_validation", "reason_if
 
 
 def llm_call(
-    connection,
-    model_or_deployment_name,
-    prompt,
-    response_format=ResponseFormat.TEXT,
-    temperature=1.0,
-    max_tokens=16
+        connection,
+        model_or_deployment_name,
+        prompt,
+        response_format=ResponseFormat.TEXT,
+        temperature=1.0,
+        max_tokens=16
 ):
     response_format = "json_object" if response_format.lower() == "json" else response_format
     prompt = f"{{% raw %}}{prompt}{{% endraw %}}"
@@ -77,22 +77,25 @@ def get_question_type(testset_distribution) -> str:
     return next((key for key in testset_distribution.keys() if prob <= testset_distribution[key]), QuestionType.SIMPLE)
 
 
-def get_suggested_answer_validation_res(connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float,
-    max_tokens: int):
+def get_suggested_answer_validation_res(connection, model_or_deployment_name, prompt, suggested_answer: str,
+                                        temperature: float,
+                                        max_tokens: int):
     rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens)
     return retrieve_verdict_and_print_reason(
         rsp=rsp, validate_obj_name=ValidateObj.SUGGESTED_ANSWER, validate_obj=suggested_answer
     )
 
 
-def get_question_validation_res(connection, model_or_deployment_name, prompt, question: str, response_format: ResponseFormat, temperature: float,
-    max_tokens: int):
+def get_question_validation_res(connection, model_or_deployment_name, prompt, question: str,
+                                response_format: ResponseFormat, temperature: float,
+                                max_tokens: int):
     rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
 
 
-def get_text_trunk_validation_res(connection, model_or_deployment_name, prompt, context: str, response_format: ResponseFormat, temperature: float,
-    max_tokens: int):
+def get_text_trunk_validation_res(connection, model_or_deployment_name, prompt, context: str,
+                                  response_format: ResponseFormat, temperature: float,
+                                  max_tokens: int):
     rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.TEXT_TRUNK, validate_obj=context)
 
@@ -133,14 +136,17 @@ def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
 
 
 def generate_question(
-    connection, model_or_deployment_name, question_type, seed_question, reasoning_prompt: str = None, conditional_prompt: str = None, temperature: float = None,
-    max_tokens: int = None
+        connection, model_or_deployment_name, question_type, seed_question, reasoning_prompt: str = None,
+        conditional_prompt: str = None, temperature: float = None,
+        max_tokens: int = None
 ):
     if question_type == QuestionType.SIMPLE:
         return seed_question
     elif question_type == QuestionType.REASONING:
-        return llm_call(connection, model_or_deployment_name, reasoning_prompt, temperature=temperature, max_tokens=max_tokens)
+        return llm_call(connection, model_or_deployment_name, reasoning_prompt, temperature=temperature,
+                        max_tokens=max_tokens)
     elif question_type == QuestionType.CONDITIONAL:
-        return llm_call(connection, model_or_deployment_name, conditional_prompt, temperature=temperature, max_tokens=max_tokens)
+        return llm_call(connection, model_or_deployment_name, conditional_prompt, temperature=temperature,
+                        max_tokens=max_tokens)
     else:
         raise Exception("Invalid question type.")
