@@ -9,6 +9,7 @@ import typing
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
+from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanFieldName
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp, flatten_pb_attributes
 
@@ -37,27 +38,26 @@ class Span:
         experiment: typing.Optional[str] = None,
     ):
         self.name = name
-        self.span_id = context["span_id"]
-        self.trace_id = context["trace_id"]
+        self.span_id = context[SpanContextFieldName.SPAN_ID]
+        self.trace_id = context[SpanContextFieldName.TRACE_ID]
         self.span_type = span_type
         self.parent_span_id = parent_span_id
         self.session_id = session_id
         self.path = path
         self.run = run
         self.experiment = experiment
-        # use @dataclass
         self._content = {
-            "name": self.name,
-            "context": copy.deepcopy(context),
-            "kind": kind,
-            "parent_id": self.parent_span_id,
-            "start_time": start_time,
-            "end_time": end_time,
-            "status": status,
-            "attributes": copy.deepcopy(attributes),
-            "events": copy.deepcopy(events),
-            "links": copy.deepcopy(links),
-            "resource": copy.deepcopy(resource),
+            SpanFieldName.NAME: self.name,
+            SpanFieldName.CONTEXT: copy.deepcopy(context),
+            SpanFieldName.KIND: kind,
+            SpanFieldName.PARENT_ID: self.parent_span_id,
+            SpanFieldName.START_TIME: start_time,
+            SpanFieldName.END_TIME: end_time,
+            SpanFieldName.STATUS: status,
+            SpanFieldName.ATTRIBUTES: copy.deepcopy(attributes),
+            SpanFieldName.EVENTS: copy.deepcopy(events),
+            SpanFieldName.LINKS: copy.deepcopy(links),
+            SpanFieldName.RESOURCE: copy.deepcopy(resource),
         }
 
     def _persist(self) -> None:
@@ -68,18 +68,18 @@ class Span:
         content = json.loads(obj.content)
         return Span(
             name=obj.name,
-            context=content["context"],
-            kind=content["kind"],
-            start_time=content["start_time"],
-            end_time=content["end_time"],
-            status=content["status"],
-            attributes=content["attributes"],
-            resource=content["resource"],
+            context=content[SpanFieldName.CONTEXT],
+            kind=content[SpanFieldName.KIND],
+            start_time=content[SpanFieldName.START_TIME],
+            end_time=content[SpanFieldName.END_TIME],
+            status=content[SpanFieldName.STATUS],
+            attributes=content[SpanFieldName.ATTRIBUTES],
+            resource=content[SpanFieldName.RESOURCE],
             span_type=obj.span_type,
             session_id=obj.session_id,
             parent_span_id=obj.parent_span_id,
-            events=content["events"],
-            links=content["links"],
+            events=content[SpanFieldName.EVENTS],
+            links=content[SpanFieldName.LINKS],
             path=obj.path,
             run=obj.run,
             experiment=obj.experiment,
@@ -105,26 +105,25 @@ class Span:
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
         context = {
-            "trace_id": trace_id,
-            "span_id": span_id,
-            "trace_state": obj.trace_state,
+            SpanContextFieldName.TRACE_ID: trace_id,
+            SpanContextFieldName.SPAN_ID: span_id,
+            SpanContextFieldName.TRACE_STATE: obj.trace_state,
         }
         parent_span_id = obj.parent_span_id.hex()
         start_time = convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano)
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
-        attributes = flatten_pb_attributes(span_dict["attributes"])
+        status = json.loads(MessageToJson(obj.status))
+        attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
         return Span(
             name=obj.name,
             context=context,
             kind=obj.kind,
             start_time=start_time,
             end_time=end_time,
-            # TODO: use real status
-            # status=obj.status,
-            status={"status_code": "OK"},
+            status=status,
             attributes=attributes,
             resource=resource,
-            span_type=attributes.get("span_type", "Function"),
-            session_id=attributes["session_id"],
+            span_type=attributes[SpanAttributeFieldName.SPAN_TYPE],
+            session_id=attributes[SpanAttributeFieldName.SESSION_ID],
             parent_span_id=parent_span_id,
         )
