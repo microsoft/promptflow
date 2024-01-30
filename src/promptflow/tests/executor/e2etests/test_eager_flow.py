@@ -1,4 +1,3 @@
-import os
 from dataclasses import is_dataclass
 from pathlib import Path
 from tempfile import mkdtemp
@@ -14,7 +13,6 @@ from promptflow.executor.flow_executor import FlowExecutor
 from ..utils import (
     EAGER_FLOW_ROOT,
     get_bulk_inputs_from_jsonl,
-    get_entry_file,
     get_flow_folder,
     get_flow_inputs_file,
     get_yaml_file,
@@ -47,40 +45,6 @@ def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, en
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
-        "flow_folder, entry, inputs, ensure_output",
-        [
-            (
-                "dummy_flow_with_trace",
-                "my_flow",
-                {"text": "text", "models": ["model"]},
-                lambda x: x == "dummy_output"
-            ),
-            (
-                "flow_with_dataclass_output",
-                "my_flow",
-                {"text": "text", "models": ["model"]},
-                lambda x: is_dataclass(x) and x.text == "text" and x.models == ["model"]
-            ),
-        ]
-    )
-    def test_flow_run(self, flow_folder, entry, inputs, ensure_output):
-        # Test submitting eager flow to script executor
-        flow_file = get_entry_file(flow_folder, root=EAGER_FLOW_ROOT)
-        executor = ScriptExecutor(flow_file=flow_file, entry=entry)
-        line_result = executor.exec_line(inputs=inputs, index=0)
-        assert isinstance(line_result, LineResult)
-        assert ensure_output(line_result.output)
-
-        # Test submitting eager flow to flow executor
-        working_dir = get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT)
-        os.chdir(working_dir)
-        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
-        executor = FlowExecutor.create(flow_file=flow_file, connections={})
-        line_result = executor.exec_line(inputs=inputs, index=0)
-        assert isinstance(line_result, LineResult)
-        assert ensure_output(line_result.output)
-
-    @pytest.mark.parametrize(
         "flow_folder, inputs, ensure_output",
         [
             (
@@ -95,59 +59,31 @@ class TestEagerFlow:
             ),
         ]
     )
-    def test_flow_run_with_flow_yaml(self, flow_folder, inputs, ensure_output):
-        working_dir = get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT)
-        os.chdir(working_dir)
+    def test_flow_run(self, flow_folder, inputs, ensure_output):
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
-        executor = FlowExecutor.create(flow_file=flow_file, connections={})
-        line_result = executor.exec_line(inputs=inputs, index=0)
 
+        # Test submitting eager flow to script executor
+        executor = ScriptExecutor(flow_file=flow_file)
+        line_result = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
 
-    def test_exec_line_with_invalid_case(self):
-        flow_file = get_entry_file("dummy_flow_with_exception", root=EAGER_FLOW_ROOT)
-        executor = ScriptExecutor(flow_file=flow_file, entry="my_flow")
+        # Test submitting eager flow to flow executor
+        executor = FlowExecutor.create(flow_file=flow_file, connections={})
+        line_result = executor.exec_line(inputs=inputs, index=0)
+        assert isinstance(line_result, LineResult)
+        assert ensure_output(line_result.output)
+
+    def test_flow_run_with_invalid_case(self):
+        flow_folder = "dummy_flow_with_exception"
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = ScriptExecutor(flow_file=flow_file)
         line_result = executor.exec_line(inputs={"text": "text"}, index=0)
 
         assert isinstance(line_result, LineResult)
         assert line_result.output is None
         assert line_result.run_info.status == Status.Failed
         assert "dummy exception" in line_result.run_info.error["message"]
-
-    @pytest.mark.parametrize(
-        "flow_folder, inputs_mapping, entry, ensure_output",
-        [
-            (
-                "dummy_flow_with_trace",
-                {"text": "${data.text}", "models": "${data.models}"},
-                "my_flow",
-                lambda x: "output" in x and x["output"] == "dummy_output",
-            ),
-            (
-                "flow_with_dataclass_output",
-                {"text": "${data.text}", "models": "${data.models}"},
-                "my_flow",
-                lambda x: x["text"] == "text" and isinstance(x["models"], list),
-            ),
-            (
-                "flow_with_dataclass_output",
-                {},  # if inputs_mapping is empty, then the inputs will be the default value
-                "my_flow",
-                lambda x: x["text"] == "default_text" and x["models"] == ["default_model"],
-            )
-        ]
-    )
-    def test_batch_run(self, flow_folder, entry, inputs_mapping, ensure_output):
-        batch_engine = BatchEngine(
-            get_entry_file(flow_folder, root=EAGER_FLOW_ROOT),
-            get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
-            entry=entry,
-        )
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
-        output_dir = Path(mkdtemp())
-        batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
-        validate_batch_result(batch_result, flow_folder, output_dir, ensure_output)
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping, ensure_output",
@@ -164,7 +100,7 @@ class TestEagerFlow:
             ),
         ]
     )
-    def test_batch_run_with_flow_yaml(self, flow_folder, inputs_mapping, ensure_output):
+    def test_batch_run(self, flow_folder, inputs_mapping, ensure_output):
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
             get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
@@ -177,9 +113,8 @@ class TestEagerFlow:
     def test_batch_run_with_invalid_case(self):
         flow_folder = "dummy_flow_with_exception"
         batch_engine = BatchEngine(
-            get_entry_file(flow_folder, root=EAGER_FLOW_ROOT),
+            get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
             get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
-            entry="my_flow",
         )
         input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
         output_dir = Path(mkdtemp())
@@ -194,8 +129,6 @@ class TestEagerFlow:
 
     def test_flow_with_operation_context(self):
         flow_folder = "flow_with_operation_context"
-        working_dir = get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT)
-        os.chdir(working_dir)
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
         executor = FlowExecutor.create(flow_file=flow_file, connections={})
         line_result = executor.exec_line(inputs={}, index=0)
