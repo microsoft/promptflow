@@ -15,7 +15,7 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._sdk._constants import TRACE_SESSION_ID_ENV_VAR
+from promptflow._constants import TRACE_SESSION_ID_ENV_VAR
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
