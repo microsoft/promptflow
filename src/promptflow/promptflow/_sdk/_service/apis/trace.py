@@ -10,6 +10,12 @@ from promptflow._sdk._service.utils.utils import get_client_from_request
 
 api = Namespace("traces", description="Trace Management")
 
+# parsers for query parameters
+trace_parser = api.parser()
+trace_parser.add_argument("session", type=str, required=False)
+trace_parser.add_argument("parent_id", type=str, required=False)
+
+# trace models, for strong type support
 context_model = api.model(
     "Context",
     {
@@ -79,5 +85,11 @@ class TraceList(Resource):
         from promptflow import PFClient
 
         client: PFClient = get_client_from_request()
-        traces = client._traces.list()
+        args = trace_parser.parse_args()
+        session_id = args.session
+        parent_span_id = args.parent_id
+        traces = client._traces.list(
+            session_id=session_id,
+            parent_span_id=parent_span_id,
+        )
         return [trace._content for trace in traces]
