@@ -118,7 +118,6 @@ def add_experiment_start(subparsers):
     )
 
 
-
 def add_experiment_stop(subparsers):
     epilog = """
     Examples:
@@ -204,6 +203,7 @@ def show_experiment(args: argparse.Namespace):
 def start_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.start(args.name)
     print(json.dumps(result._to_dict(), indent=4))
+
 
 @exception_handler("Stop experiment")
 def stop_experiment(args: argparse.Namespace):
