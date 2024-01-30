@@ -560,9 +560,9 @@ class Flow(BaseFlow):
     name: str
     nodes: List[Node]
     tools: List[Tool]
-    node_variants: Dict[str, NodeVariants]
-    environment_variables: Dict[str, object] = None
+    node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
 
     def serialize(self):
         """Serialize the flow to a dict.
