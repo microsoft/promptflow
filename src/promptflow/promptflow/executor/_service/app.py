@@ -22,4 +22,4 @@ async def exception_handler(request, exc):
 
 
 if __name__ == "__main__":
-    uvicorn.run("promptflow.executor._service.app:app", port=8000, reload=True)
+    uvicorn.run("promptflow.executor._service.app:app", host="0.0.0.0", port=8000, reload=True)()
