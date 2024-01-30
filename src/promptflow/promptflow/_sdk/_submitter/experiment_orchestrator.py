@@ -102,7 +102,7 @@ class ExperimentOrchestrator:
         if platform.system() == "Windows":
             os.spawnve(os.P_DETACH, executable_path, args, os.environ)
         else:
-            os.system(" ".join(["nohup"] + args + ["&"]))
+            subprocess.Popen(" ".join(["nohup"] + args + ["&"]), shell=True, env=os.environ)
         return self.experiment
 
     def _update_orchestrator_record(self, status, pid=None):
