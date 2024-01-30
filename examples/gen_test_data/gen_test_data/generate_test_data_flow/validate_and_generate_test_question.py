@@ -9,7 +9,7 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 @tool
 def validate_and_generate_test_question(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    model: str,
+    model_or_deployment_name: str,
     seed_question: str,
     # reasoning_prompt: str,
     # conditional_prompt: str,
@@ -18,6 +18,8 @@ def validate_and_generate_test_question(
     # reasoning_ratio: float = 0.25,
     # conditional_ratio: float = 0.25,
     response_format: str = ResponseFormat.JSON,
+    temperature: float = 1.0,
+    max_tokens: int = 512
 ):
     """
     1. Validates the given seed question.
@@ -31,7 +33,7 @@ def validate_and_generate_test_question(
         return {"question": "", "question_type": "", "validation_res": None}
 
     validation_res = get_question_validation_res(
-        connection, model, validate_seed_question_prompt, seed_question, response_format
+        connection, model_or_deployment_name, validate_seed_question_prompt, seed_question, response_format, temperature, max_tokens
     )
     is_valid_seed_question = validation_res.pass_validation
     question = ""
@@ -46,7 +48,7 @@ def validate_and_generate_test_question(
         # testset_distribution = validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio)
 
         # question_type = get_question_type(testset_distribution)
-        # question = generate_question(connection, model, question_type, seed_question)
+        # question = generate_question(connection, model_or_deployment_name, question_type, seed_question)
         question = seed_question
         question_type = QuestionType.SIMPLE
 

@@ -12,9 +12,11 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 @tool
 def validate_suggested_answer(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    model: str,
+    model_or_deployment_name: str,
     suggested_answer: str,
     validate_suggested_answer_prompt: str,
+    temperature: float = 1.0,
+    max_tokens: int = 512
 ):
     """
     1. Validates the given ground truth.
@@ -25,8 +27,8 @@ def validate_suggested_answer(
     if not suggested_answer:
         return {"suggested_answer": "", "validation_res": None}
 
-    validation_res = get_suggested_answer_validation_res(connection, model,
-                                                         validate_suggested_answer_prompt, suggested_answer)
+    validation_res = get_suggested_answer_validation_res(connection, model_or_deployment_name,
+                                                         validate_suggested_answer_prompt, suggested_answer, temperature, max_tokens)
     is_valid_gt = validation_res.pass_validation
     failed_reason = ""
     if not is_valid_gt:

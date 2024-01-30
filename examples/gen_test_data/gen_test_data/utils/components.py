@@ -10,7 +10,7 @@ from constants import ENVIRONMENT_DICT_FIXED_VERSION
 @command_component(
     name="document_split",
     version="1.0.4",
-    display_name="Split documents",
+    display_name="split documents",
     description="Split documents into chunks.",
     environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
@@ -33,7 +33,7 @@ def document_split(
 @command_component(
     name="clean_test_data_set",
     version="1.0.4",
-    display_name="Clean dataset",
+    display_name="clean dataset",
     description="Clean test data set to remove empty lines.",
     environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
