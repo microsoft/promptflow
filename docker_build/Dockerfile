@@ -5,7 +5,7 @@ WORKDIR /
 # Disable pip install cache
 ENV PIP_NO_CACHE_DIR=1
 
-# create conda environment with python 3.9, and use as default python environment
+# Create conda environment with python 3.9, and use as default python environment
 ENV CONDA_ENVIRONMENT_PATH=/azureml-envs/prompt-flow/executor
 ENV CONDA_DEFAULT_ENVIRONMENT=$CONDA_ENVIRONMENT_PATH
 ENV PATH $CONDA_DEFAULT_ENVIRONMENT/bin:$PATH
