@@ -80,7 +80,7 @@ class ExperimentOrchestrator:
             inputs = {**node.inputs, **inputs} if node in start_nodes else node.inputs
             node_result = self._test_node(node, inputs, test_context)
             test_context.add_node_result(node.name, node_result)
-        logger.info("Testing completed.")
+        logger.info("Testing completed. Reach full logs at %s.", test_context.output_path.as_posix())
         return test_context.node_results
 
     def _test_node(self, node, inputs, test_context) -> Run:
@@ -109,6 +109,7 @@ class ExperimentOrchestrator:
             environment_variables=test_context.environment_variables,
             inputs=inputs,
             output_path=test_context.output_path / node.name,
+            dump_test_result=True,
         )
 
     def _test_command_node(self, *args, **kwargs):

@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -148,6 +150,14 @@ class TestExperiment:
             target_flow_path, experiment=template_path, inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8"}
         )
         _assert_result(result)
+        expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic_no_script_template"
+        assert expected_output_path.resolve().exists()
+        # Assert eval metric exists
+        assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+        shutil.rmtree(expected_output_path)
         # Test with default data
         result = client.flows.test(target_flow_path, experiment=template_path)
         _assert_result(result)
+        assert expected_output_path.resolve().exists()
+        # Assert eval metric exists
+        assert (expected_output_path / "eval" / "flow.metrics.json").exists()

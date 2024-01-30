@@ -112,7 +112,12 @@ class FlowOperations(TelemetryMixin):
                     prefix = f"flow-{tuning_node}-{node_variant}"
                 else:
                     prefix = "flow"
-                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
+                dump_flow_result(
+                    flow_folder=flow.code,
+                    flow_result=result,
+                    prefix=prefix,
+                    custom_path=kwargs.get("output_path", None),
+                )
 
         additional_output_path = kwargs.get("detail", None)
         if additional_output_path:
