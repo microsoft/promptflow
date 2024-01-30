@@ -191,3 +191,15 @@ class TestEagerFlow:
         assert batch_result.failed_lines == nlines
         assert batch_result.start_time < batch_result.end_time
         assert batch_result.system_metrics.duration > 0
+
+    def test_flow_with_operation_context(self):
+        flow_folder = "flow_with_operation_context"
+        working_dir = get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT)
+        os.chdir(working_dir)
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={})
+        line_result = executor.exec_line(inputs={}, index=0)
+
+        assert isinstance(line_result, LineResult)
+        assert line_result.output["flow-id"] == line_result.run_info.flow_id
+        assert line_result.output["root-run-id"] == line_result.run_info.root_run_id

@@ -38,7 +38,7 @@ from promptflow._cli._pf._init_entry_generators import (
 )
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
@@ -451,7 +451,7 @@ def serve_flow(args):
     )
     os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     flow = load_flow(args.source)
-    if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+    if flow.language == FlowLanguage.CSharp:
         serve_flow_csharp(args, source)
     else:
         serve_flow_python(args, source)
