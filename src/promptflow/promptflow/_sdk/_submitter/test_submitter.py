@@ -421,10 +421,11 @@ class TestSubmitterViaProxy(TestSubmitter):
                     connections=connections,
                     storage=storage,
                     log_path=log_path,
+                    chat_output_name=chat_output_name,
                 )
 
                 line_result: LineResult = flow_executor.exec_line(
-                    inputs, index=0, enable_stream_output=allow_generator_output, chat_output_name=chat_output_name
+                    inputs, index=0, enable_stream_output=allow_generator_output
                 )
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
@@ -486,14 +487,13 @@ class TestSubmitterViaProxy(TestSubmitter):
             self.flow.code,
             connections=connections,
             storage=storage,
+            chat_output_name=chat_output_name,
         )
 
         try:
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = flow_executor.exec_line(
-                inputs, index=0, enable_stream_output=enable_stream_output, chat_output_name=chat_output_name
-            )
+            line_result = flow_executor.exec_line(inputs, index=0, enable_stream_output=enable_stream_output)
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)

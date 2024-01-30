@@ -19,9 +19,10 @@ EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
-    def __init__(self, process: subprocess.Popen, port: str):
+    def __init__(self, process: subprocess.Popen, port: str, chat_output_name=None):
         self._process = process
         self._port = port
+        self.chat_output_name = chat_output_name
 
     @property
     def api_endpoint(self) -> str:
@@ -40,6 +41,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
+        chat_output_name = kwargs.pop("chat_output_name", None)
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
         init_error_file.touch()
         command = [
@@ -60,7 +62,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             init_error_file,
         ]
         process = subprocess.Popen(command)
-        executor_proxy = cls(process, port)
+        executor_proxy = cls(process, port, chat_output_name)
         try:
             await executor_proxy.ensure_executor_startup(init_error_file)
         finally:
