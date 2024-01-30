@@ -360,9 +360,8 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
 
-        # If the while loop exits due to batch run timeout, we should set is_timeout to True.
-        if self._batch_timeout_expired(batch_start_time):
-            self._is_timeout = True
+        # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
+        self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
