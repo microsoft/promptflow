@@ -20,7 +20,8 @@ from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.azure._utils.gerneral import get_authorization, get_arm_token, get_aml_token
-from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
+from promptflow.errors import ValueErrorException
+from promptflow.exceptions import UserErrorException, SystemErrorException
 
 logger = LoggerFactory.get_logger(__name__)
 
@@ -56,7 +57,7 @@ def _request_wrapper():
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             if not isinstance(self, RequestTelemetryMixin):
-                raise PromptflowException(f"Wrapped function is not RequestTelemetryMixin, got {type(self)}")
+                raise SystemErrorException(f"Wrapped function is not RequestTelemetryMixin, got {type(self)}")
             # refresh request before each request
             self._refresh_request_id_for_telemetry()
             try:
@@ -521,7 +522,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             try:
                 timeout_seconds = float(os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR))
             except ValueError:
-                raise UserErrorException(
+                raise ValueErrorException(
                     "Environment variable {} with value {} set but failed to parse. "
                     "Please reset the value to a number.".format(
                         SESSION_CREATION_TIMEOUT_ENV_VAR, os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR)
@@ -536,7 +537,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
                     f"To proceed the {action} for {AUTOMATIC_RUNTIME}, you can retry using the same flow, "
                     "and we will continue polling status of previous session. \n"
                 )
-                raise Exception(message)
+                raise SystemErrorException(message)
             time_run += sleep_period
             time.sleep(sleep_period)
             response = self.poll_operation_status(url=polling_url, **kwargs)

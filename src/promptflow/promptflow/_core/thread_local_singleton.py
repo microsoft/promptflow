@@ -5,6 +5,8 @@
 from contextvars import ContextVar
 from typing import Type, TypeVar
 
+from promptflow.errors import NotImplementedErrorException
+
 T = TypeVar("T")
 
 
@@ -25,7 +27,7 @@ class ThreadLocalSingleton:
     def _activate_in_context(self, force=False):
         instance = self.active_instance()
         if instance is not None and instance is not self and not force:
-            raise NotImplementedError(f"Cannot set active since there is another active instance: {instance}")
+            raise NotImplementedErrorException(f"Cannot set active since there is another active instance: {instance}")
         self.context_var.set(self)
 
     def _deactivate_in_context(self):

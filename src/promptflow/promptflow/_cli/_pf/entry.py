@@ -10,6 +10,7 @@ from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
+from promptflow.exceptions import UserErrorException
 
 # Log the start time
 start_time = time.perf_counter()
@@ -69,20 +70,14 @@ def run_command(args):
             dispatch_experiment_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
         exit_code = ex.code if ex.code is not None else 1
         logger.debug(f"Code directly call sys.exit with code {exit_code}")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except Exception as ex:
         logger.debug(f"Command {args} execute failed. {str(ex)}")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
-        raise ex
+        raise UserErrorException(message=str(ex), error=ex)
     finally:
         # Log the invoke finish time
         invoke_finish_time = time.perf_counter()

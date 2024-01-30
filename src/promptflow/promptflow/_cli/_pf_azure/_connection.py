@@ -11,6 +11,7 @@ from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activ
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import Secret
+from promptflow.errors import ValueErrorException, FileNotFoundException
 
 logger = get_cli_sdk_logger()
 
@@ -82,11 +83,11 @@ def create_conn(name, type, env, subscription_id, resource_group, workspace_name
     from promptflow._sdk.entities._connection import _Connection
 
     if not Path(env).exists():
-        raise ValueError(f"Env file {env} does not exist.")
+        raise FileNotFoundException(f"Env file {env} does not exist.")
     try:
         dot_env = dotenv_values(env)
     except Exception as e:
-        raise ValueError(f"Failed to load env file {env}. Error: {e}")
+        raise ValueErrorException(f"Failed to load env file {env}. Error: {e}")
     custom_configs = CustomConnection(**{k: Secret(v) for k, v in dot_env.items()})
     connection = _Connection(name=name, type=type, custom_configs=custom_configs, connection_scope="WorkspaceShared")
 

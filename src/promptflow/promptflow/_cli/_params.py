@@ -24,7 +24,7 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
             try:
                 key, value = strip_quotation(item).split("=", 1)
                 kwargs[key] = strip_quotation(value)
-            except ValueErrorException:
+            except ValueError:
                 raise ValueErrorException("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
         return kwargs
 

@@ -9,6 +9,7 @@ from typing import Callable, List
 
 from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.run_info import RunInfo
+from promptflow.errors import NotImplementedErrorException
 from promptflow.storage import AbstractCacheStorage, AbstractRunStorage
 
 PROMPTFLOW_HASH_ATTR = "__promptflow_hash_func"
@@ -51,13 +52,13 @@ class AbstractCacheManager:
         return DummyCacheManager()
 
     def calculate_cache_info(self, flow_id: str, tool_method: Callable, args, kwargs) -> CacheInfo:
-        raise NotImplementedError("AbstractCacheManager has not implemented method calculate_cache_info.")
+        raise NotImplementedErrorException("AbstractCacheManager has not implemented method calculate_cache_info.")
 
     def get_cache_result(self, cache_info: CacheInfo) -> CacheResult:
-        raise NotImplementedError("AbstractCacheManager has not implemented method get_cache_result.")
+        raise NotImplementedErrorException("AbstractCacheManager has not implemented method get_cache_result.")
 
     def persist_result(self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str):
-        raise NotImplementedError("AbstractCacheManager has not implemented method persist_result.")
+        raise NotImplementedErrorException("AbstractCacheManager has not implemented method persist_result.")
 
 
 class DummyCacheManager(AbstractCacheManager):

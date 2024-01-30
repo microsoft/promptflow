@@ -9,6 +9,7 @@ from promptflow._cli._pf.help import show_privacy_statement, show_welcome_messag
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow.exceptions import UserErrorException
 
 # Log the start time
 start_time = time.perf_counter()
@@ -58,7 +59,7 @@ def run_command(args):
         raise ex
     except Exception as ex:
         logger.debug(f"Command {args} execute failed. {str(ex)}")
-        raise ex
+        raise UserErrorException(message=str(ex), error=ex)
     finally:
         # Log the invoke finish time
         invoke_finish_time = time.perf_counter()

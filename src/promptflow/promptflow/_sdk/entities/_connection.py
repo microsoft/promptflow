@@ -47,6 +47,7 @@ from promptflow._sdk.schemas._connection import (
 )
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
+from promptflow.errors import ValueErrorException, KeyErrorException
 from promptflow.exceptions import ValidationException, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -122,9 +123,7 @@ class _Connection(YAMLTranslatableMixin):
             return self.secrets[item]
         if item in self.configs:
             return self.configs[item]
-        # raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
-        raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
+        raise KeyErrorException(f"Key {item!r} not found in connection {self.name!r}.")
 
     @classmethod
     def _is_scrubbed_value(cls, value):
@@ -768,8 +767,7 @@ class CustomStrongTypeConnection(_Connection):
                 not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
                 or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
             ):
-                error = ValueError("custom_type and module are required for custom strong type connections.")
-                raise UserErrorException(message=str(error), error=error)
+                raise ValueErrorException(message="custom_type and module are required for custom strong type connections.")
             else:
                 m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
                 custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
@@ -781,16 +779,9 @@ class CustomStrongTypeConnection(_Connection):
             module = importlib.import_module(m)
             cls = getattr(module, custom_cls)
         except ImportError:
-            error = ValueError(
-                f"Can't find module {m} in current environment. Please check the module is correctly configured."
-            )
-            raise UserErrorException(message=str(error), error=error)
+            raise ValueErrorException(message=f"Can't find module {m} in current environment. Please check the module is correctly configured.")
         except AttributeError:
-            error = ValueError(
-                f"Can't find class {custom_cls} in module {m}. "
-                f"Please check the custom_type is correctly configured."
-            )
-            raise UserErrorException(message=str(error), error=error)
+            raise ValueErrorException(message=f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured.")
 
         schema_configs = {}
         schema_secrets = {}
@@ -883,12 +874,11 @@ class CustomConnection(_Connection):
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
         if not self.secrets:
-            error = ValueError(
+            raise ValueErrorException(
                 "Secrets is required for custom connection, "
                 "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
                 "to initialize custom connection."
             )
-            raise UserErrorException(message=str(error), error=error)
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
         }
@@ -1006,11 +996,10 @@ class CustomConnection(_Connection):
         elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
             custom_conn_name = to_class
         else:
-            error = ValueError(
+            raise ValueErrorException(
                 f"Failed to convert to custom strong type connection because of "
                 f"invalid module or class: {module}, {to_class}"
             )
-            raise UserErrorException(message=str(error), error=error)
 
         custom_defined_connection_class = getattr(module, custom_conn_name)
 

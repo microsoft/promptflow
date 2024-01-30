@@ -5,6 +5,7 @@ from contextvars import ContextVar
 from typing import Dict, Mapping
 
 from promptflow._version import VERSION
+from promptflow.errors import TypeErrorException
 
 
 class OperationContext(Dict):
@@ -53,10 +54,10 @@ class OperationContext(Dict):
         """
         # check that name is a string
         if not isinstance(name, str):
-            raise TypeError("Name must be a string")
+            raise TypeErrorException("Name must be a string")
         # check that value is a primitive
         if value is not None and not isinstance(value, (int, float, str, bool)):
-            raise TypeError("Value must be a primitive")
+            raise TypeErrorException("Value must be a primitive")
         # set the item in the data attribute
         self[name] = value
 

@@ -10,6 +10,7 @@ import typing
 from marshmallow import Schema, ValidationError
 
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.errors import NotImplementedErrorException
 
 from .core import MutableValidationResult, ValidationResultBuilder
 
@@ -56,7 +57,7 @@ class SchemaValidatableMixin:
         :return: The schema of the resource.
         :rtype: Schema.
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     def _default_context(self) -> dict:
         """Get the default context for schema validation. Should be overridden by subclass.
@@ -64,7 +65,7 @@ class SchemaValidatableMixin:
         :return: The default context for schema validation
         :rtype: dict
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     @property
     def _schema_for_validation(self) -> Schema:
@@ -98,7 +99,7 @@ class SchemaValidatableMixin:
         :return: The validation exception to raise
         :rtype: Exception
         """
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     @classmethod
     def _try_raise(

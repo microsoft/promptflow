@@ -24,6 +24,7 @@ from ..._utils.logger_utils import LoggerFactory
 from .._load_functions import load_flow
 from ..entities._eager_flow import EagerFlow
 from .utils import SubmitterHelper, variant_overwrite_context
+from ...errors import TypeErrorException, ValueErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -49,14 +50,12 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
-                error = TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
-                raise UserErrorException(message=str(error), error=error)
+                raise TypeErrorException(message=f"Referenced run must be a Run instance, got {type(run.run)}")
             else:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
-                error = ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
-                raise UserErrorException(message=str(error), error=error)
+                raise ValueErrorException(message=f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
             run.run.outputs = self.run_operations._get_outputs(run.run)
         self._validate_inputs(run=run)
 
@@ -73,8 +72,7 @@ class RunSubmitter:
     @classmethod
     def _validate_inputs(cls, run: Run):
         if not run.run and not run.data:
-            error = ValidationException("Either run or data must be specified for flow run.")
-            raise UserErrorException(message=str(error), error=error)
+            raise ValidationException(message="Either run or data must be specified for flow run.")
 
     def _submit_bulk_run(
         self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations

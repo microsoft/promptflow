@@ -5,6 +5,8 @@ import os
 from enum import Enum
 from pathlib import Path
 
+from promptflow.exceptions import UserErrorException
+
 LOGGER_NAME = "promptflow"
 
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
@@ -50,7 +52,7 @@ def _prepare_home_dir() -> Path:
             f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r}.\n"
         )
         logger.error(_error_message)
-        raise Exception(_error_message)
+        raise UserErrorException(_error_message)
 
 
 HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
@@ -289,7 +291,7 @@ class ListViewType(str, Enum):
 
 def get_list_view_type(archived_only: bool, include_archived: bool) -> ListViewType:
     if archived_only and include_archived:
-        raise Exception("Cannot provide both archived-only and include-archived.")
+        raise UserErrorException("Cannot provide both archived-only and include-archived.")
     if include_archived:
         return ListViewType.ALL
     elif archived_only:

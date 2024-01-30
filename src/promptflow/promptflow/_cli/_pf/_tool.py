@@ -20,7 +20,8 @@ from promptflow._cli._utils import activate_action, exception_handler, list_of_d
 from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.exceptions import UserErrorException
+from promptflow.errors import FileNotFoundException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -141,14 +142,14 @@ def init_tool(args):
     # Validate package/tool name
     pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*$"
     if args.package and not re.match(pattern, args.package):
-        raise UserErrorException(f"The package name {args.package} is a invalid identifier.")
+        raise ValidationException(f"The package name {args.package} is a invalid identifier.")
     if not re.match(pattern, args.tool):
-        raise UserErrorException(f"The tool name {args.tool} is a invalid identifier.")
+        raise ValidationException(f"The tool name {args.tool} is a invalid identifier.")
     print("Creating tool from scratch...")
     extra_info = list_of_dict_to_dict(args.extra_info)
     icon_path = extra_info.pop("icon", None)
     if icon_path and not Path(icon_path).exists():
-        raise UserErrorException(f"Cannot find the icon path {icon_path}.")
+        raise FileNotFoundException(f"Cannot find the icon path {icon_path}.")
     if args.package:
         package_path = Path(args.package)
         package_name = package_path.stem
@@ -214,7 +215,7 @@ def validate_tool(args):
             logger.debug(f"The source {args.source} is used as a function to validate.")
         except Exception:
             if not Path(args.source).exists():
-                raise UserErrorException("Invalid source to validate tools.")
+                raise FileNotFoundException("Invalid source to validate tools.")
             logger.debug(f"The source {args.source} is used as a script to validate.")
             source = args.source
     validation_result = pf_client._tools.validate(source)

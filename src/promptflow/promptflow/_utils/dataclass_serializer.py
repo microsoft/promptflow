@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.contracts.tool import ConnectionType
+from promptflow.errors import ValueErrorException
 
 T = TypeVar("T")
 
@@ -25,9 +26,9 @@ def get_type(obj: type):
 
 def deserialize_dataclass(cls: Type[T], data: dict) -> T:
     if not is_dataclass(cls):
-        raise ValueError(f"{cls} is not a dataclass")
+        raise ValueErrorException(f"{cls} is not a dataclass")
     if not isinstance(data, dict):
-        raise ValueError(f"{data} is not a dict")
+        raise ValueErrorException(f"{data} is not a dict")
     kwargs = {}
     for field in fields(cls):
         if field.name not in data:

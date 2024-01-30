@@ -19,6 +19,7 @@ from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts._run_management import RunMetadata
+from promptflow.exceptions import SystemErrorException
 
 api = Namespace("Runs", description="Runs Management")
 
@@ -97,7 +98,7 @@ class RunSubmit(Resource):
                         f"Output: {stdout.decode('utf-8')}"
                     )
             else:
-                raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")
+                raise SystemErrorException(f"Create batch run failed: {stdout.decode('utf-8')}")
 
 
 @api.route("/<string:name>")

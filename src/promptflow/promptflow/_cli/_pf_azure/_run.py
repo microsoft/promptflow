@@ -32,6 +32,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, ListViewType
 from promptflow._sdk._errors import InvalidRunStatusError
 from promptflow._sdk._utils import print_red_error
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+from promptflow.errors import ValueErrorException
 
 
 def add_parser_run(subparsers):
@@ -457,11 +458,11 @@ def list_runs(
 ):
     """List all runs from cloud."""
     if max_results < 1:
-        raise ValueError(f"'max_results' must be a positive integer, got {max_results!r}")
+        raise ValueErrorException(f"'max_results' must be a positive integer, got {max_results!r}")
 
     # Default list_view_type is ACTIVE_ONLY
     if archived_only and include_archived:
-        raise ValueError("Cannot specify both 'archived_only' and 'include_archived'")
+        raise ValueErrorException("Cannot specify both 'archived_only' and 'include_archived'")
     list_view_type = ListViewType.ACTIVE_ONLY
     if archived_only:
         list_view_type = ListViewType.ARCHIVED_ONLY

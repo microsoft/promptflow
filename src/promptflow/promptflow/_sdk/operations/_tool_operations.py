@@ -101,7 +101,7 @@ class ToolOperations:
                 package_tools.update(module_tools)
                 self._merge_validate_result(validate_result, module_validate_result)
         except ImportError as e:
-            raise UserErrorException(f"Cannot find the package {package_name}, {e}.")
+            raise UserErrorException(f"Cannot find the package {package_name}, {e}.") from e
         return package_tools, validate_result
 
     def _generate_tool_meta(self, tool_module):

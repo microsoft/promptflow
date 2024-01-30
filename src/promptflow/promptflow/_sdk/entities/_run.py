@@ -47,7 +47,8 @@ from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.exceptions import UserErrorException
+from promptflow.errors import FileNotFoundException, TypeErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
     AzureRunTypes.BATCH: RunTypes.BATCH,
@@ -524,7 +525,7 @@ class Run(YAMLTranslatableMixin):
                     try:
                         val = json.dumps(v)
                     except Exception as e:
-                        raise UserErrorException(
+                        raise ValidationException(
                             f"Invalid input mapping value: {v}, "
                             f"only primitive or json serializable value is supported, got {type(v)}",
                             error=e,
@@ -534,7 +535,7 @@ class Run(YAMLTranslatableMixin):
         # parse resources
         if self._resources is not None:
             if not isinstance(self._resources, dict):
-                raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
+                raise TypeErrorException(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
             vm_size = self._resources.get("instance_type", None)
             max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
             # change to seconds
@@ -584,7 +585,7 @@ class Run(YAMLTranslatableMixin):
                 if not isinstance(self.flow, str) or (
                     not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
                 ):
-                    raise UserErrorException(
+                    raise ValidationException(
                         f"Invalid flow value when transforming to rest object: {self.flow!r}. "
                         f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
                         f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
@@ -625,7 +626,7 @@ class Run(YAMLTranslatableMixin):
             # remote flow
             pass
         else:
-            raise UserErrorException(
+            raise ValidationException(
                 f"Invalid flow value: {self.flow!r}. Expecting a local flow folder path or a remote flow pattern "
                 f"like '{REMOTE_URI_PREFIX}<flow-name>'"
             )
@@ -635,7 +636,7 @@ class Run(YAMLTranslatableMixin):
             pass
         else:
             if self.data and not Path(self.data).exists():
-                raise UserErrorException(f"data path {self.data} does not exist")
+                raise FileNotFoundException(f"data path {self.data} does not exist")
         if not self.run and not self.data:
             raise UserErrorException("at least one of data or run must be provided")
 
@@ -651,7 +652,7 @@ class Run(YAMLTranslatableMixin):
                 # in case user manually modifies ~/.promptflow/pf.yaml
                 # fall back to default run output path
                 if path.as_posix() == flow_posix_path:
-                    raise Exception(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
+                    raise ValidationException(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
                 path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
@@ -671,7 +672,7 @@ class Run(YAMLTranslatableMixin):
 
         run_metadata_file = source / DownloadedRun.RUN_METADATA_FILE_NAME
         if not run_metadata_file.exists():
-            raise UserErrorException(
+            raise FileNotFoundException(
                 f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}. "
                 f"Please make sure the run source is downloaded by 'pfazure run download' command."
             )

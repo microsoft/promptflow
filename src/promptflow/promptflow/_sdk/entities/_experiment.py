@@ -37,6 +37,8 @@ from promptflow._sdk.schemas._experiment import (
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.tool import ValueType
+from promptflow.errors import ValueErrorException
+from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -81,7 +83,7 @@ class ExperimentInput(YAMLTranslatableMixin):
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
-            raise Exception(f"Load experiment input failed with {str(e)}. f{(additional_message or '')}.")
+            raise UserErrorException(f"Load experiment input failed with {str(e)}. f{(additional_message or '')}.") from e
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
 
@@ -219,7 +221,7 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
-            raise Exception(f"Load experiment template failed with {str(e)}. f{(additional_message or '')}.")
+            raise UserErrorException(f"Load experiment template failed with {str(e)}. f{(additional_message or '')}.") from e
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
     @classmethod
@@ -339,7 +341,7 @@ class Experiment(ExperimentTemplate):
                     ScriptNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
             else:
-                raise Exception(f"Unknown node type {node_dict['type']}")
+                raise ValueErrorException(f"Unknown node type {node_dict['type']}")
         data = [
             ExperimentData._load_from_dict(item, context=context, additional_message="Failed to load experiment data")
             for item in json.loads(obj.data)

@@ -1,14 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from promptflow.exceptions import UserErrorException, ValidationException
+from promptflow.exceptions import UserErrorException, SystemErrorException, ValidationException
 
 
 class ValueErrorException(ValidationException, ValueError):
     pass
 
 
-class NotImplementedErrorException(UserErrorException, NotImplementedError):
+class NotImplementedErrorException(SystemErrorException, NotImplementedError):
     pass
 
 
@@ -20,7 +20,9 @@ class FileNotFoundException(ValidationException, FileNotFoundError):
     pass
 
 
-ValueError = ValueErrorException
-NotImplementedError = NotImplementedErrorException
-TypeError = TypeErrorException
-FileNotFoundError = FileNotFoundException
+class KeyErrorException(UserErrorException, KeyError):
+    pass
+
+
+class RuntimeErrorException(UserErrorException, RuntimeError):
+    pass

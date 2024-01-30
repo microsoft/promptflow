@@ -24,6 +24,7 @@ from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow.errors import ValueErrorException, TypeErrorException
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
@@ -384,11 +385,11 @@ def get_secret_input(prompt, mask="*"):
     - Ignore control characters and print warning message.
     """
     if not isinstance(prompt, str):
-        raise TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
+        raise TypeErrorException(f"prompt must be a str, not ${type(prompt).__name__}")
     if not isinstance(mask, str):
-        raise TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
+        raise TypeErrorException(f"mask argument must be a one-character str, not ${type(mask).__name__}")
     if len(mask) != 1:
-        raise ValueError("mask argument must be a one-character str")
+        raise ValueErrorException("mask argument must be a one-character str")
 
     if sys.platform == "win32":
         # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:

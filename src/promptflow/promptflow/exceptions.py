@@ -223,10 +223,7 @@ class ValidationException(UserErrorException):
     pass
 
 
-BUILD_IN_USER_EXCEPTIONS = (
-    ImportError, AttributeError, TypeError, ValueError, NotImplementedError, ModuleNotFoundError, IndexError, KeyError,
-    KeyboardInterrupt, SystemError, SystemExit, TypeError, ValueError, FileNotFoundError, PermissionError
-)
+BUILD_IN_USER_EXCEPTIONS = (ImportError, KeyboardInterrupt, PermissionError, SystemExit)
 
 
 class _ErrorInfo:

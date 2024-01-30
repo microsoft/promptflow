@@ -40,6 +40,7 @@ from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.errors import RuntimeErrorException, ValueErrorException
 from promptflow.exceptions import UserErrorException
 
 
@@ -322,7 +323,8 @@ class FlowOperations(TelemetryMixin):
             from streamlit.web import cli as st_cli
         except ImportError as ex:
             raise UserErrorException(
-                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}.",
+                error=ex
             )
         sys.argv = [
             "streamlit",
@@ -419,7 +421,7 @@ class FlowOperations(TelemetryMixin):
                 connection_paths[-1],
             ):
                 if env_var_name in env_var_names:
-                    raise RuntimeError(
+                    raise RuntimeErrorException(
                         f"environment variable name conflict: connection {connection_name} and "
                         f"{env_var_names[env_var_name]} on {env_var_name}"
                     )
@@ -541,7 +543,8 @@ class FlowOperations(TelemetryMixin):
             import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
-                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}.",
+                error=ex
             )
 
         from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -628,7 +631,7 @@ class FlowOperations(TelemetryMixin):
         is_csharp_flow = flow.dag.get(LANGUAGE_KEY, "") == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
-            raise ValueError(f"Unsupported export format: {format}")
+            raise ValueErrorException(f"Unsupported export format: {format}")
 
         if variant:
             tuning_node, node_variant = parse_variant(variant)

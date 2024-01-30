@@ -12,6 +12,7 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
 from promptflow._sdk.entities._connection import _Connection
+from promptflow.exceptions import ValidationException
 
 api = Namespace("Connections", description="Connections Management")
 
@@ -24,7 +25,7 @@ def validate_working_directory(value):
         value = str(value)
 
     if not Path(value).is_dir():
-        raise ValueError("Invalid working directory.")
+        raise ValidationException("Invalid working directory.")
     return value
 
 

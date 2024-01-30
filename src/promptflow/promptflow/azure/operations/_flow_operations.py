@@ -45,8 +45,8 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
-from promptflow.errors import NotImplementedErrorException, ValueErrorException
-from promptflow.exceptions import SystemErrorException, UserErrorException
+from promptflow.errors import NotImplementedErrorException, ValueErrorException, FileNotFoundException
+from promptflow.exceptions import SystemErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -139,7 +139,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # validate the source folder
         logger.info("Validating flow source.")
         if not Path(source, DAG_FILE_NAME).exists():
-            raise UserErrorException(
+            raise FileNotFoundException(
                 f"Flow source must be a directory with flow definition yaml '{DAG_FILE_NAME}'. "
                 f"Got {Path(source).resolve().as_posix()!r}."
             )

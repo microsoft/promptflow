@@ -36,7 +36,8 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
-from promptflow.exceptions import UserErrorException
+from promptflow.errors import ValueErrorException, NotImplementedErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 
 def add_run_parser(subparsers):
@@ -439,7 +440,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "delete":
         delete_run(args.name, args.yes)
     else:
-        raise ValueError(f"Unrecognized command: {args.sub_action}")
+        raise ValueErrorException(f"Unrecognized command: {args.sub_action}")
 
 
 def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
@@ -448,16 +449,16 @@ def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], O
         for k, v in param.items():
             if k == "display_name":
                 if display_name is not None:
-                    raise ValueError("Duplicate argument: 'display_name'.")
+                    raise ValueErrorException("Duplicate argument: 'display_name'.")
                 display_name = v
             elif k == "description":
                 if description is not None:
-                    raise ValueError("Duplicate argument: 'description'.")
+                    raise ValueErrorException("Duplicate argument: 'description'.")
                 description = v
             elif k.startswith("tags."):
                 tag_key = k.replace("tags.", "")
                 if tag_key in tags:
-                    raise ValueError(f"Duplicate argument: 'tags.{tag_key}'.")
+                    raise ValueErrorException(f"Duplicate argument: 'tags.{tag_key}'.")
                 tags[tag_key] = v
     if len(tags) == 0:
         tags = None
@@ -561,7 +562,7 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
     for kv_pairs in kv_pairs.split(","):
         kv_pair = kv_pairs.strip()
         if "=" not in kv_pair:
-            raise ValueError(f"Invalid key-value pair: {kv_pair}")
+            raise ValueErrorException(f"Invalid key-value pair: {kv_pair}")
         key, value = kv_pair.split("=", 1)
         result[key] = value
     return result
@@ -629,7 +630,7 @@ def create_run(create_func: Callable, args):
         }
         run = Run._load_from_source(source=run_source, params_override=processed_params)
     else:
-        raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
+        raise ValidationException("To create a run, one of [file, flow, source] must be specified.")
     run = create_func(run=run, stream=stream)
     if stream:
         print("\n")  # change new line to show run info
@@ -646,4 +647,4 @@ def delete_run(name: str, skip_confirm: bool = False) -> None:
 
 
 def export_run(args):
-    raise NotImplementedError()
+    raise NotImplementedErrorException()

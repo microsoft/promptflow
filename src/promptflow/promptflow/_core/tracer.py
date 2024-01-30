@@ -19,6 +19,7 @@ from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
+from ..exceptions import UserErrorException
 
 
 class Tracer(ThreadLocalSingleton):
@@ -55,7 +56,7 @@ class Tracer(ThreadLocalSingleton):
         if not tracer:
             msg = "Try end tracing but no active tracer in current context."
             if raise_ex:
-                raise Exception(msg)
+                raise UserErrorException(msg)
             logging.warning(msg)
             return []
         if run_id is not None and tracer._run_id != run_id:

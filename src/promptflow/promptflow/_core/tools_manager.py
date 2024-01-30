@@ -43,6 +43,7 @@ from promptflow._utils.tool_utils import (
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
+from promptflow.errors import ValueErrorException, NotImplementedErrorException
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 module_logger = logging.getLogger(__name__)
@@ -336,7 +337,7 @@ class ToolsManager:
 
     def get_tool(self, key: str) -> Callable:
         if key not in self._tools:
-            raise ValueError(f"Tool for {key} is not loaded")
+            raise ValueErrorException(f"Tool for {key} is not loaded")
         return self._tools[key]
 
     def wrap_tool(self, key: str, wrapper: Callable):
@@ -352,7 +353,7 @@ class ToolsManager:
 
     def assert_loaded(self, tool: str):
         if tool not in self._tools:
-            raise ValueError(f"Tool {tool} is not loaded")
+            raise ValueErrorException(f"Tool {tool} is not loaded")
 
     # TODO: Remove this method. The code path will not be used in code-first experience.
     # Customers are familiar with the term "node", so we use it in error message.
@@ -394,13 +395,13 @@ class ToolLoader:
             elif node.source.type == ToolSourceType.Code:
                 _, tool = self.load_tool_for_script_node(node)
                 return tool
-            raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
+            raise NotImplementedErrorException(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type == ToolType.CUSTOM_LLM:
             if node.source.type == ToolSourceType.PackageWithPrompt:
                 return self.load_tool_for_package_node(node)
-            raise NotImplementedError(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
+            raise NotImplementedErrorException(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
         else:
-            raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+            raise NotImplementedErrorException(f"Tool type {node.type} is not supported yet.")
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
         if node.source.tool in self._package_tools:
@@ -456,7 +457,7 @@ def _register(provider_cls, collection, type):
     from promptflow._core.tool import ToolProvider
 
     if not issubclass(provider_cls, ToolProvider):
-        raise Exception(f"Class {provider_cls.__name__!r} must be a subclass of promptflow.ToolProvider.")
+        raise ValidationException(f"Class {provider_cls.__name__!r} must be a subclass of promptflow.ToolProvider.")
     initialize_inputs = provider_cls.get_initialize_inputs()
     # Build tool/provider definition
     for name, value in provider_cls.__dict__.items():

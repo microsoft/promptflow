@@ -16,7 +16,8 @@ from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.exceptions import UserErrorException
+from promptflow.errors import ValueErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
@@ -240,7 +241,7 @@ class StreamlitFileReplicator:
             for flow_input, value in self.executable.inputs.items():
                 if value.is_chat_input:
                     if value.type.value not in [ValueType.STRING.value, ValueType.LIST.value]:
-                        raise UserErrorException(
+                        raise ValidationException(
                             f"Only support string or list type for chat input, but got {value.type.value}."
                         )
                     results.update({flow_input: (value.default, value.type.value)})

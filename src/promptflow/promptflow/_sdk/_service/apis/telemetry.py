@@ -8,6 +8,7 @@ from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
 from promptflow._sdk._telemetry import ActivityCompletionStatus, ActivityType
 from promptflow._utils.utils import camel_to_snake
+from promptflow.errors import ValueErrorException
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("Telemetries", description="Telemetry Management")
@@ -94,7 +95,7 @@ def validate_metadata_based_on_event_type(metadata: dict, event_type: str):
 
 def validate_event_type(value) -> str:
     if value not in (EventType.START, EventType.END):
-        raise ValueError(f"Event type must be one of {EventType.START} and {EventType.END}.")
+        raise ValueErrorException(f"Event type must be one of {EventType.START} and {EventType.END}.")
     return value
 
 

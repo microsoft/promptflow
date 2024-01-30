@@ -66,6 +66,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
+from promptflow.errors import ValueErrorException
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -153,7 +154,7 @@ def encrypt_secret_value(secret_value):
 def decrypt_secret_value(connection_name, encrypted_secret_value):
     encryption_key = get_encryption_key()
     if encryption_key is None:
-        raise Exception("Encryption key not found in keyring.")
+        raise UserErrorException("Encryption key not found in keyring.")
     fernet_client = Fernet(encryption_key)
     try:
         return fernet_client.decrypt(encrypted_secret_value.encode("utf-8")).decode("utf-8")
@@ -210,13 +211,9 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        error = ValueError(
-            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
-        )
-        raise UserErrorException(
+        raise ValueErrorException(
             target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=str(error),
-            error=error,
+            message=f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
         )
 
 
@@ -459,11 +456,9 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                error = ValueError(f"Unable to find additional include {item}")
-                raise UserErrorException(
+                raise ValueErrorException(
                     target=ErrorTarget.CONTROL_PLANE_SDK,
-                    message=str(error),
-                    error=error,
+                    message=f"Unable to find additional include {item}"
                 )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
@@ -1086,11 +1081,9 @@ def get_connection_operation(connection_provider: str, credential=None, user_age
         else:
             connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
-        error = ValueError(f"Unsupported connection provider: {connection_provider}")
-        raise UserErrorException(
+        raise ValueErrorException(
             target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=str(error),
-            error=error,
+            message=f"Unsupported connection provider: {connection_provider}"
         )
     return connection_operation
 

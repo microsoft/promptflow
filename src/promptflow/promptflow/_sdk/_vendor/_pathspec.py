@@ -18,6 +18,8 @@ from typing import Optional
 from typing import Pattern as PatternHint
 from typing import Tuple, Union
 
+from promptflow.errors import TypeErrorException, NotImplementedErrorException
+
 NORMALIZE_PATH_SEPS = [sep for sep in [os.sep, os.altsep] if sep and sep != posixpath.sep]
 
 # The encoding to use when parsing a byte string pattern.
@@ -80,7 +82,7 @@ class Pattern(object):
         *file* (:class:`str`) is the normalized file path to match against.
         Returns the match result if *file* matched; otherwise, :data:`None`.
         """
-        raise NotImplementedError(
+        raise NotImplementedErrorException(
             ("{0.__module__}.{0.__qualname__} must override match_file().").format(self.__class__)
         )
 
@@ -133,7 +135,7 @@ class RegexPattern(Pattern):
             assert include is None, ("include:{!r} must be null when pattern:{!r} is null.").format(include, pattern)
 
         else:
-            raise TypeError("pattern:{!r} is not a string, re.Pattern, or None.".format(pattern))
+            raise TypeErrorException("pattern:{!r} is not a string, re.Pattern, or None.".format(pattern))
 
         super(RegexPattern, self).__init__(include)
 
@@ -236,7 +238,7 @@ class GitWildMatchPattern(RegexPattern):
             return_type = bytes
             pattern = pattern.decode(_BYTES_ENCODING)
         else:
-            raise TypeError(f"pattern:{pattern!r} is not a unicode or byte string.")
+            raise TypeErrorException(f"pattern:{pattern!r} is not a unicode or byte string.")
 
         original_pattern = pattern
         pattern = pattern.strip()
@@ -526,7 +528,7 @@ class GitWildMatchPattern(RegexPattern):
             return_type = bytes
             string = s.decode(_BYTES_ENCODING)
         else:
-            raise TypeError(f"s:{s!r} is not a unicode or byte string.")
+            raise TypeErrorException(f"s:{s!r} is not a unicode or byte string.")
 
         # Reference: https://git-scm.com/docs/gitignore#_pattern_format
         meta_characters = r"[]!*#?"

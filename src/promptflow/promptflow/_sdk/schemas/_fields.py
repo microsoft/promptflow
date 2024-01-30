@@ -179,7 +179,7 @@ class UnionField(fields.Field):
                 return schema.deserialize(value, attr, data, **kwargs)
             except ValidationError as e:
                 errors.append(e.normalized_messages())
-            except (FileNotFoundException, TypeErrorException) as e:
+            except (FileNotFoundError, TypeError) as e:
                 errors.append([str(e)])
             finally:
                 # Revert base path to original path when job schema fail to deserialize job. For example, when load

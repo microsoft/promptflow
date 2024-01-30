@@ -14,6 +14,7 @@ from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
+from promptflow.errors import ValueErrorException
 
 
 class ConnectionManager:
@@ -25,10 +26,10 @@ class ConnectionManager:
         if _dict is None and PROMPTFLOW_CONNECTIONS in os.environ:
             # !!! Important !!!: Do not leverage this environment variable in any production code, this is test only.
             if PROMPTFLOW_CONNECTIONS not in os.environ:
-                raise ValueError(f"Required environment variable {PROMPTFLOW_CONNECTIONS!r} not set.")
+                raise ValueErrorException(f"Required environment variable {PROMPTFLOW_CONNECTIONS!r} not set.")
             connection_path = Path(os.environ[PROMPTFLOW_CONNECTIONS]).resolve().absolute()
             if not connection_path.exists():
-                raise ValueError(f"Connection file not exists. Path {connection_path.as_posix()}.")
+                raise ValueErrorException(f"Connection file not exists. Path {connection_path.as_posix()}.")
             _dict = json.loads(open(connection_path).read())
         self._connections_dict = _dict or {}
         self._connections = self._build_connections(self._connections_dict)

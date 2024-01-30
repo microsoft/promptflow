@@ -12,7 +12,8 @@ from .._utils.yaml_utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._flow import Flow
-from ..errors import FileNotFoundException
+from ..errors import FileNotFoundException, ValueErrorException
+from ..exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -62,7 +63,7 @@ def load_common(
             **kwargs,
         )
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}") from e
 
 
 def load_flow(
@@ -123,17 +124,17 @@ def _load_env_to_connection(
     source = Path(source)
     name = next((_dct["name"] for _dct in params_override if "name" in _dct), None)
     if not name:
-        raise Exception("Please specify --name when creating connection from .env.")
+        raise UserErrorException("Please specify --name when creating connection from .env.")
     if not source.exists():
         raise FileNotFoundException(f"File {source.absolute().as_posix()!r} not found.")
     try:
         data = dict(dotenv_values(source))
         if not data:
             # Handle some special case dotenv returns empty with no exception raised.
-            raise ValueError(
+            raise ValueErrorException(
                 f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
                 "please make sure the file is not empty and readable."
             )
         return CustomConnection(name=name, secrets=data)
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}") from e

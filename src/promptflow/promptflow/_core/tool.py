@@ -11,6 +11,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 from promptflow._core.tracer import _traced
 from promptflow.contracts.trace import TraceType
+from promptflow.errors import NotImplementedErrorException
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -30,7 +31,7 @@ class ToolInvoker(ABC):
     _active_tool_invoker: Optional["ToolInvoker"] = None
 
     def invoke_tool(self, f, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedErrorException()
 
     @classmethod
     def activate(cls, tool_invoker: "ToolInvoker"):
@@ -70,10 +71,10 @@ def tool(
     """
 
     def tool_decorator(func: Callable) -> Callable:
-        from promptflow.exceptions import UserErrorException
+        from promptflow.exceptions import ValidationException
 
         if type is not None and type not in [k.value for k in ToolType]:
-            raise UserErrorException(f"Tool type {type} is not supported yet.")
+            raise ValidationException(f"Tool type {type} is not supported yet.")
 
         # Calls to tool functions should be traced automatically.
         new_f = _traced(func, trace_type=TraceType.TOOL)
