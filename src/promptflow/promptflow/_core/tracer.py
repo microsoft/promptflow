@@ -12,6 +12,9 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Callable, Dict, List, Optional
 
+from opentelemetry import trace
+from opentelemetry.trace.status import StatusCode
+
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
@@ -19,6 +22,8 @@ from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
+
+open_telemetry_tracer = trace.get_tracer("promptflow")
 
 
 class Tracer(ThreadLocalSingleton):
@@ -115,7 +120,7 @@ class Tracer(ThreadLocalSingleton):
     @classmethod
     def pop(cls, output=None, error: Optional[Exception] = None):
         obj = cls.active_instance()
-        return obj._pop(output, error)
+        return obj._pop(output, error) if obj else output
 
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._get_current_trace()
@@ -192,6 +197,40 @@ def _create_trace_from_function_call(
     )
 
 
+def get_node_name_from_context():
+    tracer = Tracer.active_instance()
+    if tracer is not None:
+        return tracer._node_name
+    return None
+
+
+def enrich_span_with_trace(span, trace):
+    span.set_attributes(
+        {
+            "framework": "promptflow",
+            "span_type": f"promptflow.{trace.type}",
+            "function": trace.name,
+            "inputs": serialize_attribute(trace.inputs),
+            "node_name": get_node_name_from_context(),
+            "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
+        }
+    )
+
+
+def enrich_span_with_output(span, output):
+    serialized_output = serialize_attribute(output)
+    span.set_attribute("output", serialized_output)
+
+    return output
+
+
+def serialize_attribute(value):
+    """Serialize values that can be used as attributes in span."""
+    serializable = Tracer.to_serializable(value)
+    serialized_value = serialize(serializable)
+    return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+
+
 def _traced(
     func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
 ) -> Callable:
@@ -234,18 +273,23 @@ def _traced_async(
 
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
-        if Tracer.active_instance() is None:
-            return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-        # Should not extract these codes to a separate function here.
-        # We directly call func instead of calling Tracer.invoke,
-        # because we want to avoid long stack trace when hitting an exception.
-        try:
-            Tracer.push(create_trace(func, args, kwargs))
-            output = await func(*args, **kwargs)
-            return Tracer.pop(output)
-        except Exception as e:
-            Tracer.pop(None, e)
-            raise
+        trace = create_trace(func, args, kwargs)
+        span_name = get_node_name_from_context if trace_type == TraceType.TOOL else trace.name
+        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            enrich_span_with_trace(span, trace)
+
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push(trace)
+                output = await func(*args, **kwargs)
+                enrich_span_with_output(span, output)
+                span.set_status(StatusCode.OK)
+                return Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
 
     wrapped.__original_function = func
 
@@ -273,18 +317,23 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        if Tracer.active_instance() is None:
-            return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-        # Should not extract these codes to a separate function here.
-        # We directly call func instead of calling Tracer.invoke,
-        # because we want to avoid long stack trace when hitting an exception.
-        try:
-            Tracer.push(create_trace(func, args, kwargs))
-            output = func(*args, **kwargs)
-            return Tracer.pop(output)
-        except Exception as e:
-            Tracer.pop(None, e)
-            raise
+        trace = create_trace(func, args, kwargs)
+        span_name = get_node_name_from_context if trace_type == TraceType.TOOL else trace.name
+        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            enrich_span_with_trace(span, trace)
+
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push(trace)
+                output = func(*args, **kwargs)
+                enrich_span_with_output(span, output)
+                span.set_status(StatusCode.OK)
+                return Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
 
     wrapped.__original_function = func
 
