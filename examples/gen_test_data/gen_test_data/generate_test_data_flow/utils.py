@@ -1,7 +1,6 @@
 import json
 import re
 from collections import namedtuple
-from enum import Enum
 
 import numpy as np
 import numpy.testing as npt

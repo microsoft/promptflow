@@ -25,7 +25,8 @@ def validate_suggested_answer(
     if not suggested_answer:
         return {"suggested_answer": "", "validation_res": None}
 
-    validation_res = get_suggested_answer_validation_res(connection, model, validate_suggested_answer_prompt, suggested_answer)
+    validation_res = get_suggested_answer_validation_res(connection, model,
+                                                         validate_suggested_answer_prompt, suggested_answer)
     is_valid_gt = validation_res.pass_validation
     failed_reason = ""
     if not is_valid_gt:

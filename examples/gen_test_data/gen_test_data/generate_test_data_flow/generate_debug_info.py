@@ -8,12 +8,12 @@ from promptflow import tool
 # Please update the function name/signature per need
 @tool
 def my_python_tool(
-    question_type: str,
-    text_trunk: str,
-    text_meta: dict = None,
-    validate_and_generate_seed_question_output: dict = None,
-    validate_and_generate_test_question_output: dict = None,
-    validate_suggested_answer_output: ValidationResult = None,
+        question_type: str,
+        text_trunk: str,
+        text_meta: dict = None,
+        validate_and_generate_seed_question_output: dict = None,
+        validate_and_generate_test_question_output: dict = None,
+        validate_suggested_answer_output: ValidationResult = None,
 ) -> dict:
     text_trunk_validation_res = validate_and_generate_seed_question_output["validation_res"]
     generated_seed_question = validate_and_generate_seed_question_output["question"]
@@ -24,7 +24,8 @@ def my_python_tool(
     is_generation_success = generated_suggested_answer != ""
     is_text_trunk_valid = text_trunk_validation_res.pass_validation if text_trunk_validation_res else None
     is_seed_question_valid = seed_question_validation_res.pass_validation if seed_question_validation_res else None
-    is_suggested_answer_valid = suggested_answer_validation_res.pass_validation if suggested_answer_validation_res else None
+    is_suggested_answer_valid = suggested_answer_validation_res.pass_validation \
+        if suggested_answer_validation_res else None
 
     failed_step = ""
     failed_reason = ""

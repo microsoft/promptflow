@@ -52,7 +52,8 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
     question = details["outputs.question"].tolist()
     suggested_answer = details["outputs.suggested_answer"].tolist()
     debug_info = details["outputs.debug_info"].tolist()
-    return [{"question": q, "suggested_answer": g, "debug_info": d} for q, g, d in zip(question, suggested_answer, debug_info)]
+    return [{"question": q, "suggested_answer": g, "debug_info": d}
+            for q, g, d in zip(question, suggested_answer, debug_info)]
 
 
 def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
