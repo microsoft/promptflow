@@ -131,7 +131,7 @@ class TestExperiment:
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
-    # @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_flow_test_with_experiment(self):
         def _assert_result(result):
             assert "main" in result, "Node main not in result"
