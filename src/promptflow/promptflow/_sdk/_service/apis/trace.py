@@ -31,6 +31,24 @@ attributes_model = api.model(
         "function": fields.String(required=True),
         "inputs": fields.String(required=True),
         "output": fields.String(required=True),
+        "session_id": fields.String(required=True),
+        "path": fields.String,
+        "flow_id": fields.String,
+        "run": fields.String,
+        "experiment": fields.String,
+    },
+)
+resource_attributes_model = api.model(
+    "ResourceAttributes",
+    {
+        "service.name": fields.String(default="promptflow"),
+    },
+)
+resource_model = api.model(
+    "Resource",
+    {
+        "attributes": fields.Nested(resource_attributes_model, required=True),
+        "schema_url": fields.String,
     },
 )
 trace_model = api.model(
@@ -46,7 +64,7 @@ trace_model = api.model(
         "attributes": fields.Nested(attributes_model, required=True),
         "events": fields.List(fields.String),
         "links": fields.List(fields.String),
-        "resource": fields.Raw(required=True),
+        "resource": fields.Nested(resource_model, required=True),
     },
 )
 
