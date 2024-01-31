@@ -1147,3 +1147,15 @@ def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
         attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
         flattened_attributes[attr_key] = attr_value
     return flattened_attributes
+
+
+def parse_otel_span_status_code(value: int) -> str:
+    # map int value to string
+    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
+    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
+    if value == 0:
+        return "Unset"
+    elif value == 1:
+        return "Ok"
+    else:
+        return "Error"

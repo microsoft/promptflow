@@ -12,7 +12,11 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanFieldName, SpanStatusFieldName
 from promptflow._sdk._orm.trace import Span as ORMSpan
-from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp, flatten_pb_attributes
+from promptflow._sdk._utils import (
+    convert_time_unix_nano_to_timestamp,
+    flatten_pb_attributes,
+    parse_otel_span_status_code,
+)
 
 
 class Span:
@@ -116,7 +120,7 @@ class Span:
         start_time = convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano)
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
         status = {
-            SpanStatusFieldName.STATUS_CODE: obj.status.code,
+            SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
         attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
         return Span(
