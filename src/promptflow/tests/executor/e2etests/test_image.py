@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, _is_url, is_multimedia_dict
+from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, _get_multimedia_info, _is_url, is_multimedia_dict
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -86,22 +86,31 @@ def get_test_cases_for_node_run():
     ]
 
 
-def contain_image_reference(value, parent_path="temp"):
+def contain_image_reference(value, base_dir, sub_dir=None):
     if isinstance(value, (FlowRunInfo, RunInfo)):
-        assert contain_image_reference(value.api_calls, parent_path)
-        assert contain_image_reference(value.inputs, parent_path)
-        assert contain_image_reference(value.output, parent_path)
+        assert contain_image_reference(value.api_calls, base_dir, sub_dir)
+        assert contain_image_reference(value.inputs, base_dir, sub_dir)
+        assert contain_image_reference(value.output, base_dir, sub_dir)
         return True
     assert not isinstance(value, Image)
     if isinstance(value, list):
-        return any(contain_image_reference(item, parent_path) for item in value)
+        return any(contain_image_reference(item, base_dir, sub_dir) for item in value)
     if isinstance(value, dict):
         if is_multimedia_dict(value):
+            k = list(value.keys())[0]
             v = list(value.values())[0]
+            _, resource = _get_multimedia_info(k)
             assert isinstance(v, str)
-            assert _is_url(v) or str(Path(v).parent) == parent_path
+            if resource == "path":
+                assert Path.exists(base_dir / v)
+                if sub_dir:
+                    assert Path(v).parent == sub_dir
+            elif resource == "url":
+                assert _is_url(v)
+            else:
+                assert False, "Image resource should be path or url"
             return True
-        return any(contain_image_reference(v, parent_path) for v in value.values())
+        return any(contain_image_reference(v, base_dir, sub_dir) for v in value.values())
     return False
 
 
@@ -127,7 +136,8 @@ class TestExecutorWithImage:
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        intermediate_data_dir = Path(mkdtemp())
+        storage = DefaultRunStorage(base_dir=intermediate_data_dir)
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
         flow_result = executor.exec_line(inputs)
         assert isinstance(flow_result.output, dict)
@@ -135,10 +145,10 @@ class TestExecutorWithImage:
         # Assert output also contains plain text.
         assert any(isinstance(v, str) for v in flow_result.output)
         assert flow_result.run_info.status == Status.Completed
-        assert contain_image_reference(flow_result.run_info)
+        assert contain_image_reference(flow_result.run_info, intermediate_data_dir)
         for _, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
-            assert contain_image_reference(node_run_info)
+            assert contain_image_reference(node_run_info, intermediate_data_dir)
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs", get_test_cases_for_node_run()
@@ -148,7 +158,8 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        intermediate_data_dir = Path(mkdtemp())
+        storage = DefaultRunStorage(base_dir=intermediate_data_dir)
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
@@ -159,7 +170,7 @@ class TestExecutorWithImage:
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
-        assert contain_image_reference(run_info)
+        assert contain_image_reference(run_info, intermediate_data_dir)
 
     # Assert image could be persisted to the specified path.
     @pytest.mark.parametrize(
@@ -190,7 +201,7 @@ class TestExecutorWithImage:
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
-        assert contain_image_reference(run_info, parent_path=expected_path)
+        assert contain_image_reference(run_info, working_dir, sub_dir=Path(expected_path))
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -214,7 +225,8 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        intermediate_data_dir = Path(mkdtemp())
+        storage = DefaultRunStorage(base_dir=intermediate_data_dir)
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
@@ -225,22 +237,22 @@ class TestExecutorWithImage:
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
-        assert contain_image_reference(run_info)
+        assert contain_image_reference(run_info, intermediate_data_dir)
 
     @pytest.mark.parametrize(
         "flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number, has_aggregation_node",
         [
             (
                 SIMPLE_IMAGE_FLOW,
-                {"data": "."},
+                {"data": "inputs.jsonl"},
                 {"image": "${data.image}"},
                 "output",
-                4,
+                2,
                 False,
             ),
             (
                 SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
-                {"data": "."},
+                {"data": "inputs.jsonl"},
                 {"image_2": "${data.image_2}"},
                 "output",
                 4,
@@ -311,7 +323,8 @@ class TestExecutorWithImage:
     def test_executor_exec_aggregation_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        intermediate_data_dir = Path(mkdtemp())
+        storage = DefaultRunStorage(base_dir=intermediate_data_dir)
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
         flow_result = executor.exec_line(inputs, index=0)
         flow_inputs = {k: [v] for k, v in inputs.items()}
@@ -319,7 +332,7 @@ class TestExecutorWithImage:
         aggregation_results = executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
         for _, node_run_info in aggregation_results.node_run_infos.items():
             assert node_run_info.status == Status.Completed
-            assert contain_image_reference(node_run_info)
+            assert contain_image_reference(node_run_info, intermediate_data_dir)
 
     def test_batch_run_then_eval_with_image(self):
         # submit a flow in batch mode fisrt
