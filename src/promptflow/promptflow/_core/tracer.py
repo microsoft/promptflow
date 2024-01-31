@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Callable, Optional, Dict
+from typing import Callable, Dict, List, Optional
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
@@ -147,8 +147,26 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
-    """Initialize a trace object from a function call."""
+def _create_trace_from_function_call(
+    f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+):
+    """
+    Creates a trace object from a function call.
+
+    Args:
+        f (Callable): The function to be traced.
+        args (list, optional): The positional arguments to the function. Defaults to None.
+        kwargs (dict, optional): The keyword arguments to the function. Defaults to None.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Trace: The created trace object.
+    """
+    args = args or []
+    kwargs = kwargs or {}
+    args_to_ignore = set(args_to_ignore or [])
     sig = inspect.signature(f).parameters
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -158,9 +176,15 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     }
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
+    for key in args_to_ignore:
+        all_kwargs.pop(key, None)
+
+    name = f.__qualname__
+    if trace_type == TraceType.LLM and f.__module__:
+        name = f"{f.__module__}.{name}"
 
     return Trace(
-        name=f.__qualname__,
+        name=name,
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
@@ -168,63 +192,101 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     )
 
 
-def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
-    """A wrapper to add trace to a function.
+def _traced(
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+) -> Callable:
+    """
+    Decorator that adds tracing to a function.
 
-    When a function is wrapped by this wrapper, the function name,
-    inputs, outputs, start time, end time, and error (if any) will be recorded.
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
 
-    It can be used for both sync and async functions.
-    For sync functions, it will return a sync function.
-    For async functions, it will return an async function.
+    Returns:
+        Callable: The traced function.
+    """
+    wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
+    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    :param func: The function to be traced.
-    :type func: Callable
-    :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
-    :type trace_type: TraceType, optional
-    :return: The wrapped function with trace enabled.
-    :rtype: Callable
+
+def _traced_async(
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+) -> Callable:
+    """
+    Decorator that adds tracing to an asynchronous function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
     """
 
     def create_trace(func, args, kwargs):
-        return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
+        return _create_trace_from_function_call(
+            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+        )
 
-    if inspect.iscoroutinefunction(func):
-
-        @functools.wraps(func)
-        async def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                Tracer.push(create_trace(func, args, kwargs))
-                output = await func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
-
-    else:
-
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                Tracer.push(create_trace(func, args, kwargs))
-                output = func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
+    @functools.wraps(func)
+    async def wrapped(*args, **kwargs):
+        if Tracer.active_instance() is None:
+            return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+        # Should not extract these codes to a separate function here.
+        # We directly call func instead of calling Tracer.invoke,
+        # because we want to avoid long stack trace when hitting an exception.
+        try:
+            Tracer.push(create_trace(func, args, kwargs))
+            output = await func(*args, **kwargs)
+            return Tracer.pop(output)
+        except Exception as e:
+            Tracer.pop(None, e)
+            raise
 
     wrapped.__original_function = func
-    func.__wrapped_function = wrapped
+
+    return wrapped
+
+
+def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION) -> Callable:
+    """
+    Decorator that adds tracing to a synchronous function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
+    """
+
+    def create_trace(func, args, kwargs):
+        return _create_trace_from_function_call(
+            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+        )
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if Tracer.active_instance() is None:
+            return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+        # Should not extract these codes to a separate function here.
+        # We directly call func instead of calling Tracer.invoke,
+        # because we want to avoid long stack trace when hitting an exception.
+        try:
+            Tracer.push(create_trace(func, args, kwargs))
+            output = func(*args, **kwargs)
+            return Tracer.pop(output)
+        except Exception as e:
+            Tracer.pop(None, e)
+            raise
+
+    wrapped.__original_function = func
 
     return wrapped
 

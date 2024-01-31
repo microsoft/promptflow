@@ -7,7 +7,7 @@ from datetime import datetime
 from itertools import chain
 from typing import Any, List, Mapping
 
-from promptflow._utils.exception_utils import RootErrorCode
+from promptflow._utils.exception_utils import ExceptionPresenter, RootErrorCode
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.executor._result import AggregationResult, LineResult
@@ -43,15 +43,18 @@ class ErrorSummary:
     :type error_list: List[~promptflow.batch._result.LineError]
     :param aggr_error_dict: The dict of node name and error dict of failed nodes in the aggregation result.
     :type aggr_error_dict: Mapping[str, Any]
+    :param batch_error_dict: The dict of batch run error.
+    :type batch_error_dict: Mapping[str, Any]
     """
 
     failed_user_error_lines: int
     failed_system_error_lines: int
     error_list: List[LineError]
     aggr_error_dict: Mapping[str, Any]
+    batch_error_dict: Mapping[str, Any]
 
     @staticmethod
-    def create(line_results: List[LineResult], aggr_result: AggregationResult):
+    def create(line_results: List[LineResult], aggr_result: AggregationResult, exception: Exception = None):
         failed_user_error_lines = 0
         failed_system_error_lines = 0
         error_list: List[LineError] = []
@@ -81,6 +84,7 @@ class ErrorSummary:
                 for node_name, node_run_info in aggr_result.node_run_infos.items()
                 if node_run_info.status == Status.Failed
             },
+            batch_error_dict=ExceptionPresenter.create(exception).to_dict() if exception else None,
         )
         return error_summary
 
@@ -163,10 +167,14 @@ class BatchResult:
         line_results: List[LineResult],
         aggr_result: AggregationResult,
         status: Status = Status.Completed,
+        exception: Exception = None,
     ) -> "BatchResult":
         total_lines = len(line_results)
         completed_lines = sum(line_result.run_info.status == Status.Completed for line_result in line_results)
         failed_lines = total_lines - completed_lines
+
+        if exception:
+            status = Status.Failed
 
         return cls(
             status=status,
@@ -178,7 +186,7 @@ class BatchResult:
             end_time=end_time,
             metrics=aggr_result.metrics,
             system_metrics=SystemMetrics.create(start_time, end_time, line_results, aggr_result),
-            error_summary=ErrorSummary.create(line_results, aggr_result),
+            error_summary=ErrorSummary.create(line_results, aggr_result, exception),
         )
 
     @staticmethod

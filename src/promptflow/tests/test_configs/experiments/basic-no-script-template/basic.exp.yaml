@@ -8,8 +8,8 @@ data:
 
 inputs:
   - name: my_input
-    type: string
-    default: Hello World!
+    type: int
+    default: 1
 
 nodes:
   - name: main
@@ -18,6 +18,8 @@ nodes:
     inputs:
       url: ${data.my_data.url}
     variant: ${summarize_text_content.variant_0}
+    environment_variables: {}
+    connections: {}
 
   - name: eval
     type: flow
@@ -25,4 +27,5 @@ nodes:
     inputs:
       groundtruth: ${data.my_data.answer}  # No node can be named with "data"
       prediction: ${main.outputs.category}
-
+    environment_variables: {}
+    connections: {}

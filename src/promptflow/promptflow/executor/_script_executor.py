@@ -1,17 +1,19 @@
 import asyncio
+import importlib
 import inspect
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
-from promptflow._core.tracer import Tracer, _traced
+from promptflow._core.tool_meta_generator import PythonLoadError
+from promptflow._core.tracer import _traced, Tracer
+from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
+from promptflow._utils.tool_utils import function_to_interface
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -22,27 +24,22 @@ from .flow_executor import FlowExecutor
 class ScriptExecutor(FlowExecutor):
     def __init__(
         self,
-        entry_file: Path,
-        func: Optional[str],
+        flow_file: Path,
+        connections: Optional[dict] = None,
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
     ):
-        logger.debug("Start initializing the executor with {entry_file}.")
-        working_dir = Flow._resolve_working_dir(entry_file, working_dir)
-        m = load_python_module_from_file(entry_file)
-        self._func: Callable = getattr(m, str(func), None)
-        if self._func is None or not inspect.isfunction(self._func):
-            raise PythonLoadError(
-                message_format="Failed to load python function '{func}' from file '{entry_file}'.",
-                entry_file=entry_file,
-                func=func,
-            )
-        self._is_async = inspect.iscoroutinefunction(self._func)
-        # If the function is not decorated with trace, add trace for it.
-        if not hasattr(self._func, "__original_function"):
-            self._func = _traced(self._func)
+        logger.debug(f"Start initializing the executor with {flow_file}.")
+
+        self._flow_file = flow_file
+        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        self._initialize_function()
+        self._connections = connections
         self._storage = storage or DefaultRunStorage()
+        self._flow_id = "default_flow_id"
+        self._log_interval = 60
+        self._line_timeout_sec = 600
 
     def exec_line(
         self,
@@ -51,21 +48,22 @@ class ScriptExecutor(FlowExecutor):
         run_id: Optional[str] = None,
         **kwargs,
     ) -> LineResult:
-        operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
         run_id = run_id or str(uuid.uuid4())
+        self._update_operation_context(run_id)
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         run_tracker = RunTracker(self._storage)
-        default_flow_id = "default_flow_id"
         run_info = run_tracker.start_flow_run(
-            flow_id=default_flow_id,
+            flow_id=self._flow_id,
             root_run_id=run_id,
             run_id=line_run_id,
             parent_run_id=run_id,
             inputs=inputs,
             index=index,
         )
-        output = {}
+        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
+        # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
+        inputs = {k: inputs[k] for k in self._inputs if k in inputs}
+        output = None
         traces = []
         try:
             Tracer.start_tracing(line_run_id)
@@ -74,7 +72,10 @@ class ScriptExecutor(FlowExecutor):
             else:
                 output = self._func(**inputs)
             traces = Tracer.end_tracing(line_run_id)
-            run_tracker.end_run(line_run_id, result=output, traces=traces)
+            # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
+            # so it must be a dict.
+            output_dict = convert_eager_flow_output_to_dict(output)
+            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
         except Exception as e:
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
@@ -90,3 +91,32 @@ class ScriptExecutor(FlowExecutor):
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         # TODO(2901157): check if eager mode should have streaming
         return
+
+    def get_inputs_definition(self):
+        return self._inputs
+
+    def _initialize_function(self):
+        module_name, func_name = self._parse_flow_file()
+        module = importlib.import_module(module_name)
+        func = getattr(module, func_name, None)
+        if func is None or not inspect.isfunction(func):
+            raise PythonLoadError(
+                message_format="Failed to load python function '{func_name}' from file '{module_name}'.",
+                func_name=func_name,
+                module_name=module_name,
+            )
+        # If the function is not decorated with trace, add trace for it.
+        if not hasattr(func, "__original_function"):
+            func = _traced(func)
+        self._func = func
+        inputs, _, _, _ = function_to_interface(self._func)
+        self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
+        self._is_async = inspect.iscoroutinefunction(self._func)
+        return func
+
+    def _parse_flow_file(self):
+        with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        entry = flow_dag.get("entry", "")
+        module_name, func_name = entry.split(":")
+        return module_name, func_name

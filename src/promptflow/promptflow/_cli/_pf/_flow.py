@@ -38,11 +38,12 @@ from promptflow._cli._pf._init_entry_generators import (
 )
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -224,6 +225,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     )
     add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
+        "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_flow,
@@ -236,6 +240,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_multi_modal,
         add_param_ui,
         add_param_config,
+        add_param_detail,
     ] + base_params
     activate_action(
         name="test",
@@ -287,7 +292,8 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     python_tool_inputs = [arg.name for arg in python_tool.tool_arg_list]
     for tool_input in tools.prompt_params.keys():
         if tool_input not in python_tool_inputs:
-            raise ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            error = ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(error), error=error)
 
     python_tool.generate_to_file(tool_py)
     # Create .promptflow and flow.tools.json
@@ -350,10 +356,8 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         if not flow_path.is_dir():
             logger.error(f"{flow_path.resolve()} is not a folder.")
             return
-        answer = (
-            overwrite
-            if overwrite
-            else confirm("The flow folder already exists, do you want to create the flow in this existing folder?")
+        answer = confirm(
+            "The flow folder already exists, do you want to create the flow in this existing folder?", overwrite
         )
         if not answer:
             print("The 'pf init' command has been cancelled.")
@@ -381,7 +385,12 @@ def test_flow(args):
         from promptflow._utils.load_data import load_data
 
         if args.input and not args.input.endswith(".jsonl"):
-            raise ValueError("Only support jsonl file as input.")
+            error = ValueError("Only support jsonl file as input.")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
         inputs = load_data(local_path=args.input)[0]
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
@@ -421,6 +430,7 @@ def test_flow(args):
                 allow_generator_output=False,
                 stream_output=False,
                 dump_test_result=True,
+                detail=args.detail,
             )
             # Print flow/node test result
             if isinstance(result, dict):
@@ -441,7 +451,7 @@ def serve_flow(args):
     )
     os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     flow = load_flow(args.source)
-    if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+    if flow.language == FlowLanguage.CSharp:
         serve_flow_csharp(args, source)
     else:
         serve_flow_python(args, source)

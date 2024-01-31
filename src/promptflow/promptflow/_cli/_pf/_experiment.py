@@ -4,7 +4,6 @@
 import argparse
 import json
 
-from promptflow import PFClient
 from promptflow._cli._params import (
     add_param_all_results,
     add_param_archived_only,
@@ -15,6 +14,7 @@ from promptflow._cli._params import (
 from promptflow._cli._utils import activate_action, exception_handler
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -44,7 +44,7 @@ def add_experiment_create(subparsers):
     # Create an experiment from a template:
     pf experiment create --template flow.exp.yaml
     """
-    add_params = [add_param_template] + base_params
+    add_params = [add_param_template, add_param_name] + base_params
 
     create_parser = activate_action(
         name="create",
@@ -161,7 +161,7 @@ def create_experiment(args: argparse.Namespace):
     logger.debug("Loading experiment template from %s", template_path)
     template = load_common(ExperimentTemplate, source=template_path)
     logger.debug("Creating experiment from template %s", template.name)
-    experiment = Experiment.from_template(template)
+    experiment = Experiment.from_template(template, name=args.name)
     logger.debug("Creating experiment %s", experiment.name)
     exp = _get_pf_client()._experiments.create_or_update(experiment)
     print(json.dumps(exp._to_dict(), indent=4))

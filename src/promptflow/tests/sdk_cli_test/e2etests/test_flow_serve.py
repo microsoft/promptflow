@@ -333,3 +333,23 @@ def test_list_image_flow(serving_client_composite_image_flow, sample_image):
     assert (
         "data:image/jpg;base64" in response["output"][0]
     ), f"data:image/jpg;base64 not in output list {response['output']}"
+
+
+@pytest.mark.usefixtures("serving_client_with_environment_variables")
+@pytest.mark.e2etest
+def test_flow_with_environment_variables(serving_client_with_environment_variables):
+    except_environment_variables = {
+        "env1": "2",
+        "env2": "runtime_env2",
+        "env3": "[1, 2, 3, 4, 5]",
+        "env4": '{"a": 1, "b": "2"}',
+        "env10": "aaaaa",
+    }
+    for key, value in except_environment_variables.items():
+        response = serving_client_with_environment_variables.post("/score", data=json.dumps({"key": key}))
+        assert (
+            response.status_code == 200
+        ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+        response = json.loads(response.data.decode())
+        assert {"output"} == response.keys()
+        assert response["output"] == value

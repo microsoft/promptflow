@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Callable, Dict, List, Mapping
 
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
 
@@ -68,7 +68,7 @@ class DAGManager:
                     continue
                 # If the parameter has no default value, the input will be set to None so that function will not fail.
                 else:
-                    logger.warning(
+                    flow_logger.warning(
                         f"The node '{i.value}' referenced by the input '{name}' of the current node '{node.name}' "
                         "has been bypassed, and no default value is set. Will use 'None' as the value for this input."
                     )
@@ -109,16 +109,38 @@ class DAGManager:
         if node.activate:
             # If the node referenced by activate condition is bypassed, the current node should be bypassed
             if self._is_node_dependency_bypassed(node.activate.condition):
+                flow_logger.info(
+                    f"The node '{node.name}' will be bypassed because it depends on the node "
+                    f"'{node.activate.condition.value}' which has already been bypassed in the activate config."
+                )
                 return True
             # If a node has activate config, we will always use this config
             # to determine whether the node should be bypassed.
-            return not self._is_condition_met(node.activate.condition, node.activate.condition_value)
+            activate_condition = InputAssignment.serialize(node.activate.condition)
+            if not self._is_condition_met(node.activate.condition, node.activate.condition_value):
+                flow_logger.info(
+                    f"The node '{node.name}' will be bypassed because the activate condition is not met, "
+                    f"i.e. '{activate_condition}' is not equal to '{node.activate.condition_value}'."
+                )
+                return True
+            else:
+                flow_logger.info(
+                    f"The node '{node.name}' will be executed because the activate condition is met, "
+                    f"i.e. '{activate_condition}' is equal to '{node.activate.condition_value}'."
+                )
+                return False
 
         # Bypass node if all of its node reference dependencies are bypassed
         node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
         all_dependencies_bypassed = node_dependencies and all(
             self._is_node_dependency_bypassed(dependency) for dependency in node_dependencies
         )
+        if all_dependencies_bypassed:
+            node_dependencies_list = [dependency.value for dependency in node_dependencies]
+            flow_logger.info(
+                f"The node '{node.name}' will be bypassed because all nodes "
+                f"{node_dependencies_list} it depends on are bypassed."
+            )
         return all_dependencies_bypassed
 
     def _is_condition_met(self, condition: InputAssignment, condition_value) -> bool:
