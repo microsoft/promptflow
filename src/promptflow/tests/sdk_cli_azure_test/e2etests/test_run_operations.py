@@ -41,6 +41,16 @@ RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
+def create_registry_run(name: str, registry_name: str, runtime: str, pf: PFClient):
+    return pf.run(
+        flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
+        data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+        column_mapping={"name": "${data.name}"},
+        runtime=runtime,
+        name=name,
+    )
+
+
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
@@ -146,13 +156,7 @@ class TestFlowRun:
     ):
         """Test run bulk with remote registry flow."""
         name = randstr("name")
-        run = pf.run(
-            flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
-            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
-            column_mapping={"name": "${data.name}"},
-            runtime=runtime,
-            name=name,
-        )
+        run = create_registry_run(name=name, registry_name=registry_name, runtime=runtime, pf=pf)
         assert isinstance(run, Run)
         assert run.name == name
 
@@ -165,6 +169,17 @@ class TestFlowRun:
                 runtime=runtime,
                 name=name,
             )
+
+    def test_run_bulk_with_registry_flow_automatic_runtime(
+        self, pf: PFClient, randstr: Callable[[str], str], registry_name: str
+    ):
+        """Test run bulk with remote registry flow."""
+        name = randstr("name")
+        run = create_registry_run(name=name, registry_name=registry_name, runtime=None, pf=pf)
+        assert isinstance(run, Run)
+        assert run.name == name
+        run = pf.runs.stream(run=run.name)
+        assert run.status == RunStatus.COMPLETED
 
     def test_run_with_connection_overwrite(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
