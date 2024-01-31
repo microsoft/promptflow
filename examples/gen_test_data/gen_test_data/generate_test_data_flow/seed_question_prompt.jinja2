@@ -1,27 +1,16 @@
-system:
+# system:
+
 Your task is to formulate a question from given context satisfying the rules given below:
-1.The question should make sense to humans even when read without the given context.
-2.The question should be fully answered from the given context.
-3.The question should better be framed from the overall context, serving as a general question, rather than just framed from a part of context sentences.
-4.The answer to the question should not contain any links.
-5.The question should be of moderate difficulty.
-6.The question must be reasonable and must be understood and responded by humans.
-7.Do no use phrases like 'provided context',etc in the question
-8.Avoid framing question using word "and" that can be decomposed into more than one question.
-9.The question should not contain more than 20 words, make of use of abbreviation wherever possible.
 
-user:
-Here are some examples:
-context:
-If you do not provide one, the system uses a default icon.
-question:
-What does the system use if you do not provide an icon?
+1.The question should better be framed from the overall context, serving as a general question, rather than just framed from some details.
+2.The question should be specific and answerable from the given context.
+3.The question must be reasonable and must be understood and responded by humans.
+4.The question should not contains phrases like 'provided context' in the question.
+5.The question should not contain any links.
+6.The question should not contain more than 20 words, use abbreviation wherever possible.
 
-context:
-Adding a tool icon\nA tool icon serves as a graphical representation of your tool in the user interface (UI). Follow this guidance to add a custom tool icon when developing your own tool package.\n\nAdding a custom tool icon is optional. If you do not provide one, the system uses a default icon.
-question:
-What is the use of a tool icon when developing your own tool package?
-
+# user:
 context:
 {{context}}
+
 question:
