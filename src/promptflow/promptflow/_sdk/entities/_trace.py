@@ -10,7 +10,7 @@ import typing
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
-from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanFieldName
+from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanFieldName, SpanStatusFieldName
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp, flatten_pb_attributes
 
@@ -115,7 +115,9 @@ class Span:
         parent_span_id = obj.parent_span_id.hex()
         start_time = convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano)
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
-        status = json.loads(MessageToJson(obj.status))
+        status = {
+            SpanStatusFieldName.STATUS_CODE: obj.status.code,
+        }
         attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
         return Span(
             name=obj.name,
