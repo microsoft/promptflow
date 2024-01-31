@@ -165,9 +165,11 @@
     "laddr",
     "nrows",
     "Dumpable",
+    "XCLASS",
+    "otel",
+    "OTLP",
     "spawnv",
-    "spawnve",
-    "XCLASS"
+    "spawnve"
   ],
   "flagWords": [
     "Prompt Flow"

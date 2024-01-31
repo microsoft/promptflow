@@ -179,7 +179,7 @@ def create_experiment(args: argparse.Namespace):
     template_path = args.template
     logger.debug("Loading experiment template from %s", template_path)
     template = load_common(ExperimentTemplate, source=template_path)
-    logger.debug("Creating experiment from template %s", template.name)
+    logger.debug("Creating experiment from template %s", template.dir_name)
     experiment = Experiment.from_template(template, name=args.name)
     logger.debug("Creating experiment %s", experiment.name)
     exp = _get_pf_client()._experiments.create_or_update(experiment)

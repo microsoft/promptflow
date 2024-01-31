@@ -1,12 +1,19 @@
+import os
+import subprocess
+import tempfile
 from pathlib import Path
+from time import sleep
+from unittest.mock import patch
 
 import pytest
-from time import sleep
+from mock import mock
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
 from promptflow._sdk._constants import ExperimentStatus, RunStatus
+from promptflow._sdk._errors import RunOperationError
 from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import (
     CommandNode,
     Experiment,
@@ -15,7 +22,6 @@ from promptflow._sdk.entities._experiment import (
     ExperimentTemplate,
     FlowNode,
 )
-from promptflow._sdk._errors import RunOperationError
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -25,10 +31,13 @@ FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 yaml = YAML(typ="safe")
 
 
+def mock_start_process_in_background(args, executable_path=None):
+    subprocess.Popen(" ".join(args), env=os.environ)
+
+
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("setup_experiment_table")
 class TestExperiment:
-
     def wait_for_experiment_terminated(self, client, experiment):
         while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
             experiment = client._experiments.get(experiment.name)
@@ -110,33 +119,35 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
+        with patch.object(ExperimentOrchestrator, "_start_process_in_background") as mock_start_process_func:
+            mock_start_process_func.side_effect = mock_start_process_in_background
+            exp = client._experiments.start(exp.name)
 
-        # Test the experiment in progress cannot be started.
-        with pytest.raises(RunOperationError) as e:
-            client._experiments.start(exp.name)
-        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
-        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
-        exp = self.wait_for_experiment_terminated(client, exp)
-        # Assert main run
-        assert len(exp.node_runs["main"]) > 0
-        main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
-        assert main_run.status == RunStatus.COMPLETED
-        assert main_run.variant == "${summarize_text_content.variant_0}"
-        assert main_run.display_name == "main"
-        assert len(exp.node_runs["eval"]) > 0
-        # Assert eval run and metrics
-        eval_run = client.runs.get(name=exp.node_runs["eval"][0]["name"])
-        assert eval_run.status == RunStatus.COMPLETED
-        assert eval_run.display_name == "eval"
-        metrics = client.runs.get_metrics(name=eval_run.name)
-        assert "accuracy" in metrics
+            # Test the experiment in progress cannot be started.
+            with pytest.raises(RunOperationError) as e:
+                client._experiments.start(exp.name)
+            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+            exp = self.wait_for_experiment_terminated(client, exp)
+            # Assert main run
+            assert len(exp.node_runs["main"]) > 0
+            main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
+            assert main_run.status == RunStatus.COMPLETED
+            assert main_run.variant == "${summarize_text_content.variant_0}"
+            assert main_run.display_name == "main"
+            assert len(exp.node_runs["eval"]) > 0
+            # Assert eval run and metrics
+            eval_run = client.runs.get(name=exp.node_runs["eval"][0]["name"])
+            assert eval_run.status == RunStatus.COMPLETED
+            assert eval_run.display_name == "eval"
+            metrics = client.runs.get_metrics(name=eval_run.name)
+            assert "accuracy" in metrics
 
-        # Test experiment restart
-        exp = client._experiments.start(exp.name)
-        exp = self.wait_for_experiment_terminated(client, exp)
-        for name, runs in exp.node_runs.items():
-            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+            # Test experiment restart
+            exp = client._experiments.start(exp.name)
+            exp = self.wait_for_experiment_terminated(client, exp)
+            for name, runs in exp.node_runs.items():
+                assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
@@ -146,12 +157,14 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
-        exp = self.wait_for_experiment_terminated(client, exp)
-        assert exp.status == ExperimentStatus.TERMINATED
-        assert len(exp.node_runs) == 4
-        for key, val in exp.node_runs.items():
-            assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+        with patch.object(ExperimentOrchestrator, "_start_process_in_background") as mock_start_process_func:
+            mock_start_process_func.side_effect = mock_start_process_in_background
+            exp = client._experiments.start(exp.name)
+            exp = self.wait_for_experiment_terminated(client, exp)
+            assert exp.status == ExperimentStatus.TERMINATED
+            assert len(exp.node_runs) == 4
+            for key, val in exp.node_runs.items():
+                assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
@@ -166,3 +179,39 @@ class TestExperiment:
         client._experiments.stop(exp.name)
         exp = client._experiments.get(exp.name)
         assert exp.status == ExperimentStatus.TERMINATED
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_flow_test_with_experiment(self):
+        def _assert_result(result):
+            assert "main" in result, "Node main not in result"
+            assert "category" in result["main"], "Node main.category not in result"
+            assert "evidence" in result["main"], "Node main.evidence not in result"
+            assert "eval" in result, "Node eval not in result"
+            assert "grade" in result["eval"], "Node eval.grade not in result"
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+
+            template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+            target_flow_path = FLOW_ROOT / "web_classification" / "flow.dag.yaml"
+            client = PFClient()
+            # Test with inputs
+            result = client.flows.test(
+                target_flow_path,
+                experiment=template_path,
+                inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+            )
+            _assert_result(result)
+            expected_output_path = (
+                Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
+            )
+            assert expected_output_path.resolve().exists()
+            # Assert eval metric exists
+            assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+            # Test with default data and custom path
+            expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
+            result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
+            _assert_result(result)
+            assert expected_output_path.resolve().exists()
+            # Assert eval metric exists
+            assert (expected_output_path / "eval" / "flow.metrics.json").exists()
