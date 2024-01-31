@@ -478,16 +478,16 @@ class TestRetryUtils:
         try:
             import psutil
 
-            nics = psutil.net_if_addrs()
+            net_address = psutil.net_if_addrs()
             if sys.platform.startswith("win"):
-                for snicaddr in nics["Ethernet"]:
-                    if snicaddr.family == psutil.AF_LINK:
-                        mac_address = str(snicaddr.address)
+                for net_interface in net_address["Ethernet"]:
+                    if net_interface.family == psutil.AF_LINK:
+                        mac_address = str(net_interface.address)
                         break
             else:
-                for snicaddr in nics["eth0"]:
-                    if snicaddr.family == psutil.AF_LINK:
-                        mac_address = str(snicaddr.address)
+                for net_interface in net_address["eth0"]:
+                    if net_interface.family == psutil.AF_LINK:
+                        mac_address = str(net_interface.address)
                         break
         except Exception:
             pass

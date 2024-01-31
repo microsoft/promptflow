@@ -1133,15 +1133,15 @@ def get_mac_address() -> Union[str, None]:
         import psutil
 
         mac_address = None
-        nics = psutil.net_if_addrs()
+        net_address = psutil.net_if_addrs()  # pylint: disable=no-member
         eth = []
-        if "Ethernet" in nics:  # windows
-            eth = nics["Ethernet"]
-        elif "eth0" in nics:  # linux & mac
-            eth = nics["eth0"]
-        for snicaddr in eth:
-            if snicaddr.family == psutil.AF_LINK:  # mac address
-                mac_address = str(snicaddr.address)
+        if "Ethernet" in net_address:  # windows
+            eth = net_address["Ethernet"]
+        elif "eth0" in net_address:  # linux & mac
+            eth = net_address["eth0"]
+        for net_interface in eth:
+            if net_interface.family == psutil.AF_LINK:  # mac address
+                mac_address = str(net_interface.address)
                 break
 
         # If obtaining the network card MAC ID fails, obtain other MAC ID
