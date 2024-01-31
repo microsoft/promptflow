@@ -451,9 +451,9 @@ class TestSubmitterViaProxy(TestSubmitter):
             finally:
                 # client.stream api in exec_line function won't pass all response one time. For streaming c# chat flow
                 # scenario, if executor proxy is destroyed, it will kill service process and connection will close.
-                # this will result in getting generator content failed. Since dotnet process is not started in detach
-                # mode, it wll exit when parent process exit. So we won't kill executor proxy here for streaming c#
-                # chat flow scenario.
+                # this will result in subsequent getting generator content failed. Since dotnet process is not started
+                # in detach mode, it wll exit when parent process exit. So we won't kill executor proxy here for
+                # streaming c# chat flow scenario.
                 if not (allow_generator_output and chat_output_name):
                     async_run_allowing_running_loop(flow_executor.destroy)
 
@@ -500,9 +500,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         finally:
             # client.stream api in exec_line function won't pass all response one time. For streaming c# chat flow
             # scenario, if executor proxy is destroyed, it will kill service process and connection will close.
-            # this will result in getting generator content failed. Since dotnet process is not started in detach
-            # mode, it wll exit when parent process exit. So we won't kill executor proxy here for streaming c#
-            # chat flow scenario.
+            # this will result in subsequent getting generator content failed. Since dotnet process is not started
+            # in detach mode, it wll exit when parent process exit. So we won't kill executor proxy here for
+            # streaming c# chat flow scenario.
             if not (enable_stream_output and chat_output_name):
                 async_run_allowing_running_loop(flow_executor.destroy)
 
