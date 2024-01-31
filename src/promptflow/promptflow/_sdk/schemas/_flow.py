@@ -1,9 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import re
 
-from marshmallow import fields, validate
+from marshmallow import ValidationError, fields, post_load, validate
 
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField
@@ -39,7 +41,10 @@ class BaseFlowSchema(YamlFileSchema):
 
     # metadata
     type = fields.Str(validate=validate.OneOf(FlowType.get_all_values()))
-    language = fields.Str()
+    language = fields.Str(
+        default=FlowLanguage.Python,
+        validate=validate.OneOf([FlowLanguage.Python, FlowLanguage.CSharp]),
+    )
     description = fields.Str()
     display_name = fields.Str()
     tags = fields.Dict(keys=fields.Str(), values=fields.Str())
@@ -58,6 +63,22 @@ class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # path to flow entry file.
-    path = LocalPathField(required=True)
+    path = LocalPathField(required=False)
     # entry function
     entry = fields.Str(required=True)
+
+    @post_load
+    def infer_path(self, data: dict, **kwargs):
+        """Infer path from entry."""
+        # TODO: remove this after path is removed
+        language = data.get(LANGUAGE_KEY, FlowLanguage.Python)
+        if language == FlowLanguage.Python and data.get("path", None) is None:
+            raise ValidationError(message={"path": ["Missing data for required field."]})
+        elif language == FlowLanguage.CSharp and data.get("path", None) is None:
+            # for csharp, path to flow entry file will be a dll path inferred from
+            # entry by default given customer won't see the dll on authoring
+            m = re.match(r"\((.+)\)[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)+", data["entry"])
+            if not m:
+                raise ValueError(f"Invalid entry: {data['entry']}")
+            data["path"] = m.group(1) + ".dll"
+        return data
