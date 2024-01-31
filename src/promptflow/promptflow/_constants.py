@@ -98,3 +98,19 @@ class SpanResourceAttributesFieldName:
 class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"
+
+
+class TraceFieldName:
+    LINE_RUN_ID = "line_run_id"
+    INPUTS = "inputs"
+    OUTPUTS = "outputs"
+    EVALUATIONS = "evaluations"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+
+
+class TraceEvaluationsFieldName:
+    NAME = "name"
+    VALUE = "value"
+    LINE_RUN_ID = "line_run_id"
