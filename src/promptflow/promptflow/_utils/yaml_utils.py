@@ -58,7 +58,7 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     if must_open_file:  # If supplied a file path, open it.
         try:
             input = open(source, "r", encoding=DEFAULT_ENCODING)
-        except (OSError, FileNotFoundException):  # FileNotFoundError introduced in Python 3
+        except (OSError, FileNotFoundError):  # FileNotFoundError introduced in Python 3
             msg = "No such file or directory: {}"
             raise FileNotFoundException(msg.format(source))
     # input should now be a readable file or stream. Parse it.
