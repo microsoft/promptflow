@@ -279,7 +279,7 @@ def _traced_async(
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        span_name = get_node_name_from_context if trace_type == TraceType.TOOL else trace.name
+        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
 
@@ -323,7 +323,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        span_name = get_node_name_from_context if trace_type == TraceType.TOOL else trace.name
+        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
 
