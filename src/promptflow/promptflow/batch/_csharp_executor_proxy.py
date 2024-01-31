@@ -111,8 +111,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
-            "-e",
-            "-p",
+            "--execution_service",
+            "--port",
             port,
             "--yaml_path",
             flow_file.as_posix(),
