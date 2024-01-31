@@ -474,23 +474,20 @@ class TestRetryUtils:
         assert counter == 2
 
     def test_get_mac_address(self):
-        mac_address = None
-        try:
-            import psutil
+        import psutil
 
-            net_address = psutil.net_if_addrs()
-            if sys.platform.startswith("win"):
-                for net_interface in net_address["Ethernet"]:
-                    if net_interface.family == psutil.AF_LINK:
-                        mac_address = str(net_interface.address)
-                        break
-            else:
-                for net_interface in net_address["eth0"]:
-                    if net_interface.family == psutil.AF_LINK:
-                        mac_address = str(net_interface.address)
-                        break
-        except Exception:
-            pass
+        mac_address = None
+        net_address = psutil.net_if_addrs()
+        if sys.platform.startswith("win"):
+            for net_interface in net_address["Ethernet"]:
+                if net_interface.family == psutil.AF_LINK:
+                    mac_address = str(net_interface.address)
+                    break
+        else:
+            for net_interface in net_address["eth0"]:
+                if net_interface.family == psutil.AF_LINK:
+                    mac_address = str(net_interface.address)
+                    break
 
         assert mac_address == get_mac_address()
 
