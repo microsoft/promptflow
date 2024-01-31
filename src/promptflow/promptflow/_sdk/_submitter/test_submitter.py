@@ -191,7 +191,7 @@ class TestSubmitter:
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
-        output_path = Path(kwargs.get("output_path") or (self.flow.code / PROMPT_FLOW_DIR_NAME))
+        output_path = Path(kwargs.get("output_path") or (Path(self.flow.code) / PROMPT_FLOW_DIR_NAME))
         output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
@@ -237,7 +237,7 @@ class TestSubmitter:
 
         connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
-        output_path = Path(kwargs.get("output_path") or (self.flow.code / PROMPT_FLOW_DIR_NAME))
+        output_path = Path(kwargs.get("output_path") or (Path(self.flow.code) / PROMPT_FLOW_DIR_NAME))
         output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
@@ -378,7 +378,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 client=self._client,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
-        output_path = Path(kwargs.get("output_path") or (self.flow.code / PROMPT_FLOW_DIR_NAME))
+        output_path = Path(kwargs.get("output_path") or (Path(self.flow.code) / PROMPT_FLOW_DIR_NAME))
         output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
