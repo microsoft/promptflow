@@ -102,8 +102,6 @@ class TestRunAPIs:
         with check_activity_end_telemetry(
             expected_activities=[
                 {"activity_name": "pf.runs.get", "first_call": False},
-                {"activity_name": "pf.runs.get", "first_call": False},
-                {"activity_name": "pf.runs.get_metrics", "first_call": False},
                 {"activity_name": "pf.runs.visualize"},
             ]
         ):

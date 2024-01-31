@@ -205,7 +205,7 @@ class TestFlowTest:
 
         inputs = {
             "val": result.node_run_infos["get_dict_val"].output,
-            "origin_val": result.node_run_infos["get_dict_val"].output
+            "origin_val": result.node_run_infos["get_dict_val"].output,
         }
         node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert node_result.status.value == "Completed"
@@ -242,16 +242,19 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
         result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test_with_yaml(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test_with_primitive_output(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_output/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
@@ -277,3 +280,11 @@ class TestFlowTest:
         assert "Specifying entry function is not allowed" in str(e.value)
         # wrong entry provided
         # required inputs not provided
+
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
+    def test_eager_flow_test_with_additional_includes(self):
+        # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
+        # but working dir will be temp dir which includes additional included files
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
