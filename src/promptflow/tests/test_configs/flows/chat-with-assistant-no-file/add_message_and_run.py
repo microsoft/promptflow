@@ -70,7 +70,7 @@ async def add_message(cli: AsyncOpenAI, message: list, thread_id: str):
     content = extract_text_from_message(message)
     file_ids = await extract_file_ids_from_message(cli, message)
     msg = await cli.beta.threads.messages.create(thread_id=thread_id, role="user", content=content, file_ids=file_ids)
-    print("Created message message_id: {msg.id}, assistant_id: {assistant_id}, thread_id: {thread_id}")
+    print(f"Created message message_id: {msg.id}, assistant_id: {assistant_id}, thread_id: {thread_id}")
     return msg
 
 
