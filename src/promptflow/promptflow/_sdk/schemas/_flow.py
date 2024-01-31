@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import re
 
-from marshmallow import fields, validate
+from marshmallow import fields, validate, validates_schema
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowType
@@ -76,7 +76,8 @@ class EagerFlowSchema(BaseFlowSchema):
     # entry point, for example: pkg.module:func
     entry = fields.Str(required=True)
 
-    def _deserialize(self, data, **kwargs):
+    @validates_schema
+    def validate_entry(self, data, **kwargs):
         data = super()._deserialize(data, **kwargs)
         if data.get("language", FlowLanguage.Python) == FlowLanguage.Python:
             PythonEagerFlowEntry().deserialize(data.get("entry"))
