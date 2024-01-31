@@ -55,7 +55,7 @@ def _get_datastore_name(*, datastore_name: Optional[str] = WORKSPACE_BLOB_STORE)
     datastore_name = WORKSPACE_BLOB_STORE if not datastore_name else datastore_name
     try:
         datastore_name = get_resource_name_from_arm_id(datastore_name)
-    except (ValueError, AttributeError):
+    except (ValueError, AttributeError, ValidationException):
         module_logger.debug("datastore_name %s is not a full arm id. Proceed with a shortened name.\n", datastore_name)
     datastore_name = remove_aml_prefix(datastore_name)
     if is_ARM_id_for_resource(datastore_name):
