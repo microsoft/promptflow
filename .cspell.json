@@ -168,7 +168,8 @@
     "XCLASS",
     "otel",
     "OTLP",
-    "spawnv"
+    "spawnv",
+    "addrs"
   ],
   "flagWords": [
     "Prompt Flow"
