@@ -78,6 +78,6 @@ class EagerFlowSchema(BaseFlowSchema):
 
     def _deserialize(self, data, **kwargs):
         data = super()._deserialize(data, **kwargs)
-        if data.get("language", "python") == FlowLanguage.Python:
+        if data.get("language", FlowLanguage.Python) == FlowLanguage.Python:
             PythonEagerFlowEntry().deserialize(data.get("entry"))
         return data

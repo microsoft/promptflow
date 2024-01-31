@@ -276,6 +276,12 @@ class TestFlowTest:
         assert "Provided entry my_func has incorrect format" in str(e.value)
 
         # required inputs not provided
+        clear_module_cache("flow")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/required_inputs/").absolute()
+
+        result = _client._flows._test(flow=flow_path)
+        assert result.run_info.status.value == "Failed"
+        assert "my_flow() missing 1 required positional argument: 'input_val'" in str(result.run_info.error)
 
     def test_eager_flow_test_with_additional_includes(self):
         # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
