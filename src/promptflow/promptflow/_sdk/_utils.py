@@ -1120,12 +1120,38 @@ def pd_read_json(file) -> "DataFrame":
         return pd.read_json(f, orient="records", lines=True)
 
 
-def get_uuid_by_mac_id():
+def get_mac_address() -> Union[str, None]:
+    """Get the MAC ID of the first network card."""
     try:
-        node = str(uuid.getnode())
-        if node == "0":
-            raise ValueError("node value is 0")
-        return str(uuid.uuid3(uuid.NAMESPACE_OID, node))
+        import psutil
+
+        mac_address = None
+        nics = psutil.net_if_addrs()
+        eth = []
+        if "Ethernet" in nics:  # windows
+            eth = nics["Ethernet"]
+        elif "eth0" in nics:  # linux & mac
+            eth = nics["eth0"]
+        for snicaddr in eth:
+            if snicaddr.family == psutil.AF_LINK:  # mac address
+                mac_address = str(snicaddr.address)
+                break
+
+        # If obtaining the network card MAC ID fails, obtain other MAC IDs
+        if mac_address is None:
+            node = uuid.getnode()
+            if node != 0:
+                mac_address = str(uuid.UUID(int=node).hex[-12:])
+
+        return mac_address
     except Exception as e:
         logger.debug(f"get mac id error: {str(e)}")
         return None
+
+
+def gen_uuid_by_mac_id() -> Union[str, None]:
+    mac_address = get_mac_address()
+    if mac_address:
+        mac_address_hash = hashlib.sha256(mac_address.encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, mac_address_hash))
+    return None
