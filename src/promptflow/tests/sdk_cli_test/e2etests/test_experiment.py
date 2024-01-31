@@ -135,7 +135,7 @@ class TestExperiment:
         # Test experiment restart
         exp = client._experiments.start(exp.name)
         exp = self.wait_for_experiment_terminated(client, exp)
-        for name, runs in exp.nodes_runs.items():
+        for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
