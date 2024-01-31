@@ -92,15 +92,13 @@ def execute_in_fork_mode_subprocess(
 def execute_in_spawn_mode_subprocess(
     dev_connections,
     flow_folder,
-    is_set_environ_pf_worker_count,
+    has_passed_worker_count,
     is_calculation_smaller_than_set,
     pf_worker_count,
     estimated_available_worker_count,
     n_process,
 ):
     os.environ["PF_BATCH_METHOD"] = "spawn"
-    if is_set_environ_pf_worker_count:
-        os.environ["PF_WORKER_COUNT"] = pf_worker_count
     executor = FlowExecutor.create(
         get_yaml_file(flow_folder),
         dev_connections,
@@ -119,10 +117,11 @@ def execute_in_spawn_mode_subprocess(
                     nlines,
                     run_id,
                     None,
+                    worker_count=pf_worker_count if has_passed_worker_count else None,
                 ) as pool:
 
                     assert pool._n_process == n_process
-                    if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
+                    if has_passed_worker_count and is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Set process count to {pf_worker_count} with the environment "
                             f"variable 'PF_WORKER_COUNT'."
@@ -132,12 +131,12 @@ def execute_in_spawn_mode_subprocess(
                             f"({estimated_available_worker_count}) that estimated by system available memory. This may "
                             f"cause memory exhaustion"
                         )
-                    elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
+                    elif has_passed_worker_count and not is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Set process count to {pf_worker_count} with the environment "
                             f"variable 'PF_WORKER_COUNT'."
                         )
-                    elif not is_set_environ_pf_worker_count:
+                    elif not has_passed_worker_count:
                         factors = {
                             "default_worker_count": pool._DEFAULT_WORKER_COUNT,
                             "row_count": pool._nlines,
@@ -353,7 +352,7 @@ class TestLineExecutionProcessPool:
     @pytest.mark.parametrize(
         (
             "flow_folder",
-            "is_set_environ_pf_worker_count",
+            "has_passed_worker_count,",
             "is_calculation_smaller_than_set",
             "pf_worker_count",
             "estimated_available_worker_count",
@@ -369,7 +368,7 @@ class TestLineExecutionProcessPool:
         self,
         dev_connections,
         flow_folder,
-        is_set_environ_pf_worker_count,
+        has_passed_worker_count,
         is_calculation_smaller_than_set,
         pf_worker_count,
         estimated_available_worker_count,
@@ -382,7 +381,7 @@ class TestLineExecutionProcessPool:
             args=(
                 dev_connections,
                 flow_folder,
-                is_set_environ_pf_worker_count,
+                has_passed_worker_count,
                 is_calculation_smaller_than_set,
                 pf_worker_count,
                 estimated_available_worker_count,
