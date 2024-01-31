@@ -27,7 +27,6 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
-from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk.entities import Run
