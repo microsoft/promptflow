@@ -17,6 +17,7 @@ from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIM
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
@@ -269,7 +270,7 @@ def setup_recording_injection_if_enabled():
         }
         start_patches(patch_targets)
 
-    if is_live():
+    if is_live() and is_in_ci_pipeline():
         patch_targets = {
             "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
