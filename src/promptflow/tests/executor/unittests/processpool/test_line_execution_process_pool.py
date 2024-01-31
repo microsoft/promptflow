@@ -56,12 +56,8 @@ def get_bulk_inputs(nlinee=4, flow_folder="", sample_inputs_file="", return_dict
     return [get_line_inputs() for _ in range(nlinee)]
 
 
-def execute_in_fork_mode_subprocess(
-    dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
-):
+def execute_in_fork_mode_subprocess(dev_connections, flow_folder, has_passed_worker_count, pf_worker_count, n_process):
     os.environ["PF_BATCH_METHOD"] = "fork"
-    if is_set_environ_pf_worker_count:
-        os.environ["PF_WORKER_COUNT"] = pf_worker_count
     executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
     run_id = str(uuid.uuid4())
     bulk_inputs = get_bulk_inputs()
@@ -73,12 +69,11 @@ def execute_in_fork_mode_subprocess(
             nlines,
             run_id,
             None,
+            worker_count=pf_worker_count if has_passed_worker_count else None,
         ) as pool:
             assert pool._n_process == n_process
-            if is_set_environ_pf_worker_count:
-                mock_logger.info.assert_any_call(
-                    f"Set process count to {pf_worker_count} with the environment " f"variable 'PF_WORKER_COUNT'."
-                )
+            if has_passed_worker_count:
+                mock_logger.info.assert_any_call(f"Set process count to {pf_worker_count}.")
             else:
                 factors = {
                     "default_worker_count": pool._DEFAULT_WORKER_COUNT,
@@ -327,17 +322,17 @@ class TestLineExecutionProcessPool:
             assert e.value.error_codes[0] == "UserError"
 
     @pytest.mark.parametrize(
-        ("flow_folder", "is_set_environ_pf_worker_count", "pf_worker_count", "n_process"),
-        [(SAMPLE_FLOW, True, "3", 3), (SAMPLE_FLOW, False, None, 4)],
+        ("flow_folder", "has_passed_worker_count", "pf_worker_count", "n_process"),
+        [(SAMPLE_FLOW, True, 3, 3), (SAMPLE_FLOW, False, None, 4)],
     )
     def test_process_pool_parallelism_in_fork_mode(
-        self, dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
+        self, dev_connections, flow_folder, has_passed_worker_count, pf_worker_count, n_process
     ):
         if "fork" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: fork")
         p = multiprocessing.Process(
             target=execute_in_fork_mode_subprocess,
-            args=(dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process),
+            args=(dev_connections, flow_folder, has_passed_worker_count, pf_worker_count, n_process),
         )
         p.start()
         p.join()
@@ -353,8 +348,8 @@ class TestLineExecutionProcessPool:
             "n_process",
         ),
         [
-            (SAMPLE_FLOW, True, False, "2", 4, 2),
-            (SAMPLE_FLOW, True, True, "6", 2, 6),
+            (SAMPLE_FLOW, True, False, 2, 4, 2),
+            (SAMPLE_FLOW, True, True, 6, 2, 6),
             (SAMPLE_FLOW, False, True, None, 2, 2),
         ],
     )
