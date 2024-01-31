@@ -1,3 +1,4 @@
+import importlib
 import textwrap
 from pathlib import Path
 from unittest.mock import patch
@@ -17,6 +18,16 @@ from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
+
+
+@pytest.fixture
+def mock_entry_point():
+    from ...package_tools.custom_llm_tool_multi_inputs_without_index.list import list_package_tools
+    entry_point = MagicMock()
+    entry_point.load.return_value = list_package_tools
+    entry_point.dist.metadata.return_value = "TestCustomLLMTool"
+    entry_point.dist.version.return_value = "0.0.1"
+    return entry_point
 
 
 @pytest.mark.unittest
@@ -158,6 +169,30 @@ class TestToolsManager:
         legacy_node_source_tools = ["content_safety_text.tools.content_safety_text_tool.analyze_text"]
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
+
+    def test_collect_package_tools_set_defaut_input_index(self, mocker, mock_entry_point):
+        entry_point = mock_entry_point
+        entry_points = (entry_point, )
+        mocker.patch("promptflow._core.tools_manager._get_entry_points_by_group", return_value=entry_points)
+        mocker.patch.object(importlib, 'import_module', return_value=MagicMock())
+        tool = "custom_llm_tool.TestCustomLLMTool.call"
+        package_tools = collect_package_tools([tool])
+        inputs_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
+                        "stop", "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
+
+    def test_collect_package_tools_and_connections_set_defaut_input_index(self, mocker, mock_entry_point):
+        entry_point = mock_entry_point
+        entry_points = (entry_point, )
+        mocker.patch("promptflow._core.tools_manager._get_entry_points_by_group", return_value=entry_points)
+        mocker.patch.object(importlib, 'import_module', return_value=MagicMock())
+        tool = "custom_llm_tool.TestCustomLLMTool.call"
+        package_tools, _, _ = collect_package_tools_and_connections([tool])
+        inputs_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
+                        "stop", "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
