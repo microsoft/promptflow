@@ -27,7 +27,7 @@ class TestExceptions:
         assert (
             "promptflow._sdk._pf_client, "
             "line 120, "
-            'raise FileNotFoundException(f"flow path {flow} does not exist").'
+            'raise FileNotFoundException(f"flow path {flow} does not exist")'
         ) in error_detail
 
     def test_error_category_with_user_error(self, pf):
@@ -43,9 +43,9 @@ class TestExceptions:
         assert error_message == ""
         assert (
             "promptflow._sdk._orm.retry, line 43, "
-            "return f(*args, **kwargs).\n"
+            "return f(*args, **kwargs)\n"
             "promptflow._sdk._orm.run_info, line 142, "
-            'raise RunNotFoundError(f"Run name {name!r} cannot be found.").'
+            'raise RunNotFoundError(f"Run name {name!r} cannot be found.")'
         ) in error_detail
 
     def test_error_category_with_system_error(self):
@@ -64,7 +64,7 @@ class TestExceptions:
             "but received {value_type}. "
             "Please adjust the input value to match the expected format."
         )
-        assert "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(." in error_detail
+        assert "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(" in error_detail
 
     def test_error_category_with_http_error(self, subscription_id, resource_group_name, workspace_name):
         try:
@@ -176,7 +176,7 @@ class TestExceptions:
             "input '{input_key}' should be a list, but received {value_type}. Please "
             "adjust the input value to match the expected format."
         )
-        assert "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(." in error_detail
+        assert "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(" in error_detail
 
     def test_error_category_with_cause_exception3(self, pf):
         """cause exception is not PromptflowException and e is not PromptflowException, recording e exception."""
@@ -195,5 +195,5 @@ class TestExceptions:
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "promptflow._sdk._pf_client, line 120, " 'raise FileNotFoundException(f"flow path {flow} does not exist").'
+            "promptflow._sdk._pf_client, line 120, raise FileNotFoundException(f\"flow path {flow} does not exist\")"
         ) in error_detail

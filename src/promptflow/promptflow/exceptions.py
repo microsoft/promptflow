@@ -317,7 +317,7 @@ class _ErrorInfo:
         promptflow_codes = ""
         for item in exception_codes:
             if "promptflow" in item["module"]:  # Only record the promptflow package and code.
-                promptflow_codes += f"{item['module']}, " f"line {item['lineno']}, " f"{item['exception_code']}.\n"
+                promptflow_codes += f"{item['module']}, line {item['lineno']}, {item['exception_code']}\n"
         return promptflow_codes
 
     @classmethod
