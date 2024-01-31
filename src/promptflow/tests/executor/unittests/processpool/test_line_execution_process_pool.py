@@ -122,20 +122,14 @@ def execute_in_spawn_mode_subprocess(
 
                     assert pool._n_process == n_process
                     if has_passed_worker_count and is_calculation_smaller_than_set:
-                        mock_logger.info.assert_any_call(
-                            f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'."
-                        )
+                        mock_logger.info.assert_any_call(f"Set process count to {pf_worker_count}.")
                         mock_logger.warning.assert_any_call(
                             f"The current process count ({pf_worker_count}) is larger than recommended process count "
                             f"({estimated_available_worker_count}) that estimated by system available memory. This may "
                             f"cause memory exhaustion"
                         )
                     elif has_passed_worker_count and not is_calculation_smaller_than_set:
-                        mock_logger.info.assert_any_call(
-                            f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'."
-                        )
+                        mock_logger.info.assert_any_call(f"Set process count to {pf_worker_count}.")
                     elif not has_passed_worker_count:
                         factors = {
                             "default_worker_count": pool._DEFAULT_WORKER_COUNT,
@@ -352,7 +346,7 @@ class TestLineExecutionProcessPool:
     @pytest.mark.parametrize(
         (
             "flow_folder",
-            "has_passed_worker_count,",
+            "has_passed_worker_count",
             "is_calculation_smaller_than_set",
             "pf_worker_count",
             "estimated_available_worker_count",

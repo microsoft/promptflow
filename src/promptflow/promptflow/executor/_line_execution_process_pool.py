@@ -595,7 +595,7 @@ class LineExecutionProcessPool:
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
-        bulk_logger.info(f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
+        bulk_logger.info(f"Set process count to {worker_count}.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
                 f"The current process count ({worker_count}) is larger than recommended process count "
