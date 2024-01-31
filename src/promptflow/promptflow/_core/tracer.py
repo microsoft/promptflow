@@ -205,21 +205,26 @@ def get_node_name_from_context():
 
 
 def enrich_span_with_trace(span, trace):
-    span.set_attributes(
-        {
-            "framework": "promptflow",
-            "span_type": f"promptflow.{trace.type}",
-            "function": trace.name,
-            "inputs": serialize_attribute(trace.inputs),
-            "node_name": get_node_name_from_context(),
-            "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
-        }
-    )
+    try:
+        span.set_attributes(
+            {
+                "framework": "promptflow",
+                "span_type": trace.type,
+                "function": trace.name,
+                "inputs": serialize_attribute(trace.inputs),
+                "node_name": get_node_name_from_context(),
+            }
+        )
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with trace: {e}")
 
 
 def enrich_span_with_output(span, output):
-    serialized_output = serialize_attribute(output)
-    span.set_attribute("output", serialized_output)
+    try:
+        serialized_output = serialize_attribute(output)
+        span.set_attribute("output", serialized_output)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with output: {e}")
 
     return output
 
