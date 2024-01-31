@@ -27,9 +27,11 @@ async def version():
         version = build_info_dict["build_number"]
     except Exception:
         version = VERSION
+
+    feature_list = {feature.name: feature for feature in get_feature_list()}
     return {
         "status": "healthy",
         "build_info": build_info,
         "version": version,
-        "feature_list": get_feature_list(),
+        "feature_list": feature_list,
     }
