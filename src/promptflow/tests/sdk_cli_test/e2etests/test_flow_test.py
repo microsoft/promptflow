@@ -276,7 +276,7 @@ class TestFlowTest:
         assert "Provided entry my_func has incorrect format" in str(e.value)
 
         # required inputs not provided
-        clear_module_cache("flow")
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/required_inputs/").absolute()
 
         result = _client._flows._test(flow=flow_path)
