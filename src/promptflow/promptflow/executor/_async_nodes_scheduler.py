@@ -289,7 +289,7 @@ def monitor_long_running_coroutine(
 
     while not dag_manager_completed_event.is_set():
         # get duration of running tasks
-        for task in running_tasks.values():
+        for task in list(running_tasks.values()):
             # Do not monitor sync tools, since they will run in executor thread and will
             # be monitored by RepeatLogTimer.
             task_stacks = task.get_stack()
