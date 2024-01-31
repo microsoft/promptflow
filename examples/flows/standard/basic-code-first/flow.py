@@ -2,7 +2,7 @@ from jinja2 import Template
 from pathlib import Path
 from promptflow import trace
 
-from hello import my_llm_tool
+from llm import my_llm_tool
 
 BASE_DIR = Path(__file__).absolute().parent
 

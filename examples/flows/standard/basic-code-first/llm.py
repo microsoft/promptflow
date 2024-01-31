@@ -5,10 +5,6 @@ from dotenv import load_dotenv
 from promptflow import trace
 
 
-def to_bool(value) -> bool:
-    return str(value).lower() == "true"
-
-
 def get_client():
     if OPENAI_VERSION.startswith("0."):
         raise Exception(
@@ -59,8 +55,6 @@ def my_llm_tool(
     if "AZURE_OPENAI_API_KEY" not in os.environ:
         raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
 
-    echo = to_bool(echo)
-
     response = get_client().completions.create(
         prompt=prompt,
         model=deployment_name,
@@ -84,3 +78,11 @@ def my_llm_tool(
 
     # get first element because prompt is single.
     return response.choices[0].text
+
+
+if __name__ == "__main__":
+    result = my_llm_tool(
+        prompt="Write a simple Hello, world! program that displays the greeting message when executed.",
+        deployment_name="text-davinci-003",
+    )
+    print(result)
