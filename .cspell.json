@@ -82,7 +82,8 @@
     "junit",
     "nunit",
     "astext",
-    "Likert"
+    "Likert",
+    "pfsvc"
   ],
   "ignoreWords": [
     "openmpi",
@@ -162,7 +163,12 @@
     "metagenai",
     "WBITS",
     "laddr",
-    "nrows"
+    "nrows",
+    "Dumpable",
+    "XCLASS",
+    "otel",
+    "OTLP",
+    "spawnv"
   ],
   "flagWords": [
     "Prompt Flow"

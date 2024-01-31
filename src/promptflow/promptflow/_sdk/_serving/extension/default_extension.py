@@ -69,6 +69,10 @@ class AppExtension(ABC):
         """Get user agent used for current extension."""
         return USER_AGENT
 
+    def get_credential(self):
+        """Get credential for current extension."""
+        return None
+
     def get_metrics_common_dimensions(self):
         """Get common dimensions for metrics if exist."""
         return self._get_common_dimensions_from_env()

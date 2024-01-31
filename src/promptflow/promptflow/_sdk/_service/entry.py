@@ -14,6 +14,7 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
+    dump_port_to_config,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
@@ -21,7 +22,6 @@ from promptflow._sdk._service.utils.utils import (
 )
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
-from promptflow._version import VERSION
 from promptflow.exceptions import UserErrorException
 
 
@@ -54,11 +54,13 @@ def add_show_status_action(subparsers):
 def start_service(args):
     port = args.port
     app, _ = create_app()
-    if port and is_port_in_use(port):
+    if port and is_port_in_use(port) and not args.force:
         app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
         port = get_port_from_config(create_if_not_exists=True)
+    else:
+        dump_port_to_config(port)
 
     if is_port_in_use(port):
         if args.force:
@@ -80,11 +82,7 @@ def main():
     if len(command_args) == 0:
         command_args.append("-h")
 
-    if "USER_AGENT" in os.environ:
-        user_agent = f"{os.environ['USER_AGENT']} local_pfs/{VERSION}"
-    else:
-        user_agent = f"local_pfs/{VERSION}"
-    os.environ["USER_AGENT"] = user_agent
+    # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     entry(command_args)
 

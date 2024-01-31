@@ -9,8 +9,12 @@ from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
+from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.run import api as run_api
+from promptflow._sdk._service.apis.span import api as span_api
+from promptflow._sdk._service.apis.telemetry import api as telemetry_api
+from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 
@@ -23,6 +27,7 @@ def heartbeat():
 def create_app():
     app = Flask(__name__)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
+    app.add_url_rule("/v1/traces", view_func=trace_collector, methods=["POST"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
 
@@ -30,6 +35,10 @@ def create_app():
         api = Api(api_v1, title="Prompt Flow Service", version="1.0")
         api.add_namespace(connection_api)
         api.add_namespace(run_api)
+        api.add_namespace(telemetry_api)
+        # TODO: add trace namespace
+        api.add_namespace(span_api)
+        api.add_namespace(ui_api)
         app.register_blueprint(api_v1)
 
         # Disable flask-restx set X-Fields in header. https://flask-restx.readthedocs.io/en/latest/mask.html#usage
@@ -48,6 +57,7 @@ def create_app():
         # Basic error handler
         @api.errorhandler(Exception)
         def handle_exception(e):
+            """When any error occurs on the server, return a formatted error message."""
             from dataclasses import asdict
 
             if isinstance(e, HTTPException):

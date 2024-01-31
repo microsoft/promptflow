@@ -102,6 +102,11 @@ class RunSchema(YamlFileSchema):
     connections = fields.Dict(keys=fields.Str(), values=fields.Dict(keys=fields.Str()))
     # endregion: context
 
+    # region: command node
+    command = fields.Str(dump_only=True)
+    outputs = fields.Dict(key=fields.Str(), dump_only=True)
+    # endregion: command node
+
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
         return _resolve_dot_env_file(data, **kwargs)

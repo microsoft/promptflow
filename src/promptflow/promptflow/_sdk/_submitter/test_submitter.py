@@ -40,7 +40,7 @@ logger = get_cli_sdk_logger()
 class TestSubmitter:
     def __init__(self, flow: Union[ProtectedFlow, EagerFlow], flow_context: FlowContext, client=None):
         self.flow = flow
-        self.func = flow.entry if isinstance(flow, EagerFlow) else None
+        self.entry = flow.entry if isinstance(flow, EagerFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -58,33 +58,16 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
-        if isinstance(self.flow, EagerFlow):
-            flow_content_manager = self._eager_flow_init
-        else:
-            flow_content_manager = self._dag_flow_init
-        with flow_content_manager() as submitter:
-            yield submitter
-
-    @contextlib.contextmanager
-    def _eager_flow_init(self):
+        # TODO(2901096): validate invalid configs like variant & connections
         # no variant overwrite for eager flow
         # no connection overwrite for eager flow
-        # TODO(2897147): support additional includes
-        with _change_working_dir(self.flow.code):
-            self._tuning_node = None
-            self._node_variant = None
-            yield self
-            self._dataplane_flow = None
-
-    @contextlib.contextmanager
-    def _dag_flow_init(self):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-            flow_path=self._origin_flow.code,
+            flow=self.flow,
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,
@@ -145,8 +128,10 @@ class TestSubmitter:
                         continue
                     if value.property:
                         dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
-                        if value.property in dependency_input:
+                        if isinstance(dependency_input, dict) and value.property in dependency_input:
                             dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                        elif dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input
                     else:
                         dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
@@ -196,12 +181,11 @@ class TestSubmitter:
         inputs: Mapping[str, Any],
         environment_variables: dict = None,
         stream_log: bool = True,
-        allow_generator_output: bool = False,
+        allow_generator_output: bool = False,  # TODO: remove this
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
-        from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.executor import FlowExecutor
+        from promptflow.executor.flow_executor import execute_flow
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
@@ -220,24 +204,18 @@ class TestSubmitter:
             credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = FlowExecutor.create(
-                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False, func=self.func
+            line_result = execute_flow(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                output_dir=Path(".promptflow/output"),
+                connections=connections,
+                inputs=inputs,
+                enable_stream_output=stream_output,
+                allow_generator_output=allow_generator_output,
+                entry=self.entry,
+                storage=storage,
             )
-            flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
-            line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
-            line_result.output = persist_multimedia_data(
-                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
-            )
-            if line_result.aggregation_inputs:
-                # Convert inputs of aggregation to list type
-                flow_inputs = {k: [v] for k, v in inputs.items()}
-                aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
-                line_result.node_run_infos.update(aggregation_results.node_run_infos)
-                line_result.run_info.metrics = aggregation_results.metrics
             if isinstance(line_result.output, dict):
-                # Remove line_number from output
-                line_result.output.pop(LINE_NUMBER_KEY, None)
                 generator_outputs = self._get_generator_outputs(line_result.output)
                 if generator_outputs:
                     logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")

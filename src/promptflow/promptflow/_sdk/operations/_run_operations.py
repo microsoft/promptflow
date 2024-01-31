@@ -73,6 +73,9 @@ class RunOperations(TelemetryMixin):
         :return: run object retrieved from the database.
         :rtype: ~promptflow.entities.Run
         """
+        return self._get(name)
+
+    def _get(self, name: str) -> Run:
         name = Run._validate_and_return_run_name(name)
         try:
             return Run._from_orm_object(ORMRun.get(name))
@@ -233,6 +236,8 @@ class RunOperations(TelemetryMixin):
         name: str,
     ) -> None:
         """Delete run permanently.
+        Caution: This operation will delete the run permanently from your local disk.
+        Both run entity and output data will be deleted.
 
         :param name: run name to delete
         :return: None
@@ -333,7 +338,7 @@ class RunOperations(TelemetryMixin):
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
-                metrics=self.get_metrics(name=run.name),
+                metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
                 mode="eager" if local_storage.eager_mode else "",

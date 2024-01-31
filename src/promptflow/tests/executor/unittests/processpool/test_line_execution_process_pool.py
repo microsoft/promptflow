@@ -14,6 +14,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
@@ -21,6 +22,7 @@ from promptflow.executor._line_execution_process_pool import (
     get_available_max_worker_count,
     log_process_status,
 )
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -60,10 +62,7 @@ def execute_in_fork_mode_subprocess(
     os.environ["PF_BATCH_METHOD"] = "fork"
     if is_set_environ_pf_worker_count:
         os.environ["PF_WORKER_COUNT"] = pf_worker_count
-    executor = FlowExecutor.create(
-        get_yaml_file(flow_folder),
-        dev_connections,
-    )
+    executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
     run_id = str(uuid.uuid4())
     bulk_inputs = get_bulk_inputs()
     nlines = len(bulk_inputs)
@@ -73,8 +72,6 @@ def execute_in_fork_mode_subprocess(
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
         ) as pool:
             assert pool._n_process == n_process
@@ -121,8 +118,6 @@ def execute_in_spawn_mode_subprocess(
                     executor,
                     nlines,
                     run_id,
-                    "",
-                    False,
                     None,
                 ) as pool:
 
@@ -154,27 +149,54 @@ def execute_in_spawn_mode_subprocess(
                         )
 
 
+def create_line_execution_process_pool(dev_connections):
+    executor = FlowExecutor.create(get_yaml_file(SAMPLE_FLOW), dev_connections)
+    run_id = str(uuid.uuid4())
+    bulk_inputs = get_bulk_inputs()
+    nlines = len(bulk_inputs)
+    line_execution_process_pool = LineExecutionProcessPool(
+        executor,
+        nlines,
+        run_id,
+        None,
+        line_timeout_sec=1,
+    )
+    return line_execution_process_pool
+
+
+def set_environment_successed_in_subprocess(dev_connections, pf_batch_method):
+    os.environ["PF_BATCH_METHOD"] = pf_batch_method
+    line_execution_process_pool = create_line_execution_process_pool(dev_connections)
+    use_fork = line_execution_process_pool._use_fork
+    assert use_fork is False
+
+
+def set_environment_failed_in_subprocess(dev_connections):
+    with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
+        mock_logger.warning.return_value = None
+        os.environ["PF_BATCH_METHOD"] = "test"
+        line_execution_process_pool = create_line_execution_process_pool(dev_connections)
+        use_fork = line_execution_process_pool._use_fork
+        assert use_fork == (multiprocessing.get_start_method() == "fork")
+        sys_start_methods = multiprocessing.get_all_start_methods()
+        exexpected_log_message = (
+            "Failed to set start method to 'test', start method test" f" is not in: {sys_start_methods}."
+        )
+        mock_logger.warning.assert_called_once_with(exexpected_log_message)
+
+
+def not_set_environment_in_subprocess(dev_connections):
+    line_execution_process_pool = create_line_execution_process_pool(dev_connections)
+    use_fork = line_execution_process_pool._use_fork
+    assert use_fork == (multiprocessing.get_start_method() == "fork")
+
+
+def custom_create_spawned_fork_process_manager(*args, **kwargs):
+    create_spawned_fork_process_manager("test", *args, **kwargs)
+
+
 @pytest.mark.unittest
 class TestLineExecutionProcessPool:
-    def create_line_execution_process_pool(self, dev_connections):
-        executor = FlowExecutor.create(
-            get_yaml_file(SAMPLE_FLOW),
-            dev_connections,
-            line_timeout_sec=1,
-        )
-        run_id = str(uuid.uuid4())
-        bulk_inputs = get_bulk_inputs()
-        nlines = len(bulk_inputs)
-        line_execution_process_pool = LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
-            "",
-            False,
-            None,
-        )
-        return line_execution_process_pool
-
     @pytest.mark.parametrize(
         "flow_folder",
         [
@@ -196,8 +218,6 @@ class TestLineExecutionProcessPool:
                 executor,
                 nlines,
                 run_id,
-                "",
-                False,
                 None,
             ) as pool:
                 result_list = pool.run(zip(range(nlines), bulk_inputs))
@@ -213,11 +233,7 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_line_execution_not_completed(self, flow_folder, dev_connections):
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
@@ -225,9 +241,8 @@ class TestLineExecutionProcessPool:
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
+            line_timeout_sec=1,
         ) as pool:
             result_list = pool.run(zip(range(nlines), bulk_inputs))
             result_list = sorted(result_list, key=lambda r: r.run_info.index)
@@ -246,11 +261,7 @@ class TestLineExecutionProcessPool:
     )
     def test_exec_line(self, flow_folder, dev_connections, mocker: MockFixture):
         output_queue = Queue()
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         line_inputs = get_line_inputs()
         line_result = _exec_line(
@@ -259,8 +270,7 @@ class TestLineExecutionProcessPool:
             inputs=line_inputs,
             run_id=run_id,
             index=0,
-            variant_id="",
-            validate_inputs=False,
+            line_timeout_sec=600,
         )
         assert isinstance(line_result, LineResult)
 
@@ -272,11 +282,7 @@ class TestLineExecutionProcessPool:
     )
     def test_exec_line_failed_when_line_execution_not_start(self, flow_folder, dev_connections, mocker: MockFixture):
         output_queue = Queue()
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         test_error_msg = "Test user error"
         with patch("promptflow.executor.flow_executor.FlowExecutor.exec_line", autouse=True) as mock_exec_line:
             mock_exec_line.side_effect = UserErrorException(
@@ -290,8 +296,7 @@ class TestLineExecutionProcessPool:
                 inputs=line_inputs,
                 run_id=run_id,
                 index=0,
-                variant_id="",
-                validate_inputs=False,
+                line_timeout_sec=600,
             )
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.error["message"] == test_error_msg
@@ -312,10 +317,7 @@ class TestLineExecutionProcessPool:
             "_monitor_workers_and_process_tasks_in_thread",
             side_effect=UserErrorException(message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE),
         )
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
@@ -323,8 +325,6 @@ class TestLineExecutionProcessPool:
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
         ) as pool:
             with pytest.raises(UserErrorException) as e:
@@ -365,7 +365,6 @@ class TestLineExecutionProcessPool:
             (SAMPLE_FLOW, False, True, None, 2, 2),
         ],
     )
-    @pytest.mark.skipif(sys.platform == "darwin" or sys.platform.startswith("linux"), reason="Skip on Mac and Linux")
     def test_process_pool_parallelism_in_spawn_mode(
         self,
         dev_connections,
@@ -393,6 +392,57 @@ class TestLineExecutionProcessPool:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    def test_process_set_environment_variable_successed(self, dev_connections):
+        p = multiprocessing.Process(
+            target=set_environment_successed_in_subprocess,
+            args=(
+                dev_connections,
+                "spawn",
+            ),
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    def test_process_set_environment_variable_failed(self, dev_connections):
+        p = multiprocessing.Process(target=set_environment_failed_in_subprocess, args=(dev_connections,))
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    def test_process_not_set_environment_variable(self, dev_connections):
+        p = multiprocessing.Process(target=not_set_environment_in_subprocess, args=(dev_connections,))
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    @pytest.mark.skipif(sys.platform == "win32" or sys.platform == "darwin", reason="Only test on linux")
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    @patch(
+        "promptflow.executor._process_manager.create_spawned_fork_process_manager",
+        custom_create_spawned_fork_process_manager,
+    )
+    def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        run_id = str(uuid.uuid4())
+        bulk_inputs = get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        run_id = run_id or str(uuid.uuid4())
+        with pytest.raises(SpawnedForkProcessManagerStartFailure) as e:
+            with LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                None,
+            ) as pool:
+                pool.run(zip(range(nlines), bulk_inputs))
+        assert "Failed to start spawned fork process manager" in str(e.value)
 
 
 class TestGetAvailableMaxWorkerCount:

@@ -1,6 +1,11 @@
 import inspect
 
+import opentelemetry
 import pytest
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced, trace
@@ -252,7 +257,6 @@ class TestTraced:
     def test_original_function_and_wrapped_function_attributes_are_set(self, func):
         traced_func = _traced(func)
         assert getattr(traced_func, "__original_function") == func
-        assert getattr(func, "__wrapped_function") == traced_func
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("func", [sync_func, async_func])
@@ -381,3 +385,29 @@ class TestTrace:
         assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
+
+
+@pytest.mark.unittest
+class TestOTelTracer:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.tracer_provider = TracerProvider()
+        self.memory_exporter = InMemorySpanExporter()
+        span_processor = SimpleSpanProcessor(self.memory_exporter)
+        self.tracer_provider.add_span_processor(span_processor)
+        opentelemetry.trace.set_tracer_provider(self.tracer_provider)
+
+    def test_trace_func(self):
+        traced_func = trace(sync_func)
+        result = traced_func(1)
+        assert result == 1
+
+        span_list = self.memory_exporter.get_finished_spans()
+        assert len(span_list) == 1
+        span = span_list[0]
+        assert span.name == sync_func.__name__
+        assert span.attributes["framework"] == "promptflow"
+        assert span.attributes["span_type"] == TraceType.FUNCTION
+        assert span.attributes["function"] == sync_func.__name__
+        assert span.attributes["inputs"] == '{\n  "a": 1\n}'
+        assert span.status.status_code == StatusCode.OK
