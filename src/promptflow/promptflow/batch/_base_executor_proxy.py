@@ -41,9 +41,11 @@ class AbstractExecutorProxy:
         flow_meta = self._get_flow_meta()
         inputs = {}
         for key, value in flow_meta.get("inputs", {}).items():
-            # TODO: Han to confirm - flow.json["inputs"]["xxx"]["type"] is a list in our previous contract, while
-            #  FlowInputDefinition.deserialize() expects a string
-            value["type"] = value.get("type")[0]
+            # TODO: update this after we determine whether to accept list here or now
+            _type = value.get("type")
+            if isinstance(_type, list):
+                _type = _type[0]
+            value["type"] = _type
             inputs[key] = FlowInputDefinition.deserialize(value)
         return inputs
 
