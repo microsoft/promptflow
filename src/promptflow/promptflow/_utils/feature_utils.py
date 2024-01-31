@@ -41,6 +41,11 @@ def get_feature_list():
             description="Support environment variables in flow.dag.yaml.",
             state=FeatureState.READY,
         ),
+        Feature(
+            name="BatchTimeout",
+            description="Support batch timeout.",
+            state=FeatureState.READY,
+        ),
     ]
 
     return feature_list
