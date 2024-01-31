@@ -156,7 +156,7 @@ class TestExperiment:
             )
             _assert_result(result)
             expected_output_path = (
-                Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic_no_script_template"
+                Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
             )
             assert expected_output_path.resolve().exists()
             # Assert eval metric exists
