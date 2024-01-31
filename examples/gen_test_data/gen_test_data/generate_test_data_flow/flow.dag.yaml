@@ -5,58 +5,14 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
-    default: "# AE365ExePool Component\\n\\n## Overview\\n\\nAn AE365ExePool
-      Component is a component that can be used to submit job to
-      [AE365ExePool](https://aetherwiki.azurewebsites.net/articles/FeatureAreas\
-      /AE365ExePool.html) in AP environment.\\nThis component is for **Microsoft
-      internal only**. This component is in private preview, please play it
-      around and share feedback with us.\\n\\n### Prerequisites\\n\\nBefore
-      using AE365ExePool component, you should be familiar with:\\n\\n-
-      [Cosmos](https://microsoft.sharepoint.com/teams/CosmosBDP)\\n- [Azure Data
-      Lake on
-      Cosmos](https://microsoft.sharepoint.com/teams/CosmosBDP/SitePages/Azure-\
-      Data-Lake-on-Cosmos.aspx)\\n- [AEther
-      Client](https://eng.ms/docs/experiences-devices/webxt/search-content-plat\
-      form/indexserve/galaxy/galaxy/galaxydocs/newhire/aether)\\n- [E2E
-      Annotation Workflow in Eyes On Production
-      Environment](https://aetherwiki.azurewebsites.net/articles/FeatureAreas/C\
-      AX_ProdEnv.html)\\n\\nTo submit and run a AE365ExePool job successfully,
-      you should have below access:\\n\\n- [Contributor role of your
-      ADLS](###How-to-check-my-role-in-ADLS)\\n- [RWX access to your ADLS data
-      explorer at root
-      folder](###How-to-check-my-access-in-ADLS-data-explorer)\\n\\n###
-      Scenarios\\n\\nThe component is used to trigger
-      [UHRS](https://prod.uhrs.playmsn.com/uhrs/) eyes-on annotation workflow
-      only.\\n\\n### Limitation\\n\\n- AzureML AE365ExePool module must
-      reference AEther AE365ExePool module. Currently only CAX EyesOn Module
-      [ND] v1.6 (654ec0ba-bed3-48eb-a594-efd0e9275e0d) is supported.\\n- The
-      \\\"TimeoutSeconds\\\" parameter is read from content of input port in
-      AEther module. However, the \\\"input as parameter\\\" feature is not
-      supported in AzureML yet, thus you need to fill in parameter manually.\\n-
-      AzureML will use prefix of user's AAD mail address as job requestor, which
-      has a small chance to be different from alias used in AEther Client. This
-      may have effect on auto-approval, please contact
-      [MARS](https://osp.office.net/idm/identity/access/Overview) administrator
-      for help if it happens to be the case.\\n- The inputs/outputs data must
-      reside in Azure Data Lake on Cosmos directly or indirectly under
-      \\\"local\\\" folder.\\n\\n## How to write AE365ExePoolComponent yaml
-      spec\\n\\nPlease refer to [AE365ExePoolComponent spec
-      doc](./component-spec-definition.html#ae365exepool).\\n\\nExample
-      yaml:\\n\\n```yaml\\n$schema:
-      https://componentsdk.azureedge.net/jsonschema/AE365ExePoolComponent.json\
-      \\nname:
-      microsoft.com.azureml.samples.ae365exepool.CAXEyesOnModule\\nversion:
-      0.0.1\\ndisplay_name: CAX EyesOn Module [ND] v1.6\\ntype:
-      AE365ExePoolComponent\\ndescription: Use this auto-approved module to
-      download data on EyesOn machine and interact with it for Compliant
-      Annotation purpose."
+    default: 
   text_meta:
     type: string
     default: "{}"
 outputs:
   question:
     type: string
-    reference: ${validate_and_generate_test_question.output}
+    reference: ${validate_and_generate_test_question.output.question}
   suggested_answer:
     type: string
     reference: ${validate_suggested_answer.output.suggested_answer}
@@ -96,7 +52,7 @@ nodes:
     path: generate_suggested_answer_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
-    question: ${validate_and_generate_test_question.output}
+    question: ${validate_and_generate_test_question.output.question}
   use_variants: false
 - name: validate_and_generate_seed_question
   type: python
@@ -135,7 +91,7 @@ nodes:
     connection: eus2
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
-    question: ${validate_and_generate_test_question.output}
+    question: ${validate_and_generate_test_question.output.question}
     model_or_deployment_name: gpt-4
     temperature: 0.2
     max_tokens: null
