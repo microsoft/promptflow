@@ -15,6 +15,7 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -91,8 +92,8 @@ span_model = api.model(
         SpanFieldName.CONTEXT: fields.Nested(context_model, required=True),
         SpanFieldName.KIND: fields.String(required=True),
         SpanFieldName.PARENT_ID: fields.String,
-        SpanFieldName.START_TIME: fields.DateTime(dt_format="iso8601"),
-        SpanFieldName.END_TIME: fields.DateTime(dt_format="iso8601"),
+        SpanFieldName.START_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
+        SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model),
         SpanFieldName.ATTRIBUTES: fields.Nested(attributes_model, required=True),
         SpanFieldName.EVENTS: fields.List(fields.String),

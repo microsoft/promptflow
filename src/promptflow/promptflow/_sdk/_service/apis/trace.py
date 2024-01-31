@@ -5,6 +5,7 @@
 from flask_restx import fields
 
 from promptflow._constants import TraceEvaluationsFieldName, TraceFieldName
+from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 
 api = Namespace("traces", description="Trace Management")
@@ -26,8 +27,8 @@ trace_model = api.model(
         TraceFieldName.INPUTS: fields.Raw(required=True),
         TraceFieldName.OUTPUTS: fields.Raw(required=True),
         TraceFieldName.EVALUATIONS: fields.List(fields.Nested(evaluations_model)),
-        TraceFieldName.START_TIME: fields.DateTime(dt_format="iso8601", required=True),
-        TraceFieldName.END_TIME: fields.DateTime(dt_format="iso8601", required=True),
+        TraceFieldName.START_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT, required=True),
+        TraceFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT, required=True),
         TraceFieldName.STATUS: fields.String(required=True),
     },
 )
