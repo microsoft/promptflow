@@ -1136,7 +1136,7 @@ def get_mac_address() -> Union[str, None]:
                 mac_address = str(snicaddr.address)
                 break
 
-        # If obtaining the network card MAC ID fails, obtain other MAC IDs
+        # If obtaining the network card MAC ID fails, obtain other MAC ID
         if mac_address is None:
             node = uuid.getnode()
             if node != 0:
