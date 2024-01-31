@@ -50,3 +50,52 @@ GET_PYPI_INTERVAL_DAY = 7
 
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 STREAMING_ANIMATION_TIME = 0.01
+
+# trace related
+TRACE_SESSION_ID_ENV_VAR = "PF_TRACE_SESSION_ID"
+
+
+class SpanFieldName:
+    NAME = "name"
+    CONTEXT = "context"
+    KIND = "kind"
+    PARENT_ID = "parent_id"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+    ATTRIBUTES = "attributes"
+    EVENTS = "events"
+    LINKS = "links"
+    RESOURCE = "resource"
+
+
+class SpanContextFieldName:
+    TRACE_ID = "trace_id"
+    SPAN_ID = "span_id"
+    TRACE_STATE = "trace_state"
+
+
+class SpanStatusFieldName:
+    CODE = "code"
+
+
+class SpanAttributeFieldName:
+    FRAMEWORK = "framework"
+    SPAN_TYPE = "span_type"
+    FUNCTION = "function"
+    INPUTS = "inputs"
+    OUTPUT = "output"
+    SESSION_ID = "session_id"
+    PATH = "path"
+    FLOW_ID = "flow_id"
+    RUN = "run"
+    EXPERIMENT = "experiment"
+
+
+class SpanResourceAttributesFieldName:
+    SERVICE_NAME = "service.name"
+
+
+class SpanResourceFieldName:
+    ATTRIBUTES = "attributes"
+    SCHEMA_URL = "schema_url"

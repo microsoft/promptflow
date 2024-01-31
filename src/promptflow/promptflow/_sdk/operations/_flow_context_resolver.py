@@ -38,7 +38,7 @@ class FlowContextResolver:
         """Resolve flow to flow invoker."""
         resolver = cls(flow_path=flow.path)
         resolver._resolve(flow_context=flow.context)
-        return resolver._create_invoker(flow=flow, flow_context=flow.context)
+        return resolver._create_invoker(flow_context=flow.context)
 
     def _resolve(self, flow_context: FlowContext):
         """Resolve flow context."""
@@ -101,12 +101,12 @@ class FlowContextResolver:
             connections[key] = connection_obj._to_execution_connection_dict()
         return connections
 
-    def _create_invoker(self, flow: Flow, flow_context: FlowContext) -> "FlowInvoker":
+    def _create_invoker(self, flow_context: FlowContext) -> "FlowInvoker":
         from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
         connections = self._resolve_connection_objs(flow_context=flow_context)
         # use updated flow dag to create new flow object for invoker
-        resolved_flow = Flow(code=self.working_dir, dag=self.flow_dag)
+        resolved_flow = Flow(code=self.working_dir, path=self.flow_path, dag=self.flow_dag)
         invoker = FlowInvoker(
             flow=resolved_flow,
             connections=connections,

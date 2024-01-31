@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import collections
+import datetime
 import hashlib
 import json
 import multiprocessing
@@ -1098,12 +1099,19 @@ def get_connection_operation(connection_provider: str, credential=None, user_age
 # extract open read/write as partial to centralize the encoding
 read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
 write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+# nan, inf and -inf are not JSON serializable according to https://docs.python.org/3/library/json.html#json.loads
+# `parse_constant` will be called to handle these values
+# similar idea for below `json_load` and its parameter `parse_const_as_str`
+json_loads_parse_const_as_str = partial(json.loads, parse_constant=lambda x: str(x))
 
 
 # extract some file operations inside this file
-def json_load(file) -> str:
+def json_load(file, parse_const_as_str: bool = False) -> str:
     with read_open(file) as f:
-        return json.load(f)
+        if parse_const_as_str is True:
+            return json.load(f, parse_constant=lambda x: str(x))
+        else:
+            return json.load(f)
 
 
 def json_dump(obj, file) -> None:
@@ -1116,3 +1124,26 @@ def pd_read_json(file) -> "DataFrame":
 
     with read_open(file) as f:
         return pd.read_json(f, orient="records", lines=True)
+
+
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+    nanoseconds = int(time_unix_nano)
+    seconds = nanoseconds / 1_000_000_000
+    timestamp = datetime.datetime.utcfromtimestamp(seconds)
+    return timestamp.isoformat()
+
+
+def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
+    attr_key = attribute["key"]
+    # suppose all values are flattened here
+    # so simply regard the first value as the attribute value
+    attr_value = list(attribute["value"].values())[0]
+    return attr_key, attr_value
+
+
+def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
