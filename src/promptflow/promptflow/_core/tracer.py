@@ -209,7 +209,7 @@ def enrich_span_with_trace(span, trace):
         span.set_attributes(
             {
                 "framework": "promptflow",
-                "span_type": trace.type,
+                "span_type": f"{trace.type}",
                 "function": trace.name,
                 "inputs": serialize_attribute(trace.inputs),
                 "node_name": get_node_name_from_context(),
@@ -217,6 +217,16 @@ def enrich_span_with_trace(span, trace):
         )
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
+
+
+def enrich_span_with_input(span, input):
+    try:
+        serialized_input = serialize_attribute(input)
+        span.set_attribute("inputs", serialized_input)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with input: {e}")
+
+    return input
 
 
 def enrich_span_with_output(span, output):
@@ -231,9 +241,13 @@ def enrich_span_with_output(span, output):
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
-    serializable = Tracer.to_serializable(value)
-    serialized_value = serialize(serializable)
-    return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    try:
+        serializable = Tracer.to_serializable(value)
+        serialized_value = serialize(serializable)
+        return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    except Exception as e:
+        logging.warning(f"Failed to serialize attribute: {e}")
+        return None
 
 
 def _traced(
