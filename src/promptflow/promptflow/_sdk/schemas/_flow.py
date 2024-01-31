@@ -1,9 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import re
 
 from marshmallow import fields, validate
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
@@ -54,8 +56,28 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
+class PythonEagerFlowEntry(fields.Str):
+    """Entry point for eager flow. For example: pkg.module:func"""
+
+    default_error_messages = {
+        "invalid_entry": "Provided entry {entry} has incorrect format. "
+        "Python eager flow only support pkg.module:func format.",
+    }
+
+    def _validate(self, value):
+        super()._validate(value)
+        if not re.match(r"^[a-zA-Z0-9_.]+:[a-zA-Z0-9_]+$", value):
+            raise self.make_error("invalid_entry", entry=value)
+
+
 class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # entry point, for example: pkg.module:func
     entry = fields.Str(required=True)
+
+    def _deserialize(self, data, **kwargs):
+        data = super()._deserialize(data, **kwargs)
+        if data.get("language", "python") == FlowLanguage.Python:
+            PythonEagerFlowEntry().deserialize(data.get("entry"))
+        return data

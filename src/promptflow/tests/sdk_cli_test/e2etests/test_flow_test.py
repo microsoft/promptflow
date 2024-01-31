@@ -1,4 +1,5 @@
 import logging
+import sys
 import tempfile
 from pathlib import Path
 from types import GeneratorType
@@ -21,6 +22,13 @@ EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().
 FLOW_RESULT_KEYS = ["category", "evidence"]
 
 _client = PFClient()
+
+
+def clear_module_cache(module_name):
+    try:
+        del sys.modules[module_name]
+    except Exception:
+        pass
 
 
 @pytest.mark.usefixtures(
@@ -248,43 +256,38 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test_with_yaml(self):
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test_with_primitive_output(self):
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_output/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_invalid_cases(self):
-        # no entry provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
-        with pytest.raises(UserErrorException) as e:
-            _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "Entry function is not specified" in str(e.value)
-
-        # no path provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/").absolute()
+        # wrong entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
         with pytest.raises(ValidationError) as e:
             _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "'path': ['Missing data for required field.']" in str(e.value)
+        assert "Provided entry my_func has incorrect format" in str(e.value)
 
-        # dup entries provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
-        with pytest.raises(UserErrorException) as e:
-            _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
-        assert "Specifying entry function is not allowed" in str(e.value)
-        # wrong entry provided
         # required inputs not provided
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_test_with_additional_includes(self):
         # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
         # but working dir will be temp dir which includes additional included files
+        clear_module_cache("flow")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
+
+    def test_eager_flow_with_nested_entry(self):
+        clear_module_cache("my_module.entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/nested_entry/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
+        assert result.output == "Hello world! val1"
