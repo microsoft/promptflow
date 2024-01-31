@@ -10,15 +10,15 @@ from promptflow import PFClient
 from promptflow._utils.logger_utils import get_logger
 from promptflow.entities import Run
 
-CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
+CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.ini"))
 
-UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "gen_test_data", "utils"))
-if UTILS_PATH not in os.sys.path:
-    os.sys.path.insert(0, UTILS_PATH)
+# UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "gen_test_data", "utils"))
+# if UTILS_PATH not in os.sys.path:
+#     os.sys.path.insert(0, UTILS_PATH)
 
-from common import clean_data_and_save, split_document  # noqa: E402
-from components import clean_test_data_set, document_split  # noqa: E402
-from constants import CONNECTIONS_TEMPLATE, TEXT_CHUNK  # noqa: E402
+from .utils.common import clean_data_and_save, split_document  # noqa: E402
+from .utils.components import clean_test_data_set, document_split  # noqa: E402
+from .utils.constants import CONNECTIONS_TEMPLATE, TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
 
@@ -30,7 +30,8 @@ def batch_run_flow(
     flow_batch_run_size: int,
     connection_name: str = "azure_open_ai_connection",
 ):
-    logger.info("Start to submit the batch run.")
+    doc_nodes = json.loads(flow_input_data)
+    logger.info(f"Start to submit the batch run. Collect {len(doc_nodes)} document nodes.")
     base_run = pf.run(
         flow=flow_folder,
         data=flow_input_data,
@@ -97,6 +98,8 @@ def gen_test_data_pipeline(
         if should_skip_doc_split
         else document_split(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
     )
+
+    logger.info(f"Collect {len(json.loads(data))} document nodes.")
     flow_node = load_component(flow_yml_path)(
         data=data,
         text_chunk="${data.text_chunk}",
@@ -237,6 +240,7 @@ if __name__ == "__main__":
         parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
 
     if args.cloud:
+
         run_cloud(
             args.documents_folder,
             args.document_chunk_size,

@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 
 from mldesigner import Input, Output, command_component
-from common import split_document, clean_data_and_save
-from constants import ENVIRONMENT_DICT_FIXED_VERSION
+from .common import split_document, clean_data_and_save
+from .constants import ENVIRONMENT_DICT_FIXED_VERSION
 
 
 @command_component(

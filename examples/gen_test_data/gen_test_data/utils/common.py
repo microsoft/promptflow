@@ -3,7 +3,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from constants import DOCUMENT_NODE, TEXT_CHUNK
+from .constants import DOCUMENT_NODE, TEXT_CHUNK
 from promptflow._utils.logger_utils import get_logger
 
 try:
