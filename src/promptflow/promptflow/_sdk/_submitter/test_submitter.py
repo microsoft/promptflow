@@ -191,7 +191,7 @@ class TestSubmitter:
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
-        output_path = Path(kwargs.get("output_path", self.flow.code))
+        output_path = Path(kwargs.get("output_path"), self.flow.code)
         output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
