@@ -5,7 +5,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from sdk_cli_test.recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
+from sdk_cli_test.recording_utilities import (
+    RecordStorage,
+    inject_async_with_recording,
+    inject_sync_with_recording,
+    is_record,
+    is_replay,
+    mock_tool,
+    recording_array_extend,
+    recording_array_reset,
+)
 
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._line_execution_process_pool import _process_wrapper
@@ -28,16 +37,23 @@ def recording_setup():
 def setup_recording():
     patches = []
     override_recording_file()
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+    if is_record() or is_replay():
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
-        patch_targets = ["promptflow._core.tool.tool", "promptflow._internal.tool", "promptflow.tool"]
+        patch_targets = {
+            "promptflow._core.tool.tool": mocked_tool,
+            "promptflow._internal.tool": mocked_tool,
+            "promptflow.tool": mocked_tool,
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
 
-        for target in patch_targets:
-            patcher = patch(target, mocked_tool)
+        for target, mocked_target in patch_targets.items():
+            patcher = patch(target, mocked_target)
             patches.append(patcher)
             patcher.start()
+
     return patches
 
 
@@ -143,7 +159,7 @@ def recording_file_override():
 
 
 def override_recording_file():
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+    if is_replay() or is_record():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
@@ -174,9 +190,9 @@ def process_override():
 def recording_injection(recording_setup, process_override):
     # This fixture is used to main entry point to inject recording mode into the test
     try:
-        yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
+        yield (is_replay() or is_record(), recording_array_extend)
     finally:
-        if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        if is_replay() or is_record():
             RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
 

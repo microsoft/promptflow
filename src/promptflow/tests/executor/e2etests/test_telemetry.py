@@ -60,7 +60,7 @@ def mock_process_manager(*args, **kwargs):
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
     def test_executor_openai_telemetry(self, dev_connections):
