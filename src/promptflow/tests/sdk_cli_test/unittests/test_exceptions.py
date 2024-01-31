@@ -20,14 +20,14 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.UNKNOWN
-        assert error_type == "FileNotFoundError"
+        assert error_category == ErrorCategory.USER_ERROR
+        assert error_type == "FileNotFoundException"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "module=promptflow._sdk._pf_client, "
-            'code=raise FileNotFoundError(f"flow path {flow} does not exist"), '
-            "lineno="
+            "promptflow._sdk._pf_client, "
+            "line 120, "
+            'raise FileNotFoundException(f"flow path {flow} does not exist").'
         ) in error_detail
 
     def test_error_category_with_user_error(self, pf):
@@ -42,9 +42,10 @@ class TestExceptions:
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
         assert (
-            "module=promptflow._sdk._orm.run_info, "
-            'code=raise RunNotFoundError(f"Run name {name!r} cannot be found."), '
-            "lineno="
+            "promptflow._sdk._orm.retry, line 43, "
+            "return f(*args, **kwargs).\n"
+            "promptflow._sdk._orm.run_info, line 142, "
+            'raise RunNotFoundError(f"Run name {name!r} cannot be found.").'
         ) in error_detail
 
     def test_error_category_with_system_error(self):
@@ -63,9 +64,7 @@ class TestExceptions:
             "but received {value_type}. "
             "Please adjust the input value to match the expected format."
         )
-        assert (
-            "module=promptflow.executor.flow_validator, " "code=raise InvalidAggregationInput(, " "lineno="
-        ) in error_detail
+        assert "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(." in error_detail
 
     def test_error_category_with_http_error(self, subscription_id, resource_group_name, workspace_name):
         try:
@@ -73,7 +72,7 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.UNKNOWN
+        assert error_category == ErrorCategory.SYSTEM_ERROR
         assert error_type == "HttpResponseError"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
@@ -177,9 +176,7 @@ class TestExceptions:
             "input '{input_key}' should be a list, but received {value_type}. Please "
             "adjust the input value to match the expected format."
         )
-        assert (
-            "module=promptflow.executor.flow_validator, " "code=raise InvalidAggregationInput(, " "lineno="
-        ) in error_detail
+        assert "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(." in error_detail
 
     def test_error_category_with_cause_exception3(self, pf):
         """cause exception is not PromptflowException and e is not PromptflowException, recording e exception."""
@@ -193,8 +190,10 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.UNKNOWN
-        assert error_type == "Exception"
+        assert error_category == ErrorCategory.USER_ERROR
+        assert error_type == "FileNotFoundException"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
-        assert error_detail == ""
+        assert (
+            "promptflow._sdk._pf_client, line 120, " 'raise FileNotFoundException(f"flow path {flow} does not exist").'
+        ) in error_detail
