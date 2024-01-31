@@ -12,21 +12,9 @@ from promptflow._cli._params import (
     base_params,
 )
 from promptflow._cli._utils import activate_action, exception_handler
-from promptflow._sdk._constants import get_list_view_type
-from promptflow._sdk._load_functions import load_common
-from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
-_client = None
-
-
-def _get_pf_client():
-    global _client
-    if _client is None:
-        _client = PFClient()
-    return _client
 
 
 def add_param_template(parser):
