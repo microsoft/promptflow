@@ -5,7 +5,6 @@ import contextlib
 import glob
 import json
 import os
-import shutil
 import subprocess
 import sys
 from importlib.metadata import version
@@ -14,13 +13,8 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import (
-    CHAT_HISTORY,
-    DEFAULT_ENCODING,
-    FLOW_TOOLS_JSON_GEN_TIMEOUT,
-    LOCAL_MGMT_DB_PATH,
-    PROMPT_FLOW_DIR_NAME,
-)
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
@@ -84,6 +78,13 @@ class FlowOperations(TelemetryMixin):
         :return: The result of flow or node
         :rtype: dict
         """
+        experiment = kwargs.pop("experiment", None)
+        output_path = kwargs.get("output_path", None)
+        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            return self._client._experiments._test(
+                flow=flow, inputs=inputs, environment_variables=environment_variables, experiment=experiment, **kwargs
+            )
+
         result = self._test(
             flow=flow,
             inputs=inputs,
@@ -99,49 +100,21 @@ class FlowOperations(TelemetryMixin):
             # Dump flow/node test info
             flow = load_flow(flow)
             if node:
-                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node")
-            else:
-                if variant:
-                    tuning_node, node_variant = parse_variant(variant)
-                    prefix = f"flow-{tuning_node}-{node_variant}"
-                else:
-                    prefix = "flow"
-                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
-
-        additional_output_path = kwargs.get("detail", None)
-        if additional_output_path:
-            if not dump_test_result:
-                flow = load_flow(flow)
-            if node:
-                # detail and output
                 dump_flow_result(
-                    flow_folder=flow.code,
-                    node_result=result,
-                    prefix=f"flow-{node}.node",
-                    custom_path=additional_output_path,
+                    flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node", custom_path=output_path
                 )
-                # log
-                log_src_path = Path(flow.code) / PROMPT_FLOW_DIR_NAME / f"{node}.node.log"
-                log_dst_path = Path(additional_output_path) / f"{node}.node.log"
-                shutil.copy(log_src_path, log_dst_path)
             else:
                 if variant:
                     tuning_node, node_variant = parse_variant(variant)
                     prefix = f"flow-{tuning_node}-{node_variant}"
                 else:
                     prefix = "flow"
-                # detail and output
                 dump_flow_result(
                     flow_folder=flow.code,
                     flow_result=result,
                     prefix=prefix,
-                    custom_path=additional_output_path,
+                    custom_path=output_path,
                 )
-                # log
-                log_src_path = Path(flow.code) / PROMPT_FLOW_DIR_NAME / "flow.log"
-                log_dst_path = Path(additional_output_path) / "flow.log"
-                shutil.copy(log_src_path, log_dst_path)
-
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
@@ -179,6 +152,7 @@ class FlowOperations(TelemetryMixin):
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
+        output_path = kwargs.get("output_path", None)
         flow = load_flow(flow, entry=entry)
 
         if isinstance(flow, EagerFlow):
@@ -234,6 +208,7 @@ class FlowOperations(TelemetryMixin):
                     dependency_nodes_outputs=dependency_nodes_outputs,
                     environment_variables=environment_variables,
                     stream=True,
+                    output_path=output_path,
                 )
             else:
                 return submitter.flow_test(
@@ -242,6 +217,7 @@ class FlowOperations(TelemetryMixin):
                     stream_log=stream_log,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
+                    output_path=output_path,
                 )
 
     @staticmethod
