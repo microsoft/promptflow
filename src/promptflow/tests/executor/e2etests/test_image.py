@@ -4,7 +4,13 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, _get_multimedia_info, _is_url, is_multimedia_dict
+from promptflow._utils.multimedia_utils import (
+    MIME_PATTERN,
+    _create_image_from_file,
+    _get_multimedia_info,
+    _is_url,
+    is_multimedia_dict
+)
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
