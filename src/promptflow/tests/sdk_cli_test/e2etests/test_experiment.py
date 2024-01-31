@@ -146,7 +146,9 @@ class TestExperiment:
         client = PFClient()
         # Test with inputs
         result = client.flows.test(
-            target_flow_path, experiment=template_path, inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8"}
+            target_flow_path,
+            experiment=template_path,
+            inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
         )
         _assert_result(result)
         expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic_no_script_template"
