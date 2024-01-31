@@ -43,7 +43,7 @@ class ExperimentOrchestrator:
         self.run_operations = self._client.runs
         self.experiment_operations = self._client._experiments
         self.run_submitter = ExperimentRunSubmitter(self.run_operations)
-        self.command_submitter = ExperimentCommandSubmitter(self.experiment_operations)
+        self.command_submitter = ExperimentCommandSubmitter(self.run_operations)
 
     def test(
         self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
@@ -74,29 +74,28 @@ class ExperimentOrchestrator:
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
         # Read the first line in template data
         test_context = ExperimentTemplateTestContext(
-            template, environment_variables=environment_variables, output_path=kwargs.get("output_path")
+            template, inputs=inputs, environment_variables=environment_variables, output_path=kwargs.get("output_path")
         )
 
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
-            inputs = {**node.inputs, **inputs} if node in start_nodes else node.inputs
-            node_result = self._test_node(node, inputs, test_context)
+            node_result = self._test_node(node, test_context)
             test_context.add_node_result(node.name, node_result)
         logger.info("Testing completed. Reach full logs at %s.", test_context.output_path.as_posix())
         return test_context.node_results
 
-    def _test_node(self, node, inputs, test_context) -> Run:
+    def _test_node(self, node, test_context) -> Run:
         if node.type == ExperimentNodeType.FLOW:
-            return self._test_flow_node(node, inputs, test_context)
+            return self._test_flow_node(node, test_context)
         elif node.type == ExperimentNodeType.COMMAND:
-            return self._test_command_node(node, inputs, test_context)
+            return self._test_command_node(node, test_context)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
-    def _test_flow_node(self, node, inputs, test_context):
+    def _test_flow_node(self, node, test_context):
         # Resolve experiment related inputs
-        inputs_mapping = ExperimentHelper.resolve_column_mapping(node.name, inputs, test_context.test_inputs)
+        inputs_mapping = ExperimentHelper.resolve_column_mapping(node.name, node.inputs, test_context.test_inputs)
         data, runs = ExperimentHelper.get_referenced_data_and_run(
-            node.name, inputs, test_context.test_data, test_context.node_results
+            node.name, node.inputs, test_context.test_data, test_context.node_results
         )
         # Add data, run inputs/outputs to binding context for inputs mapping resolve.
         binding_context = {**{f"data.{k}": v for k, v in data.items()}, **{f"{k}.outputs": v for k, v in runs.items()}}
@@ -205,12 +204,19 @@ class ExperimentOrchestrator:
 
 
 class ExperimentTemplateTestContext:
-    def __init__(self, template: ExperimentTemplate, environment_variables, output_path=None):
+    def __init__(self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None):
+        """
+        Test context for experiment template.
+        :param template: Template object to get definition of experiment.
+        :param inputs: User inputs when calling test command.
+        :param environment_variables: Environment variables specified for test.
+        :param output_path: The custom output path.
+        """
         self.template = template
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
-        self.environment_variables = environment_variables
-        self.test_data = ExperimentHelper.prepare_test_data(template)
+        self.environment_variables = environment_variables or {}
+        self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
         # TODO: Update session part after test session is supported
         self.output_path = (
@@ -241,11 +247,13 @@ class ExperimentRun(Run):
 
 class ExperimentHelper:
     @staticmethod
-    def prepare_test_data(template: ExperimentTemplate) -> dict:
-        """Read the first line of template data path for test."""
+    def prepare_test_data(inputs, template: ExperimentTemplate) -> dict:
+        """Prepare test data.
+        If inputs is given, use it for all test data.
+        Else, read the first line of template data path for test."""
         template_test_data = {}
         for data in template.data:
-            data_line = next(iter(load_data(local_path=data.path)), None)
+            data_line = inputs or next(iter(load_data(local_path=data.path)), None)
             if not data_line:
                 raise ExperimentValueError(f"Experiment data {data.name!r} is empty.")
             template_test_data[data.name] = data_line
