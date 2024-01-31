@@ -112,8 +112,12 @@ class BatchEngine:
         self._storage = storage
         self._kwargs = kwargs
 
-        self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
-        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._batch_timeout_sec = batch_timeout_sec or get_int_env_var(
+            "PF_BATCH_TIMEOUT_SEC"
+        )
+        self._line_timeout_sec = get_int_env_var(
+            "PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC
+        )
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -149,13 +153,15 @@ class BatchEngine:
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
                 executor_proxy_cls = self.executor_proxy_classes[self._program_language]
-                self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
-                    executor_proxy_cls.create,
-                    self._flow_file,
-                    self._working_dir,
-                    connections=self._connections,
-                    storage=self._storage,
-                    **self._kwargs,
+                self._executor_proxy: AbstractExecutorProxy = (
+                    async_run_allowing_running_loop(
+                        executor_proxy_cls.create,
+                        self._flow_file,
+                        self._working_dir,
+                        connections=self._connections,
+                        storage=self._storage,
+                        **self._kwargs,
+                    )
                 )
                 try:
                     # register signal handler for python flow in the main thread
@@ -171,25 +177,39 @@ class BatchEngine:
                             )
 
                     # set batch input source from input mapping
-                    OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                    OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(
+                        inputs_mapping
+                    )
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
                     inputs = (
-                        self._flow.inputs if self._is_dag_yaml_flow else self._executor_proxy.get_inputs_definition()
+                        self._flow.inputs
+                        if self._is_dag_yaml_flow
+                        else self._executor_proxy.get_inputs_definition()
                     )
                     # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    batch_input_processor = BatchInputsProcessor(
+                        self._working_dir, inputs, max_lines_count
+                    )
+                    batch_inputs = batch_input_processor.process_batch_inputs(
+                        input_dirs, inputs_mapping
+                    )
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
                     # run flow in batch mode
                     return async_run_allowing_running_loop(
-                        self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
+                        self._exec_in_task,
+                        batch_inputs,
+                        run_id,
+                        output_dir,
+                        raise_on_line_failure,
                     )
                 finally:
                     async_run_allowing_running_loop(self._executor_proxy.destroy)
         except Exception as e:
-            bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
-            if isinstance(e, PromptflowException):  # Need executor colleagues to modify to specific UserError or SystemError.
+            bulk_logger.error(
+                f"Error occurred while executing batch run. Exception: {str(e)}"
+            )
+            if isinstance(e, PromptflowException):
                 raise e
             else:
                 # for unexpected error, we need to wrap it to SystemErrorException to allow us to see the stack trace.
@@ -219,7 +239,14 @@ class BatchEngine:
         line_results: List[LineResult] = []
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+            self._exec(
+                line_results,
+                aggr_result,
+                batch_inputs,
+                run_id,
+                output_dir,
+                raise_on_line_failure,
+            )
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -228,7 +255,11 @@ class BatchEngine:
                 task.cancel()
                 # use current completed line results and aggregation results to create a BatchResult
                 return BatchResult.create(
-                    self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
+                    self._start_time,
+                    datetime.utcnow(),
+                    line_results,
+                    aggr_result,
+                    status=Status.Canceled,
                 )
         return task.result()
 
@@ -247,7 +278,8 @@ class BatchEngine:
         # if the flow is None, we don't need to apply default value for inputs.
         if self._is_dag_yaml_flow:
             batch_inputs = [
-                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
+                apply_default_value_for_input(self._flow.inputs, each_line_input)
+                for each_line_input in batch_inputs
             ]
         run_id = run_id or str(uuid.uuid4())
 
@@ -280,7 +312,9 @@ class BatchEngine:
         ex = None
         if not is_timeout:
             # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            aggr_exec_result = await self._exec_aggregation(
+                batch_inputs, line_results, run_id
+            )
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
             self._update_aggr_result(aggr_result, aggr_exec_result)
         else:
@@ -289,7 +323,9 @@ class BatchEngine:
                 target=ErrorTarget.BATCH,
             )
         # summary some infos from line results and aggr results to batch result
-        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
+        return BatchResult.create(
+            self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex
+        )
 
     async def _exec_batch(
         self,
@@ -300,14 +336,18 @@ class BatchEngine:
         worker_count = get_int_env_var("PF_WORKER_COUNT", DEFAULT_CONCURRENCY)
         semaphore = asyncio.Semaphore(worker_count)
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
+            asyncio.create_task(
+                self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id)
+            )
             for i, line_inputs in enumerate(batch_inputs)
         ]
 
         total_lines = len(batch_inputs)
         completed_line = 0
         while completed_line < total_lines:
-            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED
+            )
             completed_line_results = [task.result() for task in done]
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
@@ -349,10 +389,13 @@ class BatchEngine:
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input)
+            for input in succeeded_batch_inputs
         ]
 
-        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
+        succeeded_inputs = transpose(
+            resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys())
+        )
 
         aggregation_inputs = transpose(
             [result.aggregation_inputs for result in line_results],
@@ -395,7 +438,9 @@ class BatchEngine:
         output_file = output_dir / OUTPUT_FILE_NAME
         dump_list_to_jsonl(output_file, outputs)
 
-    def _update_aggr_result(self, aggr_result: AggregationResult, aggr_exec_result: AggregationResult):
+    def _update_aggr_result(
+        self, aggr_result: AggregationResult, aggr_exec_result: AggregationResult
+    ):
         """Update aggregation result with the aggregation execution result"""
         aggr_result.metrics = aggr_exec_result.metrics
         aggr_result.node_run_infos = aggr_exec_result.node_run_infos
@@ -403,7 +448,11 @@ class BatchEngine:
 
     def _is_eager_flow_yaml(self):
         if Path(self._flow_file).suffix.lower() in [".yaml", ".yml"]:
-            flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+            flow_file = (
+                self._working_dir / self._flow_file
+                if self._working_dir
+                else self._flow_file
+            )
             with open(flow_file, "r", encoding="utf-8") as fin:
                 flow_dag = load_yaml(fin)
             if "entry" in flow_dag:

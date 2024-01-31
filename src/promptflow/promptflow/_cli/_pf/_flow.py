@@ -37,14 +37,20 @@ from promptflow._cli._pf._init_entry_generators import (
     copy_extra_files,
 )
 from promptflow._cli._pf._run import exception_handler
-from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
+from promptflow._cli._utils import (
+    _copy_to_flow,
+    activate_action,
+    confirm,
+    inject_sys_path,
+    list_of_dict_to_dict,
+)
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.errors import ValueErrorException
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -149,7 +155,10 @@ pf flow serve --source <path_to_flow> --skip-open-browser
         "--static_folder", type=str, help=argparse.SUPPRESS
     )
     add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
-        "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
+        "--skip-open-browser",
+        action="store_true",
+        default=False,
+        help="Skip open browser for flow serving.",
     )
     activate_action(
         name="serve",
@@ -216,16 +225,24 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         "--node", type=str, help="the node name in the flow need to be tested."
     )
     add_param_variant = lambda parser: parser.add_argument(  # noqa: E731
-        "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
+        "--variant",
+        type=str,
+        help="Node & variant name in format of ${node_name.variant_name}.",
     )
     add_param_interactive = lambda parser: parser.add_argument(  # noqa: E731
-        "--interactive", action="store_true", help="start a interactive chat session for chat flow."
+        "--interactive",
+        action="store_true",
+        help="start a interactive chat session for chat flow.",
     )
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
-    add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
-    add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_param_ui = lambda parser: parser.add_argument(
+        "--ui", action="store_true", help=argparse.SUPPRESS
+    )  # noqa: E731
+    add_param_input = lambda parser: parser.add_argument(
+        "--input", type=str, help=argparse.SUPPRESS
+    )  # noqa: E731
     add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
         "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
     )
@@ -265,10 +282,14 @@ def init_flow(args):
     else:
         # Create an example flow
         print("Creating flow from scratch...")
-        _init_flow_by_template(args.flow, args.type, args.yes, args.connection, args.deployment)
+        _init_flow_by_template(
+            args.flow, args.type, args.yes, args.connection, args.deployment
+        )
 
 
-def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dict = None):
+def _init_existing_flow(
+    flow_name, entry=None, function=None, prompt_params: dict = None
+):
     flow_path = Path(flow_name).resolve()
     if not function:
         logger.error("--function must be specified when --entry is specified.")
@@ -293,7 +314,10 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     python_tool_inputs = [arg.name for arg in python_tool.tool_arg_list]
     for tool_input in tools.prompt_params.keys():
         if tool_input not in python_tool_inputs:
-            raise ValueErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=f"Template parameter {tool_input} doesn't find in python function arguments.")
+            raise ValueErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=f"Template parameter {tool_input} doesn't find in python function arguments.",
+            )
 
     python_tool.generate_to_file(tool_py)
     # Create .promptflow and flow.tools.json
@@ -301,29 +325,46 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     meta_dir.mkdir(parents=True, exist_ok=True)
     tools.generate_to_file(meta_dir / "flow.tools.json")
     # Create flow.dag.yaml
-    FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file("flow.dag.yaml")
-    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
+    FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file(
+        "flow.dag.yaml"
+    )
+    copy_extra_files(
+        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
+    )
     print(f"Done. Generated flow in folder: {flow_path.resolve()}.")
 
 
 def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
     from promptflow._sdk._configuration import Configuration
 
-    example_flow_path = Path(__file__).parent.parent / "data" / "chat_flow" / "flow_files"
+    example_flow_path = (
+        Path(__file__).parent.parent / "data" / "chat_flow" / "flow_files"
+    )
     for item in list(example_flow_path.iterdir()):
         _copy_to_flow(flow_path=flow_path, source_file=item)
 
     # Generate flow.dag.yaml to chat flow.
     connection = connection or DEFAULT_CONNECTION
     deployment = deployment or DEFAULT_DEPLOYMENT
-    ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(flow_path / "flow.dag.yaml")
+    ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(
+        flow_path / "flow.dag.yaml"
+    )
     # When customer not configure the remote connection provider, create connection yaml to chat flow.
-    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProvider.LOCAL
+    is_local_connection = (
+        Configuration.get_instance().get_connection_provider()
+        == ConnectionProvider.LOCAL
+    )
     if is_local_connection:
-        OpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "openai.yaml")
-        AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "azure_openai.yaml")
+        OpenAIConnectionGenerator(connection=connection).generate_to_file(
+            flow_path / "openai.yaml"
+        )
+        AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(
+            flow_path / "azure_openai.yaml"
+        )
 
-    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
+    copy_extra_files(
+        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
+    )
 
     print(f"Done. Created chat flow folder: {flow_path.resolve()}.")
     if is_local_connection:
@@ -344,29 +385,41 @@ def _init_standard_or_evaluation_flow(flow_name, flow_path, flow_type):
     example_flow_path = Path(__file__).parent.parent / "data" / f"{flow_type}_flow"
     for item in list(example_flow_path.iterdir()):
         _copy_to_flow(flow_path=flow_path, source_file=item)
-    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
+    copy_extra_files(
+        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
+    )
     print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
     flow_test_command = f"pf flow test --flow {flow_name} --input {os.path.join(flow_name, 'data.jsonl')}"
     print(f"You can execute this command to test the flow, {flow_test_command}")
 
 
-def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=None, deployment=None):
+def _init_flow_by_template(
+    flow_name, flow_type, overwrite=False, connection=None, deployment=None
+):
     flow_path = Path(flow_name)
     if flow_path.exists():
         if not flow_path.is_dir():
             logger.error(f"{flow_path.resolve()} is not a folder.")
             return
         answer = confirm(
-            "The flow folder already exists, do you want to create the flow in this existing folder?", overwrite
+            "The flow folder already exists, do you want to create the flow in this existing folder?",
+            overwrite,
         )
         if not answer:
             print("The 'pf init' command has been cancelled.")
             return
     flow_path.mkdir(parents=True, exist_ok=True)
     if flow_type == "chat":
-        _init_chat_flow(flow_name=flow_name, flow_path=flow_path, connection=connection, deployment=deployment)
+        _init_chat_flow(
+            flow_name=flow_name,
+            flow_path=flow_path,
+            connection=connection,
+            deployment=deployment,
+        )
     else:
-        _init_standard_or_evaluation_flow(flow_name=flow_name, flow_path=flow_path, flow_type=flow_type)
+        _init_standard_or_evaluation_flow(
+            flow_name=flow_name, flow_path=flow_path, flow_type=flow_type
+        )
 
 
 @exception_handler("Flow test")
@@ -495,7 +548,9 @@ def _resolve_python_flow_additional_includes(source) -> Path:
         # Note: DO NOT use resolved flow path directly, as when inner logic raise exception,
         # temp dir will fail due to file occupied by other process.
         temp_flow_path = Path(tempfile.TemporaryDirectory().name)
-        shutil.copytree(src=resolved_flow_path.parent, dst=temp_flow_path, dirs_exist_ok=True)
+        shutil.copytree(
+            src=resolved_flow_path.parent, dst=temp_flow_path, dirs_exist_ok=True
+        )
 
     return temp_flow_path
 

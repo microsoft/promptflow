@@ -27,7 +27,13 @@ from promptflow.executor._errors import (
     SingleNodeValidationError,
 )
 
-from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_flow_folder, get_flow_inputs_file, get_yaml_file
+from ..utils import (
+    FLOW_ROOT,
+    WRONG_FLOW_ROOT,
+    get_flow_folder,
+    get_flow_inputs_file,
+    get_yaml_file,
+)
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -141,10 +147,18 @@ class TestValidation:
         ],
     )
     def test_executor_create_failure_type_and_message(
-        self, flow_folder, yml_file, error_class, inner_class, error_msg, dev_connections
+        self,
+        flow_folder,
+        yml_file,
+        error_class,
+        inner_class,
+        error_msg,
+        dev_connections,
     ):
         with pytest.raises(error_class) as exc_info:
-            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
+            FlowExecutor.create(
+                get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections
+            )
         if isinstance(exc_info.value, ResolveToolError):
             assert isinstance(exc_info.value.inner_exception, inner_class)
         assert error_msg == exc_info.value.message
@@ -152,26 +166,46 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class",
         [
-            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, InvalidSource),
+            (
+                "source_file_missing",
+                "flow.dag.python.yaml",
+                ResolveToolError,
+                InvalidSource,
+            ),
         ],
     )
-    def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):
+    def test_executor_create_failure_type(
+        self, flow_folder, yml_file, error_class, inner_class, dev_connections
+    ):
         with pytest.raises(error_class) as e:
-            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
+            FlowExecutor.create(
+                get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections
+            )
         if isinstance(e.value, ResolveToolError):
             assert isinstance(e.value.inner_exception, inner_class)
 
     @pytest.mark.parametrize(
         "ordered_flow_folder,  unordered_flow_folder",
         [
-            ("web_classification_no_variants", "web_classification_no_variants_unordered"),
+            (
+                "web_classification_no_variants",
+                "web_classification_no_variants_unordered",
+            ),
         ],
     )
-    def test_node_topology_in_order(self, ordered_flow_folder, unordered_flow_folder, dev_connections):
-        ordered_executor = FlowExecutor.create(get_yaml_file(ordered_flow_folder), dev_connections)
-        unordered_executor = FlowExecutor.create(get_yaml_file(unordered_flow_folder), dev_connections)
+    def test_node_topology_in_order(
+        self, ordered_flow_folder, unordered_flow_folder, dev_connections
+    ):
+        ordered_executor = FlowExecutor.create(
+            get_yaml_file(ordered_flow_folder), dev_connections
+        )
+        unordered_executor = FlowExecutor.create(
+            get_yaml_file(unordered_flow_folder), dev_connections
+        )
 
-        for node1, node2 in zip(ordered_executor._flow.nodes, unordered_executor._flow.nodes):
+        for node1, node2 in zip(
+            ordered_executor._flow.nodes, unordered_executor._flow.nodes
+        ):
             assert node1.name == node2.name
 
     @pytest.mark.parametrize(
@@ -184,9 +218,13 @@ class TestValidation:
             ("wrong_provider", ResolveToolError, APINotFound),
         ],
     )
-    def test_invalid_flow_dag(self, flow_folder, error_class, inner_class, dev_connections):
+    def test_invalid_flow_dag(
+        self, flow_folder, error_class, inner_class, dev_connections
+    ):
         with pytest.raises(error_class) as e:
-            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+            FlowExecutor.create(
+                get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections
+            )
         if isinstance(e.value, ResolveToolError):
             assert isinstance(e.value.inner_exception, inner_class)
 
@@ -198,9 +236,13 @@ class TestValidation:
             ("python_tool_with_simple_image_without_default", {}, InputNotFound),
         ],
     )
-    def test_flow_run_input_type_invalid(self, flow_folder, line_input, error_class, dev_connections):
+    def test_flow_run_input_type_invalid(
+        self, flow_folder, line_input, error_class, dev_connections
+    ):
         # Flow run -  the input is from get_partial_line_inputs()
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder, FLOW_ROOT), dev_connections
+        )
         with pytest.raises(error_class):
             executor.exec_line(line_input)
 
@@ -213,14 +255,18 @@ class TestValidation:
                 FlowOutputUnserializable,
                 (
                     "The output 'content' for flow is incorrect. The output value is not JSON serializable. "
-                    "JSON dump failed: (TypeError) Object of type UnserializableClass is not JSON serializable. "
+                    "JSON dump failed: (TypeErrorException) Object of type UnserializableClass is not JSON serializable. "
                     "Please verify your flow output and make sure the value serializable."
                 ),
             ),
         ],
     )
-    def test_flow_run_execution_errors(self, flow_folder, line_input, error_class, error_msg, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+    def test_flow_run_execution_errors(
+        self, flow_folder, line_input, error_class, error_msg, dev_connections
+    ):
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections
+        )
         # For now, there exception is designed to be swallowed in executor. But Run Info would have the error details
         res = executor.exec_line(line_input)
         assert error_msg == res.run_info.error["message"]
@@ -245,7 +291,9 @@ class TestValidation:
     ):
         # Bulk run - the input is from sample.json
         batch_engine = BatchEngine(
-            get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
         )
         input_dirs = {"data": get_flow_inputs_file(flow_folder)}
         output_dir = Path(mkdtemp())
@@ -321,7 +369,14 @@ class TestValidation:
         ],
     )
     def test_single_node_input_type_invalid(
-        self, path_root: str, flow_folder, node_name, line_input, error_class, error_msg, dev_connections
+        self,
+        path_root: str,
+        flow_folder,
+        node_name,
+        line_input,
+        error_class,
+        error_msg,
+        dev_connections,
     ):
         # Single Node run - the inputs are from flow_inputs + dependency_nodes_outputs
         with pytest.raises(error_class) as exe_info:
@@ -367,11 +422,18 @@ class TestValidation:
         ],
     )
     def test_batch_run_raise_on_line_failure(
-        self, flow_folder, batch_input, raise_on_line_failure, error_class, dev_connections
+        self,
+        flow_folder,
+        batch_input,
+        raise_on_line_failure,
+        error_class,
+        dev_connections,
     ):
         # Bulk run - the input is from sample.json
         batch_engine = BatchEngine(
-            get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
         )
         # prepare input file and output dir
         input_file = Path(mkdtemp()) / "inputs.jsonl"
@@ -382,7 +444,10 @@ class TestValidation:
 
         if error_class is None:
             batch_result = batch_engine.run(
-                input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
+                input_dirs,
+                inputs_mapping,
+                output_dir,
+                raise_on_line_failure=raise_on_line_failure,
             )
             assert batch_result.total_lines == 1
             assert batch_result.completed_lines == 1
@@ -391,12 +456,20 @@ class TestValidation:
             if raise_on_line_failure:
                 with pytest.raises(error_class):
                     batch_engine.run(
-                        input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
+                        input_dirs,
+                        inputs_mapping,
+                        output_dir,
+                        raise_on_line_failure=raise_on_line_failure,
                     )
             else:
                 batch_result = batch_engine.run(
-                    input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
+                    input_dirs,
+                    inputs_mapping,
+                    output_dir,
+                    raise_on_line_failure=raise_on_line_failure,
                 )
                 assert batch_result.total_lines == 1
                 assert batch_result.failed_lines == 1
-                assert error_class.__name__ in json.dumps(batch_result.error_summary.error_list[0].error)
+                assert error_class.__name__ in json.dumps(
+                    batch_result.error_summary.error_list[0].error
+                )

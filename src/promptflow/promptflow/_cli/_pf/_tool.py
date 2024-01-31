@@ -16,12 +16,16 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolPackageUtilsGenerator,
     ToolReadmeGenerator,
 )
-from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
+from promptflow._cli._utils import (
+    activate_action,
+    exception_handler,
+    list_of_dict_to_dict,
+)
 from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.errors import FileNotFoundException
-from promptflow.exceptions import UserErrorException, ValidationException
+from promptflow.exceptions import ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -84,7 +88,9 @@ pf tool list
 # List all package tool and code tool in the flow:
 pf tool list --flow flow-path
 """  # noqa: E501
-    add_param_flow = lambda parser: parser.add_argument("--flow", type=str, help="the flow directory")  # noqa: E731
+    add_param_flow = lambda parser: parser.add_argument(
+        "--flow", type=str, help="the flow directory"
+    )  # noqa: E731
     add_params = [
         add_param_flow,
     ] + base_params
@@ -113,7 +119,9 @@ pf tool validate --source <path_to_tool_script>
 """  # noqa: E501
 
     def add_param_source(parser):
-        parser.add_argument("--source", type=str, help="The tool source to be used.", required=True)
+        parser.add_argument(
+            "--source", type=str, help="The tool source to be used.", required=True
+        )
 
     return activate_action(
         name="validate",
@@ -142,7 +150,9 @@ def init_tool(args):
     # Validate package/tool name
     pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*$"
     if args.package and not re.match(pattern, args.package):
-        raise ValidationException(f"The package name {args.package} is a invalid identifier.")
+        raise ValidationException(
+            f"The package name {args.package} is a invalid identifier."
+        )
     if not re.match(pattern, args.tool):
         raise ValidationException(f"The tool name {args.tool} is a invalid identifier.")
     print("Creating tool from scratch...")
@@ -175,18 +185,24 @@ def init_tool(args):
         with open(manifest_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.writelines("\n".join(set(manifest_contents)))
         # Generate package setup.py
-        SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
+        SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(
+            package_path / "setup.py"
+        )
         # Generate utils.py to list meta data of tools.
-        ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(script_code_path / "utils.py")
-        ToolReadmeGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "README.md")
+        ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(
+            script_code_path / "utils.py"
+        )
+        ToolReadmeGenerator(
+            package_name=package_name, tool_name=args.tool
+        ).generate_to_file(package_path / "README.md")
     else:
         script_code_path = Path(".")
         if icon_path:
             icon_path = f'"{Path(icon_path).as_posix()}"'
     # Generate tool script
-    ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(
-        script_code_path / f"{args.tool}.py"
-    )
+    ToolPackageGenerator(
+        tool_name=args.tool, icon=icon_path, extra_info=extra_info
+    ).generate_to_file(script_code_path / f"{args.tool}.py")
     InitGenerator().generate_to_file(script_code_path / "__init__.py")
     print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
 

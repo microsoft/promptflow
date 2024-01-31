@@ -62,8 +62,12 @@ class AbstractProcessManager:
         self._process_info = process_info
         self._process_target_func = process_target_func
         current_log_context = LogContext.get_current()
-        self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
-        self._current_operation_context = OperationContext.get_instance().get_context_dict()
+        self._log_context_initialization_func = (
+            current_log_context.get_initializer() if current_log_context else None
+        )
+        self._current_operation_context = (
+            OperationContext.get_instance().get_context_dict()
+        )
 
     def new_process(self, i):
         """
@@ -72,7 +76,10 @@ class AbstractProcessManager:
         :param i: Index of the new process to start.
         :type i: int
         """
-        raise NotImplementedErrorException("AbstractProcessManager is an abstract class, no implementation for new_process.")
+        raise NotImplementedErrorException(
+            "AbstractProcessManager is an abstract class, "
+            "no implementation for new_process."
+        )
 
     def restart_process(self, i):
         """
@@ -81,7 +88,10 @@ class AbstractProcessManager:
         :param i: Index of the process to restart.
         :type i: int
         """
-        raise NotImplementedErrorException("AbstractProcessManager is an abstract class, no implementation for restart_process.")
+        raise NotImplementedErrorException(
+            "AbstractProcessManager is an abstract class, "
+            "no implementation for restart_process."
+        )
 
     def end_process(self, i):
         """
@@ -90,7 +100,10 @@ class AbstractProcessManager:
         :param i: Index of the process to terminate.
         :type i: int
         """
-        raise NotImplementedErrorException("AbstractProcessManager is an abstract class, no implementation for end_process.")
+        raise NotImplementedErrorException(
+            "AbstractProcessManager is an abstract class, "
+            "no implementation for end_process."
+        )
 
     def ensure_healthy(self):
         """
@@ -98,7 +111,9 @@ class AbstractProcessManager:
 
         This method should be implemented in subclasses to provide specific health check mechanisms.
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+        raise NotImplementedError(
+            "AbstractProcessManager is an abstract class, no implementation for end_process."
+        )
 
 
 class SpawnProcessManager(AbstractProcessManager):
@@ -222,7 +237,9 @@ class ForkProcessManager(AbstractProcessManager):
     """
     '''
 
-    def __init__(self, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs):
+    def __init__(
+        self, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self._control_signal_queue = control_signal_queue
         self._flow_create_kwargs = flow_create_kwargs
@@ -415,7 +432,10 @@ def create_spawned_fork_process_manager(
     """
     # Set up signal handling for process interruption.
 
-    from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
+    from promptflow.executor._line_execution_process_pool import (
+        create_executor_fork,
+        signal_handler,
+    )
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -448,7 +468,9 @@ def create_spawned_fork_process_manager(
         try:
             process_info_list = process_info.items()
         except Exception as e:
-            bulk_logger.warning(f"Unexpected error occurred while get process info list. Exception: {e}")
+            bulk_logger.warning(
+                f"Unexpected error occurred while get process info list. Exception: {e}"
+            )
             break
 
         for _, info in list(process_info_list):
