@@ -799,9 +799,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_runtime(self, run, flow_path, runtime):
         runtime = run._runtime or runtime
-        # for remote flow case, use flow name as session id
+        # for remote flow case, leave session id to None and let service side resolve
         # for local flow case, use flow path to calculate session id
-        session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
+        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
