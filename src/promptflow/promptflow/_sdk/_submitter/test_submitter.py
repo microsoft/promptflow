@@ -397,10 +397,10 @@ class TestSubmitterViaProxy(TestSubmitter):
             try:
                 # ensure only one executor proxy is created when multiple rounds of dialogue for interactive mode chat
                 # flow.
-                flow_executor = CSharpExecutorProxy.get_executor_proxy()
-                if flow_executor is None or not flow_executor._is_executor_active():
+                executor_proxy = CSharpExecutorProxy.get_executor_proxy()
+                if executor_proxy is None or not executor_proxy._is_executor_active():
                     storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-                    flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
+                    executor_proxy: CSharpExecutorProxy = async_run_allowing_running_loop(
                         CSharpExecutorProxy.create,
                         self.flow.path,
                         self.flow.code,
@@ -410,7 +410,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                         chat_output_name=chat_output_name,
                     )
 
-                line_result: LineResult = flow_executor.exec_line(
+                line_result: LineResult = executor_proxy.exec_line(
                     inputs, index=0, enable_stream_output=allow_generator_output
                 )
                 line_result.output = persist_multimedia_data(
@@ -421,7 +421,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     flow_inputs = {k: [v] for k, v in inputs.items()}
                     aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
                     aggregation_results = async_run_allowing_running_loop(
-                        flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
+                        executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
                     )
                     line_result.node_run_infos.update(aggregation_results.node_run_infos)
                     line_result.run_info.metrics = aggregation_results.metrics
@@ -439,7 +439,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 # in detach mode, it wll exit when parent process exit. So we won't kill executor proxy here for
                 # streaming c# chat flow scenario.
                 if not (allow_generator_output and chat_output_name):
-                    async_run_allowing_running_loop(flow_executor.destroy)
+                    async_run_allowing_running_loop(executor_proxy.destroy)
 
     def exec_with_inputs(self, inputs, enable_stream_output=False):
         from promptflow._constants import LINE_NUMBER_KEY
@@ -452,8 +452,8 @@ class TestSubmitterViaProxy(TestSubmitter):
             None,
         )
         # ensure only one executor proxy is created when multiple rounds of dialogue for ui mode chat flow.
-        flow_executor = CSharpExecutorProxy.get_executor_proxy()
-        if flow_executor is None or not flow_executor._is_executor_active():
+        executor_proxy = CSharpExecutorProxy.get_executor_proxy()
+        if executor_proxy is None or not executor_proxy._is_executor_active():
             connections = SubmitterHelper.resolve_used_connections(
                 flow=self.flow,
                 tools_meta=CSharpExecutorProxy.get_tool_metadata(
@@ -463,7 +463,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 client=self._client,
             )
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = async_run_allowing_running_loop(
+            executor_proxy = async_run_allowing_running_loop(
                 CSharpExecutorProxy.create,
                 self.flow.path,
                 self.flow.code,
@@ -475,7 +475,7 @@ class TestSubmitterViaProxy(TestSubmitter):
         try:
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = flow_executor.exec_line(inputs, index=0, enable_stream_output=enable_stream_output)
+            line_result = executor_proxy.exec_line(inputs, index=0, enable_stream_output=enable_stream_output)
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
@@ -487,7 +487,7 @@ class TestSubmitterViaProxy(TestSubmitter):
             # in detach mode, it wll exit when parent process exit. So we won't kill executor proxy here for
             # streaming c# chat flow scenario.
             if not (enable_stream_output and chat_output_name):
-                async_run_allowing_running_loop(flow_executor.destroy)
+                async_run_allowing_running_loop(executor_proxy.destroy)
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
@@ -567,6 +567,6 @@ class TestSubmitterViaProxy(TestSubmitter):
                 chat_history.append(history)
                 dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
         finally:
-            flow_executor = CSharpExecutorProxy.get_executor_proxy()
-            if flow_executor is not None and flow_executor._is_executor_active():
-                async_run_allowing_running_loop(flow_executor.destroy)
+            executor_proxy = CSharpExecutorProxy.get_executor_proxy()
+            if executor_proxy is not None and executor_proxy._is_executor_active():
+                async_run_allowing_running_loop(executor_proxy.destroy)
