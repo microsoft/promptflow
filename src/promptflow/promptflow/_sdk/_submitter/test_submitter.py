@@ -380,7 +380,6 @@ class TestSubmitterViaProxy(TestSubmitter):
 
         from promptflow._constants import LINE_NUMBER_KEY
 
-        generator_record = {}
         chat_output_name = next(
             filter(
                 lambda key: self.dataplane_flow.outputs[key].is_chat_output,
@@ -413,16 +412,19 @@ class TestSubmitterViaProxy(TestSubmitter):
             credential_list=credential_list,
         ):
             try:
-                storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-                flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
-                    CSharpExecutorProxy.create,
-                    self.flow.path,
-                    self.flow.code,
-                    connections=connections,
-                    storage=storage,
-                    log_path=log_path,
-                    chat_output_name=chat_output_name,
-                )
+                # ensure only one executor proxy is created when multiple chat with flow in interactive mode
+                flow_executor = CSharpExecutorProxy.get_executor_proxy()
+                if flow_executor is None or not flow_executor._is_executor_active():
+                    storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+                    flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
+                        CSharpExecutorProxy.create,
+                        self.flow.path,
+                        self.flow.code,
+                        connections=connections,
+                        storage=storage,
+                        log_path=log_path,
+                        chat_output_name=chat_output_name,
+                    )
 
                 line_result: LineResult = flow_executor.exec_line(
                     inputs, index=0, enable_stream_output=allow_generator_output
@@ -445,22 +447,15 @@ class TestSubmitterViaProxy(TestSubmitter):
                     generator_outputs = self._get_generator_outputs(line_result.output)
                     if generator_outputs:
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-                if allow_generator_output and chat_output_name:
-                    self._raise_error_when_test_failed(line_result, show_trace=True)
-                    print(f"{Fore.YELLOW}Bot: ", end="")
-                    # Since streaming get_result_output need connect with server, it needs flow_executor is live, so
-                    # print chat output here
-                    print_chat_output(line_result.output[chat_output_name], generator_record)
-                    # Convert output here since need save output to chat history. For C#, we no need resolve_generator
-                    # since output in flow_result.run_info and flow_result.node_run_infos won't be GeneratorType
-                    line_result_iter = get_result_output(line_result.output[chat_output_name], generator_record)
-                    full_response = ""
-                    for event in line_result_iter:
-                        full_response += event
-                    line_result.output[chat_output_name] = full_response
                 return line_result
             finally:
-                async_run_allowing_running_loop(flow_executor.destroy)
+                # client.stream api in exec_line function won't pass all response one time. For streaming c# chat flow
+                # scenario, if executor proxy is destroyed, it will kill service process and connection will close.
+                # this will result in getting generator content failed. Since dotnet process is not started in detach
+                # mode, it wll exit when parent process exit. So we won't kill executor proxy here for streaming c#
+                # chat flow scenario.
+                if not (allow_generator_output and chat_output_name):
+                    async_run_allowing_running_loop(flow_executor.destroy)
 
     def exec_with_inputs(self, inputs, enable_stream_output=False):
         from promptflow._constants import LINE_NUMBER_KEY
@@ -472,23 +467,27 @@ class TestSubmitterViaProxy(TestSubmitter):
             ),
             None,
         )
-        connections = SubmitterHelper.resolve_used_connections(
-            flow=self.flow,
-            tools_meta=CSharpExecutorProxy.get_tool_metadata(
-                flow_file=self.flow.path,
-                working_dir=self.flow.code,
-            ),
-            client=self._client,
-        )
-        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-        flow_executor = async_run_allowing_running_loop(
-            CSharpExecutorProxy.create,
-            self.flow.path,
-            self.flow.code,
-            connections=connections,
-            storage=storage,
-            chat_output_name=chat_output_name,
-        )
+
+        # ensure only one executor proxy is created when multiple chat with flow in ui mode
+        flow_executor = CSharpExecutorProxy.get_executor_proxy()
+        if flow_executor is None or not flow_executor._is_executor_active():
+            connections = SubmitterHelper.resolve_used_connections(
+                flow=self.flow,
+                tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                    flow_file=self.flow.path,
+                    working_dir=self.flow.code,
+                ),
+                client=self._client,
+            )
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = async_run_allowing_running_loop(
+                CSharpExecutorProxy.create,
+                self.flow.path,
+                self.flow.code,
+                connections=connections,
+                storage=storage,
+                chat_output_name=chat_output_name,
+            )
 
         try:
             # validate inputs
@@ -499,7 +498,13 @@ class TestSubmitterViaProxy(TestSubmitter):
                 line_result.output.pop(LINE_NUMBER_KEY, None)
             return line_result
         finally:
-            flow_executor.destroy()
+            # client.stream api in exec_line function won't pass all response one time. For streaming c# chat flow
+            # scenario, if executor proxy is destroyed, it will kill service process and connection will close.
+            # this will result in getting generator content failed. Since dotnet process is not started in detach
+            # mode, it wll exit when parent process exit. So we won't kill executor proxy here for streaming c#
+            # chat flow scenario.
+            if not (enable_stream_output and chat_output_name):
+                async_run_allowing_running_loop(flow_executor.destroy)
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
@@ -518,8 +523,16 @@ class TestSubmitterViaProxy(TestSubmitter):
 
         init(autoreset=True)
         chat_history = []
+        generator_record = {}
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
+        )
+        chat_output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            ),
+            None,
         )
 
         # Pass connections to avoid duplicate calculation (especially http call)
@@ -532,30 +545,45 @@ class TestSubmitterViaProxy(TestSubmitter):
             client=self._client,
         )
 
-        while True:
-            try:
-                print(f"{Fore.GREEN}User: ", end="")
-                input_value = input()
-                if not input_value.strip():
-                    continue
-            except (KeyboardInterrupt, EOFError):
-                print("Terminate the chat.")
-                break
-            inputs = inputs or {}
-            inputs[input_name] = input_value
-            inputs[chat_history_name] = chat_history
-            with change_logger_level(level=logging.WARNING):
-                chat_inputs, _ = self.resolve_data(inputs=inputs)
+        try:
+            while True:
+                try:
+                    print(f"{Fore.GREEN}User: ", end="")
+                    input_value = input()
+                    if not input_value.strip():
+                        continue
+                except (KeyboardInterrupt, EOFError):
+                    print("Terminate the chat.")
+                    break
+                inputs = inputs or {}
+                inputs[input_name] = input_value
+                inputs[chat_history_name] = chat_history
+                with change_logger_level(level=logging.WARNING):
+                    chat_inputs, _ = self.resolve_data(inputs=inputs)
 
-            flow_result = self.flow_test(
-                inputs=chat_inputs,
-                environment_variables=environment_variables,
-                stream_log=False,
-                allow_generator_output=True,
-                connections=connections,
-                stream_output=True,
-            )
-            flow_outputs = {k: v for k, v in flow_result.output.items()}
-            history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
-            chat_history.append(history)
-            dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
+                flow_result = self.flow_test(
+                    inputs=chat_inputs,
+                    environment_variables=environment_variables,
+                    stream_log=False,
+                    allow_generator_output=True,
+                    connections=connections,
+                    stream_output=True,
+                )
+                self._raise_error_when_test_failed(flow_result, show_trace=True)
+                print(f"{Fore.YELLOW}Bot: ", end="")
+                print_chat_output(flow_result.output[chat_output_name], generator_record)
+                # Convert output here since need save output to chat history. For C#, we no need resolve_generator
+                # since output in flow_result.run_info and flow_result.node_run_infos won't be GeneratorType
+                line_result_iter = get_result_output(flow_result.output[chat_output_name], generator_record)
+                full_response = ""
+                for event in line_result_iter:
+                    full_response += event
+                flow_result.output[chat_output_name] = full_response
+                flow_outputs = {k: v for k, v in flow_result.output.items()}
+                history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
+                chat_history.append(history)
+                dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
+        finally:
+            flow_executor = CSharpExecutorProxy.get_executor_proxy()
+            if flow_executor is not None and flow_executor._is_executor_active():
+                async_run_allowing_running_loop(flow_executor.destroy)
