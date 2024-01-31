@@ -401,7 +401,7 @@ class BatchEngine:
     def _check_eager_flow_and_language_from_yaml(self):
         flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
         # TODO: remove this after path is removed
-        if flow_file.suffix == ".dll":
+        if flow_file.suffix.lower() == ".dll":
             return True, FlowLanguage.CSharp
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
