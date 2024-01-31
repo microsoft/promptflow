@@ -288,7 +288,6 @@ class FlowOperations(TelemetryMixin):
                 chat_history_name=chat_history_input_name,
                 environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
-                output_path=kwargs.get("output_path", None),
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
