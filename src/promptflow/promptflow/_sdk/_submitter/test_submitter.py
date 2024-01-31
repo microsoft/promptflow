@@ -231,11 +231,14 @@ class TestSubmitter:
         dependency_nodes_outputs: Mapping[str, Any],
         environment_variables: dict = None,
         stream: bool = True,
+        **kwargs,
     ):
         from promptflow.executor import FlowExecutor
 
         connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
+        output_path = Path(kwargs.get("output_path") or self.flow.code)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -244,11 +247,11 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+            file_path=output_path / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
             stream=stream,
             credential_list=credential_list,
         ):
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            storage = DefaultRunStorage(base_dir=output_path, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
