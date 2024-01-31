@@ -27,16 +27,14 @@ from azure.core.exceptions import HttpResponseError
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
-    FLOW_TOOLS_JSON,
     MAX_LIST_CLI_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     WORKSPACE_LINKED_DATASTORE_NAME,
     FlowType,
     ListViewType,
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
+from promptflow._sdk._utils import PromptflowIgnoreFile
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
@@ -55,8 +53,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """FlowOperations that can manage flows.
 
     You should not instantiate this class directly. Instead, you should
-    create a :class:`~promptflow.azure.PFClient` instance that instantiates it for you and
-    attaches it as an attribute.
+    create a :class:`~promptflow.azure.PFClient` instance and this operation is available as the instance's attribute.
     """
 
     _FLOW_RESOURCE_PATTERN = re.compile(r"azureml:.*?/workspaces/(?P<experiment_id>.*?)/flows/(?P<flow_id>.*?)$")
@@ -95,7 +92,10 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
-        """Create a flow to remote from local source.
+        """Create a flow to remote from local source, or update the metadata of an existing flow.
+
+        .. note::
+            Functionality of updating flow metadata is yet to be supported.
 
         :param flow: The source of the flow to create.
         :type flow: Union[str, Path]
@@ -315,8 +315,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :type list_view_type: ListViewType
         :param include_others: Whether to list flows owned by other users in the remote workspace, defaults to False
         :type include_others: bool
-        :return: The list of runs.
-        :rtype: List[~promptflow.azure. entities.Run]
+        :return: The list of flows.
+        :rtype: List[~promptflow.azure.entities.Flow]
         """
         if not isinstance(max_results, int) or max_results < 1:
             raise FlowOperationError(f"'max_results' must be a positive integer, got {max_results!r}")
@@ -411,11 +411,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-
-            # TODO(2567532): backend does not fully support generate flow.tools.json from blob storage yet
-            if not (Path(code.path) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON).exists():
-                generate_flow_tools_json(code.path)
-            # ignore flow.tools.json if needed (e.g. for flow run scenario)
+            # TODO(2917889): generate flow meta for eager flow
             if ignore_tools_json:
                 ignore_file = code._ignore_file
                 if isinstance(ignore_file, PromptflowIgnoreFile):

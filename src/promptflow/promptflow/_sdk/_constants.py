@@ -131,6 +131,11 @@ ICON_LIGHT = "icon_light"
 ICON = "icon"
 TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
 
+# trace
+TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
+TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
+SPAN_TABLENAME = "span"
+
 
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
@@ -157,6 +162,7 @@ class RunTypes:
     BATCH = "batch"
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
+    COMMAND = "command"
 
 
 class AzureRunTypes:
@@ -243,6 +249,9 @@ class FlowRunProperties:
     NODE_VARIANT = "node_variant"
     RUN = "run"
     SYSTEM_METRICS = "system_metrics"
+    # Experiment command node fields only
+    COMMAND = "command"
+    OUTPUTS = "outputs"
 
 
 class CommonYamlFields:
@@ -400,7 +409,7 @@ class DownloadedRun:
 
 class ExperimentNodeType(object):
     FLOW = "flow"
-    CODE = "code"
+    COMMAND = "command"
 
 
 class ExperimentStatus(object):

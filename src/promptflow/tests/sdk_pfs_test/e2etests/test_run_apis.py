@@ -11,6 +11,7 @@ import pytest
 
 from promptflow import PFClient
 from promptflow._sdk.entities import Run
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow.contracts._run_management import RunMetadata
 
 from ..utils import PFSOperations, check_activity_end_telemetry
@@ -81,12 +82,26 @@ class TestRunAPIs:
         runs = pfs_op.list_runs().json
         assert any([item["name"] == run.name for item in runs])
 
+    def test_delete_run(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
+        run = create_run_against_multi_line_data(pf_client)
+        local_storage = LocalStorageOperations(run)
+        path = local_storage.path
+        assert path.exists()
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.runs.get", "first_call": False},
+                {"activity_name": "pf.runs.delete"},
+            ]
+        ):
+            pfs_op.delete_run(name=run.name, status_code=204)
+        runs = pfs_op.list_runs().json
+        assert not any([item["name"] == run.name for item in runs])
+        assert not path.exists()
+
     def test_visualize_run(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
                 {"activity_name": "pf.runs.get", "first_call": False},
-                {"activity_name": "pf.runs.get", "first_call": False},
-                {"activity_name": "pf.runs.get_metrics", "first_call": False},
                 {"activity_name": "pf.runs.visualize"},
             ]
         ):

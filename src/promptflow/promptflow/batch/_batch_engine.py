@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
+from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -33,12 +33,12 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
-from promptflow.executor._errors import InvalidFlowFileError
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
@@ -78,8 +78,8 @@ class BatchEngine:
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
-        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
+        batch_timeout_sec: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -92,31 +92,29 @@ class BatchEngine:
         :type connections: Optional[dict]
         :param storage: The storage to store execution results
         :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
+        :param batch_timeout: The timeout of batch run in seconds
+        :type batch_timeout: Optional[int]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if self._is_eager_flow_yaml():
-            if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-                entry, path = self._parse_eager_flow_yaml()
-                self._flow_file = Path(path)
             self._is_dag_yaml_flow = False
             self._program_language = FlowLanguage.Python
-        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+        else:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
             self._is_dag_yaml_flow = True
             self._program_language = self._flow.program_language
-        else:
-            raise InvalidFlowFileError(
-                message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
-            )
 
         self._connections = connections
-        self._entry = entry
         self._storage = storage
         self._kwargs = kwargs
+
+        self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
+        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+
         # set it to True when the batch run is canceled
         self._is_canceled = False
 
@@ -156,7 +154,6 @@ class BatchEngine:
                     self._flow_file,
                     self._working_dir,
                     connections=self._connections,
-                    entry=self._entry,
                     storage=self._storage,
                     **self._kwargs,
                 )
@@ -176,8 +173,9 @@ class BatchEngine:
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._flow.inputs if self._is_dag_yaml_flow \
-                        else self._executor_proxy.get_inputs_definition()
+                    inputs = (
+                        self._flow.inputs if self._is_dag_yaml_flow else self._executor_proxy.get_inputs_definition()
+                    )
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
@@ -254,9 +252,18 @@ class BatchEngine:
         run_id = run_id or str(uuid.uuid4())
 
         # execute lines
+        is_timeout = False
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
+            results, is_timeout = self._executor_proxy._exec_batch(
+                batch_inputs,
+                output_dir,
+                run_id,
+                batch_timeout_sec=self._batch_timeout_sec,
+                line_timeout_sec=self._line_timeout_sec,
+            )
+            line_results.extend(results)
         else:
+            # TODO: Enable batch timeout for other api based executor proxy
             await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
 
@@ -266,14 +273,23 @@ class BatchEngine:
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
+        outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
         self._persist_outputs(outputs, output_dir)
 
-        # execute aggregation nodes
-        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-        # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-        self._update_aggr_result(aggr_result, aggr_exec_result)
+        # if the batch runs with errors, we should update the errors to ex
+        ex = None
+        if not is_timeout:
+            # execute aggregation nodes
+            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+            self._update_aggr_result(aggr_result, aggr_exec_result)
+        else:
+            ex = BatchRunTimeoutError(
+                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
+                target=ErrorTarget.BATCH,
+            )
         # summary some infos from line results and aggr results to batch result
-        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
+        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
 
     async def _exec_batch(
         self,
@@ -386,18 +402,10 @@ class BatchEngine:
         aggr_result.output = aggr_exec_result.output
 
     def _is_eager_flow_yaml(self):
-        if Path(self._flow_file).suffix.lower() == ".py":
-            return True
-        elif Path(self._flow_file).suffix.lower() in [".yaml", ".yml"]:
+        if Path(self._flow_file).suffix.lower() in [".yaml", ".yml"]:
             flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
             with open(flow_file, "r", encoding="utf-8") as fin:
                 flow_dag = load_yaml(fin)
             if "entry" in flow_dag:
                 return True
         return False
-
-    def _parse_eager_flow_yaml(self):
-        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
-        with open(flow_file, "r", encoding="utf-8") as fin:
-            flow_dag = load_yaml(fin)
-        return flow_dag.get("entry", ""), flow_dag.get("path", "")

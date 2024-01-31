@@ -8,7 +8,7 @@ import inspect
 import threading
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
@@ -16,7 +16,7 @@ from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
-from promptflow.executor._errors import NoNodeExecutedError, LineExecutionTimeoutError
+from promptflow.executor._errors import LineExecutionTimeoutError, NoNodeExecutedError
 
 RUN_FLOW_NODES_LINEARLY = 1
 DEFAULT_CONCURRENCY_BULK = 2
@@ -67,9 +67,7 @@ class FlowNodesScheduler:
                     tasks_to_wait = list(self._future_to_node.keys())
                     if timeout_task is not None:
                         tasks_to_wait.append(timeout_task)
-                    completed_futures_with_wait, _ = futures.wait(
-                        tasks_to_wait, return_when=futures.FIRST_COMPLETED
-                    )
+                    completed_futures_with_wait, _ = futures.wait(tasks_to_wait, return_when=futures.FIRST_COMPLETED)
                     completed_futures = [f for f in completed_futures_with_wait if f in self._future_to_node]
                     self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))
                     for each_future in completed_futures:
@@ -80,7 +78,7 @@ class FlowNodesScheduler:
             except Exception as e:
                 err_msg = "Flow execution has failed."
                 if isinstance(e, LineExecutionTimeoutError):
-                    err_msg = f"Line execution timeout after {e.timeout_sec} seconds."
+                    err_msg = f"Line execution timeout after {line_timeout_sec} seconds."
                     self._context.cancel_node_runs(err_msg)
                 node_names = ",".join(node.name for node in self._future_to_node.values())
                 flow_logger.error(f"{err_msg} Cancelling all running nodes: {node_names}.")

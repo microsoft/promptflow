@@ -14,12 +14,14 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
+from promptflow import load_flow
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     LOCAL_STORAGE_BATCH_SIZE,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
+    RunInfoSources,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
 from promptflow._sdk._utils import (
@@ -27,6 +29,7 @@ from promptflow._sdk._utils import (
     generate_flow_tools_json,
     json_dump,
     json_load,
+    json_loads_parse_const_as_str,
     pd_read_json,
     read_open,
     write_open,
@@ -217,23 +220,26 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        if run.flow:
-            try:
-                from promptflow import load_flow
-
-                flow_obj = load_flow(source=run.flow)
-                self._eager_mode = isinstance(flow_obj, EagerFlow)
-            except Exception as e:
-                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
-                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
-                self._eager_mode = False
-        else:
-            # TODO(2901279): support eager mode for run created from run folder
-            self._eager_mode = False
+        self._eager_mode = self._calculate_eager_mode(run)
 
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
+
+    @classmethod
+    def _calculate_eager_mode(cls, run: Run) -> bool:
+        if run._run_source == RunInfoSources.LOCAL:
+            try:
+                flow_obj = load_flow(source=run.flow)
+                return isinstance(flow_obj, EagerFlow)
+            except Exception as e:
+                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
+                return False
+        elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
+            return run._properties.get("azureml.promptflow.run_mode") == "Eager"
+        # TODO(2901279): support eager mode for run created from run folder
+        return False
 
     def delete(self) -> None:
         def on_rmtree_error(func, path, exc_info):
@@ -360,11 +366,7 @@ class LocalStorageOperations(AbstractRunStorage):
             # legacy run with local file detail.json, then directly load from the file
             return json_load(self._detail_path)
         else:
-            # nan, inf and -inf are not JSON serializable
-            # according to https://docs.python.org/3/library/json.html#json.loads
-            # `parse_constant` will be called to handle these values
-            # so if parse_const_as_str is True, we will parse these values as str with a lambda function
-            json_loads = json.loads if not parse_const_as_str else partial(json.loads, parse_constant=lambda x: str(x))
+            json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
@@ -384,8 +386,8 @@ class LocalStorageOperations(AbstractRunStorage):
                         node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
-    def load_metrics(self) -> Dict[str, Union[int, float, str]]:
-        return json_load(self._metrics_path)
+    def load_metrics(self, *, parse_const_as_str: bool = False) -> Dict[str, Union[int, float, str]]:
+        return json_load(self._metrics_path, parse_const_as_str=parse_const_as_str)
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""

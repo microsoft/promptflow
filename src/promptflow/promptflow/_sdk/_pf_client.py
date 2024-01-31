@@ -20,6 +20,7 @@ from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
 from .operations._tool_operations import ToolOperations
 from ..errors import FileNotFoundException, ValueErrorException
+from .operations._trace_operations import TraceOperations
 
 logger = get_cli_sdk_logger()
 
@@ -48,6 +49,7 @@ class PFClient:
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._experiments = ExperimentOperations(self)
+        self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
