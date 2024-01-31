@@ -20,7 +20,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
 time_threshold = 30
-time_delay = 10
+time_delay = 5
 
 
 def start_trace():

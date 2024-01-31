@@ -20,7 +20,7 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     kill_exist_service,
 )
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity, monitor_operation
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow.exceptions import UserErrorException
 
@@ -51,24 +51,26 @@ def add_show_status_action(subparsers):
     show_status_parser.set_defaults(action="show-status")
 
 
+@monitor_operation(activity_name="pfs.start", activity_type=ActivityType.PUBLICAPI)
 def start_service(args):
     port = args.port
     app, _ = create_app()
-    if port and is_port_in_use(port) and not args.force:
-        app.logger.warning(f"Service port {port} is used.")
-        raise UserErrorException(f"Service port {port} is used.")
-    if not port:
-        port = get_port_from_config(create_if_not_exists=True)
-    else:
-        dump_port_to_config(port)
 
-    if is_port_in_use(port):
-        if args.force:
-            app.logger.warning(f"Force restart the service on the port {port}.")
-            kill_exist_service(port)
-        else:
-            app.logger.warning(f"Service port {port} is used.")
-            raise UserErrorException(f"Service port {port} is used.")
+    def run_command(port, force_start):
+        if is_port_in_use(port):
+            if force_start:
+                app.logger.warning(f"Force restart the service on the port {port}.")
+                kill_exist_service(port)
+            else:
+                app.logger.warning(f"Service port {port} is used.")
+                raise UserErrorException(f"Service port {port} is used.")
+
+    if port:
+        dump_port_to_config(port)
+        run_command(port, args.force)
+    else:
+        port = get_port_from_config(create_if_not_exists=True)
+        run_command(port, args.force)
     # Set host to localhost, only allow request from localhost.
     app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
     waitress.serve(app, host="127.0.0.1", port=port)
