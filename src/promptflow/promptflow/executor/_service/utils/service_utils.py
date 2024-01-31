@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+import os
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter, JsonSerializedPromptflowException
@@ -23,3 +24,8 @@ def generate_error_response(ex):
         error_dict = ExceptionPresenter.create(ex).to_dict(include_debug_info=True)
     logger.error(f"Failed to execute the flow: \n{ex}")
     return ErrorResponse.from_error_dict(error_dict)
+
+
+def set_environment_variables(request: BaseExecutionRequest):
+    if isinstance(request.environment_variables, dict) and request.environment_variables:
+        os.environ.update(request.environment_variables)
