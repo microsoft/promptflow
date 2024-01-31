@@ -75,7 +75,7 @@ class SpanContextFieldName:
 
 
 class SpanStatusFieldName:
-    CODE = "code"
+    STATUS_CODE = "status_code"
 
 
 class SpanAttributeFieldName:
