@@ -19,6 +19,10 @@ COPY ./promptflow-0.0.1-py3-none-any.whl ./
 RUN pip install "./promptflow-0.0.1-py3-none-any.whl[executor-service]" \
     && rm promptflow-0.0.1-py3-none-any.whl
 
+# Install extra requirements
+COPY ./extra_requirements.txt ./
+RUN pip install -r extra_requirements.txt
+
 ENV APP_PORT 8000
 
 CMD ["sh", "-c", "exec uvicorn promptflow.executor._service.app:app --host 0.0.0.0 --port $APP_PORT"]
