@@ -255,7 +255,8 @@ class TestValidation:
                 FlowOutputUnserializable,
                 (
                     "The output 'content' for flow is incorrect. The output value is not JSON serializable. "
-                    "JSON dump failed: (TypeErrorException) Object of type UnserializableClass is not JSON serializable. "
+                    "JSON dump failed: (TypeErrorException) Object of "
+                    "type UnserializableClass is not JSON serializable. "
                     "Please verify your flow output and make sure the value serializable."
                 ),
             ),

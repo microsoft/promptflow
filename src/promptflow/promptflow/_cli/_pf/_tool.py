@@ -88,9 +88,7 @@ pf tool list
 # List all package tool and code tool in the flow:
 pf tool list --flow flow-path
 """  # noqa: E501
-    add_param_flow = lambda parser: parser.add_argument(
-        "--flow", type=str, help="the flow directory"
-    )  # noqa: E731
+    add_param_flow = lambda parser: parser.add_argument("--flow", type=str, help="the flow directory")  # noqa: E731
     add_params = [
         add_param_flow,
     ] + base_params

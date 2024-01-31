@@ -238,12 +238,8 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
-    add_param_ui = lambda parser: parser.add_argument(
-        "--ui", action="store_true", help=argparse.SUPPRESS
-    )  # noqa: E731
-    add_param_input = lambda parser: parser.add_argument(
-        "--input", type=str, help=argparse.SUPPRESS
-    )  # noqa: E731
+    add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
+    add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
     add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
         "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
     )

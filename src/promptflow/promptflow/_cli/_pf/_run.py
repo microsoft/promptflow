@@ -95,9 +95,7 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         help="Referenced flow run name referenced by current run. "
         "For example, you can run an evaluation flow against an existing run.",
     )
-    add_param_name = lambda parser: parser.add_argument(
-        "-n", "--name", type=str, help="Name of the run."
-    )  # noqa: E731
+    add_param_name = lambda parser: parser.add_argument("-n", "--name", type=str, help="Name of the run.")  # noqa: E731
 
     add_params = [
         add_param_file,
@@ -528,9 +526,7 @@ def list_runs(
         ),
     )
     # hide additional info and debug info in run list for better user experience
-    parser = lambda run: run._to_dict(
-        exclude_additional_info=True, exclude_debug_info=True
-    )  # noqa: E731
+    parser = lambda run: run._to_dict(exclude_additional_info=True, exclude_debug_info=True)  # noqa: E731
     json_list = safe_parse_object_list(
         obj_list=runs,
         parser=parser,
