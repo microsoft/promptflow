@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import copy
+import datetime
 import json
 import typing
 
@@ -15,6 +16,8 @@ from promptflow._sdk._utils import convert_time_unix_nano_to_timestamp, flatten_
 
 
 class Span:
+    """Span is exactly the same as OpenTelemetry Span."""
+
     def __init__(
         self,
         name: str,
@@ -127,3 +130,19 @@ class Span:
             session_id=attributes[SpanAttributeFieldName.SESSION_ID],
             parent_span_id=parent_span_id,
         )
+
+
+class Trace:
+    """Trace is an abstraction of spans related to prompt flow."""
+
+    def __init__(
+        self,
+        line_run_id: str,
+        inputs: typing.Dict,
+        outputs: typing.Dict,
+        start_time: datetime.datetime,
+        end_time: datetime.datetime,
+        status: str,
+        evaluations: typing.Optional[typing.List[typing.Dict]] = None,
+    ):
+        ...
