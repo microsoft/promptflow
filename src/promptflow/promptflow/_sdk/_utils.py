@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import collections
+import datetime
 import hashlib
 import json
 import multiprocessing
@@ -1123,3 +1124,26 @@ def pd_read_json(file) -> "DataFrame":
 
     with read_open(file) as f:
         return pd.read_json(f, orient="records", lines=True)
+
+
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+    nanoseconds = int(time_unix_nano)
+    seconds = nanoseconds / 1_000_000_000
+    timestamp = datetime.datetime.utcfromtimestamp(seconds)
+    return timestamp.isoformat()
+
+
+def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
+    attr_key = attribute["key"]
+    # suppose all values are flattened here
+    # so simply regard the first value as the attribute value
+    attr_value = list(attribute["value"].values())[0]
+    return attr_key, attr_value
+
+
+def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
