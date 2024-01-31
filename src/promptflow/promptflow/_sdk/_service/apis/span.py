@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import typing
 from dataclasses import dataclass
 
 from flask_restx import fields
@@ -28,8 +29,8 @@ list_span_parser.add_argument("parent_span_id", type=str, required=False)
 # use @dataclass for strong type
 @dataclass
 class ListSpanParser:
-    session_id: str | None = None
-    parent_span_id: str | None = None
+    session_id: typing.Optional[str] = None
+    parent_span_id: typing.Optional[str] = None
 
     @staticmethod
     def from_request() -> "ListSpanParser":
