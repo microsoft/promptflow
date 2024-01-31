@@ -72,13 +72,16 @@ class ExperimentOrchestrator:
         logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
-        # Read the first line in template data
+        # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
             template, inputs=inputs, environment_variables=environment_variables, output_path=kwargs.get("output_path")
         )
 
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
+            if node in start_nodes:
+                # Start nodes inputs should be updated, as original value could be a constant without data reference.
+                node.inputs = {**node.inputs, **inputs}
             node_result = self._test_node(node, test_context)
             test_context.add_node_result(node.name, node_result)
         logger.info("Testing completed. Reach full logs at %s.", test_context.output_path.as_posix())
@@ -111,6 +114,7 @@ class ExperimentOrchestrator:
             inputs=inputs,
             output_path=test_context.output_path / node.name,
             dump_test_result=True,
+            stream_output=False,
         )
 
     def _test_command_node(self, *args, **kwargs):
@@ -219,10 +223,12 @@ class ExperimentTemplateTestContext:
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
         # TODO: Update session part after test session is supported
-        self.output_path = (
-            Path(output_path)
-            or Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
-        )
+        if output_path:
+            self.output_path = Path(output_path)
+        else:
+            self.output_path = (
+                Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
+            )
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs
