@@ -20,6 +20,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
 time_threshold = 30
+time_delay = 10
 
 
 def start_trace():
@@ -62,16 +63,16 @@ def _start_pfs_in_background(pfs_port) -> None:
     else:
         os.system(" ".join(["nohup"] + args + ["&"]))
 
-    wait_time = 10
-    time.sleep(10)
+    wait_time = time_delay
+    time.sleep(time_delay)
     is_healthy = _check_pfs_service_status(pfs_port)
     while is_healthy is False and time_threshold > wait_time:
         _logger.info(
             f"Pfs service is not ready. It has been waited for {wait_time}s, will wait for at most "
             f"{time_threshold}s."
         )
-        wait_time += 10
-        time.sleep(10)
+        wait_time += time_delay
+        time.sleep(time_delay)
         is_healthy = _check_pfs_service_status(pfs_port)
 
     if is_healthy is False:
