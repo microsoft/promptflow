@@ -6,7 +6,7 @@ import contextlib
 import logging
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Tuple, Union
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
@@ -176,7 +176,7 @@ class TestSubmitter:
         logger.info(f"{prefix} input(s): {merged_inputs}")
         return flow_inputs, dependency_nodes_outputs
 
-    def _get_output_path(self, kwargs) -> tuple:
+    def _get_output_path(self, kwargs) -> Tuple[Path, Path]:
         """Return the output path and sub dir path of the output."""
         # Note that the different relative path in LocalRunStorage will lead to different image reference
         if kwargs.get("output_path"):
