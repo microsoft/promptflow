@@ -181,7 +181,7 @@ class TestSubmitter:
         # Note that the different relative path in LocalRunStorage will lead to different image reference
         if kwargs.get("output_path"):
             return Path(kwargs["output_path"]), Path(".")
-        return Path(self.flow.code), Path(".promptflow")
+        return Path(self.flow.code), Path(PROMPT_FLOW_DIR_NAME)
 
     def flow_test(
         self,
@@ -209,7 +209,7 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=output_path / PROMPT_FLOW_DIR_NAME / "flow.log",
+            file_path=output_path / sub_path / "flow.log",
             stream=stream_log,
             credential_list=credential_list,
         ):

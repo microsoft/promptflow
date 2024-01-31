@@ -220,7 +220,8 @@ class ExperimentTemplateTestContext:
         self.test_inputs = {input.name: input.default for input in template.inputs}
         # TODO: Update session part after test session is supported
         self.output_path = (
-            output_path or Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
+            Path(output_path)
+            or Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
         )
 
     def add_node_inputs(self, name, inputs):

@@ -1961,6 +1961,29 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--experiment",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+                "--detail",
+                Path(tmpdir).as_posix(),
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
+        for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+            for node_name in ["main", "eval"]:
+                path = Path(tmpdir) / node_name / filename
+                assert path.is_file()
+
     def test_batch_run_timeout(self, local_client):
         line_timeout_seconds = "54"
         timout_index = 9
