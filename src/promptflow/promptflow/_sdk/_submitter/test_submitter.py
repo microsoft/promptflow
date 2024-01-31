@@ -412,7 +412,8 @@ class TestSubmitterViaProxy(TestSubmitter):
             credential_list=credential_list,
         ):
             try:
-                # ensure only one executor proxy is created when multiple chat with flow in interactive mode
+                # ensure only one executor proxy is created when multiple rounds of dialogue for interactive mode chat
+                # flow.
                 flow_executor = CSharpExecutorProxy.get_executor_proxy()
                 if flow_executor is None or not flow_executor._is_executor_active():
                     storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
@@ -467,8 +468,7 @@ class TestSubmitterViaProxy(TestSubmitter):
             ),
             None,
         )
-
-        # ensure only one executor proxy is created when multiple chat with flow in ui mode
+        # ensure only one executor proxy is created when multiple rounds of dialogue for ui mode chat flow.
         flow_executor = CSharpExecutorProxy.get_executor_proxy()
         if flow_executor is None or not flow_executor._is_executor_active():
             connections = SubmitterHelper.resolve_used_connections(
