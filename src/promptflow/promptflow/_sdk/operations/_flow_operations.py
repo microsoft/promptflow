@@ -357,7 +357,7 @@ class FlowOperations(TelemetryMixin):
         if "conda_file" in env_obj:
             conda_file = flow_dag_path.parent / env_obj["conda_file"]
             if conda_file.is_file():
-                conda_obj = yaml.safe_load(conda_file.read_text())
+                conda_obj = load_yaml(conda_file)
                 if "name" in conda_obj:
                     env_obj["conda_env_name"] = conda_obj["name"]
 
