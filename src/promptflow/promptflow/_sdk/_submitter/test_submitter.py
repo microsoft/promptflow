@@ -378,6 +378,8 @@ class TestSubmitterViaProxy(TestSubmitter):
                 client=self._client,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
+        output_path = Path(kwargs.get("output_path") or self.flow.code)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -386,14 +388,14 @@ class TestSubmitterViaProxy(TestSubmitter):
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        log_path = self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log"
+        log_path = output_path / PROMPT_FLOW_DIR_NAME / "flow.log"
         with LoggerOperations(
             file_path=log_path,
             stream=stream_log,
             credential_list=credential_list,
         ):
             try:
-                storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+                storage = DefaultRunStorage(base_dir=output_path, sub_dir=Path(".promptflow/intermediate"))
                 flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
                     CSharpExecutorProxy.create,
                     self.flow.path,
@@ -407,7 +409,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     flow_executor.exec_line_async, inputs, index=0
                 )
                 line_result.output = persist_multimedia_data(
-                    line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                    line_result.output, base_dir=output_path, sub_dir=Path(".promptflow/output")
                 )
                 if line_result.aggregation_inputs:
                     # Convert inputs of aggregation to list type
