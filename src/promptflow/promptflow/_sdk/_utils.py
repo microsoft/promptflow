@@ -1133,7 +1133,8 @@ def get_mac_address() -> Union[str, None]:
         import psutil
 
         mac_address = None
-        net_address = psutil.net_if_addrs()  # pylint: disable=no-member
+        # pylint: disable=anomaly
+        net_address = psutil.net_if_addrs()
         eth = []
         if "Ethernet" in net_address:  # windows
             eth = net_address["Ethernet"]
