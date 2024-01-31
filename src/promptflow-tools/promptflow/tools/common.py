@@ -224,14 +224,14 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         retry_after_in_header = None
 
                     if not retry_after_in_header:
-                        retry_after_seconds = delay * (2 ** i)
+                        retry_after_seconds = delay + (2 ** i)
                         msg = (
                             f"{type(e).__name__} #{i}, but no Retry-After header, "
                             + f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     else:
-                        retry_after_seconds = float(retry_after_in_header) * (2 ** i)
+                        retry_after_seconds = retry_after_in_header
                         msg = (
                             f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
                             f"Back off {retry_after_seconds} seconds for retry."
