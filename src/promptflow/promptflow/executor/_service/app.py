@@ -24,4 +24,7 @@ async def exception_handler(request, exc):
 
 if __name__ == "__main__":
     command = ["uvicorn", "promptflow.executor._service.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    subprocess.run(command)
+    try:
+        subprocess.run(command)
+    except KeyboardInterrupt:
+        pass
