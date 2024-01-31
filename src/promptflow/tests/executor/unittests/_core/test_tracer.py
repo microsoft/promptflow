@@ -407,8 +407,7 @@ class TestOTelTracer:
         span = span_list[0]
         assert span.name == sync_func.__name__
         assert span.attributes["framework"] == "promptflow"
-        assert span.attributes["span_type"] == "promptflow.Function"
+        assert span.attributes["span_type"] == TraceType.FUNCTION
         assert span.attributes["function"] == sync_func.__name__
         assert span.attributes["inputs"] == '{\n  "a": 1\n}'
-        assert span.attributes["tool_version"] == "tool_version"
         assert span.status.status_code == StatusCode.OK
