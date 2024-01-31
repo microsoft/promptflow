@@ -251,6 +251,8 @@ class ExperimentOrchestrator:
                     if not nodes:
                         next_execute_nodes.extend(get_next_executable_nodes(completed_node=node_name))
                     self.experiment._append_node_run(node_name, self._node_runs[node_name])
+                    with open(Path(self._node_runs[node_name].properties["output_path"]) / "logs.txt", "r") as f:
+                        logger.info(f.read())
                     del future_to_node_run[future]
                 except Exception as e:
                     executor.shutdown(wait=False)
