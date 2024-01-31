@@ -14,6 +14,7 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
+    dump_port_to_config,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
@@ -53,11 +54,13 @@ def add_show_status_action(subparsers):
 def start_service(args):
     port = args.port
     app, _ = create_app()
-    if port and is_port_in_use(port):
+    if port and is_port_in_use(port) and not args.force:
         app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
         port = get_port_from_config(create_if_not_exists=True)
+    else:
+        dump_port_to_config(port)
 
     if is_port_in_use(port):
         if args.force:
