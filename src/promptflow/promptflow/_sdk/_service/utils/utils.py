@@ -45,6 +45,17 @@ def get_port_from_config(create_if_not_exists=False):
     return port
 
 
+def dump_port_to_config(port):
+    # Set port to ~/.promptflow/pf.port, if already have a port in file , will overwrite it.
+    (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
+    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
+        service_config = load_yaml(f) or {}
+    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
+        service_config["service"] = service_config.get("service", {})
+        service_config["service"]["port"] = port
+        dump_yaml(service_config, f)
+
+
 def is_port_in_use(port: int):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(("localhost", port)) == 0
