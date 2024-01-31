@@ -514,7 +514,6 @@ class TestSubmitterViaProxy(TestSubmitter):
                 lambda key: self.dataplane_flow.outputs[key].is_chat_output,
                 self.dataplane_flow.outputs.keys(),
             ),
-            None,
         )
 
         # Pass connections to avoid duplicate calculation (especially http call)
