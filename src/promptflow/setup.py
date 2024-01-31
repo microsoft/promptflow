@@ -52,6 +52,8 @@ REQUIRES = [
     "docutils",  # used to generate description for tools
     "opentelemetry-api>=1.21.0,<2.0.0",  # used to generate trace
     "opentelemetry-sdk>=1.21.0,<2.0.0",  # used to collect trace
+    "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # OpenTelemetry exporter
+    "opentelemetry-proto>=1.22.0,<2.0.0",  # OpenTelemetry collector in PFS
 ]
 
 setup(
