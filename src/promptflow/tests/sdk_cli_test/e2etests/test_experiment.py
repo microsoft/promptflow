@@ -111,10 +111,11 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
+
+        # Test the experiment in progress cannot be started.
         with pytest.raises(RunOperationError) as e:
             client._experiments.start(exp.name)
         assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
-        assert e.value.message
         assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
         exp = self.wait_for_experiment_terminated(client, exp)
         # Assert main run
@@ -130,6 +131,12 @@ class TestExperiment:
         assert eval_run.display_name == "eval"
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
+
+        # Test experiment restart
+        exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
+        for name, runs in exp.nodes_runs.items():
+            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):

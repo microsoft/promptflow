@@ -14,13 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-
 import psutil
-
-if not sys.stdout:
-    sys.stdout = open(os.devnull, "w")
-if not sys.stderr:
-    sys.stderr = sys.stdout
 
 from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus, FlowRunProperties
 from promptflow._sdk._errors import (
@@ -77,7 +71,7 @@ class ExperimentOrchestrator:
         # Return experiment info
         return self.experiment
 
-    def async_start(self, executable_path=None, nodes=None, from_node=None):
+    def async_start(self, executable_path=None, nodes=None, from_nodes=None):
         """Start an experiment async.
 
         :param executable_path: Python path when executing the experiment.
@@ -96,8 +90,8 @@ class ExperimentOrchestrator:
         args = [executable_path, __file__, "start", "--experiment", self.experiment.name]
         if nodes:
             args = args + ["--nodes"] + nodes
-        if from_node:
-            args = args + ["--from-nodes"] + from_node
+        if from_nodes:
+            args = args + ["--from-nodes"] + from_nodes
         # Start an orchestrator process using detach mode
         logger.debug(f"Start experiment {self.experiment.name} in background.")
         if platform.system() == "Windows":
@@ -519,9 +513,8 @@ class ExperimentNodeRun(Run):
             snapshot_id=self.snapshot_id, experiment_name=self.experiment.name, raise_error=False
         )
         if node_run and node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
-            run_info = ORMRunInfo.get(node_run.run_id)
-            run_info_properties = json.loads(run_info.properties)
-            output_path = run_info_properties.get("output_path", None)
+            run_info = self.run_operations.get(node_run.run_id)
+            output_path = run_info.properties.get("output_path", None)
             if output_path and Path(output_path).exists():
                 # TODO Whether need to link used node output folder in the experiment run folder
                 logger.info(f"Reuse exist node run {run_info.name} for node {self.node.name}.")
