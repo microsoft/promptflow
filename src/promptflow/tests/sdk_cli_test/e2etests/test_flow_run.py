@@ -37,8 +37,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
-from ..recording_utilities import RecordStorage
-
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -901,7 +899,6 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="System metrics not supported in replaying mode")
     def test_system_metrics_in_properties(self, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
@@ -1238,7 +1235,7 @@ class TestFlowRun:
         )
         assert run.status == "Completed"
 
-    @pytest.mark.skip("Enable this when executor change merges")
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
         run = pf.run(
@@ -1246,6 +1243,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
         )
         assert run.status == "Completed"
+        assert "error" not in run._to_dict()
 
     def test_eager_flow_test_invalid_cases(self, pf):
         # no entry provided
@@ -1265,3 +1263,31 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             )
         assert "'path': ['Missing data for required field.']" in str(e.value)
+
+    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
+    def test_eager_flow_run_with_additional_includes(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+    def test_get_incomplete_run(self, local_client, pf) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree(f"{FLOWS_DIR}/print_env_var", f"{temp_dir}/print_env_var")
+
+            run = pf.run(
+                flow=f"{temp_dir}/print_env_var",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+            )
+
+            # remove run dag
+            shutil.rmtree(f"{temp_dir}/print_env_var")
+
+            # can still get run operations
+            LocalStorageOperations(run=run)
+
+            # can to_dict
+            run._to_dict()

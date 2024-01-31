@@ -5,11 +5,12 @@
 
 import datetime
 from pathlib import Path
+from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
@@ -19,8 +20,9 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 
-from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
+from .._load_functions import load_flow
+from ..entities._eager_flow import EagerFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -60,13 +62,9 @@ class RunSubmitter:
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
-            if local_storage.eager_mode:
-                flow_obj = load_flow(source=run.flow)
-                self._submit_bulk_run(flow=flow_obj, run=run, local_storage=local_storage)
-            else:
-                # running specified variant
-                with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+            flow_obj = load_flow(source=run.flow)
+            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
+                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
     def _validate_inputs(cls, run: Run):
@@ -74,7 +72,10 @@ class RunSubmitter:
             error = ValidationException("Either run or data must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
-    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(
+        self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
+    ) -> dict:
+        logger.info(f"Submitting run {run.name}, reach logs at {local_storage.logger.file_path}.")
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
             connections = []
@@ -101,6 +102,7 @@ class RunSubmitter:
                 flow.path,
                 flow.code,
                 connections=connections,
+                entry=flow.entry if isinstance(flow, EagerFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
             )

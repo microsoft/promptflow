@@ -40,7 +40,7 @@ logger = get_cli_sdk_logger()
 class TestSubmitter:
     def __init__(self, flow: Union[ProtectedFlow, EagerFlow], flow_context: FlowContext, client=None):
         self.flow = flow
-        self.func = flow.entry if isinstance(flow, EagerFlow) else None
+        self.entry = flow.entry if isinstance(flow, EagerFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -58,33 +58,16 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
-        if isinstance(self.flow, EagerFlow):
-            flow_content_manager = self._eager_flow_init
-        else:
-            flow_content_manager = self._dag_flow_init
-        with flow_content_manager() as submitter:
-            yield submitter
-
-    @contextlib.contextmanager
-    def _eager_flow_init(self):
+        # TODO(2901096): validate invalid configs like variant & connections
         # no variant overwrite for eager flow
         # no connection overwrite for eager flow
-        # TODO(2897147): support additional includes
-        with _change_working_dir(self.flow.code):
-            self._tuning_node = None
-            self._node_variant = None
-            yield self
-            self._dataplane_flow = None
-
-    @contextlib.contextmanager
-    def _dag_flow_init(self):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-            flow_path=self._origin_flow.code,
+            flow=self.flow,
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,
@@ -145,8 +128,10 @@ class TestSubmitter:
                         continue
                     if value.property:
                         dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
-                        if value.property in dependency_input:
+                        if isinstance(dependency_input, dict) and value.property in dependency_input:
                             dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                        elif dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input
                     else:
                         dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
@@ -227,7 +212,7 @@ class TestSubmitter:
                 inputs=inputs,
                 enable_stream_output=stream_output,
                 allow_generator_output=allow_generator_output,
-                func=self.func,
+                entry=self.entry,
                 storage=storage,
             )
             if isinstance(line_result.output, dict):

@@ -13,6 +13,7 @@ from unittest.mock import patch
 import jwt
 import pytest
 from azure.core.exceptions import ResourceNotFoundError
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
@@ -34,6 +35,7 @@ from .recording_utilities import (
 )
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
@@ -224,10 +226,15 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
             **connections,
         },
     )
-    app = create_serving_app(
-        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
-        extension_type="azureml",
-    )
+    # Set credential to None for azureml extension type
+    # As we mock app in github workflow, which do not have managed identity credential
+    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    with mock.patch(func) as mock_cred_func:
+        mock_cred_func.return_value = None
+        app = create_serving_app(
+            environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+            extension_type="azureml",
+        )
     app.config.update(
         {
             "TESTING": True,
@@ -400,6 +407,20 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )
     run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def simple_eager_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
+    """Create a simple eager run."""
+    run = pf.run(
+        flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+        data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        name=randstr("name"),
+    )
+    pf.runs.stream(run)
+    run = pf.runs.get(run)
     assert run.status == RunStatus.COMPLETED
     yield run
 

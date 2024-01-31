@@ -1,6 +1,22 @@
 # Release History
 
-## 1.4.0 (2024.01.19)
+## 1.5.0 (Upcoming)
+
+
+### Features Added
+
+
+### Bugs Fixed
+
+- [SDK/CLI] The inputs of node test allows the value of reference node output be passed directly in.
+- [SDK/CLI][azure] Fixed bug for cloud batch run referencing registry flow with automatic runtime.
+
+### Improvements
+
+- [SDK/CLI] For `pf run delete`, `pf connection delete`, introducing an option to skip confirmation prompts.
+
+
+## 1.4.0 (2024.01.22)
 
 ### Features Added
 
@@ -13,6 +29,7 @@
 - [SDK/CLI] Support `pf run delete` to delete a run irreversibly.
 - [SDK/CLI][azure] Automatically put requirements.txt to flow.dag.yaml if exists in flow snapshot.
 - [SDK/CLI] Support `pf upgrade` to upgrade prompt flow to the latest version.
+- [SDK/CLI] Support env variables in yaml file.
 
 ### Bugs Fixed
 

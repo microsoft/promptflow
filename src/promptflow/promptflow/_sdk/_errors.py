@@ -167,3 +167,9 @@ class DownloadInternalError(SDKInternalError):
     """Exception raised if download internal error."""
 
     pass
+
+
+class ExperimentCommandRunError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass

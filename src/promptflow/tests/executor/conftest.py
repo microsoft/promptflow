@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from sdk_cli_test.recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
 
+from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
@@ -178,3 +179,12 @@ def recording_injection(recording_setup, process_override):
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def inject_api_executor():
+    """Inject OpenAI API during test session.
+
+    AOAI call in promptflow should involve trace logging and header injection. Inject
+    function to API call in test scenario."""
+    inject_openai_api()
