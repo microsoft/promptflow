@@ -4,6 +4,7 @@
 
 import argparse
 import datetime
+import hashlib
 import importlib
 import json
 import os
@@ -12,6 +13,7 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 from pathlib import Path
 from unittest.mock import patch
 
@@ -39,6 +41,8 @@ from promptflow._sdk._utils import (
     refresh_connections_dir,
     resolve_connections_environment_variable_reference,
     snake_to_camel,
+    get_mac_address,
+    gen_uuid_by_mac_id,
 )
 from promptflow._utils.load_data import load_data
 from promptflow._utils.retry_utils import http_retry_wrapper, retry
@@ -468,3 +472,29 @@ class TestRetryUtils:
 
         http_retry_wrapper(mock_http_request, tries=2, delay=1, backoff=1)()
         assert counter == 2
+
+    def test_get_mac_address(self):
+        mac_address = None
+        try:
+            import psutil
+
+            nics = psutil.net_if_addrs()
+            if sys.platform.startswith("win"):
+                for snicaddr in nics["Ethernet"]:
+                    if snicaddr.family == psutil.AF_LINK:
+                        mac_address = str(snicaddr.address)
+                        break
+            else:
+                for snicaddr in nics["eth0"]:
+                    if snicaddr.family == psutil.AF_LINK:
+                        mac_address = str(snicaddr.address)
+                        break
+        except Exception:
+            pass
+
+        assert mac_address == get_mac_address()
+
+    def test_gen_uuid_by_mac_id(self):
+        mac_address = get_mac_address()
+        mac_address_hash = hashlib.sha256(mac_address.encode()).hexdigest()
+        assert str(uuid.uuid5(uuid.NAMESPACE_OID, mac_address_hash)) == gen_uuid_by_mac_id()

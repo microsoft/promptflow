@@ -9,7 +9,6 @@ import os
 import platform
 import re
 import shutil
-import socket
 import stat
 import sys
 import tempfile
