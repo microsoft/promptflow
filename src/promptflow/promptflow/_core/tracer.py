@@ -209,7 +209,7 @@ def enrich_span_with_trace(span, trace):
         span.set_attributes(
             {
                 "framework": "promptflow",
-                "span_type": trace.type,
+                "span_type": f"{trace.type}",
                 "function": trace.name,
                 "inputs": serialize_attribute(trace.inputs),
                 "node_name": get_node_name_from_context(),
@@ -231,9 +231,13 @@ def enrich_span_with_output(span, output):
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
-    serializable = Tracer.to_serializable(value)
-    serialized_value = serialize(serializable)
-    return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    try:
+        serializable = Tracer.to_serializable(value)
+        serialized_value = serialize(serializable)
+        return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    except Exception as e:
+        logging.warning(f"Failed to serialize attribute: {e}")
+        return None
 
 
 def _traced(
@@ -382,3 +386,36 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
+
+
+def entry_trace(func: Callable = None) -> Callable:
+    """Decorator that adds trace to a function."""
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        # extract inputs args and output args
+        inputs = kwargs.get("inputs")
+        if inputs is None and len(args) > 1:
+            inputs = args[1]  # assuming inputs is the second argument
+        with open_telemetry_tracer.start_as_current_span(func.__name__) as span:
+            # enrich span with input
+            span.set_attributes(
+                {
+                    "framework": "promptflow",
+                    "span_type": TraceType.FLOW.value,
+                    "function": func.__name__,
+                    "inputs": serialize_attribute(inputs),
+                }
+            )
+            # invoke function
+            result = func(*args, **kwargs)
+            # extract output from result
+            output = result.output
+            # enrich span with output
+            span.set_attribute("output", serialize_attribute(output))
+            # set status
+            span.set_status(StatusCode.OK)
+            # return result
+            return result
+
+    return wrapped

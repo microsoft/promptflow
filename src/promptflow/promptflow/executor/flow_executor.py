@@ -23,6 +23,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tracer import entry_trace
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -43,11 +44,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
-from promptflow.executor._errors import (
-    NodeOutputNotFound,
-    OutputReferenceNotExist,
-    SingleNodeValidationError,
-)
+from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -746,6 +743,7 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
+    @entry_trace
     def _exec(
         self,
         inputs: Mapping[str, Any],
