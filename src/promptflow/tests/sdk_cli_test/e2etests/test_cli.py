@@ -1971,6 +1971,29 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--experiment",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+                "--detail",
+                Path(tmpdir).as_posix(),
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
+        for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+            for node_name in ["main", "eval"]:
+                path = Path(tmpdir) / node_name / filename
+                assert path.is_file()
+
     def test_batch_run_timeout(self, local_client):
         line_timeout_seconds = "54"
         timout_index = 9
@@ -2018,15 +2041,11 @@ class TestCli:
             "--detail",
             Path(tmpdir).as_posix(),
         )
-        # when specify parameter `detail`, detail, output and log will be saved in both
-        # the specified folder and ".promptflow" under flow folder
-        for parent_folder in [
-            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
-            Path(tmpdir),
-        ]:
-            for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
-                path = parent_folder / filename
-                assert path.is_file()
+        # when specify parameter `detail`, detail, output and log will be saved in
+        # the specified folder
+        for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+            path = Path(tmpdir) / filename
+            assert path.is_file()
 
     def test_pf_flow_test_single_node_with_detail(self, tmpdir):
         node_name = "fetch_text_content_from_url"
@@ -2046,16 +2065,12 @@ class TestCli:
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
         assert output_path.exists()
 
-        # when specify parameter `detail`, node detail, output and log will be saved in both
-        # the specified folder and ".promptflow" under flow folder
-        for parent_folder in [
-            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
-            Path(tmpdir),
+        # when specify parameter `detail`, node detail, output and log will be saved in
+        # the specified folder
+        for filename in [
+            f"flow-{node_name}.node.detail.json",
+            f"flow-{node_name}.node.output.json",
+            f"{node_name}.node.log",
         ]:
-            for filename in [
-                f"flow-{node_name}.node.detail.json",
-                f"flow-{node_name}.node.output.json",
-                f"{node_name}.node.log",
-            ]:
-                path = parent_folder / filename
-                assert path.is_file()
+            path = Path(tmpdir) / filename
+            assert path.is_file()
