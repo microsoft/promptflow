@@ -16,3 +16,8 @@ class TestTrace:
         session_id = _provision_session()
         operation_context = OperationContext.get_instance()
         assert session_id == operation_context[TRACE_SESSION_ID_OP_CTX_NAME]
+
+    def test_provision_session_multiple_times(self):
+        session_id = _provision_session()
+        session_id_twice = _provision_session()
+        assert session_id == session_id_twice

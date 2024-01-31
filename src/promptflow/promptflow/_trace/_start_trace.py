@@ -95,9 +95,14 @@ def _check_pfs_service_status(pfs_port) -> bool:
 
 
 def _provision_session() -> str:
+    operation_context = OperationContext.get_instance()
+    # session id is already provisioned, directly return
+    if TRACE_SESSION_ID_OP_CTX_NAME in operation_context:
+        return operation_context[TRACE_SESSION_ID_OP_CTX_NAME]
+    # provision a new session id
     session_id = str(uuid.uuid4())
     session_id_context_info = {TRACE_SESSION_ID_OP_CTX_NAME: session_id}
-    OperationContext.get_instance().update(session_id_context_info)
+    operation_context.update(session_id_context_info)
     return session_id
 
 
