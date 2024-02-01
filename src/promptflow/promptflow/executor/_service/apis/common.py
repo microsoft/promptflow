@@ -28,10 +28,9 @@ async def version():
     except Exception:
         version = VERSION
 
-    feature_list = {feature.name: feature for feature in get_feature_list()}
     return {
         "status": "healthy",
         "build_info": build_info,
         "version": version,
-        "feature_list": feature_list,
+        "feature_list": get_feature_list(),
     }
