@@ -13,7 +13,7 @@ def validate_text_trunk(
     score_text_trunk_prompt: str,
     score_threshold: float,
     context: str = None,
-    response_format: str = ResponseFormat.JSON,
+    response_format: str = ResponseFormat.TEXT,
     temperature: float = 1.0,
     max_tokens: int = 512,
 ):
