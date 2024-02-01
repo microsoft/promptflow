@@ -145,7 +145,7 @@ from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
 
 
 if __name__ == "__main__":
-    cls_list = [EagerFlowSchema]
+    cls_list = [FlowSchema, EagerFlowSchema]
     schema_list = []
     for cls in cls_list:
         target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
@@ -154,11 +154,9 @@ if __name__ == "__main__":
         file_name = file_name.replace("Schema", "")
         schema_list.append(target_schema["definitions"][cls.__name__])
         print(target_schema)
-        with open((f"{file_name}.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    # schema = {
-    #     "type": "object",
-    #     "oneOf": schema_list
-    # }
-    # with open((f"Flow.schema.json"), "w") as f:
-    #     f.write(json.dumps(schema, indent=4))
+    schema = {
+        "type": "object",
+        "oneOf": schema_list
+    }
+    with open((f"Flow.schema.json"), "w") as f:
+        f.write(json.dumps(schema, indent=4))
