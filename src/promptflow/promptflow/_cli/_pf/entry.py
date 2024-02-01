@@ -140,8 +140,9 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        version_dict_string = json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True,
-                                         separators=(",", ": ")) + "\n"
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
         print(version_dict_string)
         return
     if len(command_args) == 0:
