@@ -365,9 +365,11 @@ class TestToolUtils:
     def test_find_deprecated_tools(self):
         package_tools = {
             "new_tool_1": Tool(
-                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
             "new_tool_2": Tool(
-                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
         }
         with pytest.raises(DuplicateToolMappingError, match="secure operation"):
             _find_deprecated_tools(package_tools)
