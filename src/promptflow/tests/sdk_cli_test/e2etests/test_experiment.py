@@ -105,7 +105,7 @@ class TestExperiment:
         exp_get = client._experiments.get(name=exp.name)
         assert exp_get._to_dict() == exp._to_dict()
 
-    @pytest.mark.skipif(condition=not is_live())
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -142,7 +142,7 @@ class TestExperiment:
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
-    @pytest.mark.skipif(condition=not is_live())
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -158,7 +158,7 @@ class TestExperiment:
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
-    @pytest.mark.skipif(condition=not is_live())
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
         # Load template and create experiment

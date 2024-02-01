@@ -6,7 +6,6 @@ import multiprocessing
 import os
 import os.path
 import shutil
-import subprocess
 import sys
 import tempfile
 import uuid
@@ -31,6 +30,8 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
@@ -1932,6 +1933,7 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
         def wait_for_experiment_terminated(experiment_name):
@@ -1940,9 +1942,6 @@ class TestCli:
                 sleep(10)
                 experiment = local_client._experiments.get(experiment_name)
             return experiment
-
-        def mock_start_process_in_background(args, executable_path=None):
-            subprocess.Popen(args, env=os.environ)
 
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
@@ -1959,16 +1958,12 @@ class TestCli:
             assert exp_name in out
             assert ExperimentStatus.NOT_STARTED in out
 
-            with mock.patch(
-                "promptflow._sdk._submitter.experiment_orchestrator.ExperimentOrchestrator._start_process_in_background"
-            ) as mock_start_process_func:
-                mock_start_process_func.side_effect = mock_start_process_in_background
-                run_pf_command(
-                    "experiment",
-                    "start",
-                    "--name",
-                    exp_name,
-                )
+            run_pf_command(
+                "experiment",
+                "start",
+                "--name",
+                exp_name,
+            )
             out, _ = capfd.readouterr()
             assert ExperimentStatus.QUEUING in out
             wait_for_experiment_terminated(exp_name)
