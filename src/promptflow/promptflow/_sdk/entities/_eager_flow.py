@@ -47,17 +47,11 @@ class EagerFlow(FlowBase):
         return EagerFlowSchema(context=context)
 
     @classmethod
-    def _load(cls, path: Path, entry: str = None, data: dict = None, **kwargs):
-        data = data or {}
-        code = path.parent
+    def _load(cls, path: Path, data: dict, **kwargs):
         # schema validation on unknown fields
-        if path.suffix in [".yaml", ".yml"]:
-            data = cls._create_schema_for_validation(context={BASE_PATH_CONTEXT_KEY: path.parent}).load(data)
-            path = data["path"]
-            if entry:
-                raise UserErrorException("Specifying entry function is not allowed when YAML file is provided.")
-            else:
-                entry = data["entry"]
+        data = cls._create_schema_for_validation(context={BASE_PATH_CONTEXT_KEY: path.parent}).load(data)
+        entry = data["entry"]
+        code = path.parent
 
         if entry is None:
             raise UserErrorException(f"Entry function is not specified for flow {path}")

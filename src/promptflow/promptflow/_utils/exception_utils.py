@@ -384,6 +384,7 @@ def infer_error_code_from_class(cls):
 def is_pf_core_frame(frame: FrameType):
     """Check if the frame is from promptflow core code."""
     from promptflow import _core
+
     folder_of_core = os.path.dirname(_core.__file__)
     return folder_of_core in frame.f_code.co_filename
 
@@ -409,4 +410,4 @@ def remove_suffix(text: str, suffix: str = None):
     if not text.endswith(suffix):
         return text
 
-    return text[:-len(suffix)]
+    return text[: -len(suffix)]

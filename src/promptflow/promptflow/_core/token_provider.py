@@ -40,11 +40,12 @@ class AzureTokenProvider(TokenProviderABC):
         try:
             # Initialize a credential instance
             from azure.identity import DefaultAzureCredential
+
             self.credential = DefaultAzureCredential()
         except ImportError as ex:
             raise UserErrorException(
-                "Failed to initialize AzureTokenProvider. " +
-                f"Please try 'pip install azure.identity' to install dependency, {ex.msg}."
+                "Failed to initialize AzureTokenProvider. "
+                + f"Please try 'pip install azure.identity' to install dependency, {ex.msg}."
             )
 
     def get_token(self):

@@ -378,7 +378,6 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
 
 @exception_handler("Flow test")
 def test_flow(args):
-
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
 
