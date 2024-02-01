@@ -39,6 +39,7 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import FlowLanguage
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
@@ -228,6 +229,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
         "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
     )
+    add_param_experiment = lambda parser: parser.add_argument(  # noqa: E731
+        "--experiment", type=str, help="the experiment template path of flow."
+    )
 
     add_params = [
         add_param_flow,
@@ -242,6 +246,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_config,
         add_param_detail,
     ] + base_params
+
+    if Configuration.get_instance().is_internal_features_enabled():
+        add_params.append(add_param_experiment)
     activate_action(
         name="test",
         description="Test the flow.",
@@ -371,7 +378,6 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
 
 @exception_handler("Flow test")
 def test_flow(args):
-    from promptflow._sdk._load_functions import load_flow
 
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
@@ -380,6 +386,22 @@ def test_flow(args):
         environment_variables = list_of_dict_to_dict(args.environment_variables)
     else:
         environment_variables = {}
+    inputs = _build_inputs_for_flow_test(args)
+    # Select different test mode
+    if Configuration.get_instance().is_internal_features_enabled() and args.experiment:
+        _test_flow_experiment(args, pf_client, inputs, environment_variables)
+        return
+    if args.multi_modal or args.ui:
+        _test_flow_multi_modal(args, pf_client)
+        return
+    if args.interactive:
+        _test_flow_interactive(args, pf_client, inputs, environment_variables)
+        return
+    _test_flow_standard(args, pf_client, inputs, environment_variables)
+
+
+def _build_inputs_for_flow_test(args):
+    """Build inputs from --input and --inputs for flow test."""
     inputs = {}
     if args.input:
         from promptflow._utils.load_data import load_data
@@ -394,49 +416,78 @@ def test_flow(args):
         inputs = load_data(local_path=args.input)[0]
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
+    return inputs
 
-    if args.multi_modal or args.ui:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            flow = load_flow(args.flow)
 
-            script_path = [
-                os.path.join(temp_dir, "main.py"),
-                os.path.join(temp_dir, "utils.py"),
-                os.path.join(temp_dir, "logo.png"),
-            ]
-            for script in script_path:
-                StreamlitFileReplicator(
-                    flow_name=flow.display_name if flow.display_name else flow.name,
-                    flow_dag_path=flow.flow_dag_path,
-                ).generate_to_file(script)
-            main_script_path = os.path.join(temp_dir, "main.py")
-            pf_client.flows._chat_with_ui(script=main_script_path)
+def _test_flow_multi_modal(args, pf_client):
+    """Test flow with multi modality mode."""
+    from promptflow._sdk._load_functions import load_flow
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        flow = load_flow(args.flow)
+
+        script_path = [
+            os.path.join(temp_dir, "main.py"),
+            os.path.join(temp_dir, "utils.py"),
+            os.path.join(temp_dir, "logo.png"),
+        ]
+        for script in script_path:
+            StreamlitFileReplicator(
+                flow_name=flow.display_name if flow.display_name else flow.name,
+                flow_dag_path=flow.flow_dag_path,
+            ).generate_to_file(script)
+        main_script_path = os.path.join(temp_dir, "main.py")
+        pf_client.flows._chat_with_ui(script=main_script_path)
+
+
+def _test_flow_interactive(args, pf_client, inputs, environment_variables):
+    """Test flow with interactive mode."""
+    pf_client.flows._chat(
+        flow=args.flow,
+        inputs=inputs,
+        environment_variables=environment_variables,
+        variant=args.variant,
+        show_step_output=args.verbose,
+    )
+
+
+def _test_flow_standard(args, pf_client, inputs, environment_variables):
+    """Test flow with standard mode."""
+    result = pf_client.flows.test(
+        flow=args.flow,
+        inputs=inputs,
+        environment_variables=environment_variables,
+        variant=args.variant,
+        node=args.node,
+        allow_generator_output=False,
+        stream_output=False,
+        dump_test_result=True,
+        output_path=args.detail,
+    )
+    # Print flow/node test result
+    if isinstance(result, dict):
+        print(json.dumps(result, indent=4, ensure_ascii=False))
     else:
-        if args.interactive:
-            pf_client.flows._chat(
-                flow=args.flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=args.variant,
-                show_step_output=args.verbose,
-            )
-        else:
-            result = pf_client.flows.test(
-                flow=args.flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=args.variant,
-                node=args.node,
-                allow_generator_output=False,
-                stream_output=False,
-                dump_test_result=True,
-                detail=args.detail,
-            )
-            # Print flow/node test result
-            if isinstance(result, dict):
-                print(json.dumps(result, indent=4, ensure_ascii=False))
-            else:
-                print(result)
+        print(result)
+
+
+def _test_flow_experiment(args, pf_client, inputs, environment_variables):
+    """Test flow with experiment specified."""
+    if args.variant or args.node:
+        error = ValueError("--variant or --node is not supported experiment is specified.")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
+    node_results = pf_client.flows.test(
+        flow=args.flow,
+        inputs=inputs,
+        environment_variables=environment_variables,
+        experiment=args.experiment,
+        output_path=args.detail,
+    )
+    print(json.dumps(node_results, indent=4, ensure_ascii=False))
 
 
 def serve_flow(args):

@@ -43,11 +43,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
-from promptflow.executor._errors import (
-    NodeOutputNotFound,
-    OutputReferenceNotExist,
-    SingleNodeValidationError,
-)
+from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -936,7 +932,7 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
+        from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 
         return apply_inputs_mapping(inputs, inputs_mapping)
 

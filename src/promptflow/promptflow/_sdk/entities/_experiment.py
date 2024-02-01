@@ -189,9 +189,9 @@ class CommandNode(YAMLTranslatableMixin):
 
 
 class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
-    def __init__(self, nodes, name=None, description=None, data=None, inputs=None, **kwargs):
+    def __init__(self, nodes, description=None, data=None, inputs=None, **kwargs):
         self._base_path = kwargs.get(BASE_PATH_CONTEXT_KEY, Path("."))
-        self.name = name or self._generate_name()
+        self.dir_name = self._get_directory_name()
         self.description = description
         self.nodes = nodes
         self.data = data or []
@@ -232,11 +232,11 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
             exp._source_path = yaml_path
         return exp
 
-    def _generate_name(self) -> str:
-        """Generate a template name."""
+    def _get_directory_name(self) -> str:
+        """Get experiment template directory name."""
         try:
             folder_name = Path(self._base_path).resolve().absolute().name
-            return _sanitize_python_variable_name(folder_name)
+            return folder_name
         except Exception as e:
             logger.debug(f"Failed to generate template name, error: {e}, use uuid.")
             return str(uuid.uuid4())
@@ -398,7 +398,7 @@ class Experiment(ExperimentTemplate):
     def from_template(cls, template: ExperimentTemplate, name=None):
         """Create a experiment object from template."""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        exp_name = name or f"{template.name}_{timestamp}"
+        exp_name = name or f"{template.dir_name}_{timestamp}"
         experiment = cls(
             name=exp_name,
             description=template.description,
