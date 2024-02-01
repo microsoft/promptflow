@@ -63,6 +63,7 @@ nodes:
     model_or_deployment_name: ""
     context: ${validate_text_trunk.output.context}
     temperature: 0.2
+    max_tokens: ""
     generate_question_prompt: ${generate_question_prompt.output}
   use_variants: false
 - name: validate_question
@@ -120,6 +121,7 @@ nodes:
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
     temperature: 0.2
+    max_tokens: ""
 - name: validate_text_trunk
   type: python
   source:
