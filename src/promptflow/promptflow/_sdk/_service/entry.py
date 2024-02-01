@@ -92,7 +92,6 @@ def start_service(args, logger, activity_name):
 
 
 def main():
-    sys.argv += ["start", "--force"]
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
