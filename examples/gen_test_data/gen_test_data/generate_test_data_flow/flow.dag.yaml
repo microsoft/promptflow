@@ -58,8 +58,8 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection:
-    model_or_deployment_name:
+    connection: open-ai-connection
+    model_or_deployment_name: gpt-4-1106-preview
     score_text_trunk_prompt: ${score_text_trunk_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
     context: ${inputs.text_chunk}
@@ -74,8 +74,8 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection:
-    model_or_deployment_name:
+    connection: open-ai-connection
+    model_or_deployment_name: gpt-4-1106-preview
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${validate_and_generate_seed_question.output.question}
     response_format: text
@@ -96,8 +96,8 @@ nodes:
     type: code
     path: validate_test_question.py
   inputs:
-    connection:
-    model_or_deployment_name:
+    connection: open-ai-connection
+    model_or_deployment_name: gpt-4-1106-preview
     question_info: ${validate_and_generate_test_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
     temperature: 0.2
@@ -109,11 +109,11 @@ nodes:
     type: code
     path: generate_suggested_answer.py
   inputs:
-    connection:
+    connection: open-ai-connection
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
     question: ${validate_test_question.output}
-    model_or_deployment_name:
+    model_or_deployment_name: gpt-4-1106-preview
     temperature: 0.2
     max_tokens:
   use_variants: false
@@ -142,8 +142,8 @@ nodes:
     type: code
     path: validate_suggested_answer.py
   inputs:
-    connection:
-    model_or_deployment_name:
+    connection: open-ai-connection
+    model_or_deployment_name: gpt-4-1106-preview
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
     temperature: 0.2

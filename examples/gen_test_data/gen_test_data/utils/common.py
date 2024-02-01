@@ -2,7 +2,6 @@ import json
 import os
 import typing as t
 from pathlib import Path
-
 from .constants import DOCUMENT_NODE, TEXT_CHUNK
 from promptflow._utils.logger_utils import get_logger
 
@@ -19,7 +18,7 @@ except ImportError:
 
 def split_document(chunk_size, documents_folder, document_node_output):
     logger = get_logger("doc.split")
-    logger.info("Start to split the documents.")
+    logger.info("Step 1: Split documents to document nodes.")
     documents = SimpleDirectoryReader(
         documents_folder, recursive=True, exclude=["index.md", "README.md"], encoding="utf-8"
     ).load_data()
@@ -28,20 +27,20 @@ def split_document(chunk_size, documents_folder, document_node_output):
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     documents = t.cast(t.List[LlamaindexDocument], documents)
     document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=documents)
-
-    with open(os.path.join(document_node_output, "document_nodes.jsonl"), "wt") as text_file:
+    logger.info(f"End to split the documents and generate {len(document_nodes)} document nodes.")
+    document_nodes_output_path = os.path.join(document_node_output, "document_nodes.jsonl")
+    with open(document_nodes_output_path, "wt") as text_file:
         for doc in document_nodes:
             print(json.dumps({TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}), file=text_file)
 
-    logger.info(f"End to split the documents and generate {len(document_nodes)} document nodes.")
-
+    logger.info(f"Saved document nodes to {document_nodes_output_path}.")
     return str((Path(document_node_output) / "document_nodes.jsonl"))
 
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     logger = get_logger("data.clean")
-    logger.info(f"Collected {len(test_data_set)} test data after the batch run. "
-                f"Initiating data cleaning process.")
+    logger.info("Step 3: Clean invalid test data.")
+    logger.info(f"Collected {len(test_data_set)} test data after the batch run.")
     cleaned_data = []
 
     for test_data in test_data_set:
@@ -57,3 +56,11 @@ def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     logger.info(
         f"Collected {len(cleaned_data)} valid test data. "
         f"The cleaned data has been saved to {test_data_output_path}.")
+
+
+def count_non_blank_lines(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    non_blank_lines = len([line for line in lines if line.strip()])
+    return non_blank_lines

@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from pathlib import Path
 
 import configargparse
 from azure.ai.ml import Input, MLClient, dsl, load_component
@@ -9,29 +10,26 @@ from azure.identity import DefaultAzureCredential
 from promptflow import PFClient
 from promptflow._utils.logger_utils import get_logger
 from promptflow.entities import Run
+from .utils.common import clean_data_and_save, split_document, count_non_blank_lines
+from .utils.components import clean_data_and_save_component, split_document_component
+from .utils.constants import TEXT_CHUNK
 
-CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.ini"))
-
-# UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "gen_test_data", "utils"))
-# if UTILS_PATH not in os.sys.path:
-#     os.sys.path.insert(0, UTILS_PATH)
-
-from .utils.common import clean_data_and_save, split_document  # noqa: E402
-from .utils.components import clean_test_data_set, document_split  # noqa: E402
-from .utils.constants import CONNECTIONS_TEMPLATE, TEXT_CHUNK  # noqa: E402
+CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
+ROOT = Path(__file__).parents[1]
+if ROOT not in os.sys.path:
+    os.sys.path.insert(0, ROOT)
 
 logger = get_logger("data.gen")
 
 
 def batch_run_flow(
-    pf: PFClient,
-    flow_folder: str,
-    flow_input_data: str,
-    flow_batch_run_size: int,
-    connection_name: str = "azure_open_ai_connection",
+        pf: PFClient,
+        flow_folder: str,
+        flow_input_data: str,
+        flow_batch_run_size: int,
 ):
-    doc_nodes = json.loads(flow_input_data)
-    logger.info(f"Start to submit the batch run. Collect {len(doc_nodes)} document nodes.")
+    logger.info("Step 2: Start to batch run generate test data flow.")
+    logger.info(f"Collect {count_non_blank_lines(flow_input_data)} document nodes.")
     base_run = pf.run(
         flow=flow_folder,
         data=flow_input_data,
@@ -39,10 +37,6 @@ def batch_run_flow(
         environment_variables={
             "PF_WORKER_COUNT": str(flow_batch_run_size),
             "PF_BATCH_METHOD": "spawn",
-        },
-        connections={
-            key: {"connection": value["connection"].format(connection_name=connection_name)}
-            for key, value in CONNECTIONS_TEMPLATE.items()
         },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
@@ -84,63 +78,59 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
     ]
 )
 def gen_test_data_pipeline(
-    data_input: Input,
-    flow_yml_path: str,
-    connection_name: str,
-    should_skip_doc_split: bool,
-    chunk_size=1024,
-    instance_count=1,
-    mini_batch_size="10kb",
-    max_concurrency_per_instance=2,
+        data_input: Input,
+        flow_yml_path: str,
+        should_skip_doc_split: bool,
+        chunk_size=1024,
+        instance_count=1,
+        mini_batch_size="10kb",
+        max_concurrency_per_instance=2,
 ):
     data = (
         data_input
         if should_skip_doc_split
-        else document_split(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
+        else split_document_component(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
     )
 
-    logger.info(f"Collect {len(json.loads(data))} document nodes.")
+    logger.info("Step 2: Start to batch run generate test data flow.")
     flow_node = load_component(flow_yml_path)(
         data=data,
         text_chunk="${data.text_chunk}",
-        connections={
-            key: {"connection": value["connection"].format(connection_name=connection_name)}
-            for key, value in CONNECTIONS_TEMPLATE.items()
-        },
     )
 
     flow_node.mini_batch_size = mini_batch_size
     flow_node.max_concurrency_per_instance = max_concurrency_per_instance
     flow_node.set_resources(instance_count=instance_count)
 
-    clean_test_data_set(test_data_set_folder=flow_node.outputs.flow_outputs)
+    clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs)
 
 
 def run_local(
-    documents_folder,
-    document_chunk_size,
-    document_nodes_file,
-    flow_folder,
-    flow_batch_run_size,
-    connection_name,
-    output_folder,
-    should_skip_split,
+        documents_folder,
+        document_chunk_size,
+        document_nodes_file,
+        flow_folder,
+        flow_batch_run_size,
+        output_folder,
+        should_skip_split,
 ):
-    text_chunks_path = document_nodes_file
+    logger.info("Start to generate test data at local.")
+    data_input = document_nodes_file
     inner_folder = os.path.join(output_folder, datetime.now().strftime("%b-%d-%Y-%H-%M-%S"))
     if not os.path.isdir(inner_folder):
         os.makedirs(inner_folder)
 
     if not should_skip_split:
-        text_chunks_path = split_document(document_chunk_size, documents_folder, inner_folder)
+        data_input = split_document(document_chunk_size, documents_folder, inner_folder)
+    else:
+        logger.info("Received document node input file, skip step 1 'split documents to document nodes'.")
 
     pf = PFClient()
     batch_run = batch_run_flow(
         pf,
         flow_folder,
-        text_chunks_path,
+        data_input,
         flow_batch_run_size,
-        connection_name=connection_name,
     )
 
     test_data_set = get_batch_run_output(pf, batch_run)
@@ -156,24 +146,25 @@ def run_local(
 
 
 def run_cloud(
-    documents_folder,
-    document_chunk_size,
-    document_nodes_file,
-    flow_folder,
-    connection_name,
-    subscription_id,
-    resource_group,
-    workspace_name,
-    aml_cluster,
-    prs_instance_count,
-    prs_mini_batch_size,
-    prs_max_concurrency_per_instance,
-    should_skip_split,
+        documents_folder,
+        document_chunk_size,
+        document_nodes_file,
+        flow_folder,
+        subscription_id,
+        resource_group,
+        workspace_name,
+        aml_cluster,
+        prs_instance_count,
+        prs_mini_batch_size,
+        prs_max_concurrency_per_instance,
+        should_skip_split,
 ):
+    logger.info("Start to generate test data at cloud.")
     ml_client = get_ml_client(subscription_id, resource_group, workspace_name)
 
     if should_skip_split:
         data_input = Input(path=document_nodes_file, type="uri_file")
+        logger.info(f"Collect {count_non_blank_lines(data_input)} document nodes.")
     else:
         data_input = Input(path=documents_folder, type="uri_folder")
 
@@ -186,7 +177,6 @@ def run_cloud(
     pipeline_with_flow = gen_test_data_pipeline(
         data_input=data_input,
         flow_yml_path=os.path.join(flow_folder, "flow.dag.yaml"),
-        connection_name=connection_name,
         should_skip_doc_split=should_skip_split,
         chunk_size=document_chunk_size,
         **prs_configs,
@@ -197,7 +187,7 @@ def run_cloud(
 
 
 if __name__ == "__main__":
-    if os.path.isfile(CONFIG_FILE):
+    if Path(CONFIG_FILE).is_file():
         parser = configargparse.ArgParser(default_config_files=[CONFIG_FILE])
     else:
         raise Exception(
@@ -218,7 +208,6 @@ if __name__ == "__main__":
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
-    parser.add_argument("--connection_name", required=True, type=str, help="Promptflow connection name")
     # Configs for local
     parser.add_argument("--output_folder", type=str, help="Output folder path.")
     # Configs for cloud
@@ -234,19 +223,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     should_skip_split_documents = False
-    if args.document_nodes_file and os.path.isfile(args.document_nodes_file):
+    if args.document_nodes_file and Path(args.document_nodes_file).is_file():
         should_skip_split_documents = True
-    elif not args.documents_folder or not os.path.isdir(args.documents_folder):
+    elif not args.documents_folder or not Path(args.documents_folder).is_dir():
         parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
 
     if args.cloud:
-
         run_cloud(
             args.documents_folder,
             args.document_chunk_size,
             args.document_nodes_file,
             args.flow_folder,
-            args.connection_name,
             args.subscription_id,
             args.resource_group,
             args.workspace_name,
@@ -263,7 +250,6 @@ if __name__ == "__main__":
             args.document_nodes_file,
             args.flow_folder,
             args.flow_batch_run_size,
-            args.connection_name,
             args.output_folder,
             should_skip_split_documents,
         )
