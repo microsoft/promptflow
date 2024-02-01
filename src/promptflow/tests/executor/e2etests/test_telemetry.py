@@ -60,7 +60,7 @@ def mock_process_manager(*args, **kwargs):
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
-@pytest.mark.usefixtures("dev_connections", "recording_injection")
+@pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
     def test_executor_openai_telemetry(self, dev_connections):
@@ -113,7 +113,7 @@ class TestExecutorTelemetry:
             assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
             assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name
 
-    def test_executor_openai_telemetry_with_batch_run(self, dev_connections):
+    def test_executor_openai_telemetry_with_batch_run(self, dev_connections, recording_injection):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
