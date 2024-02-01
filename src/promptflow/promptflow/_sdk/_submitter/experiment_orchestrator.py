@@ -258,7 +258,7 @@ class ExperimentTemplateTestContext:
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
         # Generate line run id for node
-        self.node_name_to_id = {node.name: uuid.uuid4() for node in template.nodes}
+        self.node_name_to_id = {node.name: str(uuid.uuid4()) for node in template.nodes}
         self.node_name_to_referenced_id = self._prepare_referenced_ids()
         # TODO: Update session part after test session is supported
         if output_path:

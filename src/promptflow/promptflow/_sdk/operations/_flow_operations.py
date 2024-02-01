@@ -149,7 +149,7 @@ class FlowOperations(TelemetryMixin):
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         # Run id will be set in operation context and used for session
-        run_id = kwargs.get("run_id", uuid.uuid4())
+        run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
