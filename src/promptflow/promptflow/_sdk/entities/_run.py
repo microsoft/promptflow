@@ -202,9 +202,7 @@ class Run(YAMLTranslatableMixin):
         if self._run_source == RunInfoSources.LOCAL:
             # show posix path to avoid windows path escaping
             result = {
-                FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix()
-                if not self._use_remote_flow
-                else self.flow,
+                FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix() if not self._use_remote_flow else self.flow,
                 FlowRunProperties.OUTPUT_PATH: self._output_path.as_posix(),
             }
             if self.run:
@@ -250,19 +248,11 @@ class Run(YAMLTranslatableMixin):
             tags=json.loads(str(obj.tags)) if obj.tags else None,
             # keyword arguments
             created_on=datetime.datetime.fromisoformat(str(obj.created_on)),
-            start_time=datetime.datetime.fromisoformat(str(obj.start_time))
-            if obj.start_time
-            else None,
-            end_time=datetime.datetime.fromisoformat(str(obj.end_time))
-            if obj.end_time
-            else None,
+            start_time=datetime.datetime.fromisoformat(str(obj.start_time)) if obj.start_time else None,
+            end_time=datetime.datetime.fromisoformat(str(obj.end_time)) if obj.end_time else None,
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
-            properties={
-                FlowRunProperties.SYSTEM_METRICS: properties_json.get(
-                    FlowRunProperties.SYSTEM_METRICS, {}
-                )
-            },
+            properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
             # experiment command node only fields
@@ -281,9 +271,7 @@ class Run(YAMLTranslatableMixin):
             name=run_entity["properties"]["runId"],
             flow=Path(f"azureml://flows/{run_entity['properties']['experimentName']}"),
             type=AZURE_RUN_TYPE_2_RUN_TYPE[run_entity["properties"]["runType"]],
-            created_on=date_parser.parse(
-                run_entity["properties"]["creationContext"]["createdTime"]
-            ),
+            created_on=date_parser.parse(run_entity["properties"]["creationContext"]["createdTime"]),
             status=run_entity["annotations"]["status"],
             display_name=run_entity["annotations"]["displayName"],
             description=run_entity["annotations"]["description"],
@@ -320,9 +308,7 @@ class Run(YAMLTranslatableMixin):
             description=run_entity["description"],
             tags=run_entity["tags"],
             properties=run_entity["properties"],
-            is_archived=run_entity.get(
-                "archived", False
-            ),  # TODO: Get archived status, depends on run history team
+            is_archived=run_entity.get("archived", False),  # TODO: Get archived status, depends on run history team
             error=run_entity.get("error", None),
             run_source=RunInfoSources.RUN_HISTORY,
             portal_url=run_entity[RunDataKeys.PORTAL_URL],
@@ -401,9 +387,7 @@ class Run(YAMLTranslatableMixin):
             result[RunDataKeys.OUTPUT] = local_storage.outputs_folder.as_posix()
             if self.run:
                 run_name = self.run.name if isinstance(self.run, Run) else self.run
-                result[RunDataKeys.RUN] = properties.pop(
-                    FlowRunProperties.RUN, run_name
-                )
+                result[RunDataKeys.RUN] = properties.pop(FlowRunProperties.RUN, run_name)
             # add exception part if any
             exception_dict = local_storage.load_exception()
             if exception_dict:
@@ -416,16 +400,12 @@ class Run(YAMLTranslatableMixin):
             result["creation_context"] = self._creation_context
             result["flow_name"] = self._experiment_name
             result["is_archived"] = self._is_archived
-            result["start_time"] = (
-                self._start_time.isoformat() if self._start_time else None
-            )
+            result["start_time"] = self._start_time.isoformat() if self._start_time else None
             result["end_time"] = self._end_time.isoformat() if self._end_time else None
             result["duration"] = self._duration
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             result["creation_context"] = self._creation_context
-            result["start_time"] = (
-                self._start_time.isoformat() if self._start_time else None
-            )
+            result["start_time"] = self._start_time.isoformat() if self._start_time else None
             result["end_time"] = self._end_time.isoformat() if self._end_time else None
             result["duration"] = self._duration
             result[RunDataKeys.PORTAL_URL] = self._portal_url
@@ -476,11 +456,7 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_name = (
-                self._get_flow_dir().name
-                if not self._use_remote_flow
-                else self._flow_name
-            )
+            flow_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
@@ -508,9 +484,7 @@ class Run(YAMLTranslatableMixin):
         display_name = self._get_default_display_name()
         time_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
         if self.run:
-            display_name = display_name.replace(
-                RUN_MACRO, self._validate_and_return_run_name(self.run)
-            )
+            display_name = display_name.replace(RUN_MACRO, self._validate_and_return_run_name(self.run))
         display_name = display_name.replace(TIMESTAMP_MACRO, time_stamp)
         variant = self.variant
         variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
@@ -556,9 +530,7 @@ class Run(YAMLTranslatableMixin):
         # parse inputs mapping
         inputs_mapping = {}
         if self.column_mapping and not isinstance(self.column_mapping, dict):
-            raise UserErrorException(
-                f"column_mapping should be a dictionary, got {type(self.column_mapping)} instead."
-            )
+            raise UserErrorException(f"column_mapping should be a dictionary, got {type(self.column_mapping)} instead.")
         if self.column_mapping:
             for k, v in self.column_mapping.items():
                 if isinstance(v, (int, float, str, bool)):
@@ -578,17 +550,12 @@ class Run(YAMLTranslatableMixin):
         if self._resources is not None:
             if not isinstance(self._resources, dict):
                 raise TypeErrorException(
-                    f"resources should be a dict, "
-                    f"got {type(self._resources)} for {self._resources}"
+                    f"resources should be a dict, " f"got {type(self._resources)} for {self._resources}"
                 )
             vm_size = self._resources.get("instance_type", None)
-            max_idle_time_minutes = self._resources.get(
-                "idle_time_before_shutdown_minutes", None
-            )
+            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
             # change to seconds
-            max_idle_time_seconds = (
-                max_idle_time_minutes * 60 if max_idle_time_minutes else None
-            )
+            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
         else:
             vm_size = None
             max_idle_time_seconds = None
@@ -632,8 +599,7 @@ class Run(YAMLTranslatableMixin):
                 # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
                 # the flow resource id looks like: "azureml://locations/<region>/workspaces/<ws-name>/flows/<flow-name>"
                 if not isinstance(self.flow, str) or (
-                    not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX)
-                    and not self.flow.startswith(REGISTRY_URI_PREFIX)
+                    not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
                 ):
                     raise ValidationException(
                         f"Invalid flow value when transforming to rest object: {self.flow!r}. "
@@ -652,13 +618,9 @@ class Run(YAMLTranslatableMixin):
 
     def _check_run_status_is_completed(self) -> None:
         if self.status != RunStatus.COMPLETED:
-            error_message = (
-                f"Run {self.name!r} is not completed, the status is {self.status!r}."
-            )
+            error_message = f"Run {self.name!r} is not completed, the status is {self.status!r}."
             if self.status != RunStatus.FAILED:
-                error_message += (
-                    " Please wait for its completion, or select other completed run(s)."
-                )
+                error_message += " Please wait for its completion, or select other completed run(s)."
             raise InvalidRunStatusError(error_message)
 
     @staticmethod
@@ -668,9 +630,7 @@ class Run(YAMLTranslatableMixin):
             return run.name
         elif isinstance(run, str):
             return run
-        raise InvalidRunError(
-            f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}."
-        )
+        raise InvalidRunError(f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}.")
 
     def _validate_for_run_create_operation(self):
         """Validate run object for create operation."""
@@ -704,17 +664,11 @@ class Run(YAMLTranslatableMixin):
         else:
             try:
                 flow_posix_path = self.flow.resolve().as_posix()
-                path = Path(
-                    path.replace(
-                        FLOW_DIRECTORY_MACRO_IN_CONFIG, self.flow.resolve().as_posix()
-                    )
-                ).resolve()
+                path = Path(path.replace(FLOW_DIRECTORY_MACRO_IN_CONFIG, self.flow.resolve().as_posix())).resolve()
                 # in case user manually modifies ~/.promptflow/pf.yaml
                 # fall back to default run output path
                 if path.as_posix() == flow_posix_path:
-                    raise ValidationException(
-                        f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value."
-                    )
+                    raise ValidationException(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
                 path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
@@ -727,9 +681,7 @@ class Run(YAMLTranslatableMixin):
         return (path / str(self.name)).resolve()
 
     @classmethod
-    def _load_from_source(
-        cls, source: Union[str, Path], params_override: Optional[Dict] = None, **kwargs
-    ) -> "Run":
+    def _load_from_source(cls, source: Union[str, Path], params_override: Optional[Dict] = None, **kwargs) -> "Run":
         """Load run from run record source folder."""
         source = Path(source)
         params_override = params_override or {}
@@ -741,9 +693,7 @@ class Run(YAMLTranslatableMixin):
                 f"Please make sure the run source is downloaded by 'pfazure run download' command."
             )
         # extract run info from source folder
-        with open(
-            source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING
-        ) as f:
+        with open(source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING) as f:
             run_info = json.load(f)
 
         return cls(
@@ -751,12 +701,8 @@ class Run(YAMLTranslatableMixin):
             source=source,
             run_source=RunInfoSources.EXISTING_RUN,
             status=run_info["status"],  # currently only support completed run
-            display_name=params_override.get(
-                "display_name", run_info.get("display_name", source.name)
-            ),
-            description=params_override.get(
-                "description", run_info.get("description", "")
-            ),
+            display_name=params_override.get("display_name", run_info.get("display_name", source.name)),
+            description=params_override.get("description", run_info.get("description", "")),
             tags=params_override.get("tags", run_info.get("tags", {})),
             created_on=datetime.datetime.fromisoformat(run_info["created_on"]),
             start_time=datetime.datetime.fromisoformat(run_info["start_time"]),

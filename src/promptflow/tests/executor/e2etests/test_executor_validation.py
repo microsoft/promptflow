@@ -156,9 +156,7 @@ class TestValidation:
         dev_connections,
     ):
         with pytest.raises(error_class) as exc_info:
-            FlowExecutor.create(
-                get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections
-            )
+            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
         if isinstance(exc_info.value, ResolveToolError):
             assert isinstance(exc_info.value.inner_exception, inner_class)
         assert error_msg == exc_info.value.message
@@ -174,13 +172,9 @@ class TestValidation:
             ),
         ],
     )
-    def test_executor_create_failure_type(
-        self, flow_folder, yml_file, error_class, inner_class, dev_connections
-    ):
+    def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):
         with pytest.raises(error_class) as e:
-            FlowExecutor.create(
-                get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections
-            )
+            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
         if isinstance(e.value, ResolveToolError):
             assert isinstance(e.value.inner_exception, inner_class)
 
@@ -193,19 +187,11 @@ class TestValidation:
             ),
         ],
     )
-    def test_node_topology_in_order(
-        self, ordered_flow_folder, unordered_flow_folder, dev_connections
-    ):
-        ordered_executor = FlowExecutor.create(
-            get_yaml_file(ordered_flow_folder), dev_connections
-        )
-        unordered_executor = FlowExecutor.create(
-            get_yaml_file(unordered_flow_folder), dev_connections
-        )
+    def test_node_topology_in_order(self, ordered_flow_folder, unordered_flow_folder, dev_connections):
+        ordered_executor = FlowExecutor.create(get_yaml_file(ordered_flow_folder), dev_connections)
+        unordered_executor = FlowExecutor.create(get_yaml_file(unordered_flow_folder), dev_connections)
 
-        for node1, node2 in zip(
-            ordered_executor._flow.nodes, unordered_executor._flow.nodes
-        ):
+        for node1, node2 in zip(ordered_executor._flow.nodes, unordered_executor._flow.nodes):
             assert node1.name == node2.name
 
     @pytest.mark.parametrize(
@@ -218,13 +204,9 @@ class TestValidation:
             ("wrong_provider", ResolveToolError, APINotFound),
         ],
     )
-    def test_invalid_flow_dag(
-        self, flow_folder, error_class, inner_class, dev_connections
-    ):
+    def test_invalid_flow_dag(self, flow_folder, error_class, inner_class, dev_connections):
         with pytest.raises(error_class) as e:
-            FlowExecutor.create(
-                get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections
-            )
+            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
         if isinstance(e.value, ResolveToolError):
             assert isinstance(e.value.inner_exception, inner_class)
 
@@ -236,13 +218,9 @@ class TestValidation:
             ("python_tool_with_simple_image_without_default", {}, InputNotFound),
         ],
     )
-    def test_flow_run_input_type_invalid(
-        self, flow_folder, line_input, error_class, dev_connections
-    ):
+    def test_flow_run_input_type_invalid(self, flow_folder, line_input, error_class, dev_connections):
         # Flow run -  the input is from get_partial_line_inputs()
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder, FLOW_ROOT), dev_connections
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         with pytest.raises(error_class):
             executor.exec_line(line_input)
 
@@ -262,12 +240,8 @@ class TestValidation:
             ),
         ],
     )
-    def test_flow_run_execution_errors(
-        self, flow_folder, line_input, error_class, error_msg, dev_connections
-    ):
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections
-        )
+    def test_flow_run_execution_errors(self, flow_folder, line_input, error_class, error_msg, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
         # For now, there exception is designed to be swallowed in executor. But Run Info would have the error details
         res = executor.exec_line(line_input)
         assert error_msg == res.run_info.error["message"]
@@ -471,6 +445,4 @@ class TestValidation:
                 )
                 assert batch_result.total_lines == 1
                 assert batch_result.failed_lines == 1
-                assert error_class.__name__ in json.dumps(
-                    batch_result.error_summary.error_list[0].error
-                )
+                assert error_class.__name__ in json.dumps(batch_result.error_summary.error_list[0].error)

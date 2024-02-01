@@ -77,30 +77,23 @@ class ExperimentInput(YAMLTranslatableMixin):
             ValueType.OBJECT,
             ValueType.BOOL,
         ]
-        value_type: ValueType = next(
-            (i for i in supported_types if typ.lower() == i.value.lower()), None
-        )
+        value_type: ValueType = next((i for i in supported_types if typ.lower() == i.value.lower()), None)
         if value_type is None:
-            raise ExperimentValueError(
-                f"Unknown experiment input type {typ!r}, supported are {supported_types}."
-            )
+            raise ExperimentValueError(f"Unknown experiment input type {typ!r}, supported are {supported_types}.")
         return (
             value_type.value,
             value_type.parse(default) if default is not None else None,
         )
 
     @classmethod
-    def _load_from_dict(
-        cls, data: Dict, context: Dict, additional_message: str = None, **kwargs
-    ):
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
         # Override this to avoid 'type' got pop out
         schema_cls = cls._get_schema_cls()
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
             raise UserErrorException(
-                f"Load experiment input failed with {str(e)}."
-                f"{(additional_message or '')}."
+                f"Load experiment input failed with {str(e)}." f"{(additional_message or '')}."
             ) from e
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
@@ -153,9 +146,7 @@ class FlowNode(YAMLTranslatableMixin):
         Path(target).mkdir(parents=True, exist_ok=True)
         flow = load_flow(source=self.path)
         saved_flow_path = Path(target) / self.name
-        with _merge_local_code_and_additional_includes(
-            code_path=flow.code
-        ) as resolved_flow_dir:
+        with _merge_local_code_and_additional_includes(code_path=flow.code) as resolved_flow_dir:
             remove_additional_includes(Path(resolved_flow_dir))
             shutil.copytree(src=resolved_flow_dir, dst=saved_flow_path)
         logger.debug(f"Flow source saved to {saved_flow_path}.")
@@ -243,9 +234,7 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
             BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent if yaml_path else Path("./"),
             PARAMS_OVERRIDE_KEY: params_override,
         }
-        logger.debug(
-            f"Loading class object with data {data}, params_override {params_override}, context {context}."
-        )
+        logger.debug(f"Loading class object with data {data}, params_override {params_override}, context {context}.")
         exp = cls._load_from_dict(
             data=data,
             context=context,
@@ -266,16 +255,13 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
             return str(uuid.uuid4())
 
     @classmethod
-    def _load_from_dict(
-        cls, data: Dict, context: Dict, additional_message: str = None, **kwargs
-    ):
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
         schema_cls = cls._get_schema_cls()
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
             raise UserErrorException(
-                f"Load experiment template failed with {str(e)}."
-                f"{(additional_message or '')}."
+                f"Load experiment template failed with {str(e)}." f"{(additional_message or '')}."
             ) from e
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
@@ -287,9 +273,7 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
         return {BASE_PATH_CONTEXT_KEY: self._base_path}
 
     @classmethod
-    def _create_validation_error(
-        cls, message: str, no_personal_data_message: str
-    ) -> Exception:
+    def _create_validation_error(cls, message: str, no_personal_data_message: str) -> Exception:
         return ExperimentValidationError(
             message=message,
             no_personal_data_message=no_personal_data_message,
@@ -326,9 +310,7 @@ class Experiment(ExperimentTemplate):
         self.last_start_time = kwargs.get("last_start_time", None)
         self.last_end_time = kwargs.get("last_end_time", None)
         self.is_archived = kwargs.get("is_archived", False)
-        self._output_dir = (
-            Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_EXP_DIR_NAME / self.name
-        )
+        self._output_dir = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_EXP_DIR_NAME / self.name
         super().__init__(nodes, name=self.name, data=data, inputs=inputs, **kwargs)
 
     @classmethod
@@ -361,9 +343,7 @@ class Experiment(ExperimentTemplate):
 
     def _append_node_run(self, node_name, run: Run):
         """Append node run to experiment."""
-        if node_name not in self.node_runs or not isinstance(
-            self.node_runs[node_name], list
-        ):
+        if node_name not in self.node_runs or not isinstance(self.node_runs[node_name], list):
             self.node_runs[node_name] = []
         # TODO: Review this
         self.node_runs[node_name].append({"name": run.name, "status": run.status})

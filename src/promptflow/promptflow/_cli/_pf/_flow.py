@@ -285,14 +285,10 @@ def init_flow(args):
     else:
         # Create an example flow
         print("Creating flow from scratch...")
-        _init_flow_by_template(
-            args.flow, args.type, args.yes, args.connection, args.deployment
-        )
+        _init_flow_by_template(args.flow, args.type, args.yes, args.connection, args.deployment)
 
 
-def _init_existing_flow(
-    flow_name, entry=None, function=None, prompt_params: dict = None
-):
+def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dict = None):
     flow_path = Path(flow_name).resolve()
     if not function:
         logger.error("--function must be specified when --entry is specified.")
@@ -328,46 +324,29 @@ def _init_existing_flow(
     meta_dir.mkdir(parents=True, exist_ok=True)
     tools.generate_to_file(meta_dir / "flow.tools.json")
     # Create flow.dag.yaml
-    FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file(
-        "flow.dag.yaml"
-    )
-    copy_extra_files(
-        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
-    )
+    FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file("flow.dag.yaml")
+    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
     print(f"Done. Generated flow in folder: {flow_path.resolve()}.")
 
 
 def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
     from promptflow._sdk._configuration import Configuration
 
-    example_flow_path = (
-        Path(__file__).parent.parent / "data" / "chat_flow" / "flow_files"
-    )
+    example_flow_path = Path(__file__).parent.parent / "data" / "chat_flow" / "flow_files"
     for item in list(example_flow_path.iterdir()):
         _copy_to_flow(flow_path=flow_path, source_file=item)
 
     # Generate flow.dag.yaml to chat flow.
     connection = connection or DEFAULT_CONNECTION
     deployment = deployment or DEFAULT_DEPLOYMENT
-    ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(
-        flow_path / "flow.dag.yaml"
-    )
+    ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(flow_path / "flow.dag.yaml")
     # When customer not configure the remote connection provider, create connection yaml to chat flow.
-    is_local_connection = (
-        Configuration.get_instance().get_connection_provider()
-        == ConnectionProvider.LOCAL
-    )
+    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProvider.LOCAL
     if is_local_connection:
-        OpenAIConnectionGenerator(connection=connection).generate_to_file(
-            flow_path / "openai.yaml"
-        )
-        AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(
-            flow_path / "azure_openai.yaml"
-        )
+        OpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "openai.yaml")
+        AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "azure_openai.yaml")
 
-    copy_extra_files(
-        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
-    )
+    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
 
     print(f"Done. Created chat flow folder: {flow_path.resolve()}.")
     if is_local_connection:
@@ -388,17 +367,13 @@ def _init_standard_or_evaluation_flow(flow_name, flow_path, flow_type):
     example_flow_path = Path(__file__).parent.parent / "data" / f"{flow_type}_flow"
     for item in list(example_flow_path.iterdir()):
         _copy_to_flow(flow_path=flow_path, source_file=item)
-    copy_extra_files(
-        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
-    )
+    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
     print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
     flow_test_command = f"pf flow test --flow {flow_name} --input {os.path.join(flow_name, 'data.jsonl')}"
     print(f"You can execute this command to test the flow, {flow_test_command}")
 
 
-def _init_flow_by_template(
-    flow_name, flow_type, overwrite=False, connection=None, deployment=None
-):
+def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=None, deployment=None):
     flow_path = Path(flow_name)
     if flow_path.exists():
         if not flow_path.is_dir():
@@ -420,9 +395,7 @@ def _init_flow_by_template(
             deployment=deployment,
         )
     else:
-        _init_standard_or_evaluation_flow(
-            flow_name=flow_name, flow_path=flow_path, flow_type=flow_type
-        )
+        _init_standard_or_evaluation_flow(flow_name=flow_name, flow_path=flow_path, flow_type=flow_type)
 
 
 @exception_handler("Flow test")
@@ -594,9 +567,7 @@ def _resolve_python_flow_additional_includes(source) -> Path:
         # Note: DO NOT use resolved flow path directly, as when inner logic raise exception,
         # temp dir will fail due to file occupied by other process.
         temp_flow_path = Path(tempfile.TemporaryDirectory().name)
-        shutil.copytree(
-            src=resolved_flow_path.parent, dst=temp_flow_path, dirs_exist_ok=True
-        )
+        shutil.copytree(src=resolved_flow_path.parent, dst=temp_flow_path, dirs_exist_ok=True)
 
     return temp_flow_path
 

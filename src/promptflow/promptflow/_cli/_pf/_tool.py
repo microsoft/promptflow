@@ -117,9 +117,7 @@ pf tool validate --source <path_to_tool_script>
 """  # noqa: E501
 
     def add_param_source(parser):
-        parser.add_argument(
-            "--source", type=str, help="The tool source to be used.", required=True
-        )
+        parser.add_argument("--source", type=str, help="The tool source to be used.", required=True)
 
     return activate_action(
         name="validate",
@@ -148,9 +146,7 @@ def init_tool(args):
     # Validate package/tool name
     pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*$"
     if args.package and not re.match(pattern, args.package):
-        raise ValidationException(
-            f"The package name {args.package} is a invalid identifier."
-        )
+        raise ValidationException(f"The package name {args.package} is a invalid identifier.")
     if not re.match(pattern, args.tool):
         raise ValidationException(f"The tool name {args.tool} is a invalid identifier.")
     print("Creating tool from scratch...")
@@ -183,24 +179,18 @@ def init_tool(args):
         with open(manifest_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.writelines("\n".join(set(manifest_contents)))
         # Generate package setup.py
-        SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(
-            package_path / "setup.py"
-        )
+        SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate utils.py to list meta data of tools.
-        ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(
-            script_code_path / "utils.py"
-        )
-        ToolReadmeGenerator(
-            package_name=package_name, tool_name=args.tool
-        ).generate_to_file(package_path / "README.md")
+        ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(script_code_path / "utils.py")
+        ToolReadmeGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "README.md")
     else:
         script_code_path = Path(".")
         if icon_path:
             icon_path = f'"{Path(icon_path).as_posix()}"'
     # Generate tool script
-    ToolPackageGenerator(
-        tool_name=args.tool, icon=icon_path, extra_info=extra_info
-    ).generate_to_file(script_code_path / f"{args.tool}.py")
+    ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(
+        script_code_path / f"{args.tool}.py"
+    )
     InitGenerator().generate_to_file(script_code_path / "__init__.py")
     print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
 

@@ -214,7 +214,7 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     else:
         raise ValueErrorException(
             target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+            message=f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}",
         )
 
 
@@ -458,8 +458,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
 
             if not src_path.exists():
                 raise ValueErrorException(
-                    target=ErrorTarget.CONTROL_PLANE_SDK,
-                    message=f"Unable to find additional include {item}"
+                    target=ErrorTarget.CONTROL_PLANE_SDK, message=f"Unable to find additional include {item}"
                 )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
@@ -1083,8 +1082,7 @@ def get_connection_operation(connection_provider: str, credential=None, user_age
             connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
         raise ValueErrorException(
-            target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=f"Unsupported connection provider: {connection_provider}"
+            target=ErrorTarget.CONTROL_PLANE_SDK, message=f"Unsupported connection provider: {connection_provider}"
         )
     return connection_operation
 

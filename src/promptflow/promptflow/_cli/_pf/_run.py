@@ -41,9 +41,7 @@ from promptflow.exceptions import ValidationException
 
 
 def add_run_parser(subparsers):
-    run_parser = subparsers.add_parser(
-        "run", description="A CLI tool to manage runs for prompt flow.", help="pf run"
-    )
+    run_parser = subparsers.add_parser("run", description="A CLI tool to manage runs for prompt flow.", help="pf run")
     subparsers = run_parser.add_subparsers()
     add_run_create(subparsers)
     # add_run_cancel(subparsers)
@@ -143,14 +141,11 @@ pf run create --source <path-to-run-folder>
         parser.add_argument(
             "--data",
             type=str,
-            help="Local path to the data file."
-            "If --file is provided, this path should be relative path to the file.",
+            help="Local path to the data file." "If --file is provided, this path should be relative path to the file.",
         )
 
     def add_param_source(parser):
-        parser.add_argument(
-            "--source", type=str, help="Local path to the existing run record folder."
-        )
+        parser.add_argument("--source", type=str, help="Local path to the existing run record folder.")
 
     add_run_create_common(subparsers, [add_param_data, add_param_source], epilog=epilog)
 
@@ -441,9 +436,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "show":
         show_run(name=args.name)
     elif args.sub_action == "show-details":
-        show_run_details(
-            name=args.name, max_results=args.max_results, all_results=args.all_results
-        )
+        show_run_details(name=args.name, max_results=args.max_results, all_results=args.all_results)
     elif args.sub_action == "show-metrics":
         show_run_metrics(name=args.name)
     elif args.sub_action == "visualize":
@@ -460,9 +453,7 @@ def dispatch_run_commands(args: argparse.Namespace):
         raise ValueErrorException(f"Unrecognized command: {args.sub_action}")
 
 
-def _parse_metadata_args(
-    params: List[Dict[str, str]]
-) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
+def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
     display_name, description, tags = None, None, {}
     for param in params:
         for k, v in param.items():
@@ -521,9 +512,7 @@ def list_runs(
         max_results = None
     runs = pf_client.runs.list(
         max_results=max_results,
-        list_view_type=get_list_view_type(
-            archived_only=archived_only, include_archived=include_archived
-        ),
+        list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     # hide additional info and debug info in run list for better user experience
     parser = lambda run: run._to_dict(exclude_additional_info=True, exclude_debug_info=True)  # noqa: E731
@@ -546,9 +535,7 @@ def show_run(name: str) -> None:
 @exception_handler("Show run details")
 def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
-    details = pf_client.runs.get_details(
-        name=name, max_results=max_results, all_results=all_results
-    )
+    details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
     pretty_print_dataframe_as_table(details)
 
 
@@ -595,9 +582,7 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
 def create_run(create_func: Callable, args):
     file = args.file
     flow = args.flow
-    run_source = getattr(
-        args, "source", None
-    )  # source is only available for pf args, not pfazure.
+    run_source = getattr(args, "source", None)  # source is only available for pf args, not pfazure.
     data = args.data
     column_mapping = args.column_mapping
     variant = args.variant
@@ -655,9 +640,7 @@ def create_run(create_func: Callable, args):
         }
         run = Run._load_from_source(source=run_source, params_override=processed_params)
     else:
-        raise ValidationException(
-            "To create a run, one of [file, flow, source] must be specified."
-        )
+        raise ValidationException("To create a run, one of [file, flow, source] must be specified.")
     run = create_func(run=run, stream=stream)
     if stream:
         print("\n")  # change new line to show run info

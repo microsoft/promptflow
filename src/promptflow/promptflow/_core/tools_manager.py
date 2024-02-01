@@ -140,9 +140,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 if isinstance(keys, set) and identifier not in keys:
                     continue
                 m = tool["module"]
-                module = importlib.import_module(
-                    m
-                )  # Import the module to make sure it is valid
+                module = importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 assign_tool_input_index_for_ux_order_if_needed(tool)
@@ -166,9 +164,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                             entry_point.dist.version,
                         )
                         all_package_connection_specs[identifier] = connection_spec
-                        all_package_connection_templates[
-                            identifier
-                        ] = generate_custom_strong_type_connection_template(
+                        all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
                             cls,
                             connection_spec,
                             entry_point.dist.metadata["Name"],
@@ -207,17 +203,13 @@ def retrieve_tool_func_result(
     try:
         result = func(**combined_func_input_params)
     except Exception as e:
-        raise RetrieveToolFuncResultError(
-            f"Error when calling function {func_path}: {e}"
-        )
+        raise RetrieveToolFuncResultError(f"Error when calling function {func_path}: {e}")
 
     validate_tool_func_result(func_call_scenario, result)
     return result
 
 
-def gen_dynamic_list(
-    func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}
-):
+def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
@@ -255,14 +247,10 @@ class BuiltinsManager:
         tool: Tool,
         node_inputs: Optional[dict] = None,
     ) -> Tuple[Callable, dict]:
-        return BuiltinsManager._load_package_tool(
-            tool.name, tool.module, tool.class_name, tool.function, node_inputs
-        )
+        return BuiltinsManager._load_package_tool(tool.name, tool.module, tool.class_name, tool.function, node_inputs)
 
     @staticmethod
-    def _load_package_tool(
-        tool_name, module_name, class_name, method_name, node_inputs
-    ):
+    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs):
         module = importlib.import_module(module_name)
         return BuiltinsManager._load_tool_from_module(
             module, tool_name, module_name, class_name, method_name, node_inputs
@@ -299,9 +287,7 @@ class BuiltinsManager:
                     target=ErrorTarget.EXECUTOR,
                 )
             init_inputs_values[k] = v.value
-        missing_inputs = set(provider_class.get_required_initialize_inputs()) - set(
-            init_inputs_values
-        )
+        missing_inputs = set(provider_class.get_required_initialize_inputs()) - set(init_inputs_values)
         if missing_inputs:
             raise MissingRequiredInputs(
                 message=f"Required inputs {list(missing_inputs)} are not provided for tool '{tool_name}'.",
@@ -326,19 +312,13 @@ class BuiltinsManager:
             return None
         return BuiltinsManager._load_llm_api(api_name)
 
-    def load_prompt_with_api(
-        self, tool: Tool, api: Tool, node_inputs: Optional[dict] = None
-    ) -> Tuple[Callable, dict]:
+    def load_prompt_with_api(self, tool: Tool, api: Tool, node_inputs: Optional[dict] = None) -> Tuple[Callable, dict]:
         """Load a prompt template tool with action."""
         # Load provider action function
         api_func, init_inputs = self.load_builtin(api, node_inputs)
         # Find the prompt template parameter name and parse tool code to it.
         prompt_tpl_param_name = get_prompt_param_name_from_func(api_func)
-        api_func = (
-            partial(api_func, **{prompt_tpl_param_name: tool.code})
-            if prompt_tpl_param_name
-            else api_func
-        )
+        api_func = partial(api_func, **{prompt_tpl_param_name: tool.code}) if prompt_tpl_param_name else api_func
         # Return the init_inputs to update node inputs in the afterward steps
         return api_func, init_inputs
 
@@ -359,9 +339,7 @@ class BuiltinsManager:
     @staticmethod
     def is_builtin(tool: Tool) -> bool:
         """Check if the tool is a builtin tool."""
-        return (
-            tool.type == ToolType.PYTHON and tool.code is None and tool.source is None
-        )
+        return tool.type == ToolType.PYTHON and tool.code is None and tool.source is None
 
     @staticmethod
     def is_llm(tool: Tool) -> bool:
@@ -416,14 +394,10 @@ class ToolsManager:
     @staticmethod
     def _load_custom_tool(tool: Tool, node_name: str) -> Callable:
         func_name = tool.function or tool.name
-        if (
-            tool.source and Path(tool.source).exists()
-        ):  # If source file is provided, load the function from the file
+        if tool.source and Path(tool.source).exists():  # If source file is provided, load the function from the file
             m = load_python_module_from_file(tool.source)
             if m is None:
-                raise CustomToolSourceLoadError(
-                    f"Cannot load module from source {tool.source} for node {node_name}."
-                )
+                raise CustomToolSourceLoadError(f"Cannot load module from source {tool.source} for node {node_name}.")
             return getattr(m, func_name)
         if not tool.code:
             raise EmptyCodeInCustomTool(f"Missing code in node {node_name}.")
@@ -432,24 +406,16 @@ class ToolsManager:
             f_globals = {}
             exec(func_code, f_globals)
         except Exception as e:
-            raise CustomPythonToolLoadError(
-                f"Error when loading code of node {node_name}: {e}"
-            ) from e
+            raise CustomPythonToolLoadError(f"Error when loading code of node {node_name}: {e}") from e
         if func_name not in f_globals:
-            raise MissingTargetFunction(
-                f"Cannot find function {func_name} in the code of node {node_name}."
-            )
+            raise MissingTargetFunction(f"Cannot find function {func_name} in the code of node {node_name}.")
         return f_globals[func_name]
 
 
 class ToolLoader:
-    def __init__(
-        self, working_dir: str, package_tool_keys: Optional[List[str]] = None
-    ) -> None:
+    def __init__(self, working_dir: str, package_tool_keys: Optional[List[str]] = None) -> None:
         self._working_dir = working_dir
-        self._package_tools = (
-            collect_package_tools(package_tool_keys) if package_tool_keys else {}
-        )
+        self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
         # Used to handle backward compatibility of tool ID changes.
         self._deprecated_tools = _find_deprecated_tools(self._package_tools)
 
@@ -464,20 +430,16 @@ class ToolLoader:
                 _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedErrorException(
-                f"Tool source type {node.source.type} "
-                f"for python tool is not supported yet."
+                f"Tool source type {node.source.type} " f"for python tool is not supported yet."
             )
         elif node.type == ToolType.CUSTOM_LLM:
             if node.source.type == ToolSourceType.PackageWithPrompt:
                 return self.load_tool_for_package_node(node)
             raise NotImplementedErrorException(
-                f"Tool source type {node.source.type} "
-                f"for custom_llm tool is not supported yet."
+                f"Tool source type {node.source.type} " f"for custom_llm tool is not supported yet."
             )
         else:
-            raise NotImplementedErrorException(
-                f"Tool type {node.type} is not supported yet."
-            )
+            raise NotImplementedErrorException(f"Tool type {node.type} is not supported yet.")
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
         if node.source.tool in self._package_tools:
@@ -488,9 +450,7 @@ class ToolLoader:
         if node.source.tool in self._deprecated_tools:
             new_tool_id = self._deprecated_tools[node.source.tool]
             # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(
-                f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
-            )
+            module_logger.warning(f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead.")
             return Tool.deserialize(self._package_tools[new_tool_id])
 
         raise PackageToolNotFoundError(
@@ -535,17 +495,13 @@ def _register(provider_cls, collection, type):
     from promptflow._core.tool import ToolProvider
 
     if not issubclass(provider_cls, ToolProvider):
-        raise ValidationException(
-            f"Class {provider_cls.__name__!r} must be a subclass of promptflow.ToolProvider."
-        )
+        raise ValidationException(f"Class {provider_cls.__name__!r} must be a subclass of promptflow.ToolProvider.")
     initialize_inputs = provider_cls.get_initialize_inputs()
     # Build tool/provider definition
     for name, value in provider_cls.__dict__.items():
         if hasattr(value, "__original_function"):
             name = value.__original_function.__qualname__
-            value.__tool = function_to_tool_definition(
-                value, type=type, initialize_inputs=initialize_inputs
-            )
+            value.__tool = function_to_tool_definition(value, type=type, initialize_inputs=initialize_inputs)
             collection[name] = value.__tool
             module_logger.debug(f"Registered {name} as a builtin function")
     # Get the connection type - provider name mapping for execution use
@@ -556,9 +512,7 @@ def _register(provider_cls, collection, type):
         annotation_type_name = param.annotation.__name__
         if annotation_type_name in connections:
             api_name = provider_cls.__name__
-            module_logger.debug(
-                f"Add connection type {annotation_type_name} to api {api_name} mapping"
-            )
+            module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
             connection_type_to_api_mapping[annotation_type_name] = api_name
             break
 
@@ -587,11 +541,7 @@ def register_api_method(provider_method):
 
 
 def register_connections(connection_classes: Union[type, List[type]]):
-    connection_classes = (
-        [connection_classes]
-        if not isinstance(connection_classes, list)
-        else connection_classes
-    )
+    connection_classes = [connection_classes] if not isinstance(connection_classes, list) else connection_classes
     connections.update({cls.__name__: cls for cls in connection_classes})
 
 

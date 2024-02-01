@@ -50,36 +50,27 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
-                raise TypeErrorException(
-                    message=f"Referenced run must be a Run instance, got {type(run.run)}"
-                )
+                raise TypeErrorException(message=f"Referenced run must be a Run instance, got {type(run.run)}")
             else:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
                 raise ValueErrorException(
-                    message=f"Referenced run {run.run.name} "
-                    f"is not completed, got status {run.run.status}"
+                    message=f"Referenced run {run.run.name} " f"is not completed, got status {run.run.status}"
                 )
             run.run.outputs = self.run_operations._get_outputs(run.run)
         self._validate_inputs(run=run)
 
-        local_storage = LocalStorageOperations(
-            run, stream=stream, run_mode=RunMode.Batch
-        )
+        local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
             flow_obj = load_flow(source=run.flow)
-            with variant_overwrite_context(
-                flow_obj, tuning_node, variant, connections=run.connections
-            ) as flow:
+            with variant_overwrite_context(flow_obj, tuning_node, variant, connections=run.connections) as flow:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
     def _validate_inputs(cls, run: Run):
         if not run.run and not run.data:
-            raise ValidationException(
-                message="Either run or data must be specified for flow run."
-            )
+            raise ValidationException(message="Either run or data must be specified for flow run.")
 
     def _submit_bulk_run(
         self,
@@ -96,10 +87,8 @@ class RunSubmitter:
                 connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
-        run.environment_variables = (
-            SubmitterHelper.load_and_resolve_environment_variables(
-                flow=flow, environment_variables=run.environment_variables
-            )
+        run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=flow, environment_variables=run.environment_variables
         )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
@@ -134,12 +123,8 @@ class RunSubmitter:
                 )
             if batch_result.error_summary.aggr_error_dict:
                 # log warning message when there are failed aggregation nodes in bulk run.
-                aggregation_nodes = list(
-                    batch_result.error_summary.aggr_error_dict.keys()
-                )
-                error_logs.append(
-                    f"aggregation nodes {aggregation_nodes} failed in batch run."
-                )
+                aggregation_nodes = list(batch_result.error_summary.aggr_error_dict.keys())
+                error_logs.append(f"aggregation nodes {aggregation_nodes} failed in batch run.")
             # update error log
             if error_logs and run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
                 error_logs.append(
@@ -151,9 +136,7 @@ class RunSubmitter:
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
-            logger.warning(
-                f"Run {run.name} failed when executing in executor with exception {e}."
-            )
+            logger.warning(f"Run {run.name} failed when executing in executor with exception {e}.")
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):
@@ -169,9 +152,7 @@ class RunSubmitter:
             # exceptions
             local_storage.dump_exception(exception=exception, batch_result=batch_result)
             # system metrics: token related
-            system_metrics = (
-                batch_result.system_metrics.to_dict() if batch_result else {}
-            )
+            system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
             self.run_operations.update(
                 name=run.name,
@@ -197,9 +178,7 @@ class RunSubmitter:
         if not column_mapping:
             return
         if not isinstance(column_mapping, dict):
-            raise ValidationException(
-                f"Column mapping must be a dict, got {type(column_mapping)}."
-            )
+            raise ValidationException(f"Column mapping must be a dict, got {type(column_mapping)}.")
         all_static = True
         for v in column_mapping.values():
             if isinstance(v, str) and v.startswith("$"):

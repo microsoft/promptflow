@@ -299,8 +299,7 @@ class FlowOperations(TelemetryMixin):
             from streamlit.web import cli as st_cli
         except ImportError as ex:
             raise UserErrorException(
-                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}.",
-                error=ex
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}.", error=ex
             )
         sys.argv = [
             "streamlit",
@@ -519,8 +518,7 @@ class FlowOperations(TelemetryMixin):
             import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
-                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}.",
-                error=ex
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}.", error=ex
             )
 
         from promptflow.contracts.flow import Flow as ExecutableFlow
