@@ -403,36 +403,3 @@ def trace(func: Callable = None) -> Callable:
     """
 
     return _traced(func, trace_type=TraceType.FUNCTION)
-
-
-def entry_trace(func: Callable = None) -> Callable:
-    """Decorator that adds trace to a function."""
-
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        # extract inputs args and output args
-        inputs = kwargs.get("inputs")
-        if inputs is None and len(args) > 1:
-            inputs = args[1]  # assuming inputs is the second argument
-        with open_telemetry_tracer.start_as_current_span(func.__name__) as span:
-            # enrich span with input
-            span.set_attributes(
-                {
-                    "framework": "promptflow",
-                    "span_type": TraceType.FLOW.value,
-                    "function": func.__name__,
-                    "inputs": serialize_attribute(inputs),
-                }
-            )
-            # invoke function
-            result = func(*args, **kwargs)
-            # extract output from result
-            output = result.output
-            # enrich span with output
-            span.set_attribute("output", serialize_attribute(output))
-            # set status
-            span.set_status(StatusCode.OK)
-            # return result
-            return result
-
-    return wrapped
