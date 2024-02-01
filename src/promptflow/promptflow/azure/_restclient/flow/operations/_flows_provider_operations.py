@@ -7,7 +7,13 @@ import functools
 from typing import TYPE_CHECKING
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import HttpResponse
 from azure.core.rest import HttpRequest
@@ -20,7 +26,8 @@ from .._vendor import _convert_request, _format_url_section
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Callable, Dict, Generic, Optional, TypeVar
-    T = TypeVar('T')
+
+    T = TypeVar("T")
     ClsType = Optional[Callable[[PipelineResponse[HttpRequest, HttpResponse], T, Dict[str, Any]], Any]]
 
 _SERIALIZER = Serializer()
@@ -94,6 +101,7 @@ def build_get_updated_entity_ids_for_workspace_request(
         **kwargs
     )
 
+
 # fmt: on
 class FlowsProviderOperations(object):
     """FlowsProviderOperations operations.
@@ -142,16 +150,14 @@ class FlowsProviderOperations(object):
         :rtype: ~flow.models.UnversionedEntityResponseDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.UnversionedEntityResponseDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedEntityRequestDto')
+            _json = self._serialize.body(body, "UnversionedEntityRequestDto")
         else:
             _json = None
 
@@ -161,7 +167,7 @@ class FlowsProviderOperations(object):
             workspace_name=workspace_name,
             content_type=content_type,
             json=_json,
-            template_url=self.get_index_entity_by_id.metadata['url'],
+            template_url=self.get_index_entity_by_id.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -174,15 +180,14 @@ class FlowsProviderOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedEntityResponseDto', pipeline_response)
+        deserialized = self._deserialize("UnversionedEntityResponseDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_index_entity_by_id.metadata = {'url': '/flow/v1.0/flows/getIndexEntities'}  # type: ignore
-
+    get_index_entity_by_id.metadata = {"url": "/flow/v1.0/flows/getIndexEntities"}  # type: ignore
 
     @distributed_trace
     def get_updated_entity_ids_for_workspace(
@@ -209,16 +214,14 @@ class FlowsProviderOperations(object):
         :rtype: ~flow.models.UnversionedRebuildResponseDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.UnversionedRebuildResponseDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedRebuildIndexDto')
+            _json = self._serialize.body(body, "UnversionedRebuildIndexDto")
         else:
             _json = None
 
@@ -228,7 +231,7 @@ class FlowsProviderOperations(object):
             workspace_name=workspace_name,
             content_type=content_type,
             json=_json,
-            template_url=self.get_updated_entity_ids_for_workspace.metadata['url'],
+            template_url=self.get_updated_entity_ids_for_workspace.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -241,12 +244,11 @@ class FlowsProviderOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedRebuildResponseDto', pipeline_response)
+        deserialized = self._deserialize("UnversionedRebuildResponseDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_updated_entity_ids_for_workspace.metadata = {'url': '/flow/v1.0/flows/rebuildIndex'}  # type: ignore
-
+    get_updated_entity_ids_for_workspace.metadata = {"url": "/flow/v1.0/flows/rebuildIndex"}  # type: ignore

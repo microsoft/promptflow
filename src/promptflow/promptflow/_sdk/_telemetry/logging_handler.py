@@ -22,7 +22,6 @@ def get_appinsights_log_handler():
     from promptflow._sdk._telemetry.telemetry import is_telemetry_enabled
 
     try:
-
         config = Configuration.get_instance()
         instrumentation_key = INSTRUMENTATION_KEY
         custom_properties = {

@@ -127,7 +127,7 @@ class ToolOperations:
             else:
                 invalid_tool_count = invalid_tool_count + 1
                 tool_validate_result.merge_with(validate_result)
-        for (f, initialize_inputs) in tool_methods:
+        for f, initialize_inputs in tool_methods:
             tool, input_settings, extra_info = self._parse_tool_from_func(f, initialize_inputs)
             construct_tool, validate_result = self._serialize_tool(tool, input_settings, extra_info, f)
             if validate_result.passed:
@@ -374,8 +374,10 @@ class ToolOperations:
                             elif isinstance(v, list):
                                 tool_inputs[input_name][k].append(v)
                             else:
-                                logger.debug(f"InputSetting {k} of {input_name} will be overwrite from"
-                                             f" {tool_inputs[input_name][k]} to {v}.")
+                                logger.debug(
+                                    f"InputSetting {k} of {input_name} will be overwrite from"
+                                    f" {tool_inputs[input_name][k]} to {v}."
+                                )
                                 tool_inputs[input_name][k] = v
                         else:
                             tool_inputs[input_name][k] = v
@@ -462,6 +464,7 @@ class ToolOperations:
         :return: a validation result object
         :rtype: ValidationResult
         """
+
         def validate_tool_function(tool_func, init_inputs=None):
             tool, input_settings, extra_info = self._parse_tool_from_func(tool_func, init_inputs)
             _, validate_result = self._serialize_tool(tool, input_settings, extra_info, source)

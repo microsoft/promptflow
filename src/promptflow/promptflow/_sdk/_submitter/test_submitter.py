@@ -372,7 +372,6 @@ class TestSubmitterViaProxy(TestSubmitter):
         stream_output: bool = True,
         **kwargs,
     ):
-
         from promptflow._constants import LINE_NUMBER_KEY
 
         if not connections:

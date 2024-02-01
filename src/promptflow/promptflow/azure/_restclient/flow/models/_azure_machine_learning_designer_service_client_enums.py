@@ -10,15 +10,14 @@ from azure.core import CaseInsensitiveEnumMeta
 
 
 class ActionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
     SEND_VALIDATION_REQUEST = "SendValidationRequest"
     GET_VALIDATION_STATUS = "GetValidationStatus"
     SUBMIT_BULK_RUN = "SubmitBulkRun"
     LOG_RUN_RESULT = "LogRunResult"
     LOG_RUN_TERMINATED_EVENT = "LogRunTerminatedEvent"
 
-class AetherArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LITERAL = "Literal"
     PARAMETER = "Parameter"
     INPUT = "Input"
@@ -26,8 +25,8 @@ class AetherArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     NESTED_LIST = "NestedList"
     STRING_INTERPOLATION_LIST = "StringInterpolationList"
 
-class AetherAssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherAssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     URI_FILE = "UriFile"
     URI_FOLDER = "UriFolder"
     ML_TABLE = "MLTable"
@@ -36,14 +35,14 @@ class AetherAssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TRITON_MODEL = "TritonModel"
     OPEN_AI_MODEL = "OpenAIModel"
 
-class AetherBuildSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherBuildSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CLOUD_BUILD = "CloudBuild"
     VSO = "Vso"
     VSO_GIT = "VsoGit"
 
-class AetherComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BATCH_AI = "BatchAi"
     MLC = "MLC"
     HDI_CLUSTER = "HdiCluster"
@@ -51,26 +50,26 @@ class AetherComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATABRICKS = "Databricks"
     AISC = "Aisc"
 
-class AetherControlFlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherControlFlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     DO_WHILE = "DoWhile"
     PARALLEL_FOR = "ParallelFor"
 
-class AetherControlInputValue(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherControlInputValue(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     FALSE = "False"
     TRUE = "True"
     SKIPPED = "Skipped"
 
-class AetherDataCopyMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDataCopyMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MERGE_WITH_OVERWRITE = "MergeWithOverwrite"
     FAIL_IF_CONFLICT = "FailIfConflict"
 
-class AetherDataLocationStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDataLocationStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COSMOS = "Cosmos"
     AZURE_BLOB = "AzureBlob"
     ARTIFACT = "Artifact"
@@ -78,8 +77,8 @@ class AetherDataLocationStorageType(with_metaclass(CaseInsensitiveEnumMeta, str,
     SAVED_AML_DATASET = "SavedAmlDataset"
     ASSET = "Asset"
 
-class AetherDataReferenceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDataReferenceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     AZURE_BLOB = "AzureBlob"
     AZURE_DATA_LAKE = "AzureDataLake"
@@ -94,13 +93,13 @@ class AetherDataReferenceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     CUSTOM = "Custom"
     HDFS = "Hdfs"
 
-class AetherDatasetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDatasetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FILE = "File"
     TABULAR = "Tabular"
 
-class AetherDataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     MOUNT = "Mount"
     DOWNLOAD = "Download"
@@ -109,68 +108,68 @@ class AetherDataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     HDFS = "Hdfs"
     LINK = "Link"
 
-class AetherDataTransferStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDataTransferStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATA_BASE = "DataBase"
     FILE_SYSTEM = "FileSystem"
 
-class AetherDataTransferTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherDataTransferTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     IMPORT_DATA = "ImportData"
     EXPORT_DATA = "ExportData"
     COPY_DATA = "CopyData"
 
-class AetherEarlyTerminationPolicyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherEarlyTerminationPolicyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BANDIT = "Bandit"
     MEDIAN_STOPPING = "MedianStopping"
     TRUNCATION_SELECTION = "TruncationSelection"
 
-class AetherEntityStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherEntityStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ACTIVE = "Active"
     DEPRECATED = "Deprecated"
     DISABLED = "Disabled"
 
-class AetherExecutionEnvironment(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherExecutionEnvironment(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EXE_WORKER_MACHINE = "ExeWorkerMachine"
     DOCKER_CONTAINER_WITHOUT_NETWORK = "DockerContainerWithoutNetwork"
     DOCKER_CONTAINER_WITH_NETWORK = "DockerContainerWithNetwork"
     HYPER_V_WITHOUT_NETWORK = "HyperVWithoutNetwork"
     HYPER_V_WITH_NETWORK = "HyperVWithNetwork"
 
-class AetherExecutionPhase(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherExecutionPhase(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EXECUTION = "Execution"
     INITIALIZATION = "Initialization"
     FINALIZATION = "Finalization"
 
-class AetherFeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherFeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
     OFF = "Off"
 
-class AetherFileBasedPathType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherFileBasedPathType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNKNOWN = "Unknown"
     FILE = "File"
     FOLDER = "Folder"
 
-class AetherForecastHorizonMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherForecastHorizonMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class AetherIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     USER_IDENTITY = "UserIdentity"
     MANAGED = "Managed"
     AML_TOKEN = "AMLToken"
 
-class AetherLogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherLogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_SET = "NotSet"
     DEBUG = "Debug"
     INFO = "Info"
@@ -178,37 +177,37 @@ class AetherLogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ERROR = "Error"
     CRITICAL = "Critical"
 
-class AetherModuleDeploymentSource(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherModuleDeploymentSource(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CLIENT = "Client"
     AUTO_DEPLOYMENT = "AutoDeployment"
     VSTS = "Vsts"
 
-class AetherModuleHashVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherModuleHashVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     IDENTIFIER_HASH = "IdentifierHash"
     IDENTIFIER_HASH_V2 = "IdentifierHashV2"
 
-class AetherModuleType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherModuleType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     BATCH_INFERENCING = "BatchInferencing"
 
-class AetherNCrossValidationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherNCrossValidationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class AetherParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INT = "Int"
     DOUBLE = "Double"
     BOOL = "Bool"
     STRING = "String"
     UNDEFINED = "Undefined"
 
-class AetherParameterValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherParameterValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LITERAL = "Literal"
     GRAPH_PARAMETER_NAME = "GraphParameterName"
     CONCATENATE = "Concatenate"
@@ -216,8 +215,8 @@ class AetherParameterValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum
     DATA_PATH = "DataPath"
     DATA_SET_DEFINITION = "DataSetDefinition"
 
-class AetherPrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherPrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUC_WEIGHTED = "AUCWeighted"
     ACCURACY = "Accuracy"
     NORM_MACRO_RECALL = "NormMacroRecall"
@@ -231,44 +230,44 @@ class AetherPrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MEAN_AVERAGE_PRECISION = "MeanAveragePrecision"
     IOU = "Iou"
 
-class AetherRepositoryType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherRepositoryType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     OTHER = "Other"
     GIT = "Git"
     SOURCE_DEPOT = "SourceDepot"
     COSMOS = "Cosmos"
 
-class AetherResourceOperator(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherResourceOperator(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EQUAL = "Equal"
     CONTAIN = "Contain"
     GREATER_OR_EQUAL = "GreaterOrEqual"
 
-class AetherResourceValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherResourceValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STRING = "String"
     DOUBLE = "Double"
 
-class AetherSamplingAlgorithmType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherSamplingAlgorithmType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     RANDOM = "Random"
     GRID = "Grid"
     BAYESIAN = "Bayesian"
 
-class AetherSeasonalityMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherSeasonalityMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class AetherShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     PAD = "Pad"
     DROP = "Drop"
 
-class AetherStackMetaLearnerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherStackMetaLearnerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     LOGISTIC_REGRESSION = "LogisticRegression"
     LOGISTIC_REGRESSION_CV = "LogisticRegressionCV"
@@ -278,8 +277,8 @@ class AetherStackMetaLearnerType(with_metaclass(CaseInsensitiveEnumMeta, str, En
     LIGHT_GBM_REGRESSOR = "LightGBMRegressor"
     LINEAR_REGRESSION = "LinearRegression"
 
-class AetherStoredProcedureParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherStoredProcedureParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STRING = "String"
     INT = "Int"
     DECIMAL = "Decimal"
@@ -287,31 +286,31 @@ class AetherStoredProcedureParameterType(with_metaclass(CaseInsensitiveEnumMeta,
     BOOLEAN = "Boolean"
     DATE = "Date"
 
-class AetherTabularTrainingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherTabularTrainingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DISTRIBUTED = "Distributed"
     NON_DISTRIBUTED = "NonDistributed"
     AUTO = "Auto"
 
-class AetherTargetAggregationFunction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherTargetAggregationFunction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SUM = "Sum"
     MAX = "Max"
     MIN = "Min"
     MEAN = "Mean"
 
-class AetherTargetLagsMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherTargetLagsMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
+
 
 class AetherTargetRollingWindowSizeMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class AetherTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CLASSIFICATION = "Classification"
     REGRESSION = "Regression"
     FORECASTING = "Forecasting"
@@ -324,21 +323,21 @@ class AetherTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TEXT_NER = "TextNER"
     TEXT_CLASSIFICATION_MULTILABEL = "TextClassificationMultilabel"
 
-class AetherTrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherTrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     METRICS = "Metrics"
     MODEL = "Model"
 
-class AetherUIScriptLanguageEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherUIScriptLanguageEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     PYTHON = "Python"
     R = "R"
     JSON = "Json"
     SQL = "Sql"
 
-class AetherUIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherUIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT = "Default"
     MODE = "Mode"
     COLUMN_PICKER = "ColumnPicker"
@@ -356,20 +355,20 @@ class AetherUIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum))
     PROMPT_FLOW_CONNECTION_SELECTION = "PromptFlowConnectionSelection"
     AZURE_OPEN_AI_DEPLOYMENT_NAME_SELECTION = "AzureOpenAIDeploymentNameSelection"
 
-class AetherUploadState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherUploadState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UPLOADING = "Uploading"
     COMPLETED = "Completed"
     CANCELED = "Canceled"
     FAILED = "Failed"
 
-class AetherUseStl(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AetherUseStl(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SEASON = "Season"
     SEASON_TREND = "SeasonTrend"
 
-class AEVAAssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AEVAAssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     URI_FILE = "UriFile"
     URI_FOLDER = "UriFolder"
     ML_TABLE = "MLTable"
@@ -378,8 +377,8 @@ class AEVAAssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TRITON_MODEL = "TritonModel"
     OPEN_AI_MODEL = "OpenAIModel"
 
-class AEVADataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AEVADataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     MOUNT = "Mount"
     DOWNLOAD = "Download"
@@ -388,14 +387,14 @@ class AEVADataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     HDFS = "Hdfs"
     LINK = "Link"
 
-class AEVAIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AEVAIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     USER_IDENTITY = "UserIdentity"
     MANAGED = "Managed"
     AML_TOKEN = "AMLToken"
 
-class ApplicationEndpointType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ApplicationEndpointType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     JUPYTER = "Jupyter"
     JUPYTER_LAB = "JupyterLab"
     SSH = "SSH"
@@ -406,8 +405,8 @@ class ApplicationEndpointType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     CUSTOM = "Custom"
     RAY_DASHBOARD = "RayDashboard"
 
-class ArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LITERAL = "Literal"
     PARAMETER = "Parameter"
     INPUT = "Input"
@@ -415,23 +414,23 @@ class ArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NESTED_LIST = "NestedList"
     STRING_INTERPOLATION_LIST = "StringInterpolationList"
 
-class AssetScopeTypes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AssetScopeTypes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WORKSPACE = "Workspace"
     GLOBAL_ENUM = "Global"
     ALL = "All"
     FEED = "Feed"
 
-class AssetSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AssetSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNKNOWN = "Unknown"
     LOCAL = "Local"
     GITHUB_FILE = "GithubFile"
     GITHUB_FOLDER = "GithubFolder"
     DEVOPS_ARTIFACTS_ZIP = "DevopsArtifactsZip"
 
-class AssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COMPONENT = "Component"
     MODEL = "Model"
     ENVIRONMENT = "Environment"
@@ -444,18 +443,18 @@ class AssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FLOW_SAMPLE = "FlowSample"
     FLOW_RUNTIME_SPEC = "FlowRuntimeSpec"
 
-class AutoDeleteCondition(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class AutoDeleteCondition(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CREATED_GREATER_THAN = "CreatedGreaterThan"
     LAST_ACCESSED_GREATER_THAN = "LastAccessedGreaterThan"
 
-class BuildContextLocationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class BuildContextLocationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GIT = "Git"
     STORAGE_ACCOUNT = "StorageAccount"
 
-class Communicator(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class Communicator(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     PARAMETER_SERVER = "ParameterServer"
     GLOO = "Gloo"
@@ -463,21 +462,21 @@ class Communicator(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NCCL = "Nccl"
     PARALLEL_TASK = "ParallelTask"
 
-class ComponentRegistrationTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ComponentRegistrationTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NORMAL = "Normal"
     ANONYMOUS_AML_MODULE = "AnonymousAmlModule"
     ANONYMOUS_AML_MODULE_VERSION = "AnonymousAmlModuleVersion"
     MODULE_ENTITY_ONLY = "ModuleEntityOnly"
 
-class ComponentType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ComponentType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNKNOWN = "Unknown"
     COMMAND_COMPONENT = "CommandComponent"
     COMMAND = "Command"
 
-class ComputeEnvironmentType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ComputeEnvironmentType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ACI = "ACI"
     AKS = "AKS"
     AMLCOMPUTE = "AMLCOMPUTE"
@@ -490,8 +489,8 @@ class ComputeEnvironmentType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum))
     BATCHAMLCOMPUTE = "BATCHAMLCOMPUTE"
     UNKNOWN = "UNKNOWN"
 
-class ComputeTargetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ComputeTargetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LOCAL = "Local"
     REMOTE = "Remote"
     HDI_CLUSTER = "HdiCluster"
@@ -506,8 +505,8 @@ class ComputeTargetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATABRICKS = "Databricks"
     MOCKED_COMPUTE = "MockedCompute"
 
-class ComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BATCH_AI = "BatchAi"
     MLC = "MLC"
     HDI_CLUSTER = "HdiCluster"
@@ -515,13 +514,13 @@ class ComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATABRICKS = "Databricks"
     AISC = "Aisc"
 
-class ConfigValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ConfigValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STRING = "String"
     SECRET = "Secret"
 
-class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PYTHON_FEED = "PythonFeed"
     ACR = "ACR"
     GIT = "Git"
@@ -620,18 +619,18 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ZOHO = "Zoho"
     GENERIC_CONTAINER_REGISTRY = "GenericContainerRegistry"
 
-class ConnectionScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ConnectionScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     USER = "User"
     WORKSPACE_SHARED = "WorkspaceShared"
 
-class ConnectionSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ConnectionSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NODE = "Node"
     NODE_INPUT = "NodeInput"
 
-class ConnectionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ConnectionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     OPEN_AI = "OpenAI"
     AZURE_OPEN_AI = "AzureOpenAI"
     SERP = "Serp"
@@ -646,27 +645,27 @@ class ConnectionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEAVIATE = "Weaviate"
     FORM_RECOGNIZER = "FormRecognizer"
 
-class ConsumeMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ConsumeMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     REFERENCE = "Reference"
     COPY = "Copy"
     COPY_AND_AUTO_UPGRADE = "CopyAndAutoUpgrade"
 
-class ControlFlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ControlFlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     DO_WHILE = "DoWhile"
     PARALLEL_FOR = "ParallelFor"
 
-class ControlInputValue(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ControlInputValue(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     FALSE = "False"
     TRUE = "True"
     SKIPPED = "Skipped"
 
-class DataBindingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataBindingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MOUNT = "Mount"
     DOWNLOAD = "Download"
     UPLOAD = "Upload"
@@ -676,19 +675,19 @@ class DataBindingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EVAL_MOUNT = "EvalMount"
     EVAL_DOWNLOAD = "EvalDownload"
 
-class DataCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ALL = "All"
     DATASET = "Dataset"
     MODEL = "Model"
 
-class DataCopyMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataCopyMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MERGE_WITH_OVERWRITE = "MergeWithOverwrite"
     FAIL_IF_CONFLICT = "FailIfConflict"
 
-class DataLocationStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataLocationStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     AZURE_BLOB = "AzureBlob"
     ARTIFACT = "Artifact"
@@ -696,13 +695,13 @@ class DataLocationStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     SAVED_AML_DATASET = "SavedAmlDataset"
     ASSET = "Asset"
 
-class DataPortType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataPortType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INPUT = "Input"
     OUTPUT = "Output"
 
-class DataReferenceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataReferenceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     AZURE_BLOB = "AzureBlob"
     AZURE_DATA_LAKE = "AzureDataLake"
@@ -715,8 +714,8 @@ class DataReferenceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CUSTOM = "Custom"
     HDFS = "Hdfs"
 
-class DatasetAccessModes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DatasetAccessModes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT = "Default"
     DATASET_IN_DPV2 = "DatasetInDpv2"
     ASSET_IN_DPV2 = "AssetInDpv2"
@@ -729,30 +728,30 @@ class DatasetAccessModes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ASSET_IN_DPV2_WITH_ASSET_IN_DESIGNER_UI = "AssetInDpv2WithAssetInDesignerUI"
     ASSET = "Asset"
 
-class DatasetConsumptionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DatasetConsumptionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     RUN_INPUT = "RunInput"
     REFERENCE = "Reference"
 
-class DatasetDeliveryMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DatasetDeliveryMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DIRECT = "Direct"
     MOUNT = "Mount"
     DOWNLOAD = "Download"
     HDFS = "Hdfs"
 
-class DatasetOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DatasetOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     RUN_OUTPUT = "RunOutput"
     REFERENCE = "Reference"
 
-class DatasetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DatasetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FILE = "File"
     TABULAR = "Tabular"
 
-class DataSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     PIPELINE_DATA_SOURCE = "PipelineDataSource"
     AML_DATASET = "AmlDataset"
@@ -762,114 +761,114 @@ class DataSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AML_DATA_VERSION = "AmlDataVersion"
     AML_MODEL_VERSION = "AMLModelVersion"
 
-class DataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataStoreMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MOUNT = "Mount"
     DOWNLOAD = "Download"
     UPLOAD = "Upload"
 
-class DataTransferStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataTransferStorageType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATA_BASE = "DataBase"
     FILE_SYSTEM = "FileSystem"
 
-class DataTransferTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataTransferTaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     IMPORT_DATA = "ImportData"
     EXPORT_DATA = "ExportData"
     COPY_DATA = "CopyData"
 
-class DataTypeMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DataTypeMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ERROR_WHEN_NOT_EXISTING = "ErrorWhenNotExisting"
     REGISTER_WHEN_NOT_EXISTING = "RegisterWhenNotExisting"
     REGISTER_BUILDIN_DATA_TYPE_ONLY = "RegisterBuildinDataTypeOnly"
 
-class DeliveryMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DeliveryMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DIRECT = "Direct"
     MOUNT = "Mount"
     DOWNLOAD = "Download"
     HDFS = "Hdfs"
 
-class DistributionParameterEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DistributionParameterEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TEXT = "Text"
     NUMBER = "Number"
 
-class DistributionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class DistributionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PY_TORCH = "PyTorch"
     TENSOR_FLOW = "TensorFlow"
     MPI = "Mpi"
     RAY = "Ray"
 
-class EarlyTerminationPolicyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class EarlyTerminationPolicyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BANDIT = "Bandit"
     MEDIAN_STOPPING = "MedianStopping"
     TRUNCATION_SELECTION = "TruncationSelection"
 
-class EmailNotificationEnableType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class EmailNotificationEnableType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     JOB_COMPLETED = "JobCompleted"
     JOB_FAILED = "JobFailed"
     JOB_CANCELLED = "JobCancelled"
 
-class EndpointAuthMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class EndpointAuthMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AML_TOKEN = "AMLToken"
     KEY = "Key"
     AAD_TOKEN = "AADToken"
 
-class EntityKind(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class EntityKind(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INVALID = "Invalid"
     LINEAGE_ROOT = "LineageRoot"
     VERSIONED = "Versioned"
     UNVERSIONED = "Unversioned"
 
-class EntityStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class EntityStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ACTIVE = "Active"
     DEPRECATED = "Deprecated"
     DISABLED = "Disabled"
 
-class ErrorHandlingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ErrorHandlingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT_INTERPOLATION = "DefaultInterpolation"
     CUSTOMER_FACING_INTERPOLATION = "CustomerFacingInterpolation"
 
-class ExecutionPhase(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ExecutionPhase(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EXECUTION = "Execution"
     INITIALIZATION = "Initialization"
     FINALIZATION = "Finalization"
 
-class FeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
     OFF = "Off"
 
-class FlowFeatureStateEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowFeatureStateEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     READY = "Ready"
     E2_E_TEST = "E2ETest"
 
-class FlowLanguage(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowLanguage(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PYTHON = "Python"
     C_SHARP = "CSharp"
 
-class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ARCHIVE_FLOW = "ArchiveFlow"
     RESTORE_FLOW = "RestoreFlow"
     EXPORT_FLOW_TO_FILE = "ExportFlowToFile"
 
-class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FLOW = "Flow"
     SINGLE_NODE = "SingleNode"
     FROM_NODE = "FromNode"
@@ -877,38 +876,38 @@ class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EVAL = "Eval"
     PAIRWISE_EVAL = "PairwiseEval"
 
-class FlowRuntimeSubmissionApiVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowRuntimeSubmissionApiVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     VERSION1 = "Version1"
     VERSION2 = "Version2"
 
-class FlowRunTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowRunTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FLOW_RUN = "FlowRun"
     EVALUATION_RUN = "EvaluationRun"
     PAIRWISE_EVALUATION_RUN = "PairwiseEvaluationRun"
     SINGLE_NODE_RUN = "SingleNodeRun"
     FROM_NODE_RUN = "FromNodeRun"
 
-class FlowTestMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowTestMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SYNC = "Sync"
     ASYNC_ENUM = "Async"
 
-class FlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class FlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT = "Default"
     EVALUATION = "Evaluation"
     CHAT = "Chat"
     RAG = "Rag"
 
-class ForecastHorizonMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ForecastHorizonMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class Framework(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class Framework(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PYTHON = "Python"
     PY_SPARK = "PySpark"
     CNTK = "Cntk"
@@ -917,27 +916,27 @@ class Framework(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PY_SPARK_INTERACTIVE = "PySparkInteractive"
     R = "R"
 
-class Frequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class Frequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MONTH = "Month"
     WEEK = "Week"
     DAY = "Day"
     HOUR = "Hour"
     MINUTE = "Minute"
 
-class GlobalJobDispatcherSupportedComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class GlobalJobDispatcherSupportedComputeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AML_COMPUTE = "AmlCompute"
     AML_K8_S = "AmlK8s"
 
-class GraphComponentsMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class GraphComponentsMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NORMAL = "Normal"
     ALL_DESIGNER_BUILDIN = "AllDesignerBuildin"
     CONTAINS_DESIGNER_BUILDIN = "ContainsDesignerBuildin"
 
-class GraphDatasetsLoadModes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class GraphDatasetsLoadModes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SKIP_DATASETS_LOAD = "SkipDatasetsLoad"
     V1_REGISTERED_DATASET = "V1RegisteredDataset"
     V1_SAVED_DATASET = "V1SavedDataset"
@@ -949,14 +948,14 @@ class GraphDatasetsLoadModes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum))
     ALL_REGISTERED_DATA = "AllRegisteredData"
     ALL_DATA = "AllData"
 
-class GraphSdkCodeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class GraphSdkCodeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PYTHON = "Python"
     JUPYTER_NOTEBOOK = "JupyterNotebook"
     UNKNOWN = "Unknown"
 
-class HttpStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class HttpStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CONTINUE_ENUM = "Continue"
     SWITCHING_PROTOCOLS = "SwitchingProtocols"
     PROCESSING = "Processing"
@@ -1024,24 +1023,24 @@ class HttpStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_EXTENDED = "NotExtended"
     NETWORK_AUTHENTICATION_REQUIRED = "NetworkAuthenticationRequired"
 
-class IdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class IdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MANAGED = "Managed"
     SERVICE_PRINCIPAL = "ServicePrincipal"
     AML_TOKEN = "AMLToken"
 
-class InputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class InputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT = "default"
     UIONLY_HIDDEN = "uionly_hidden"
 
-class IntellectualPropertyAccessMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class IntellectualPropertyAccessMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     READ_ONLY = "ReadOnly"
     READ_WRITE = "ReadWrite"
 
-class JobInputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class JobInputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATASET = "Dataset"
     URI = "Uri"
     LITERAL = "Literal"
@@ -1052,13 +1051,13 @@ class JobInputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ML_FLOW_MODEL = "MLFlowModel"
     TRITON_MODEL = "TritonModel"
 
-class JobLimitsType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class JobLimitsType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COMMAND = "Command"
     SWEEP = "Sweep"
 
-class JobOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class JobOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     URI = "Uri"
     DATASET = "Dataset"
     URI_FILE = "UriFile"
@@ -1068,15 +1067,15 @@ class JobOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ML_FLOW_MODEL = "MLFlowModel"
     TRITON_MODEL = "TritonModel"
 
-class JobProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class JobProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SUCCEEDED = "Succeeded"
     FAILED = "Failed"
     CANCELED = "Canceled"
     IN_PROGRESS = "InProgress"
 
-class JobStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class JobStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_STARTED = "NotStarted"
     STARTING = "Starting"
     PROVISIONING = "Provisioning"
@@ -1093,8 +1092,8 @@ class JobStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNKNOWN = "Unknown"
     SCHEDULED = "Scheduled"
 
-class JobType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class JobType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COMMAND = "Command"
     SWEEP = "Sweep"
     LABELING = "Labeling"
@@ -1104,19 +1103,19 @@ class JobType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SPARK = "Spark"
     BASE = "Base"
 
-class KeyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class KeyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PRIMARY = "Primary"
     SECONDARY = "Secondary"
 
-class ListViewType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ListViewType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ACTIVE_ONLY = "ActiveOnly"
     ARCHIVED_ONLY = "ArchivedOnly"
     ALL = "All"
 
-class LogLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class LogLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TRACE = "Trace"
     DEBUG = "Debug"
     INFORMATION = "Information"
@@ -1125,8 +1124,8 @@ class LogLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CRITICAL = "Critical"
     NONE = "None"
 
-class LogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class LogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_SET = "NotSet"
     DEBUG = "Debug"
     INFO = "Info"
@@ -1134,23 +1133,23 @@ class LogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ERROR = "Error"
     CRITICAL = "Critical"
 
-class LongRunningUpdateType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class LongRunningUpdateType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ENABLE_MODULE = "EnableModule"
     DISABLE_MODULE = "DisableModule"
     UPDATE_DISPLAY_NAME = "UpdateDisplayName"
     UPDATE_DESCRIPTION = "UpdateDescription"
     UPDATE_TAGS = "UpdateTags"
 
-class ManagedServiceIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ManagedServiceIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SYSTEM_ASSIGNED = "SystemAssigned"
     USER_ASSIGNED = "UserAssigned"
     SYSTEM_ASSIGNED_USER_ASSIGNED = "SystemAssignedUserAssigned"
     NONE = "None"
 
-class MetricValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class MetricValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INT = "Int"
     DOUBLE = "Double"
     STRING = "String"
@@ -1159,29 +1158,29 @@ class MetricValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     HISTOGRAM = "Histogram"
     MALFORMED = "Malformed"
 
-class MfeInternalIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class MfeInternalIdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MANAGED = "Managed"
     AML_TOKEN = "AMLToken"
     USER_IDENTITY = "UserIdentity"
 
-class MfeInternalMLFlowAutologgerState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class MfeInternalMLFlowAutologgerState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ENABLED = "Enabled"
     DISABLED = "Disabled"
+
 
 class MfeInternalScheduleStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
     ENABLED = "Enabled"
     DISABLED = "Disabled"
+
 
 class MLFlowAutologgerState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
     ENABLED = "Enabled"
     DISABLED = "Disabled"
 
-class ModuleDtoFields(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleDtoFields(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFINITION = "Definition"
     YAML_STR = "YamlStr"
     REGISTRATION_CONTEXT = "RegistrationContext"
@@ -1192,16 +1191,16 @@ class ModuleDtoFields(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BASIC = "Basic"
     MINIMAL = "Minimal"
 
-class ModuleInfoFromYamlStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleInfoFromYamlStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NEW_MODULE = "NewModule"
     NEW_VERSION = "NewVersion"
     CONFLICT = "Conflict"
     PARSE_ERROR = "ParseError"
     PROCESS_REQUEST_ERROR = "ProcessRequestError"
 
-class ModuleRunSettingTypes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleRunSettingTypes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ALL = "All"
     RELEASED = "Released"
     DEFAULT = "Default"
@@ -1213,8 +1212,8 @@ class ModuleRunSettingTypes(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UX_INTEGRATION = "UxIntegration"
     FULL = "Full"
 
-class ModuleScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ALL = "All"
     GLOBAL_ENUM = "Global"
     WORKSPACE = "Workspace"
@@ -1225,8 +1224,8 @@ class ModuleScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     REGISTRY = "Registry"
     SYSTEM_AUTO_CREATED = "SystemAutoCreated"
 
-class ModuleSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNKNOWN = "Unknown"
     LOCAL = "Local"
     GITHUB_FILE = "GithubFile"
@@ -1234,13 +1233,13 @@ class ModuleSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEVOPS_ARTIFACTS_ZIP = "DevopsArtifactsZip"
     SERIALIZED_MODULE_INFO = "SerializedModuleInfo"
 
-class ModuleType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     BATCH_INFERENCING = "BatchInferencing"
 
-class ModuleUpdateOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleUpdateOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SET_DEFAULT_VERSION = "SetDefaultVersion"
     ENABLE_MODULE = "EnableModule"
     DISABLE_MODULE = "DisableModule"
@@ -1248,50 +1247,50 @@ class ModuleUpdateOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enu
     UPDATE_DESCRIPTION = "UpdateDescription"
     UPDATE_TAGS = "UpdateTags"
 
-class ModuleWorkingMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ModuleWorkingMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NORMAL = "Normal"
     OUTPUT_TO_DATASET = "OutputToDataset"
 
-class NCrossValidationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class NCrossValidationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class NodeCompositionMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class NodeCompositionMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     ONLY_SEQUENTIAL = "OnlySequential"
     FULL = "Full"
 
-class NodesValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class NodesValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ALL = "All"
     CUSTOM = "Custom"
 
-class Orientation(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class Orientation(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     HORIZONTAL = "Horizontal"
     VERTICAL = "Vertical"
 
-class OutputMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class OutputMechanism(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UPLOAD = "Upload"
     MOUNT = "Mount"
     HDFS = "Hdfs"
     LINK = "Link"
     DIRECT = "Direct"
 
-class ParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INT = "Int"
     DOUBLE = "Double"
     BOOL = "Bool"
     STRING = "String"
     UNDEFINED = "Undefined"
 
-class ParameterValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ParameterValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LITERAL = "Literal"
     GRAPH_PARAMETER_NAME = "GraphParameterName"
     CONCATENATE = "Concatenate"
@@ -1299,14 +1298,14 @@ class ParameterValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATA_PATH = "DataPath"
     DATA_SET_DEFINITION = "DataSetDefinition"
 
-class PipelineDraftMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class PipelineDraftMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     NORMAL = "Normal"
     CUSTOM = "Custom"
 
-class PipelineRunStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class PipelineRunStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_STARTED = "NotStarted"
     RUNNING = "Running"
     FAILED = "Failed"
@@ -1315,8 +1314,8 @@ class PipelineRunStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     QUEUED = "Queued"
     CANCEL_REQUESTED = "CancelRequested"
 
-class PipelineStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class PipelineStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_STARTED = "NotStarted"
     IN_DRAFT = "InDraft"
     PREPARING = "Preparing"
@@ -1327,15 +1326,15 @@ class PipelineStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     THROTTLED = "Throttled"
     UNKNOWN = "Unknown"
 
-class PipelineType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class PipelineType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TRAINING_PIPELINE = "TrainingPipeline"
     REAL_TIME_INFERENCE_PIPELINE = "RealTimeInferencePipeline"
     BATCH_INFERENCE_PIPELINE = "BatchInferencePipeline"
     UNKNOWN = "Unknown"
 
-class PortAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class PortAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PROMOTE = "Promote"
     VIEW_IN_DATA_STORE = "ViewInDataStore"
     VISUALIZE = "Visualize"
@@ -1344,8 +1343,8 @@ class PortAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     REGISTER_MODEL = "RegisterModel"
     PROMOTE_AS_TABULAR = "PromoteAsTabular"
 
-class PrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class PrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUC_WEIGHTED = "AUCWeighted"
     ACCURACY = "Accuracy"
     NORM_MACRO_RECALL = "NormMacroRecall"
@@ -1359,8 +1358,8 @@ class PrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MEAN_AVERAGE_PRECISION = "MeanAveragePrecision"
     IOU = "Iou"
 
-class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNKNOWN = "Unknown"
     UPDATING = "Updating"
     CREATING = "Creating"
@@ -1370,8 +1369,8 @@ class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FAILED = "Failed"
     CANCELED = "Canceled"
 
-class RealTimeEndpointInternalStepCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RealTimeEndpointInternalStepCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ABOUT_TO_DEPLOY = "AboutToDeploy"
     WAIT_AKS_COMPUTE_READY = "WaitAksComputeReady"
     REGISTER_MODELS = "RegisterModels"
@@ -1387,34 +1386,34 @@ class RealTimeEndpointInternalStepCode(with_metaclass(CaseInsensitiveEnumMeta, s
     DELETE_MODEL = "DeleteModel"
     DELETE_SERVICE_RECORD = "DeleteServiceRecord"
 
-class RealTimeEndpointOpCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RealTimeEndpointOpCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CREATE = "Create"
     UPDATE = "Update"
     DELETE = "Delete"
 
-class RealTimeEndpointOpStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RealTimeEndpointOpStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ONGOING = "Ongoing"
     SUCCEEDED = "Succeeded"
     FAILED = "Failed"
     SUCCEEDED_WITH_WARNING = "SucceededWithWarning"
 
-class RecurrenceFrequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RecurrenceFrequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MINUTE = "Minute"
     HOUR = "Hour"
     DAY = "Day"
     WEEK = "Week"
     MONTH = "Month"
 
-class RunDisplayNameGenerationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RunDisplayNameGenerationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO_APPEND = "AutoAppend"
     USER_PROVIDED_MACRO = "UserProvidedMacro"
 
-class RunSettingParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RunSettingParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNDEFINED = "Undefined"
     INT = "Int"
     DOUBLE = "Double"
@@ -1424,8 +1423,8 @@ class RunSettingParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     YAML_STRING = "YamlString"
     STRING_LIST = "StringList"
 
-class RunSettingUIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RunSettingUIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT = "Default"
     COMPUTE_SELECTION = "ComputeSelection"
     JSON_EDITOR = "JsonEditor"
@@ -1442,8 +1441,8 @@ class RunSettingUIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, En
     CONNECTION = "Connection"
     STATIC = "Static"
 
-class RunStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RunStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_STARTED = "NotStarted"
     UNAPPROVED = "Unapproved"
     PAUSING = "Pausing"
@@ -1458,35 +1457,35 @@ class RunStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FAILED = "Failed"
     CANCELED = "Canceled"
 
-class RuntimeStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RuntimeStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UNAVAILABLE = "Unavailable"
     FAILED = "Failed"
     NOT_EXIST = "NotExist"
     STARTING = "Starting"
     STOPPING = "Stopping"
 
-class RuntimeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RuntimeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MANAGED_ONLINE_ENDPOINT = "ManagedOnlineEndpoint"
     COMPUTE_INSTANCE = "ComputeInstance"
     TRAINING_SESSION = "TrainingSession"
 
-class RunType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class RunType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     HTTP = "HTTP"
     SDK = "SDK"
     SCHEDULE = "Schedule"
     PORTAL = "Portal"
 
-class SamplingAlgorithmType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class SamplingAlgorithmType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     RANDOM = "Random"
     GRID = "Grid"
     BAYESIAN = "Bayesian"
 
-class ScheduleProvisioningStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ScheduleProvisioningStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CREATING = "Creating"
     UPDATING = "Updating"
     DELETING = "Deleting"
@@ -1494,66 +1493,66 @@ class ScheduleProvisioningStatus(with_metaclass(CaseInsensitiveEnumMeta, str, En
     FAILED = "Failed"
     CANCELED = "Canceled"
 
-class ScheduleStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ScheduleStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ENABLED = "Enabled"
     DISABLED = "Disabled"
 
-class ScheduleType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ScheduleType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CRON = "Cron"
     RECURRENCE = "Recurrence"
 
-class ScopeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ScopeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GLOBAL_ENUM = "Global"
     TENANT = "Tenant"
     SUBSCRIPTION = "Subscription"
     RESOURCE_GROUP = "ResourceGroup"
     WORKSPACE = "Workspace"
 
-class ScriptType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ScriptType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PYTHON = "Python"
     NOTEBOOK = "Notebook"
 
-class SeasonalityMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class SeasonalityMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class Section(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class Section(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GALLERY = "Gallery"
     TEMPLATE = "Template"
 
-class SessionSetupModeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class SessionSetupModeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CLIENT_WAIT = "ClientWait"
     SYSTEM_WAIT = "SystemWait"
 
-class SetupFlowSessionAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class SetupFlowSessionAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INSTALL = "Install"
     RESET = "Reset"
     UPDATE = "Update"
     DELETE = "Delete"
 
-class SeverityLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class SeverityLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CRITICAL = "Critical"
     ERROR = "Error"
     WARNING = "Warning"
     INFO = "Info"
 
-class ShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     PAD = "Pad"
     DROP = "Drop"
 
-class StackMetaLearnerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class StackMetaLearnerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     LOGISTIC_REGRESSION = "LogisticRegression"
     LOGISTIC_REGRESSION_CV = "LogisticRegressionCV"
@@ -1563,14 +1562,14 @@ class StackMetaLearnerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LIGHT_GBM_REGRESSOR = "LightGBMRegressor"
     LINEAR_REGRESSION = "LinearRegression"
 
-class StorageAuthType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class StorageAuthType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MSI = "MSI"
     CONNECTION_STRING = "ConnectionString"
     SAS = "SAS"
 
-class StoredProcedureParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class StoredProcedureParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STRING = "String"
     INT = "Int"
     DECIMAL = "Decimal"
@@ -1578,36 +1577,36 @@ class StoredProcedureParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, 
     BOOLEAN = "Boolean"
     DATE = "Date"
 
-class SuccessfulCommandReturnCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class SuccessfulCommandReturnCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ZERO = "Zero"
     ZERO_OR_GREATER = "ZeroOrGreater"
 
-class TabularTrainingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TabularTrainingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DISTRIBUTED = "Distributed"
     NON_DISTRIBUTED = "NonDistributed"
     AUTO = "Auto"
 
-class TargetAggregationFunction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TargetAggregationFunction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SUM = "Sum"
     MAX = "Max"
     MIN = "Min"
     MEAN = "Mean"
 
-class TargetLagsMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TargetLagsMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
+
 
 class TargetRollingWindowSizeMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class TaskCreationOptions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TaskCreationOptions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     PREFER_FAIRNESS = "PreferFairness"
     LONG_RUNNING = "LongRunning"
@@ -1616,8 +1615,8 @@ class TaskCreationOptions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     HIDE_SCHEDULER = "HideScheduler"
     RUN_CONTINUATIONS_ASYNCHRONOUSLY = "RunContinuationsAsynchronously"
 
-class TaskStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TaskStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CREATED = "Created"
     WAITING_FOR_ACTIVATION = "WaitingForActivation"
     WAITING_TO_RUN = "WaitingToRun"
@@ -1627,8 +1626,8 @@ class TaskStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CANCELED = "Canceled"
     FAULTED = "Faulted"
 
-class TaskStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TaskStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NOT_STARTED = "NotStarted"
     QUEUED = "Queued"
     RUNNING = "Running"
@@ -1638,8 +1637,8 @@ class TaskStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PARTIALLY_EXECUTED = "PartiallyExecuted"
     BYPASSED = "Bypassed"
 
-class TaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CLASSIFICATION = "Classification"
     REGRESSION = "Regression"
     FORECASTING = "Forecasting"
@@ -1652,20 +1651,20 @@ class TaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TEXT_NER = "TextNER"
     TEXT_CLASSIFICATION_MULTILABEL = "TextClassificationMultilabel"
 
-class ToolFuncCallScenario(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ToolFuncCallScenario(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GENERATED_BY = "generated_by"
     REVERSE_GENERATED_BY = "reverse_generated_by"
     DYNAMIC_LIST = "dynamic_list"
 
-class ToolState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ToolState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STABLE = "Stable"
     PREVIEW = "Preview"
     DEPRECATED = "Deprecated"
 
-class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LLM = "llm"
     PYTHON = "python"
     ACTION = "action"
@@ -1673,25 +1672,25 @@ class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CUSTOM_LLM = "custom_llm"
     CSHARP = "csharp"
 
-class TrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     METRICS = "Metrics"
     MODEL = "Model"
 
-class TriggerOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TriggerOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CREATE = "Create"
     UPDATE = "Update"
     DELETE = "Delete"
     CREATE_OR_UPDATE = "CreateOrUpdate"
 
-class TriggerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class TriggerType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     RECURRENCE = "Recurrence"
     CRON = "Cron"
 
-class UIInputDataDeliveryMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class UIInputDataDeliveryMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     READ_ONLY_MOUNT = "Read-only mount"
     READ_WRITE_MOUNT = "Read-write mount"
     DOWNLOAD = "Download"
@@ -1700,16 +1699,16 @@ class UIInputDataDeliveryMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     EVALUATE_DOWNLOAD = "Evaluate download"
     HDFS = "Hdfs"
 
-class UIScriptLanguageEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class UIScriptLanguageEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     PYTHON = "Python"
     R = "R"
     JSON = "Json"
     SQL = "Sql"
 
-class UIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class UIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEFAULT = "Default"
     MODE = "Mode"
     COLUMN_PICKER = "ColumnPicker"
@@ -1727,32 +1726,32 @@ class UIWidgetTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PROMPT_FLOW_CONNECTION_SELECTION = "PromptFlowConnectionSelection"
     AZURE_OPEN_AI_DEPLOYMENT_NAME_SELECTION = "AzureOpenAIDeploymentNameSelection"
 
-class UploadState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class UploadState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     UPLOADING = "Uploading"
     COMPLETED = "Completed"
     CANCELED = "Canceled"
     FAILED = "Failed"
 
-class UserType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class UserType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     USER = "User"
     APPLICATION = "Application"
     MANAGED_IDENTITY = "ManagedIdentity"
     KEY = "Key"
 
-class UseStl(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class UseStl(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SEASON = "Season"
     SEASON_TREND = "SeasonTrend"
 
-class ValidationStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ValidationStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SUCCEEDED = "Succeeded"
     FAILED = "Failed"
 
-class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     INT = "int"
     DOUBLE = "double"
     BOOL = "bool"
@@ -1779,21 +1778,21 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FILE_PATH = "file_path"
     IMAGE = "image"
 
-class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEDICATED = "Dedicated"
     LOWPRIORITY = "Lowpriority"
 
-class WebServiceState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class WebServiceState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TRANSITIONING = "Transitioning"
     HEALTHY = "Healthy"
     UNHEALTHY = "Unhealthy"
     FAILED = "Failed"
     UNSCHEDULABLE = "Unschedulable"
 
-class Weekday(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class Weekday(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MONDAY = "Monday"
     TUESDAY = "Tuesday"
     WEDNESDAY = "Wednesday"
@@ -1801,9 +1800,9 @@ class Weekday(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FRIDAY = "Friday"
     SATURDAY = "Saturday"
     SUNDAY = "Sunday"
+
 
 class WeekDays(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
     MONDAY = "Monday"
     TUESDAY = "Tuesday"
     WEDNESDAY = "Wednesday"
@@ -1812,8 +1811,8 @@ class WeekDays(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SATURDAY = "Saturday"
     SUNDAY = "Sunday"
 
-class YarnDeployMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
+class YarnDeployMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     NONE = "None"
     CLIENT = "Client"
     CLUSTER = "Cluster"
