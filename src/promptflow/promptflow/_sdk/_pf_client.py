@@ -19,7 +19,7 @@ from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
 from .operations._tool_operations import ToolOperations
-from ..errors import FileNotFoundException, ValueErrorException
+from .._errors import FileNotFoundException, ValueErrorException
 from .operations._trace_operations import TraceOperations
 
 logger = get_cli_sdk_logger()

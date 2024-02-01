@@ -12,7 +12,7 @@ from .._utils.yaml_utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._flow import Flow
-from ..errors import FileNotFoundException, ValueErrorException
+from .._errors import FileNotFoundException, ValueErrorException
 from ..exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()

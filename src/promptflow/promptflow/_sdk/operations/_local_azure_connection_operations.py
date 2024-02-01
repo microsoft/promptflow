@@ -10,7 +10,7 @@ from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli,
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._utils.gerneral import get_arm_token
-from promptflow.errors import ValueErrorException, NotImplementedErrorException
+from promptflow._errors import ValueErrorException, NotImplementedErrorException
 
 logger = get_cli_sdk_logger()
 

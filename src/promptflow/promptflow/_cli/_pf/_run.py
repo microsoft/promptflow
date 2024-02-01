@@ -36,7 +36,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
-from promptflow.errors import ValueErrorException, NotImplementedErrorException
+from promptflow._errors import ValueErrorException, NotImplementedErrorException
 from promptflow.exceptions import ValidationException
 
 

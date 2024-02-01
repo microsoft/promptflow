@@ -17,7 +17,7 @@ from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage

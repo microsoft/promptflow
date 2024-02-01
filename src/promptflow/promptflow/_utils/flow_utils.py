@@ -10,7 +10,7 @@ from typing import Union
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.errors import FileNotFoundException
+from promptflow._errors import FileNotFoundException
 
 logger = LoggerFactory.get_logger(name=__name__)
 

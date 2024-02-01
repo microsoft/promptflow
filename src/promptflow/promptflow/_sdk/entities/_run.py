@@ -47,7 +47,7 @@ from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.errors import FileNotFoundException, TypeErrorException
+from promptflow._errors import FileNotFoundException, TypeErrorException
 from promptflow.exceptions import UserErrorException, ValidationException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {

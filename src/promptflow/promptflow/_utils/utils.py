@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 from promptflow.exceptions import ValidationException, UserErrorException
 
 T = TypeVar("T")

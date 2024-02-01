@@ -13,7 +13,7 @@ from marshmallow.utils import RAISE, resolve_field_instance
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.schemas._base import PathAwareSchema
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 # pylint: disable=unused-argument,no-self-use,protected-access
 

@@ -11,7 +11,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 from promptflow._core.tracer import _traced
 from promptflow.contracts.trace import TraceType
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"

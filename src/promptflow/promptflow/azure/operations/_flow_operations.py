@@ -43,7 +43,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
-from promptflow.errors import NotImplementedErrorException, ValueErrorException, FileNotFoundException
+from promptflow._errors import NotImplementedErrorException, ValueErrorException, FileNotFoundException
 from promptflow.exceptions import SystemErrorException
 
 logger = get_cli_sdk_logger()

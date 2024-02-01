@@ -43,7 +43,7 @@ from promptflow._sdk.schemas._experiment import (
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.tool import ValueType
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()

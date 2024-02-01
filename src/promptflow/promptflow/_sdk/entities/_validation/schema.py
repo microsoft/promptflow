@@ -10,7 +10,7 @@ import typing
 from marshmallow import Schema, ValidationError
 
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 
 from .core import MutableValidationResult, ValidationResultBuilder
 

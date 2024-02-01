@@ -14,7 +14,7 @@ from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 
 class ConnectionManager:

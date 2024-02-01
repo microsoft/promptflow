@@ -6,7 +6,7 @@ from ruamel.yaml import YAML, YAMLError
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils._errors import YamlParseError
-from promptflow.errors import FileNotFoundException
+from promptflow._errors import FileNotFoundException
 
 
 def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:

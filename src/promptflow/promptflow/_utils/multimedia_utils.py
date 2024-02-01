@@ -13,7 +13,7 @@ from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.tool import ValueType
-from promptflow.errors import TypeErrorException
+from promptflow._errors import TypeErrorException
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")

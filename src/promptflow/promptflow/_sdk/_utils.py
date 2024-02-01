@@ -67,7 +67,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()

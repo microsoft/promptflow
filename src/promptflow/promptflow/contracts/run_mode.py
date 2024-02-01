@@ -4,7 +4,7 @@
 
 from enum import Enum
 
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 
 class RunMode(str, Enum):

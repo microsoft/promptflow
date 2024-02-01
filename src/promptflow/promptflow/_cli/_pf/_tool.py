@@ -24,7 +24,7 @@ from promptflow._cli._utils import (
 from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.errors import FileNotFoundException
+from promptflow._errors import FileNotFoundException
 from promptflow.exceptions import ValidationException
 
 logger = get_cli_sdk_logger()

@@ -5,7 +5,7 @@
 from contextvars import ContextVar
 from typing import Type, TypeVar
 
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 
 T = TypeVar("T")
 

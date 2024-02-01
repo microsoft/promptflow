@@ -9,7 +9,7 @@ from typing import Callable, List
 
 from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.run_info import RunInfo
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 from promptflow.storage import AbstractCacheStorage, AbstractRunStorage
 
 PROMPTFLOW_HASH_ATTR = "__promptflow_hash_func"

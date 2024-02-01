@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from promptflow._utils.multimedia_utils import is_multimedia_dict
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 
 
 class ResourceType(Enum):

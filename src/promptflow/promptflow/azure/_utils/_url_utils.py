@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import re
 
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 
 class BulkRunURL:

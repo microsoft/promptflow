@@ -49,7 +49,7 @@ from promptflow.contracts.flow import (
     ToolSourceType,
 )
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
-from promptflow.errors import ValueErrorException, NotImplementedErrorException
+from promptflow._errors import ValueErrorException, NotImplementedErrorException
 from promptflow.exceptions import (
     ErrorTarget,
     SystemErrorException,

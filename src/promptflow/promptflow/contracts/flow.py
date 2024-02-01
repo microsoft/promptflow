@@ -20,7 +20,7 @@ from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
-from ..errors import ValueErrorException
+from .._errors import ValueErrorException
 
 logger = logging.getLogger(__name__)
 

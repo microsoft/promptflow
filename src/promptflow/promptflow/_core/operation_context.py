@@ -5,7 +5,7 @@ from contextvars import ContextVar
 from typing import Dict, Mapping
 
 from promptflow._version import VERSION
-from promptflow.errors import TypeErrorException
+from promptflow._errors import TypeErrorException
 
 
 class OperationContext(Dict):

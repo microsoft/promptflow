@@ -11,7 +11,7 @@ from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activ
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import Secret
-from promptflow.errors import ValueErrorException, FileNotFoundException
+from promptflow._errors import ValueErrorException, FileNotFoundException
 
 logger = get_cli_sdk_logger()
 

@@ -55,7 +55,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_authorization, get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
-from promptflow.errors import ValueErrorException, TypeErrorException
+from promptflow._errors import ValueErrorException, TypeErrorException
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()

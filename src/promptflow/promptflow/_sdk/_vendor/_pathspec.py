@@ -18,7 +18,7 @@ from typing import Optional
 from typing import Pattern as PatternHint
 from typing import Tuple, Union
 
-from promptflow.errors import TypeErrorException, NotImplementedErrorException
+from promptflow._errors import TypeErrorException, NotImplementedErrorException
 
 NORMALIZE_PATH_SEPS = [sep for sep in [os.sep, os.altsep] if sep and sep != posixpath.sep]
 

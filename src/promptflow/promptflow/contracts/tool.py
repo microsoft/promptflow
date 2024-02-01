@@ -12,7 +12,7 @@ from promptflow._constants import CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
 from .types import AssistantDefinition, FilePath, PromptTemplate, Secret
-from ..errors import ValueErrorException
+from .._errors import ValueErrorException
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")

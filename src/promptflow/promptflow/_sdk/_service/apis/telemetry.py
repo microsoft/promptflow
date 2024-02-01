@@ -8,7 +8,7 @@ from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
 from promptflow._sdk._telemetry import ActivityCompletionStatus, ActivityType
 from promptflow._utils.utils import camel_to_snake
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("Telemetries", description="Telemetry Management")

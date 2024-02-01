@@ -11,7 +11,7 @@ import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -111,7 +111,7 @@ class AbstractProcessManager:
 
         This method should be implemented in subclasses to provide specific health check mechanisms.
         """
-        raise NotImplementedError(
+        raise NotImplementedErrorException(
             "AbstractProcessManager is an abstract class, no implementation for end_process."
         )
 

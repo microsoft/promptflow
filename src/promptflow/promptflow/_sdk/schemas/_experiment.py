@@ -13,7 +13,7 @@ from promptflow._sdk.schemas._fields import (
     UnionField,
 )
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 
 class CommandNodeSchema(YamlFileSchema):

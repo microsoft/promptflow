@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.contracts.tool import ConnectionType
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 T = TypeVar("T")
 

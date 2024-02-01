@@ -34,7 +34,7 @@ from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.errors import RuntimeErrorException, ValueErrorException
+from promptflow._errors import RuntimeErrorException, ValueErrorException
 from promptflow.exceptions import UserErrorException
 
 

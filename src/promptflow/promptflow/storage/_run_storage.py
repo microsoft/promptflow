@@ -13,7 +13,7 @@ from promptflow._utils.multimedia_utils import (
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 
 
 class AbstractRunStorage:

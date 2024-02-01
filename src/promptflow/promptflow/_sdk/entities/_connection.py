@@ -47,7 +47,7 @@ from promptflow._sdk.schemas._connection import (
 )
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
-from promptflow.errors import ValueErrorException, KeyErrorException
+from promptflow._errors import ValueErrorException, KeyErrorException
 from promptflow.exceptions import ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)

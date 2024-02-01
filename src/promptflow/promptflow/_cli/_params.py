@@ -5,7 +5,7 @@
 import argparse
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50

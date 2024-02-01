@@ -35,7 +35,7 @@ from promptflow.contracts.flow import (
 )
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
-from promptflow.errors import NotImplementedErrorException
+from promptflow._errors import NotImplementedErrorException
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,

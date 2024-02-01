@@ -45,7 +45,7 @@ from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
 from ..._utils.logger_utils import LoggerFactory
 from ._fileshare_storeage_helper import FlowFileStorageClient
-from ...errors import TypeErrorException, ValueErrorException
+from ..._errors import TypeErrorException, ValueErrorException
 from ...exceptions import UserErrorException
 
 module_logger = LoggerFactory.get_logger(__name__)

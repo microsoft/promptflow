@@ -32,7 +32,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, ListViewType
 from promptflow._sdk._errors import InvalidRunStatusError
 from promptflow._sdk._utils import print_red_error
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
-from promptflow.errors import ValueErrorException
+from promptflow._errors import ValueErrorException
 
 
 def add_parser_run(subparsers):

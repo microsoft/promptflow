@@ -23,7 +23,7 @@ from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
-from promptflow.errors import FileNotFoundException
+from promptflow._errors import FileNotFoundException
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
