@@ -7,19 +7,14 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 @tool
-def validate_and_generate_test_question(
+def validate_question(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
     model_or_deployment_name: str,
-    seed_question: str,
-    # reasoning_prompt: str,
-    # conditional_prompt: str,
-    validate_seed_question_prompt: str,
-    # simple_ratio: float = 0.5,
-    # reasoning_ratio: float = 0.25,
-    # conditional_ratio: float = 0.25,
+    generated_question: str,
+    validate_question_prompt: str,
     response_format: str = ResponseFormat.JSON,
     temperature: float = 1.0,
-    max_tokens: int = 512
+    max_tokens: int = 512,
 ):
     """
     1. Validates the given seed question.
@@ -29,27 +24,27 @@ def validate_and_generate_test_question(
         dict: The generated test question and its type.
     """
     # text trunk is not valid, seed question not generated.
-    if not seed_question:
+    if not generated_question:
         return {"question": "", "question_type": "", "validation_res": None}
 
     validation_res = get_question_validation_res(
-        connection, model_or_deployment_name, validate_seed_question_prompt, seed_question, response_format, temperature, max_tokens
+        connection,
+        model_or_deployment_name,
+        validate_question_prompt,
+        generated_question,
+        response_format,
+        temperature,
+        max_tokens,
     )
     is_valid_seed_question = validation_res.pass_validation
     question = ""
     question_type = ""
     failed_reason = ""
     if not is_valid_seed_question:
-        failed_reason = ErrorMsg.INVALID_QUESTION.format(seed_question)
+        failed_reason = ErrorMsg.INVALID_QUESTION.format(generated_question)
         print(failed_reason)
     else:
-        # TODO: add multi_context prompt (p3)
-        # TODO: add reasoning prompt and conditional prompt (p4)
-        # testset_distribution = validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio)
-
-        # question_type = get_question_type(testset_distribution)
-        # question = generate_question(connection, model_or_deployment_name, question_type, seed_question)
-        question = seed_question
+        question = generated_question
         question_type = QuestionType.SIMPLE
 
     return {"question": question, "question_type": question_type, "validation_res": validation_res}
