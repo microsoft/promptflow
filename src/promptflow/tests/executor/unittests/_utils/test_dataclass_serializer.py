@@ -3,8 +3,13 @@ from datetime import datetime
 from dataclasses import dataclass
 from typing import Dict, List
 from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow._utils.dataclass_serializer import \
-    get_type, serialize, deserialize_dataclass, deserialize_value, assertEqual
+from promptflow._utils.dataclass_serializer import (
+    get_type,
+    serialize,
+    deserialize_dataclass,
+    deserialize_value,
+    assertEqual,
+)
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow.storage.run_records import NodeRunRecord
@@ -44,7 +49,7 @@ def get_connection_dict():
         (dict(a=NodeRunRecord), Dict[str, NodeRunRecord]),
         (int, int),
         (str, str),
-    ]
+    ],
 )
 def test_get_type(type_input, expected):
     assert get_type(type_input) == expected
@@ -72,8 +77,8 @@ def test_serialize_dataclass():
     serialized_info = serialize(node_run_info)
     serialized_record = serialize(node_record)
     # test dataclass without serialize attribute
-    assert serialized_info['status'] == "Completed"
-    assert serialized_info['start_time'] == "2023-09-04T00:00:00Z"
+    assert serialized_info["status"] == "Completed"
+    assert serialized_info["start_time"] == "2023-09-04T00:00:00Z"
     assert deserialize_value(serialized_info, RunInfo) == node_run_info
     # test dataclass with serialize attribute
     assert serialized_record == node_record.serialize()
@@ -89,7 +94,7 @@ def test_serialize_dataclass():
         ({"a": 1, "b": 2}, Dict[str, int], {"a": 1, "b": 2}),
         (1, int, 1),
         ("a", str, "a"),
-    ]
+    ],
 )
 def test_serialize_value(value, value_type, expected):
     assert serialize(value) == expected
@@ -106,7 +111,8 @@ def test_serialize_remove_null():
     class DummyDataClass:
         name: str
         age: int
-    assert serialize(DummyDataClass("Dummy", None), remove_null=True) == {'name': 'Dummy'}
+
+    assert serialize(DummyDataClass("Dummy", None), remove_null=True) == {"name": "Dummy"}
 
 
 @pytest.mark.unittest
@@ -121,25 +127,27 @@ def test_serialize_generator():
     def generator():
         for i in range(3):
             yield i
+
     g = GeneratorProxy(generator())
     next(g)
     assert serialize(g) == [0]
 
 
 @pytest.mark.unittest
-@patch.dict('sys.modules', {'pydantic': None})
+@patch.dict("sys.modules", {"pydantic": None})
 def test_import_pydantic_error():
     # mock pydantic is not installed
     class DummyClass:
         def __init__(self, name, age):
             self.name = name
             self.age = age
-    dummy = DummyClass('Test', 20)
+
+    dummy = DummyClass("Test", 20)
     assert serialize(dummy) == dummy
 
 
 @pytest.mark.unittest
-@patch.dict('sys.modules', {'pydantic': Mock()})
+@patch.dict("sys.modules", {"pydantic": Mock()})
 def test_import_pydantic():
     # mock pydantic is installed
     class MockBaseModel:
@@ -147,7 +155,7 @@ def test_import_pydantic():
             return {"key": "value"}
 
     mock_value = MockBaseModel()
-    sys.modules['pydantic'].BaseModel = MockBaseModel
+    sys.modules["pydantic"].BaseModel = MockBaseModel
     assert serialize(mock_value) == mock_value.dict()
     assert serialize(123) == 123
 
@@ -165,6 +173,7 @@ def test_deserialize_dataclass():
     class DummyDataClassWithDefault:
         name: str = "Default Name"
         age: int = 0
+
     # test deserialize dataclass with default value
     data = {"age": 25}
     obj = deserialize_dataclass(DummyDataClassWithDefault, data)
@@ -180,7 +189,7 @@ def test_deserialize_dataclass():
         (Status.Completed, Status, Status.Completed),
         (None, datetime, None),
         ("2022-01-01T00:00:00", datetime, datetime.fromisoformat("2022-01-01T00:00:00")),
-    ]
+    ],
 )
 def test_deserialize_value(a, b, expected):
     assert deserialize_value(a, b) == expected
@@ -191,21 +200,29 @@ def test_deserialize_value(a, b, expected):
     "a, b, path, are_equal",
     [
         # Test with identical dicts
-        ({'key1': 'value1', 'key2': 'value2'}, {'key1': 'value1', 'key2': 'value2'}, \
-            "unittests/_utils/test_dataclass_serializer", True),
+        (
+            {"key1": "value1", "key2": "value2"},
+            {"key1": "value1", "key2": "value2"},
+            "unittests/_utils/test_dataclass_serializer",
+            True,
+        ),
         # Test with non-identical dicts
-        ({'key1': 'value1', 'key2': 'value2'}, {'key1': 'value1', 'key3': 'value3'}, \
-            "unittests/_utils/test_dataclass_serializer", False),
+        (
+            {"key1": "value1", "key2": "value2"},
+            {"key1": "value1", "key3": "value3"},
+            "unittests/_utils/test_dataclass_serializer",
+            False,
+        ),
         # Test with identical lists
-        (['item1', 'item2'], ['item1', 'item2'], "", True),
+        (["item1", "item2"], ["item1", "item2"], "", True),
         # Test with non-identical lists
-        (['item1', 'item2'], ['item1', 'item3'], "", False),
+        (["item1", "item2"], ["item1", "item3"], "", False),
         # Test with other types
         (1, 1, "", True),
         (1, 2, "", False),
-        ('string', 'string', "", True),
-        ('string1', 'string2', "", False),
-    ]
+        ("string", "string", "", True),
+        ("string1", "string2", "", False),
+    ],
 )
 def test_assertEqual(a, b, path, are_equal):
     if are_equal:

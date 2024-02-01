@@ -47,8 +47,7 @@ def start():
         response = resolve_generator(response, generator_record)
         # Get base64 for multi modal object
         resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
-            for k, v in response.output.items()
+            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in response.output.items()
         }
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
@@ -117,12 +116,12 @@ def start():
         page_title=f"{flow_name} - Promptflow App",
         page_icon=image,
         menu_items={
-            'About': """
+            "About": """
             # This is a Promptflow App.
 
             You can refer to [promptflow](https://github.com/microsoft/promptflow) for more information.
             """
-        }
+        },
     )
     # Set primary button color here since button color of the same form need to be identical in streamlit, but we only
     # need Run/Chat button to be blue.
@@ -134,16 +133,19 @@ def start():
     with container:
         show_conversation()
 
-    with st.form(key='input_form', clear_on_submit=True):
+    with st.form(key="input_form", clear_on_submit=True):
         settings_path = os.path.join(os.path.dirname(__file__), "settings.json")
         if os.path.exists(settings_path):
             with open(settings_path, "r", encoding="utf-8") as file:
                 json_data = json.load(file)
             environment_variables = list(json_data.keys())
             for environment_variable in environment_variables:
-                secret_input = st.sidebar.text_input(label=environment_variable, type="password",
-                                                     placeholder=f"Please input {environment_variable} here. "
-                                                                 f"If you input before, you can leave it blank.")
+                secret_input = st.sidebar.text_input(
+                    label=environment_variable,
+                    type="password",
+                    placeholder=f"Please input {environment_variable} here. "
+                    f"If you input before, you can leave it blank.",
+                )
                 if secret_input != "":
                     os.environ[environment_variable] = secret_input
 
@@ -151,9 +153,13 @@ def start():
         for flow_input, (default_value, value_type) in flow_inputs.items():
             if value_type == "list":
                 st.text(flow_input)
-                input = st_quill(html=True, toolbar=["image"], key=flow_input,
-                                 placeholder='Please enter the list values and use the image icon to upload a picture. '
-                                             'Make sure to format each list item correctly with line breaks')
+                input = st_quill(
+                    html=True,
+                    toolbar=["image"],
+                    key=flow_input,
+                    placeholder="Please enter the list values and use the image icon to upload a picture. "
+                    "Make sure to format each list item correctly with line breaks",
+                )
             elif value_type == "image":
                 input = st.file_uploader(label=flow_input)
             elif value_type == "string":
@@ -163,8 +169,8 @@ def start():
             flow_inputs_params.update({flow_input: copy(input)})
 
         cols = st.columns(7)
-        submit_bt = cols[0].form_submit_button(label=label, type='primary')
-        clear_bt = cols[1].form_submit_button(label='Clear')
+        submit_bt = cols[0].form_submit_button(label=label, type="primary")
+        clear_bt = cols[1].form_submit_button(label="Clear")
 
         if submit_bt:
             with st.spinner("Loading..."):
@@ -175,7 +181,7 @@ def start():
                     elif value_type == "image":
                         input = parse_image_content(
                             flow_inputs_params[flow_input],
-                            flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None
+                            flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None,
                         )
                         flow_inputs_params.update({flow_input: copy(input)})
                 submit(**flow_inputs_params)
@@ -187,7 +193,7 @@ def start():
 
 
 if __name__ == "__main__":
-    with open(Path(__file__).parent / "config.json", 'r') as f:
+    with open(Path(__file__).parent / "config.json", "r") as f:
         config = json.load(f)
         is_chat_flow = config["is_chat_flow"]
         chat_history_input_name = config["chat_history_input_name"]
