@@ -9,21 +9,15 @@ ENVIRONMENT_DICT_FIXED_VERSION = dict(
         "dependencies": [
             "python=3.10.12",
             "pip=23.2.1",
-            {
-                "pip": [
-                    "mldesigner==0.1.0b17",
-                    "llama_index",
-                    "docx2txt",
-                    "promptflow"
-                ]
-            },
+            {"pip": ["mldesigner==0.1.0b17", "llama_index", "docx2txt", "promptflow"]},
         ],
-    }
+    },
 )
 
 CONNECTIONS_TEMPLATE = {
-    "validate_and_generate_seed_question": {"connection": "{connection_name}"},
-    "validate_and_generate_test_question": {"connection": "{connection_name}"},
+    "validate_text_trunk": {"connection": "{connection_name}"},
+    "generate_question": {"connection": "{connection_name}"},
+    "validate_question": {"connection": "{connection_name}"},
     "generate_suggested_answer": {"connection": "{connection_name}"},
-    "validate_suggested_answer": {"connection": "{connection_name}"}
+    "validate_suggested_answer": {"connection": "{connection_name}"},
 }

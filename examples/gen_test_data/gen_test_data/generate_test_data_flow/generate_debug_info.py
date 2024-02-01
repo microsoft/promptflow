@@ -11,19 +11,19 @@ def my_python_tool(
     question_type: str,
     text_trunk: str,
     text_meta: dict = None,
-    validate_and_generate_seed_question_output: dict = None,
-    validate_and_generate_test_question_output: dict = None,
-    validate_suggested_answer_output: ValidationResult = None,
+    text_trunk_validation_res: ValidationResult = None,
+    validate_question_output: dict = None,
+    validate_suggested_answer_output: dict = None,
 ) -> dict:
-    text_trunk_validation_res = validate_and_generate_seed_question_output["validation_res"]
-    generated_seed_question = validate_and_generate_seed_question_output["question"]
-    seed_question_validation_res = validate_and_generate_test_question_output["validation_res"]
+    generated_question = validate_question_output["question"]
+    question_validation_res = validate_question_output["validation_res"]
+
     generated_suggested_answer = validate_suggested_answer_output["suggested_answer"]
     suggested_answer_validation_res = validate_suggested_answer_output["validation_res"]
 
     is_generation_success = generated_suggested_answer != ""
     is_text_trunk_valid = text_trunk_validation_res.pass_validation if text_trunk_validation_res else None
-    is_seed_question_valid = seed_question_validation_res.pass_validation if seed_question_validation_res else None
+    is_seed_question_valid = question_validation_res.pass_validation if question_validation_res else None
     is_suggested_answer_valid = (
         suggested_answer_validation_res.pass_validation if suggested_answer_validation_res else None
     )
@@ -36,7 +36,7 @@ def my_python_tool(
             failed_reason = text_trunk_validation_res.reason
         elif is_seed_question_valid is False:
             failed_step = ValidateObj.QUESTION
-            failed_reason = seed_question_validation_res.reason
+            failed_reason = question_validation_res.reason
         elif is_suggested_answer_valid is False:
             failed_step = ValidateObj.SUGGESTED_ANSWER
             failed_reason = suggested_answer_validation_res.reason
@@ -57,9 +57,9 @@ def my_python_tool(
                 "pass_validation": is_text_trunk_valid,
             },
             "seed_question": {
-                "generated_question": generated_seed_question,
+                "generated_question": generated_question,
                 "pass_validation": is_seed_question_valid,
-                "reason": seed_question_validation_res.reason if seed_question_validation_res else None,
+                "reason": question_validation_res.reason if question_validation_res else None,
             },
             # "test_question": {},  # placeholder for evolved questions like multi-context, reasoning, etc.
             "suggested_answer": {

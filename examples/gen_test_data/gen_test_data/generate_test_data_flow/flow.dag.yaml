@@ -12,7 +12,7 @@ inputs:
 outputs:
   question:
     type: string
-    reference: ${validate_and_generate_test_question.output.question}
+    reference: ${validate_question.output.question}
   suggested_answer:
     type: string
     reference: ${validate_suggested_answer.output.suggested_answer}
@@ -28,20 +28,20 @@ nodes:
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
-- name: validate_seed_question_prompt
+- name: validate_question_prompt
   type: prompt
   source:
     type: code
     path: validate_question_prompt.jinja2
   inputs:
-    question: ${validate_and_generate_seed_question.output.question}
+    question: ${generate_question.output}
     context: ${inputs.text_chunk}
   use_variants: false
-- name: seed_question_prompt
+- name: generate_question_prompt
   type: prompt
   source:
     type: code
-    path: seed_question_prompt.jinja2
+    path: generate_question_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
@@ -52,35 +52,31 @@ nodes:
     path: generate_suggested_answer_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
-    question: ${validate_and_generate_test_question.output.question}
+    question: ${validate_question.output.question}
   use_variants: false
-- name: validate_and_generate_seed_question
+- name: generate_question
   type: python
   source:
     type: code
-    path: validate_and_generate_seed_question.py
+    path: generate_question.py
   inputs:
     model_or_deployment_name: ""
-    score_text_trunk_prompt: ${score_text_trunk_prompt.output}
-    seed_question_prompt: ${seed_question_prompt.output}
-    context: ${inputs.text_chunk}
-    score_threshold: 4
-    response_format: text
+    context: ${validate_text_trunk.output.context}
     temperature: 0.2
-    max_tokens: ""
+    generate_question_prompt: ${generate_question_prompt.output}
   use_variants: false
-- name: validate_and_generate_test_question
+- name: validate_question
   type: python
   source:
     type: code
-    path: validate_and_generate_test_question.py
+    path: validate_question.py
   inputs:
     model_or_deployment_name: ""
-    validate_seed_question_prompt: ${validate_seed_question_prompt.output}
-    seed_question: ${validate_and_generate_seed_question.output.question}
-    response_format: text
+    response_format: json_object
     temperature: 0.2
     max_tokens: ""
+    generated_question: ${generate_question.output}
+    validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
 - name: generate_suggested_answer
   type: python
@@ -90,7 +86,7 @@ nodes:
   inputs:
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
-    question: ${validate_and_generate_test_question.output.question}
+    question: ${validate_question.output.question}
     model_or_deployment_name: ""
     temperature: 0.2
     max_tokens: ""
@@ -101,12 +97,12 @@ nodes:
     type: code
     path: generate_debug_info.py
   inputs:
-    question_type: ${validate_and_generate_test_question.output.question_type}
+    question_type: ${validate_question.output.question_type}
     text_trunk: ${inputs.text_chunk}
     text_meta: ${inputs.text_meta}
-    validate_and_generate_seed_question_output: ${validate_and_generate_seed_question.output}
-    validate_and_generate_test_question_output: ${validate_and_generate_test_question.output}
     validate_suggested_answer_output: ${validate_suggested_answer.output}
+    text_trunk_validation_res: ${validate_text_trunk.output.validation_res}
+    validate_question_output: ${validate_question.output}
 - name: validate_suggested_answer_prompt
   type: prompt
   source:
@@ -123,5 +119,16 @@ nodes:
     model_or_deployment_name: ""
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
+    temperature: 0.2
+- name: validate_text_trunk
+  type: python
+  source:
+    type: code
+    path: validate_text_trunk.py
+  inputs:
+    score_text_trunk_prompt: ${score_text_trunk_prompt.output}
+    context: ${inputs.text_chunk}
+    score_threshold: 4
+    model_or_deployment_name: ""
     temperature: 0.2
     max_tokens: ""
