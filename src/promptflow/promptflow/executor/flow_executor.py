@@ -721,7 +721,9 @@ class FlowExecutor:
     def _update_operation_context(self, run_id: str):
         operation_context = OperationContext.get_instance()
         operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow-id": self._flow_id, "root-run-id": run_id})
+        operation_context.update({"flow_id": self._flow_id, "root_run_id": run_id})
+        if operation_context.run_mode == RunMode.Test.name:
+            operation_context._add_otel_attributes("line_run_id", run_id)
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
@@ -992,7 +994,7 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
+        from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 
         return apply_inputs_mapping(inputs, inputs_mapping)
 

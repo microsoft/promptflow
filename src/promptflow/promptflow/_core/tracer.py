@@ -16,6 +16,7 @@ from opentelemetry import trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
+from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
@@ -214,8 +215,8 @@ def enrich_span_with_trace(span, trace):
                 "node_name": get_node_name_from_context(),
             }
         )
-
-        enrich_span_with_input(span, trace.inputs)
+        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+        span.set_attributes(attrs_from_context)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
 
@@ -303,6 +304,7 @@ def _traced_async(
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
+                enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
@@ -347,6 +349,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
+                enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)

@@ -419,15 +419,12 @@ def test_generate_api_and_injector_attribute_error_logging(caplog):
 @pytest.mark.unittest
 def test_get_aoai_telemetry_headers():
     # create a mock operation context
-    mock_operation_context = OperationContext()
+    mock_operation_context = OperationContext.get_instance()
     mock_operation_context.user_agent = "test-user-agent"
     mock_operation_context.update(
         {
             "flow_id": "test-flow-id",
             "root_run_id": "test-root-run-id",
-            "index": 1,
-            "run_id": "test-run-id",
-            "variant_id": "test-variant-id",
         }
     )
 
@@ -446,9 +443,15 @@ def test_get_aoai_telemetry_headers():
         assert headers[USER_AGENT_HEADER] == f"test-user-agent promptflow/{VERSION}"
         assert headers[f"{PROMPTFLOW_PREFIX}flow-id"] == "test-flow-id"
         assert headers[f"{PROMPTFLOW_PREFIX}root-run-id"] == "test-root-run-id"
-        assert headers[f"{PROMPTFLOW_PREFIX}index"] == "1"
-        assert headers[f"{PROMPTFLOW_PREFIX}run-id"] == "test-run-id"
-        assert headers[f"{PROMPTFLOW_PREFIX}variant-id"] == "test-variant-id"
+
+        context = OperationContext.get_instance()
+        context.dummy_key = "dummy_value"
+        headers = get_aoai_telemetry_headers()
+        assert f"{PROMPTFLOW_PREFIX}dummy-key" not in headers  # not default telemetry
+
+        context._tracking_keys.add("dummy_key")
+        headers = get_aoai_telemetry_headers()
+        assert headers[f"{PROMPTFLOW_PREFIX}dummy-key"] == "dummy_value"  # telemetry key inserted
 
 
 @pytest.mark.unittest

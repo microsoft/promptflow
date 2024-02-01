@@ -14,7 +14,6 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow import load_flow
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -24,6 +23,7 @@ from promptflow._sdk._constants import (
     RunInfoSources,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     PromptflowIgnoreFile,
     generate_flow_tools_json,
