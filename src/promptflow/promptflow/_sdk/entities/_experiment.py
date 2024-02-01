@@ -22,7 +22,6 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import ExperimentValidationError, ExperimentValueError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
-from promptflow._sdk._submitter import remove_additional_includes
 from promptflow._sdk._utils import _merge_local_code_and_additional_includes, _sanitize_python_variable_name
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
@@ -128,7 +127,8 @@ class FlowNode(YAMLTranslatableMixin):
     def _save_snapshot(self, target):
         """Save flow source to experiment snapshot."""
         # Resolve additional includes in flow
-        from promptflow import load_flow
+        from .._load_functions import load_flow
+        from .._submitter import remove_additional_includes
 
         Path(target).mkdir(parents=True, exist_ok=True)
         flow = load_flow(source=self.path)
