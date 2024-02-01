@@ -299,8 +299,7 @@ class InputDefinition:
         )
 
     def to_flow_input_definition(self):
-        """ Used for eager flow to convert input definition to flow input definition.
-        """
+        """Used for eager flow to convert input definition to flow input definition."""
         from .flow import FlowInputDefinition
 
         # TODO: To align with tool resolver we respect the first type if multiple types are provided,

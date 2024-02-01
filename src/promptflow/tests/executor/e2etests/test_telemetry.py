@@ -43,7 +43,7 @@ def mock_stream_chat(*args, **kwargs):
 def setup_mocks():
     patch_targets = {
         "openai.ChatCompletion.create": mock_stream_chat,
-        "openai.resources.chat.Completions.create": mock_stream_chat
+        "openai.resources.chat.Completions.create": mock_stream_chat,
     }
     for target, func in patch_targets.items():
         patcher = patch(target, func)
