@@ -17,8 +17,17 @@ class OperationContext(Dict):
     """
 
     _CONTEXT_KEY = "operation_context"
+    _OTEL_ATTRIBUTES = "_otel_attributes"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
     USER_AGENT_KEY = "user_agent"
+
+    def _add_otel_attributes(self, key, value):
+        attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        attributes[key] = value
+        self[OperationContext._OTEL_ATTRIBUTES] = attributes
+
+    def _get_otel_attributes(self):
+        return self.get(OperationContext._OTEL_ATTRIBUTES, {})
 
     @classmethod
     def get_instance(cls):

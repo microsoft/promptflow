@@ -15,7 +15,6 @@ from typing import Callable, Dict, List, Optional
 from opentelemetry import trace
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME, SpanAttributeFieldName
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
@@ -208,7 +207,6 @@ def get_node_name_from_context():
 
 def enrich_span_with_trace(span, trace):
     try:
-        session_id = OperationContext.get_instance().get(TRACE_SESSION_ID_OP_CTX_NAME)
         span.set_attributes(
             {
                 "framework": "promptflow",
@@ -216,9 +214,10 @@ def enrich_span_with_trace(span, trace):
                 "function": trace.name,
                 "inputs": serialize_attribute(trace.inputs),
                 "node_name": get_node_name_from_context(),
-                SpanAttributeFieldName.SESSION_ID: session_id,
             }
         )
+        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+        span.set_attributes(attrs_from_context)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
 
