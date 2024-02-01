@@ -61,7 +61,7 @@ def start_service(args, logger, activity_name):
 
     def check_service_status():
         try:
-            with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
+            with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
                 nonlocal port
 
                 def validate_port(port, force_start):
@@ -135,7 +135,7 @@ def entry(command_args):
     if args.action == "start":
         start_service(args, logger, activity_name)
     else:
-        with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
+        with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
             run_command(args)
 
 
@@ -153,8 +153,6 @@ def run_command(args):
             logger = logging.getLogger(LOGGER_NAME)
             logger.warning("Promptflow service is not started.")
             exit(1)
-    elif args.action == "start":
-        start_service(args)
 
 
 if __name__ == "__main__":
