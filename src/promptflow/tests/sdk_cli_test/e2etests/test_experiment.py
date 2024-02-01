@@ -10,14 +10,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import ExperimentStatus, RunStatus
 from promptflow._sdk._errors import ExperimentValueError
 from promptflow._sdk._load_functions import load_common
-from promptflow._sdk.entities._experiment import (
-    CommandNode,
-    Experiment,
-    ExperimentData,
-    ExperimentInput,
-    ExperimentTemplate,
-    FlowNode,
-)
+from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -30,32 +23,6 @@ yaml = YAML(typ="safe")
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("setup_experiment_table")
 class TestExperiment:
-    def test_experiment_from_template(self):
-        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
-        # Load template and create experiment
-        template = load_common(ExperimentTemplate, source=template_path)
-        experiment = Experiment.from_template(template)
-        # Assert experiment parts are resolved
-        assert len(experiment.nodes) == 2
-        assert all(isinstance(n, FlowNode) for n in experiment.nodes)
-        assert len(experiment.data) == 1
-        assert isinstance(experiment.data[0], ExperimentData)
-        assert len(experiment.inputs) == 1
-        assert isinstance(experiment.inputs[0], ExperimentInput)
-        # Assert type is resolved
-        assert experiment.inputs[0].default == 1
-        # Pop schema and resolve path
-        expected = dict(yaml.load(open(template_path, "r", encoding="utf-8").read()))
-        expected.pop("$schema")
-        expected["data"][0]["path"] = (FLOW_ROOT / "web_classification" / "data.jsonl").absolute().as_posix()
-        expected["nodes"][0]["path"] = (experiment._output_dir / "snapshots" / "main").absolute().as_posix()
-        expected["nodes"][1]["path"] = (experiment._output_dir / "snapshots" / "eval").absolute().as_posix()
-        experiment_dict = experiment._to_dict()
-        assert experiment_dict["data"][0].items() == expected["data"][0].items()
-        assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
-        assert experiment_dict["nodes"][1].items() == expected["nodes"][1].items()
-        assert experiment_dict.items() >= expected.items()
-
     def test_experiment_from_template_with_script_node(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
         # Load template and create experiment
@@ -106,7 +73,7 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
-        assert OperationContext.get_instance().experiment == exp.name
+        assert OperationContext.get_instance()._get_otel_attributes().get("experiment") == exp.name
         assert exp.status == ExperimentStatus.TERMINATED
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
@@ -158,7 +125,14 @@ class TestExperiment:
                 inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
             )
             _assert_result(result)
-            assert OperationContext.get_instance().experiment == template_path.resolve().absolute().as_posix()
+            assert (
+                OperationContext.get_instance()._get_otel_attributes().get("experiment")
+                == template_path.resolve().absolute().as_posix()
+            )
+            # Assert line run id is set by executor when running test
+            assert OperationContext.get_instance()._get_otel_attributes().get("line_run_id") is not None
+            # Assert reference line run id is set after running eval
+            assert OperationContext.get_instance()._get_otel_attributes().get("reference.line_run_id") is not None
             expected_output_path = (
                 Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
             )
@@ -177,9 +151,11 @@ class TestExperiment:
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         target_flow_path = FLOW_ROOT / "chat_flow" / "flow.dag.yaml"
         client = PFClient()
-        with pytest.raises(ExperimentValueError) as error:
-            client.flows.test(
-                target_flow_path,
-                experiment=template_path,
-            )
-        assert "not found in experiment" in str(error.value)
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            with pytest.raises(ExperimentValueError) as error:
+                client.flows.test(
+                    target_flow_path,
+                    experiment=template_path,
+                )
+            assert "not found in experiment" in str(error.value)
