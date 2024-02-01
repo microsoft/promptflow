@@ -64,9 +64,10 @@ SNAPSHOT_IGNORES = ["__pycache__"]
 class ExperimentOrchestrator:
     """Experiment orchestrator, responsible for experiment running and status checking."""
 
-    def __init__(self, run_operations, experiment_operations, experiment: Experiment = None):
-        self.run_operations = run_operations
-        self.experiment_operations = experiment_operations
+    def __init__(self, client, experiment: Experiment = None):
+        self.run_operations = client.runs
+        self.experiment_operations = client._experiments
+        self._client = client
         self.experiment = experiment
         self._nodes = {node.name: node for node in self.experiment.nodes} if experiment else {}
         # A key-value pair of node name and run info

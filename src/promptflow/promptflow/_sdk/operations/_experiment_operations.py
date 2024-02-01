@@ -111,7 +111,7 @@ class ExperimentOperations(TelemetryMixin):
             raise RunOperationError(
                 f"Experiment {experiment.name} is {experiment.status}, cannot be started repeatedly."
             )
-        return ExperimentOrchestrator(self._client.runs, self, experiment).async_start(**kwargs)
+        return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
 
     @monitor_operation(activity_name="pf.experiment.stop", activity_type=ActivityType.PUBLICAPI)
     def stop(self, name: str, **kwargs) -> Experiment:
@@ -126,7 +126,7 @@ class ExperimentOperations(TelemetryMixin):
 
         if not isinstance(name, str):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        ExperimentOrchestrator(self._client.runs, self, self.get(name)).stop()
+        ExperimentOrchestrator(self._client, self.get(name)).stop()
         return self.get(name)
 
     def _test(
@@ -148,6 +148,6 @@ class ExperimentOperations(TelemetryMixin):
 
         experiment_template = load_common(ExperimentTemplate, experiment)
         output_path = kwargs.get("output_path", None)
-        return ExperimentOrchestrator(self._client.runs, self, None).test(
+        return ExperimentOrchestrator(self._client, None).test(
             flow, experiment_template, inputs, environment_variables, output_path=output_path
         )
