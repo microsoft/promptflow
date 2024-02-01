@@ -12,13 +12,25 @@ from msrest import Deserializer, Serializer
 
 from . import models
 from ._configuration import AzureMachineLearningDesignerServiceClientConfiguration
-from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, FlowRunsAdminOperations, FlowRuntimesOperations, FlowRuntimesWorkspaceIndependentOperations, FlowSessionsOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations
+from .operations import (
+    BulkRunsOperations,
+    ConnectionOperations,
+    ConnectionsOperations,
+    FlowRunsAdminOperations,
+    FlowRuntimesOperations,
+    FlowRuntimesWorkspaceIndependentOperations,
+    FlowSessionsOperations,
+    FlowsOperations,
+    FlowsProviderOperations,
+    ToolsOperations,
+)
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Optional
 
     from azure.core.rest import HttpRequest, HttpResponse
+
 
 class AzureMachineLearningDesignerServiceClient(object):
     """AzureMachineLearningDesignerServiceClient.
@@ -70,12 +82,13 @@ class AzureMachineLearningDesignerServiceClient(object):
         self.connections = ConnectionsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_runs_admin = FlowRunsAdminOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_runtimes = FlowRuntimesOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flow_runtimes_workspace_independent = FlowRuntimesWorkspaceIndependentOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.flow_runtimes_workspace_independent = FlowRuntimesWorkspaceIndependentOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
         self.flows = FlowsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_sessions = FlowSessionsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flows_provider = FlowsProviderOperations(self._client, self._config, self._serialize, self._deserialize)
         self.tools = ToolsOperations(self._client, self._config, self._serialize, self._deserialize)
-
 
     def _send_request(
         self,

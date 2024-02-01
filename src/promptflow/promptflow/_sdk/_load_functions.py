@@ -66,8 +66,6 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-    *,
-    entry: str = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
@@ -76,12 +74,10 @@ def load_flow(
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
-    :param entry: The entry function, only works when source is a code file.
-    :type entry: str
     :return: A Flow object
     :rtype: Flow
     """
-    return Flow.load(source, entry=entry, **kwargs)
+    return Flow.load(source, **kwargs)
 
 
 def load_run(

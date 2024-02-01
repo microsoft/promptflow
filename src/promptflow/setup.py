@@ -50,10 +50,8 @@ REQUIRES = [
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
-    "opentelemetry-api>=1.21.0,<2.0.0",  # used to generate trace
-    "opentelemetry-sdk>=1.21.0,<2.0.0",  # used to collect trace
-    "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # OpenTelemetry exporter
-    "opentelemetry-proto>=1.22.0,<2.0.0",  # OpenTelemetry collector in PFS
+    "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
+    "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
 ]
 
 setup(
@@ -88,9 +86,6 @@ setup(
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
         "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0", "bs4"],
-        "pfs": [
-            "flask-restx>=1.2.0,<2.0.0",
-        ],
         "azureml-serving": [
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
