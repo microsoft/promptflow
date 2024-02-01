@@ -30,8 +30,13 @@ def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> R
     prompt = load_prompt("chat.jinja2", question, chat_history)
     config = Configuration.get_instance()
     # TODO: create your own config.json
-    workspace_config = config._get_workspace_from_config(path="./config.json")
-    config.set_config(Configuration.CONNECTION_PROVIDER, "azureml:" + workspace_config)
+    # This could be done automatically in cloud.
+    try:
+        connection_config = config._get_workspace_from_config(path="./config.json")
+        connection_provider = "azureml:" + connection_config
+    except Exception:
+        connection_provider = "local"
+    config.set_config(Configuration.CONNECTION_PROVIDER, connection_provider)
     pf = PFClient()
     connection = pf.connections.get(
         "open_ai_connection", with_secrets=True
