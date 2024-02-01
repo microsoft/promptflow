@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 
 from mldesigner import Input, Output, command_component
@@ -8,16 +7,15 @@ from constants import ENVIRONMENT_DICT_FIXED_VERSION
 
 
 @command_component(
-    name="document_split",
-    version="1.0.4",
+    name="split_document_component",
     display_name="split documents",
-    description="Split documents into chunks.",
+    description="Split documents into document nodes.",
     environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
-def document_split(
+def split_document_component(
         documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
 ) -> str:
-    """Split documents into chunks.
+    """Split documents into document nodes.
 
     Args:
         documents_folder: The folder containing documents to be split.
@@ -31,13 +29,12 @@ def document_split(
 
 
 @command_component(
-    name="clean_test_data_set",
-    version="1.0.4",
+    name="clean_data_and_save_component",
     display_name="clean dataset",
     description="Clean test data set to remove empty lines.",
     environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
-def clean_test_data_set(
+def clean_data_and_save_component(
         test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
 ) -> str:
     test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
@@ -45,7 +42,7 @@ def clean_test_data_set(
     with open(test_data_set_path, "r") as f:
         data = [json.loads(line) for line in f]
 
-    test_data_output_path = os.path.join(test_data_output, "test_data_set.jsonl")
+    test_data_output_path = test_data_output / Path("test_data_set.jsonl")
     clean_data_and_save(data, test_data_output_path)
 
     return test_data_output_path
