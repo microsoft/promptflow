@@ -5,19 +5,16 @@
 import asyncio
 import functools
 import importlib
-import inspect
 import logging
 import os
-from datetime import datetime
 from importlib.metadata import version
 
 import openai
-from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.contracts.trace import Trace, TraceType
+from promptflow.contracts.trace import TraceType
 
-from .tracer import Tracer, enrich_span_with_output, enrich_span_with_trace, tracer
+from .tracer import _traced_async, _traced_sync
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
@@ -25,94 +22,17 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
-    args_to_ignore = args_to_ignore or []
-    args_to_ignore = set(args_to_ignore)
+    def decorator(func):
+        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    def wrapper(f):
-        sig = inspect.signature(f).parameters
-
-        @functools.wraps(f)
-        async def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return await f(*args, **kwargs)
-
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            all_kwargs.pop("self", None)
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-
-            span_name = trace.name
-            with tracer.start_as_current_span(span_name) as span:
-                enrich_span_with_trace(span, trace)
-
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push(trace)
-                    output = await f(*args, **kwargs)
-                    span.set_status(StatusCode.OK)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-        return wrapped_method
-
-    return wrapper
+    return decorator
 
 
 def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
-    args_to_ignore = args_to_ignore or []
-    args_to_ignore = set(args_to_ignore)
+    def decorator(func):
+        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    def wrapper(f):
-        sig = inspect.signature(f).parameters
-
-        @functools.wraps(f)
-        def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return f(*args, **kwargs)
-
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            all_kwargs.pop("self", None)
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-
-            span_name = trace.name
-            with tracer.start_as_current_span(span_name) as span:
-                enrich_span_with_trace(span, trace)
-
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push(trace)
-                    output = f(*args, **kwargs)
-                    output = enrich_span_with_output(span, output)
-                    span.set_status(StatusCode.OK)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-        return wrapped_method
-
-    return wrapper
+    return decorator
 
 
 def get_aoai_telemetry_headers() -> dict:

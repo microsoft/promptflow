@@ -10,19 +10,21 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional
 
+from opentelemetry import trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
-from promptflow._telemetry.tracer_manager import get_tracer
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
+
+open_telemetry_tracer = trace.get_tracer("promptflow")
 
 
 class Tracer(ThreadLocalSingleton):
@@ -151,8 +153,26 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
-    """Initialize a trace object from a function call."""
+def _create_trace_from_function_call(
+    f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+):
+    """
+    Creates a trace object from a function call.
+
+    Args:
+        f (Callable): The function to be traced.
+        args (list, optional): The positional arguments to the function. Defaults to None.
+        kwargs (dict, optional): The keyword arguments to the function. Defaults to None.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Trace: The created trace object.
+    """
+    args = args or []
+    kwargs = kwargs or {}
+    args_to_ignore = set(args_to_ignore or [])
     sig = inspect.signature(f).parameters
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -162,17 +182,20 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     }
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
+    for key in args_to_ignore:
+        all_kwargs.pop(key, None)
+
+    name = f.__qualname__
+    if trace_type == TraceType.LLM and f.__module__:
+        name = f"{f.__module__}.{name}"
 
     return Trace(
-        name=f.__qualname__,
+        name=name,
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
         children=[],
     )
-
-
-tracer = get_tracer("promptflow")
 
 
 def get_node_name_from_context():
@@ -183,24 +206,29 @@ def get_node_name_from_context():
 
 
 def enrich_span_with_trace(span, trace):
-    operation_context = OperationContext.get_instance()
-    span.set_attributes(
-        {
-            "framework": "promptflow",
-            "span_type": f"promptflow.{trace.type}",
-            "function": trace.name,
-            "inputs": serialize_attribute(trace.inputs),
-            "node_name": get_node_name_from_context(),
-            "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
-            "flow_id": operation_context.get("flow-id", ""),
-            "root_run_id": operation_context.get("root-run-id", ""),
-        }
-    )
+    try:
+        operation_context = OperationContext.get_instance()
+        span.set_attributes(
+            {
+                "framework": "promptflow",
+                "span_type": trace.type,
+                "function": trace.name,
+                "inputs": serialize_attribute(trace.inputs),
+                "node_name": get_node_name_from_context(),
+                "flow_id": operation_context.get("flow-id", ""),
+                "root_run_id": operation_context.get("root-run-id", ""),
+            }
+        )
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with trace: {e}")
 
 
 def enrich_span_with_output(span, output):
-    serialized_output = serialize_attribute(output)
-    span.set_attribute("output", serialized_output)
+    try:
+        serialized_output = serialize_attribute(output)
+        span.set_attribute("output", serialized_output)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with output: {e}")
 
     return output
 
@@ -212,69 +240,109 @@ def serialize_attribute(value):
     return json.dumps(serialized_value, indent=2, default=default_json_encoder)
 
 
-def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
-    """A wrapper to add trace to a function.
+def _traced(
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+) -> Callable:
+    """
+    Decorator that adds tracing to a function.
 
-    When a function is wrapped by this wrapper, the function name,
-    inputs, outputs, start time, end time, and error (if any) will be recorded.
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
 
-    It can be used for both sync and async functions.
-    For sync functions, it will return a sync function.
-    For async functions, it will return an async function.
+    Returns:
+        Callable: The traced function.
+    """
+    wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
+    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    :param func: The function to be traced.
-    :type func: Callable
-    :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
-    :type trace_type: TraceType, optional
-    :return: The wrapped function with trace enabled.
-    :rtype: Callable
+
+def _traced_async(
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+) -> Callable:
+    """
+    Decorator that adds tracing to an asynchronous function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
     """
 
     def create_trace(func, args, kwargs):
-        return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
+        return _create_trace_from_function_call(
+            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+        )
 
-    if inspect.iscoroutinefunction(func):
+    @functools.wraps(func)
+    async def wrapped(*args, **kwargs):
+        trace = create_trace(func, args, kwargs)
+        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            enrich_span_with_trace(span, trace)
 
-        @functools.wraps(func)
-        async def wrapped(*args, **kwargs):
-            trace = create_trace(func, args, kwargs)
-            span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
-            with tracer.start_as_current_span(span_name) as span:
-                enrich_span_with_trace(span, trace)
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push(trace)
+                output = await func(*args, **kwargs)
+                enrich_span_with_output(span, output)
+                span.set_status(StatusCode.OK)
+                return Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
 
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push(trace)
-                    output = await func(*args, **kwargs)
-                    span.set_status(StatusCode.OK)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
+    wrapped.__original_function = func
 
-    else:
+    return wrapped
 
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            trace = create_trace(func, args, kwargs)
-            span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
-            with tracer.start_as_current_span(span_name) as span:
-                enrich_span_with_trace(span, trace)
 
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push(trace)
-                    output = func(*args, **kwargs)
-                    output = enrich_span_with_output(span, output)
-                    span.set_status(StatusCode.OK)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
+def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION) -> Callable:
+    """
+    Decorator that adds tracing to a synchronous function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
+    """
+
+    def create_trace(func, args, kwargs):
+        return _create_trace_from_function_call(
+            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+        )
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        trace = create_trace(func, args, kwargs)
+        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            enrich_span_with_trace(span, trace)
+
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push(trace)
+                output = func(*args, **kwargs)
+                enrich_span_with_output(span, output)
+                span.set_status(StatusCode.OK)
+                return Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
 
     wrapped.__original_function = func
 

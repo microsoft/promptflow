@@ -32,12 +32,12 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
-    _get_additional_includes,
     _merge_local_code_and_additional_includes,
     get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
@@ -150,7 +150,7 @@ def remove_additional_includes(flow_path: Path):
 
 @contextlib.contextmanager
 def variant_overwrite_context(
-    flow_path: Path,
+    flow: Flow,
     tuning_node: str = None,
     variant: str = None,
     connections: dict = None,
@@ -159,19 +159,23 @@ def variant_overwrite_context(
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
-    flow_dag_path, flow_dag = load_flow_dag(flow_path)
-    flow_dir_path = flow_dag_path.parent
-    if _get_additional_includes(flow_dag_path):
-        # Merge the flow folder and additional includes to temp folder.
-        with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
-            # always overwrite variant since we need to overwrite default variant if not specified.
-            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
-            overwrite_flow(flow_dag, overrides)
+    flow_dag = flow._data
+    flow_dir_path = Path(flow.code)
+    if flow.additional_includes:
+        # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
+        with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
+            if not isinstance(flow, EagerFlow):
+                # always overwrite variant since we need to overwrite default variant if not specified.
+                overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+                overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+                overwrite_flow(flow_dag, overrides)
             flow_dag.pop("additional_includes", None)
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
+    elif isinstance(flow, EagerFlow):
+        # eager flow don't support overwrite variant
+        yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
@@ -218,7 +222,7 @@ class SubmitterHelper:
         from .._pf_client import PFClient
 
         client = client or PFClient()
-        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow.dag)
+        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow._data)
         connections_to_ignore = connections_to_ignore or []
         result = {}
         for n in connection_names:

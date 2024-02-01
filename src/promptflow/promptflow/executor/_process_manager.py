@@ -11,6 +11,7 @@ import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
 
@@ -52,7 +53,8 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> None:
         self._input_queues = input_queues
         self._output_queues = output_queues
@@ -86,6 +88,14 @@ class AbstractProcessManager:
 
         :param i: Index of the process to terminate.
         :type i: int
+        """
+        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        This method should be implemented in subclasses to provide specific health check mechanisms.
         """
         raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
 
@@ -178,6 +188,16 @@ class SpawnProcessManager(AbstractProcessManager):
                 f"Exception: {e}"
             )
 
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        Note:
+        Health checks for spawn mode processes are currently not performed.
+        Add detailed checks in this function if needed in the future.
+        """
+        pass
+
 
 class ForkProcessManager(AbstractProcessManager):
     '''
@@ -225,6 +245,7 @@ class ForkProcessManager(AbstractProcessManager):
             ),
         )
         process.start()
+        self._spawned_fork_process_manager_pid = process.pid
 
     def restart_process(self, i):
         """
@@ -252,6 +273,16 @@ class ForkProcessManager(AbstractProcessManager):
         :type i: int
         """
         self._control_signal_queue.put((ProcessControlSignal.START, i))
+
+    def ensure_healthy(self):
+        # A 'zombie' process is a process that has finished running but still remains in
+        # the process table, waiting for its parent process to collect and handle its exit status.
+        # The normal state of the spawned process is 'running'. If the process does not start successfully
+        # or exit unexpectedly, its state will be 'zombie'.
+        if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
+            bulk_logger.error("The spawned fork process manager failed to start.")
+            ex = SpawnedForkProcessManagerStartFailure()
+            raise ex
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):

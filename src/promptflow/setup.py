@@ -52,6 +52,8 @@ REQUIRES = [
     "docutils",  # used to generate description for tools
     "opentelemetry-api>=1.21.0,<2.0.0",  # used to generate trace
     "opentelemetry-sdk>=1.21.0,<2.0.0",  # used to collect trace
+    "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # OpenTelemetry exporter
+    "opentelemetry-proto>=1.22.0,<2.0.0",  # OpenTelemetry collector in PFS
 ]
 
 setup(
@@ -100,10 +102,7 @@ setup(
         ],
     },
     packages=find_packages(),
-    scripts=[
-        'pf',
-        'pf.bat'
-    ],
+    scripts=["pf", "pf.bat"],
     entry_points={
         "console_scripts": [
             "pfazure = promptflow._cli._pf_azure.entry:main",
