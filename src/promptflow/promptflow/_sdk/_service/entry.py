@@ -60,35 +60,44 @@ def start_service(args, logger, activity_name):
     port_event = threading.Event()
 
     def check_service_status():
-        with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
-            nonlocal port
+        try:
+            with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
+                nonlocal port
 
-            def validate_port(port, force_start):
-                if is_port_in_use(port):
-                    if force_start:
-                        app.logger.warning(f"Force restart the service on the port {port}.")
-                        kill_exist_service(port)
-                    else:
-                        app.logger.warning(f"Service port {port} is used.")
-                        raise UserErrorException(f"Service port {port} is used.")
+                def validate_port(port, force_start):
+                    if is_port_in_use(port):
+                        if force_start:
+                            app.logger.warning(f"Force restart the service on the port {port}.")
+                            kill_exist_service(port)
+                        else:
+                            app.logger.warning(f"Service port {port} is used.")
+                            raise UserErrorException(f"Service port {port} is used.")
 
-            if port:
-                dump_port_to_config(port)
-                validate_port(port, args.force)
-            else:
-                port = get_port_from_config(create_if_not_exists=True)
-                validate_port(port, args.force)
+                if port:
+                    dump_port_to_config(port)
+                    validate_port(port, args.force)
+                else:
+                    port = get_port_from_config(create_if_not_exists=True)
+                    validate_port(port, args.force)
+                port_event.set()
+                # Set host to localhost, only allow request from localhost.
+                app.logger.info(
+                    f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+                )
+                while check_pfs_service_status(port) is False:
+                    time.sleep(1)
+        except UserErrorException as e:
+            port = None
             port_event.set()
-            # Set host to localhost, only allow request from localhost.
-            app.logger.info(
-                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-            )
-            while check_pfs_service_status(port) is False:
-                time.sleep(1)
+            raise UserErrorException(message=e.message)
+        except Exception:  # pylint: disable=broad-except
+            port = None
+            port_event.set()
 
     threading.Thread(target=check_service_status).start()
     port_event.wait()
-    waitress.serve(app, host="127.0.0.1", port=port)
+    if port is not None:
+        waitress.serve(app, host="127.0.0.1", port=port)
 
 
 def main():

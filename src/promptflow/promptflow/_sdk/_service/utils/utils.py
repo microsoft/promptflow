@@ -109,7 +109,7 @@ def check_pfs_service_status(pfs_port) -> bool:
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
-            logger.info(f"Pfs service is already running on port {pfs_port}.")
+            logger.debug(f"Pfs service is already running on port {pfs_port}.")
             return True
     except Exception:  # pylint: disable=broad-except
         pass
