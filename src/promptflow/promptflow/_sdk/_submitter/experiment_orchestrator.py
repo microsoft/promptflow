@@ -5,10 +5,12 @@ import copy
 import os
 import subprocess
 import tempfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Union
 
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     PROMPT_FLOW_DIR_NAME,
@@ -45,6 +47,20 @@ class ExperimentOrchestrator:
         self.run_submitter = ExperimentRunSubmitter(self.run_operations)
         self.command_submitter = ExperimentCommandSubmitter(self.run_operations)
 
+    @classmethod
+    def _set_context(cls, experiment, test=False):
+        """Set experiment info to operation context.
+
+        :param experiment: Experiment name or experiment template absolute path.
+        :type experiment: Union[str, Path]
+        :param test: Whether it's a test run. If True, will set line run id.
+        :type test: bool
+        """
+        operation_context = OperationContext.get_instance()
+        operation_context.experiment = experiment
+        if test:
+            operation_context.line_run_id = uuid.uuid4()
+
     def test(
         self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
     ):
@@ -79,6 +95,7 @@ class ExperimentOrchestrator:
             template, inputs=inputs, environment_variables=environment_variables, output_path=kwargs.get("output_path")
         )
 
+        self._set_context(template._source_path)
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
@@ -140,6 +157,7 @@ class ExperimentOrchestrator:
         resolved_nodes = ExperimentHelper.resolve_nodes_to_execute(experiment)
 
         # Run nodes
+        self._set_context(experiment.name)
         run_dict = {}
         try:
             for node in resolved_nodes:
