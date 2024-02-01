@@ -202,21 +202,13 @@ def process_override():
                     multiprocessing.Process = original_process_class[start_method]
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def recording_injection(recording_setup, process_override):
     # This fixture is used to main entry point to inject recording mode into the test
     try:
         yield (is_replay() or is_record(), recording_array_extend)
     finally:
-        RecordStorage.get_instance().delete_lock_file()
-        delete_count_lock_file()
+        if is_replay() or is_record():
+            RecordStorage.get_instance().delete_lock_file()
+            delete_count_lock_file()
         recording_array_reset()
-
-
-# @pytest.fixture(autouse=True, scope="session")
-# def inject_api_executor():
-#     """Inject OpenAI API during test session.
-#
-#     AOAI call in promptflow should involve trace logging and header injection. Inject
-#     function to API call in test scenario."""
-#     inject_openai_api()
