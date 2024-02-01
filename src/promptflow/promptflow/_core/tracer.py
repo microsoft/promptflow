@@ -209,7 +209,7 @@ def enrich_span_with_trace(span, trace):
         span.set_attributes(
             {
                 "framework": "promptflow",
-                "span_type": f"{trace.type}",
+                "span_type": trace.type.value,
                 "function": trace.name,
                 "inputs": serialize_attribute(trace.inputs),
                 "node_name": get_node_name_from_context(),
