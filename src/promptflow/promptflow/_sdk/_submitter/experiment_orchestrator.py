@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
+from time import sleep
 from typing import Union
 
 import psutil
@@ -43,6 +44,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
+from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk.entities import Run
@@ -284,7 +286,41 @@ class ExperimentOrchestrator:
                     is_in_degree_nodes_ready = is_in_degree_nodes_ready and Path(output_path).exists()
             return is_in_degree_nodes_ready
 
-        if platform.system() != "Windows":
+        def stop_process():
+            executor.shutdown(wait=False)
+            for future, node in future_to_node_run.items():
+                if future.running():
+                    # update status of running nodes to canceled.
+                    node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
+                    self.experiment._append_node_run(node.node.name, ORMRunInfo.get(node.name))
+            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+            sys.exit(1)
+
+        if platform.system() == "Windows":
+            import threading
+
+            import win32pipe
+
+            def stop_handler():
+                pipe_name = r"\\.\pipe\{}".format(self.experiment.name)
+                pipe = win32pipe.CreateNamedPipe(
+                    pipe_name,
+                    win32pipe.PIPE_ACCESS_DUPLEX,
+                    win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+                    1,
+                    65536,
+                    65536,
+                    0,
+                    None,
+                )
+                # Wait for connection to stop orchestrator
+                win32pipe.ConnectNamedPipe(pipe, None)
+                stop_process()
+
+            pipe_thread = threading.Thread(target=stop_handler)
+            pipe_thread.daemon = True
+            pipe_thread.start()
+        else:
 
             def stop_handler(signum, frame):
                 """
@@ -292,14 +328,7 @@ class ExperimentOrchestrator:
                 Terminate all executing nodes and update node status.
                 """
                 if signum == signal.SIGTERM:
-                    self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
-                    executor.shutdown(wait=False)
-                    for future, node in future_to_node_run.items():
-                        if future.cancelled():
-                            # update status of running nodes to canceled.
-                            node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
-                            self.experiment.node_runs[node.name] = ORMExperimentNodeRun.get(node.run_id)
-                    sys.exit(1)
+                    stop_process()
 
             signal.signal(signal.SIGTERM, stop_handler)
 
@@ -369,24 +398,35 @@ class ExperimentOrchestrator:
                 message="Experiment cannot be stopped if it is not started.",
             )
         try:
-            process = psutil.Process(orchestrator.pid)
-            process.terminate()
+            if platform.system() == "Windows":
+                import win32file
+
+                win32file.CreateFile(
+                    r"\\.\pipe\{}".format(self.experiment.name),
+                    win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                    0,
+                    None,
+                    win32file.OPEN_EXISTING,
+                    0,
+                    None,
+                )
+            else:
+                process = psutil.Process(orchestrator.pid)
+                process.terminate()
         except psutil.NoSuchProcess:
             logger.debug("Experiment orchestrator process terminates abnormally.")
+            return
         except Exception as e:
             raise RunOperationError(
                 message=f"Experiment stopped failed with {e}",
             )
-        finally:
-            if platform.system() == "Windows":
-                nodes = ORMExperimentNodeRun.get_node_runs_by_experiment(experiment_name=self.experiment.name)
-                for node in nodes or []:
-                    if node.status == ExperimentNodeRunStatus.IN_PROGRESS:
-                        node.update_status(status=ExperimentNodeRunStatus.CANCELED)
-                        self.experiment.node_runs[node.name] = ORMExperimentNodeRun.get(run_id=node.run_id)
-                    else:
-                        self.experiment.node_runs[node.name] = node
-            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+        # Wait for status updated
+        try:
+            while True:
+                psutil.Process(orchestrator.pid)
+                sleep(1)
+        except psutil.NoSuchProcess:
+            logger.debug("Experiment status has been updated.")
 
     @staticmethod
     def get_status(experiment_name):
