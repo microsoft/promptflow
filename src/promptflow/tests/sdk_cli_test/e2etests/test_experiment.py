@@ -1,9 +1,6 @@
-import os
-import subprocess
 import tempfile
 from pathlib import Path
 from time import sleep
-from unittest.mock import patch
 
 import pytest
 from mock import mock
@@ -13,7 +10,6 @@ from promptflow import PFClient
 from promptflow._sdk._constants import ExperimentStatus, RunStatus
 from promptflow._sdk._errors import RunOperationError
 from promptflow._sdk._load_functions import load_common
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import (
     CommandNode,
     Experiment,
@@ -23,16 +19,14 @@ from promptflow._sdk.entities._experiment import (
     FlowNode,
 )
 
+from ..recording_utilities import is_live
+
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 
 
 yaml = YAML(typ="safe")
-
-
-def mock_start_process_in_background(args, executable_path=None):
-    subprocess.Popen(args, env=os.environ)
 
 
 @pytest.mark.e2etest
@@ -111,6 +105,7 @@ class TestExperiment:
         exp_get = client._experiments.get(name=exp.name)
         assert exp_get._to_dict() == exp._to_dict()
 
+    @pytest.mark.skipif(condition=not is_live())
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -119,36 +114,35 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        with patch.object(ExperimentOrchestrator, "_start_process_in_background") as mock_start_process_func:
-            mock_start_process_func.side_effect = mock_start_process_in_background
-            exp = client._experiments.start(exp.name)
+        exp = client._experiments.start(exp.name)
 
-            # Test the experiment in progress cannot be started.
-            with pytest.raises(RunOperationError) as e:
-                client._experiments.start(exp.name)
-            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
-            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
-            exp = self.wait_for_experiment_terminated(client, exp)
-            # Assert main run
-            assert len(exp.node_runs["main"]) > 0
-            main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
-            assert main_run.status == RunStatus.COMPLETED
-            assert main_run.variant == "${summarize_text_content.variant_0}"
-            assert main_run.display_name == "main"
-            assert len(exp.node_runs["eval"]) > 0
-            # Assert eval run and metrics
-            eval_run = client.runs.get(name=exp.node_runs["eval"][0]["name"])
-            assert eval_run.status == RunStatus.COMPLETED
-            assert eval_run.display_name == "eval"
-            metrics = client.runs.get_metrics(name=eval_run.name)
-            assert "accuracy" in metrics
+        # Test the experiment in progress cannot be started.
+        with pytest.raises(RunOperationError) as e:
+            client._experiments.start(exp.name)
+        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+        exp = self.wait_for_experiment_terminated(client, exp)
+        # Assert main run
+        assert len(exp.node_runs["main"]) > 0
+        main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
+        assert main_run.status == RunStatus.COMPLETED
+        assert main_run.variant == "${summarize_text_content.variant_0}"
+        assert main_run.display_name == "main"
+        assert len(exp.node_runs["eval"]) > 0
+        # Assert eval run and metrics
+        eval_run = client.runs.get(name=exp.node_runs["eval"][0]["name"])
+        assert eval_run.status == RunStatus.COMPLETED
+        assert eval_run.display_name == "eval"
+        metrics = client.runs.get_metrics(name=eval_run.name)
+        assert "accuracy" in metrics
 
-            # Test experiment restart
-            exp = client._experiments.start(exp.name)
-            exp = self.wait_for_experiment_terminated(client, exp)
-            for name, runs in exp.node_runs.items():
-                assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+        # Test experiment restart
+        exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
+        for name, runs in exp.node_runs.items():
+            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
+    @pytest.mark.skipif(condition=not is_live())
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -157,15 +151,14 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        with patch.object(ExperimentOrchestrator, "_start_process_in_background") as mock_start_process_func:
-            mock_start_process_func.side_effect = mock_start_process_in_background
-            exp = client._experiments.start(exp.name)
-            exp = self.wait_for_experiment_terminated(client, exp)
-            assert exp.status == ExperimentStatus.TERMINATED
-            assert len(exp.node_runs) == 4
-            for key, val in exp.node_runs.items():
-                assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+        exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
+    @pytest.mark.skipif(condition=not is_live())
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
         # Load template and create experiment
