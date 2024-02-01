@@ -1,7 +1,8 @@
 import os
-from openai.version import VERSION as OPENAI_VERSION
 
 from dotenv import load_dotenv
+from openai.version import VERSION as OPENAI_VERSION
+
 from promptflow import trace
 
 
@@ -21,9 +22,7 @@ def get_client():
 
         conn.update(
             azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
-            api_version=os.environ.get(
-                "AZURE_OPENAI_API_VERSION", "2023-07-01-preview"
-            ),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
         )
     return Client(**conn)
 
