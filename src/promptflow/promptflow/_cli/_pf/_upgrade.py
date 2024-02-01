@@ -1,8 +1,6 @@
 import os
-from promptflow._cli._params import (
-    add_param_yes,
-    base_params,
-)
+
+from promptflow._cli._params import add_param_yes, base_params
 from promptflow._cli._utils import activate_action, get_cli_sdk_logger
 from promptflow._utils.utils import prompt_y_n
 from promptflow.exceptions import UserErrorException
@@ -36,14 +34,14 @@ def add_upgrade_parser(subparsers):
 
 def upgrade_version(args):
     import platform
-    import sys
     import subprocess
+    import sys
 
-    from promptflow._constants import _ENV_PF_INSTALLER, CLI_PACKAGE_NAME
-    from promptflow._version import VERSION as local_version
     from packaging.version import parse
 
+    from promptflow._constants import _ENV_PF_INSTALLER, CLI_PACKAGE_NAME
     from promptflow._utils.version_hint_utils import get_latest_version_from_pypi
+    from promptflow._version import VERSION as local_version
 
     latest_version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
     if not latest_version:
@@ -84,7 +82,7 @@ def upgrade_version(args):
             "pip",
             "install",
             "--upgrade",
-            "promptflow[azure,executable,pfs,azureml-serving]",
+            "promptflow[azure,executable,azureml-serving]",
             "-vv",
             "--disable-pip-version-check",
             "--no-cache-dir",
