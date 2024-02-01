@@ -1,8 +1,12 @@
+import os
+
+from dotenv import load_dotenv
 from dataclasses import dataclass
 from jinja2 import Template
 from pathlib import Path
 from promptflow import trace, PFClient
 from promptflow.tools.aoai import chat
+from promptflow._sdk.entities import AzureOpenAIConnection
 
 
 BASE_DIR = Path(__file__).absolute().parent
@@ -25,22 +29,23 @@ class Result:
 @trace
 def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> Result:
     """Flow entry function."""
-    from promptflow._sdk._configuration import Configuration
 
     prompt = load_prompt("chat.jinja2", question, chat_history)
-    config = Configuration.get_instance()
-    # TODO: create your own config.json
-    # This could be done automatically in cloud.
-    try:
-        connection_config = config._get_workspace_from_config(path="./config.json")
-        connection_provider = "azureml:" + connection_config
-    except Exception:
-        connection_provider = "local"
-    config.set_config(Configuration.CONNECTION_PROVIDER, connection_provider)
-    pf = PFClient()
-    connection = pf.connections.get(
-        "open_ai_connection", with_secrets=True
-    )  # TODO: add connection to function inputs
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
+        # load environment variables from .env file
+        load_dotenv()
+
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
+        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
+    
+    connection = AzureOpenAIConnection(
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_base=os.environ["AZURE_OPENAI_API_BASE"],
+        api_version=os.environ.get(
+            "AZURE_OPENAI_API_VERSION", "2023-07-01-preview"
+        ),
+    )
+
     output = chat(
         connection=connection,
         prompt=prompt,
