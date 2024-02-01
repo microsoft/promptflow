@@ -56,7 +56,7 @@ def start_service(args):
     port = args.port
     app, _ = create_app()
 
-    def run_command(port, force_start):
+    def validate_port(port, force_start):
         if is_port_in_use(port):
             if force_start:
                 app.logger.warning(f"Force restart the service on the port {port}.")
@@ -67,10 +67,10 @@ def start_service(args):
 
     if port:
         dump_port_to_config(port)
-        run_command(port, args.force)
+        validate_port(port, args.force)
     else:
         port = get_port_from_config(create_if_not_exists=True)
-        run_command(port, args.force)
+        validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
     app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
     waitress.serve(app, host="127.0.0.1", port=port)
