@@ -39,7 +39,8 @@ class InvalidConnectionData(FlowConnectionError):
         super().__init__(
             message_format="Invalid connection data detected while overriding connection {connection_name}.",
             connection_name=connection_name,
-            target=ErrorTarget.FLOW_INVOKER)
+            target=ErrorTarget.FLOW_INVOKER,
+        )
 
 
 class UnexpectedConnectionProviderReturn(FlowConnectionError):

@@ -23,7 +23,7 @@ class Result:
 
 
 @trace
-def flow_entry(question: str='What is ChatGPT?', chat_history: list = []) -> Result:
+def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> Result:
     """Flow entry function."""
     from promptflow._sdk._configuration import Configuration
 
@@ -31,12 +31,11 @@ def flow_entry(question: str='What is ChatGPT?', chat_history: list = []) -> Res
     config = Configuration.get_instance()
     # TODO: create your own config.json
     workspace_config = config._get_workspace_from_config(path="./config.json")
-    config.set_config(
-        Configuration.CONNECTION_PROVIDER,
-        "azureml:" + workspace_config
-    )
+    config.set_config(Configuration.CONNECTION_PROVIDER, "azureml:" + workspace_config)
     pf = PFClient()
-    connection = pf.connections.get("open_ai_connection", with_secrets=True) # TODO: add connection to function inputs
+    connection = pf.connections.get(
+        "open_ai_connection", with_secrets=True
+    )  # TODO: add connection to function inputs
     output = chat(
         connection=connection,
         prompt=prompt,
@@ -49,5 +48,9 @@ def flow_entry(question: str='What is ChatGPT?', chat_history: list = []) -> Res
 
 
 if __name__ == "__main__":
+    from promptflow._trace._start_trace import start_trace  # TODO move to public API
+
+    start_trace()
+    
     result = flow_entry("What's Azure Machine Learning?", [])
     print(result)

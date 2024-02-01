@@ -1,2 +1,2 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-entry: flow.flow_entry
+entry: flow:flow_entry
