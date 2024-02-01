@@ -776,39 +776,31 @@ class FlowExecutor:
             LineResult: Line run result
         """
         with open_telemetry_tracer.start_as_current_span("promptflow.flow") as span:
-            try:
-                # initialize span
-                span.set_attributes(
-                    {
-                        "framework": "promptflow",
-                        "span_type": TraceType.FLOW.value,
-                    }
-                )
-                # enrich span with input
-                enrich_span_with_input(span, inputs)
-                # invoke
-                result = self._exec(
-                    inputs,
-                    run_id=run_id,
-                    line_number=line_number,
-                    variant_id=variant_id,
-                    validate_inputs=validate_inputs,
-                    allow_generator_output=allow_generator_output,
-                )
-                # extract output from result
-                output = result.output
-                # enrich span with output
-                enrich_span_with_output(span, output)
-                # set status
-                span.set_status(StatusCode.OK)
-            except Exception as ex:
-                # set status
-                span.set_status(StatusCode.ERROR, str(ex))
-                # raise exception
-                raise ex
-            else:
-                # return result
-                return result
+            # initialize span
+            span.set_attributes(
+                {
+                    "framework": "promptflow",
+                    "span_type": TraceType.FLOW.value,
+                }
+            )
+            # enrich span with input
+            enrich_span_with_input(span, inputs)
+            # invoke
+            result = self._exec(
+                inputs,
+                run_id=run_id,
+                line_number=line_number,
+                variant_id=variant_id,
+                validate_inputs=validate_inputs,
+                allow_generator_output=allow_generator_output,
+            )
+            # extract output from result
+            output = result.output
+            # enrich span with output
+            enrich_span_with_output(span, output)
+            # set status
+            span.set_status(StatusCode.OK)
+            return result
 
     def _exec(
         self,
