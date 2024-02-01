@@ -32,7 +32,7 @@ yaml = YAML(typ="safe")
 
 
 def mock_start_process_in_background(args, executable_path=None):
-    subprocess.Popen(args, env=os.environ)
+    subprocess.Popen(args, env=os.environ, shell=True)
 
 
 @pytest.mark.e2etest
