@@ -12,11 +12,11 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Callable, Dict, List, Optional
 
-from opentelemetry import trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
+from promptflow._telemetry.tracer_manager import get_tracer
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
@@ -24,7 +24,7 @@ from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
 
-open_telemetry_tracer = trace.get_tracer("promptflow")
+open_telemetry_tracer = get_tracer("promptflow")
 
 
 class Tracer(ThreadLocalSingleton):
