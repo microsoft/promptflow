@@ -10,10 +10,9 @@ import uuid
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-import yaml
-
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, UnexpectedError
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -95,7 +94,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         # TODO: should we change the interface to init the proxy (always pass entry for eager mode)?
         if "entry" in kwargs:
             fd, temp_dag_file = tempfile.mkstemp(suffix=".yaml", text=True)
-            os.write(fd, yaml.dump({"entry": kwargs["entry"], "path": flow_file.as_posix()}).encode(DEFAULT_ENCODING))
+            os.write(fd, dump_yaml({"entry": kwargs["entry"], "path": flow_file.as_posix()}).encode(DEFAULT_ENCODING))
             # need to close the fd manually, or it can't be used in subprocess
             os.close(fd)
             flow_file = Path(temp_dag_file)

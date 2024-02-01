@@ -717,7 +717,7 @@ class FlowExecutor:
     def _update_operation_context(self, run_id: str):
         operation_context = OperationContext.get_instance()
         operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow-id": self._flow_id, "root-run-id": run_id})
+        operation_context.update({"flow_id": self._flow_id, "root_run_id": run_id})
         if operation_context.run_mode == RunMode.Test.name:
             operation_context._add_otel_attributes("line_run_id", run_id)
 
