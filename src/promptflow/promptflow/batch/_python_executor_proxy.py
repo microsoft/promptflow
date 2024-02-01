@@ -51,6 +51,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
+        worker_count: Optional[int] = None,
     ) -> Tuple[List[LineResult], bool]:
         # TODO: Refine the logic here since the script executor actually doesn't have the 'node' concept
         if isinstance(self._flow_executor, ScriptExecutor):
@@ -75,6 +76,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 output_dir,
                 batch_timeout_sec=batch_timeout_sec,
                 line_timeout_sec=line_timeout_sec,
+                worker_count=worker_count,
             ) as pool:
                 line_number = [batch_input["line_number"] for batch_input in batch_inputs]
                 line_results = pool.run(zip(line_number, batch_inputs))
