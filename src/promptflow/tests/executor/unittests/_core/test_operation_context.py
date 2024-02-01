@@ -88,7 +88,7 @@ class TestOperationContext:
 
     def test_append_user_agent(self):
         context = OperationContext()
-        user_agent = ' ' + context.user_agent if 'user_agent' in context else ''
+        user_agent = " " + context.user_agent if "user_agent" in context else ""
 
         context.append_user_agent("test_agent/0.0.2")
         assert context.user_agent == "test_agent/0.0.2" + user_agent
