@@ -48,18 +48,29 @@ class ExperimentOrchestrator:
         self.command_submitter = ExperimentCommandSubmitter(self.run_operations)
 
     @classmethod
-    def _set_context(cls, experiment, test=False):
+    def _set_experiment(cls, experiment):
         """Set experiment info to operation context.
 
         :param experiment: Experiment name or experiment template absolute path.
         :type experiment: str
-        :param test: Whether it's a test run. If True, will set line run id.
-        :type test: bool
         """
         operation_context = OperationContext.get_instance()
-        operation_context.experiment = experiment
-        if test:
-            operation_context.line_run_id = uuid.uuid4()
+        operation_context._add_otel_attributes("experiment", experiment)
+
+    @classmethod
+    def _set_referenced_line_run_id(cls, node_name, test_context):
+        """Set referenced line run id for node test.
+
+        :param node_name: Experiment node name.
+        :type node_name: str
+        :param test_context: Experiment test context.
+        :type test_context: ~promptflow._sdk._submitter.experiment_orchestrator.ExperimentTemplateTestContext
+        """
+        operation_context = OperationContext.get_instance()
+        referenced_ids = test_context.node_name_to_referenced_id.get(node_name, [])
+        if referenced_ids:
+            # Here we use next to get the first referenced id, as we only support 1 referenced node for flow node now.
+            operation_context._add_otel_attributes("referenced.line_run_id", next(referenced_ids))
 
     def test(
         self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
@@ -96,7 +107,7 @@ class ExperimentOrchestrator:
         )
 
         if template._source_path:
-            self._set_context(Path(template._source_path).resolve().absolute().as_posix())
+            self._set_experiment(Path(template._source_path).resolve().absolute().as_posix())
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
@@ -128,6 +139,8 @@ class ExperimentOrchestrator:
         inputs = apply_inputs_mapping(inputs=binding_context, inputs_mapping=inputs_mapping)
         logger.debug(f"Resolved node {node.name!r} inputs {inputs}.")
         test_context.add_node_inputs(node.name, inputs)
+        # Only set referenced line run id, run id will be passed in.
+        self._set_referenced_line_run_id(node.name, test_context)
         return self._client.flows.test(
             flow=node.path,
             environment_variables=test_context.environment_variables,
@@ -135,6 +148,7 @@ class ExperimentOrchestrator:
             output_path=test_context.output_path / node.name,
             dump_test_result=True,
             stream_output=False,
+            run_id=test_context.node_name_to_id[node.name],
         )
 
     def _test_command_node(self, *args, **kwargs):
@@ -158,7 +172,7 @@ class ExperimentOrchestrator:
         resolved_nodes = ExperimentHelper.resolve_nodes_to_execute(experiment)
 
         # Run nodes
-        self._set_context(experiment.name)
+        self._set_experiment(experiment.name)
         run_dict = {}
         try:
             for node in resolved_nodes:
@@ -243,6 +257,9 @@ class ExperimentTemplateTestContext:
         self.environment_variables = environment_variables or {}
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
+        # Generate line run id for node
+        self.node_name_to_id = {node.name: uuid.uuid4() for node in template.nodes}
+        self.node_name_to_referenced_id = self._prepare_referenced_ids()
         # TODO: Update session part after test session is supported
         if output_path:
             self.output_path = Path(output_path)
@@ -256,6 +273,15 @@ class ExperimentTemplateTestContext:
 
     def add_node_result(self, name, result):
         self.node_results[name] = result
+
+    def _prepare_referenced_ids(self):
+        """Change name: [referenced_name] to name: [referenced_id]."""
+        edges = ExperimentHelper.get_experiment_node_edges(self.template.nodes)
+        result = {
+            name: [self.node_name_to_id[referenced_name] for referenced_name in edges] for name, edges in edges.items()
+        }
+        logger.debug(f"Resolved node name to id mapping: {self.node_name_to_id}, referenced id mapping {result}.")
+        return result
 
 
 class ExperimentRun(Run):
@@ -333,22 +359,35 @@ class ExperimentHelper:
         return resolved_mapping
 
     @staticmethod
+    def _is_node_reference(value):
+        """Check if value is a node reference."""
+        return (
+            isinstance(value, str)
+            and value.startswith("${")
+            and not value.startswith("${data.")
+            and not value.startswith("${inputs.")
+        )
+
+    @staticmethod
+    def _prepare_single_node_edges(node):
+        """Prepare single node name to referenced node name edges mapping."""
+        node_names = set()
+        for input_value in node.inputs.values():
+            if not isinstance(input_value, str):
+                continue
+            if ExperimentHelper._is_node_reference(input_value):
+                referenced_node_name = input_value.split(".")[0].replace("${", "")
+                node_names.add(referenced_node_name)
+        return node_names
+
+    @staticmethod
+    def get_experiment_node_edges(nodes):
+        """Get experiment node edges mapping."""
+        return {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
+
+    @staticmethod
     def resolve_nodes_to_execute(experiment, start_nodes=None):
         """Resolve node to execute and ensure nodes order in experiment."""
-
-        def _prepare_single_node_edges(node):
-            node_names = set()
-            for input_value in node.inputs.values():
-                if not isinstance(input_value, str):
-                    continue
-                if (
-                    input_value.startswith("${")
-                    and not input_value.startswith("${data.")
-                    and not input_value.startswith("${inputs.")
-                ):
-                    referenced_node_name = input_value.split(".")[0].replace("${", "")
-                    node_names.add(referenced_node_name)
-            return node_names
 
         def _remove_nodes_from_active_edges(nodes_to_remove):
             for node in nodes_to_remove:
@@ -373,7 +412,7 @@ class ExperimentHelper:
         # Perform topological sort to ensure nodes order
         nodes = experiment.nodes
         resolved_nodes, start_nodes = [], start_nodes or []
-        edges = {node.name: _prepare_single_node_edges(node) for node in nodes}
+        edges = {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
         active_edges = copy.deepcopy(edges)
         # If start nodes specified, preprocessing them.
         _remove_nodes_from_active_edges(start_nodes)
