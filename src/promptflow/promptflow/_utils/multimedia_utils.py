@@ -127,9 +127,7 @@ def create_image(value: any):
             )
     elif isinstance(value, str):
         if not value:
-            raise InvalidImageInput(
-                message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR
-            )
+            raise InvalidImageInput(message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR)
         return _create_image_from_string(value)
     else:
         raise InvalidImageInput(

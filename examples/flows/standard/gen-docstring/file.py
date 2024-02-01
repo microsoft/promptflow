@@ -63,13 +63,15 @@ class File:
             with open(self._path, "w") as f:
                 f.write(content)
         else:
-            logging.warning("Cannot override origin file from URL, create a new file instead.")
+            logging.warning(
+                "Cannot override origin file from URL, create a new file instead."
+            )
             self.create_new_file(content)
 
     def create_new_file(self, content: str) -> None:
         if self._is_url:
             path = os.path.join(
-                './',
+                "./",
                 self.filename + f"_doc.{self.language}",
             )
         else:
