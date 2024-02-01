@@ -30,5 +30,5 @@ aml_cluster = "<your-compute-name>"
 
 ; Parallel run step configs
 prs_instance_count = 2
-prs_mini_batch_size = "10kb"
+prs_mini_batch_size = 2
 prs_max_concurrency_per_instance = 10
