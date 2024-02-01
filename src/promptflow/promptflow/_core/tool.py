@@ -144,7 +144,6 @@ class ToolProvider(ABC):
 
 @dataclass
 class DynamicList:
-
     function: InitVar[Union[str, Callable]]
     """The dynamic list function."""
 

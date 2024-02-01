@@ -352,7 +352,6 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
                 )
                 return result
         else:
-
             invoker = FlowContextResolver.resolve(flow=self)
             result = invoker._invoke(
                 data=inputs,

@@ -120,7 +120,6 @@ def execute_in_spawn_mode_subprocess(
                     run_id,
                     None,
                 ) as pool:
-
                     assert pool._n_process == n_process
                     if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
