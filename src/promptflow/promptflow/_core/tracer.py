@@ -211,10 +211,11 @@ def enrich_span_with_trace(span, trace):
                 "framework": "promptflow",
                 "span_type": trace.type.value,
                 "function": trace.name,
-                "inputs": serialize_attribute(trace.inputs),
                 "node_name": get_node_name_from_context(),
             }
         )
+
+        enrich_span_with_input(span, trace.inputs)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
 
