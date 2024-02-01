@@ -820,11 +820,11 @@ class TestExceptions:
         }
 
     def test_remove_suffix(self):
-        assert remove_suffix('PackageToolNotFoundError.', '.') == 'PackageToolNotFoundError'
-        assert remove_suffix('PackageToolNotFoundError', 'Error') == 'PackageToolNotFound'
-        assert remove_suffix('PackageToolNotFoundError', 'PackageToolNotFoundError') == ''
-        assert remove_suffix('PackageToolNotFoundError', 'NonExistedSuffix') == 'PackageToolNotFoundError'
-        assert remove_suffix('PackageToolNotFoundError', '') == 'PackageToolNotFoundError'
-        assert remove_suffix('PackageToolNotFoundError', None) == 'PackageToolNotFoundError'
-        assert remove_suffix('', 'NonExistedSuffix') == ''
-        assert remove_suffix(None, 'NonExistedSuffix') is None
+        assert remove_suffix("PackageToolNotFoundError.", ".") == "PackageToolNotFoundError"
+        assert remove_suffix("PackageToolNotFoundError", "Error") == "PackageToolNotFound"
+        assert remove_suffix("PackageToolNotFoundError", "PackageToolNotFoundError") == ""
+        assert remove_suffix("PackageToolNotFoundError", "NonExistedSuffix") == "PackageToolNotFoundError"
+        assert remove_suffix("PackageToolNotFoundError", "") == "PackageToolNotFoundError"
+        assert remove_suffix("PackageToolNotFoundError", None) == "PackageToolNotFoundError"
+        assert remove_suffix("", "NonExistedSuffix") == ""
+        assert remove_suffix(None, "NonExistedSuffix") is None

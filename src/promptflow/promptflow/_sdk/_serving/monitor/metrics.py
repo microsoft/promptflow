@@ -152,9 +152,11 @@ class MetricsRecorder(object):
         """
         self.logger = logger
         if not metrics_enabled:
-            logger.warning("OpenTelemetry metric is not enabled, metrics will not be recorded." +
-                           "If you want to collect metrics, please enable 'azureml-serving' extra requirement " +
-                           "for promptflow: 'pip install promptflow[azureml-serving]'")
+            logger.warning(
+                "OpenTelemetry metric is not enabled, metrics will not be recorded."
+                + "If you want to collect metrics, please enable 'azureml-serving' extra requirement "
+                + "for promptflow: 'pip install promptflow[azureml-serving]'"
+            )
             return
         self.common_dimensions = common_dimensions or {}
         self.reader = reader

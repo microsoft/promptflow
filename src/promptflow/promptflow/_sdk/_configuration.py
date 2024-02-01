@@ -39,7 +39,6 @@ class InvalidConfigValue(ValidationException):
 
 
 class Configuration(object):
-
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
     COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
@@ -116,7 +115,6 @@ class Configuration(object):
         if path.is_file():
             found_path = path
         else:
-
             # Based on priority
             # Look in config dirs like .azureml or plain directory
             # with None
