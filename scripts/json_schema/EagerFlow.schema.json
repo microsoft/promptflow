@@ -32,10 +32,6 @@
                     "title": "language",
                     "type": "string"
                 },
-                "path": {
-                    "title": "path",
-                    "type": "string"
-                },
                 "$schema": {
                     "title": "$schema",
                     "type": "string",
@@ -62,8 +58,7 @@
             },
             "type": "object",
             "required": [
-                "entry",
-                "path"
+                "entry"
             ],
             "additionalProperties": false
         }

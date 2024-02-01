@@ -24,7 +24,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import get_int_env_var, log_progress, set_context
+from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -97,6 +97,7 @@ class LineExecutionProcessPool:
         output_dir,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
+        worker_count: Optional[int] = None,
     ):
         self._nlines = nlines
         self._run_id = run_id
@@ -132,6 +133,7 @@ class LineExecutionProcessPool:
         }
         # Will set to True if the batch run is timeouted.
         self._is_timeout = False
+        self._worker_count = self._determine_worker_count(worker_count)
 
     def __enter__(self):
         manager = Manager()
@@ -139,7 +141,7 @@ class LineExecutionProcessPool:
         self._completed_idx = manager.dict()
 
         self._task_queue = Queue()
-        self._n_process = self._determine_worker_count()
+        self._n_process = self._worker_count
 
         # When using fork, we first spawn a sub process, the SemLock created in fork context (multiprocessing.Queue()）
         # can't used in a spawn context. Since spawn does not share memory, synchronization primitives created by
@@ -565,11 +567,9 @@ class LineExecutionProcessPool:
             msgs.append("Processing Lines: " + ", ".join(lines) + ".")
         return msgs
 
-    def _determine_worker_count(self):
-        worker_count = get_int_env_var("PF_WORKER_COUNT")
-
-        # Starting a new process in non-fork mode requires to allocate memory. Calculate the maximum number of processes
-        # based on available memory to avoid memory bursting.
+    def _determine_worker_count(self, worker_count):
+        # Starting a new process in non-fork mode requires to allocate memory.
+        # Calculate the maximum number of processes based on available memory to avoid memory bursting.
         estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
 
         # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
@@ -595,7 +595,7 @@ class LineExecutionProcessPool:
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
-        bulk_logger.info(f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
+        bulk_logger.info(f"Set process count to {worker_count}.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
                 f"The current process count ({worker_count}) is larger than recommended process count "
