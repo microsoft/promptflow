@@ -68,7 +68,7 @@ class ExperimentOrchestrator:
         self.run_operations = run_operations
         self.experiment_operations = experiment_operations
         self.experiment = experiment
-        self._nodes = {node.name: node for node in self.experiment.nodes}
+        self._nodes = {node.name: node for node in self.experiment.nodes} if experiment else {}
         # A key-value pair of node name and run info
         self._node_runs = {}
 

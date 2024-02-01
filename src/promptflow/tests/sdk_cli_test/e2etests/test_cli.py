@@ -1959,7 +1959,7 @@ class TestCli:
             assert exp_name in out
             assert ExperimentStatus.NOT_STARTED in out
 
-            with patch.object(
+            with mock.patch(
                 "promptflow._sdk._submitter.experiment_orchestrator.ExperimentOrchestrator._start_process_in_background"
             ) as mock_start_process_func:
                 mock_start_process_func.side_effect = mock_start_process_in_background
