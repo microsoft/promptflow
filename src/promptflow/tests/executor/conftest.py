@@ -7,8 +7,10 @@ from unittest.mock import patch
 import pytest
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
+    delete_count_lock_file,
     inject_async_with_recording,
     inject_sync_with_recording,
+    is_live,
     is_record,
     is_replay,
     mock_tool,
@@ -36,8 +38,17 @@ def recording_setup():
 
 def setup_recording():
     patches = []
-    override_recording_file()
-    if is_record() or is_replay():
+
+    def start_patches(patch_targets):
+        for target, mock_func in patch_targets.items():
+            patcher = patch(target, mock_func)
+            patches.append(patcher)
+            patcher.start()
+
+    if is_replay() or is_record():
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
+        RecordStorage.get_instance(file_path)
+
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
@@ -48,11 +59,16 @@ def setup_recording():
             "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
         }
+        start_patches(patch_targets)
 
-        for target, mocked_target in patch_targets.items():
-            patcher = patch(target, mocked_target)
-            patches.append(patcher)
-            patcher.start()
+    if is_live():
+        patch_targets = {
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
+
+    inject_openai_api()
 
     return patches
 
@@ -186,21 +202,21 @@ def process_override():
                     multiprocessing.Process = original_process_class[start_method]
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def recording_injection(recording_setup, process_override):
     # This fixture is used to main entry point to inject recording mode into the test
     try:
         yield (is_replay() or is_record(), recording_array_extend)
     finally:
-        if is_replay() or is_record():
-            RecordStorage.get_instance().delete_lock_file()
+        RecordStorage.get_instance().delete_lock_file()
+        delete_count_lock_file()
         recording_array_reset()
 
 
-@pytest.fixture(autouse=True, scope="session")
-def inject_api_executor():
-    """Inject OpenAI API during test session.
-
-    AOAI call in promptflow should involve trace logging and header injection. Inject
-    function to API call in test scenario."""
-    inject_openai_api()
+# @pytest.fixture(autouse=True, scope="session")
+# def inject_api_executor():
+#     """Inject OpenAI API during test session.
+#
+#     AOAI call in promptflow should involve trace logging and header injection. Inject
+#     function to API call in test scenario."""
+#     inject_openai_api()
