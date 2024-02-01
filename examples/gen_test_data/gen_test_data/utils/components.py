@@ -45,4 +45,4 @@ def clean_data_and_save_component(
     test_data_output_path = test_data_output / Path("test_data_set.jsonl")
     clean_data_and_save(data, test_data_output_path)
 
-    return test_data_output_path
+    return str(test_data_output_path)
