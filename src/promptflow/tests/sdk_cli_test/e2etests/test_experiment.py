@@ -6,6 +6,7 @@ from mock import mock
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import ExperimentStatus, RunStatus
 from promptflow._sdk._errors import ExperimentValueError
 from promptflow._sdk._load_functions import load_common
@@ -105,6 +106,7 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
+        assert OperationContext.get_instance().experiment == exp.name
         assert exp.status == ExperimentStatus.TERMINATED
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
@@ -156,6 +158,7 @@ class TestExperiment:
                 inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
             )
             _assert_result(result)
+            assert OperationContext.get_instance().experiment == template_path.resolve().absolute().as_posix()
             expected_output_path = (
                 Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
             )

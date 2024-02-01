@@ -52,7 +52,7 @@ class ExperimentOrchestrator:
         """Set experiment info to operation context.
 
         :param experiment: Experiment name or experiment template absolute path.
-        :type experiment: Union[str, Path]
+        :type experiment: str
         :param test: Whether it's a test run. If True, will set line run id.
         :type test: bool
         """
@@ -95,7 +95,8 @@ class ExperimentOrchestrator:
             template, inputs=inputs, environment_variables=environment_variables, output_path=kwargs.get("output_path")
         )
 
-        self._set_context(template._source_path)
+        if template._source_path:
+            self._set_context(Path(template._source_path).resolve().absolute().as_posix())
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
