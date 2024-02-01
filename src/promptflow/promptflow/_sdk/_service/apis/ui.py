@@ -36,7 +36,7 @@ class Trace(Resource):
             {
                 "trace_id": trace.trace_id,
                 "span_id": trace.span_id,
-                "content": trace._content,
+                "content": json.dumps(trace._content, indent=4),
             }
             for trace in traces
         ]
