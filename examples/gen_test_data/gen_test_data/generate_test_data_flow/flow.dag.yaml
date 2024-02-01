@@ -5,7 +5,7 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
-    default: 
+    default: ""
   text_meta:
     type: string
     default: "{}"
@@ -60,14 +60,14 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection: eus2
-    model_or_deployment_name: gpt-4
+    model_or_deployment_name: ""
     score_text_trunk_prompt: ${score_text_trunk_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
     context: ${inputs.text_chunk}
     score_threshold: 4
     response_format: text
     temperature: 0.2
+    max_tokens: ""
   use_variants: false
 - name: validate_and_generate_test_question
   type: python
@@ -75,12 +75,12 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection: eus2
-    model_or_deployment_name: gpt-4
+    model_or_deployment_name: ""
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${validate_and_generate_seed_question.output.question}
     response_format: text
     temperature: 0.2
+    max_tokens: ""
   use_variants: false
 - name: generate_suggested_answer
   type: python
@@ -88,13 +88,12 @@ nodes:
     type: code
     path: generate_suggested_answer.py
   inputs:
-    connection: eus2
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
     question: ${validate_and_generate_test_question.output.question}
-    model_or_deployment_name: gpt-4
+    model_or_deployment_name: ""
     temperature: 0.2
-    max_tokens: null
+    max_tokens: ""
   use_variants: false
 - name: generate_debug_info
   type: python
@@ -121,9 +120,8 @@ nodes:
     type: code
     path: validate_suggested_answer.py
   inputs:
-    connection: eus2
-    model_or_deployment_name: gpt-4
+    model_or_deployment_name: ""
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
     temperature: 0.2
-    max_tokens: null
+    max_tokens: ""

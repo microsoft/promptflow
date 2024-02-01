@@ -1,4 +1,5 @@
-system:
+# system:
+
 Given a text trunk from a document as a context, complete the two following tasks and output a valid json format with the score and the reason.
 Evaluate the provided context and assign a numerical score between 0 and 10 based on the following criteria:
 1. Award a high score if:
@@ -9,7 +10,8 @@ Evaluate the provided context and assign a numerical score between 0 and 10 base
     (2) context contains just punctuations or code snippet.
     (3) context that is shorter than five words.
 
-user:
+# user:
+
 Output a JSON with both the score and the reason. The score and reason should totally based on the above criteria. Do not add any other criteria. The reason should be a string that explains why the score is given.
 Here are some examples:
 context:
