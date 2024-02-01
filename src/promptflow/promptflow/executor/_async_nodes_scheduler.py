@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Tuple
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.thread_utils import create_thread_with_context_vars
 from promptflow._utils.utils import extract_user_frame_summaries, set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
@@ -57,10 +58,10 @@ class AsyncNodesScheduler:
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
         self._semaphore = asyncio.Semaphore(self._node_concurrency)
-        monitor = threading.Thread(
-            target=monitor_long_running_coroutine,
-            args=(loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event),
+        monitor = create_thread_with_context_vars(
+            target_function=monitor_long_running_coroutine,
             daemon=True,
+            target_args=(loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event),
         )
         monitor.start()
 
@@ -174,7 +175,7 @@ def signal_handler(sig, frame):
     """
     flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}), start coroutine monitor thread.")
     loop = asyncio.get_running_loop()
-    monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
+    monitor = create_thread_with_context_vars(target_function=monitor_coroutine_after_cancellation, target_args=(loop,))
     monitor.start()
     raise KeyboardInterrupt
 
