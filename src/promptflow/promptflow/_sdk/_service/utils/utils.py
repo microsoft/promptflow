@@ -8,14 +8,18 @@ from datetime import datetime
 from functools import wraps
 
 import psutil
+import requests
 from flask import abort, make_response, request
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utils import read_write_by_user
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def local_user_only(func):
@@ -98,6 +102,19 @@ def get_started_service_info(port):
 
 def make_response_no_content():
     return make_response("", 204)
+
+
+def check_pfs_service_status(pfs_port) -> bool:
+    """Check if pfs service is running."""
+    try:
+        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
+        if response.status_code == 200:
+            logger.info(f"Pfs service is already running on port {pfs_port}.")
+            return True
+    except Exception:  # pylint: disable=broad-except
+        pass
+    logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to start/force restart pfs.")
+    return False
 
 
 @dataclass

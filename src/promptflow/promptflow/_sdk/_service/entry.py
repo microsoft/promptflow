@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import sys
+import threading
+import time
 
 import waitress
 
@@ -14,13 +16,14 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
+    check_pfs_service_status,
     dump_port_to_config,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
     kill_exist_service,
 )
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity, monitor_operation
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow.exceptions import UserErrorException
 
@@ -51,32 +54,45 @@ def add_show_status_action(subparsers):
     show_status_parser.set_defaults(action="show-status")
 
 
-@monitor_operation(activity_name="pfs.start", activity_type=ActivityType.PUBLICAPI)
-def start_service(args):
-    port = args.port
+def start_service(args, logger, activity_name):
     app, _ = create_app()
+    port = args.port
+    port_event = threading.Event()
 
-    def validate_port(port, force_start):
-        if is_port_in_use(port):
-            if force_start:
-                app.logger.warning(f"Force restart the service on the port {port}.")
-                kill_exist_service(port)
+    def check_service_status():
+        with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
+            nonlocal port
+
+            def validate_port(port, force_start):
+                if is_port_in_use(port):
+                    if force_start:
+                        app.logger.warning(f"Force restart the service on the port {port}.")
+                        kill_exist_service(port)
+                    else:
+                        app.logger.warning(f"Service port {port} is used.")
+                        raise UserErrorException(f"Service port {port} is used.")
+
+            if port:
+                dump_port_to_config(port)
+                validate_port(port, args.force)
             else:
-                app.logger.warning(f"Service port {port} is used.")
-                raise UserErrorException(f"Service port {port} is used.")
+                port = get_port_from_config(create_if_not_exists=True)
+                validate_port(port, args.force)
+            port_event.set()
+            # Set host to localhost, only allow request from localhost.
+            app.logger.info(
+                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+            )
+            while check_pfs_service_status(port) is False:
+                time.sleep(1)
 
-    if port:
-        dump_port_to_config(port)
-        validate_port(port, args.force)
-    else:
-        port = get_port_from_config(create_if_not_exists=True)
-        validate_port(port, args.force)
-    # Set host to localhost, only allow request from localhost.
-    app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
+    threading.Thread(target=check_service_status).start()
+    port_event.wait()
     waitress.serve(app, host="127.0.0.1", port=port)
 
 
 def main():
+    sys.argv += ["start", "--force"]
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
@@ -108,8 +124,11 @@ def entry(command_args):
     activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
     logger = get_telemetry_logger()
 
-    with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
-        run_command(args)
+    if args.action == "start":
+        start_service(args, logger, activity_name)
+    else:
+        with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
+            run_command(args)
 
 
 def run_command(args):
