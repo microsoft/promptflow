@@ -273,7 +273,7 @@ class TestFlowTest:
         flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
         with pytest.raises(ValidationError) as e:
             _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "Provided entry my_func has incorrect format" in str(e.value)
+        assert "Entry function my_func is not valid." in str(e.value)
 
         # required inputs not provided
         clear_module_cache("entry")
