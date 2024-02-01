@@ -51,6 +51,7 @@ REQUIRES = [
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
     "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
+    "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
 ]
 
 setup(
@@ -85,9 +86,6 @@ setup(
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
         "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0", "bs4"],
-        "pfs": [
-            "flask-restx>=1.2.0,<2.0.0",
-        ],
         "azureml-serving": [
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",

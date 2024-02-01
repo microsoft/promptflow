@@ -1,6 +1,8 @@
+import tempfile
 from pathlib import Path
 
 import pytest
+from mock import mock
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
@@ -130,3 +132,39 @@ class TestExperiment:
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_flow_test_with_experiment(self):
+        def _assert_result(result):
+            assert "main" in result, "Node main not in result"
+            assert "category" in result["main"], "Node main.category not in result"
+            assert "evidence" in result["main"], "Node main.evidence not in result"
+            assert "eval" in result, "Node eval not in result"
+            assert "grade" in result["eval"], "Node eval.grade not in result"
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+
+            template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+            target_flow_path = FLOW_ROOT / "web_classification" / "flow.dag.yaml"
+            client = PFClient()
+            # Test with inputs
+            result = client.flows.test(
+                target_flow_path,
+                experiment=template_path,
+                inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+            )
+            _assert_result(result)
+            expected_output_path = (
+                Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
+            )
+            assert expected_output_path.resolve().exists()
+            # Assert eval metric exists
+            assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+            # Test with default data and custom path
+            expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
+            result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
+            _assert_result(result)
+            assert expected_output_path.resolve().exists()
+            # Assert eval metric exists
+            assert (expected_output_path / "eval" / "flow.metrics.json").exists()

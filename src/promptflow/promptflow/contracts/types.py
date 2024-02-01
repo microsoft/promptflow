@@ -40,9 +40,7 @@ class AssistantDefinition:
     @staticmethod
     def deserialize(data: dict) -> "AssistantDefinition":
         return AssistantDefinition(
-            model=data.get("model", ""),
-            instructions=data.get("instructions", ""),
-            tools=data.get("tools", [])
+            model=data.get("model", ""), instructions=data.get("instructions", ""), tools=data.get("tools", [])
         )
 
     def serialize(self):

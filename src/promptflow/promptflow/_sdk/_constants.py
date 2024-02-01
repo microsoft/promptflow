@@ -318,13 +318,11 @@ class RunInfoSources(str, Enum):
 
 
 class ConfigValueType(str, Enum):
-
     STRING = "String"
     SECRET = "Secret"
 
 
 class ConnectionType(str, Enum):
-
     _NOT_SET = "NotSet"
     AZURE_OPEN_AI = "AzureOpenAI"
     OPEN_AI = "OpenAI"

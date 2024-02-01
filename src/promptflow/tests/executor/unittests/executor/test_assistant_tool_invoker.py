@@ -18,12 +18,10 @@ class TestAssistantToolInvoker:
                 "type": "function",
                 "tool_type": "python",
                 "source": {"type": "code", "path": "test_assistant_tool_invoker.py"},
-            }
+            },
         ]
 
-    @pytest.mark.parametrize(
-        "predefined_inputs", [({}), ({"input_int": 1})]
-    )
+    @pytest.mark.parametrize("predefined_inputs", [({}), ({"input_int": 1})])
     def test_load_tools(self, predefined_inputs):
         input_int = 1
         input_str = "test"
@@ -34,8 +32,8 @@ class TestAssistantToolInvoker:
                 "type": "function",
                 "tool_type": "python",
                 "source": {"type": "code", "path": "test_assistant_tool_invoker.py"},
-                "predefined_inputs": predefined_inputs
-            }
+                "predefined_inputs": predefined_inputs,
+            },
         ]
 
         # Test load tools
@@ -54,7 +52,7 @@ class TestAssistantToolInvoker:
         assert len(descriptions) == 3
         properties = {
             "input_int": {"description": "This is a sample input int.", "type": "number"},
-            "input_str": {"description": "This is a sample input str.", "type": "string"}
+            "input_str": {"description": "This is a sample input str.", "type": "string"},
         }
         required = ["input_int", "input_str"]
         self._remove_predefined_inputs(properties, predefined_inputs.keys())
@@ -68,12 +66,8 @@ class TestAssistantToolInvoker:
                     "function": {
                         "name": "sample_tool",
                         "description": "This is a sample tool.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": properties,
-                            "required": required
-                        }
-                    }
+                        "parameters": {"type": "object", "properties": properties, "required": required},
+                    },
                 }
 
         # Test invoke tool

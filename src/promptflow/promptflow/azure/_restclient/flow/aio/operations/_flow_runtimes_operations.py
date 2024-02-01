@@ -7,7 +7,13 @@ import functools
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse
 from azure.core.rest import HttpRequest
@@ -15,9 +21,22 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._flow_runtimes_operations import build_check_ci_availability_request, build_check_mir_availability_request, build_check_runtime_upgrade_request, build_create_runtime_request, build_delete_runtime_request, build_get_runtime_capability_request, build_get_runtime_latest_config_request, build_get_runtime_request, build_list_runtimes_request, build_update_runtime_request
-T = TypeVar('T')
+from ...operations._flow_runtimes_operations import (
+    build_check_ci_availability_request,
+    build_check_mir_availability_request,
+    build_check_runtime_upgrade_request,
+    build_create_runtime_request,
+    build_delete_runtime_request,
+    build_get_runtime_capability_request,
+    build_get_runtime_latest_config_request,
+    build_get_runtime_request,
+    build_list_runtimes_request,
+    build_update_runtime_request,
+)
+
+T = TypeVar("T")
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
+
 
 class FlowRuntimesOperations:
     """FlowRuntimesOperations async operations.
@@ -77,16 +96,14 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.FlowRuntimeDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.FlowRuntimeDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'CreateFlowRuntimeRequest')
+            _json = self._serialize.body(body, "CreateFlowRuntimeRequest")
         else:
             _json = None
 
@@ -100,7 +117,7 @@ class FlowRuntimesOperations:
             async_call=async_call,
             msi_token=msi_token,
             skip_port_check=skip_port_check,
-            template_url=self.create_runtime.metadata['url'],
+            template_url=self.create_runtime.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -113,15 +130,14 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowRuntimeDto', pipeline_response)
+        deserialized = self._deserialize("FlowRuntimeDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    create_runtime.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}'}  # type: ignore
-
+    create_runtime.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}"}  # type: ignore
 
     @distributed_trace_async
     async def update_runtime(
@@ -159,16 +175,14 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.FlowRuntimeDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.FlowRuntimeDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UpdateFlowRuntimeRequest')
+            _json = self._serialize.body(body, "UpdateFlowRuntimeRequest")
         else:
             _json = None
 
@@ -182,7 +196,7 @@ class FlowRuntimesOperations:
             async_call=async_call,
             msi_token=msi_token,
             skip_port_check=skip_port_check,
-            template_url=self.update_runtime.metadata['url'],
+            template_url=self.update_runtime.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -195,24 +209,18 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowRuntimeDto', pipeline_response)
+        deserialized = self._deserialize("FlowRuntimeDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    update_runtime.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}'}  # type: ignore
-
+    update_runtime.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}"}  # type: ignore
 
     @distributed_trace_async
     async def get_runtime(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        runtime_name: str,
-        **kwargs: Any
+        self, subscription_id: str, resource_group_name: str, workspace_name: str, runtime_name: str, **kwargs: Any
     ) -> "_models.FlowRuntimeDto":
         """get_runtime.
 
@@ -229,19 +237,16 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.FlowRuntimeDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.FlowRuntimeDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_runtime_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             runtime_name=runtime_name,
-            template_url=self.get_runtime.metadata['url'],
+            template_url=self.get_runtime.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -254,15 +259,14 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowRuntimeDto', pipeline_response)
+        deserialized = self._deserialize("FlowRuntimeDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_runtime.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}'}  # type: ignore
-
+    get_runtime.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}"}  # type: ignore
 
     @distributed_trace_async
     async def delete_runtime(
@@ -294,13 +298,10 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.FlowRuntimeDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.FlowRuntimeDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_delete_runtime_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
@@ -308,7 +309,7 @@ class FlowRuntimesOperations:
             runtime_name=runtime_name,
             async_call=async_call,
             msi_token=msi_token,
-            template_url=self.delete_runtime.metadata['url'],
+            template_url=self.delete_runtime.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -321,15 +322,14 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowRuntimeDto', pipeline_response)
+        deserialized = self._deserialize("FlowRuntimeDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    delete_runtime.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}'}  # type: ignore
-
+    delete_runtime.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}"}  # type: ignore
 
     @distributed_trace_async
     async def check_ci_availability(
@@ -358,20 +358,17 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.AvailabilityResponse
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.AvailabilityResponse"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.AvailabilityResponse"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_check_ci_availability_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             compute_instance_name=compute_instance_name,
             custom_app_name=custom_app_name,
-            template_url=self.check_ci_availability.metadata['url'],
+            template_url=self.check_ci_availability.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -384,15 +381,14 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('AvailabilityResponse', pipeline_response)
+        deserialized = self._deserialize("AvailabilityResponse", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    check_ci_availability.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/checkCiAvailability'}  # type: ignore
-
+    check_ci_availability.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/checkCiAvailability"}  # type: ignore
 
     @distributed_trace_async
     async def check_mir_availability(
@@ -421,20 +417,17 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.AvailabilityResponse
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.AvailabilityResponse"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.AvailabilityResponse"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_check_mir_availability_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             endpoint_name=endpoint_name,
             deployment_name=deployment_name,
-            template_url=self.check_mir_availability.metadata['url'],
+            template_url=self.check_mir_availability.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -447,24 +440,18 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('AvailabilityResponse', pipeline_response)
+        deserialized = self._deserialize("AvailabilityResponse", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    check_mir_availability.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/checkMirAvailability'}  # type: ignore
-
+    check_mir_availability.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/checkMirAvailability"}  # type: ignore
 
     @distributed_trace_async
     async def check_runtime_upgrade(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        runtime_name: str,
-        **kwargs: Any
+        self, subscription_id: str, resource_group_name: str, workspace_name: str, runtime_name: str, **kwargs: Any
     ) -> bool:
         """check_runtime_upgrade.
 
@@ -481,19 +468,16 @@ class FlowRuntimesOperations:
         :rtype: bool
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[bool]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType[bool]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_check_runtime_upgrade_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             runtime_name=runtime_name,
-            template_url=self.check_runtime_upgrade.metadata['url'],
+            template_url=self.check_runtime_upgrade.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -506,24 +490,18 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('bool', pipeline_response)
+        deserialized = self._deserialize("bool", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    check_runtime_upgrade.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}/needUpgrade'}  # type: ignore
-
+    check_runtime_upgrade.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}/needUpgrade"}  # type: ignore
 
     @distributed_trace_async
     async def get_runtime_capability(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        runtime_name: str,
-        **kwargs: Any
+        self, subscription_id: str, resource_group_name: str, workspace_name: str, runtime_name: str, **kwargs: Any
     ) -> "_models.FlowRuntimeCapability":
         """get_runtime_capability.
 
@@ -540,19 +518,16 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.FlowRuntimeCapability
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeCapability"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.FlowRuntimeCapability"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_runtime_capability_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             runtime_name=runtime_name,
-            template_url=self.get_runtime_capability.metadata['url'],
+            template_url=self.get_runtime_capability.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -565,23 +540,18 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowRuntimeCapability', pipeline_response)
+        deserialized = self._deserialize("FlowRuntimeCapability", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_runtime_capability.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}/capability'}  # type: ignore
-
+    get_runtime_capability.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}/capability"}  # type: ignore
 
     @distributed_trace_async
     async def get_runtime_latest_config(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        **kwargs: Any
+        self, subscription_id: str, resource_group_name: str, workspace_name: str, **kwargs: Any
     ) -> "_models.RuntimeConfiguration":
         """get_runtime_latest_config.
 
@@ -596,18 +566,15 @@ class FlowRuntimesOperations:
         :rtype: ~flow.models.RuntimeConfiguration
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.RuntimeConfiguration"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.RuntimeConfiguration"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_runtime_latest_config_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            template_url=self.get_runtime_latest_config.metadata['url'],
+            template_url=self.get_runtime_latest_config.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -620,23 +587,18 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('RuntimeConfiguration', pipeline_response)
+        deserialized = self._deserialize("RuntimeConfiguration", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_runtime_latest_config.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/latestConfig'}  # type: ignore
-
+    get_runtime_latest_config.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/latestConfig"}  # type: ignore
 
     @distributed_trace_async
     async def list_runtimes(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        **kwargs: Any
+        self, subscription_id: str, resource_group_name: str, workspace_name: str, **kwargs: Any
     ) -> List["_models.FlowRuntimeDto"]:
         """list_runtimes.
 
@@ -651,18 +613,15 @@ class FlowRuntimesOperations:
         :rtype: list[~flow.models.FlowRuntimeDto]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[List["_models.FlowRuntimeDto"]]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType[List["_models.FlowRuntimeDto"]]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_list_runtimes_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            template_url=self.list_runtimes.metadata['url'],
+            template_url=self.list_runtimes.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -675,12 +634,11 @@ class FlowRuntimesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('[FlowRuntimeDto]', pipeline_response)
+        deserialized = self._deserialize("[FlowRuntimeDto]", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    list_runtimes.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes'}  # type: ignore
-
+    list_runtimes.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes"}  # type: ignore

@@ -7,7 +7,13 @@ import functools
 from typing import TYPE_CHECKING
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import HttpResponse
 from azure.core.rest import HttpRequest
@@ -20,7 +26,8 @@ from .._vendor import _convert_request
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Callable, Dict, Generic, Optional, TypeVar
-    T = TypeVar('T')
+
+    T = TypeVar("T")
     ClsType = Optional[Callable[[PipelineResponse[HttpRequest, HttpResponse], T, Dict[str, Any]], Any]]
 
 _SERIALIZER = Serializer()
@@ -45,6 +52,7 @@ def build_get_runtime_latest_config_request(
         headers=header_parameters,
         **kwargs
     )
+
 
 # fmt: on
 class FlowRuntimesWorkspaceIndependentOperations(object):
@@ -71,8 +79,7 @@ class FlowRuntimesWorkspaceIndependentOperations(object):
 
     @distributed_trace
     def get_runtime_latest_config(
-        self,
-        **kwargs  # type: Any
+        self, **kwargs  # type: Any
     ):
         # type: (...) -> "_models.RuntimeConfiguration"
         """get_runtime_latest_config.
@@ -82,15 +89,12 @@ class FlowRuntimesWorkspaceIndependentOperations(object):
         :rtype: ~flow.models.RuntimeConfiguration
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.RuntimeConfiguration"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.RuntimeConfiguration"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_runtime_latest_config_request(
-            template_url=self.get_runtime_latest_config.metadata['url'],
+            template_url=self.get_runtime_latest_config.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -103,12 +107,11 @@ class FlowRuntimesWorkspaceIndependentOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('RuntimeConfiguration', pipeline_response)
+        deserialized = self._deserialize("RuntimeConfiguration", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_runtime_latest_config.metadata = {'url': '/flow/api/runtimes/latestConfig'}  # type: ignore
-
+    get_runtime_latest_config.metadata = {"url": "/flow/api/runtimes/latestConfig"}  # type: ignore
