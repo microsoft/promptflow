@@ -63,7 +63,9 @@ def resolve_tutorial_resource(workflow_name: str, resource_path: Path) -> str:
         # validate resource path exists
         resource_path = (git_base_dir / resource).resolve()
         if not resource_path.exists():
-            raise FileNotFoundError("Please declare tutorial resources path whose base is the git repo root.")
+            raise FileNotFoundError(
+                "Please declare tutorial resources path whose base is the git repo root."
+            )
         elif resource_path.is_file():
             path_filter_list.append(resource)
         else:

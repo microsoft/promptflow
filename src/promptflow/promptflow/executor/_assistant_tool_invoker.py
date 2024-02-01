@@ -51,9 +51,7 @@ class AssistantToolInvoker:
         node, predefined_inputs = self._generate_node_for_tool(tool)
         resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
         func_name = resolved_tool.definition.function
-        definition = self._generate_tool_definition(
-            func_name, resolved_tool.definition.description, predefined_inputs
-        )
+        definition = self._generate_tool_definition(func_name, resolved_tool.definition.description, predefined_inputs)
         if resolved_tool.node.inputs:
             inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
             func = partial(resolved_tool.callable, **inputs)
@@ -82,7 +80,12 @@ class AssistantToolInvoker:
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
         to_openai_type = {
-            "str": "string", "int": "number", "float": "number", "bool": "boolean", "list": "array", "dict": "object"
+            "str": "string",
+            "int": "number",
+            "float": "number",
+            "bool": "boolean",
+            "list": "array",
+            "dict": "object",
         }
         description, params = DocstringParser.parse(description)
         for input in predefined_inputs:
@@ -96,10 +99,6 @@ class AssistantToolInvoker:
             "function": {
                 "name": func_name,
                 "description": description,
-                "parameters": {
-                    "type": "object",
-                    "properties": params,
-                    "required": list(params.keys())
-                }
-            }
+                "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+            },
         }

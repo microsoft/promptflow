@@ -47,17 +47,13 @@ class TestEagerFlow:
     @pytest.mark.parametrize(
         "flow_folder, inputs, ensure_output",
         [
-            (
-                "dummy_flow_with_trace",
-                {"text": "text", "models": ["model"]},
-                lambda x: x == "dummy_output"
-            ),
+            ("dummy_flow_with_trace", {"text": "text", "models": ["model"]}, lambda x: x == "dummy_output"),
             (
                 "flow_with_dataclass_output",
                 {"text": "text", "models": ["model"]},
-                lambda x: is_dataclass(x) and x.text == "text" and x.models == ["model"]
+                lambda x: is_dataclass(x) and x.text == "text" and x.models == ["model"],
             ),
-        ]
+        ],
     )
     def test_flow_run(self, flow_folder, inputs, ensure_output):
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
@@ -98,7 +94,7 @@ class TestEagerFlow:
                 {"text": "${data.text}", "models": "${data.models}"},
                 lambda x: x["text"] == "text" and isinstance(x["models"], list),
             ),
-        ]
+        ],
     )
     def test_batch_run(self, flow_folder, inputs_mapping, ensure_output):
         batch_engine = BatchEngine(

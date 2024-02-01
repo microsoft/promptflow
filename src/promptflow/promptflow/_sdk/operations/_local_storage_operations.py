@@ -14,7 +14,6 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow import load_flow
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -24,11 +23,13 @@ from promptflow._sdk._constants import (
     RunInfoSources,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     PromptflowIgnoreFile,
     generate_flow_tools_json,
     json_dump,
     json_load,
+    json_loads_parse_const_as_str,
     pd_read_json,
     read_open,
     write_open,
@@ -365,11 +366,7 @@ class LocalStorageOperations(AbstractRunStorage):
             # legacy run with local file detail.json, then directly load from the file
             return json_load(self._detail_path)
         else:
-            # nan, inf and -inf are not JSON serializable
-            # according to https://docs.python.org/3/library/json.html#json.loads
-            # `parse_constant` will be called to handle these values
-            # so if parse_const_as_str is True, we will parse these values as str with a lambda function
-            json_loads = json.loads if not parse_const_as_str else partial(json.loads, parse_constant=lambda x: str(x))
+            json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
@@ -389,8 +386,8 @@ class LocalStorageOperations(AbstractRunStorage):
                         node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
-    def load_metrics(self) -> Dict[str, Union[int, float, str]]:
-        return json_load(self._metrics_path)
+    def load_metrics(self, *, parse_const_as_str: bool = False) -> Dict[str, Union[int, float, str]]:
+        return json_load(self._metrics_path, parse_const_as_str=parse_const_as_str)
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""

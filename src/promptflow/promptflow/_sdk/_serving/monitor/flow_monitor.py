@@ -15,11 +15,7 @@ from flask import request, g
 class FlowMonitor:
     """FlowMonitor is used to collect metrics & data for promptflow serving."""
 
-    def __init__(self,
-                 logger,
-                 default_flow_name,
-                 data_collector: FlowDataCollector,
-                 metrics_recorder: MetricsRecorder):
+    def __init__(self, logger, default_flow_name, data_collector: FlowDataCollector, metrics_recorder: MetricsRecorder):
         self.data_collector = data_collector
         self.metrics_recorder = metrics_recorder
         self.logger = logger

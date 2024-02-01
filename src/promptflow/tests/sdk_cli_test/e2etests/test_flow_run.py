@@ -1224,9 +1224,31 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
-    @pytest.mark.skip("Enable this when executor change merges")
+    def test_flow_with_nan_inf_metrics(self, pf: PFClient, monkeypatch) -> None:
+        # TODO: remove this patch after executor switch to default spawn
+        monkeypatch.setenv("PF_BATCH_METHOD", "spawn")
+
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow-with-nan-inf-metrics",
+            data=f"{DATAS_DIR}/numbers.jsonl",
+            column_mapping={"number": "${data.value}"},
+        )
+        pf.stream(run)
+        local_storage = LocalStorageOperations(run=run)
+        # default behavior: no special logic for nan and inf
+        metrics = local_storage.load_metrics()
+        assert isinstance(metrics["nan_metrics"], float) and np.isnan(metrics["nan_metrics"])
+        assert isinstance(metrics["inf_metrics"], float) and np.isinf(metrics["inf_metrics"])
+
+        # handles nan and inf, which is real scenario during visualize
+        metrics = local_storage.load_metrics(parse_const_as_str=True)
+        assert isinstance(metrics["nan_metrics"], str) and metrics["nan_metrics"] == "NaN"
+        assert isinstance(metrics["inf_metrics"], str) and metrics["inf_metrics"] == "Infinity"
+
+        monkeypatch.delenv("PF_BATCH_METHOD")
+
+    @pytest.mark.skip("Won't support this kind of usage.")
     def test_eager_flow_run_without_yaml(self, pf):
-        # TODO(2898455): support this
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
         run = pf.run(
             flow=flow_path,
@@ -1235,7 +1257,6 @@ class TestFlowRun:
         )
         assert run.status == "Completed"
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
         run = pf.run(
@@ -1246,25 +1267,15 @@ class TestFlowRun:
         assert "error" not in run._to_dict()
 
     def test_eager_flow_test_invalid_cases(self, pf):
-        # no entry provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
-        with pytest.raises(UserErrorException) as e:
-            pf.run(
-                flow=flow_path,
-                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            )
-        assert "Entry function is not specified" in str(e.value)
-
-        # no path provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/")
+        # incorrect entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/")
         with pytest.raises(ValidationError) as e:
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             )
-        assert "'path': ['Missing data for required field.']" in str(e.value)
+        assert "Entry function my_func is not valid" in str(e.value)
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_additional_includes(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes")
         run = pf.run(
