@@ -21,6 +21,7 @@ from promptflow.executor._service.contracts.execution_request import BaseExecuti
 from promptflow.executor._service.utils.service_utils import get_log_context
 
 EXECUTION_TIMEOUT = timedelta(days=1).total_seconds()
+WAIT_SUBPROCESS_EXCEPTION_TIMEOUT = 10  # seconds
 
 
 async def invoke_function_in_process(request: BaseExecutionRequest, context_dict: dict, target_function: Callable):
@@ -49,7 +50,7 @@ async def invoke_function_in_process(request: BaseExecutionRequest, context_dict
         if p.exitcode and p.exitcode > 0:
             exception = None
             try:
-                exception = exception_queue.get(timeout=10)
+                exception = exception_queue.get(timeout=WAIT_SUBPROCESS_EXCEPTION_TIMEOUT)
             except Exception:
                 pass
             if exception is None:
