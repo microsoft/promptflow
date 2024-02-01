@@ -25,7 +25,7 @@ from promptflow._sdk._service.utils.utils import (
 )
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
 def add_start_service_action(subparsers):
@@ -90,9 +90,10 @@ def start_service(args, logger, activity_name):
             port = None
             port_event.set()
             raise UserErrorException(message=e.message)
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
             port = None
             port_event.set()
+            raise SystemErrorException(message=str(e))
 
     threading.Thread(target=check_service_status).start()
     port_event.wait()
