@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 import re
 
-from marshmallow import fields, validate, validates_schema
+from marshmallow import ValidationError, fields, validate, validates_schema
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
@@ -41,7 +41,10 @@ class BaseFlowSchema(YamlFileSchema):
 
     # metadata
     type = fields.Str(validate=validate.OneOf(FlowType.get_all_values()))
-    language = fields.Str()
+    language = fields.Str(
+        default=FlowLanguage.Python,
+        validate=validate.OneOf([FlowLanguage.Python, FlowLanguage.CSharp]),
+    )
     description = fields.Str()
     display_name = fields.Str()
     tags = fields.Dict(keys=fields.Str(), values=fields.Str())
@@ -73,12 +76,18 @@ class PythonEagerFlowEntry(fields.Str):
 class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
-    # entry point, for example: pkg.module:func
+    # entry point for eager flow
     entry = fields.Str(required=True)
 
-    @validates_schema
+    @validates_schema(skip_on_field_errors=False)
     def validate_entry(self, data, **kwargs):
-        data = super()._deserialize(data, **kwargs)
-        if data.get("language", FlowLanguage.Python) == FlowLanguage.Python:
-            PythonEagerFlowEntry().deserialize(data.get("entry"))
-        return data
+        """Validate entry."""
+        language = data.get(LANGUAGE_KEY, FlowLanguage.Python)
+        entry_regex = None
+        if language == FlowLanguage.CSharp:
+            entry_regex = r"\((.+)\)[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)+"
+        elif language == FlowLanguage.Python:
+            entry_regex = r"^[a-zA-Z0-9_.]+:[a-zA-Z0-9_]+$"
+
+        if entry_regex is not None and not re.match(entry_regex, data["entry"]):
+            raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
