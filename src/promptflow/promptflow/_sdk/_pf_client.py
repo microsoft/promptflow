@@ -121,7 +121,6 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-        # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow)
         # validate param conflicts
