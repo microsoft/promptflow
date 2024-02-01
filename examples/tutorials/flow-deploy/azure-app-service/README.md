@@ -36,12 +36,12 @@ The two scripts will do the following things:
 
 Example command to use bash script:
 ```shell
-bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registry> -g <resource_group>
+bash deploy.sh --path dist -i <image_tag> --name my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 dist -i <image_tag> -n my-app-23d8m -r <docker registry> -g <resource_group>
+.\deploy.ps1 -Path dist -i <image_tag> -n my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 
@@ -69,5 +69,5 @@ curl http://<Default-domain-of-app-service>/score --data '{"url":"https://play.g
 
 Tips:
 - Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream).
-- Reach advanced deployment tools at https://$name.scm.azurewebsites.net/.
-- Reach more details about app service at https://learn.microsoft.com/azure/app-service/.
+- Reach advanced deployment tools at (Development Tools>Advanced Tools).
+- Reach more details about app service at [Azure App Service](https://learn.microsoft.com/azure/app-service/)
