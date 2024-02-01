@@ -1942,7 +1942,7 @@ class TestCli:
             return experiment
 
         def mock_start_process_in_background(args, executable_path=None):
-            subprocess.Popen(args, env=os.environ, shell=True)
+            subprocess.Popen(args, env=os.environ)
 
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True

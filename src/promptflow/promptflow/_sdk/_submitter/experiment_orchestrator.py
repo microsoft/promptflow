@@ -941,6 +941,4 @@ if __name__ == "__main__":
 
         client = PFClient()
         experiment = client._experiments.get(args.experiment)
-        ExperimentOrchestrator(
-            run_operations=client.runs, experiment_operations=client._experiments, experiment=experiment
-        ).start(nodes=args.nodes, from_nodes=args.from_nodes)
+        ExperimentOrchestrator(client, experiment=experiment).start(nodes=args.nodes, from_nodes=args.from_nodes)
