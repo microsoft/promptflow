@@ -9,7 +9,7 @@ from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundErr
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
-from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
+from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
@@ -114,10 +114,10 @@ class ExperimentOperations(TelemetryMixin):
         :param environment_variables: Environment variables for flow.
         :type environment_variables: dict
         """
-        from .._load_functions import load_common
+        from .._load_functions import _load_experiment_template
         from .._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        experiment_template = load_common(ExperimentTemplate, experiment)
+        experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)
         return ExperimentOrchestrator(client=self._client).test(
             flow, experiment_template, inputs, environment_variables, output_path=output_path

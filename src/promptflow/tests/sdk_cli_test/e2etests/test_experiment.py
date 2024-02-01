@@ -7,6 +7,7 @@ from ruamel.yaml import YAML
 
 from promptflow import PFClient
 from promptflow._sdk._constants import ExperimentStatus, RunStatus
+from promptflow._sdk._errors import ExperimentValueError
 from promptflow._sdk._load_functions import load_common
 from promptflow._sdk.entities._experiment import (
     CommandNode,
@@ -168,3 +169,14 @@ class TestExperiment:
             assert expected_output_path.resolve().exists()
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+
+    def test_flow_not_in_experiment(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        target_flow_path = FLOW_ROOT / "chat_flow" / "flow.dag.yaml"
+        client = PFClient()
+        with pytest.raises(ExperimentValueError) as error:
+            client.flows.test(
+                target_flow_path,
+                experiment=template_path,
+            )
+        assert "not found in experiment" in str(error.value)
