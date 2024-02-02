@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import getpass
 import socket
+import time
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
@@ -104,7 +105,7 @@ def make_response_no_content():
     return make_response("", 204)
 
 
-def check_pfs_service_status(pfs_port) -> bool:
+def is_pfs_service_healthy(pfs_port) -> bool:
     """Check if pfs service is running."""
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
@@ -115,6 +116,21 @@ def check_pfs_service_status(pfs_port) -> bool:
         pass
     logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to start/force restart pfs.")
     return False
+
+
+def check_pfs_service_status(pfs_port, time_delay=5, time_threshold=30) -> bool:
+    wait_time = time_delay
+    time.sleep(time_delay)
+    is_healthy = is_pfs_service_healthy(pfs_port)
+    while is_healthy is False and time_threshold > wait_time:
+        logger.info(
+            f"Pfs service is not ready. It has been waited for {wait_time}s, will wait for at most "
+            f"{time_threshold}s."
+        )
+        wait_time += time_delay
+        time.sleep(time_delay)
+        is_healthy = is_pfs_service_healthy(pfs_port)
+    return is_healthy
 
 
 @dataclass

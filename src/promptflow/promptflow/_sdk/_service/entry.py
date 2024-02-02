@@ -5,11 +5,9 @@ import argparse
 import json
 import logging
 import os
+import platform
+import subprocess
 import sys
-import threading
-import time
-
-import waitress
 
 from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
@@ -25,7 +23,16 @@ from promptflow._sdk._service.utils.utils import (
 )
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
-from promptflow.exceptions import SystemErrorException, UserErrorException
+from promptflow.exceptions import UserErrorException
+
+app = None
+
+
+def get_app():
+    global app
+    if app is None:
+        app, _ = create_app()
+    return app
 
 
 def add_start_service_action(subparsers):
@@ -41,6 +48,11 @@ def add_start_service_action(subparsers):
         action="store_true",
         help="If the port is used, the existing service will be terminated and restart a new service.",
     )
+    start_pfs_parser.add_argument(
+        "--synchronous",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
     start_pfs_parser.set_defaults(action="start")
 
 
@@ -54,51 +66,50 @@ def add_show_status_action(subparsers):
     show_status_parser.set_defaults(action="show-status")
 
 
-def start_service(args, logger, activity_name):
-    app, _ = create_app()
+def start_service(args):
     port = args.port
-    port_event = threading.Event()
+    get_app()
 
-    def check_service_status():
-        try:
-            with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
-                nonlocal port
+    def validate_port(port, force_start):
+        if is_port_in_use(port):
+            if force_start:
+                app.logger.warning(f"Force restart the service on the port {port}.")
+                kill_exist_service(port)
+            else:
+                app.logger.warning(f"Service port {port} is used.")
+                raise UserErrorException(f"Service port {port} is used.")
 
-                def validate_port(port, force_start):
-                    if is_port_in_use(port):
-                        if force_start:
-                            app.logger.warning(f"Force restart the service on the port {port}.")
-                            kill_exist_service(port)
-                        else:
-                            app.logger.warning(f"Service port {port} is used.")
-                            raise UserErrorException(f"Service port {port} is used.")
-
-                if port:
-                    dump_port_to_config(port)
-                    validate_port(port, args.force)
-                else:
-                    port = get_port_from_config(create_if_not_exists=True)
-                    validate_port(port, args.force)
-                port_event.set()
-                # Set host to localhost, only allow request from localhost.
-                app.logger.info(
-                    f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-                )
-                while check_pfs_service_status(port) is False:
-                    time.sleep(1)
-        except UserErrorException as e:
-            port = None
-            port_event.set()
-            raise UserErrorException(message=e.message)
-        except Exception as e:  # pylint: disable=broad-except
-            port = None
-            port_event.set()
-            raise SystemErrorException(message=str(e))
-
-    threading.Thread(target=check_service_status).start()
-    port_event.wait()
-    if port is not None:
-        waitress.serve(app, host="127.0.0.1", port=port)
+    if port:
+        dump_port_to_config(port)
+        validate_port(port, args.force)
+    else:
+        port = get_port_from_config(create_if_not_exists=True)
+        validate_port(port, args.force)
+    # Set host to localhost, only allow request from localhost.
+    # Start a pfs process using detach mode
+    cmd = [
+        sys.executable,
+        "-m",
+        "waitress",
+        "--host",
+        "127.0.0.1",
+        f"--port={port}",
+        "--call",
+        "promptflow._sdk._service.entry:get_app",
+    ]
+    if args.synchronous:
+        subprocess.call(cmd)
+    else:
+        if platform.system() == "Windows":
+            os.spawnv(os.P_DETACH, sys.executable, cmd)
+        else:
+            os.system(" ".join(["nohup"] + cmd + ["&"]))
+    is_healthy = check_pfs_service_status(port)
+    if is_healthy:
+        app.logger.info(
+            f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+        )
+    return is_healthy
 
 
 def main():
@@ -133,11 +144,8 @@ def entry(command_args):
     activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
     logger = get_telemetry_logger()
 
-    if args.action == "start":
-        start_service(args, logger, activity_name)
-    else:
-        with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
-            run_command(args)
+    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
+        run_command(args)
 
 
 def run_command(args):
@@ -154,6 +162,8 @@ def run_command(args):
             logger = logging.getLogger(LOGGER_NAME)
             logger.warning("Promptflow service is not started.")
             exit(1)
+    elif args.action == "start":
+        start_service(args)
 
 
 if __name__ == "__main__":
