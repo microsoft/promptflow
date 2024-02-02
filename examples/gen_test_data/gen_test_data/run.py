@@ -209,26 +209,15 @@ def run_cloud(
 
 
 if __name__ == "__main__":
-    parser = configargparse.ArgParser()
-    parser.add_argument("--cloud", action="store_true", help="cloud flag")
-    args = parser.parse_args()
-
-    # Choose the config file based on the argument
-    if args.cloud:
-        config_file = CLOUD_CONFIG_FILE
+    if Path(CONFIG_FILE).is_file():
+        parser = configargparse.ArgParser(default_config_files=[CONFIG_FILE])
     else:
-        config_file = CONFIG_FILE
-
-    if not Path(config_file).is_file():
         raise Exception(
-            f"'{config_file}' does not exist. "
+            f"'{CONFIG_FILE}' does not exist. "
             + "Please check if you are under the wrong directory or the file is missing."
         )
 
-    parser = configargparse.ArgParser(default_config_files=[config_file])
-    # TODO: remove this
     parser.add_argument("--cloud", action="store_true", help="cloud flag")
-
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
     parser.add_argument("--document_chunk_size", type=int, help="Document chunk size, default is 1024")
     parser.add_argument(
@@ -241,23 +230,23 @@ if __name__ == "__main__":
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
-    if not args.cloud:
-        parser.add_argument("--output_folder", type=str, help="Output folder path.")
-    else:
-        parser.add_argument("--subscription_id", help="AzureML workspace subscription id")
-        parser.add_argument("--resource_group", help="AzureML workspace resource group name")
-        parser.add_argument("--workspace_name", help="AzureML workspace name")
-        parser.add_argument("--aml_cluster", help="AzureML cluster name")
-        parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
-        parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
-        parser.add_argument(
-            "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
-        )
-        parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
-        parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
-        parser.add_argument(
-            "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
-        )
+    # Configs for local
+    parser.add_argument("--output_folder", type=str, help="Output folder path.")
+    # Configs for cloud
+    parser.add_argument("--subscription_id", help="AzureML workspace subscription id")
+    parser.add_argument("--resource_group", help="AzureML workspace resource group name")
+    parser.add_argument("--workspace_name", help="AzureML workspace name")
+    parser.add_argument("--aml_cluster", help="AzureML cluster name")
+    parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
+    parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
+    parser.add_argument(
+        "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
+    )
+    parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
+    parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
+    parser.add_argument(
+        "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
+    )
     args = parser.parse_args()
 
     should_skip_split_documents = False

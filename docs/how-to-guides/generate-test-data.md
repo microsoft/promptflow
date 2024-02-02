@@ -74,16 +74,4 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
 
 ## Generate test data at cloud
-For handling larger test data, you can leverage the PRS component to run flow in pipeline.
-- Navigate to [gen_test_data](../../examples/gen_test_data_gen) folder.
-
-- Run command to copy `config.ini.example` and update the `COMMON` and `CLOUD` configurations in the `configs.ini` file
-    ```
-    cp config.ini.example config.ini
-    ```
-- After configuration, run the following command to generate the test data set:
-  ```bash
-  python -m gen_test_data.run --cloud
-  ``` 
-  
-- The generated test data will be a data asset which can be found in the output of the last node. You can register this data asset for future use.
+For handling larger test data, you can leverage the PRS component to run flow in cloud. Please refer to this [guide](../cloud/azureai/generate-test-data-cloud.md) for more information.
