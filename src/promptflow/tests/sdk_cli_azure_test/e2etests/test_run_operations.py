@@ -1019,7 +1019,7 @@ class TestFlowRun:
     def test_run_with_compute_instance_session_yml(
         self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
     ):
-        source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"
+        source = f"{RUNS_DIR}/sample_bulk_run_with_compute_instance.yaml"
         run_id = randstr("run_id")
         run = load_run(
             source=source,
