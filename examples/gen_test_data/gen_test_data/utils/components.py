@@ -1,19 +1,24 @@
 import json
 from pathlib import Path
 
+from common import clean_data_and_save, split_document
 from mldesigner import Input, Output, command_component
-from common import split_document, clean_data_and_save
-from constants import ENVIRONMENT_DICT_FIXED_VERSION
+
+conda_file = Path(__file__).parent.parent.parent / "conda.yml"
+env_image = "mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04"
 
 
 @command_component(
     name="split_document_component",
     display_name="split documents",
     description="Split documents into document nodes.",
-    environment=ENVIRONMENT_DICT_FIXED_VERSION,
+    environment=dict(
+        conda_file=conda_file,
+        image=env_image,
+    ),
 )
 def split_document_component(
-        documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
+    documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
 ) -> str:
     """Split documents into document nodes.
 
@@ -32,10 +37,13 @@ def split_document_component(
     name="clean_data_and_save_component",
     display_name="clean dataset",
     description="Clean test data set to remove empty lines.",
-    environment=ENVIRONMENT_DICT_FIXED_VERSION,
+    environment=dict(
+        conda_file=conda_file,
+        image=env_image,
+    ),
 )
 def clean_data_and_save_component(
-        test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
+    test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
 ) -> str:
     test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
 

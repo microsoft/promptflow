@@ -10,12 +10,13 @@ from promptflow._utils.logger_utils import get_logger
 from promptflow.entities import Run
 
 CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
+CLOUD_CONFIG_FILE = (Path(__file__).parents[1] / "cloud.config.ini").resolve()
 
 UTILS_PATH = os.path.abspath(Path(__file__).parents[0] / "utils")
 if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
-from common import clean_data_and_save, split_document, count_non_blank_lines  # noqa: E402
+from common import clean_data_and_save, count_non_blank_lines, split_document  # noqa: E402
 from constants import TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
@@ -41,6 +42,7 @@ def batch_run_flow(
     )
     logger.info("Batch run is completed.")
     return base_run
+
 
 def get_batch_run_output(pf: PFClient, base_run: Run):
     logger.info(f"Start to get batch run {base_run.name} details.")
@@ -103,14 +105,17 @@ def run_cloud(
     prs_instance_count,
     prs_mini_batch_size,
     prs_max_concurrency_per_instance,
+    prs_max_retry_count,
+    prs_run_invocation_time,
     should_skip_split,
 ):
     # lazy import azure dependencies
-    from azure.ai.ml import Input as V2Input, MLClient, dsl, load_component
+    from azure.ai.ml import Input as V2Input
+    from azure.ai.ml import MLClient, dsl, load_component
+    from azure.ai.ml.entities import RetrySettings
     from azure.identity import DefaultAzureCredential
-    from mldesigner import Input, Output, command_component
     from constants import ENVIRONMENT_DICT_FIXED_VERSION
-
+    from mldesigner import Input, Output, command_component
 
     @command_component(
         name="split_document_component",
@@ -119,7 +124,7 @@ def run_cloud(
         environment=ENVIRONMENT_DICT_FIXED_VERSION,
     )
     def split_document_component(
-            documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
+        documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
     ) -> str:
         """Split documents into document nodes.
 
@@ -133,7 +138,6 @@ def run_cloud(
         """
         return split_document(chunk_size, documents_folder, document_node_output)
 
-
     @command_component(
         name="clean_data_and_save_component",
         display_name="clean dataset",
@@ -141,7 +145,7 @@ def run_cloud(
         environment=ENVIRONMENT_DICT_FIXED_VERSION,
     )
     def clean_data_and_save_component(
-            test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
+        test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
     ) -> str:
         test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
 
@@ -153,7 +157,6 @@ def run_cloud(
 
         return str(test_data_output_path)
 
-
     @dsl.pipeline(
         non_pipeline_inputs=[
             "flow_yml_path",
@@ -161,6 +164,8 @@ def run_cloud(
             "instance_count",
             "mini_batch_size",
             "max_concurrency_per_instance",
+            "max_retry_count",
+            "run_invocation_time",
         ]
     )
     def gen_test_data_pipeline(
@@ -171,11 +176,15 @@ def run_cloud(
         instance_count=1,
         mini_batch_size=1,
         max_concurrency_per_instance=2,
+        max_retry_count=3,
+        run_invocation_time=600,
     ):
         data = (
             data_input
             if should_skip_doc_split
-            else split_document_component(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
+            else split_document_component(
+                documents_folder=data_input, chunk_size=chunk_size
+            ).outputs.document_node_output
         )
         flow_node = load_component(flow_yml_path)(
             data=data,
@@ -188,6 +197,8 @@ def run_cloud(
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
         flow_node.set_resources(instance_count=instance_count)
+        flow_node.retry_settings = RetrySettings(max_retry_count=max_retry_count, timeout=run_invocation_time)
+
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
         clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
@@ -212,6 +223,8 @@ def run_cloud(
         "instance_count": prs_instance_count,
         "mini_batch_size": prs_mini_batch_size,
         "max_concurrency_per_instance": prs_max_concurrency_per_instance,
+        "max_retry_count": prs_max_retry_count,
+        "run_invocation_time": prs_run_invocation_time,
     }
 
     pipeline_with_flow = gen_test_data_pipeline(
@@ -227,15 +240,26 @@ def run_cloud(
 
 
 if __name__ == "__main__":
-    if Path(CONFIG_FILE).is_file():
-        parser = configargparse.ArgParser(default_config_files=[CONFIG_FILE])
+    parser = configargparse.ArgParser()
+    parser.add_argument("--cloud", action="store_true", help="cloud flag")
+    args = parser.parse_args()
+
+    # Choose the config file based on the argument
+    if args.cloud:
+        config_file = CLOUD_CONFIG_FILE
     else:
+        config_file = CONFIG_FILE
+
+    if not Path(config_file).is_file():
         raise Exception(
-            f"'{CONFIG_FILE}' does not exist. "
+            f"'{config_file}' does not exist. "
             + "Please check if you are under the wrong directory or the file is missing."
         )
 
+    parser = configargparse.ArgParser(default_config_files=[config_file])
+    # TODO: remove this
     parser.add_argument("--cloud", action="store_true", help="cloud flag")
+
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
     parser.add_argument("--document_chunk_size", type=int, help="Document chunk size, default is 1024")
     parser.add_argument(
@@ -248,18 +272,20 @@ if __name__ == "__main__":
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
-    # Configs for local
-    parser.add_argument("--output_folder", type=str, help="Output folder path.")
-    # Configs for cloud
-    parser.add_argument("--subscription_id", help="AzureML workspace subscription id")
-    parser.add_argument("--resource_group", help="AzureML workspace resource group name")
-    parser.add_argument("--workspace_name", help="AzureML workspace name")
-    parser.add_argument("--aml_cluster", help="AzureML cluster name")
-    parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
-    parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
-    parser.add_argument(
-        "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
-    )
+    if not args.cloud:
+        parser.add_argument("--output_folder", type=str, help="Output folder path.")
+    else:
+        parser.add_argument("--subscription_id", help="AzureML workspace subscription id")
+        parser.add_argument("--resource_group", help="AzureML workspace resource group name")
+        parser.add_argument("--workspace_name", help="AzureML workspace name")
+        parser.add_argument("--aml_cluster", help="AzureML cluster name")
+        parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
+        parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
+        parser.add_argument(
+            "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
+        )
+        parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
+        parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
     args = parser.parse_args()
 
     should_skip_split_documents = False
@@ -267,14 +293,17 @@ if __name__ == "__main__":
         should_skip_split_documents = True
     elif not args.documents_folder or not Path(args.documents_folder).is_dir():
         parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
-    
+
     if args.cloud:
         logger.info("Start to generate test data at cloud...")
     else:
         logger.info("Start to generate test data at local...")
-    
+
     if should_skip_split_documents:
-        logger.info(f"Skip step 1 'Split documents to document nodes' as received document nodes from input file '{args.document_nodes_file}'.")
+        logger.info(
+            "Skip step 1 'Split documents to document nodes' as received document nodes from "
+            f"input file '{args.document_nodes_file}'."
+        )
         logger.info(f"Collected {count_non_blank_lines(args.document_nodes_file)} document nodes.")
 
     if args.cloud:
@@ -290,6 +319,8 @@ if __name__ == "__main__":
             args.prs_instance_count,
             args.prs_mini_batch_size,
             args.prs_max_concurrency_per_instance,
+            args.prs_max_retry_count,
+            args.prs_run_invocation_time,
             should_skip_split_documents,
         )
     else:
