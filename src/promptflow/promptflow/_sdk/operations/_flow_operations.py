@@ -154,34 +154,6 @@ class FlowOperations(TelemetryMixin):
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
         flow.context.variant = variant
-        from promptflow._constants import FlowLanguage
-
-        # TODO: merge this into TestSubmitter
-        if flow.language == FlowLanguage.CSharp:
-            from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
-
-            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init(
-                target_node=node,
-                environment_variables=environment_variables,
-                stream_log=stream_log,
-                output_path=output_path,
-            ) as submitter:
-                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-                )
-
-                if node:
-                    return submitter.node_test(
-                        flow_inputs=flow_inputs,
-                        dependency_nodes_outputs=dependency_nodes_outputs,
-                    )
-                else:
-                    return submitter.flow_test(
-                        inputs=flow_inputs,
-                        stream_output=stream_output,
-                        allow_generator_output=allow_generator_output and is_chat_flow,
-                    )
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
             target_node=node,
