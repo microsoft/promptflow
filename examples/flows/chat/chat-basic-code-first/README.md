@@ -34,37 +34,100 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
     {% endfor %}
     ```
 
-## Getting started
 
-### 1 Create connection for LLM tool to use
-Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
+## Run flow
 
-Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
+- Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+
+- Setup environment variables
+
+Ensure you have put your azure open ai endpoint key in [.env](.env) file. You can create one refer to this [example file](.env.example).
 
 ```bash
-# Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+cat .env
 ```
 
-Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
-```bash
-# show registered connection 
-pf connection show --name open_ai_connection
-```
-
-### 2 Start chatting
+- Test flow/node
 
 ```bash
 # run chat flow with default question in flow.dag.yaml
-pf flow test --flow . 
+pf flow test --flow .
 
 # run chat flow with new question
 pf flow test --flow . --inputs question="What's Azure Machine Learning?"
-
-# start a interactive chat session in CLI
-pf flow test --flow . --interactive
-
-# start a interactive chat session in CLI with verbose info
-pf flow test --flow . --interactive --verbose
 ```
 
+- Create run with multiple lines data
+```bash
+# using environment from .env file (loaded in user code: hello.py)
+pf run create --flow . --data ./data.jsonl --column-mapping question='${data.question}' --stream
+```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+
+- List and show run meta
+```bash
+# list created run
+pf run list
+
+# get a sample run name
+
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_code_first")) | .name'| head -n 1 | tr -d '"')
+# show specific run detail
+pf run show --name $name
+
+# show output
+pf run show-details --name $name
+
+# visualize run in browser
+pf run visualize --name $name
+```
+
+## Run flow with connection
+Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
+
+- Show or create `open_ai_connection`
+```bash
+# create connection from `azure_openai.yml` file
+# Override keys with --set to avoid yaml file changes
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+
+# check if connection exists
+pf connection show -n open_ai_connection
+```
+
+- Test using connection secret specified in environment variables
+**Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
+
+```bash
+# test with default input value in flow.dag.yaml
+pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}'
+```
+
+- Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
+```bash
+# create run
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}' --column-mapping question='${data.question}'
+# create run using yaml file
+pf run create --file run.yml --stream
+
+# show outputs
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_variant_0")) | .name'| head -n 1 | tr -d '"')
+pf run show-details --name $name
+```
+
+## Run flow in cloud with connection
+- Assume we already have a connection named `open_ai_connection` in workspace.
+```bash
+# set default workspace
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
+```
+
+- Create run
+```bash
+# run with environment variable reference connection in azureml workspace
+pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}' --column-mapping question='${data.question}' --stream
+# run using yaml file
+pfazure run create --file run.yml --stream

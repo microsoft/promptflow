@@ -1,13 +1,13 @@
 import os
+from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
-from dataclasses import dataclass
 from jinja2 import Template
-from pathlib import Path
-from promptflow import trace, PFClient
-from promptflow.tools.aoai import chat
-from promptflow._sdk.entities import AzureOpenAIConnection
 
+from promptflow import trace
+from promptflow._sdk.entities import AzureOpenAIConnection
+from promptflow.tools.aoai import chat
 
 BASE_DIR = Path(__file__).absolute().parent
 
@@ -37,13 +37,11 @@ def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> R
 
     if "AZURE_OPENAI_API_KEY" not in os.environ:
         raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
-    
+
     connection = AzureOpenAIConnection(
         api_key=os.environ["AZURE_OPENAI_API_KEY"],
         api_base=os.environ["AZURE_OPENAI_API_BASE"],
-        api_version=os.environ.get(
-            "AZURE_OPENAI_API_VERSION", "2023-07-01-preview"
-        ),
+        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
     )
 
     output = chat(
@@ -61,6 +59,6 @@ if __name__ == "__main__":
     from promptflow._trace._start_trace import start_trace  # TODO move to public API
 
     start_trace()
-    
+
     result = flow_entry("What's Azure Machine Learning?", [])
     print(result)
