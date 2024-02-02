@@ -5,6 +5,7 @@
 
 ### Features Added
 
+- [SDK/CLI][azure] Support specify compute instance as session compute in run.yaml
 
 ### Bugs Fixed
 
