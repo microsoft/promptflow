@@ -49,17 +49,17 @@ async def node_execution(request: Request, node_request: NodeExecutionRequest):
     executor_version = get_executor_version()
     with get_service_log_context(node_request):
         service_logger.info(
-            f"Received node execution request, node run id: {node_request.run_id}, "
+            f"Received node execution request, node name: {node_request.node_name}, "
             f"request id: {request_id}, executor version: {executor_version}."
         )
         try:
             result = await invoke_function_in_process(node_request, request.headers, single_node_run)
-            service_logger.info(f"Completed node execution request, node run id: {node_request.run_id}.")
+            service_logger.info(f"Completed node execution request, node name: {node_request.node_name}.")
             return result
         except Exception as ex:
             error_type_and_message = (f"({ex.__class__.__name__}) {ex}",)
             service_logger.error(
-                f"Failed to execute node, node run id: {node_request.run_id}. Error: {error_type_and_message}"
+                f"Failed to execute node, node name: {node_request.node_name}. Error: {error_type_and_message}"
             )
             raise ex
 
