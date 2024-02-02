@@ -17,10 +17,10 @@ from promptflow.executor._service.utils.service_utils import (
 from promptflow.executor.flow_executor import FlowExecutor, execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
-router = APIRouter()
+router = APIRouter(prefix="/execution")
 
 
-@router.post("/execution/flow")
+@router.post("/flow")
 async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
     update_operation_context(dict(request.headers))
     request_id = OperationContext.get_instance().request_id
@@ -42,7 +42,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
             raise ex
 
 
-@router.post("/execution/node")
+@router.post("/node")
 async def node_execution(request: Request, node_request: NodeExecutionRequest):
     update_operation_context(dict(request.headers))
     request_id = OperationContext.get_instance().request_id
