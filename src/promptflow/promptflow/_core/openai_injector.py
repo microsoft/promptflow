@@ -46,14 +46,20 @@ def get_aoai_telemetry_headers() -> dict:
     """
     # get promptflow info from operation context
     operation_context = OperationContext.get_instance()
-    context_info = operation_context.get_context_dict()
-    promptflow_info = {k.replace("_", "-"): v for k, v in context_info.items()}
+    tracking_info = operation_context._get_tracking_info()
+    tracking_info = {k.replace("_", "-"): v for k, v in tracking_info.items()}
+
+    def is_primitive(value):
+        return value is None or isinstance(value, (int, float, str, bool))
+
+    #  Ensure that the telemetry info is primitive
+    tracking_info = {k: v for k, v in tracking_info.items() if is_primitive(v)}
 
     # init headers
     headers = {USER_AGENT_HEADER: operation_context.get_user_agent()}
 
     # update header with promptflow info
-    headers.update({f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else "" for k, v in promptflow_info.items()})
+    headers.update({f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else "" for k, v in tracking_info.items()})
 
     return headers
 

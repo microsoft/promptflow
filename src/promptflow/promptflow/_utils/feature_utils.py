@@ -46,6 +46,11 @@ def get_feature_list():
             description="Support batch timeout.",
             state=FeatureState.READY,
         ),
+        Feature(
+            name="BatchWorkerCount",
+            description="Supports users explicitly specifying the worker count for batch run.",
+            state=FeatureState.READY,
+        ),
     ]
 
     return feature_list
