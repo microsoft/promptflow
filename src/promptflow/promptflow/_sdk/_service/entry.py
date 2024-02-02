@@ -86,7 +86,6 @@ def start_service(args):
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
-    # Start a pfs process using detach mode
     cmd = [
         sys.executable,
         "-m",
@@ -100,6 +99,7 @@ def start_service(args):
     if args.synchronous:
         subprocess.call(cmd)
     else:
+        # Start a pfs process using detach mode
         if platform.system() == "Windows":
             os.spawnv(os.P_DETACH, sys.executable, cmd)
         else:
