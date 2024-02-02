@@ -90,13 +90,13 @@ def inject_operation_headers(f):
 
 
 def inject_async(f):
-    wrapper_fun = inject_operation_headers((inject_function_async(["api_key", "headers", "extra_headers"])(f)))
+    wrapper_fun = inject_function_async(["api_key", "headers", "extra_headers"])((inject_operation_headers(f)))
     wrapper_fun._original = f
     return wrapper_fun
 
 
 def inject_sync(f):
-    wrapper_fun = inject_operation_headers((inject_function_sync(["api_key", "headers", "extra_headers"])(f)))
+    wrapper_fun = inject_function_sync(["api_key", "headers", "extra_headers"])((inject_operation_headers(f)))
     wrapper_fun._original = f
     return wrapper_fun
 
