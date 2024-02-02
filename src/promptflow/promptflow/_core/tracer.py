@@ -164,7 +164,7 @@ class TokenCollector():
 
     def collect_openai_tokens(self, output):
         span_id = otel_trace.get_current_span().get_span_context().span_id
-        if not inspect.isgenerator(output):
+        if not inspect.isgenerator(output) and hasattr(output, "usage") and output.usage is not None:
             tokens = {
                 f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
             }
