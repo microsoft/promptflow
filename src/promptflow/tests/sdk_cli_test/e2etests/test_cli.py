@@ -1,12 +1,12 @@
 import importlib
 import importlib.util
 import json
-import hashlib
 import logging
 import multiprocessing
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -1387,7 +1387,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert not outerr.err
 
-    def test_tool_init(self, capsys, caplog, mocker):
+    def test_tool_init(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
             package_name = "package_name"
             func_name = "func_name"
@@ -1415,32 +1415,6 @@ class TestCli:
             assert meta["name"] == func_name
             assert meta["description"] == f"This is {func_name} tool"
             assert meta["type"] == "python"
-
-            # Test get tool_meta from cache
-            mock_module = MagicMock()
-
-            def mock_has_metadata(*args):
-                return True
-
-            def mock_get_metadata_lines(*args):
-                return ["egg-link"]
-
-            mock_module.has_metadata = mock_has_metadata
-            mock_module.get_metadata_lines = mock_get_metadata_lines
-            with mocker.patch("pkg_resources.get_distribution", return_value=mock_module):
-                # Generate tool meta cache
-                tools_meta = utils.list_package_tools()
-                assert f"{package_name}.{func_name}.{func_name}" in tools_meta
-
-                cache_file_name = hashlib.sha256(Path(utils.__file__).parent.parent.as_posix().encode()).hexdigest()
-                cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tools_meta" / f"{cache_file_name}.yaml"
-                assert cache_file.exists()
-
-                with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
-                    # Use tool meta cache
-                    tools_meta = utils.list_package_tools()
-                    assert "List tools meta from cache file" in caplog.text
-                    assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
             # Invalid package/tool name
             invalid_package_name = "123-package-name"
@@ -1531,6 +1505,35 @@ class TestCli:
                 )
             outerr = capsys.readouterr()
             assert "Cannot find the icon path" in outerr.out
+
+    def test_list_tool_cache(self, caplog, mocker):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_name = "mock_tool_package_name"
+            func_name = "func_name"
+            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
+            package_folder = Path(temp_dir) / package_name
+
+            # Package tool project
+            subprocess.check_call([sys.executable, "setup.py", "sdist", "bdist_wheel"], cwd=package_folder)
+
+            package_file = list((package_folder / "dist").glob("*.whl"))
+            assert len(package_file) == 1
+            # Install package
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package_file[0].as_posix()], cwd=package_folder
+            )
+
+            package_module = importlib.import_module(package_name)
+            # cache file in installed package
+            assert (Path(package_module.__file__).parent / "yamls" / "tools_meta.yaml").exists()
+
+            from mock_tool_package_name import utils
+
+            # Get tools meta from cache file
+            with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
+                tools_meta = utils.list_package_tools()
+            assert "List tools meta from cache file" in caplog.text
+            assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
     def test_tool_list(self, capsys):
         # List package tools in environment
