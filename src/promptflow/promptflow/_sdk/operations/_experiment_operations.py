@@ -7,7 +7,6 @@ from typing import List, Optional, Union
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, ListViewType
 from promptflow._sdk._errors import (
     ExperimentExistsError,
-    ExperimentNotFoundError,
     ExperimentValueError,
     RunOperationError,
 )
@@ -60,13 +59,10 @@ class ExperimentOperations(TelemetryMixin):
         :return: experiment object retrieved from the database.
         :rtype: ~promptflow.entities.Experiment
         """
-        try:
-            from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-            ExperimentOrchestrator.get_status(name)
-            return Experiment._from_orm_object(ORMExperiment.get(name))
-        except ExperimentNotFoundError as e:
-            raise e
+        ExperimentOrchestrator.get_status(name)
+        return Experiment._from_orm_object(ORMExperiment.get(name))
 
     @monitor_operation(activity_name="pf.experiment.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, experiment: Experiment, **kwargs) -> Experiment:

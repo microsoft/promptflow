@@ -21,6 +21,8 @@ from typing import Union
 
 import psutil
 
+# For the process started in detach mode, stdout/std error will be none.
+# To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
@@ -151,7 +153,9 @@ class ExperimentOrchestrator:
         raise NotImplementedError
 
     def start(self, nodes=None, from_nodes=None):
-        """Start an experiment.
+        """Start an execution of an experiment.
+
+        Start an orchestrator to schedule node execution according to topological ordering.
 
         :param nodes: Nodes to be executed.
         :type nodes: list
@@ -168,7 +172,7 @@ class ExperimentOrchestrator:
         return self.experiment
 
     def async_start(self, executable_path=None, nodes=None, from_nodes=None):
-        """Start an experiment async.
+        """Start an asynchronous execution of an experiment.
 
         :param executable_path: Python path when executing the experiment.
         :type executable_path: str
@@ -268,6 +272,7 @@ class ExperimentOrchestrator:
             return next_executable_nodes
 
         def check_in_degree_node_outputs(node, node_edges_mapping):
+            """Check the input data of nodes already exists, it not return false."""
             in_degree_nodes = []
             for in_degree_node, edges in node_edges_mapping.items():
                 if node in edges:
@@ -288,13 +293,19 @@ class ExperimentOrchestrator:
             return is_in_degree_nodes_ready
 
         def stop_process():
+            """
+            Post process of stop experiment. It will update status of all running node to canceled.
+            And update status of experiment to terminated. Then terminate the orchestrator process.
+            """
             executor.shutdown(wait=False)
             for future, node in future_to_node_run.items():
                 if future.running():
-                    # update status of running nodes to canceled.
+                    # Update status of running nodes to canceled.
                     node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
                     self.experiment._append_node_run(node.node.name, ORMRunInfo.get(node.name))
+            # Update status experiment to terminated.
             self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+            # Terminate orchestrator process.
             sys.exit(1)
 
         if platform.system() == "Windows":
@@ -303,6 +314,7 @@ class ExperimentOrchestrator:
             import win32pipe
 
             def stop_handler():
+                # Create a named pipe to receive the cancel signal.
                 pipe_name = r"\\.\pipe\{}".format(self.experiment.name)
                 pipe = win32pipe.CreateNamedPipe(
                     pipe_name,
@@ -318,6 +330,9 @@ class ExperimentOrchestrator:
                 win32pipe.ConnectNamedPipe(pipe, None)
                 stop_process()
 
+            # Because of signal handler not works well in Windows, orchestrator starts a daemon thread
+            # that creates named pipe to receive cancel signals from other processes.
+            # Related issue of signal handler in Windows: https://bugs.python.org/issue26350
             pipe_thread = threading.Thread(target=stop_handler)
             pipe_thread.daemon = True
             pipe_thread.start()
@@ -376,6 +391,7 @@ class ExperimentOrchestrator:
                     node_name = future_to_node_run[future].node.name
                     self._node_runs[node_name] = future.result()
                     if not nodes:
+                        # Get next executable nodes by completed nodes.
                         next_execute_nodes.extend(get_next_executable_nodes(completed_node=node_name))
                     self.experiment._append_node_run(node_name, self._node_runs[node_name])
                     del future_to_node_run[future]
@@ -392,6 +408,15 @@ class ExperimentOrchestrator:
         self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
 
     def stop(self):
+        """Stop in progress experiment.
+
+        If experiment is not in progress, it will raise user error.
+        In Linux, it will send terminate signal to orchestrator process. In Windows, it will pass signal by named pipe.
+        When process receives the terminate signl, it will update running nodes to canceled and terminate the process.
+
+        :return: Stopped experiment info.
+        :rtype: ~promptflow.entities.Experiment
+        """
         orchestrator = ORMOrchestrator.get(experiment_name=self.experiment.name)
         if orchestrator.status in [ExperimentStatus.NOT_STARTED, ExperimentStatus.QUEUING, ExperimentStatus.TERMINATED]:
             raise UserErrorException(
@@ -402,6 +427,7 @@ class ExperimentOrchestrator:
             if platform.system() == "Windows":
                 import win32file
 
+                # Connect to named pipe to stop the orchestrator process.
                 win32file.CreateFile(
                     r"\\.\pipe\{}".format(self.experiment.name),
                     win32file.GENERIC_READ | win32file.GENERIC_WRITE,
@@ -412,6 +438,7 @@ class ExperimentOrchestrator:
                     None,
                 )
             else:
+                # Send terminate signal to orchestrator process.
                 process = psutil.Process(orchestrator.pid)
                 process.terminate()
         except psutil.NoSuchProcess:
@@ -431,6 +458,14 @@ class ExperimentOrchestrator:
 
     @staticmethod
     def get_status(experiment_name):
+        """Check the status of the orchestrator
+
+        The status recorded in database and process status may be inconsistent. Need to check the orchestrator process status
+
+        :return: Orchestrator status.
+        :rtype: str
+        """
+
         def set_orchestrator_terminated():
             logger.info(
                 "The orchestrator process terminates abnormally, "
@@ -446,9 +481,11 @@ class ExperimentOrchestrator:
                 try:
                     process = psutil.Process(orm_orchestrator.pid)
                     if experiment_name not in process.cmdline():
+                        # This process is not the process used to start the orchestrator, update experiment to terminated.
                         set_orchestrator_terminated()
                     return orm_orchestrator.status
                 except psutil.NoSuchProcess:
+                    # The process is terminated abnormally, update experiment to terminated.
                     set_orchestrator_terminated()
                     return ExperimentStatus.TERMINATED
             else:
