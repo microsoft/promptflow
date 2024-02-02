@@ -87,13 +87,16 @@ class ConnectionList(Resource):
     )
     def get(self):
         args = working_directory_parser.parse_args()
-        connection_op = _get_connection_operation(args.working_directory)
-        # parse query parameters
-        max_results = request.args.get("max_results", default=50, type=int)
-        all_results = request.args.get("all_results", default=False, type=bool)
+        try:
+            connection_op = _get_connection_operation(args.working_directory)
+            # parse query parameters
+            max_results = request.args.get("max_results", default=50, type=int)
+            all_results = request.args.get("all_results", default=False, type=bool)
 
-        connections = connection_op.list(max_results=max_results, all_results=all_results)
-        connections_dict = [connection._to_dict() for connection in connections]
+            connections = connection_op.list(max_results=max_results, all_results=all_results)
+            connections_dict = [connection._to_dict() for connection in connections]
+        except Exception as e:
+            return jsonify({"error": f"Failed to list connection under {args.working_directory}:\n{e}"}), 500
         return connections_dict
 
 
@@ -123,9 +126,9 @@ class Connection(Resource):
         connection_op = _get_connection_operation()
         connection_data = request.get_json(force=True)
         connection_data["name"] = name
-        connection = _Connection._load(data=connection_data)
-        connection = connection_op.create_or_update(connection)
-        return jsonify(connection._to_dict())
+        _connection = _Connection._load(data=connection_data)
+        _connection = connection_op.create_or_update(_connection)
+        return jsonify(_connection._to_dict())
 
     @api.doc(body=dict_field, description="Update connection")
     @api.response(code=200, description="Connection details", model=dict_field)
