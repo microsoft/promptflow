@@ -15,7 +15,7 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME
+from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME, SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -105,6 +105,7 @@ def _provision_session() -> str:
     session_id = str(uuid.uuid4())
     session_id_context_info = {TRACE_SESSION_ID_OP_CTX_NAME: session_id}
     operation_context.update(session_id_context_info)
+    operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
     return session_id
 
 
