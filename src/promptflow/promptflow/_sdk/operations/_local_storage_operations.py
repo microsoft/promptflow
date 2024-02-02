@@ -222,6 +222,9 @@ class LocalStorageOperations(AbstractRunStorage):
         self._dump_meta_file()
         self._eager_mode = self._calculate_eager_mode(run)
 
+        self._loaded_flow_run_info = {}  # {line_number: flow_run_info}
+        self._loaded_node_run_info = {}  # {line_number: [node_name: node_run_info]}
+
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
@@ -366,24 +369,8 @@ class LocalStorageOperations(AbstractRunStorage):
             # legacy run with local file detail.json, then directly load from the file
             return json_load(self._detail_path)
         else:
-            json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
-            # collect from local files and concat in the memory
-            flow_runs, node_runs = [], []
-            for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
-                # In addition to the output jsonl files, there may be multimedia files in the output folder,
-                # so we should skip them.
-                if line_run_record_file.suffix.lower() != ".jsonl":
-                    continue
-                with read_open(line_run_record_file) as f:
-                    new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                    flow_runs += new_runs
-            for node_folder in sorted(self._node_infos_folder.iterdir()):
-                for node_run_record_file in sorted(node_folder.iterdir()):
-                    if node_run_record_file.suffix.lower() != ".jsonl":
-                        continue
-                    with read_open(node_run_record_file) as f:
-                        new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                        node_runs += new_runs
+            flow_runs = self._loaded_flow_run_info(parse_const_as_str=parse_const_as_str)
+            node_runs = self._loaded_node_run_info(parse_const_as_str=parse_const_as_str)
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self, *, parse_const_as_str: bool = False) -> Dict[str, Union[int, float, str]]:
@@ -399,6 +386,20 @@ class LocalStorageOperations(AbstractRunStorage):
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
+
+    def load_node_run_infos(self, line_number: int = None, parse_const_as_str: bool = False) -> List[NodeRunInfo]:
+        json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
+        node_runs = []
+        for node_folder in sorted(self._node_infos_folder.iterdir()):
+            for node_run_record_file in sorted(node_folder.iterdir()):
+                if node_run_record_file.suffix.lower() != ".jsonl":
+                    continue
+                with read_open(node_run_record_file) as f:
+                    new_runs = [json_loads(line)["run_info"] for line in list(f)]
+                    node_runs += new_runs
+        if line_number:
+            self._loaded_flow_run_info[line_number] = node_runs.get(line_number, None)
+        return node_runs
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
@@ -416,6 +417,19 @@ class LocalStorageOperations(AbstractRunStorage):
             f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         )
         line_run_record.dump(self._run_infos_folder / filename)
+
+    def load_flow_run_info(self, line_number: int = None, parse_const_as_str: bool = False) -> FlowRunInfo:
+        json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
+        flow_runs = []
+        for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+            if line_run_record_file.suffix.lower() != ".jsonl":
+                continue
+            with read_open(line_run_record_file) as f:
+                new_runs = [json_loads(line)["run_info"] for line in list(f)]
+                flow_runs += new_runs
+        if line_number:
+            self._loaded_flow_run_info[line_number] = flow_runs.get(line_number, None)
+        return flow_runs
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""
