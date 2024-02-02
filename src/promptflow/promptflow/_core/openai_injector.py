@@ -12,6 +12,7 @@ from importlib.metadata import version
 import openai
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.tracer import token_collector
 from promptflow.contracts.trace import TraceType
 
 from .tracer import _traced_async, _traced_sync
@@ -72,14 +73,18 @@ def inject_operation_headers(f):
         @functools.wraps(f)
         async def wrapper(*args, **kwargs):
             inject_headers(kwargs)
-            return await f(*args, **kwargs)
+            output = await f(*args, **kwargs)
+            token_collector.collect_openai_tokens(output)
+            return output
 
     else:
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             inject_headers(kwargs)
-            return f(*args, **kwargs)
+            output = f(*args, **kwargs)
+            token_collector.collect_openai_tokens(output)
+            return output
 
     return wrapper
 

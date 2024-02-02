@@ -13,9 +13,6 @@ from datetime import datetime
 from threading import Lock
 from typing import Callable, Dict, List, Optional
 
-from openai.types.chat import ChatCompletion
-from openai.types.completion import Completion
-
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
@@ -165,9 +162,9 @@ class TokenCollector():
     def __init__(self):
         self._span_id_to_tokens = {}
 
-    def collect_openai_tokens(self, span, output):
-        span_id = span.context.span_id
-        if isinstance(output, (ChatCompletion, Completion)):
+    def collect_openai_tokens(self, output):
+        span_id = otel_trace.get_current_span().get_span_context().span_id
+        if not inspect.isgenerator(output):
             tokens = {
                 f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
             }
@@ -176,9 +173,9 @@ class TokenCollector():
                     self._span_id_to_tokens[span_id] = tokens
 
     def collect_openai_tokens_for_parent_span(self, span):
-        tokens = self.try_get_openai_tokens(span.context.span_id)
+        tokens = self.try_get_openai_tokens(span.get_span_context().span_id)
         if tokens:
-            if span.parent is None:
+            if not hasattr(span, "parent") or span.parent is None:
                 return
             parent_span_id = span.parent.span_id
             if parent_span_id in self._span_id_to_tokens:
@@ -273,7 +270,7 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        tokens = token_collector.try_get_openai_tokens(span.context.span_id)
+        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
         if tokens:
             span.set_attributes(tokens)
     except Exception as e:
@@ -342,7 +339,6 @@ def _traced_async(
             try:
                 Tracer.push(trace)
                 output = await func(*args, **kwargs)
-                token_collector.collect_openai_tokens(output, span)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
@@ -389,7 +385,6 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             try:
                 Tracer.push(trace)
                 output = func(*args, **kwargs)
-                token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
