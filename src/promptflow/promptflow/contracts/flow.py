@@ -17,7 +17,7 @@ from promptflow.exceptions import ErrorTarget
 from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
-from .._utils.utils import try_import
+from .._utils.utils import try_import, _sanitize_python_variable_name
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
@@ -655,6 +655,7 @@ class Flow:
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
+        flow_dag["name"] = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     @classmethod

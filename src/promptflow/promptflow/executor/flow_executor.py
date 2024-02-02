@@ -777,7 +777,7 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
-        with open_telemetry_tracer.start_as_current_span("promptflow.flow") as span:
+        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
             # initialize span
             span.set_attributes(
                 {
