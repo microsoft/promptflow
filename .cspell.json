@@ -83,7 +83,6 @@
     "nunit",
     "astext",
     "Likert",
-    "uvicorn",
     "pfsvc"
   ],
   "ignoreWords": [
