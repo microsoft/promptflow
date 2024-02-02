@@ -19,7 +19,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
     # validate request
     flow_request.validate_request()
     # resolve environment variables
-    set_environment_variables(request)
+    set_environment_variables(flow_request)
     # execute flow
     storage = DefaultRunStorage(base_dir=flow_request.working_dir, sub_dir=flow_request.output_dir)
     with get_log_context(flow_request):
@@ -40,7 +40,7 @@ async def node_execution(request: Request, node_request: NodeExecutionRequest):
     # validate request
     node_request.validate_request()
     # resolve environment variables
-    set_environment_variables(request)
+    set_environment_variables(node_request)
     # execute node
     with get_log_context(node_request):
         storage = DefaultRunStorage(base_dir=node_request.working_dir, sub_dir=node_request.output_dir)
