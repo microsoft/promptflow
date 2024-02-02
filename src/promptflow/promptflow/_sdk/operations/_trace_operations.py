@@ -5,7 +5,7 @@
 import typing
 
 from promptflow._sdk._orm.trace import Span as ORMSpan
-from promptflow._sdk.entities._trace import Span, Trace
+from promptflow._sdk.entities._trace import LineRun, Span
 
 
 class TraceOperations:
@@ -20,9 +20,9 @@ class TraceOperations:
         )
         return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
 
-    def list_traces(
+    def list_line_runs(
         self,
         session_id: typing.Optional[str] = None,
-    ) -> typing.List[Trace]:
+    ) -> typing.List[LineRun]:
         # TODO: do we need to leverage SQL during extraction
         ...
