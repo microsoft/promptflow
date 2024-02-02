@@ -39,10 +39,19 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     pfs_port = get_port_from_config(create_if_not_exists=True)
     _start_pfs_in_background(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
+
     # provision a session
     session_id = _provision_session(session_id=session)
     _logger.debug("current session id is %s", session_id)
-    # init the global tracer with endpoint, context (session, run, exp)
+
+    # honor and set attributes if user has specified
+    attributes: dict = kwargs.get("attributes", None)
+    if attributes is not None:
+        operation_context = OperationContext.get_instance()
+        for attr_key, attr_value in attributes.items():
+            operation_context._add_otel_attributes(attr_key, attr_value)
+
+    # init the global tracer with endpoint
     _init_otel_trace_exporter(otlp_port=pfs_port)
     # openai instrumentation
     inject_openai_api()
