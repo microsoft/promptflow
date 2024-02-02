@@ -12,7 +12,8 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._telemetry.tracer_manager import trace_store
+
+# from promptflow._telemetry.tracer_manager import trace_store
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
@@ -266,8 +267,8 @@ class RunTracker(ThreadLocalSingleton):
         if run_info.status == Status.Canceled:
             return run_info
         if isinstance(run_info, FlowRunInfo):
-            span_list = trace_store.pop_spans_from_run_id(run_info.root_run_id)
-            run_info.traces = [json.loads(span.to_json()) for span in span_list]
+            # span_list = trace_store.pop_spans_from_run_id(run_info.root_run_id)
+            # run_info.traces = [json.loads(span.to_json()) for span in span_list]
             self._flow_run_postprocess(run_info, result, ex)
             if traces:
                 run_info.api_calls = traces
