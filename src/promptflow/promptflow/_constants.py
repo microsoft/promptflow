@@ -50,10 +50,8 @@ GET_PYPI_INTERVAL_DAY = 7
 
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 
+
 # trace related
-TRACE_SESSION_ID_OP_CTX_NAME = "pf_trace_session_id"
-
-
 class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
@@ -103,19 +101,3 @@ class SpanResourceAttributesFieldName:
 class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"
-
-
-class TraceFieldName:
-    LINE_RUN_ID = "line_run_id"
-    INPUTS = "inputs"
-    OUTPUTS = "outputs"
-    EVALUATIONS = "evaluations"
-    START_TIME = "start_time"
-    END_TIME = "end_time"
-    STATUS = "status"
-
-
-class TraceEvaluationsFieldName:
-    NAME = "name"
-    VALUE = "value"
-    LINE_RUN_ID = "line_run_id"
