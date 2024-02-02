@@ -200,6 +200,8 @@ class TestSubmitter:
         credential_list = ConnectionManager(connections).get_secret_list()
         output_path, sub_path = self._get_output_path(kwargs)
         output_path.mkdir(parents=True, exist_ok=True)
+        # Run id will be set in operation context and used for session
+        run_id = kwargs.get("run_id", None)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -224,6 +226,7 @@ class TestSubmitter:
                 allow_generator_output=allow_generator_output,
                 entry=self.entry,
                 storage=storage,
+                run_id=run_id,
             )
             if isinstance(line_result.output, dict):
                 generator_outputs = self._get_generator_outputs(line_result.output)
