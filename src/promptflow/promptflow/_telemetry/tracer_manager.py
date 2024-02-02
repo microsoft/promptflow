@@ -27,7 +27,7 @@ class MemoryTraceStore:
         self._spans.extend(spans)
 
     def get_spans_from_run_id(self, run_id: str):
-        return [span for span in self._spans if span.attributes["root_run_id"] == run_id]
+        return [span for span in self._spans if span.attributes.get("root_run_id") == run_id]
 
     def pop_spans_from_run_id(self, run_id: str):
         spans = self.get_spans_from_run_id(run_id)
