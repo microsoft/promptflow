@@ -4,8 +4,6 @@ from datetime import datetime
 from pathlib import Path
 
 import configargparse
-from azure.ai.ml import Input, MLClient, dsl, load_component
-from azure.identity import DefaultAzureCredential
 
 from promptflow import PFClient
 from promptflow._utils.logger_utils import get_logger
@@ -18,8 +16,7 @@ if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
 from common import clean_data_and_save, split_document, count_non_blank_lines  # noqa: E402
-from components import clean_data_and_save_component, split_document_component  # noqa: E402
-from constants import CONNECTIONS_TEMPLATE, TEXT_CHUNK  # noqa: E402
+from constants import TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
 
@@ -29,7 +26,6 @@ def batch_run_flow(
     flow_folder: str,
     flow_input_data: str,
     flow_batch_run_size: int,
-    connection_name: str = "azure_open_ai_connection",
 ):
     logger.info("Step 2: Start to batch run 'generate_test_data_flow'...")
     base_run = pf.run(
@@ -40,17 +36,11 @@ def batch_run_flow(
             "PF_WORKER_COUNT": str(flow_batch_run_size),
             "PF_BATCH_METHOD": "spawn",
         },
-        connections={
-            key: {"connection": value["connection"].format(connection_name=connection_name)}
-            for key, value in CONNECTIONS_TEMPLATE.items()
-        },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
     )
     logger.info("Batch run is completed.")
-
     return base_run
-
 
 def get_batch_run_output(pf: PFClient, base_run: Run):
     logger.info(f"Start to get batch run {base_run.name} details.")
@@ -64,64 +54,12 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
     ]
 
 
-def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
-    credential = DefaultAzureCredential(exclude_shared_token_cache_credential=True)
-    return MLClient(
-        credential=credential,
-        subscription_id=subscription_id,
-        resource_group_name=resource_group,
-        workspace_name=workspace_name,
-    )
-
-
-@dsl.pipeline(
-    non_pipeline_inputs=[
-        "flow_yml_path",
-        "should_skip_doc_split",
-        "instance_count",
-        "mini_batch_size",
-        "max_concurrency_per_instance",
-    ]
-)
-def gen_test_data_pipeline(
-    data_input: Input,
-    flow_yml_path: str,
-    connection_name: str,
-    should_skip_doc_split: bool,
-    chunk_size=1024,
-    instance_count=1,
-    mini_batch_size="10kb",
-    max_concurrency_per_instance=2,
-):
-    data = (
-        data_input
-        if should_skip_doc_split
-        else split_document_component(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
-    )
-
-    flow_node = load_component(flow_yml_path)(
-        data=data,
-        text_chunk="${data.text_chunk}",
-        connections={
-            key: {"connection": value["connection"].format(connection_name=connection_name)}
-            for key, value in CONNECTIONS_TEMPLATE.items()
-        },
-    )
-
-    flow_node.mini_batch_size = mini_batch_size
-    flow_node.max_concurrency_per_instance = max_concurrency_per_instance
-    flow_node.set_resources(instance_count=instance_count)
-
-    clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs)
-
-
 def run_local(
     documents_folder,
     document_chunk_size,
     document_nodes_file,
     flow_folder,
     flow_batch_run_size,
-    connection_name,
     output_folder,
     should_skip_split,
 ):
@@ -139,7 +77,6 @@ def run_local(
         flow_folder,
         text_chunks_path,
         flow_batch_run_size,
-        connection_name=connection_name,
     )
 
     test_data_set = get_batch_run_output(pf, batch_run)
@@ -159,7 +96,6 @@ def run_cloud(
     document_chunk_size,
     document_nodes_file,
     flow_folder,
-    connection_name,
     subscription_id,
     resource_group,
     workspace_name,
@@ -169,12 +105,108 @@ def run_cloud(
     prs_max_concurrency_per_instance,
     should_skip_split,
 ):
+    # lazy import azure dependencies
+    from azure.ai.ml import Input as V2Input, MLClient, dsl, load_component
+    from azure.identity import DefaultAzureCredential
+    from mldesigner import Input, Output, command_component
+    from constants import ENVIRONMENT_DICT_FIXED_VERSION
+
+
+    @command_component(
+        name="split_document_component",
+        display_name="split documents",
+        description="Split documents into document nodes.",
+        environment=ENVIRONMENT_DICT_FIXED_VERSION,
+    )
+    def split_document_component(
+            documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
+    ) -> str:
+        """Split documents into document nodes.
+
+        Args:
+            documents_folder: The folder containing documents to be split.
+            chunk_size: The size of each chunk.
+            document_node_output: The output folder
+
+        Returns:
+            The folder containing the split documents.
+        """
+        return split_document(chunk_size, documents_folder, document_node_output)
+
+
+    @command_component(
+        name="clean_data_and_save_component",
+        display_name="clean dataset",
+        description="Clean test data set to remove empty lines.",
+        environment=ENVIRONMENT_DICT_FIXED_VERSION,
+    )
+    def clean_data_and_save_component(
+            test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
+    ) -> str:
+        test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
+
+        with open(test_data_set_path, "r") as f:
+            data = [json.loads(line) for line in f]
+
+        test_data_output_path = test_data_output / Path("test_data_set.jsonl")
+        clean_data_and_save(data, test_data_output_path)
+
+        return str(test_data_output_path)
+
+
+    @dsl.pipeline(
+        non_pipeline_inputs=[
+            "flow_yml_path",
+            "should_skip_doc_split",
+            "instance_count",
+            "mini_batch_size",
+            "max_concurrency_per_instance",
+        ]
+    )
+    def gen_test_data_pipeline(
+        data_input: V2Input,
+        flow_yml_path: str,
+        should_skip_doc_split: bool,
+        chunk_size=1024,
+        instance_count=1,
+        mini_batch_size=1,
+        max_concurrency_per_instance=2,
+    ):
+        data = (
+            data_input
+            if should_skip_doc_split
+            else split_document_component(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
+        )
+        flow_node = load_component(flow_yml_path)(
+            data=data,
+            text_chunk="${data.text_chunk}",
+            # connections={
+            #     key: {"connection": value["connection"].format(connection_name=connection_name)}
+            #     for key, value in CONNECTIONS_TEMPLATE.items()
+            # },
+        )
+        flow_node.mini_batch_size = mini_batch_size
+        flow_node.max_concurrency_per_instance = max_concurrency_per_instance
+        flow_node.set_resources(instance_count=instance_count)
+        # Should use `mount` mode to ensure PRS complete merge output lines.
+        flow_node.outputs.flow_outputs.mode = "mount"
+        clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
+
+    def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
+        credential = DefaultAzureCredential(exclude_shared_token_cache_credential=True)
+        return MLClient(
+            credential=credential,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group,
+            workspace_name=workspace_name,
+        )
+
     ml_client = get_ml_client(subscription_id, resource_group, workspace_name)
 
     if should_skip_split:
-        data_input = Input(path=document_nodes_file, type="uri_file")
+        data_input = V2Input(path=document_nodes_file, type="uri_file")
     else:
-        data_input = Input(path=documents_folder, type="uri_folder")
+        data_input = V2Input(path=documents_folder, type="uri_folder")
 
     prs_configs = {
         "instance_count": prs_instance_count,
@@ -185,7 +217,6 @@ def run_cloud(
     pipeline_with_flow = gen_test_data_pipeline(
         data_input=data_input,
         flow_yml_path=os.path.join(flow_folder, "flow.dag.yaml"),
-        connection_name=connection_name,
         should_skip_doc_split=should_skip_split,
         chunk_size=document_chunk_size,
         **prs_configs,
@@ -217,7 +248,6 @@ if __name__ == "__main__":
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
-    parser.add_argument("--connection_name", required=True, type=str, help="Promptflow connection name")
     # Configs for local
     parser.add_argument("--output_folder", type=str, help="Output folder path.")
     # Configs for cloud
@@ -244,8 +274,8 @@ if __name__ == "__main__":
         logger.info("Start to generate test data at local...")
     
     if should_skip_split_documents:
-        logger.info(f"Skip step 1 'Split documents to document nodes' as received document nodes from input file {args.document_nodes_file}.")
-        logger.info(f"Collect {count_non_blank_lines(args.document_nodes_file)} document nodes.")
+        logger.info(f"Skip step 1 'Split documents to document nodes' as received document nodes from input file '{args.document_nodes_file}'.")
+        logger.info(f"Collected {count_non_blank_lines(args.document_nodes_file)} document nodes.")
 
     if args.cloud:
         run_cloud(
@@ -253,7 +283,6 @@ if __name__ == "__main__":
             args.document_chunk_size,
             args.document_nodes_file,
             args.flow_folder,
-            args.connection_name,
             args.subscription_id,
             args.resource_group,
             args.workspace_name,
@@ -270,7 +299,6 @@ if __name__ == "__main__":
             args.document_nodes_file,
             args.flow_folder,
             args.flow_batch_run_size,
-            args.connection_name,
             args.output_folder,
             should_skip_split_documents,
         )
