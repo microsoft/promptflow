@@ -44,6 +44,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _logger.debug("current session id is %s", session_id)
     # init the global tracer with endpoint, context (session, run, exp)
     _init_otel_trace_exporter(otlp_port=pfs_port)
+    # openai instrumentation
     inject_openai_api()
     # print user the UI url
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
