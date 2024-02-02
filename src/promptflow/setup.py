@@ -96,8 +96,7 @@ setup(
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
         "executor-service": [
-            "uvicorn>=0.25.0",  # used to start executor service
-            "fastapi>=0.109.0",  # used to build web executor server
+            "fastapi>=0.109.0,<1.0.0",  # used to build web executor server
         ],
     },
     packages=find_packages(),
