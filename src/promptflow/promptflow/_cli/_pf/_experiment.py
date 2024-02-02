@@ -13,9 +13,8 @@ from promptflow._cli._params import (
 )
 from promptflow._cli._utils import activate_action, exception_handler
 from promptflow._sdk._constants import get_list_view_type
-from promptflow._sdk._load_functions import load_common
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
+from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
@@ -157,9 +156,11 @@ def dispatch_experiment_commands(args: argparse.Namespace):
 
 @exception_handler("Create experiment")
 def create_experiment(args: argparse.Namespace):
+    from promptflow._sdk._load_functions import _load_experiment_template
+
     template_path = args.template
     logger.debug("Loading experiment template from %s", template_path)
-    template = load_common(ExperimentTemplate, source=template_path)
+    template = _load_experiment_template(source=template_path)
     logger.debug("Creating experiment from template %s", template.dir_name)
     experiment = Experiment.from_template(template, name=args.name)
     logger.debug("Creating experiment %s", experiment.name)
