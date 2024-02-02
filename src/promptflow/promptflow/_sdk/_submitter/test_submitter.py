@@ -6,7 +6,7 @@ import contextlib
 import logging
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Tuple, Union
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
@@ -58,33 +58,16 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
-        if isinstance(self.flow, EagerFlow):
-            flow_content_manager = self._eager_flow_init
-        else:
-            flow_content_manager = self._dag_flow_init
-        with flow_content_manager() as submitter:
-            yield submitter
-
-    @contextlib.contextmanager
-    def _eager_flow_init(self):
+        # TODO(2901096): validate invalid configs like variant & connections
         # no variant overwrite for eager flow
         # no connection overwrite for eager flow
-        # TODO(2897147): support additional includes
-        with _change_working_dir(self.flow.code):
-            self._tuning_node = None
-            self._node_variant = None
-            yield self
-            self._dataplane_flow = None
-
-    @contextlib.contextmanager
-    def _dag_flow_init(self):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-            flow_path=self._origin_flow.code,
+            flow=self.flow,
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,
@@ -193,6 +176,13 @@ class TestSubmitter:
         logger.info(f"{prefix} input(s): {merged_inputs}")
         return flow_inputs, dependency_nodes_outputs
 
+    def _get_output_path(self, kwargs) -> Tuple[Path, Path]:
+        """Return the output path and sub dir path of the output."""
+        # Note that the different relative path in LocalRunStorage will lead to different image reference
+        if kwargs.get("output_path"):
+            return Path(kwargs["output_path"]), Path(".")
+        return Path(self.flow.code), Path(PROMPT_FLOW_DIR_NAME)
+
     def flow_test(
         self,
         inputs: Mapping[str, Any],
@@ -201,12 +191,15 @@ class TestSubmitter:
         allow_generator_output: bool = False,  # TODO: remove this
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
         from promptflow.executor.flow_executor import execute_flow
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
+        output_path, sub_path = self._get_output_path(kwargs)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -216,15 +209,15 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            file_path=output_path / sub_path / "flow.log",
             stream=stream_log,
             credential_list=credential_list,
         ):
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            storage = DefaultRunStorage(base_dir=output_path, sub_dir=sub_path / "intermediate")
             line_result = execute_flow(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
-                output_dir=Path(".promptflow/output"),
+                output_dir=output_path / sub_path / "output",
                 connections=connections,
                 inputs=inputs,
                 enable_stream_output=stream_output,
@@ -245,11 +238,14 @@ class TestSubmitter:
         dependency_nodes_outputs: Mapping[str, Any],
         environment_variables: dict = None,
         stream: bool = True,
+        **kwargs,
     ):
         from promptflow.executor import FlowExecutor
 
         connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
+        output_path, sub_path = self._get_output_path(kwargs)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -258,11 +254,11 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+            file_path=output_path / sub_path / f"{node_name}.node.log",
             stream=stream,
             credential_list=credential_list,
         ):
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            storage = DefaultRunStorage(base_dir=output_path, sub_dir=sub_path / "intermediate")
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -374,8 +370,8 @@ class TestSubmitterViaProxy(TestSubmitter):
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
-
         from promptflow._constants import LINE_NUMBER_KEY
 
         if not connections:
@@ -388,6 +384,8 @@ class TestSubmitterViaProxy(TestSubmitter):
                 client=self._client,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
+        output_path, sub_path = self._get_output_path(kwargs)
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # resolve environment variables
         environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -396,14 +394,14 @@ class TestSubmitterViaProxy(TestSubmitter):
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        log_path = self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log"
+        log_path = output_path / sub_path / "flow.log"
         with LoggerOperations(
             file_path=log_path,
             stream=stream_log,
             credential_list=credential_list,
         ):
             try:
-                storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+                storage = DefaultRunStorage(base_dir=output_path, sub_dir=sub_path / "intermediate")
                 flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
                     CSharpExecutorProxy.create,
                     self.flow.path,
@@ -417,7 +415,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     flow_executor.exec_line_async, inputs, index=0
                 )
                 line_result.output = persist_multimedia_data(
-                    line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                    line_result.output, base_dir=output_path, sub_dir=sub_path / "output"
                 )
                 if line_result.aggregation_inputs:
                     # Convert inputs of aggregation to list type

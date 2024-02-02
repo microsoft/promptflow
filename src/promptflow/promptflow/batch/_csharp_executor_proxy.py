@@ -2,14 +2,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import os
 import socket
 import subprocess
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, UnexpectedError
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -19,13 +22,57 @@ EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
-    def __init__(self, process: subprocess.Popen, port: str):
+    def __init__(
+        self, *, process: subprocess.Popen, port: str, working_dir: Path, temp_dag_file: Optional[Path] = None
+    ):
         self._process = process
         self._port = port
+        self._working_dir = working_dir
+        self._temp_dag_file = temp_dag_file
 
     @property
     def api_endpoint(self) -> str:
         return EXECUTOR_SERVICE_DOMAIN + self._port
+
+    def _get_flow_meta(self) -> dict:
+        # TODO: this should be got from flow.json for all languages by default?
+        flow_meta_json_path = self._working_dir / ".promptflow" / "flow.json"
+        if not flow_meta_json_path.is_file():
+            raise MetaFileNotFound(
+                message_format=(
+                    # TODO: pf flow validate should be able to generate flow.json
+                    "Failed to fetch meta of inputs: cannot find {file_path}, please retry."
+                ),
+                file_path=flow_meta_json_path.absolute().as_posix(),
+            )
+
+        with open(flow_meta_json_path, mode="r", encoding=DEFAULT_ENCODING) as flow_meta_json_path:
+            return json.load(flow_meta_json_path)
+
+    @classmethod
+    def _generate_flow_meta(cls, flow_file: str, assembly_folder: Path):
+        command = [
+            "dotnet",
+            EXECUTOR_SERVICE_DLL,
+            "--flow_meta",
+            "--yaml_path",
+            flow_file,
+            "--assembly_folder",
+            ".",
+        ]
+        try:
+            subprocess.check_output(
+                command,
+                cwd=assembly_folder,
+            )
+        except subprocess.CalledProcessError as e:
+            raise UnexpectedError(
+                message_format=f"Failed to generate flow meta for csharp flow.\n"
+                f"Command: {' '.join(command)}\n"
+                f"Working directory: {assembly_folder.as_posix()}\n"
+                f"Return code: {e.returncode}\n"
+                f"Output: {e.output}",
+            )
 
     @classmethod
     async def create(
@@ -42,14 +89,32 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         log_path = kwargs.get("log_path", "")
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
         init_error_file.touch()
+
+        assembly_folder = flow_file.parent
+        # TODO: should we change the interface to init the proxy (always pass entry for eager mode)?
+        if "entry" in kwargs:
+            fd, temp_dag_file = tempfile.mkstemp(suffix=".yaml", text=True)
+            os.write(fd, dump_yaml({"entry": kwargs["entry"], "path": flow_file.as_posix()}).encode(DEFAULT_ENCODING))
+            # need to close the fd manually, or it can't be used in subprocess
+            os.close(fd)
+            flow_file = Path(temp_dag_file)
+
+            # generate flow meta
+            cls._generate_flow_meta(
+                flow_file=temp_dag_file,
+                assembly_folder=assembly_folder,
+            )
+        else:
+            temp_dag_file = None
+
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
-            "-e",
-            "-p",
+            "--execution_service",
+            "--port",
             port,
             "--yaml_path",
-            flow_file,
+            flow_file.as_posix(),
             "--assembly_folder",
             ".",
             "--log_path",
@@ -60,7 +125,12 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             init_error_file,
         ]
         process = subprocess.Popen(command)
-        executor_proxy = cls(process, port)
+        executor_proxy = cls(
+            process=process,
+            port=port,
+            temp_dag_file=temp_dag_file,
+            working_dir=working_dir,
+        )
         try:
             await executor_proxy.ensure_executor_startup(init_error_file)
         finally:
@@ -75,6 +145,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._process.kill()
+        if self._temp_dag_file and os.path.isfile(self._temp_dag_file):
+            Path(self._temp_dag_file).unlink()
 
     async def exec_aggregation_async(
         self,

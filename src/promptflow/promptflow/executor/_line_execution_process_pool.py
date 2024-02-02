@@ -24,7 +24,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import get_int_env_var, log_progress, set_context
+from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -97,6 +97,7 @@ class LineExecutionProcessPool:
         output_dir,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
+        worker_count: Optional[int] = None,
     ):
         self._nlines = nlines
         self._run_id = run_id
@@ -127,10 +128,12 @@ class LineExecutionProcessPool:
             "flow_file": flow_executor._flow_file,
             "connections": flow_executor._connections,
             "working_dir": flow_executor._working_dir,
-            "entry": flow_executor._entry,
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
         }
+        # Will set to True if the batch run is timeouted.
+        self._is_timeout = False
+        self._worker_count = self._determine_worker_count(worker_count)
 
     def __enter__(self):
         manager = Manager()
@@ -138,7 +141,7 @@ class LineExecutionProcessPool:
         self._completed_idx = manager.dict()
 
         self._task_queue = Queue()
-        self._n_process = self._determine_worker_count()
+        self._n_process = self._worker_count
 
         # When using fork, we first spawn a sub process, the SemLock created in fork context (multiprocessing.Queue()）
         # can't used in a spawn context. Since spawn does not share memory, synchronization primitives created by
@@ -190,6 +193,10 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
+    @property
+    def is_timeout(self):
+        return self._is_timeout
+
     def _get_process_info(self, index):
         start_time = time.time()
         while True:
@@ -219,7 +226,7 @@ class LineExecutionProcessPool:
     def _is_process_alive(self, process_id):
         return psutil.pid_exists(process_id)
 
-    def _handle_output_queue_messages(self, output_queue: Queue, result_list):
+    def _handle_output_queue_messages(self, output_queue: Queue, result_list: List[LineResult]):
         try:
             message = output_queue.get(timeout=1)
             if isinstance(message, LineResult):
@@ -265,6 +272,7 @@ class LineExecutionProcessPool:
                     self._batch_timeout_sec - (datetime.utcnow() - batch_start_time).total_seconds()
                 )
                 if remaining_execution_time <= 0:
+                    self._is_timeout = True
                     break
                 line_timeout_sec = min(line_timeout_sec, remaining_execution_time)
 
@@ -306,22 +314,26 @@ class LineExecutionProcessPool:
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
-                # Handle line execution timeout.
-                elif self._line_timeout_expired(start_time):
-                    bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
-                # Handle batch execution timeout.
-                elif self._batch_timeout_expired(batch_start_time):
-                    bulk_logger.warning(
-                        f"Line {line_number} execution terminated due to the total "
-                        f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
-                    )
-                    ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                 else:
-                    # This branch should not be reached, add this warning for the case.
+                    # Handle line execution timeout.
+                    if self._line_timeout_expired(start_time):
+                        bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
+                        ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
+                    # Handle batch execution timeout.
+                    if self._batch_timeout_expired(batch_start_time):
+                        bulk_logger.warning(
+                            f"Line {line_number} execution terminated due to the total "
+                            f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
+                        )
+                        ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
+                        # Set is_timeout to True if the batch run exceeds the batch timeout.
+                        self._is_timeout = True
+                # This branch should not be reached, add this warning for the case.
+                if ex is None:
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
                     bulk_logger.warning(msg)
                     ex = UnexpectedError(msg)
+
                 result = self._generate_line_result_for_exception(
                     inputs,
                     run_id,
@@ -348,6 +360,9 @@ class LineExecutionProcessPool:
                     index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
+
+        # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
+        self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
@@ -552,11 +567,9 @@ class LineExecutionProcessPool:
             msgs.append("Processing Lines: " + ", ".join(lines) + ".")
         return msgs
 
-    def _determine_worker_count(self):
-        worker_count = get_int_env_var("PF_WORKER_COUNT")
-
-        # Starting a new process in non-fork mode requires to allocate memory. Calculate the maximum number of processes
-        # based on available memory to avoid memory bursting.
+    def _determine_worker_count(self, worker_count):
+        # Starting a new process in non-fork mode requires to allocate memory.
+        # Calculate the maximum number of processes based on available memory to avoid memory bursting.
         estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
 
         # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
@@ -582,7 +595,7 @@ class LineExecutionProcessPool:
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
-        bulk_logger.info(f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
+        bulk_logger.info(f"Set process count to {worker_count}.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
                 f"The current process count ({worker_count}) is larger than recommended process count "
@@ -657,7 +670,6 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
     if isinstance(flow_executor, ScriptExecutor):
         return ScriptExecutor(
             flow_file=flow_executor._flow_file,
-            entry=flow_executor._entry,
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
             storage=storage,

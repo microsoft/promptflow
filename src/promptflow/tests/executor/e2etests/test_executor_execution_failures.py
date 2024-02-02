@@ -26,7 +26,9 @@ Traceback (most recent call last):
 sync_fail.py", line 13, in raise_an_exception
     raise Exception(f"In tool raise_an_exception: {s}") from e
 Exception: In tool raise_an_exception: dummy_input
-""".split("\n"),
+""".split(
+        "\n"
+    ),
     "async_tools_failures": """Traceback (most recent call last):
 async_fail.py", line 11, in raise_an_exception_async
     await raise_exception_async(s)
@@ -40,7 +42,9 @@ Traceback (most recent call last):
 in raise_an_exception_async
     raise Exception(f"In tool raise_an_exception_async: {s}") from e
 Exception: In tool raise_an_exception_async: dummy_input
-""".split("\n"),
+""".split(
+        "\n"
+    ),
 }
 
 

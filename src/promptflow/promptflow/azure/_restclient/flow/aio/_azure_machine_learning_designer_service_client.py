@@ -13,7 +13,19 @@ from msrest import Deserializer, Serializer
 
 from .. import models
 from ._configuration import AzureMachineLearningDesignerServiceClientConfiguration
-from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, FlowRunsAdminOperations, FlowRuntimesOperations, FlowRuntimesWorkspaceIndependentOperations, FlowSessionsOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations
+from .operations import (
+    BulkRunsOperations,
+    ConnectionOperations,
+    ConnectionsOperations,
+    FlowRunsAdminOperations,
+    FlowRuntimesOperations,
+    FlowRuntimesWorkspaceIndependentOperations,
+    FlowSessionsOperations,
+    FlowsOperations,
+    FlowsProviderOperations,
+    ToolsOperations,
+)
+
 
 class AzureMachineLearningDesignerServiceClient:
     """AzureMachineLearningDesignerServiceClient.
@@ -46,12 +58,7 @@ class AzureMachineLearningDesignerServiceClient:
     :type api_version: str
     """
 
-    def __init__(
-        self,
-        base_url: str = "",
-        api_version: Optional[str] = "1.0.0",
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, base_url: str = "", api_version: Optional[str] = "1.0.0", **kwargs: Any) -> None:
         self._config = AzureMachineLearningDesignerServiceClientConfiguration(api_version=api_version, **kwargs)
         self._client = AsyncPipelineClient(base_url=base_url, config=self._config, **kwargs)
 
@@ -64,18 +71,15 @@ class AzureMachineLearningDesignerServiceClient:
         self.connections = ConnectionsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_runs_admin = FlowRunsAdminOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_runtimes = FlowRuntimesOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flow_runtimes_workspace_independent = FlowRuntimesWorkspaceIndependentOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.flow_runtimes_workspace_independent = FlowRuntimesWorkspaceIndependentOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
         self.flows = FlowsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flow_sessions = FlowSessionsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flows_provider = FlowsProviderOperations(self._client, self._config, self._serialize, self._deserialize)
         self.tools = ToolsOperations(self._client, self._config, self._serialize, self._deserialize)
 
-
-    def _send_request(
-        self,
-        request: HttpRequest,
-        **kwargs: Any
-    ) -> Awaitable[AsyncHttpResponse]:
+    def _send_request(self, request: HttpRequest, **kwargs: Any) -> Awaitable[AsyncHttpResponse]:
         """Runs the network request through the client's chained policies.
 
         >>> from azure.core.rest import HttpRequest
