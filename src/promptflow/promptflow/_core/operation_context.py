@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
+
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
@@ -20,6 +22,8 @@ class OperationContext(Dict):
     _OTEL_ATTRIBUTES = "_otel_attributes"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
     USER_AGENT_KEY = "user_agent"
+    _DEFAULT_TRACKING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source"}
+    _TRACKING_KEYS = "_tracking_keys"
 
     def _add_otel_attributes(self, key, value):
         attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
@@ -45,6 +49,8 @@ class OperationContext(Dict):
             # create a new instance and set it in the current context
             instance = OperationContext()
             cls._current_context.set(instance)
+        if cls._TRACKING_KEYS not in instance:
+            instance[cls._TRACKING_KEYS] = copy.copy(cls._DEFAULT_TRACKING_KEYS)
         return instance
 
     def __setattr__(self, name, value):
@@ -63,9 +69,6 @@ class OperationContext(Dict):
         # check that name is a string
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
-        # check that value is a primitive
-        if value is not None and not isinstance(value, (int, float, str, bool)):
-            raise TypeError("Value must be a primitive")
         # set the item in the data attribute
         self[name] = value
 
@@ -188,3 +191,7 @@ class OperationContext(Dict):
             dict: The context dictionary.
         """
         return dict(self)
+
+    def _get_tracking_info(self):
+        keys = getattr(self, self._TRACKING_KEYS, self._DEFAULT_TRACKING_KEYS)
+        return {k: v for k, v in self.items() if k in keys}
