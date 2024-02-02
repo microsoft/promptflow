@@ -88,7 +88,7 @@ class TraceUI(Resource):
         return Response(
             render_template(
                 "ui_traces.html",
-                trace_ui_dict=json.dumps(trace_ui_dict, indent=4),
+                trace_ui_dict=json.dumps(trace_ui_dict),
                 summary=summary,
                 traces=traces,
                 eval_traces=eval_traces,
