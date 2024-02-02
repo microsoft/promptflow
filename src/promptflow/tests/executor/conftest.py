@@ -12,12 +12,12 @@ from sdk_cli_test.recording_utilities import (
     inject_sync_with_recording,
     is_live,
     is_record,
-    is_recording_enabled,
     is_replay,
     mock_tool,
     recording_array_extend,
     recording_array_reset,
 )
+from sdk_cli_test.recording_utilities.record_storage import is_recording_enabled
 
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._line_execution_process_pool import _process_wrapper
