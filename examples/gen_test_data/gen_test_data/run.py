@@ -10,7 +10,6 @@ from promptflow._utils.logger_utils import get_logger
 from promptflow.entities import Run
 
 CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
-CLOUD_CONFIG_FILE = (Path(__file__).parents[1] / "cloud.config.ini").resolve()
 
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))

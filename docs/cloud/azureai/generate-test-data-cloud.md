@@ -18,8 +18,13 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 5. Prepare Azure AI resources in cloud.
     - An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?view=azureml-api-2).
     - A compute target - [Learn more about compute cluster](https://learn.microsoft.com/en-us/azure/machine-learning/concept-compute-target?view=azureml-api-2).
-6. Set configs
-    If you have already generated `configs.ini` file, just fill in the values in `COMMON` and `CLOUD` sections. Otherwise, navigate to [gen_test_data](../../../examples/gen_test_data) folder, run `cp config.ini.example config.ini` to generate the `configs.ini` file
+6. Prepare config.ini
+    - Navigate to [gen_test_data](../../../examples/gen_test_data) folder.
+    - Run command to copy `config.ini.example` and update the configurations in the `configs.ini` file
+        ```
+        cp config.ini.example config.ini
+        ```
+    - Fill in the values in `COMMON` and `CLOUD` section.
 
 
 ## Generate test data at cloud
