@@ -14,10 +14,10 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
         - .pdf - `pypdf`
         - .ipynb - `nbconvert`
 
-4. Create cloud connection: [Create a connection](https://microsoft.github.io/promptflow/cloud/azureai/quick-start.html#create-necessary-connections)
-5. Prepare Azure AI resources in cloud.
+4. Prepare Azure AI resources in cloud.
     - An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?view=azureml-api-2).
     - A compute target - [Learn more about compute cluster](https://learn.microsoft.com/en-us/azure/machine-learning/concept-compute-target?view=azureml-api-2).
+5. Create cloud connection: [Create a connection](https://microsoft.github.io/promptflow/cloud/azureai/quick-start.html#create-necessary-connections)
 6. Prepare config.ini
     - Navigate to [gen_test_data](../../../examples/gen_test_data) folder.
     - Run command to copy `config.ini.example` and update the configurations in the `configs.ini` file
