@@ -5,6 +5,7 @@
 from fastapi import APIRouter
 
 from promptflow._core.tools_manager import collect_package_tools
+from promptflow.executor._service.contracts.tool_request import ToolGenMetaRequest
 
 router = APIRouter(prefix="/tool")
 
@@ -12,3 +13,8 @@ router = APIRouter(prefix="/tool")
 @router.get("/package_tools")
 async def list_package_tools():
     return collect_package_tools()
+
+
+@router.post("/meta")
+async def gen_tool_meta(request: ToolGenMetaRequest):
+    return {"status": "healthy", "meta": "meta_dict"}
