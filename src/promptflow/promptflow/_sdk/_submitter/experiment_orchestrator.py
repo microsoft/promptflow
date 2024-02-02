@@ -412,7 +412,7 @@ class ExperimentOrchestrator:
 
         If experiment is not in progress, it will raise user error.
         In Linux, it will send terminate signal to orchestrator process. In Windows, it will pass signal by named pipe.
-        When process receives the terminate signl, it will update running nodes to canceled and terminate the process.
+        When process receives the terminate signal, it will update running nodes to canceled and terminate the process.
 
         :return: Stopped experiment info.
         :rtype: ~promptflow.entities.Experiment
@@ -460,7 +460,8 @@ class ExperimentOrchestrator:
     def get_status(experiment_name):
         """Check the status of the orchestrator
 
-        The status recorded in database and process status may be inconsistent. Need to check the orchestrator process status
+        The status recorded in database and process status may be inconsistent.
+        Need to check the orchestrator process status.
 
         :return: Orchestrator status.
         :rtype: str
@@ -481,7 +482,8 @@ class ExperimentOrchestrator:
                 try:
                     process = psutil.Process(orm_orchestrator.pid)
                     if experiment_name not in process.cmdline():
-                        # This process is not the process used to start the orchestrator, update experiment to terminated.
+                        # This process is not the process used to start the orchestrator
+                        # update experiment to terminated.
                         set_orchestrator_terminated()
                     return orm_orchestrator.status
                 except psutil.NoSuchProcess:
