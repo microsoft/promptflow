@@ -5,18 +5,18 @@ from pathlib import Path
 from constants import DOCUMENT_NODE, TEXT_CHUNK
 from promptflow._utils.logger_utils import get_logger
 
-try:
-    from llama_index import SimpleDirectoryReader
-    from llama_index.node_parser import SentenceSplitter
-    from llama_index.readers.schema import Document as LlamaindexDocument
-    from llama_index.schema import BaseNode
-except ImportError:
-    raise ImportError(
-        "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
-    )
-
 
 def split_document(chunk_size, documents_folder, document_node_output):
+    try:
+        from llama_index import SimpleDirectoryReader
+        from llama_index.node_parser import SentenceSplitter
+        from llama_index.readers.schema import Document as LlamaindexDocument
+        from llama_index.schema import BaseNode
+    except ImportError:
+        raise ImportError(
+            "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
+        )
+
     logger = get_logger("doc.split")
     logger.info("Step 1: Start to split documents to document nodes...")
     # count the number of files in documents_folder, including subfolders, use pathlib
