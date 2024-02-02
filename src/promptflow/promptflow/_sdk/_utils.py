@@ -369,17 +369,9 @@ def safe_parse_object_list(obj_list, parser, message_generator):
     return results
 
 
-def _normalize_identifier_name(name):
-    normalized_name = name.lower()
-    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
-    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
-    if re.match(r"\d", normalized_name):
-        normalized_name = "n" + normalized_name  # No leading digits
-    return normalized_name
-
-
 def _sanitize_python_variable_name(name: str):
-    return _normalize_identifier_name(name).replace(" ", "_")
+    from promptflow._utils.utils import _sanitize_python_variable_name
+    return _sanitize_python_variable_name(name)
 
 
 def _get_additional_includes(yaml_path):
