@@ -17,6 +17,7 @@ from sdk_cli_test.recording_utilities import (
     recording_array_extend,
     recording_array_reset,
 )
+from tests.sdk_cli_test.recording_utilities.record_storage import is_recording_enabled
 
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._line_execution_process_pool import _process_wrapper
@@ -216,9 +217,9 @@ def recording_injection(recording_setup, process_override):
 
 @pytest.fixture(autouse=True, scope="session")
 def inject_api_executor():
-    """Inject OpenAI API during test session.
+    """Inject OpenAI API during test session when recording not enabled
 
     AOAI call in promptflow should involve trace logging and header injection. Inject
     function to API call in test scenario."""
-    if not (is_replay() or is_record() or is_live()):
+    if not is_recording_enabled():
         inject_openai_api()

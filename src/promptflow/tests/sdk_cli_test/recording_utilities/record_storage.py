@@ -32,6 +32,10 @@ def is_live() -> bool:
     return get_test_mode_from_environ() == RecordMode.LIVE
 
 
+def is_recording_enabled() -> bool:
+    return is_record() or is_replay() or is_live()
+
+
 class RecordItemMissingException(PromptflowException):
     """Exception raised when record item missing."""
 
