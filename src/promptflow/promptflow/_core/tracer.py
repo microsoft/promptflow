@@ -205,6 +205,14 @@ def get_node_name_from_context():
     return None
 
 
+def enrich_span_with_context(span):
+    try:
+        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+        span.set_attributes(attrs_from_context)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with context: {e}")
+
+
 def enrich_span_with_trace(span, trace):
     try:
         span.set_attributes(
@@ -215,8 +223,7 @@ def enrich_span_with_trace(span, trace):
                 "node_name": get_node_name_from_context(),
             }
         )
-        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
-        span.set_attributes(attrs_from_context)
+        enrich_span_with_context(span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
 

@@ -11,7 +11,7 @@ def _run_in_subprocess(error_queue: Queue, func, args, kwargs):
     try:
         func(*args, **kwargs)
     except BaseException as e:
-        error_queue.put((e, traceback.format_exc()))
+        error_queue.put((repr(e), traceback.format_exc()))
 
 
 def execute_function_in_subprocess(func, *args, **kwargs):
