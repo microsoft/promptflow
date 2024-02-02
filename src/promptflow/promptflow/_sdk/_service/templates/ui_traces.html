@@ -14,6 +14,7 @@
     </style>
 </head>
 <body>
+    Line Runs
     <table>
         <thead>
             <tr>
@@ -23,7 +24,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for row in data %}
+            {% for row in summary %}
             <tr>
                 <td>{{ row.trace_id }}</td>
                 <td>{{ row.span_id }}</td>
@@ -32,6 +33,47 @@
             {% endfor %}
         </tbody>
     </table>
-    {{ traces_json }}
+
+    Traces
+    <table>
+        <thead>
+            <tr>
+                <th>trace_id</th>
+                <th>span_id</th>
+                <th>content</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in traces %}
+            <tr>
+                <td>{{ row.trace_id }}</td>
+                <td>{{ row.span_id }}</td>
+                <td><pre>{{ row.content }}</pre></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    Evaluation Traces
+    <table>
+        <thead>
+            <tr>
+                <th>trace_id</th>
+                <th>span_id</th>
+                <th>content</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in eval_traces %}
+            <tr>
+                <td>{{ row.trace_id }}</td>
+                <td>{{ row.span_id }}</td>
+                <td><pre>{{ row.content }}</pre></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <pre>{{ trace_ui_dict }}</pre>
 </body>
 </html>
