@@ -1135,10 +1135,14 @@ def get_mac_address() -> Union[str, None]:
         mac_address = None
         net_address = psutil.net_if_addrs()
         eth = []
-        if "Ethernet" in net_address:  # windows
-            eth = net_address["Ethernet"]
-        elif "eth0" in net_address:  # linux & mac
-            eth = net_address["eth0"]
+        # Query the first network card in order and obtain the MAC address of the first network card.
+        # "Ethernet" is the name of the Windows network card.
+        # "ethx", "ensx", "enox" are the name of the Linux & Mac network card.
+        net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
+        for net_interface_name in net_interface_names:
+            if net_interface_name in net_address:
+                eth = net_address[net_interface_name]
+                break
         for net_interface in eth:
             if net_interface.family == psutil.AF_LINK:  # mac address
                 mac_address = str(net_interface.address)
