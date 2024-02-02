@@ -13,11 +13,3 @@ ENVIRONMENT_DICT_FIXED_VERSION = dict(
         ],
     },
 )
-
-CONNECTIONS_TEMPLATE = {
-    "validate_text_trunk": {"connection": "{connection_name}"},
-    "generate_question": {"connection": "{connection_name}"},
-    "validate_question": {"connection": "{connection_name}"},
-    "generate_suggested_answer": {"connection": "{connection_name}"},
-    "validate_suggested_answer": {"connection": "{connection_name}"},
-}
