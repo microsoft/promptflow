@@ -26,6 +26,13 @@ def construct_monitor_blueprint(flow_monitor: FlowMonitor):
 
     @monitor_blueprint.after_app_request
     def finish_monitoring(response):
+        # add request id in response header.
+        req_id = request.headers.get("x-request-id", None)
+        if req_id:
+            response.headers["x-request-id"] = req_id
+        client_req_id = request.headers.get("x-ms-client-request-id", req_id)
+        if client_req_id:
+            response.headers["x-ms-client-request-id"] = client_req_id
         if not is_monitoring_enabled():
             return response
         flow_monitor.finish_monitoring(response.status_code)
