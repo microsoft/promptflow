@@ -132,7 +132,7 @@ class TestExperiment:
             # Assert line run id is set by executor when running test
             assert OperationContext.get_instance()._get_otel_attributes().get("line_run_id") is not None
             # Assert reference line run id is set after running eval
-            assert OperationContext.get_instance()._get_otel_attributes().get("reference.line_run_id") is not None
+            assert OperationContext.get_instance()._get_otel_attributes().get("referenced.line_run_id") is not None
             expected_output_path = (
                 Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
             )

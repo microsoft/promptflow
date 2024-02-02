@@ -70,7 +70,7 @@ class ExperimentOrchestrator:
         referenced_ids = test_context.node_name_to_referenced_id.get(node_name, [])
         if referenced_ids:
             # Here we use next to get the first referenced id, as we only support 1 referenced node for flow node now.
-            operation_context._add_otel_attributes("referenced.line_run_id", next(referenced_ids))
+            operation_context._add_otel_attributes("referenced.line_run_id", next(iter(referenced_ids)))
 
     def test(
         self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
