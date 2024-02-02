@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Dict, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import mock
 import pytest
