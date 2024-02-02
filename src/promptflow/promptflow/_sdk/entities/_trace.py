@@ -152,7 +152,7 @@ class LineRun:
         latency: float,
         name: str,
         kind: str,
-        cumulative_token_count: typing.Dict[str, int],
+        cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None,
         evaluations: typing.Optional[typing.List[typing.Dict]] = None,
     ):
         ...
