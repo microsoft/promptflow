@@ -8,7 +8,6 @@ from pathlib import Path
 from types import GeneratorType
 
 import pytest
-from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -159,7 +158,6 @@ class TestExecutor:
         if not queue.empty():
             raise queue.get()
 
-    @pytest.mark.skipif(is_replay() or is_record(), reason="Tools errors are not supported in recording")
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
