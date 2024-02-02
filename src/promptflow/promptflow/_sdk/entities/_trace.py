@@ -156,3 +156,7 @@ class LineRun:
         evaluations: typing.Optional[typing.List[typing.Dict]] = None,
     ):
         ...
+
+    @staticmethod
+    def _from_spans(spans: typing.List[Span]) -> "LineRun":
+        ...
