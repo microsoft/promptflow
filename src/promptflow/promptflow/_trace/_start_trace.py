@@ -34,6 +34,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
+    from promptflow._sdk._constants import ExperimentContextKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
@@ -44,12 +45,21 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     session_id = _provision_session(session_id=session)
     _logger.debug("current session id is %s", session_id)
 
+    operation_context = OperationContext.get_instance()
+
     # honor and set attributes if user has specified
     attributes: dict = kwargs.get("attributes", None)
     if attributes is not None:
-        operation_context = OperationContext.get_instance()
         for attr_key, attr_value in attributes.items():
             operation_context._add_otel_attributes(attr_key, attr_value)
+
+    # prompt flow related, retrieve `experiment` and `referenced.line_run_id`
+    experiment = os.environ.get(ExperimentContextKey.EXPERIMENT, None)
+    if experiment is not None:
+        operation_context._add_otel_attributes(SpanAttributeFieldName.EXPERIMENT, experiment)
+    ref_line_run_id = os.environ.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
+    if ref_line_run_id is not None:
+        operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
     # init the global tracer with endpoint
     _init_otel_trace_exporter(otlp_port=pfs_port)
