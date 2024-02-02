@@ -381,6 +381,7 @@ class TestSubmitter:
         inputs: Mapping[str, Any],
         allow_generator_output: bool = False,  # TODO: remove this
         stream_output: bool = True,
+        run_id: str = None,
     ) -> LineResult:
         """
         Submit a flow test.
@@ -396,6 +397,8 @@ class TestSubmitter:
         :type allow_generator_output: bool
         :param stream_output: Stream output.
         :type stream_output: bool
+        :param run_id: Run id will be set in operation context and used for session
+        :type run_id: str
         """
         self._raise_if_not_within_init_context()
         if self.target_node:
@@ -415,10 +418,12 @@ class TestSubmitter:
                 allow_generator_output=allow_generator_output,
                 entry=self.entry,
                 storage=self._storage,
+                run_id=run_id,
             )
         else:
             from promptflow._utils.multimedia_utils import persist_multimedia_data
 
+            # TODO: support run_id for non-python
             # TODO: most of below code is duplicate to flow_executor.execute_flow
             line_result: LineResult = async_run_allowing_running_loop(
                 self._executor_proxy.exec_line_async, inputs, index=0

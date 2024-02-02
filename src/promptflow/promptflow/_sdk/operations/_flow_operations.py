@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import sys
+import uuid
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -147,6 +148,8 @@ class FlowOperations(TelemetryMixin):
 
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
+        # Run id will be set in operation context and used for session
+        run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow: FlowBase = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
@@ -181,6 +184,8 @@ class FlowOperations(TelemetryMixin):
                     inputs=flow_inputs,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
+                    output_path=output_path,
+                    run_id=run_id,
                 )
 
     @staticmethod
