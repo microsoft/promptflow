@@ -2,8 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import argparse
-import sys
+import os
 import uuid
 
 from opentelemetry import trace
@@ -46,21 +45,18 @@ def start_trace():
 
 
 def _start_pfs(pfs_port) -> None:
-    from promptflow._sdk._service.entry import start_service
+    from promptflow._sdk._service.entry import PF_NO_INTERACTIVE_LOGIN, entry
     from promptflow._sdk._service.utils.utils import is_port_in_use
 
-    args = argparse.Namespace(port=pfs_port, force=False, synchronous=False)
+    command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
         if is_pfs_service_healthy(pfs_port) is True:
             return
         else:
-            args.force = True
-
-    is_healthy = start_service(args)
-    if is_healthy is False:
-        _logger.error(f"Pfs service start failed in {pfs_port}.")
-        sys.exit(1)
+            command_args += ["--force"]
+    os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
+    entry(command_args)
 
 
 def _provision_session() -> str:

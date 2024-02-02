@@ -109,7 +109,8 @@ def start_service(args):
         app.logger.info(
             f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
         )
-    return is_healthy
+    else:
+        app.logger.warning(f"Pfs service start failed in {port}.")
 
 
 def main():
