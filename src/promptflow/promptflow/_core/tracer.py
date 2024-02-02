@@ -178,15 +178,14 @@ class TokenCollector():
             if not hasattr(span, "parent") or span.parent is None:
                 return
             parent_span_id = span.parent.span_id
-            if parent_span_id in self._span_id_to_tokens:
-                merged_tokens = {
-                    key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
-                    for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
-                }
-                with self._lock:
+            with self._lock:
+                if parent_span_id in self._span_id_to_tokens:
+                    merged_tokens = {
+                        key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
+                        for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
+                    }
                     self._span_id_to_tokens[parent_span_id] = merged_tokens
-            else:
-                with self._lock:
+                else:
                     self._span_id_to_tokens[parent_span_id] = tokens
 
     def try_get_openai_tokens(self, span_id):
