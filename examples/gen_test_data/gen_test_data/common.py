@@ -19,7 +19,7 @@ def split_document(chunk_size, documents_folder, document_node_output):
 
     logger = get_logger("doc.split")
     logger.info("Step 1: Start to split documents to document nodes...")
-    # count the number of files in documents_folder, including subfolders, use pathlib
+    # count the number of files in documents_folder, including subfolders.
     num_files = sum(1 for _ in Path(documents_folder).rglob("*") if _.is_file())
     logger.info(f"Found {num_files} files in the documents folder '{documents_folder}'. Using chunk size: {chunk_size} to split.")
     # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.

@@ -1,5 +1,8 @@
 import json
 import os
+import sys
+import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -20,37 +23,65 @@ from constants import TEXT_CHUNK  # noqa: E402
 logger = get_logger("data.gen")
 
 
+def print_progress(log_file_path: str):
+    logger.info(f"Showing progress log, or you can click '{log_file_path}' and see detailed batch run log...")
+    log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished \d+ / \d+ lines\.")
+    # wait for the log file to be created
+    start_time = time.time()
+    while not Path(log_file_path).is_file():
+        time.sleep(1)
+        # if the log file is not created within 5 minutes, raise an error
+        if time.time() - start_time > 300:
+            raise Exception(f"Log file '{log_file_path}' is not created within 5 minutes.")
+
+    try:
+        last_data_time = time.time()
+        with open(log_file_path, 'r') as f:
+            while True:
+                line = f.readline().strip()
+                if line:
+                    last_data_time = time.time()  # Update the time when the last data was received
+                    time.sleep(1)
+                    if not log_pattern.match(line):
+                        continue
+
+                    sys.stdout.write("\r" + line)  # \r will move the cursor back to the beginning of the line
+                    sys.stdout.flush()  # flush the buffer to ensure the log is displayed immediately
+                elif time.time() - last_data_time > 300:  # If no new data has been received for 10 seconds
+                    logger.info("No new data received for 300 seconds. Stop reading the log file.")
+                    break  # Stop reading
+                else:
+                    time.sleep(1)  # wait for 1 second if no new line is available
+    except KeyboardInterrupt:
+        sys.stdout.write("\n")  # ensure to start on a new line when the user interrupts
+        sys.stdout.flush()
+
+
 def batch_run_flow(
-    pf: PFClient,
     flow_folder: str,
     flow_input_data: str,
     flow_batch_run_size: int,
 ):
     logger.info("Step 2: Start to batch run 'generate_test_data_flow'...")
-    base_run = pf.run(
-        flow=flow_folder,
-        data=flow_input_data,
-        stream=True,
-        environment_variables={
-            "PF_WORKER_COUNT": str(flow_batch_run_size),
-            "PF_BATCH_METHOD": "spawn",
-        },
-        column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
-        debug=True,
-    )
-    logger.info("Batch run is completed.")
-    return base_run
+    import subprocess
+
+    run_name = f"test_data_gen_{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}"
+    cmd = f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} " \
+          f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' " \
+          f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}'"
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logger.info(f"Submit batch run successfully. process id {process.pid}. Please wait for the batch run to complete...")
+    return run_name
 
 
-def get_batch_run_output(pf: PFClient, base_run: Run):
-    logger.info(f"Start to get batch run {base_run.name} details.")
-    details = pf.get_details(base_run, all_results=True)
-    question = details["outputs.question"].tolist()
-    suggested_answer = details["outputs.suggested_answer"].tolist()
-    debug_info = details["outputs.debug_info"].tolist()
+def get_batch_run_output(output_path: Path):
+    logger.info(f"Start to get batch run output from '{output_path}'.")
+    with open(output_path, 'r') as f:
+        output_lines = list(map(json.loads, f))
+    
     return [
-        {"question": q, "suggested_answer": g, "debug_info": d}
-        for q, g, d in zip(question, suggested_answer, debug_info)
+        {"question": line["question"], "suggested_answer": line["suggested_answer"], "debug_info": line["debug_info"]}
+        for line in output_lines
     ]
 
 
@@ -71,16 +102,15 @@ def run_local(
     if not should_skip_split:
         text_chunks_path = split_document(document_chunk_size, documents_folder, inner_folder)
 
-    pf = PFClient()
-    batch_run = batch_run_flow(
-        pf,
+    run_name = batch_run_flow(
         flow_folder,
         text_chunks_path,
         flow_batch_run_size,
     )
-
-    test_data_set = get_batch_run_output(pf, batch_run)
-
+    run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
+    print_progress(run_folder_path / "logs.txt")
+    logger.info("Batch run is completed. ")
+    test_data_set = get_batch_run_output(run_folder_path / "outputs.jsonl")
     # Store intermedian batch run output results
     jsonl_str = "\n".join(map(json.dumps, test_data_set))
     intermedian_batch_run_res = os.path.join(inner_folder, "test-data-gen-details.jsonl")
