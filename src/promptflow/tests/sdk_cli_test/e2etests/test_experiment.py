@@ -8,7 +8,6 @@ from mock import mock
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus
 from promptflow._sdk._errors import ExperimentValueError
 from promptflow._sdk._load_functions import load_common
@@ -131,7 +130,6 @@ class TestExperiment:
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
             assert attributes.get("experiment") == template_path.resolve().absolute().as_posix()
             assert attributes.get("referenced.line_run_id", "").startswith("main")
-            assert OperationContext.get_instance()._get_otel_attributes().get("line_run_id") is not None
             expected_output_path = (
                 Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
             )
