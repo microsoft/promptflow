@@ -6,6 +6,7 @@ dependencies:
   - pip=23.2.1
   - pip:
     - mldesigner==0.1.0b17
+    - configargparse
     - llama_index
     - docx2txt
     - promptflow

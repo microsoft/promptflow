@@ -107,6 +107,7 @@ def run_cloud(
     prs_max_concurrency_per_instance,
     prs_max_retry_count,
     prs_run_invocation_time,
+    prs_allowed_failed_count,
     should_skip_split,
 ):
     # lazy import azure dependencies
@@ -166,6 +167,7 @@ def run_cloud(
             "max_concurrency_per_instance",
             "max_retry_count",
             "run_invocation_time",
+            "allowed_failed_count",
         ]
     )
     def gen_test_data_pipeline(
@@ -178,6 +180,7 @@ def run_cloud(
         max_concurrency_per_instance=2,
         max_retry_count=3,
         run_invocation_time=600,
+        allowed_failed_count=-1,
     ):
         data = (
             data_input
@@ -198,6 +201,7 @@ def run_cloud(
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
         flow_node.set_resources(instance_count=instance_count)
         flow_node.retry_settings = RetrySettings(max_retry_count=max_retry_count, timeout=run_invocation_time)
+        flow_node.mini_batch_error_threshold = allowed_failed_count
 
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
@@ -225,6 +229,7 @@ def run_cloud(
         "max_concurrency_per_instance": prs_max_concurrency_per_instance,
         "max_retry_count": prs_max_retry_count,
         "run_invocation_time": prs_run_invocation_time,
+        "allowed_failed_count": prs_allowed_failed_count,
     }
 
     pipeline_with_flow = gen_test_data_pipeline(
@@ -286,7 +291,12 @@ if __name__ == "__main__":
         )
         parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
         parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
+        parser.add_argument(
+            "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
+        )
     args = parser.parse_args()
+
+    print(f"yaodebug: {type(args.prs_allowed_failed_count)}")
 
     should_skip_split_documents = False
     if args.document_nodes_file and Path(args.document_nodes_file).is_file():
@@ -321,6 +331,7 @@ if __name__ == "__main__":
             args.prs_max_concurrency_per_instance,
             args.prs_max_retry_count,
             args.prs_run_invocation_time,
+            args.prs_allowed_failed_count,
             should_skip_split_documents,
         )
     else:
