@@ -32,3 +32,6 @@ aml_cluster = "<your-compute-name>"
 prs_instance_count = 2
 prs_mini_batch_size = 2
 prs_max_concurrency_per_instance = 10
+prs_max_retry_count = 3
+prs_run_invocation_time = 800
+prs_allowed_failed_count = -1

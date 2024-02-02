@@ -11,10 +11,10 @@ from promptflow.entities import Run
 
 CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
 
-# in order to import from absoluate path, which is required by mldesigner
+# in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
-from common import clean_data_and_save, split_document, count_non_blank_lines  # noqa: E402
+from common import clean_data_and_save, count_non_blank_lines, split_document  # noqa: E402
 from constants import TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
@@ -83,7 +83,7 @@ def run_local(
 
     # Store intermedian batch run output results
     jsonl_str = "\n".join(map(json.dumps, test_data_set))
-    intermedian_batch_run_res = os.path.join(inner_folder, "batch-run-result.jsonl")
+    intermedian_batch_run_res = os.path.join(inner_folder, "test-data-gen-details.jsonl")
     with open(intermedian_batch_run_res, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
@@ -103,13 +103,17 @@ def run_cloud(
     prs_instance_count,
     prs_mini_batch_size,
     prs_max_concurrency_per_instance,
+    prs_max_retry_count,
+    prs_run_invocation_time,
+    prs_allowed_failed_count,
     should_skip_split,
 ):
     # lazy import azure dependencies
     try:
-        from azure.ai.ml import Input as V2Input, MLClient, dsl, load_component
+        from azure.ai.ml import Input as V2Input
+        from azure.ai.ml import MLClient, dsl, load_component
+        from azure.ai.ml.entities import RetrySettings
         from azure.identity import DefaultAzureCredential
-        from constants import ENVIRONMENT_DICT_FIXED_VERSION
     except ImportError:
         raise ImportError(
             "Please install azure dependencies using the following command: "
@@ -123,6 +127,9 @@ def run_cloud(
             "instance_count",
             "mini_batch_size",
             "max_concurrency_per_instance",
+            "max_retry_count",
+            "run_invocation_time",
+            "allowed_failed_count",
         ]
     )
     def gen_test_data_pipeline(
@@ -133,12 +140,18 @@ def run_cloud(
         instance_count=1,
         mini_batch_size=1,
         max_concurrency_per_instance=2,
+        max_retry_count=3,
+        run_invocation_time=600,
+        allowed_failed_count=-1,
     ):
-        from components import split_document_component, clean_data_and_save_component
+        from components import clean_data_and_save_component, split_document_component
+
         data = (
             data_input
             if should_skip_doc_split
-            else split_document_component(documents_folder=data_input, chunk_size=chunk_size).outputs.document_node_output
+            else split_document_component(
+                documents_folder=data_input, chunk_size=chunk_size
+            ).outputs.document_node_output
         )
         flow_node = load_component(flow_yml_path)(
             data=data,
@@ -151,7 +164,8 @@ def run_cloud(
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
         flow_node.set_resources(instance_count=instance_count)
-        # flow_node.allowed_failed_count = -1
+        flow_node.retry_settings = RetrySettings(max_retry_count=max_retry_count, timeout=run_invocation_time)
+        flow_node.mini_batch_error_threshold = allowed_failed_count
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
         clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
@@ -176,6 +190,9 @@ def run_cloud(
         "instance_count": prs_instance_count,
         "mini_batch_size": prs_mini_batch_size,
         "max_concurrency_per_instance": prs_max_concurrency_per_instance,
+        "max_retry_count": prs_max_retry_count,
+        "run_invocation_time": prs_run_invocation_time,
+        "allowed_failed_count": prs_allowed_failed_count,
     }
 
     pipeline_with_flow = gen_test_data_pipeline(
@@ -224,6 +241,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
     )
+    parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
+    parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
+    parser.add_argument(
+        "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
+    )
     args = parser.parse_args()
 
     should_skip_split_documents = False
@@ -231,14 +253,17 @@ if __name__ == "__main__":
         should_skip_split_documents = True
     elif not args.documents_folder or not Path(args.documents_folder).is_dir():
         parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
-    
+
     if args.cloud:
         logger.info("Start to generate test data at cloud...")
     else:
         logger.info("Start to generate test data at local...")
-    
+
     if should_skip_split_documents:
-        logger.info(f"Skip step 1 'Split documents to document nodes' as received document nodes from input file '{args.document_nodes_file}'.")
+        logger.info(
+            "Skip step 1 'Split documents to document nodes' as received document nodes from "
+            f"input file '{args.document_nodes_file}'."
+        )
         logger.info(f"Collected {count_non_blank_lines(args.document_nodes_file)} document nodes.")
 
     if args.cloud:
@@ -254,6 +279,9 @@ if __name__ == "__main__":
             args.prs_instance_count,
             args.prs_mini_batch_size,
             args.prs_max_concurrency_per_instance,
+            args.prs_max_retry_count,
+            args.prs_run_invocation_time,
+            args.prs_allowed_failed_count,
             should_skip_split_documents,
         )
     else:
