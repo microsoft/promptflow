@@ -91,7 +91,7 @@ Next Step! Continue with the **Tutorial**  👇 section to delve deeper into pro
 
 ## Tutorial 🏃‍♂️
 
-Prompt flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
+Prompt flow is a tool designed to **build high-quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, and deploy the production flow.
 
 ### Develop your own LLM apps
 
@@ -105,11 +105,11 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 #### Deep delve into flow development
 
-[Getting started with prompt flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
+[Getting started with prompt flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step-by-step guidance to invoke your first flow run.
 
 ### Learn from use cases
 
-[Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+[Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high-quality chat application with prompt flow, including flow development and evaluation with metrics.
 > More examples can be found [here](https://microsoft.github.io/promptflow/tutorials/index.html#samples). We welcome contributions of new use cases!
 
 ### Setup for contributors
@@ -121,7 +121,7 @@ Next Step! Continue with the **Contributing**  👇 section to contribute to pro
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
+Contributor License Agreement (CLA) declaring that you have the right to, and do, grant us
 the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
 
 When you submit a pull request, a CLA bot will automatically determine whether you need to provide
@@ -135,10 +135,10 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 ## Trademarks
 
 This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
-trademarks or logos is subject to and must follow
+trademarks or logos are subject to and must follow
 [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
+Use of Microsoft trademarks or logos in modified versions of this project must not confuse or imply Microsoft sponsorship.
+Any use of third-party trademarks or logos is subject to those third-party's policies.
 
 ## Code of Conduct
 
@@ -155,7 +155,7 @@ The software may collect information about you and your use of the software and
 send it to Microsoft if configured to enable telemetry.
 Microsoft may use this information to provide services and improve our products and services.
 You may turn on the telemetry as described in the repository.
-There are also some features in the software that may enable you and Microsoft
+Some features in the software may enable you and Microsoft
 to collect data from users of your applications. If you use these features, you
 must comply with applicable law, including providing appropriate notices to
 users of your applications together with a copy of Microsoft's privacy
