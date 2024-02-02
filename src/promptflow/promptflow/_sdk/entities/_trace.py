@@ -138,8 +138,8 @@ class Span:
         )
 
 
-class Trace:
-    """Trace is an abstraction of spans related to prompt flow."""
+class LineRun:
+    """Line run is an abstraction of spans related to prompt flow."""
 
     def __init__(
         self,
@@ -149,6 +149,10 @@ class Trace:
         start_time: datetime.datetime,
         end_time: datetime.datetime,
         status: str,
+        latency: float,
+        name: str,
+        kind: str,
+        cumulative_token_count: typing.Dict[str, int],
         evaluations: typing.Optional[typing.List[typing.Dict]] = None,
     ):
         ...
