@@ -30,7 +30,7 @@ from promptflow.contracts.trace import Trace, TraceType
 from .thread_local_singleton import ThreadLocalSingleton
 
 
-open_telemetry_tracer = None
+open_telemetry_tracer = otel_trace.get_tracer("promptflow")
 
 
 class Tracer(ThreadLocalSingleton):
@@ -43,7 +43,6 @@ class Tracer(ThreadLocalSingleton):
         self._traces = []
         self._current_trace_id = ContextVar("current_trace_id", default="")
         self._id_to_trace: Dict[str, Trace] = {}
-        self._id_to_tokens = {}
 
     @classmethod
     def start_tracing(cls, run_id, node_name: Optional[str] = None):
@@ -305,13 +304,6 @@ def _traced(
     Returns:
         Callable: The traced function.
     """
-
-    from promptflow._trace._start_trace import start_trace
-
-    start_trace()
-    global open_telemetry_tracer
-    open_telemetry_tracer = otel_trace.get_tracer("promptflow")
-
     wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
     return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
