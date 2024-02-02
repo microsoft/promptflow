@@ -10,12 +10,13 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
+from threading import Lock
 from typing import Callable, Dict, List, Optional
 
 from openai.types.chat import ChatCompletion
 from openai.types.completion import Completion
 
-from opentelemetry import trace
+import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME, SpanAttributeFieldName
@@ -28,7 +29,8 @@ from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
 
-open_telemetry_tracer = trace.get_tracer("promptflow")
+
+open_telemetry_tracer = None
 
 
 class Tracer(ThreadLocalSingleton):
@@ -147,37 +149,6 @@ class Tracer(ThreadLocalSingleton):
         else:
             return output
 
-    @classmethod
-    def update_openai_tokens(cls, output):
-        tracer = cls.active_instance()
-        if not tracer:
-            logging.warning("Try to update openai tokens but no active tracer in current context.")
-            return
-        last_trace = tracer._get_current_trace()
-        if isinstance(output, (ChatCompletion, Completion)):
-            tokens = {
-                f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
-            }
-            if tokens:
-                tracer._id_to_tokens[last_trace.id] = tokens
-                if last_trace.parent_id in tracer._id_to_tokens:
-                    merged_tokens = {
-                        key: tracer._id_to_tokens.get(key, 0) + tokens.get(key, 0)
-                        for key in set(tracer._id_to_tokens) | set(tokens)
-                    }
-                    tracer._id_to_tokens[last_trace.parent_id] = merged_tokens
-                else:
-                    tracer._id_to_tokens[last_trace.parent_id] = tokens
-
-    @classmethod
-    def try_get_openai_tokens(cls):
-        tracer = cls.active_instance()
-        if not tracer:
-            logging.warning("Try to get openai tokens but no active tracer in current context.")
-            return
-        last_trace = tracer._get_current_trace()
-        return tracer._id_to_tokens.get(last_trace.id, None)
-
     def to_json(self) -> list:
         return serialize(self._traces)
 
@@ -187,6 +158,47 @@ class Tracer(ThreadLocalSingleton):
             "message": str(error),
             "type": type(error).__qualname__,
         }
+
+
+class TokenCollector():
+    _lock = Lock()
+
+    def __init__(self):
+        self._span_id_to_tokens = {}
+
+    def collect_openai_tokens(self, span, output):
+        span_id = span.context.span_id
+        if isinstance(output, (ChatCompletion, Completion)):
+            tokens = {
+                f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
+            }
+            if tokens:
+                with self._lock:
+                    self._span_id_to_tokens[span_id] = tokens
+
+    def collect_openai_tokens_for_parent_span(self, span):
+        tokens = self.try_get_openai_tokens(span.context.span_id)
+        if tokens:
+            if span.parent is None:
+                return
+            parent_span_id = span.parent.span_id
+            if parent_span_id in self._span_id_to_tokens:
+                merged_tokens = {
+                    key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
+                    for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
+                }
+                with self._lock:
+                    self._span_id_to_tokens[parent_span_id] = merged_tokens
+            else:
+                with self._lock:
+                    self._span_id_to_tokens[parent_span_id] = tokens
+
+    def try_get_openai_tokens(self, span_id):
+        with self._lock:
+            return self._span_id_to_tokens.get(span_id, None)
+
+
+token_collector = TokenCollector()
 
 
 def _create_trace_from_function_call(
@@ -262,7 +274,7 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        tokens = Tracer.try_get_openai_tokens()
+        tokens = token_collector.try_get_openai_tokens(span.context.span_id)
         if tokens:
             span.set_attributes(tokens)
     except Exception as e:
@@ -293,6 +305,13 @@ def _traced(
     Returns:
         Callable: The traced function.
     """
+
+    from promptflow._trace._start_trace import start_trace
+
+    start_trace()
+    global open_telemetry_tracer
+    open_telemetry_tracer = otel_trace.get_tracer("promptflow")
+
     wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
     return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
@@ -331,13 +350,15 @@ def _traced_async(
             try:
                 Tracer.push(trace)
                 output = await func(*args, **kwargs)
-                Tracer.update_openai_tokens(output)
+                token_collector.collect_openai_tokens(output, span)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
-                return Tracer.pop(output)
+                output = Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
+        token_collector.collect_openai_tokens_for_parent_span(span)
+        return output
 
     wrapped.__original_function = func
 
@@ -376,13 +397,15 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             try:
                 Tracer.push(trace)
                 output = func(*args, **kwargs)
-                Tracer.update_openai_tokens(output)
+                token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
-                return Tracer.pop(output)
+                output = Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
+        token_collector.collect_openai_tokens_for_parent_span(span)
+        return output
 
     wrapped.__original_function = func
 
