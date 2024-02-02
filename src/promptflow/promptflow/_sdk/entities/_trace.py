@@ -155,17 +155,20 @@ class _LineRunData:
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
 
     def _from_root_span(span: Span) -> "_LineRunData":
-        attributes = span._content[SpanFieldName.ATTRIBUTES]
+        attributes: dict = span._content[SpanFieldName.ATTRIBUTES]
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
-        else:
+        elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
             line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
+        else:
+            # eager flow/arbitrary script
+            line_run_id = span.trace_id
         start_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.START_TIME])
         end_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.END_TIME])
         # calculate `cumulative_token_count`
-        completion_token_count = attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0)
-        prompt_token_count = attributes.get(SpanAttributeFieldName.PROMPT_TOKEN_COUNT, 0)
-        total_token_count = attributes.get(SpanAttributeFieldName.TOTAL_TOKEN_COUNT, 0)
+        completion_token_count = int(attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0))
+        prompt_token_count = int(attributes.get(SpanAttributeFieldName.PROMPT_TOKEN_COUNT, 0))
+        total_token_count = int(attributes.get(SpanAttributeFieldName.TOTAL_TOKEN_COUNT, 0))
         # if there is no token usage, set `cumulative_token_count` to None
         if total_token_count > 0:
             cumulative_token_count = {
@@ -177,8 +180,8 @@ class _LineRunData:
             cumulative_token_count = None
         return _LineRunData(
             line_run_id=line_run_id,
-            inputs=attributes[SpanAttributeFieldName.INPUTS],
-            outputs=attributes[SpanAttributeFieldName.OUTPUT],
+            inputs=json.loads(attributes[SpanAttributeFieldName.INPUTS]),
+            outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
             start_time=start_time,
             end_time=end_time,
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
@@ -189,38 +192,37 @@ class _LineRunData:
         )
 
 
+@dataclass
 class LineRun:
     """Line run is an abstraction of spans related to prompt flow."""
 
-    def __init__(
-        self,
-        line_run_id: str,
-        inputs: typing.Dict,
-        outputs: typing.Dict,
-        start_time: datetime.datetime,
-        end_time: datetime.datetime,
-        status: str,
-        latency: float,
-        name: str,
-        kind: str,
-        cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None,
-        evaluations: typing.Optional[typing.List[typing.Dict]] = None,
-    ):
-        ...
+    line_run_id: str
+    inputs: typing.Dict
+    outputs: typing.Dict
+    start_time: str
+    end_time: str
+    status: str
+    latency: float
+    name: str
+    kind: str
+    cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None
+    evaluations: typing.Optional[typing.List[typing.Dict]] = None
 
     @staticmethod
     def _from_spans(spans: typing.List[Span]) -> "LineRun":
-        # suppose spans should share the same line_run_id or referenced.line_run_id
         main_line_run_data: _LineRunData = None
         evaluation_line_run_datas = dict()
         for span in spans:
-            if span.parent_span_id is not None:
+            if span.parent_span_id:
                 continue
             attributes = span._content[SpanFieldName.ATTRIBUTES]
             if SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
             elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
                 evaluation_line_run_datas[span.name] = _LineRunData._from_root_span(span)
+            else:
+                # eager flow/arbitrary script
+                main_line_run_data = _LineRunData._from_root_span(span)
         evaluations = dict()
         for eval_name, eval_line_run_data in evaluation_line_run_datas.items():
             evaluations[eval_name] = eval_line_run_data
@@ -228,8 +230,8 @@ class LineRun:
             line_run_id=main_line_run_data.line_run_id,
             inputs=main_line_run_data.inputs,
             outputs=main_line_run_data.outputs,
-            start_time=main_line_run_data.start_time,
-            end_time=main_line_run_data.end_time,
+            start_time=main_line_run_data.start_time.isoformat(),
+            end_time=main_line_run_data.end_time.isoformat(),
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
             name=main_line_run_data.name,

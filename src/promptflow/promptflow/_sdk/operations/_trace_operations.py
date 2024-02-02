@@ -4,6 +4,7 @@
 
 import typing
 
+from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk.entities._trace import LineRun, Span
 
@@ -24,5 +25,9 @@ class TraceOperations:
         self,
         session_id: typing.Optional[str] = None,
     ) -> typing.List[LineRun]:
-        # TODO: do we need to leverage SQL during extraction
-        ...
+        line_runs = []
+        orm_spans_group_by_trace_id = ORMLineRun.list(session_id=session_id)
+        for orm_spans in orm_spans_group_by_trace_id:
+            spans = [Span._from_orm_object(orm_span) for orm_span in orm_spans]
+            line_runs.append(LineRun._from_spans(spans))
+        return line_runs
