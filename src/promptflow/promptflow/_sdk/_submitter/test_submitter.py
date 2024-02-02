@@ -47,10 +47,13 @@ class TestSubmitter:
     1) we will occupy some resources like a temporary folder to save flow with variant resolved, or an execution
       service process if applicable;
     2) output path will also be fixed within an init context;
-    usage:
-    test_submitter = TestSubmitter(...)
-    with test_submitter.init(...) as submitter:
-        xxx
+
+    Dependent resources like execution service will be created and released within the init context:
+    with TestSubmitter(...).init(...) as submitter:
+        # dependent resources are created, e.g., we may assume that an execution service is started here if applicable
+        ...
+    # dependent resources are released
+    ...
     """
 
     def __init__(
@@ -69,12 +72,14 @@ class TestSubmitter:
         from .._pf_client import PFClient
 
         self._client = client if client else PFClient()
+
+        # below attributes will be set within init context
+        # TODO: try to minimize the attribute count
         self._output_base: Optional[Path] = None
-        self._output_sub: Optional[Path] = None
+        self._relative_flow_output_path: Optional[Path] = None
         self._connections: Optional[dict] = None
         self._target_node = None
         self._storage = None
-        self._log_path = None
         self._executor_proxy = None
         self._within_init_context = False
 
@@ -105,14 +110,9 @@ class TestSubmitter:
         return self._output_base
 
     @property
-    def output_sub(self) -> Path:
+    def relative_flow_output_path(self) -> Path:
         self._raise_if_not_within_init_context()
-        return self._output_sub
-
-    @property
-    def log_path(self) -> Path:
-        self._raise_if_not_within_init_context()
-        return self._log_path
+        return self._relative_flow_output_path
 
     @property
     def target_node(self) -> Optional[str]:
@@ -177,27 +177,19 @@ class TestSubmitter:
             flow=flow, environment_variable_overrides=environment_variable_overrides, client=client
         )
 
-    @contextlib.contextmanager
-    def _resolve_output_path(self, stream_log: bool, output_path: Optional[str]):
-        credential_list = ConnectionManager(self._connections).get_secret_list()
-        if output_path:
-            self._output_base, self._output_sub = Path(output_path), Path(".")
+    @classmethod
+    def _resolve_output_path(
+        cls, *, output_base: Optional[str], default: Path, target_node: str
+    ) -> Tuple[Path, Path, Path]:
+        if output_base:
+            output_base, output_sub = Path(output_base), Path(".")
         else:
-            self._output_base, self._output_sub = Path(self.flow.code), Path(PROMPT_FLOW_DIR_NAME)
+            output_base, output_sub = Path(default), Path(PROMPT_FLOW_DIR_NAME)
 
-        self.output_base.mkdir(parents=True, exist_ok=True)
+        output_base.mkdir(parents=True, exist_ok=True)
 
-        self._log_path = (
-            self.output_base / self.output_sub / (f"{self.target_node}.node.log" if self.target_node else "flow.log")
-        )
-
-        with LoggerOperations(
-            file_path=self.log_path.as_posix(),
-            stream=stream_log,
-            credential_list=credential_list,
-        ):
-            self._storage = DefaultRunStorage(base_dir=self.output_base, sub_dir=self.output_sub / "intermediate")
-            yield self
+        log_path = output_base / output_sub / (f"{target_node}.node.log" if target_node else "flow.log")
+        return output_base, log_path, output_sub
 
     @contextlib.contextmanager
     def init(
@@ -210,8 +202,8 @@ class TestSubmitter:
         output_path: Optional[str] = None,
     ):
         """
-        Initialize the submitter and execute the test within the context.
-        output base and sub will be resolved from kwargs.
+        Create/Occupy dependent resources to execute the test within the context.
+        Resources will be released after exiting the context.
 
         : param connections: connection overrides.
         : type connections: dict
@@ -232,11 +224,6 @@ class TestSubmitter:
 
             self._target_node = target_node
 
-            # use flow instead of origin_flow here, as flow can be incomplete before resolving additional includes
-            self._connections = connections or self._resolve_connections(
-                self.flow,
-                self._client,
-            )
             SubmitterHelper.init_env(
                 environment_variables=self._resolve_environment_variables(
                     environment_variable_overrides=environment_variables,
@@ -246,16 +233,40 @@ class TestSubmitter:
                 or {},
             )
 
-            with self._resolve_output_path(stream_log, output_path):
+            self._output_base, log_path, output_sub = self._resolve_output_path(
+                output_base=output_path,
+                default=self.flow.code,
+                target_node=target_node,
+            )
+            self._relative_flow_output_path = output_sub / "output"
+
+            # use flow instead of origin_flow here, as flow can be incomplete before resolving additional includes
+            self._connections = connections or self._resolve_connections(
+                self.flow,
+                self._client,
+            )
+            credential_list = ConnectionManager(self._connections).get_secret_list()
+
+            with LoggerOperations(
+                file_path=log_path.as_posix(),
+                stream=stream_log,
+                credential_list=credential_list,
+            ):
+                # storage must be created within the LoggerOperations context to shadow credentials
+                self._storage = DefaultRunStorage(
+                    base_dir=self.output_base,
+                    sub_dir=output_sub / "intermediate",
+                )
+
                 # TODO: set up executor proxy for all languages
                 if self.flow.language == FlowLanguage.CSharp:
                     self._executor_proxy = async_run_allowing_running_loop(
                         CSharpExecutorProxy.create,
                         self.flow.path,
                         self.flow.code,
-                        connections=connections,
+                        connections=self._connections,
                         storage=self._storage,
-                        log_path=self.log_path,
+                        log_path=log_path,
                     )
 
                 try:
@@ -397,7 +408,7 @@ class TestSubmitter:
             line_result = execute_flow(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
-                output_dir=self._output_base / self._output_sub / "output",
+                output_dir=self.output_base / self.relative_flow_output_path,
                 connections=self._connections,
                 inputs=inputs,
                 enable_stream_output=stream_output,
@@ -413,7 +424,7 @@ class TestSubmitter:
                 self._executor_proxy.exec_line_async, inputs, index=0
             )
             line_result.output = persist_multimedia_data(
-                line_result.output, base_dir=self.output_base, sub_dir=self.output_sub / "output"
+                line_result.output, base_dir=self.output_base, sub_dir=self.relative_flow_output_path
             )
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type

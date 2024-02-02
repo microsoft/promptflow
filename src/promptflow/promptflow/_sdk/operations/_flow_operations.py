@@ -30,7 +30,7 @@ from promptflow._sdk._utils import (
     parse_variant,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, ProtectedFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -147,7 +147,7 @@ class FlowOperations(TelemetryMixin):
 
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
-        flow: ProtectedFlow = load_flow(flow)
+        flow: FlowBase = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
             if variant or node:
@@ -234,7 +234,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow: ProtectedFlow = load_flow(flow)
+        flow: FlowBase = load_flow(flow)
         flow.context.variant = variant
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
@@ -383,7 +383,7 @@ class FlowOperations(TelemetryMixin):
         that the flow involves no additional includes, symlink, or variant.
         :param output_dir: output directory to export connections
         """
-        flow: ProtectedFlow = load_flow(built_flow_dag_path)
+        flow: FlowBase = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -568,7 +568,7 @@ class FlowOperations(TelemetryMixin):
         output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow: ProtectedFlow = load_flow(flow)
+        flow: FlowBase = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
@@ -715,7 +715,7 @@ class FlowOperations(TelemetryMixin):
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow: ProtectedFlow = load_flow(source=flow)
+        flow: FlowBase = load_flow(source=flow)
         if not isinstance(flow, ProtectedFlow):
             # No tools meta for eager flow
             return {}, {}
