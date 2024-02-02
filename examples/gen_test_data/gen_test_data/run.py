@@ -31,7 +31,7 @@ def batch_run_flow(
     flow_batch_run_size: int,
     connection_name: str = "azure_open_ai_connection",
 ):
-    logger.info("Step 2: Start to batch run generate test data flow.")
+    logger.info("Step 2: Start to batch run 'generate_test_data_flow'...")
     base_run = pf.run(
         flow=flow_folder,
         data=flow_input_data,
@@ -125,7 +125,6 @@ def run_local(
     output_folder,
     should_skip_split,
 ):
-    logger.info("Start to generate test data at local.")
     text_chunks_path = document_nodes_file
     inner_folder = os.path.join(output_folder, datetime.now().strftime("%b-%d-%Y-%H-%M-%S"))
     if not os.path.isdir(inner_folder):
@@ -170,7 +169,6 @@ def run_cloud(
     prs_max_concurrency_per_instance,
     should_skip_split,
 ):
-    logger.info("Start to generate test data at cloud.")
     ml_client = get_ml_client(subscription_id, resource_group, workspace_name)
 
     if should_skip_split:
@@ -236,11 +234,18 @@ if __name__ == "__main__":
 
     should_skip_split_documents = False
     if args.document_nodes_file and Path(args.document_nodes_file).is_file():
-        logger.info("Received document node input file, skip step 1 'split documents to document nodes'.")
-        logger.info(f"Collect {count_non_blank_lines(args.document_nodes_file)} document nodes from document node input file.")
         should_skip_split_documents = True
     elif not args.documents_folder or not Path(args.documents_folder).is_dir():
         parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
+    
+    if args.cloud:
+        logger.info("Start to generate test data at cloud...")
+    else:
+        logger.info("Start to generate test data at local...")
+    
+    if should_skip_split_documents:
+        logger.info(f"Skip step 1 'Split documents to document nodes' as received document nodes from input file {args.document_nodes_file}.")
+        logger.info(f"Collect {count_non_blank_lines(args.document_nodes_file)} document nodes.")
 
     if args.cloud:
         run_cloud(

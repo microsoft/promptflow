@@ -18,30 +18,30 @@ except ImportError:
 
 def split_document(chunk_size, documents_folder, document_node_output):
     logger = get_logger("doc.split")
-    logger.info("Step 1: Split documents to document nodes.")
-    documents = SimpleDirectoryReader(
-        documents_folder, recursive=True, exclude=["index.md", "README.md"], encoding="utf-8"
-    ).load_data()
-    logger.info(f"Collect {len(documents)} documents.")
+    logger.info("Step 1: Start to split documents to document nodes...")
+    # count the number of files in documents_folder, including subfolders, use pathlib
+    num_files = sum(1 for _ in Path(documents_folder).rglob("*") if _.is_file())
+    logger.info(f"Found {num_files} files in the documents folder '{documents_folder}'. Using chunk size: {chunk_size} to split.")
+    # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.
+    # TODO: improve on top of `SimpleDirectoryReader` with a better chunking algorithm.
+    chunks = SimpleDirectoryReader(documents_folder, recursive=True, encoding="utf-8").load_data()
     # Convert documents into nodes
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
-    documents = t.cast(t.List[LlamaindexDocument], documents)
-    document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=documents)
-
-    logger.info(f"End to split the documents and generate {len(document_nodes)} document nodes.")
+    chunks = t.cast(t.List[LlamaindexDocument], chunks)
+    document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=chunks)
+    logger.info(f"Split the documents and created {len(document_nodes)} document nodes.")
     document_nodes_output_path = document_node_output / Path("document_nodes.jsonl")
     with open(document_nodes_output_path, "wt") as text_file:
         for doc in document_nodes:
             print(json.dumps({TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}), file=text_file)
 
-    logger.info(f"Saved document nodes to {document_nodes_output_path}.")
-
+    logger.info(f"Saved document nodes to '{document_nodes_output_path}'.")
     return str((Path(document_node_output) / "document_nodes.jsonl"))
 
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     logger = get_logger("data.clean")
-    logger.info("Step 3: Clean invalid test data.")
+    logger.info("Step 3: Start to clean invalid test data...")
     logger.info(f"Collected {len(test_data_set)} test data after the batch run.")
     cleaned_data = []
 
@@ -55,9 +55,9 @@ def clean_data_and_save(test_data_set: list, test_data_output_path: str):
     with open(test_data_output_path, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
-    logger.info(
-        f"Collected {len(cleaned_data)} valid test data. "
-        f"The cleaned data has been saved to {test_data_output_path}.")
+    # log debug info path.
+    logger.info(f"Removed {len(test_data_set) - len(cleaned_data)} invalid test data.")
+    logger.info(f"Saved {len(cleaned_data)} valid test data to {test_data_output_path}.")
 
 
 def count_non_blank_lines(file_path):

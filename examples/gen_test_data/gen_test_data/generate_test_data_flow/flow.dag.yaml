@@ -73,7 +73,6 @@ nodes:
     path: validate_question.py
   inputs:
     model_or_deployment_name: ""
-    response_format: json_object
     temperature: 0.2
     max_tokens: ""
     generated_question: ${generate_question.output}

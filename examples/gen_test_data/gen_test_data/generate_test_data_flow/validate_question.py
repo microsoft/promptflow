@@ -12,7 +12,7 @@ def validate_question(
     model_or_deployment_name: str,
     generated_question: str,
     validate_question_prompt: str,
-    response_format: str = ResponseFormat.JSON,
+    response_format: str = ResponseFormat.TEXT,
     temperature: float = 1.0,
     max_tokens: int = 512,
 ):
