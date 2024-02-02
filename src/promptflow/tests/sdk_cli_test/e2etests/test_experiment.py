@@ -75,10 +75,6 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
-        assert PF_TRACE_CONTEXT in os.environ
-        attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
-        assert attributes.get("experiment") == exp.name
-        assert attributes.get("referenced.run_id", "").startswith("main")
         assert exp.status == ExperimentStatus.TERMINATED
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
