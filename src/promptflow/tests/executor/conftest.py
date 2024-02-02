@@ -60,6 +60,7 @@ def setup_recording():
             "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
+        inject_openai_api()
 
     if is_live():
         patch_targets = {
@@ -67,8 +68,7 @@ def setup_recording():
             "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
-
-    inject_openai_api()
+        inject_openai_api()
 
     return patches
 
@@ -212,3 +212,13 @@ def recording_injection(recording_setup, process_override):
             RecordStorage.get_instance().delete_lock_file()
             delete_count_lock_file()
         recording_array_reset()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def inject_api_executor():
+    """Inject OpenAI API during test session.
+
+    AOAI call in promptflow should involve trace logging and header injection. Inject
+    function to API call in test scenario."""
+    if not (is_replay() or is_record() or is_live()):
+        inject_openai_api()
