@@ -184,7 +184,6 @@ class FlowOperations(TelemetryMixin):
                     inputs=flow_inputs,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
-                    output_path=output_path,
                     run_id=run_id,
                 )
 
