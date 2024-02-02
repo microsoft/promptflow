@@ -147,7 +147,7 @@ class FlowOperations(TelemetryMixin):
 
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
-        flow = load_flow(flow)
+        flow: ProtectedFlow = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
             if variant or node:
@@ -155,10 +155,17 @@ class FlowOperations(TelemetryMixin):
                 variant, node = None, None
         flow.context.variant = variant
         from promptflow._constants import FlowLanguage
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
+        # TODO: merge this into TestSubmitter
         if flow.language == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+            from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+
+            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init(
+                target_node=node,
+                environment_variables=environment_variables,
+                stream_log=stream_log,
+                output_path=output_path,
+            ) as submitter:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
                     node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
@@ -166,22 +173,22 @@ class FlowOperations(TelemetryMixin):
 
                 if node:
                     return submitter.node_test(
-                        node_name=node,
                         flow_inputs=flow_inputs,
                         dependency_nodes_outputs=dependency_nodes_outputs,
-                        environment_variables=environment_variables,
-                        stream=True,
                     )
                 else:
                     return submitter.flow_test(
                         inputs=flow_inputs,
-                        environment_variables=environment_variables,
-                        stream_log=stream_log,
                         stream_output=stream_output,
                         allow_generator_output=allow_generator_output and is_chat_flow,
                     )
 
-        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
+            target_node=node,
+            environment_variables=environment_variables,
+            stream_log=stream_log,
+            output_path=output_path,
+        ) as submitter:
             if isinstance(flow, EagerFlow):
                 # TODO(2897153): support chat eager flow
                 is_chat_flow, chat_history_input_name = False, None
@@ -194,21 +201,14 @@ class FlowOperations(TelemetryMixin):
 
             if node:
                 return submitter.node_test(
-                    node_name=node,
                     flow_inputs=flow_inputs,
                     dependency_nodes_outputs=dependency_nodes_outputs,
-                    environment_variables=environment_variables,
-                    stream=True,
-                    output_path=output_path,
                 )
             else:
                 return submitter.flow_test(
                     inputs=flow_inputs,
-                    environment_variables=environment_variables,
-                    stream_log=stream_log,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
-                    output_path=output_path,
                 )
 
     @staticmethod
@@ -262,9 +262,13 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow = load_flow(flow)
+        flow: ProtectedFlow = load_flow(flow)
         flow.context.variant = variant
-        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
+            environment_variables=environment_variables,
+            stream_log=False,  # no need to stream log in chat mode
+        ) as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -275,10 +279,10 @@ class FlowOperations(TelemetryMixin):
             print("Press Enter to send your message.")
             print("You can quit with ctrl+C.")
             print("=" * len(info_msg))
+
             submitter._chat_flow(
                 inputs=inputs,
                 chat_history_name=chat_history_input_name,
-                environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
             )
 

@@ -6,7 +6,7 @@ import contextlib
 import logging
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Mapping, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
@@ -15,15 +15,12 @@ from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
-from promptflow._utils.multimedia_utils import persist_multimedia_data
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ..entities._eager_flow import EagerFlow
 from .utils import (
@@ -38,8 +35,27 @@ logger = get_cli_sdk_logger()
 
 
 class TestSubmitter:
-    def __init__(self, flow: Union[ProtectedFlow, EagerFlow], flow_context: FlowContext, client=None):
-        self.flow = flow
+    """
+    Submitter for testing flow/node.
+
+    A submitter will be bonded to a test run (including whether this is a node test or a flow test) after __init__,
+    and will be bonded to a specific executor proxy within an init context:
+    1) we will occupy some resources like a temporary folder to save flow with variant resolved, or an execution
+      service process if applicable;
+    2) output path will also be fixed within an init context;
+    usage:
+    test_submitter = TestSubmitter(...)
+    with test_submitter.init(...) as submitter:
+        xxx
+    """
+
+    def __init__(
+        self,
+        flow: Union[ProtectedFlow, EagerFlow],
+        flow_context: FlowContext,
+        client=None,
+    ):
+        self._flow = flow
         self.entry = flow.entry if isinstance(flow, EagerFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
@@ -49,15 +65,52 @@ class TestSubmitter:
         from .._pf_client import PFClient
 
         self._client = client if client else PFClient()
+        self._output_base: Optional[Path] = None
+        self._output_sub: Optional[Path] = None
+        self._connections: Optional[dict] = None
+        self._target_node = None
+        self._storage = None
+        self._log_path = None
+        self._within_init_context = False
+
+    def _raise_if_not_within_init_context(self):
+        if not self._within_init_context:
+            raise UserErrorException("This method should be called within the init context.")
+
+    @property
+    def flow(self):
+        self._raise_if_not_within_init_context()
+        return self._flow
 
     @property
     def dataplane_flow(self):
+        # TODO: test submitter shouldn't interact with dataplane flow directly
         if not self._dataplane_flow:
             self._dataplane_flow = ExecutableFlow.from_yaml(flow_file=self.flow.path, working_dir=self.flow.code)
         return self._dataplane_flow
 
+    @property
+    def output_base(self) -> Path:
+        self._raise_if_not_within_init_context()
+        return self._output_base
+
+    @property
+    def output_sub(self) -> Path:
+        self._raise_if_not_within_init_context()
+        return self._output_sub
+
+    @property
+    def log_path(self) -> Path:
+        self._raise_if_not_within_init_context()
+        return self._log_path
+
+    @property
+    def target_node(self) -> Optional[str]:
+        self._raise_if_not_within_init_context()
+        return self._target_node
+
     @contextlib.contextmanager
-    def init(self):
+    def _resolve_variant(self):
         # TODO(2901096): validate invalid configs like variant & connections
         # no variant overwrite for eager flow
         # no connection overwrite for eager flow
@@ -67,7 +120,7 @@ class TestSubmitter:
             tuning_node, node_variant = None, None
 
         with variant_overwrite_context(
-            flow=self.flow,
+            flow=self._origin_flow,
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,
@@ -75,14 +128,97 @@ class TestSubmitter:
         ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
-                self.flow = temp_flow
+                self._flow = temp_flow
                 self._tuning_node = tuning_node
                 self._node_variant = node_variant
                 yield self
-                self.flow = self._origin_flow
+                self._flow = None
                 self._dataplane_flow = None
                 self._tuning_node = None
                 self._node_variant = None
+
+    @classmethod
+    def _resolve_connections(cls, flow, client):
+        return SubmitterHelper.resolve_connections(flow=flow, client=client)
+
+    @classmethod
+    def _resolve_environment_variables(cls, environment_variable_overrides, flow: ProtectedFlow, client):
+        return SubmitterHelper.load_and_resolve_environment_variables(
+            flow=flow, environment_variable_overrides=environment_variable_overrides, client=client
+        )
+
+    @contextlib.contextmanager
+    def _resolve_output_path(self, stream_log: bool, output_path: Optional[str]):
+        credential_list = ConnectionManager(self._connections).get_secret_list()
+        if output_path:
+            self._output_base, self._output_sub = Path(output_path), Path(".")
+        else:
+            self._output_base, self._output_sub = Path(self.flow.code), Path(PROMPT_FLOW_DIR_NAME)
+
+        self.output_base.mkdir(parents=True, exist_ok=True)
+
+        self._log_path = (
+            self.output_base / self.output_sub / (f"{self.target_node}.node.log" if self.target_node else "flow.log")
+        )
+
+        with LoggerOperations(
+            file_path=self.log_path.as_posix(),
+            stream=stream_log,
+            credential_list=credential_list,
+        ):
+            self._storage = DefaultRunStorage(base_dir=self.output_base, sub_dir=self.output_sub / "intermediate")
+            yield self
+
+    @contextlib.contextmanager
+    def init(
+        self,
+        *,
+        connections: Optional[dict] = None,
+        target_node: Optional[str] = None,
+        environment_variables: Optional[dict] = None,
+        stream_log: bool = True,
+        output_path: Optional[str] = None,
+    ):
+        """
+        Initialize the submitter and execute the test within the context.
+        output base and sub will be resolved from kwargs.
+
+        : param connections: connection overrides.
+        : type connections: dict
+        : param target_node: target node name for node test, may only do node_test if specified.
+        : type target_node: str
+        : param environment_variables: environment variable overrides.
+        : type environment_variables: dict
+        : param stream_log: whether to stream log to stdout.
+        : type stream_log: bool
+        : param output_path: output path.
+        : type output_path: str
+        : return: TestSubmitter instance.
+        : rtype: TestSubmitter
+        """
+        with self._resolve_variant():
+            # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
+            self._within_init_context = True
+
+            self._target_node = target_node
+
+            # use flow instead of origin_flow here, as flow can be incomplete before resolving additional includes
+            self._connections = connections or self._resolve_connections(
+                self.flow,
+                self._client,
+            )
+            SubmitterHelper.init_env(
+                environment_variables=self._resolve_environment_variables(
+                    environment_variable_overrides=environment_variables,
+                    flow=self.flow,
+                    client=self._client,
+                )
+                or {},
+            )
+
+            with self._resolve_output_path(stream_log, output_path):
+                yield self
+            self._within_init_context = False
 
     def resolve_data(
         self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
@@ -186,91 +322,70 @@ class TestSubmitter:
     def flow_test(
         self,
         inputs: Mapping[str, Any],
-        environment_variables: dict = None,
-        stream_log: bool = True,
         allow_generator_output: bool = False,  # TODO: remove this
-        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
-        **kwargs,
-    ):
+    ) -> LineResult:
+        """
+        Submit a flow test.
+        Note that you will get an error if you call this method with target_node specified in the init context.
+
+        We have separate interface for flow test and node test as they have different input and output.
+        However, target node will determine log path, which should be specified in the init context, e.g.,
+        it is required for starting an execution service.
+
+        :param inputs: Inputs of the flow.
+        :type inputs: dict
+        :param allow_generator_output: Allow generator output.
+        :type allow_generator_output: bool
+        :param stream_output: Stream output.
+        :type stream_output: bool
+        """
+        self._raise_if_not_within_init_context()
+        if self.target_node:
+            raise UserErrorException("target_node is not allowed for flow test.")
+
+        # TODO: replace with implementation based on PythonExecutorProxy
         from promptflow.executor.flow_executor import execute_flow
 
-        if not connections:
-            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
-        credential_list = ConnectionManager(connections).get_secret_list()
-        output_path, sub_path = self._get_output_path(kwargs)
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        # resolve environment variables
-        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
-            flow=self.flow, environment_variables=environment_variables, client=self._client
+        line_result = execute_flow(
+            flow_file=self.flow.path,
+            working_dir=self.flow.code,
+            output_dir=self._output_base / self._output_sub / "output",
+            connections=self._connections,
+            inputs=inputs,
+            enable_stream_output=stream_output,
+            allow_generator_output=allow_generator_output,
+            entry=self.entry,
+            storage=self._storage,
         )
-        environment_variables = environment_variables if environment_variables else {}
-        SubmitterHelper.init_env(environment_variables=environment_variables)
-
-        with LoggerOperations(
-            file_path=output_path / sub_path / "flow.log",
-            stream=stream_log,
-            credential_list=credential_list,
-        ):
-            storage = DefaultRunStorage(base_dir=output_path, sub_dir=sub_path / "intermediate")
-            line_result = execute_flow(
-                flow_file=self.flow.path,
-                working_dir=self.flow.code,
-                output_dir=output_path / sub_path / "output",
-                connections=connections,
-                inputs=inputs,
-                enable_stream_output=stream_output,
-                allow_generator_output=allow_generator_output,
-                entry=self.entry,
-                storage=storage,
-            )
-            if isinstance(line_result.output, dict):
-                generator_outputs = self._get_generator_outputs(line_result.output)
-                if generator_outputs:
-                    logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-            return line_result
+        if isinstance(line_result.output, dict):
+            generator_outputs = self._get_generator_outputs(line_result.output)
+            if generator_outputs:
+                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+        return line_result
 
     def node_test(
         self,
-        node_name: str,
         flow_inputs: Mapping[str, Any],
         dependency_nodes_outputs: Mapping[str, Any],
-        environment_variables: dict = None,
-        stream: bool = True,
-        **kwargs,
-    ):
-        from promptflow.executor import FlowExecutor
+    ) -> RunInfo:
+        self._raise_if_not_within_init_context()
+        if self.target_node is None:
+            raise UserErrorException("target_node is required for node test.")
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
-        credential_list = ConnectionManager(connections).get_secret_list()
-        output_path, sub_path = self._get_output_path(kwargs)
-        output_path.mkdir(parents=True, exist_ok=True)
+        from promptflow.executor.flow_executor import FlowExecutor
 
-        # resolve environment variables
-        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
-            flow=self.flow, environment_variables=environment_variables, client=self._client
+        return FlowExecutor.load_and_exec_node(
+            self.flow.path,
+            self.target_node,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=dependency_nodes_outputs,
+            connections=self._connections,
+            working_dir=self.flow.code,
+            storage=self._storage,
         )
-        SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(
-            file_path=output_path / sub_path / f"{node_name}.node.log",
-            stream=stream,
-            credential_list=credential_list,
-        ):
-            storage = DefaultRunStorage(base_dir=output_path, sub_dir=sub_path / "intermediate")
-            result = FlowExecutor.load_and_exec_node(
-                self.flow.path,
-                node_name,
-                flow_inputs=flow_inputs,
-                dependency_nodes_outputs=dependency_nodes_outputs,
-                connections=connections,
-                working_dir=self.flow.code,
-                storage=storage,
-            )
-            return result
-
-    def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
+    def _chat_flow(self, inputs, chat_history_name, show_step_output=False):
         """
         Interact with Chat Flow. Do the following:
             1. Combine chat_history and user input as the input for each round of the chat flow.
@@ -289,6 +404,7 @@ class TestSubmitter:
         init(autoreset=True)
         chat_history = []
         generator_record = {}
+        # TODO: test submitter should not interact with dataplane flow directly
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
         )
@@ -299,8 +415,6 @@ class TestSubmitter:
             )
         )
 
-        # Pass connections to avoid duplicate calculation (especially http call)
-        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         while True:
             try:
                 print(f"{Fore.GREEN}User: ", end="")
@@ -318,10 +432,7 @@ class TestSubmitter:
 
             flow_result = self.flow_test(
                 inputs=chat_inputs,
-                environment_variables=environment_variables,
-                stream_log=False,
                 allow_generator_output=True,
-                connections=connections,
                 stream_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
@@ -361,108 +472,114 @@ class TestSubmitter:
 class TestSubmitterViaProxy(TestSubmitter):
     def __init__(self, flow: ProtectedFlow, flow_context: FlowContext, client=None):
         super().__init__(flow, flow_context, client)
+        self._executor_proxy = None
+
+    @property
+    def executor_proxy(self):
+        self._raise_if_not_within_init_context()
+        return self._executor_proxy
+
+    @classmethod
+    def _resolve_connections(cls, flow, client):
+        # TODO: is it possible that we resolve connections after executor proxy is created?
+        from promptflow.batch import CSharpExecutorProxy
+
+        return SubmitterHelper.resolve_used_connections(
+            flow=flow,
+            tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                flow_file=flow.flow_dag_path,
+                working_dir=flow.code,
+            ),
+            client=client,
+        )
+
+    @contextlib.contextmanager
+    def init(
+        self,
+        *,
+        connections: Optional[dict] = None,
+        target_node: Optional[str] = None,
+        environment_variables: Optional[dict] = None,
+        stream_log: bool = True,
+        output_path: Optional[str] = None,
+    ):
+        submitter = super().init(
+            connections=connections,
+            target_node=target_node,
+            environment_variables=environment_variables,
+            stream_log=stream_log,
+            output_path=output_path,
+        )
+        from promptflow._utils.async_utils import async_run_allowing_running_loop
+        from promptflow.batch import CSharpExecutorProxy
+
+        self._executor_proxy = async_run_allowing_running_loop(
+            CSharpExecutorProxy.create,
+            self.flow.path,
+            self.flow.code,
+            connections=connections,
+            storage=self._storage,
+            log_path=self.log_path,
+        )
+        try:
+            yield submitter
+        finally:
+            self._executor_proxy.destroy()
+
+    def node_test(
+        self,
+        flow_inputs: Mapping[str, Any],
+        dependency_nodes_outputs: Mapping[str, Any],
+    ) -> RunInfo:
+        raise NotImplementedError("Node test is not supported for TestSubmitterViaProxy for now.")
 
     def flow_test(
         self,
         inputs: Mapping[str, Any],
-        environment_variables: dict = None,
-        stream_log: bool = True,
-        allow_generator_output: bool = False,
-        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        allow_generator_output: bool = False,  # TODO: remove this
         stream_output: bool = True,
-        **kwargs,
-    ):
-        from promptflow._constants import LINE_NUMBER_KEY
+    ) -> LineResult:
+        """
+        Submit a flow test.
+        Note that you will get an error if you call this method with target_node specified in the init context.
 
-        if not connections:
-            connections = SubmitterHelper.resolve_used_connections(
-                flow=self.flow,
-                tools_meta=CSharpExecutorProxy.get_tool_metadata(
-                    flow_file=self.flow.flow_dag_path,
-                    working_dir=self.flow.code,
-                ),
-                client=self._client,
+        We have separate interface for flow test and node test as they have different input and output.
+        However, target node will determine log path, which should be specified in the init context, e.g.,
+        it is required for starting an execution service.
+
+        :param inputs: Inputs of the flow.
+        :type inputs: dict
+        :param allow_generator_output: Allow generator output.
+        :type allow_generator_output: bool
+        :param stream_output: Stream output.
+        :type stream_output: bool
+        """
+        self._raise_if_not_within_init_context()
+        if self.target_node:
+            raise UserErrorException("target_node is not allowed for flow test.")
+
+        from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow._utils.async_utils import async_run_allowing_running_loop
+        from promptflow._utils.multimedia_utils import persist_multimedia_data
+
+        # TODO: still duplicate code with flow_executor.execute_flow
+        line_result: LineResult = async_run_allowing_running_loop(self._executor_proxy.exec_line_async, inputs, index=0)
+        line_result.output = persist_multimedia_data(
+            line_result.output, base_dir=self.output_base, sub_dir=self.output_sub / "output"
+        )
+        if line_result.aggregation_inputs:
+            # Convert inputs of aggregation to list type
+            flow_inputs = {k: [v] for k, v in inputs.items()}
+            aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+            aggregation_results = async_run_allowing_running_loop(
+                self._executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
             )
-        credential_list = ConnectionManager(connections).get_secret_list()
-        output_path, sub_path = self._get_output_path(kwargs)
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        # resolve environment variables
-        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
-            flow=self.flow, environment_variables=environment_variables, client=self._client
-        )
-        environment_variables = environment_variables if environment_variables else {}
-        SubmitterHelper.init_env(environment_variables=environment_variables)
-
-        log_path = output_path / sub_path / "flow.log"
-        with LoggerOperations(
-            file_path=log_path,
-            stream=stream_log,
-            credential_list=credential_list,
-        ):
-            try:
-                storage = DefaultRunStorage(base_dir=output_path, sub_dir=sub_path / "intermediate")
-                flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
-                    CSharpExecutorProxy.create,
-                    self.flow.path,
-                    self.flow.code,
-                    connections=connections,
-                    storage=storage,
-                    log_path=log_path,
-                )
-
-                line_result: LineResult = async_run_allowing_running_loop(
-                    flow_executor.exec_line_async, inputs, index=0
-                )
-                line_result.output = persist_multimedia_data(
-                    line_result.output, base_dir=output_path, sub_dir=sub_path / "output"
-                )
-                if line_result.aggregation_inputs:
-                    # Convert inputs of aggregation to list type
-                    flow_inputs = {k: [v] for k, v in inputs.items()}
-                    aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                    aggregation_results = async_run_allowing_running_loop(
-                        flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
-                    )
-                    line_result.node_run_infos.update(aggregation_results.node_run_infos)
-                    line_result.run_info.metrics = aggregation_results.metrics
-                if isinstance(line_result.output, dict):
-                    # Remove line_number from output
-                    line_result.output.pop(LINE_NUMBER_KEY, None)
-                    generator_outputs = self._get_generator_outputs(line_result.output)
-                    if generator_outputs:
-                        logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-                return line_result
-            finally:
-                async_run_allowing_running_loop(flow_executor.destroy)
-
-    def exec_with_inputs(self, inputs):
-        from promptflow._constants import LINE_NUMBER_KEY
-
-        connections = SubmitterHelper.resolve_used_connections(
-            flow=self.flow,
-            tools_meta=CSharpExecutorProxy.get_tool_metadata(
-                flow_file=self.flow.path,
-                working_dir=self.flow.code,
-            ),
-            client=self._client,
-        )
-        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-        flow_executor = CSharpExecutorProxy.create(
-            flow_file=self.flow.path,
-            working_dir=self.flow.code,
-            connections=connections,
-            storage=storage,
-        )
-
-        try:
-            # validate inputs
-            flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
-            # line_result = flow_executor.exec_line(inputs, index=0)
-            if isinstance(line_result.output, dict):
-                # Remove line_number from output
-                line_result.output.pop(LINE_NUMBER_KEY, None)
-            return line_result
-        finally:
-            flow_executor.destroy()
+            line_result.node_run_infos.update(aggregation_results.node_run_infos)
+            line_result.run_info.metrics = aggregation_results.metrics
+        if isinstance(line_result.output, dict):
+            # Remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
+            generator_outputs = self._get_generator_outputs(line_result.output)
+            if generator_outputs:
+                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+        return line_result
