@@ -1,5 +1,0 @@
-# Prompt-flow tool package
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow-tools==1.1.0rc2
-
-beautifulsoup4>=4.12.2,<5.0.0
