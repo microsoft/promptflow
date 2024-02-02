@@ -995,3 +995,43 @@ class TestFlowRun:
             pf.runs.download(run=run.name, output=tmp_dir)
             for file in expected_files:
                 assert Path(tmp_dir, run.name, file).exists()
+
+    def test_run_with_compute_instance_session(
+        self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
+    ):
+        run = Run(
+            flow=Path(f"{FLOWS_DIR}/print_env_var"),
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+            resources={"compute": compute_instance_name},
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.compute_name == compute_instance_name
+
+        run = pf.runs.create_or_update(
+            run=run,
+        )
+        assert isinstance(run, Run)
+
+        run = pf.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+    def test_run_with_compute_instance_session_yml(
+        self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
+    ):
+        source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.compute_name == "my_ci"
+
+        # update ci to actual ci
+        run._resources["compute"] = compute_instance_name
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+        run = pf.stream(run)
+        assert run.status == RunStatus.COMPLETED
