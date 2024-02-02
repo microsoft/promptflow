@@ -1,8 +1,6 @@
 ; config.ini
 ; This is a sample configuration file
 
-[COMMON]
-; The COMMON section provides common values for all other sections.
 ; Configure both 'document_folder' and 'document_chunk_size' if you require document splitting.
 ; However, if you wish to bypass the document split process, simply provide the 'document_node_file', which is a JSONL file.
 ; When all these parameters are configured, the system will primarily use the 'document_node_file'
@@ -14,21 +12,6 @@ document_nodes_file = "<your-node-file-abspath>"
 flow_folder = "<your-test-data-gen-flow-folder-abspath>" ; There is must one flow.dag.yaml file under this folder as entry
 connection_name = "<your-connection-name>"
 
-
-[LOCAL]
 ; This section is for local test data generation related configuration.
 output_folder = "<your-output-folder-abspath>"
 flow_batch_run_size = 10
-
-
-[CLOUD]
-; This section is for cloud test data generation related configuration.
-subscription_id = "<your-sub-id>"
-resource_group = "<your-resource-group>"
-workspace_name = "<your-workspace-name>"
-aml_cluster = "<your-compute-name>"
-
-; Parallel run step configs
-prs_instance_count = 2
-prs_mini_batch_size = 2
-prs_max_concurrency_per_instance = 10

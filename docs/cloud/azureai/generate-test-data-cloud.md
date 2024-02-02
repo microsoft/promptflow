@@ -10,9 +10,9 @@ This guide will help you learn how to generate test data in a pipeline job on Az
     - Navigate to file [conda.yml](../../../examples/gen_test_data/conda.yml).
     - For specific document file types, you will need to add extra packages in `conda.yml`:
         > !Note: We use llama index `SimpleDirectoryReador` in this process. For the latest information on required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
-        - .docx - `pip install docx2txt`
-        - .pdf - `pip install pypdf`
-        - .ipynb - `pip install nbconvert`
+        - .docx - `docx2txt`
+        - .pdf - `pypdf`
+        - .ipynb - `nbconvert`
 
 4. Create cloud connection: [Create a connection](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#create-a-connection)
 5. Prepare AzureML resources to run your pipeline.

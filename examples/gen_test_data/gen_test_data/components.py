@@ -4,7 +4,7 @@ from pathlib import Path
 from common import clean_data_and_save, split_document
 from mldesigner import Input, Output, command_component
 
-conda_file = Path(__file__).parent.parent.parent / "conda.yml"
+conda_file = Path(__file__).parent.parent / "conda.yml"
 env_image = "mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04"
 
 
