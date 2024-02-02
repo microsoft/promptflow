@@ -601,7 +601,7 @@ class Flow:
         outputs = data.get("outputs") or {}
         return Flow(
             # TODO: Remove this fallback.
-            data.get("id", data.get("name", "default_flow_id")),
+            data.get("id", "default_flow_id"),
             data.get("name", "default_flow"),
             nodes,
             {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
