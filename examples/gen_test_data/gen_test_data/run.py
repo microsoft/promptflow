@@ -11,9 +11,8 @@ from promptflow.entities import Run
 
 CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
 
-UTILS_PATH = os.path.abspath(Path(__file__).parents[0] / "utils")
-if UTILS_PATH not in os.sys.path:
-    os.sys.path.insert(0, UTILS_PATH)
+# in order to import from absoluate path, which is required by mldesigner
+os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
 from common import clean_data_and_save, split_document, count_non_blank_lines  # noqa: E402
 from constants import TEXT_CHUNK  # noqa: E402
@@ -41,6 +40,7 @@ def batch_run_flow(
     )
     logger.info("Batch run is completed.")
     return base_run
+
 
 def get_batch_run_output(pf: PFClient, base_run: Run):
     logger.info(f"Start to get batch run {base_run.name} details.")
@@ -106,53 +106,15 @@ def run_cloud(
     should_skip_split,
 ):
     # lazy import azure dependencies
-    from azure.ai.ml import Input as V2Input, MLClient, dsl, load_component
-    from azure.identity import DefaultAzureCredential
-    from mldesigner import Input, Output, command_component
-    from constants import ENVIRONMENT_DICT_FIXED_VERSION
-
-
-    @command_component(
-        name="split_document_component",
-        display_name="split documents",
-        description="Split documents into document nodes.",
-        environment=ENVIRONMENT_DICT_FIXED_VERSION,
-    )
-    def split_document_component(
-            documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
-    ) -> str:
-        """Split documents into document nodes.
-
-        Args:
-            documents_folder: The folder containing documents to be split.
-            chunk_size: The size of each chunk.
-            document_node_output: The output folder
-
-        Returns:
-            The folder containing the split documents.
-        """
-        return split_document(chunk_size, documents_folder, document_node_output)
-
-
-    @command_component(
-        name="clean_data_and_save_component",
-        display_name="clean dataset",
-        description="Clean test data set to remove empty lines.",
-        environment=ENVIRONMENT_DICT_FIXED_VERSION,
-    )
-    def clean_data_and_save_component(
-            test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
-    ) -> str:
-        test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
-
-        with open(test_data_set_path, "r") as f:
-            data = [json.loads(line) for line in f]
-
-        test_data_output_path = test_data_output / Path("test_data_set.jsonl")
-        clean_data_and_save(data, test_data_output_path)
-
-        return str(test_data_output_path)
-
+    try:
+        from azure.ai.ml import Input as V2Input, MLClient, dsl, load_component
+        from azure.identity import DefaultAzureCredential
+        from constants import ENVIRONMENT_DICT_FIXED_VERSION
+    except ImportError:
+        raise ImportError(
+            "Please install azure dependencies using the following command: "
+            + "`pip install -r requirements_cloud.txt`"
+        )
 
     @dsl.pipeline(
         non_pipeline_inputs=[
@@ -172,6 +134,7 @@ def run_cloud(
         mini_batch_size=1,
         max_concurrency_per_instance=2,
     ):
+        from components import split_document_component, clean_data_and_save_component
         data = (
             data_input
             if should_skip_doc_split
@@ -188,6 +151,7 @@ def run_cloud(
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
         flow_node.set_resources(instance_count=instance_count)
+        # flow_node.allowed_failed_count = -1
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
         clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
