@@ -1,0 +1,8 @@
+name: flow_run_20230629_101205
+flow: ../flows/print_env_var
+data: ../datas/env_var_names.jsonl
+column_mapping:
+   key: "${data.key}"
+
+resources:
+  compute: my_ci
