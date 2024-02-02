@@ -27,5 +27,4 @@ class TestCommonApis:
         assert response["build_info"] == '{"build_number": "20240131.v1"}'
 
         feature_list = response["feature_list"]
-        assert isinstance(feature_list, dict)
-        assert all(k == v["name"] for k, v in feature_list.items())
+        assert isinstance(feature_list, list)
