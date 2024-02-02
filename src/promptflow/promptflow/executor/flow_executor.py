@@ -25,7 +25,12 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._core.tracer import enrich_span_with_input, enrich_span_with_output, open_telemetry_tracer
+from promptflow._core.tracer import (
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_output,
+    open_telemetry_tracer,
+)
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -785,6 +790,7 @@ class FlowExecutor:
                     "span_type": TraceType.FLOW.value,
                 }
             )
+            enrich_span_with_context(span)
             # enrich span with input
             enrich_span_with_input(span, inputs)
             # invoke
