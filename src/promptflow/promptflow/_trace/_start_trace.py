@@ -15,7 +15,8 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME
+from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME, SpanAttributeFieldName
+from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -42,6 +43,7 @@ def start_trace():
     _logger.debug("current session id is %s", session_id)
     # init the global tracer with endpoint, context (session, run, exp)
     _init_otel_trace_exporter(otlp_port=pfs_port)
+    inject_openai_api()
     # print user the UI url
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
     print(f"You can view the trace from UI url: {ui_url}")
@@ -103,6 +105,7 @@ def _provision_session() -> str:
     session_id = str(uuid.uuid4())
     session_id_context_info = {TRACE_SESSION_ID_OP_CTX_NAME: session_id}
     operation_context.update(session_id_context_info)
+    operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
     return session_id
 
 

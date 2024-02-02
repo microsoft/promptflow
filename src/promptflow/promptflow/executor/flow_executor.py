@@ -13,6 +13,8 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
+from opentelemetry.trace.status import StatusCode
+
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
@@ -23,6 +25,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tracer import enrich_span_with_input, enrich_span_with_output, open_telemetry_tracer
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -40,6 +43,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -632,7 +636,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
-        result = self._exec(inputs)
+        result = self._exec_with_trace(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
         return result.output or {}
@@ -642,7 +646,7 @@ class FlowExecutor:
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
-        results = self._exec(
+        results = self._exec_with_trace(
             inputs, run_id=run_id, line_number=line_number, variant_id=variant_id, validate_inputs=validate_inputs
         )
         self._run_tracker._deactivate_in_context()
@@ -701,7 +705,7 @@ class FlowExecutor:
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
             self._update_operation_context(run_id)
-            line_result = self._exec(
+            line_result = self._exec_with_trace(
                 inputs,
                 run_id=run_id,
                 line_number=index,
@@ -717,7 +721,9 @@ class FlowExecutor:
     def _update_operation_context(self, run_id: str):
         operation_context = OperationContext.get_instance()
         operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow-id": self._flow_id, "root-run-id": run_id})
+        operation_context.update({"flow_id": self._flow_id, "root_run_id": run_id})
+        if operation_context.run_mode == RunMode.Test.name:
+            operation_context._add_otel_attributes("line_run_id", run_id)
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
@@ -741,6 +747,62 @@ class FlowExecutor:
             if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
+
+    def _exec_with_trace(
+        self,
+        inputs: Mapping[str, Any],
+        run_id: Optional[str] = None,
+        line_number: Optional[int] = None,
+        variant_id: str = "",
+        validate_inputs: bool = False,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        """execute line run with trace
+
+        This method is similar to `_exec`, but it also includes tracing functionality.
+        It starts a new span, enriches it with input and output data, and sets the span status.
+
+        Args:
+            inputs (Mapping): flow inputs
+            run_id: the id to identify the flow run
+            line_number: line number for batch inputs
+            variant_id: variant id for the line run
+            validate_inputs:
+                Flag to indicate if input validation needed. It is used along with "_raise_ex" to
+                define if exception shall be raised if inputs validation (type check, etc) failed
+                The flag is True for Flow Run, False for bulk run as default
+            allow_generator_output:
+                Flag to indicate if generator output is allowed.
+
+        Returns:
+            LineResult: Line run result
+        """
+        with open_telemetry_tracer.start_as_current_span("promptflow.flow") as span:
+            # initialize span
+            span.set_attributes(
+                {
+                    "framework": "promptflow",
+                    "span_type": TraceType.FLOW.value,
+                }
+            )
+            # enrich span with input
+            enrich_span_with_input(span, inputs)
+            # invoke
+            result = self._exec(
+                inputs,
+                run_id=run_id,
+                line_number=line_number,
+                variant_id=variant_id,
+                validate_inputs=validate_inputs,
+                allow_generator_output=allow_generator_output,
+            )
+            # extract output from result
+            output = result.output
+            # enrich span with output
+            enrich_span_with_output(span, output)
+            # set status
+            span.set_status(StatusCode.OK)
+            return result
 
     def _exec(
         self,

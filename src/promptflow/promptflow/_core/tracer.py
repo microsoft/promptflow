@@ -15,7 +15,6 @@ from typing import Callable, Dict, List, Optional
 from opentelemetry import trace
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME, SpanAttributeFieldName
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
@@ -208,19 +207,28 @@ def get_node_name_from_context():
 
 def enrich_span_with_trace(span, trace):
     try:
-        session_id = OperationContext.get_instance().get(TRACE_SESSION_ID_OP_CTX_NAME)
         span.set_attributes(
             {
                 "framework": "promptflow",
-                "span_type": trace.type,
+                "span_type": trace.type.value,
                 "function": trace.name,
-                "inputs": serialize_attribute(trace.inputs),
                 "node_name": get_node_name_from_context(),
-                SpanAttributeFieldName.SESSION_ID: session_id,
             }
         )
+        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+        span.set_attributes(attrs_from_context)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
+
+
+def enrich_span_with_input(span, input):
+    try:
+        serialized_input = serialize_attribute(input)
+        span.set_attribute("inputs", serialized_input)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with input: {e}")
+
+    return input
 
 
 def enrich_span_with_output(span, output):
@@ -235,9 +243,13 @@ def enrich_span_with_output(span, output):
 
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
-    serializable = Tracer.to_serializable(value)
-    serialized_value = serialize(serializable)
-    return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    try:
+        serializable = Tracer.to_serializable(value)
+        serialized_value = serialize(serializable)
+        return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    except Exception as e:
+        logging.warning(f"Failed to serialize attribute: {e}")
+        return None
 
 
 def _traced(
@@ -292,6 +304,7 @@ def _traced_async(
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
+                enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
@@ -336,6 +349,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
+                enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
