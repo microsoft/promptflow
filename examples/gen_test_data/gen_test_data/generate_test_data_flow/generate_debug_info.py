@@ -10,7 +10,6 @@ from promptflow import tool
 def my_python_tool(
     question_type: str,
     text_chunk: str,
-    text_meta: dict = None,
     text_chunk_validation_res: ValidationResult = None,
     validate_question_output: dict = None,
     validate_suggested_answer_output: dict = None,
