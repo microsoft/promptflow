@@ -42,29 +42,25 @@ def my_python_tool(
             failed_reason = suggested_answer_validation_res.reason
 
     return {
-        "question_type": question_type,
+        # TODO: support more question types like multi-context etc.
+        # "question_type": question_type,
         "text_trunk": text_trunk,
-        "text_meta": text_meta,
-        "generation_summary": {
+        "validation_summary": {
             "success": is_generation_success,
-            "failed_step": failed_step,
-            "failed_reason": failed_reason,
+            "failed_step": failed_step
         },
-        "generation_details": {
-            "text_trunk": {
+        "validation_details": {
+            ValidateObj.TEXT_TRUNK: {
                 "score": text_trunk_validation_res.score if text_trunk_validation_res else None,
+                "success": is_text_trunk_valid,
                 "reason": text_trunk_validation_res.reason if text_trunk_validation_res else None,
-                "pass_validation": is_text_trunk_valid,
             },
-            "seed_question": {
-                "generated_question": generated_question,
-                "pass_validation": is_seed_question_valid,
+            ValidateObj.QUESTION: {
+                "success": is_seed_question_valid,
                 "reason": question_validation_res.reason if question_validation_res else None,
             },
-            # "test_question": {},  # placeholder for evolved questions like multi-context, reasoning, etc.
-            "suggested_answer": {
-                "generated_suggested_answer": generated_suggested_answer,
-                "pass_validation": is_suggested_answer_valid,
+            ValidateObj.SUGGESTED_ANSWER: {
+                "success": is_suggested_answer_valid,
                 "reason": suggested_answer_validation_res.reason if suggested_answer_validation_res else None,
             },
         },

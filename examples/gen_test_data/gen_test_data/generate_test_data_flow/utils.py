@@ -2,8 +2,6 @@ import json
 import re
 from collections import namedtuple
 
-import numpy as np
-import numpy.testing as npt
 from numpy.random import default_rng
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -13,15 +11,13 @@ from promptflow.tools.openai import chat as openai_chat
 
 class QuestionType:
     SIMPLE = "simple"
-    REASONING = "reasoning"
-    CONDITIONAL = "conditional"
     # MULTI_CONTEXT = "multi_context"
 
 
 class ValidateObj:
-    QUESTION = "question"
-    TEXT_TRUNK = "text_trunk"
-    SUGGESTED_ANSWER = "suggested_answer"
+    QUESTION = "validate_question"
+    TEXT_TRUNK = "validate_text_trunk"
+    SUGGESTED_ANSWER = "validate_suggested_answer"
 
 
 class ResponseFormat:
@@ -44,6 +40,7 @@ def llm_call(
     connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=16
 ):
     response_format = "json_object" if response_format.lower() == "json" else response_format
+    # avoid unnecessary jinja2 template re-rendering and potential error.
     prompt = f"{{% raw %}}{prompt}{{% endraw %}}"
     if isinstance(connection, AzureOpenAIConnection):
         return aoai_chat(
@@ -154,38 +151,3 @@ def _load_json_rsp(rsp: str):
         data = None
 
     return data
-
-
-def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
-    testset_distribution = {
-        QuestionType.SIMPLE: simple_ratio,
-        QuestionType.REASONING: reasoning_ratio,
-        QuestionType.CONDITIONAL: conditional_ratio,
-    }
-    npt.assert_almost_equal(1, sum(testset_distribution.values()), err_msg="Sum of distribution should be 1")
-    testset_distribution = dict(zip(testset_distribution.keys(), np.cumsum(list(testset_distribution.values()))))
-    return testset_distribution
-
-
-def generate_question(
-    connection,
-    model_or_deployment_name,
-    question_type,
-    seed_question,
-    reasoning_prompt: str = None,
-    conditional_prompt: str = None,
-    temperature: float = None,
-    max_tokens: int = None,
-):
-    if question_type == QuestionType.SIMPLE:
-        return seed_question
-    elif question_type == QuestionType.REASONING:
-        return llm_call(
-            connection, model_or_deployment_name, reasoning_prompt, temperature=temperature, max_tokens=max_tokens
-        )
-    elif question_type == QuestionType.CONDITIONAL:
-        return llm_call(
-            connection, model_or_deployment_name, conditional_prompt, temperature=temperature, max_tokens=max_tokens
-        )
-    else:
-        raise Exception("Invalid question type.")

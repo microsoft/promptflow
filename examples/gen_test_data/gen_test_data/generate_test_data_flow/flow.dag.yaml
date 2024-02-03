@@ -6,9 +6,6 @@ inputs:
     type: string
     is_chat_input: false
     default: ""
-  text_meta:
-    type: string
-    default: "{}"
 outputs:
   question:
     type: string

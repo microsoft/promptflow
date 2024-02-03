@@ -1,60 +1,22 @@
 import json
 import os
-import sys
-import re
 import time
 from datetime import datetime
 from pathlib import Path
 
 import configargparse
 
-from promptflow import PFClient
 from promptflow._utils.logger_utils import get_logger
-from promptflow.entities import Run
 
 CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
 
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
-from common import clean_data_and_save, count_non_blank_lines, split_document  # noqa: E402
-from constants import TEXT_CHUNK  # noqa: E402
+from common import clean_data, count_non_blank_lines, split_document, print_progress  # noqa: E402
+from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
 
 logger = get_logger("data.gen")
-
-
-def print_progress(log_file_path: str):
-    logger.info(f"Showing progress log, or you can click '{log_file_path}' and see detailed batch run log...")
-    log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished \d+ / \d+ lines\.")
-    # wait for the log file to be created
-    start_time = time.time()
-    while not Path(log_file_path).is_file():
-        time.sleep(1)
-        # if the log file is not created within 5 minutes, raise an error
-        if time.time() - start_time > 300:
-            raise Exception(f"Log file '{log_file_path}' is not created within 5 minutes.")
-
-    try:
-        last_data_time = time.time()
-        with open(log_file_path, 'r') as f:
-            while True:
-                line = f.readline().strip()
-                if line:
-                    last_data_time = time.time()  # Update the time when the last data was received
-                    time.sleep(1)
-                    if not log_pattern.match(line):
-                        continue
-
-                    sys.stdout.write("\r" + line)  # \r will move the cursor back to the beginning of the line
-                    sys.stdout.flush()  # flush the buffer to ensure the log is displayed immediately
-                elif time.time() - last_data_time > 300:  # If no new data has been received for 10 seconds
-                    logger.info("No new data received for 300 seconds. Stop reading the log file.")
-                    break  # Stop reading
-                else:
-                    time.sleep(1)  # wait for 1 second if no new line is available
-    except KeyboardInterrupt:
-        sys.stdout.write("\n")  # ensure to start on a new line when the user interrupts
-        sys.stdout.flush()
 
 
 def batch_run_flow(
@@ -66,6 +28,7 @@ def batch_run_flow(
     import subprocess
 
     run_name = f"test_data_gen_{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}"
+    # TODO: replace the separate process to submit batch run with batch run async method when it's available.
     cmd = f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} " \
           f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' " \
           f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}'"
@@ -75,7 +38,15 @@ def batch_run_flow(
 
 
 def get_batch_run_output(output_path: Path):
-    logger.info(f"Start to get batch run output from '{output_path}'.")
+    logger.info(f"Reading batch run output from '{output_path}'.")
+    # wait for the output file to be created
+    start_time = time.time()
+    while not Path(output_path).is_file():
+        time.sleep(1)
+        # if the log file is not created within 5 minutes, raise an error
+        if time.time() - start_time > 300:
+            raise Exception(f"Output jsonl file '{output_path}' is not created within 5 minutes.")
+
     with open(output_path, 'r') as f:
         output_lines = list(map(json.loads, f))
     
@@ -95,12 +66,12 @@ def run_local(
     should_skip_split,
 ):
     text_chunks_path = document_nodes_file
-    inner_folder = os.path.join(output_folder, datetime.now().strftime("%b-%d-%Y-%H-%M-%S"))
-    if not os.path.isdir(inner_folder):
-        os.makedirs(inner_folder)
+    output_folder = Path(output_folder) / datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
+    if not Path(output_folder).is_dir():
+        Path(output_folder).mkdir(parents=True, exist_ok=True)
 
     if not should_skip_split:
-        text_chunks_path = split_document(document_chunk_size, documents_folder, inner_folder)
+        text_chunks_path = split_document(document_chunk_size, documents_folder, output_folder)
 
     run_name = batch_run_flow(
         flow_folder,
@@ -109,16 +80,16 @@ def run_local(
     )
     run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
     print_progress(run_folder_path / "logs.txt")
-    logger.info("Batch run is completed. ")
     test_data_set = get_batch_run_output(run_folder_path / "outputs.jsonl")
     # Store intermedian batch run output results
     jsonl_str = "\n".join(map(json.dumps, test_data_set))
-    intermedian_batch_run_res = os.path.join(inner_folder, "test-data-gen-details.jsonl")
-    with open(intermedian_batch_run_res, "wt") as text_file:
+    batch_run_details_file = Path(output_folder) / DETAILS_FILE_NAME
+    with open(batch_run_details_file, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
-    clean_data_output = os.path.join(inner_folder, "test-data.jsonl")
-    clean_data_and_save(test_data_set, clean_data_output)
+    clean_data_output = Path(output_folder) / "test-data.jsonl"
+    clean_data(test_data_set, clean_data_output)
+    logger.info(f"More debug info of test data generation can be found in '{batch_run_details_file}'.")
 
 
 def run_cloud(
@@ -174,7 +145,7 @@ def run_cloud(
         run_invocation_time=600,
         allowed_failed_count=-1,
     ):
-        from components import clean_data_and_save_component, split_document_component
+        from components import clean_data_component, split_document_component
 
         data = (
             data_input
@@ -198,7 +169,7 @@ def run_cloud(
         flow_node.mini_batch_error_threshold = allowed_failed_count
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
-        clean_data_and_save_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
+        clean_data_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
 
     def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
         credential = DefaultAzureCredential(exclude_shared_token_cache_credential=True)
