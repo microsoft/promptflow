@@ -13,6 +13,9 @@ document_nodes_file = "<your-node-file-abspath>"
 ; Test data gen flow configs
 flow_folder = "<your-test-data-gen-flow-folder-abspath>" ; There is must one flow.dag.yaml file under this folder as entry
 connection_name = "<your-connection-name>"
+; Override some inputs, for example, {"node_1": {"input_1": "value", "input_2": "value"}, "node_2":{"input_1": "value", "input_2": "value"}}
+; Ensure the node name and the input name exist in flag.dag.yaml
+node_inputs_override = {}
 
 
 [LOCAL]
@@ -32,3 +35,6 @@ aml_cluster = "<your-compute-name>"
 prs_instance_count = 2
 prs_mini_batch_size = 2
 prs_max_concurrency_per_instance = 10
+prs_max_retry_count = 3
+prs_run_invocation_time = 800
+prs_allowed_failed_count = -1

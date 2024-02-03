@@ -60,6 +60,7 @@ nodes:
     type: code
     path: generate_question.py
   inputs:
+    connection: ""
     model_or_deployment_name: ""
     context: ${validate_text_trunk.output.context}
     temperature: 0.2
@@ -72,6 +73,7 @@ nodes:
     type: code
     path: validate_question.py
   inputs:
+    connection: ""
     model_or_deployment_name: ""
     temperature: 0.2
     max_tokens: ""
@@ -84,6 +86,7 @@ nodes:
     type: code
     path: generate_suggested_answer.py
   inputs:
+    connection: ""
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
     question: ${validate_question.output.question}
@@ -116,6 +119,7 @@ nodes:
     type: code
     path: validate_suggested_answer.py
   inputs:
+    connection: ""
     model_or_deployment_name: ""
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
@@ -127,6 +131,7 @@ nodes:
     type: code
     path: validate_text_trunk.py
   inputs:
+    connection: ""
     score_text_trunk_prompt: ${score_text_trunk_prompt.output}
     context: ${inputs.text_chunk}
     score_threshold: 4

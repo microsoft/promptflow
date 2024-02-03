@@ -1,0 +1,12 @@
+name: test_data_gen_conda_env
+channels:
+  - defaults
+dependencies:
+  - python=3.10.12
+  - pip=23.2.1
+  - pip:
+    - mldesigner
+    - configargparse
+    - llama_index
+    - docx2txt
+    - promptflow
