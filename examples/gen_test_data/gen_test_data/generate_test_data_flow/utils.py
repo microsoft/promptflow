@@ -16,7 +16,7 @@ class QuestionType:
 
 class ValidateObj:
     QUESTION = "validate_question"
-    TEXT_TRUNK = "validate_text_trunk"
+    TEXT_CHUNK = "validate_text_chunk"
     SUGGESTED_ANSWER = "validate_suggested_answer"
 
 
@@ -27,7 +27,7 @@ class ResponseFormat:
 
 class ErrorMsg:
     INVALID_JSON_FORMAT = "Invalid json format. Response: {0}"
-    INVALID_TEXT_TRUNK = "Skipping generating seed question due to invalid text chunk: {0}"
+    INVALID_TEXT_CHUNK = "Skipping generating seed question due to invalid text chunk: {0}"
     INVALID_QUESTION = "Invalid seed question: {0}"
     INVALID_ANSWER = "Invalid answer: {0}"
 
@@ -37,7 +37,7 @@ ScoreResult = namedtuple("ScoreResult", ["score", "reason", "pass_validation"])
 
 
 def llm_call(
-    connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=16
+    connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=None
 ):
     response_format = "json_object" if response_format.lower() == "json" else response_format
     # avoid unnecessary jinja2 template re-rendering and potential error.
@@ -72,9 +72,11 @@ def get_question_type(testset_distribution) -> str:
 
 
 def get_suggested_answer_validation_res(
-    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float, max_tokens: int
+    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float, max_tokens: int,
+    response_format: ResponseFormat = ResponseFormat.TEXT
 ):
-    rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens)
+    rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens,
+                   response_format=response_format)
     return retrieve_verdict_and_print_reason(
         rsp=rsp, validate_obj_name=ValidateObj.SUGGESTED_ANSWER, validate_obj=suggested_answer
     )
@@ -93,7 +95,7 @@ def get_question_validation_res(
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
 
 
-def get_text_trunk_score(
+def get_text_chunk_score(
     connection,
     model_or_deployment_name,
     prompt,
@@ -111,7 +113,7 @@ def get_text_trunk_score(
         # Extract the verdict and reason
         score = data["score"].lower()
         reason = data["reason"]
-        print(f"Score {ValidateObj.TEXT_TRUNK}: {score}\nReason: {reason}")
+        print(f"Score {ValidateObj.TEXT_CHUNK}: {score}\nReason: {reason}")
         try:
             score_float = float(score)
         except ValueError:

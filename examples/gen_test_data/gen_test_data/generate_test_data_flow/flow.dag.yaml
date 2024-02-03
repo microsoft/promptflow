@@ -5,7 +5,9 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
-    default: ""
+    default: Albert Einstein (14 March 1879 - 18 April 1955) was a German-born
+      theoretical physicist who is widely held to be one of the greatest and
+      most influential scientists of all time.
 outputs:
   question:
     type: string
@@ -17,11 +19,11 @@ outputs:
     type: string
     reference: ${generate_debug_info.output}
 nodes:
-- name: score_text_trunk_prompt
+- name: score_text_chunk_prompt
   type: prompt
   source:
     type: code
-    path: score_text_trunk_prompt.jinja2
+    path: score_text_chunk_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
@@ -58,9 +60,8 @@ nodes:
     path: generate_question.py
   inputs:
     model_or_deployment_name: ""
-    context: ${validate_text_trunk.output.context}
+    context: ${validate_text_chunk.output.context}
     temperature: 0.2
-    max_tokens: ""
     generate_question_prompt: ${generate_question_prompt.output}
   use_variants: false
 - name: validate_question
@@ -71,7 +72,6 @@ nodes:
   inputs:
     model_or_deployment_name: ""
     temperature: 0.2
-    max_tokens: ""
     generated_question: ${generate_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
@@ -86,7 +86,6 @@ nodes:
     question: ${validate_question.output.question}
     model_or_deployment_name: ""
     temperature: 0.2
-    max_tokens: ""
   use_variants: false
 - name: generate_debug_info
   type: python
@@ -95,10 +94,9 @@ nodes:
     path: generate_debug_info.py
   inputs:
     question_type: ${validate_question.output.question_type}
-    text_trunk: ${inputs.text_chunk}
-    text_meta: ${inputs.text_meta}
+    text_chunk: ${inputs.text_chunk}
     validate_suggested_answer_output: ${validate_suggested_answer.output}
-    text_trunk_validation_res: ${validate_text_trunk.output.validation_res}
+    text_chunk_validation_res: ${validate_text_chunk.output.validation_res}
     validate_question_output: ${validate_question.output}
 - name: validate_suggested_answer_prompt
   type: prompt
@@ -117,16 +115,14 @@ nodes:
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
     temperature: 0.2
-    max_tokens: ""
-- name: validate_text_trunk
+- name: validate_text_chunk
   type: python
   source:
     type: code
-    path: validate_text_trunk.py
+    path: validate_text_chunk.py
   inputs:
-    score_text_trunk_prompt: ${score_text_trunk_prompt.output}
+    score_text_chunk_prompt: ${score_text_chunk_prompt.output}
     context: ${inputs.text_chunk}
     score_threshold: 4
     model_or_deployment_name: ""
     temperature: 0.2
-    max_tokens: ""

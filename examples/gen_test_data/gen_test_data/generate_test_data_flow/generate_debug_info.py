@@ -9,9 +9,9 @@ from promptflow import tool
 @tool
 def my_python_tool(
     question_type: str,
-    text_trunk: str,
+    text_chunk: str,
     text_meta: dict = None,
-    text_trunk_validation_res: ValidationResult = None,
+    text_chunk_validation_res: ValidationResult = None,
     validate_question_output: dict = None,
     validate_suggested_answer_output: dict = None,
 ) -> dict:
@@ -22,7 +22,7 @@ def my_python_tool(
     suggested_answer_validation_res = validate_suggested_answer_output["validation_res"]
 
     is_generation_success = generated_suggested_answer != ""
-    is_text_trunk_valid = text_trunk_validation_res.pass_validation if text_trunk_validation_res else None
+    is_text_chunk_valid = text_chunk_validation_res.pass_validation if text_chunk_validation_res else None
     is_seed_question_valid = question_validation_res.pass_validation if question_validation_res else None
     is_suggested_answer_valid = (
         suggested_answer_validation_res.pass_validation if suggested_answer_validation_res else None
@@ -31,9 +31,9 @@ def my_python_tool(
     failed_step = ""
     failed_reason = ""
     if not is_generation_success:
-        if is_text_trunk_valid is False:
-            failed_step = ValidateObj.TEXT_TRUNK
-            failed_reason = text_trunk_validation_res.reason
+        if is_text_chunk_valid is False:
+            failed_step = ValidateObj.TEXT_CHUNK
+            failed_reason = text_chunk_validation_res.reason
         elif is_seed_question_valid is False:
             failed_step = ValidateObj.QUESTION
             failed_reason = question_validation_res.reason
@@ -44,16 +44,16 @@ def my_python_tool(
     return {
         # TODO: support more question types like multi-context etc.
         # "question_type": question_type,
-        "text_trunk": text_trunk,
+        "text_chunk": text_chunk,
         "validation_summary": {
             "success": is_generation_success,
             "failed_step": failed_step
         },
         "validation_details": {
-            ValidateObj.TEXT_TRUNK: {
-                "score": text_trunk_validation_res.score if text_trunk_validation_res else None,
-                "success": is_text_trunk_valid,
-                "reason": text_trunk_validation_res.reason if text_trunk_validation_res else None,
+            ValidateObj.TEXT_CHUNK: {
+                "score": text_chunk_validation_res.score if text_chunk_validation_res else None,
+                "success": is_text_chunk_valid,
+                "reason": text_chunk_validation_res.reason if text_chunk_validation_res else None,
             },
             ValidateObj.QUESTION: {
                 "success": is_seed_question_valid,

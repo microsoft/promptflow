@@ -21,7 +21,7 @@ def generate_seed_question(
     Returns:
         dict: The generated seed question.
     """
-    # text trunk is not valid, just skip test data gen.
+    # text chunk is not valid, just skip test data gen.
     if not context:
         return ""
 
