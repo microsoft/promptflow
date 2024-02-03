@@ -15,7 +15,8 @@ CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
-from common import clean_data_and_save, count_non_blank_lines, split_document, copy_flow_folder_and_set_node_inputs  # noqa: E402
+from common import clean_data_and_save, count_non_blank_lines, \
+    split_document, copy_flow_folder_and_set_node_inputs  # noqa: E402
 from constants import TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")

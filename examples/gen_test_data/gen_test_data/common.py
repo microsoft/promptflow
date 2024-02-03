@@ -1,10 +1,11 @@
 import json
 import shutil
-import yaml
 import typing as t
 from pathlib import Path
 
+import yaml
 from constants import DOCUMENT_NODE, TEXT_CHUNK
+
 from promptflow._utils.logger_utils import get_logger
 
 
@@ -23,8 +24,10 @@ def split_document(chunk_size, documents_folder, document_node_output):
     logger.info("Step 1: Start to split documents to document nodes...")
     # count the number of files in documents_folder, including subfolders, use pathlib
     num_files = sum(1 for _ in Path(documents_folder).rglob("*") if _.is_file())
-    logger.info(f"Found {num_files} files in the documents folder '{documents_folder}'. Using chunk size: {chunk_size} to split.")
-    # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.
+    logger.info(
+        f"Found {num_files} files in the documents folder '{documents_folder}'. Using chunk size: {chunk_size} to split.")
+    # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs,
+    # which may lead to small chunks.
     # TODO: improve on top of `SimpleDirectoryReader` with a better chunking algorithm.
     chunks = SimpleDirectoryReader(documents_folder, recursive=True, encoding="utf-8").load_data()
     # Convert documents into nodes
