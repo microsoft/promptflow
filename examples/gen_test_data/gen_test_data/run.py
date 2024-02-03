@@ -29,7 +29,7 @@ def batch_run_flow(
     flow_folder: str,
     flow_input_data: str,
     flow_batch_run_size: int,
-    connection_name: str = "azure_open_ai_connection",
+    node_inputs_override: dict = None,
 ):
     logger.info("Step 2: Start to batch run 'generate_test_data_flow'...")
     base_run = pf.run(
@@ -40,12 +40,9 @@ def batch_run_flow(
             "PF_WORKER_COUNT": str(flow_batch_run_size),
             "PF_BATCH_METHOD": "spawn",
         },
-        connections={
-            key: {"connection": value["connection"].format(connection_name=connection_name)}
-            for key, value in CONNECTIONS_TEMPLATE.items()
-        },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
+        **node_inputs_override
     )
     logger.info("Batch run is completed.")
 
@@ -81,16 +78,17 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
         "instance_count",
         "mini_batch_size",
         "max_concurrency_per_instance",
+        "node_inputs_override"
     ]
 )
 def gen_test_data_pipeline(
     data_input: Input,
     flow_yml_path: str,
-    connection_name: str,
+    node_inputs_override: dict,
     should_skip_doc_split: bool,
     chunk_size=1024,
     instance_count=1,
-    mini_batch_size="10kb",
+    mini_batch_size="2",
     max_concurrency_per_instance=2,
 ):
     data = (
@@ -102,10 +100,7 @@ def gen_test_data_pipeline(
     flow_node = load_component(flow_yml_path)(
         data=data,
         text_chunk="${data.text_chunk}",
-        connections={
-            key: {"connection": value["connection"].format(connection_name=connection_name)}
-            for key, value in CONNECTIONS_TEMPLATE.items()
-        },
+        connections=node_inputs_override
     )
 
     flow_node.mini_batch_size = mini_batch_size
@@ -121,7 +116,7 @@ def run_local(
     document_nodes_file,
     flow_folder,
     flow_batch_run_size,
-    connection_name,
+    node_inputs_override,
     output_folder,
     should_skip_split,
 ):
@@ -139,7 +134,7 @@ def run_local(
         flow_folder,
         text_chunks_path,
         flow_batch_run_size,
-        connection_name=connection_name,
+        node_inputs_override=node_inputs_override,
     )
 
     test_data_set = get_batch_run_output(pf, batch_run)
@@ -159,7 +154,7 @@ def run_cloud(
     document_chunk_size,
     document_nodes_file,
     flow_folder,
-    connection_name,
+    node_inputs_override,
     subscription_id,
     resource_group,
     workspace_name,
@@ -185,7 +180,7 @@ def run_cloud(
     pipeline_with_flow = gen_test_data_pipeline(
         data_input=data_input,
         flow_yml_path=os.path.join(flow_folder, "flow.dag.yaml"),
-        connection_name=connection_name,
+        connection_name=node_inputs_override,
         should_skip_doc_split=should_skip_split,
         chunk_size=document_chunk_size,
         **prs_configs,
@@ -217,7 +212,7 @@ if __name__ == "__main__":
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
-    parser.add_argument("--connection_name", required=True, type=str, help="Promptflow connection name")
+    parser.add_argument("--node_inputs_override", type=json.loads, help="The inputs need to override")
     # Configs for local
     parser.add_argument("--output_folder", type=str, help="Output folder path.")
     # Configs for cloud
@@ -237,12 +232,12 @@ if __name__ == "__main__":
         should_skip_split_documents = True
     elif not args.documents_folder or not Path(args.documents_folder).is_dir():
         parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
-    
+
     if args.cloud:
         logger.info("Start to generate test data at cloud...")
     else:
         logger.info("Start to generate test data at local...")
-    
+
     if should_skip_split_documents:
         logger.info(f"Skip step 1 'Split documents to document nodes' as received document nodes from input file {args.document_nodes_file}.")
         logger.info(f"Collect {count_non_blank_lines(args.document_nodes_file)} document nodes.")
@@ -253,7 +248,7 @@ if __name__ == "__main__":
             args.document_chunk_size,
             args.document_nodes_file,
             args.flow_folder,
-            args.connection_name,
+            args.node_inputs_override,
             args.subscription_id,
             args.resource_group,
             args.workspace_name,
@@ -270,7 +265,7 @@ if __name__ == "__main__":
             args.document_nodes_file,
             args.flow_folder,
             args.flow_batch_run_size,
-            args.connection_name,
+            args.node_inputs_override,
             args.output_folder,
             should_skip_split_documents,
         )
