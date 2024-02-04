@@ -11,10 +11,13 @@ Create a run with automatic runtime is simple, just omit the `runtime` field and
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
+
+```bash
 pfazure run create --flow path/to/flow --data path/to/data --stream
+```
+
 :::
 
-::::{tab-set}
 :::{tab-item} SDK
 :sync: SDK
 
@@ -35,6 +38,7 @@ pf.run(
 ```
 
 :::
+::::
 
 ## Specify pip requirements for automatic runtime
 
@@ -43,7 +47,7 @@ The dependencies in it will be automatically installed for automatic runtime.
 
 You can also specify which requirements file to use in `flow.dag.yaml` like this:
 
-```yml
+```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: path/to/requirement/file
@@ -56,7 +60,7 @@ Reference [Flow YAML Schema](../../reference/flow-yaml-schema-reference.md) for 
 
 In automatic runtime case, you can also specify the instance type, if you don't specify the instance type, Azure Machine Learning chooses an instance type (VM size) based on factors like quota, cost, performance and disk size, learn more about [serverless compute](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-use-serverless-compute).
 
-```yml
+```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
 flow: <path_to_flow>
 data: <path_to_flow>/data.jsonl
@@ -72,10 +76,13 @@ resources:
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
+
+```bash
 pfazure run create --file run.yml
+```
+
 :::
 
-::::{tab-set}
 :::{tab-item} SDK
 :sync: SDK
 
@@ -93,6 +100,8 @@ pf.runs.create_or_update(
     run=run
 )
 ```
+:::
+::::
 
 ## Next steps
 
