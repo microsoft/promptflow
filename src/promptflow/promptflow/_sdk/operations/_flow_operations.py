@@ -551,7 +551,7 @@ class FlowOperations(TelemetryMixin):
         config_content = {
             "flow_name": flow_name,
             "flow_inputs": flow_inputs,
-            "flow_path": None,
+            "flow_path": flow_dag_path.as_posix(),
             "is_chat_flow": is_chat_flow,
             "chat_history_input_name": chat_history_input_name,
             "label": label,
