@@ -11,6 +11,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
     - .docx - Microsoft Word
     - .pdf - Portable Document Format
     - .ipynb - Jupyter Notebook
+    - .txt - Text
 
     **Limitations:**
 

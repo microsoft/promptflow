@@ -6,7 +6,7 @@ import time
 import typing as t
 from pathlib import Path
 
-from constants import DOCUMENT_NODE, TEXT_CHUNK
+from constants import DOCUMENT_NODE, TEXT_CHUNK, SUPPORT_FILE_TYPE
 
 from promptflow._utils.logger_utils import get_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -26,14 +26,17 @@ def split_document(chunk_size, documents_folder, document_node_output):
     logger = get_logger("doc.split")
     logger.info("Step 1: Start to split documents to document nodes...")
     # count the number of files in documents_folder, including subfolders.
-    num_files = sum(1 for _ in Path(documents_folder).rglob("*") if _.is_file())
+    all_files = [f for f in Path(documents_folder).rglob("*") if f.is_file()]
+    filtered_num_files = sum(1 for _ in all_files if _.suffix.lower() in SUPPORT_FILE_TYPE)
     logger.info(
-        f"Found {num_files} files in the documents folder '{documents_folder}'. "
+        f"Found {len(all_files)} files in the documents folder '{documents_folder}'. "
+        f"Rest {filtered_num_files} files after filtering unsupported file types. "
         f"Using chunk size: {chunk_size} to split."
     )
     # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.  # noqa: E501
     # TODO: improve on top of `SimpleDirectoryReader` with a better chunking algorithm.
-    chunks = SimpleDirectoryReader(documents_folder, recursive=True, encoding="utf-8").load_data()
+    chunks = SimpleDirectoryReader(documents_folder, required_exts=SUPPORT_FILE_TYPE, recursive=True, encoding="utf-8")\
+        .load_data()
     # Convert documents into nodes
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     chunks = t.cast(t.List[LlamaindexDocument], chunks)
