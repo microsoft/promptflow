@@ -142,9 +142,9 @@ class TestExperiment:
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
             # Sleep to wait all traces are flushed
-            time.sleep(10) # TODO fix this
+            time.sleep(10)  # TODO fix this
             line_runs = client._traces.list_line_runs(session_id=session)
-            if len(line_runs) == 1: 
+            if len(line_runs) == 1:
                 line_run = line_runs[0]
                 assert "main_attempt" in line_run.line_run_id
                 assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
