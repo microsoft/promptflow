@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from marshmallow import ValidationError
 from mock.mock import Mock
 
 from promptflow import load_run
@@ -119,8 +120,13 @@ class TestFlow:
     def test_load_yaml_run_with_resources(self):
         source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"
         run = load_run(source=source, params_override=[{"name": str(uuid.uuid4())}])
-        assert run._resources["instance_type"] == "Standard_D2"
-        assert run._resources["idle_time_before_shutdown_minutes"] == 60
+        assert dict(run._resources) == {"instance_type": "Standard_D2"}
+
+    def test_load_yaml_run_with_resources_unsupported_field(self):
+        source = f"{RUNS_DIR}/sample_bulk_run_with_idle_time.yaml"
+        with pytest.raises(ValidationError) as e:
+            load_run(source=source, params_override=[{"name": str(uuid.uuid4())}])
+        assert "Unknown field" in str(e.value)
 
     def test_flow_with_additional_includes(self):
         flow_folder = FLOWS_DIR / "web_classification_with_additional_include"

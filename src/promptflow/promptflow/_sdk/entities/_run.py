@@ -545,13 +545,9 @@ class Run(YAMLTranslatableMixin):
             if not isinstance(self._resources, dict):
                 raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
             vm_size = self._resources.get("instance_type", None)
-            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
-            # change to seconds
-            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
             compute_name = self._resources.get("compute", None)
         else:
             vm_size = None
-            max_idle_time_seconds = None
             compute_name = None
 
         # use functools.partial to avoid too many arguments that have the same values
@@ -574,7 +570,6 @@ class Run(YAMLTranslatableMixin):
             flow_lineage_id=self._lineage_id,
             run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             vm_size=vm_size,
-            max_idle_time_seconds=max_idle_time_seconds,
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
             compute_name=compute_name,
         )

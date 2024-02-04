@@ -53,13 +53,20 @@ class FlowMonitor:
     def start_monitoring(self):
         g.start_time = time.time()
         g.streaming = streaming_response_required()
+        # if both request_id and client_request_id are provided, each will respect their own value.
+        # if either one is provided, the provided one will be used for both request_id and client_request_id.
+        # in aml deployment, request_id is provided by aml, user can only customize client_request_id.
+        # in non-aml deployment, user can customize both request_id and client_request_id.
         g.req_id = request.headers.get("x-request-id", None)
-        self.logger.info(f"Start monitoring new request, request_id: {g.req_id}")
+        g.client_req_id = request.headers.get("x-ms-client-request-id", g.req_id)
+        g.req_id = g.req_id or g.client_req_id
+        self.logger.info(f"Start monitoring new request, request_id: {g.req_id}, client_request_id: {g.client_req_id}")
 
     def finish_monitoring(self, resp_status_code):
         data = g.get("data", None)
         flow_result: FlowResult = g.get("flow_result", None)
         req_id = g.get("req_id", None)
+        client_req_id = g.get("client_req_id", req_id)
         flow_id = g.get("flow_id", self.flow_name)
         # collect non-streaming flow request/response data
         if self.data_collector and data and flow_result and flow_result.output and not g.streaming:
@@ -77,4 +84,4 @@ class FlowMonitor:
                     flow_id, resp_status_code, g.streaming, ResponseType.Default.value, latency
                 )
 
-        self.logger.info(f"Finish monitoring request, request_id: {req_id}.")
+        self.logger.info(f"Finish monitoring request, request_id: {req_id}, client_request_id: {client_req_id}.")
