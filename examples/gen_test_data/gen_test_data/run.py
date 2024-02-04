@@ -54,7 +54,7 @@ def get_batch_run_output(output_path: Path):
         if time.time() - start_time > 300:
             raise Exception(f"Output jsonl file '{output_path}' is not created within 5 minutes.")
 
-    with open(output_path, "r") as f:
+    with open(output_path, "r", encoding='utf-8') as f:
         output_lines = list(map(json.loads, f))
 
     return [

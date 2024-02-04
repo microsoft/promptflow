@@ -82,8 +82,9 @@ def count_non_blank_lines(file_path):
 
 
 def print_progress(log_file_path: str):
+    from tqdm import tqdm
     logger = get_logger("data.gen")
-    logger.info(f"Showing progress log, or you can click '{log_file_path}' and see detailed batch run log...")
+    logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
     log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished (\d+) / (\d+) lines\.")
     # wait for the log file to be created
     start_time = time.time()
@@ -93,6 +94,7 @@ def print_progress(log_file_path: str):
         if time.time() - start_time > 300:
             raise Exception(f"Log file '{log_file_path}' is not created within 5 minutes.")
 
+    pbar = None
     try:
         last_data_time = time.time()
         with open(log_file_path, "r") as f:
@@ -104,22 +106,28 @@ def print_progress(log_file_path: str):
                     if not match:
                         continue
 
-                    sys.stdout.write("\r" + line)  # \r will move the cursor back to the beginning of the line
-                    sys.stdout.flush()  # flush the buffer to ensure the log is displayed immediately
                     finished, total = map(int, match.groups())
+                    if pbar is None:
+                        pbar = tqdm(total=total, desc="Processing", file=sys.stdout)
+                    pbar.update(finished - pbar.n)
+
                     if finished == total:
+                        pbar.close()
                         logger.info("Batch run is completed.")
+
                         break
                 elif time.time() - last_data_time > 300:
-                    logger.info(
-                        "No new log line received for 5 minutes. Stop reading. See the log file for more details."
-                    )
-                    break  # Stop reading
+                    logger.info("No new log line received for 5 minutes. Stop reading. "
+                                f"See the log file '{log_file_path}' for more details.")
+                    break
                 else:
                     time.sleep(1)  # wait for 1 second if no new line is available
-    except KeyboardInterrupt:
-        sys.stdout.write("\n")  # ensure to start on a new line when the user interrupts
-        sys.stdout.flush()
+    except Exception as e:
+        raise Exception(f"Error occurred while printing batch run progress {e}. "
+                        f"See the log file '{log_file_path}' for more details.")
+    finally:
+        if pbar:
+            pbar.close()
 
 
 def copy_flow_folder_and_set_node_inputs(copied_folder, flow_folder, node_inputs_override):

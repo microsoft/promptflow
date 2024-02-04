@@ -14,8 +14,7 @@ def validate_text_chunk(
     score_threshold: float,
     context: str = None,
     response_format: str = ResponseFormat.TEXT,
-    temperature: float = 1.0,
-    max_tokens: int = None,
+    temperature: float = 0.2,
 ):
     """
     Validates the given text chunk. If the validation fails, return an empty context and the validation result.
@@ -30,7 +29,6 @@ def validate_text_chunk(
         response_format,
         score_threshold,
         temperature,
-        max_tokens,
     )
     if not text_chunk_score_res.pass_validation:
         print(ErrorMsg.INVALID_TEXT_CHUNK.format(context))

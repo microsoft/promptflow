@@ -14,7 +14,6 @@ def validate_question(
     validate_question_prompt: str,
     response_format: str = ResponseFormat.TEXT,
     temperature: float = 0.2,
-    max_tokens: int = None,
 ):
     """
     1. Validates the given seed question.
@@ -34,7 +33,6 @@ def validate_question(
         generated_question,
         response_format,
         temperature,
-        max_tokens,
     )
     is_valid_seed_question = validation_res.pass_validation
     question = ""
