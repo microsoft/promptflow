@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import contextlib
 import copy
 import functools
 import inspect
@@ -12,6 +13,8 @@ from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -23,6 +26,12 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tracer import (
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_output,
+    open_telemetry_tracer,
+)
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -40,6 +49,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -632,7 +642,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
-        result = self._exec(inputs)
+        result = self._exec_with_trace(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
         return result.output or {}
@@ -642,7 +652,7 @@ class FlowExecutor:
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
-        results = self._exec(
+        results = self._exec_with_trace(
             inputs, run_id=run_id, line_number=line_number, variant_id=variant_id, validate_inputs=validate_inputs
         )
         self._run_tracker._deactivate_in_context()
@@ -700,24 +710,43 @@ class FlowExecutor:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
-            self._update_operation_context(run_id)
-            line_result = self._exec(
-                inputs,
-                run_id=run_id,
-                line_number=index,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
-                allow_generator_output=allow_generator_output,
-            )
+            with self._update_operation_context(run_id):
+                line_result = self._exec_with_trace(
+                    inputs,
+                    run_id=run_id,
+                    line_number=index,
+                    variant_id=variant_id,
+                    validate_inputs=validate_inputs,
+                    allow_generator_output=allow_generator_output,
+                )
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    @contextlib.contextmanager
     def _update_operation_context(self, run_id: str):
         operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow-id": self._flow_id, "root-run-id": run_id})
+        original_mode = operation_context.get("run_mode", None)
+        values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
+        values_for_otel = {"line_run_id": run_id}
+        try:
+
+            operation_context.run_mode = original_mode or RunMode.Test.name
+            operation_context.update(values_for_context)
+            if operation_context.run_mode == RunMode.Test.name:
+                for k, v in values_for_otel.items():
+                    operation_context._add_otel_attributes(k, v)
+            yield
+        finally:
+            for k in values_for_context:
+                operation_context.pop(k)
+            if operation_context.run_mode == RunMode.Test.name:
+                operation_context._remove_otel_attributes(values_for_otel.keys())
+            if original_mode is None:
+                operation_context.pop("run_mode")
+            else:
+                operation_context.run_mode = original_mode
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
@@ -741,6 +770,63 @@ class FlowExecutor:
             if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
+
+    def _exec_with_trace(
+        self,
+        inputs: Mapping[str, Any],
+        run_id: Optional[str] = None,
+        line_number: Optional[int] = None,
+        variant_id: str = "",
+        validate_inputs: bool = False,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        """execute line run with trace
+
+        This method is similar to `_exec`, but it also includes tracing functionality.
+        It starts a new span, enriches it with input and output data, and sets the span status.
+
+        Args:
+            inputs (Mapping): flow inputs
+            run_id: the id to identify the flow run
+            line_number: line number for batch inputs
+            variant_id: variant id for the line run
+            validate_inputs:
+                Flag to indicate if input validation needed. It is used along with "_raise_ex" to
+                define if exception shall be raised if inputs validation (type check, etc) failed
+                The flag is True for Flow Run, False for bulk run as default
+            allow_generator_output:
+                Flag to indicate if generator output is allowed.
+
+        Returns:
+            LineResult: Line run result
+        """
+        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+            # initialize span
+            span.set_attributes(
+                {
+                    "framework": "promptflow",
+                    "span_type": TraceType.FLOW.value,
+                }
+            )
+            enrich_span_with_context(span)
+            # enrich span with input
+            enrich_span_with_input(span, inputs)
+            # invoke
+            result = self._exec(
+                inputs,
+                run_id=run_id,
+                line_number=line_number,
+                variant_id=variant_id,
+                validate_inputs=validate_inputs,
+                allow_generator_output=allow_generator_output,
+            )
+            # extract output from result
+            output = result.output
+            # enrich span with output
+            enrich_span_with_output(span, output)
+            # set status
+            span.set_status(StatusCode.OK)
+            return result
 
     def _exec(
         self,
@@ -1060,6 +1146,7 @@ def execute_flow(
     connections: dict,
     inputs: Mapping[str, Any],
     *,
+    run_id: str = None,
     run_aggregation: bool = True,
     enable_stream_output: bool = False,
     allow_generator_output: bool = False,  # TODO: remove this
@@ -1079,6 +1166,8 @@ def execute_flow(
     :type inputs: Mapping[str, Any]
     :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
     :type enable_stream_output: Optional[bool]
+    :param run_id: Run id will be set in operation context and used for session.
+    :type run_id: Optional[str]
     :param kwargs: Other keyword arguments to create flow executor.
     :type kwargs: Any
     :return: The line result of executing the flow.
@@ -1090,14 +1179,18 @@ def execute_flow(
         # execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
-        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+        line_result = flow_executor.exec_line(
+            inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
+        )
         # persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if run_aggregation and line_result.aggregation_inputs:
             # convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}
             aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-            aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+            aggregation_results = flow_executor.exec_aggregation(
+                flow_inputs, aggregation_inputs=aggregation_inputs, run_id=run_id
+            )
             line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
             line_result.run_info.metrics = aggregation_results.metrics
         if isinstance(line_result.output, dict):

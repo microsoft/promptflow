@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import copy
+import json
 import os
 import subprocess
 import tempfile
@@ -11,7 +12,9 @@ from typing import Dict, Union
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
+    PF_TRACE_CONTEXT,
     PROMPT_FLOW_DIR_NAME,
+    ExperimentContextKey,
     ExperimentNodeType,
     ExperimentStatus,
     FlowRunProperties,
@@ -69,6 +72,8 @@ class ExperimentOrchestrator:
             if node.type == ExperimentNodeType.FLOW
             and ProtectedFlow._get_flow_definition(node.path) == ProtectedFlow._get_flow_definition(flow_path)
         ]
+        if not start_nodes:
+            raise ExperimentValueError(f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")
         logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
@@ -108,13 +113,15 @@ class ExperimentOrchestrator:
         inputs = apply_inputs_mapping(inputs=binding_context, inputs_mapping=inputs_mapping)
         logger.debug(f"Resolved node {node.name!r} inputs {inputs}.")
         test_context.add_node_inputs(node.name, inputs)
+        node_context = test_context.get_node_context(node.name, is_flow=True, test=True)
         return self._client.flows.test(
             flow=node.path,
-            environment_variables=test_context.environment_variables,
+            environment_variables={**test_context.environment_variables, **node_context},
             inputs=inputs,
             output_path=test_context.output_path / node.name,
             dump_test_result=True,
             stream_output=False,
+            run_id=test_context.node_name_to_id[node.name],
         )
 
     def _test_command_node(self, *args, **kwargs):
@@ -130,6 +137,7 @@ class ExperimentOrchestrator:
         """
         # Start experiment
         logger.info(f"Starting experiment {experiment.name}.")
+        context = ExperimentTemplateContext(experiment)
         experiment.status = ExperimentStatus.IN_PROGRESS
         experiment.last_start_time = datetime.utcnow().isoformat()
         experiment.last_end_time = None
@@ -142,7 +150,7 @@ class ExperimentOrchestrator:
         try:
             for node in resolved_nodes:
                 logger.info(f"Running node {node.name}...")
-                run = self._run_node(node, experiment, run_dict)
+                run = self._run_node(node, experiment, context, run_dict)
                 # Update node run to experiment
                 experiment._append_node_run(node.name, run)
                 self.experiment_operations.create_or_update(experiment)
@@ -157,57 +165,100 @@ class ExperimentOrchestrator:
             experiment.last_end_time = datetime.utcnow().isoformat()
             return self.experiment_operations.create_or_update(experiment)
 
-    def _run_node(self, node, experiment, run_dict) -> Run:
+    def _run_node(self, node, experiment, context, run_dict) -> Run:
         if node.type == ExperimentNodeType.FLOW:
-            return self._run_flow_node(node, experiment, run_dict)
+            return self._run_flow_node(node, experiment, context, run_dict)
         elif node.type == ExperimentNodeType.COMMAND:
-            return self._run_command_node(node, experiment, run_dict)
+            return self._run_command_node(node, experiment, context, run_dict)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
-    def _run_flow_node(self, node, experiment, run_dict):
+    def _run_flow_node(self, node, experiment, context, run_dict):
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        node_context = context.get_node_context(node.name, is_flow=True, test=False)
         run = ExperimentRun(
             node_name=node.name,
             experiment=experiment,
             experiment_runs=run_dict,
-            # Use node name as prefix for run name?
-            name=f"{node.name}_attempt{timestamp}",
+            name=context.node_name_to_id[node.name],
             display_name=node.display_name or node.name,
             column_mapping=node.inputs,
             variant=node.variant,
             flow=node.path,
             connections=node.connections,
-            environment_variables=node.environment_variables,
+            environment_variables={**node.environment_variables, **node_context},
             # Config run output path to experiment output folder
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
         )
         logger.debug(f"Creating run {run.name}")
         return self.run_submitter.submit(run)
 
-    def _run_command_node(self, node, experiment, run_dict):
+    def _run_command_node(self, node, experiment, context, run_dict):
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        node_context = context.get_node_context(node.name, is_flow=False, test=False)
         run = ExperimentRun(
             type=RunTypes.COMMAND,
             node_name=node.name,
             experiment=experiment,
             experiment_runs=run_dict,
-            name=f"{node.name}_attempt{timestamp}",
+            name=context.node_name_to_id[node.name],
             display_name=node.display_name or node.name,
             column_mapping=node.inputs,
             # Use command code path as flow path
             flow=node.code,
             outputs=node.outputs,
             command=node.command,
-            environment_variables=node.environment_variables,
+            environment_variables={**node.environment_variables, **node_context},
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
         )
         logger.debug(f"Creating run {run.name}")
         return self.command_submitter.submit(run)
 
 
-class ExperimentTemplateTestContext:
+class ExperimentTemplateContext:
+    def __init__(self, template: ExperimentTemplate, environment_variables=None):
+        """Context for experiment template.
+        :param template: Template object to get definition of experiment.
+        :param environment_variables: Environment variables specified for test.
+        """
+        self.template = template
+        self.environment_variables = environment_variables or {}
+        self._experiment_context = self._get_experiment_context()
+        # Generate line run id for node
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
+        self.node_name_to_referenced_id = self._prepare_referenced_ids()
+
+    def _prepare_referenced_ids(self):
+        """Change name: [referenced_name] to name: [referenced_id]."""
+        edges = ExperimentHelper.get_experiment_node_edges(self.template.nodes)
+        result = {
+            name: [self.node_name_to_id[referenced_name] for referenced_name in edges] for name, edges in edges.items()
+        }
+        logger.debug(f"Resolved node name to id mapping: {self.node_name_to_id}, referenced id mapping {result}.")
+        return result
+
+    def _get_experiment_context(self):
+        """Get the experiment context required for trace."""
+        if not self.template._source_path:
+            return {}
+        return {ExperimentContextKey.EXPERIMENT: Path(self.template._source_path).resolve().absolute().as_posix()}
+
+    def get_node_context(self, node_name, is_flow, test=False):
+        """Get the context for a node."""
+        node_context = {**self._experiment_context}
+        referenced_key = ExperimentContextKey.REFERENCED_LINE_RUN_ID if test else ExperimentContextKey.REFERENCED_RUN_ID
+        referenced_ids = self.node_name_to_referenced_id.get(node_name, [])
+        # Add reference context only for flow node
+        if referenced_ids and is_flow:
+            node_context[referenced_key] = next(iter(referenced_ids))
+        global_context = os.environ.get(PF_TRACE_CONTEXT)
+        # Expected global context: {"endpoint": "..", "attributes": {..}}
+        global_context = json.loads(global_context) if global_context else {"endpoint": "", "attributes": {}}
+        global_context["attributes"].update(node_context)
+        return {PF_TRACE_CONTEXT: json.dumps(global_context)}
+
+
+class ExperimentTemplateTestContext(ExperimentTemplateContext):
     def __init__(self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None):
         """
         Test context for experiment template.
@@ -216,10 +267,9 @@ class ExperimentTemplateTestContext:
         :param environment_variables: Environment variables specified for test.
         :param output_path: The custom output path.
         """
-        self.template = template
+        super().__init__(template, environment_variables)
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
-        self.environment_variables = environment_variables or {}
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
         self.test_inputs = {input.name: input.default for input in template.inputs}
         # TODO: Update session part after test session is supported
@@ -312,22 +362,35 @@ class ExperimentHelper:
         return resolved_mapping
 
     @staticmethod
+    def _is_node_reference(value):
+        """Check if value is a node reference."""
+        return (
+            isinstance(value, str)
+            and value.startswith("${")
+            and not value.startswith("${data.")
+            and not value.startswith("${inputs.")
+        )
+
+    @staticmethod
+    def _prepare_single_node_edges(node):
+        """Prepare single node name to referenced node name edges mapping."""
+        node_names = set()
+        for input_value in node.inputs.values():
+            if not isinstance(input_value, str):
+                continue
+            if ExperimentHelper._is_node_reference(input_value):
+                referenced_node_name = input_value.split(".")[0].replace("${", "")
+                node_names.add(referenced_node_name)
+        return node_names
+
+    @staticmethod
+    def get_experiment_node_edges(nodes):
+        """Get experiment node edges mapping."""
+        return {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
+
+    @staticmethod
     def resolve_nodes_to_execute(experiment, start_nodes=None):
         """Resolve node to execute and ensure nodes order in experiment."""
-
-        def _prepare_single_node_edges(node):
-            node_names = set()
-            for input_value in node.inputs.values():
-                if not isinstance(input_value, str):
-                    continue
-                if (
-                    input_value.startswith("${")
-                    and not input_value.startswith("${data.")
-                    and not input_value.startswith("${inputs.")
-                ):
-                    referenced_node_name = input_value.split(".")[0].replace("${", "")
-                    node_names.add(referenced_node_name)
-            return node_names
 
         def _remove_nodes_from_active_edges(nodes_to_remove):
             for node in nodes_to_remove:
@@ -352,7 +415,7 @@ class ExperimentHelper:
         # Perform topological sort to ensure nodes order
         nodes = experiment.nodes
         resolved_nodes, start_nodes = [], start_nodes or []
-        edges = {node.name: _prepare_single_node_edges(node) for node in nodes}
+        edges = {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
         active_edges = copy.deepcopy(edges)
         # If start nodes specified, preprocessing them.
         _remove_nodes_from_active_edges(start_nodes)
