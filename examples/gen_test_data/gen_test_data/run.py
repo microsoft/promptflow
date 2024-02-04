@@ -162,7 +162,7 @@ def run_cloud(
                 documents_folder=data_input, chunk_size=chunk_size
             ).outputs.document_node_output
         )
-        flow_node = load_component(flow_yml_path)(
+        flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_flow"}])(
             data=data,
             text_chunk="${data.text_chunk}"
         )
