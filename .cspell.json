@@ -169,7 +169,8 @@
     "otel",
     "OTLP",
     "spawnv",
-    "arxiv"
+    "arxiv",
+    "autogen"
   ],
   "flagWords": [
     "Prompt Flow"
