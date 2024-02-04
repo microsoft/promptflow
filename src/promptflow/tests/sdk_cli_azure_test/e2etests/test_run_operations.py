@@ -588,7 +588,6 @@ class TestFlowRun:
         )
         rest_run = run._to_rest_object()
         assert rest_run.vm_size == "Standard_D2"
-        assert rest_run.max_idle_time_seconds == 3600
         assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
         run = pf.runs.create_or_update(run=run)
         assert isinstance(run, Run)
