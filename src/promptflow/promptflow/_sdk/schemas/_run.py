@@ -30,7 +30,6 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
     """Schema for resources."""
 
     instance_type = fields.Str()
-    idle_time_before_shutdown_minutes = fields.Int()
     # compute instance name for session usage
     compute = fields.Str()
 
