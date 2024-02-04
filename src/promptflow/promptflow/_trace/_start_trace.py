@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import os
 import typing
 import uuid
@@ -15,6 +15,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from promptflow._constants import SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._constants import PF_TRACE_CONTEXT
 from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -49,10 +50,13 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
             operation_context._add_otel_attributes(attr_key, attr_value)
 
     # prompt flow related, retrieve `experiment` and `referenced.line_run_id`
-    experiment = os.environ.get(ExperimentContextKey.EXPERIMENT, None)
+    env_trace_context = os.environ.get(PF_TRACE_CONTEXT, None)
+    _logger.debug("Read trace context from environment: %s", env_trace_context)
+    env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
+    experiment = env_attributes.get(ExperimentContextKey.EXPERIMENT, None)
     if experiment is not None:
         operation_context._add_otel_attributes(SpanAttributeFieldName.EXPERIMENT, experiment)
-    ref_line_run_id = os.environ.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
+    ref_line_run_id = env_attributes.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
     if ref_line_run_id is not None:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 

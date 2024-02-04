@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import uuid
 from pathlib import Path
 
 import pytest
@@ -118,11 +119,13 @@ class TestExperiment:
             template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
             target_flow_path = FLOW_ROOT / "web_classification" / "flow.dag.yaml"
             client = PFClient()
+            session = str(uuid.uuid4())
             # Test with inputs
             result = client.flows.test(
                 target_flow_path,
                 experiment=template_path,
                 inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                session=session,
             )
             _assert_result(result)
             # Assert line run id is set by executor when running test
@@ -136,6 +139,9 @@ class TestExperiment:
             assert expected_output_path.resolve().exists()
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+            # Assert session exists
+            line_runs = client._traces.list_line_runs(session_id=session)
+            assert len(line_runs) > 0
             # Test with default data and custom path
             expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
             result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)

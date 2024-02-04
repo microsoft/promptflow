@@ -77,11 +77,21 @@ class FlowOperations(TelemetryMixin):
         :rtype: dict
         """
         experiment = kwargs.pop("experiment", None)
+        session = kwargs.pop("session", None)
         output_path = kwargs.get("output_path", None)
-        if Configuration.get_instance().is_internal_features_enabled() and experiment:
-            return self._client._experiments._test(
-                flow=flow, inputs=inputs, environment_variables=environment_variables, experiment=experiment, **kwargs
-            )
+        if Configuration.get_instance().is_internal_features_enabled():
+            from promptflow._trace._start_trace import start_trace
+
+            logger.debug("Starting trace for flow test...")
+            start_trace(session=session)
+            if experiment:
+                return self._client._experiments._test(
+                    flow=flow,
+                    inputs=inputs,
+                    environment_variables=environment_variables,
+                    experiment=experiment,
+                    **kwargs,
+                )
 
         result = self._test(
             flow=flow,
