@@ -76,7 +76,12 @@ def call_func(func, args, kwargs):
             obj = RecordStorage.get_instance().get_record(input_dict)
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
-            obj = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
+            res = None
+            try:
+                res = func(*args, **kwargs)
+            except Exception as e:
+                RecordStorage.get_instance().set_record(input_dict, e)
+            obj = RecordStorage.get_instance().set_record(input_dict, res)
     elif is_live():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
     return obj

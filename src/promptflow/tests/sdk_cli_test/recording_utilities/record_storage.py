@@ -2,13 +2,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import hashlib
+import importlib
 import json
 import os
 import shelve
+import traceback
 from pathlib import Path
 from typing import Dict, Iterator, Union
 
 from filelock import FileLock
+from openai import NotFoundError
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.exceptions import PromptflowException
@@ -185,7 +188,7 @@ class RecordCache:
             return item
 
     @staticmethod
-    def _parse_output_generator(output):
+    def _parse_output(output):
         """
         Special handling for generator type. Since pickle will not work for generator.
         Returns the real list for reocrding, and create a generator for original output.
@@ -224,9 +227,17 @@ class RecordCache:
             output_generator = generator()
             output_type = "generator"
         else:
-            output_value = output
+            output_value = {
+                "module": output.__class__.__module__,
+                "message": str(output),
+                "type": type(output).__name__,
+                "args": output.args,
+                "traceback": traceback.format_exc(),
+                "response": getattr(output, "response", None),
+                "body": getattr(output, "body", None),
+            }
             output_generator = None
-            output_type = type(output).__name__
+            output_type = "Exception"
         return output_value, output_generator, output_type
 
     @staticmethod
@@ -286,6 +297,25 @@ class RecordCache:
         output_type = line_record_pointer["output_type"]
         if "generator" in output_type:
             return RecordCache._create_output_generator(output, output_type)
+        elif "Exception" in output_type:
+            # Dynamically import the module
+            module = importlib.import_module(output["module"])
+
+            # Get the exception class
+            exception_class = getattr(module, output["type"], None)
+
+            if exception_class is None:
+                raise ValueError(f"Exception type {output['type']} not found")
+
+            # Reconstruct the exception
+            # Check if the exception class requires specific keyword arguments
+            if exception_class is NotFoundError:
+                exception_instance = exception_class(
+                    output["message"], response=output["response"], body=output["body"]
+                )
+            else:
+                exception_instance = exception_class(*output["args"])
+            raise exception_instance
         else:
             return output
 
@@ -306,7 +336,7 @@ class RecordCache:
         # filter args, object at will not hash
         input_dict = self._recursive_create_hashable_args(input_dict)
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
-        output_value, output_generator, output_type = RecordCache._parse_output_generator(output)
+        output_value, output_generator, output_type = RecordCache._parse_output(output)
 
         try:
             line_record_pointer = self.file_records_pointer[hash_value]
@@ -323,6 +353,8 @@ class RecordCache:
             # no writeback
             if "generator" in output_type:
                 return output_generator
+            elif output_type == "Exception":
+                raise output_value
             else:
                 return output_value
         else:
@@ -336,6 +368,8 @@ class RecordCache:
 
             if "generator" in output_type:
                 return output_generator
+            elif output_type == "Exception":
+                raise output_value
             else:
                 return output_value
 
@@ -421,7 +455,7 @@ class Counter:
         Just count how many tokens are calculated. Different from
         openai_metric_calculator, this is directly returned from AOAI.
         """
-        output_value, output_generator, output_type = RecordCache._parse_output_generator(obj)
+        output_value, output_generator, output_type = RecordCache._parse_output(obj)
         if "generator" in output_type:
             count = len(output_value)
         elif hasattr(output_value, "usage") and output_value.usage and output_value.usage.total_tokens:
