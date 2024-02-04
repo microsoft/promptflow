@@ -5,6 +5,7 @@
 
 ### Features Added
 
+- [SDK/CLI][azure] Support specify compute instance as session compute in run.yaml
 
 ### Bugs Fixed
 
@@ -15,6 +16,7 @@
 ### Improvements
 
 - [SDK/CLI] For `pf run delete`, `pf connection delete`, introducing an option to skip confirmation prompts.
+- [SDK/CLI] Move pfs extra dependency to required dependency.
 
 
 ## 1.4.0 (2024.01.22)
@@ -24,6 +26,7 @@
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+- [Tool] InputSetting of tool supports passing undefined configuration.
 - [SDK/CLI][azure] Switch automatic runtime's session provision to system wait.
 - [SDK/CLI] Add `--skip-open-browser` option to `pf flow serve` to skip opening browser.
 - [SDK/CLI][azure] Support submit flow to sovereign cloud.

@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+
 class FlowDataCollector:
     """FlowDataCollector is used to collect flow data via MDC for monitoring."""
 

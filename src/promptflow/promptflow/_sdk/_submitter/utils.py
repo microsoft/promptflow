@@ -256,12 +256,12 @@ class SubmitterHelper:
         return list(connection_names)
 
     @classmethod
-    def load_and_resolve_environment_variables(cls, flow: Flow, environment_variables: dict, client=None):
-        environment_variables = ExecutableFlow.load_env_variables(
-            flow_file=flow.path, working_dir=flow.code, environment_variables_overrides=environment_variables
+    def load_and_resolve_environment_variables(cls, flow: Flow, environment_variable_overrides: dict, client=None):
+        environment_variable_overrides = ExecutableFlow.load_env_variables(
+            flow_file=flow.path, working_dir=flow.code, environment_variables_overrides=environment_variable_overrides
         )
-        cls.resolve_environment_variables(environment_variables, client)
-        return environment_variables
+        cls.resolve_environment_variables(environment_variable_overrides, client)
+        return environment_variable_overrides
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):

@@ -75,7 +75,7 @@ class RunSubmitter:
     def _submit_bulk_run(
         self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
     ) -> dict:
-        logger.info(f"Submitting run {run.name}, reach logs at {local_storage.logger.file_path}.")
+        logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}.")
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
             connections = []
@@ -85,7 +85,7 @@ class RunSubmitter:
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
-            flow=flow, environment_variables=run.environment_variables
+            flow=flow, environment_variable_overrides=run.environment_variables
         )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 

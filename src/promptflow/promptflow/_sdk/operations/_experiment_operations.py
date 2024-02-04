@@ -1,7 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ListViewType
 from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError, ExperimentValueError
@@ -97,4 +98,27 @@ class ExperimentOperations(TelemetryMixin):
 
         if not isinstance(name, str):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        return ExperimentOrchestrator(self._client.runs, self).start(self.get(name), **kwargs)
+        return ExperimentOrchestrator(self._client).start(self.get(name), **kwargs)
+
+    def _test(
+        self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs
+    ):
+        """Test flow in experiment.
+
+        :param flow: Flow dag yaml file path.
+        :type flow: Union[Path, str]
+        :param experiment: Experiment yaml file path.
+        :type experiment: Union[Path, str]
+        :param inputs: Input parameters for flow.
+        :type inputs: dict
+        :param environment_variables: Environment variables for flow.
+        :type environment_variables: dict
+        """
+        from .._load_functions import _load_experiment_template
+        from .._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        experiment_template = _load_experiment_template(experiment)
+        output_path = kwargs.get("output_path", None)
+        return ExperimentOrchestrator(client=self._client).test(
+            flow, experiment_template, inputs, environment_variables, output_path=output_path
+        )

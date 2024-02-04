@@ -43,7 +43,7 @@ def mock_stream_chat(*args, **kwargs):
 def setup_mocks():
     patch_targets = {
         "openai.ChatCompletion.create": mock_stream_chat,
-        "openai.resources.chat.Completions.create": mock_stream_chat
+        "openai.resources.chat.Completions.create": mock_stream_chat,
     }
     for target, func in patch_targets.items():
         patcher = patch(target, func)
@@ -88,7 +88,8 @@ class TestExecutorTelemetry:
             assert isinstance(flow_result.output, dict)
             headers = json.loads(flow_result.output.get("answer", ""))
             assert "promptflow/" in headers.get("x-ms-useragent")
-            assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
+            # User-defined properties `scenario` is not set in headers
+            assert "ms-azure-ai-promptflow-scenario" not in headers
             assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Test.name
             assert headers.get("ms-azure-ai-promptflow-flow-id") == flow_result.run_info.flow_id
             assert headers.get("ms-azure-ai-promptflow-root-run-id") == flow_result.run_info.run_id
@@ -110,7 +111,7 @@ class TestExecutorTelemetry:
             assert run_info.output is not None
             headers = json.loads(run_info.output)
             assert "promptflow/" in headers.get("x-ms-useragent")
-            assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
+            assert "ms-azure-ai-promptflow-scenario" not in headers
             assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name
 
     def test_executor_openai_telemetry_with_batch_run(self, dev_connections):
@@ -124,6 +125,9 @@ class TestExecutorTelemetry:
         operation_context.clear()
         # Set user-defined properties `scenario` in context
         operation_context.scenario = "test"
+        operation_context.dummy_key = "dummy_value"
+        operation_context._tracking_keys = OperationContext._DEFAULT_TRACKING_KEYS
+        operation_context._tracking_keys.add("dummy_key")
 
         with enable_mock_in_process(mock_process_wrapper, mock_process_manager):
             run_id = str(uuid.uuid4())
@@ -141,7 +145,9 @@ class TestExecutorTelemetry:
             for line in outputs:
                 headers = json.loads(line.get("answer", ""))
                 assert "promptflow/" in headers.get("x-ms-useragent")
-                assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
+                assert "ms-azure-ai-promptflow-scenario" not in headers
                 assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
                 assert headers.get("ms-azure-ai-promptflow-flow-id") == "default_flow_id"
                 assert headers.get("ms-azure-ai-promptflow-root-run-id") == run_id
+                assert headers.get("ms-azure-ai-promptflow-batch-input-source") == "Data"
+                assert headers.get("ms-azure-ai-promptflow-dummy-key") == "dummy_value"
