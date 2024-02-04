@@ -119,6 +119,12 @@ class ExperimentOperations(TelemetryMixin):
 
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)
+        session = kwargs.get("session", None)
         return ExperimentOrchestrator(client=self._client).test(
-            flow, experiment_template, inputs, environment_variables, output_path=output_path
+            flow,
+            experiment_template,
+            inputs,
+            environment_variables,
+            output_path=output_path,
+            session=session,
         )

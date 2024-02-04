@@ -8,6 +8,7 @@ import uuid
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -77,6 +78,7 @@ def _start_pfs(pfs_port) -> None:
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
         if is_pfs_service_healthy(pfs_port) is True:
+            _logger.info(f"Service is already running on port {pfs_port}.")
             return
         else:
             command_args += ["--force"]
@@ -110,6 +112,8 @@ def _init_otel_trace_exporter(otlp_port: str) -> None:
     )
     trace_provider = TracerProvider(resource=resource)
     endpoint = f"http://localhost:{otlp_port}/v1/traces"
+    # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
+    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
     otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
     trace_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(trace_provider)
