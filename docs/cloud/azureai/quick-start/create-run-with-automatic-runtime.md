@@ -54,7 +54,7 @@ environment:
 ...
 ```
 
-Reference [Flow YAML Schema](../../reference/flow-yaml-schema-reference.md) for details.
+Reference [Flow YAML Schema](../../../reference/flow-yaml-schema-reference.md) for details.
 
 ## Customize automatic runtime
 

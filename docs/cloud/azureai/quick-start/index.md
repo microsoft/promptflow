@@ -1,10 +1,10 @@
 # Run prompt flow in Azure AI
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-Assuming you have learned how to create and run a flow following [Quick start](../../how-to-guides/quick-start.md). This guide will walk you through the main process of how to submit a promptflow run to [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+Assuming you have learned how to create and run a flow following [Quick start](../../../how-to-guides/quick-start.md). This guide will walk you through the main process of how to submit a promptflow run to [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
 Benefits of use Azure AI comparison to just run locally:
 - **Designed for team collaboration**: Portal UI is a better fix for sharing & presentation your flow and runs. And workspace can better organize team shared resources like connections.
@@ -83,7 +83,7 @@ pfazure run show-details -n my_first_cloud_run
 pfazure run visualize -n my_first_cloud_run
 ```
 
-More details can be found in [CLI reference: pfazure](../../reference/pfazure-command-reference.md)
+More details can be found in [CLI reference: pfazure](../../../reference/pfazure-command-reference.md)
 
 :::
 
@@ -155,16 +155,23 @@ pf.visualize(base_run)
 
 At the end of stream logs, you can find the `portal_url` of the submitted run, click it to view the run in the workspace.
 
-![c_0](../../media/cloud/azureml/local-to-cloud-run-webview.png)
+![c_0](../../../media/cloud/azureml/local-to-cloud-run-webview.png)
 
 ### Run snapshot of the flow with additional includes
 
-Flows that enabled [additional include](../../how-to-guides/develop-a-flow/referencing-external-files-or-folders-in-a-flow.md) files can also be submitted for execution in the workspace. Please note that the specific additional include files or folders will be uploaded and organized within the **Files** folder of the run snapshot in the cloud.
+Flows that enabled [additional include](../../../how-to-guides/develop-a-flow/referencing-external-files-or-folders-in-a-flow.md) files can also be submitted for execution in the workspace. Please note that the specific additional include files or folders will be uploaded and organized within the **Files** folder of the run snapshot in the cloud.
 
-![img](../../media/cloud/azureml/run-with-additional-includes.png)
+![img](../../../media/cloud/azureml/run-with-additional-includes.png)
 
 
 ## Next steps
 
 Learn more about:
-- [CLI reference: pfazure](../../reference/pfazure-command-reference.md)
+- [CLI reference: pfazure](../../../reference/pfazure-command-reference.md)
+
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+create-run-with-automatic-runtime
+```
