@@ -1171,8 +1171,8 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
         # Use sha256 convert host_name+system+machine to a fixed length string
         # and concatenate it after the mac address to ensure that the concatenated string is unique.
         system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
-        compute_inf_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
-        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_inf_hash))
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
     return None
 
 

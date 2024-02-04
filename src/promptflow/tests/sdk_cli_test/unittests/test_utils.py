@@ -500,5 +500,5 @@ class TestRetryUtils:
         mac_address = get_mac_address()
         host_name, system, machine = get_system_info()
         system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
-        compute_inf_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
-        assert str(uuid.uuid5(uuid.NAMESPACE_OID, compute_inf_hash)) == gen_uuid_by_compute_info()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        assert str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash)) == gen_uuid_by_compute_info()
