@@ -6,6 +6,7 @@ import string
 import traceback
 from enum import Enum
 from functools import cached_property
+from typing import Dict
 
 from azure.core.exceptions import HttpResponseError
 
@@ -299,7 +300,7 @@ class _ErrorInfo:
         return ErrorTarget.EXECUTOR
 
     @classmethod
-    def _module_target_map(cls) -> dict[str, ErrorTarget]:
+    def _module_target_map(cls) -> Dict[str, ErrorTarget]:
         return {
             "promptflow._sdk": ErrorTarget.CONTROL_PLANE_SDK,
             "promptflow._cli": ErrorTarget.CONTROL_PLANE_SDK,
