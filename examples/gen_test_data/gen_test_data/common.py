@@ -1,4 +1,5 @@
 import json
+import shutil
 import re
 import sys
 import time
@@ -8,6 +9,7 @@ from pathlib import Path
 from constants import DOCUMENT_NODE, TEXT_CHUNK
 
 from promptflow._utils.logger_utils import get_logger
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 
 
 def split_document(chunk_size, documents_folder, document_node_output):
@@ -126,6 +128,36 @@ def print_progress(log_file_path: str):
     finally:
         if pbar:
             pbar.close()
+
+
+def copy_flow_folder_and_set_node_inputs(copied_folder, flow_folder, node_inputs_override):
+    logger = get_logger("node_inputs_override")
+    logger.info("Overriding the values of node inputs in flag.dag.yaml...")
+    if not (Path(flow_folder) / "flow.dag.yaml").is_file():
+        raise ValueError(f"The file 'flag.dag.yaml' does not exist in {flow_folder}.")
+
+    if Path(copied_folder).exists():
+        shutil.rmtree(copied_folder)
+    shutil.copytree(flow_folder, copied_folder)
+
+    with open(Path(copied_folder) / "flow.dag.yaml", "r", encoding="utf-8") as f:
+        data = load_yaml(f)
+
+    if node_inputs_override and len(node_inputs_override) > 0:
+        # Update the YAML data according to the config dict
+        for node_name, inputs in node_inputs_override.items():
+            node = next((node for node in data['nodes'] if node['name'] == node_name), None)
+            if node is None:
+                raise ValueError(f"Node '{node_name}' not found in the flag.dag.yaml.")
+            for input_name, input_value in inputs.items():
+                if input_name not in node['inputs']:
+                    raise ValueError(f"Input '{input_name}' not found in node '{node_name}'.")
+
+                if not (input_value.startswith('<') and input_value.endswith('>')):
+                    node['inputs'][input_name] = input_value
+
+        with open(Path(copied_folder) / "flow.dag.yaml", 'w', encoding="utf-8") as f:
+            dump_yaml(data, f)
 
 
 def convert_to_abs_path(file_path: str) -> str:

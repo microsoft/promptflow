@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import time
 from datetime import datetime
 from pathlib import Path
@@ -13,8 +14,10 @@ CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
-from common import clean_data, convert_to_abs_path, count_non_blank_lines, print_progress, split_document  # noqa: E402
-from constants import DETAILS_FILE_NAME, TEXT_CHUNK  # noqa: E402
+from common import clean_data, count_non_blank_lines, \
+    split_document, copy_flow_folder_and_set_node_inputs, \
+    print_progress, convert_to_abs_path  # noqa: E402
+from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
 
 logger = get_logger("data.gen")
 
@@ -61,13 +64,13 @@ def get_batch_run_output(output_path: Path):
 
 
 def run_local(
-    documents_folder,
-    document_chunk_size,
-    document_nodes_file,
-    flow_folder,
-    flow_batch_run_size,
-    output_folder,
-    should_skip_split,
+        documents_folder,
+        document_chunk_size,
+        document_nodes_file,
+        flow_folder,
+        flow_batch_run_size,
+        output_folder,
+        should_skip_split,
 ):
     text_chunks_path = document_nodes_file
     output_folder = Path(output_folder) / datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
@@ -80,8 +83,9 @@ def run_local(
     run_name = batch_run_flow(
         flow_folder,
         text_chunks_path,
-        flow_batch_run_size,
+        flow_batch_run_size
     )
+
     run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
     print_progress(run_folder_path / "logs.txt")
     test_data_set = get_batch_run_output(run_folder_path / "outputs.jsonl")
@@ -97,21 +101,21 @@ def run_local(
 
 
 def run_cloud(
-    documents_folder,
-    document_chunk_size,
-    document_nodes_file,
-    flow_folder,
-    subscription_id,
-    resource_group,
-    workspace_name,
-    aml_cluster,
-    prs_instance_count,
-    prs_mini_batch_size,
-    prs_max_concurrency_per_instance,
-    prs_max_retry_count,
-    prs_run_invocation_time,
-    prs_allowed_failed_count,
-    should_skip_split,
+        documents_folder,
+        document_chunk_size,
+        document_nodes_file,
+        flow_folder,
+        subscription_id,
+        resource_group,
+        workspace_name,
+        aml_cluster,
+        prs_instance_count,
+        prs_mini_batch_size,
+        prs_max_concurrency_per_instance,
+        prs_max_retry_count,
+        prs_run_invocation_time,
+        prs_allowed_failed_count,
+        should_skip_split,
 ):
     # lazy import azure dependencies
     try:
@@ -138,16 +142,16 @@ def run_cloud(
         ]
     )
     def gen_test_data_pipeline(
-        data_input: V2Input,
-        flow_yml_path: str,
-        should_skip_doc_split: bool,
-        chunk_size=1024,
-        instance_count=1,
-        mini_batch_size=1,
-        max_concurrency_per_instance=2,
-        max_retry_count=3,
-        run_invocation_time=600,
-        allowed_failed_count=-1,
+            data_input: V2Input,
+            flow_yml_path: str,
+            should_skip_doc_split: bool,
+            chunk_size=1024,
+            instance_count=1,
+            mini_batch_size=1,
+            max_concurrency_per_instance=2,
+            max_retry_count=3,
+            run_invocation_time=600,
+            allowed_failed_count=-1,
     ):
         from components import clean_data_component, split_document_component
 
@@ -160,11 +164,7 @@ def run_cloud(
         )
         flow_node = load_component(flow_yml_path)(
             data=data,
-            text_chunk="${data.text_chunk}",
-            # connections={
-            #     key: {"connection": value["connection"].format(connection_name=connection_name)}
-            #     for key, value in CONNECTIONS_TEMPLATE.items()
-            # },
+            text_chunk="${data.text_chunk}"
         )
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
@@ -234,6 +234,7 @@ if __name__ == "__main__":
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
+    parser.add_argument("--node_inputs_override", type=json.loads, help="The inputs need to override")
     # Configs for local
     parser.add_argument("--output_folder", type=str, help="Output folder path.")
     # Configs for cloud
@@ -252,58 +253,65 @@ if __name__ == "__main__":
         "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
     )
     args = parser.parse_args()
+    copied_flow_folder = args.flow_folder + "_" + time.strftime("%b-%d-%Y-%H-%M-%S") + "_temp"
 
-    should_skip_split_documents = False
-    document_nodes_file = convert_to_abs_path(args.document_nodes_file)
-    documents_folder = convert_to_abs_path(args.documents_folder)
-    flow_folder = convert_to_abs_path(args.flow_folder)
-    output_folder = convert_to_abs_path(args.output_folder)
+    try:
+        should_skip_split_documents = False
+        document_nodes_file = convert_to_abs_path(args.document_nodes_file)
+        documents_folder = convert_to_abs_path(args.documents_folder)
+        flow_folder = convert_to_abs_path(args.flow_folder)
+        output_folder = convert_to_abs_path(args.output_folder)
 
-    if document_nodes_file and Path(document_nodes_file).is_file():
-        should_skip_split_documents = True
-    elif not documents_folder or not Path(documents_folder).is_dir():
-        parser.error(
-            "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
-            f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
-        )
+        if document_nodes_file and Path(document_nodes_file).is_file():
+            should_skip_split_documents = True
+        elif not documents_folder or not Path(documents_folder).is_dir():
+            parser.error(
+                "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
+                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
+            )
 
-    if args.cloud:
-        logger.info("Start to generate test data at cloud...")
-    else:
-        logger.info("Start to generate test data at local...")
+        if args.cloud:
+            logger.info("Start to generate test data at cloud...")
+        else:
+            logger.info("Start to generate test data at local...")
 
-    if should_skip_split_documents:
-        logger.info(
-            "Skip step 1 'Split documents to document nodes' as received document nodes from "
-            f"input file path '{document_nodes_file}'."
-        )
-        logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
+        if should_skip_split_documents:
+            logger.info(
+                "Skip step 1 'Split documents to document nodes' as received document nodes from "
+                f"input file path '{document_nodes_file}'."
+            )
+            logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
 
-    if args.cloud:
-        run_cloud(
-            documents_folder,
-            args.document_chunk_size,
-            document_nodes_file,
-            flow_folder,
-            args.subscription_id,
-            args.resource_group,
-            args.workspace_name,
-            args.aml_cluster,
-            args.prs_instance_count,
-            args.prs_mini_batch_size,
-            args.prs_max_concurrency_per_instance,
-            args.prs_max_retry_count,
-            args.prs_run_invocation_time,
-            args.prs_allowed_failed_count,
-            should_skip_split_documents,
-        )
-    else:
-        run_local(
-            documents_folder,
-            args.document_chunk_size,
-            document_nodes_file,
-            flow_folder,
-            args.flow_batch_run_size,
-            output_folder,
-            should_skip_split_documents,
-        )
+        copy_flow_folder_and_set_node_inputs(copied_flow_folder, args.flow_folder, args.node_inputs_override)
+
+        if args.cloud:
+            run_cloud(
+                documents_folder,
+                args.document_chunk_size,
+                document_nodes_file,
+                copied_flow_folder,
+                args.subscription_id,
+                args.resource_group,
+                args.workspace_name,
+                args.aml_cluster,
+                args.prs_instance_count,
+                args.prs_mini_batch_size,
+                args.prs_max_concurrency_per_instance,
+                args.prs_max_retry_count,
+                args.prs_run_invocation_time,
+                args.prs_allowed_failed_count,
+                should_skip_split_documents,
+            )
+        else:
+            run_local(
+                documents_folder,
+                args.document_chunk_size,
+                document_nodes_file,
+                copied_flow_folder,
+                args.flow_batch_run_size,
+                output_folder,
+                should_skip_split_documents,
+            )
+    finally:
+        if os.path.exists(copied_flow_folder):
+            shutil.rmtree(copied_flow_folder)
