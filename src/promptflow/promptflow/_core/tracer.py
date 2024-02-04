@@ -256,15 +256,12 @@ def enrich_span_with_context(span):
 
 def enrich_span_with_trace(span, trace):
     try:
-        operation_context = OperationContext.get_instance()
         span.set_attributes(
             {
                 "framework": "promptflow",
                 "span_type": trace.type.value,
                 "function": trace.name,
                 "node_name": get_node_name_from_context(),
-                "flow_id": operation_context.get("flow-id", ""),
-                "root_run_id": operation_context.get("root-run-id", ""),
             }
         )
         enrich_span_with_context(span)
