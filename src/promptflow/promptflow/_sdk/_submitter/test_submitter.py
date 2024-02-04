@@ -86,6 +86,8 @@ class TestSubmitter:
         self._within_init_context = False
 
         self._generator_returned = False
+        # this will be set only if a new execution service is started within the init context
+        self._occupied_port: Optional[str] = None
 
     @property
     def executor_proxy(self) -> AbstractExecutorProxy:
@@ -205,6 +207,7 @@ class TestSubmitter:
         environment_variables: Optional[dict] = None,
         stream_log: bool = True,
         output_path: Optional[str] = None,
+        port: Optional[int] = None,
     ):
         """
         Create/Occupy dependent resources to execute the test within the context.
@@ -220,6 +223,10 @@ class TestSubmitter:
         : type stream_log: bool
         : param output_path: output path.
         : type output_path: str
+        : param port: port for a started execution service. If specified, executor proxy will reuse the service
+            instead of starting a new one; If not specified, executor proxy will start a new service. Applicable for
+            CSharp flow only for now.
+        : type port: str
         : return: TestSubmitter instance.
         : rtype: TestSubmitter
         """
@@ -265,14 +272,17 @@ class TestSubmitter:
 
                 # TODO: set up executor proxy for all languages
                 if self.flow.language == FlowLanguage.CSharp:
-                    self._executor_proxy = async_run_allowing_running_loop(
+                    executor_proxy: CSharpExecutorProxy = async_run_allowing_running_loop(
                         CSharpExecutorProxy.create,
                         self.flow.path,
                         self.flow.code,
                         connections=self._connections,
                         storage=self._storage,
                         log_path=log_path,
+                        port=port,
                     )
+                    self._occupied_port = executor_proxy.port
+                    self._executor_proxy = executor_proxy
 
                 try:
                     yield self

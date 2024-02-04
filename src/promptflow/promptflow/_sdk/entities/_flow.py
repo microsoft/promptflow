@@ -345,8 +345,11 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if self.language == FlowLanguage.CSharp:
-            with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
+            # TODO: this is still wired, need to refactor
+            port_to_reuse = getattr(self, "_port_to_reuse", None)
+            with TestSubmitter(flow=self, flow_context=self.context).init(port=port_to_reuse) as submitter:
                 result = submitter.flow_test(inputs=inputs, enable_stream_output=self.context.streaming)
+                self._port_to_reuse = submitter._occupied_port
                 return result
         else:
             invoker = FlowContextResolver.resolve(flow=self)
