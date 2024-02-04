@@ -8,59 +8,40 @@ from promptflow import tool
 # Please update the function name/signature per need
 @tool
 def my_python_tool(
-    question_type: str,
     text_chunk: str,
     text_chunk_validation_res: ValidationResult = None,
     validate_question_output: dict = None,
     validate_suggested_answer_output: dict = None,
 ) -> dict:
-    generated_question = validate_question_output["question"]
     question_validation_res = validate_question_output["validation_res"]
 
     generated_suggested_answer = validate_suggested_answer_output["suggested_answer"]
     suggested_answer_validation_res = validate_suggested_answer_output["validation_res"]
 
     is_generation_success = generated_suggested_answer != ""
-    is_text_chunk_valid = text_chunk_validation_res.pass_validation if text_chunk_validation_res else None
-    is_seed_question_valid = question_validation_res.pass_validation if question_validation_res else None
+    is_text_chunk_valid = text_chunk_validation_res["pass_validation"] if text_chunk_validation_res else None
+    is_seed_question_valid = question_validation_res["pass_validation"] if question_validation_res else None
     is_suggested_answer_valid = (
-        suggested_answer_validation_res.pass_validation if suggested_answer_validation_res else None
+        suggested_answer_validation_res["pass_validation"] if suggested_answer_validation_res else None
     )
 
     failed_step = ""
-    failed_reason = ""
     if not is_generation_success:
         if is_text_chunk_valid is False:
             failed_step = ValidateObj.TEXT_CHUNK
-            failed_reason = text_chunk_validation_res.reason
         elif is_seed_question_valid is False:
             failed_step = ValidateObj.QUESTION
-            failed_reason = question_validation_res.reason
         elif is_suggested_answer_valid is False:
             failed_step = ValidateObj.SUGGESTED_ANSWER
-            failed_reason = suggested_answer_validation_res.reason
 
     return {
         # TODO: support more question types like multi-context etc.
         # "question_type": question_type,
         "text_chunk": text_chunk,
-        "validation_summary": {
-            "success": is_generation_success,
-            "failed_step": failed_step
-        },
+        "validation_summary": {"success": is_generation_success, "failed_step": failed_step},
         "validation_details": {
-            ValidateObj.TEXT_CHUNK: {
-                "score": text_chunk_validation_res.score if text_chunk_validation_res else None,
-                "success": is_text_chunk_valid,
-                "reason": text_chunk_validation_res.reason if text_chunk_validation_res else None,
-            },
-            ValidateObj.QUESTION: {
-                "success": is_seed_question_valid,
-                "reason": question_validation_res.reason if question_validation_res else None,
-            },
-            ValidateObj.SUGGESTED_ANSWER: {
-                "success": is_suggested_answer_valid,
-                "reason": suggested_answer_validation_res.reason if suggested_answer_validation_res else None,
-            },
+            ValidateObj.TEXT_CHUNK: text_chunk_validation_res,
+            ValidateObj.QUESTION: question_validation_res,
+            ValidateObj.SUGGESTED_ANSWER: suggested_answer_validation_res,
         },
     }
