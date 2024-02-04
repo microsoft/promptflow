@@ -1,17 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import os
 import socket
 import subprocess
-import tempfile
 import uuid
 from pathlib import Path
 from typing import Optional
 
 from promptflow._core._errors import UnexpectedError
-from promptflow._sdk._constants import DEFAULT_ENCODING
-from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -26,20 +22,22 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         process: subprocess.Popen,
         port: str,
         working_dir: Path,
-        temp_dag_file: Optional[Path] = None,
         chat_output_name: Optional[str] = None,
     ):
         self._process = process
         self._port = port
+        self._chat_output_name = chat_output_name
         super().__init__(
             working_dir=working_dir,
         )
-        self._temp_dag_file = temp_dag_file
-        self.chat_output_name = chat_output_name
 
     @property
     def api_endpoint(self) -> str:
         return EXECUTOR_SERVICE_DOMAIN + self._port
+
+    @property
+    def chat_output_name(self) -> Optional[str]:
+        return self._chat_output_name
 
     @classmethod
     def _generate_flow_meta(cls, flow_file: str, assembly_folder: Path):
@@ -67,6 +65,22 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             )
 
     @classmethod
+    def get_outputs_definition(cls, flow_file: Path, working_dir: Path) -> dict:
+        from promptflow._utils.yaml_utils import load_yaml
+
+        flow_data = load_yaml(flow_file)
+        # TODO: no outputs definition for eager flow for now
+        if flow_data.get("entry", None) is not None:
+            return {}
+
+        # TODO: get this from self._get_flow_meta for both eager flow and non-eager flow then remove
+        #  dependency on flow_file and working_dir
+        from promptflow.contracts.flow import Flow as DataplaneFlow
+
+        dataplane_flow = DataplaneFlow.from_yaml(flow_file, working_dir=working_dir)
+        return dataplane_flow.outputs
+
+    @classmethod
     async def create(
         cls,
         flow_file: Path,
@@ -79,26 +93,8 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
-        chat_output_name = kwargs.pop("chat_output_name", None)
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
         init_error_file.touch()
-
-        assembly_folder = flow_file.parent
-        # TODO: should we change the interface to init the proxy (always pass entry for eager mode)?
-        if "entry" in kwargs:
-            fd, temp_dag_file = tempfile.mkstemp(suffix=".yaml", text=True)
-            os.write(fd, dump_yaml({"entry": kwargs["entry"], "path": flow_file.as_posix()}).encode(DEFAULT_ENCODING))
-            # need to close the fd manually, or it can't be used in subprocess
-            os.close(fd)
-            flow_file = Path(temp_dag_file)
-
-            # generate flow meta
-            cls._generate_flow_meta(
-                flow_file=temp_dag_file,
-                assembly_folder=assembly_folder,
-            )
-        else:
-            temp_dag_file = None
 
         process = subprocess.Popen(
             cls._construct_service_startup_command(
@@ -108,11 +104,19 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                 yaml_path=flow_file.as_posix(),
             )
         )
+        outputs_definition = cls.get_outputs_definition(flow_file, working_dir=working_dir)
+        chat_output_name = next(
+            filter(
+                lambda key: outputs_definition[key].is_chat_output,
+                outputs_definition.keys(),
+            ),
+            None,
+        )
         executor_proxy = cls(
             process=process,
             port=port,
-            temp_dag_file=temp_dag_file,
             working_dir=working_dir,
+            # TODO: remove this from the constructor after can always be inferred from flow meta?
             chat_output_name=chat_output_name,
         )
         try:
@@ -129,8 +133,6 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._process.kill()
-        if self._temp_dag_file and os.path.isfile(self._temp_dag_file):
-            Path(self._temp_dag_file).unlink()
 
     def _is_executor_active(self):
         """Check if the process is still running and return False if it has exited"""

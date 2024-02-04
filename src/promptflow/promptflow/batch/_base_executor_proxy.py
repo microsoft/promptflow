@@ -12,8 +12,9 @@ from typing import Any, Mapping, Optional
 import httpx
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
-from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, UnexpectedError
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported, UnexpectedError
 from promptflow._sdk._constants import FLOW_META_JSON, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
@@ -77,9 +78,24 @@ class AbstractExecutorProxy:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
+        enable_stream_output=False,
     ) -> LineResult:
         """Execute a line"""
         raise NotImplementedError()
+
+    def exec_line(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        enable_stream_output=False,
+    ) -> LineResult:
+        return async_run_allowing_running_loop(
+            self.exec_line_async,
+            inputs=inputs,
+            index=index,
+            run_id=run_id,
+        )
 
     async def exec_aggregation_async(
         self,
@@ -159,6 +175,12 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """
         raise NotImplementedError()
 
+    @property
+    def chat_output_name(self) -> Optional[str]:
+        """The name of the chat output in the line result. Return None if the bonded flow is not a chat flow."""
+        # TODO: implement this based on _get_flow_meta
+        return None
+
     def exec_line(
         self,
         inputs: Mapping[str, Any],
@@ -166,53 +188,54 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         enable_stream_output=False,
     ) -> LineResult:
+        if not enable_stream_output:
+            return super().exec_line(inputs, index, run_id)
+
         start_time = datetime.utcnow()
         # call execution api to get line results
         url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         headers = {"Accept": "text/event-stream"} if enable_stream_output else None
 
-        if enable_stream_output:
+        # TODO: always redirect to self.exec_line_async after we support stream output in async mode
+        if not enable_stream_output:
+            return async_run_allowing_running_loop(
+                self.exec_line_async,
+                inputs=inputs,
+                index=index,
+                run_id=run_id,
+                enable_stream_output=enable_stream_output,
+            )
 
-            def generator():
-                with httpx.Client() as client:
-                    with client.stream(
-                        "POST", url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers
-                    ) as response:
-                        if response.status_code != 200:
-                            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
-                            yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
-                        for line in response.iter_lines():
-                            chunk_data = json.loads(line)
-                            # only support one chat output for now
-                            yield LineResult.deserialize(chunk_data)
-
-            origin_generator = generator()
-            line_result = next(origin_generator)
-            if (
-                hasattr(self, "chat_output_name")
-                and self.chat_output_name
-                and self.chat_output_name in line_result.output
-            ):
-                first_chat_output = line_result.output[self.chat_output_name]
-
-                def final_generator():
-                    yield first_chat_output
-                    for output in origin_generator:
-                        yield output.output[self.chat_output_name]
-
-                line_result.output[self.chat_output_name] = final_generator()
-            return line_result
-        else:
+        def generator():
             with httpx.Client() as client:
-                response = client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
+                with client.stream("POST", url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers) as response:
+                    if response.status_code != 200:
+                        # TODO: a bug to fix
+                        run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
+                        yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
+                    for line in response.iter_lines():
+                        chunk_data = json.loads(line)
+                        # only support one chat output for now
+                        yield LineResult.deserialize(chunk_data)
 
-            # process the response
-            result = self._process_http_response(response)
-            if response.status_code != 200:
-                run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
-                return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
-            return LineResult.deserialize(result)
+        origin_generator = generator()
+        line_result = next(origin_generator)
+
+        if self.chat_output_name is None:
+            # TODO: do we support streaming output for non-chat flow and what to return if so?
+            return line_result
+
+        first_chat_output = line_result.output[self.chat_output_name]
+
+        def final_generator():
+            yield first_chat_output
+            for output in origin_generator:
+                yield output.output[self.chat_output_name]
+
+        line_result.output[self.chat_output_name] = final_generator()
+
+        return line_result
 
     async def exec_line_async(
         self,
@@ -221,25 +244,23 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         enable_stream_output=False,
     ) -> LineResult:
+        if enable_stream_output:
+            # Todo: update to async, will get no result in "async for" of final_generator function in async mode
+            raise NotSupported("Stream output is not supported in async mode for now")
+
         start_time = datetime.utcnow()
         # call execution api to get line results
         url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-        headers = {"Accept": "text/event-stream"} if enable_stream_output else None
 
-        if enable_stream_output:
-            # Todo: update to async, will get no result in "async for" of final_generator function in async mode
-            raise NotImplementedError()
-        else:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
-
-            # process the response
-            result = self._process_http_response(response)
-            if response.status_code != 200:
-                run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
-                return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
-            return LineResult.deserialize(result)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
+        # process the response
+        result = self._process_http_response(response)
+        if response.status_code != 200:
+            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
+            return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
+        return LineResult.deserialize(result)
 
     async def exec_aggregation_async(
         self,
