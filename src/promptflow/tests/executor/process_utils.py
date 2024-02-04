@@ -41,10 +41,6 @@ if "forkserver" in multiprocessing.get_all_start_methods():
     ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
 
-current_process_wrapper = _process_wrapper
-current_process_manager = create_spawned_fork_process_manager
-
-
 class BaseMockProcess:
     # Base class for the mock process; This class is mainly used as the placeholder for the target mocking logic
     def modify_target(self, target):
@@ -69,28 +65,24 @@ class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
         super().__init__(group, modified_target, *args, **kwargs)
 
 
+current_process_wrapper = None
+current_process_manager = None
+
+
 @contextlib.contextmanager
 def enable_mock_in_process(process_wrapper=None, process_manager=None):
     global current_process_wrapper, current_process_manager
-
+    original_process_wrapper = current_process_wrapper
+    original_process_manager = current_process_manager
+    # Set to the customized ones if provided
     if process_wrapper is not None:
         current_process_wrapper = process_wrapper
     if process_manager is not None:
         current_process_manager = process_manager
 
-    start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
-    original_process_class = {}
-    for start_method, MockProcessClass in start_methods_mocks.items():
-        if start_method in multiprocessing.get_all_start_methods():
-            original_process_class[start_method] = multiprocessing.get_context(start_method).Process
-            multiprocessing.get_context(start_method).Process = MockProcessClass
-            if start_method == multiprocessing.get_start_method():
-                multiprocessing.Process = MockProcessClass
     try:
         yield
     finally:
-        for start_method, MockProcessClass in start_methods_mocks.items():
-            if start_method in multiprocessing.get_all_start_methods():
-                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
-                if start_method == multiprocessing.get_start_method():
-                    multiprocessing.Process = original_process_class[start_method]
+        # Revert back to the original states
+        current_process_wrapper = original_process_wrapper
+        current_process_manager = original_process_manager
