@@ -4,7 +4,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-from flask import Blueprint, Flask, jsonify
+from flask import Blueprint, Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
@@ -67,5 +67,10 @@ def create_app():
                 asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v}),
                 formatted_exception.status_code,
             )
+
+        @app.before_request
+        def log_request_info():
+            app.logger.info("Headers: %s", request.headers)
+            app.logger.info("Body: %s", request.get_data())
 
     return app, api
