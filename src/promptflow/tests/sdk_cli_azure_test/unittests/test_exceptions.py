@@ -13,11 +13,11 @@ from promptflow.executor._errors import InvalidNodeReference
 FLOWS_DIR = "./tests/test_configs/flows/print_input_flow"
 
 
-def is_matching(str_a, str_b):
-    str_a = re.sub(r"line \d+", r"", str_a).replace("\n", "").replace(" ", "")
-    str_b = re.sub(r"line \d+", r"", str_b).replace("\n", "").replace(" ", "")
+def is_match_error_detail(expected_info, actual_info):
+    expected_info = re.sub(r"line \d+", r"", expected_info).replace("\n", "").replace(" ", "")
+    actual_info = re.sub(r"line \d+", r"", actual_info).replace("\n", "").replace(" ", "")
 
-    return str_a == str_b
+    return expected_info == actual_info
 
 
 @pytest.mark.unittest
@@ -33,7 +33,7 @@ class TestExceptions:
         assert error_type == "RunNotFoundError"
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
-        assert is_matching(
+        assert is_match_error_detail(
             "promptflow._sdk._orm.retry, line 43, "
             "return f(*args, **kwargs)\n"
             "promptflow._sdk._orm.run_info, line 142, "
@@ -57,7 +57,7 @@ class TestExceptions:
             "but received {value_type}. "
             "Please adjust the input value to match the expected format."
         )
-        assert is_matching(
+        assert is_match_error_detail(
             "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(\n", error_detail
         )
 
@@ -115,7 +115,7 @@ class TestExceptions:
             error_target == ErrorTarget.EXECUTOR
         )  # Default target is EXECUTOR due to the UserErrorException has no target.
         assert error_message == ""
-        assert is_matching(
+        assert is_match_error_detail(
             "The above exception was the direct cause of the following exception:\n"
             "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(\n",
             error_detail,
@@ -136,7 +136,7 @@ class TestExceptions:
             error_target == ErrorTarget.EXECUTOR
         )  # Default target is EXECUTOR due to the UserErrorException has no target.
         assert error_message == ""
-        assert is_matching(
+        assert is_match_error_detail(
             "The above exception was the direct cause of the following exception:\n"
             "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(\n",
             error_detail,
@@ -156,7 +156,7 @@ class TestExceptions:
         assert error_type == "Exception"
         assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
-        assert is_matching(
+        assert is_match_error_detail(
             "The above exception was the direct cause of the following exception:\n"
             "promptflow.executor.flow_validator, line 311, raise InvalidAggregationInput(\n",
             error_detail,
@@ -176,7 +176,7 @@ class TestExceptions:
         assert error_type == "Exception"
         assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
-        assert is_matching("The above exception was the direct cause of the following exception:\n"
+        assert is_match_error_detail("The above exception was the direct cause of the following exception:\n"
                            "promptflow.azure._pf_client, line 260, "
                            "return self.runs.create_or_update(run=run, **kwargs)\n"
                            "promptflow._sdk._telemetry.activity, line 245, return f(self, *args, **kwargs)\n"
@@ -195,7 +195,7 @@ class TestExceptions:
         assert error_type == "UserErrorException"
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
-        assert is_matching("promptflow.azure._pf_client, line 260, "
+        assert is_match_error_detail("promptflow.azure._pf_client, line 260, "
                            "return self.runs.create_or_update(run=run, **kwargs)\n"
                            "promptflow._sdk._telemetry.activity, line 245, "
                            "return f(self, *args, **kwargs)\n"
