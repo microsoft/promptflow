@@ -69,7 +69,9 @@ class TestExceptions:
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.SYSTEM_ERROR
         assert error_type == "HttpResponseError"
-        assert error_target == ErrorTarget.RUNTIME
+        assert (
+            error_target == ErrorTarget.EXECUTOR
+        )  # Default target is EXECUTOR due to the HttpResponseError has no target.
         assert error_message == ""
         assert error_detail == ""
 
@@ -93,7 +95,7 @@ class TestExceptions:
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == expected_error_category
         assert error_type == "Exception"
-        assert error_target == ErrorTarget.RUNTIME
+        assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
         assert error_detail == ""
 
@@ -109,7 +111,9 @@ class TestExceptions:
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.USER_ERROR
         assert error_type == "InvalidAggregationInput"
-        assert error_target == ErrorTarget.RUNTIME
+        assert (
+            error_target == ErrorTarget.EXECUTOR
+        )  # Default target is EXECUTOR due to the UserErrorException has no target.
         assert error_message == ""
         assert is_matching(
             "The above exception was the direct cause of the following exception:\n"
@@ -128,7 +132,9 @@ class TestExceptions:
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.USER_ERROR
         assert error_type == "InvalidAggregationInput"
-        assert error_target == ErrorTarget.RUNTIME
+        assert (
+            error_target == ErrorTarget.EXECUTOR
+        )  # Default target is EXECUTOR due to the UserErrorException has no target.
         assert error_message == ""
         assert is_matching(
             "The above exception was the direct cause of the following exception:\n"
@@ -148,7 +154,7 @@ class TestExceptions:
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.SYSTEM_ERROR
         assert error_type == "Exception"
-        assert error_target == ErrorTarget.RUNTIME
+        assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
         assert is_matching(
             "The above exception was the direct cause of the following exception:\n"
@@ -168,10 +174,10 @@ class TestExceptions:
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.SYSTEM_ERROR
         assert error_type == "Exception"
-        assert error_target == ErrorTarget.RUNTIME
+        assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
         assert is_matching(
-            'The above exception was the direct cause of the following exception:\n'
+            "The above exception was the direct cause of the following exception:\n"
             'promptflow._sdk._pf_client, line 119, raise FileNotFoundError(f"flow path {flow} does not exist")\n',
             error_detail,
         )
@@ -188,8 +194,7 @@ class TestExceptions:
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
         assert is_matching(
-            "promptflow._sdk._pf_client, " "line 120, "
-            'raise FileNotFoundError(f"flow path {flow} does not exist")\n',
+            "promptflow._sdk._pf_client, " "line 120, " 'raise FileNotFoundError(f"flow path {flow} does not exist")\n',
             error_detail,
         )
 
@@ -221,4 +226,3 @@ class TestExceptions:
         for module_name in module_target_map.keys():
             module = importlib.import_module(module_name)
             assert module.__name__ == module_name
-
