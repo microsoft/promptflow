@@ -4,7 +4,7 @@
 import os.path
 
 from dotenv import dotenv_values
-from marshmallow import fields, post_load, pre_load
+from marshmallow import RAISE, fields, post_load, pre_load
 
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
@@ -88,7 +88,8 @@ class RunSchema(YamlFileSchema):
     column_mapping = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()
-    resources = NestedField(ResourcesSchema)
+    # raise unknown exception for unknown fields in resources
+    resources = NestedField(ResourcesSchema, unknown=RAISE)
     run = fields.Str()
 
     # region: context
