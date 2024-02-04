@@ -2,8 +2,6 @@ import json
 import re
 from collections import namedtuple
 
-import numpy as np
-import numpy.testing as npt
 from numpy.random import default_rng
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -13,15 +11,13 @@ from promptflow.tools.openai import chat as openai_chat
 
 class QuestionType:
     SIMPLE = "simple"
-    REASONING = "reasoning"
-    CONDITIONAL = "conditional"
     # MULTI_CONTEXT = "multi_context"
 
 
 class ValidateObj:
-    QUESTION = "question"
-    TEXT_TRUNK = "text_trunk"
-    SUGGESTED_ANSWER = "suggested_answer"
+    QUESTION = "validate_question"
+    TEXT_CHUNK = "validate_text_chunk"
+    SUGGESTED_ANSWER = "validate_suggested_answer"
 
 
 class ResponseFormat:
@@ -31,7 +27,7 @@ class ResponseFormat:
 
 class ErrorMsg:
     INVALID_JSON_FORMAT = "Invalid json format. Response: {0}"
-    INVALID_TEXT_TRUNK = "Skipping generating seed question due to invalid text chunk: {0}"
+    INVALID_TEXT_CHUNK = "Skipping generating seed question due to invalid text chunk: {0}"
     INVALID_QUESTION = "Invalid seed question: {0}"
     INVALID_ANSWER = "Invalid answer: {0}"
 
@@ -41,9 +37,10 @@ ScoreResult = namedtuple("ScoreResult", ["score", "reason", "pass_validation"])
 
 
 def llm_call(
-    connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=16
+    connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=None
 ):
     response_format = "json_object" if response_format.lower() == "json" else response_format
+    # avoid unnecessary jinja2 template re-rendering and potential error.
     prompt = f"{{% raw %}}{prompt}{{% endraw %}}"
     if isinstance(connection, AzureOpenAIConnection):
         return aoai_chat(
@@ -75,9 +72,11 @@ def get_question_type(testset_distribution) -> str:
 
 
 def get_suggested_answer_validation_res(
-    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float, max_tokens: int
+    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float, max_tokens: int,
+    response_format: ResponseFormat = ResponseFormat.TEXT
 ):
-    rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens)
+    rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens,
+                   response_format=response_format)
     return retrieve_verdict_and_print_reason(
         rsp=rsp, validate_obj_name=ValidateObj.SUGGESTED_ANSWER, validate_obj=suggested_answer
     )
@@ -96,7 +95,7 @@ def get_question_validation_res(
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
 
 
-def get_text_trunk_score(
+def get_text_chunk_score(
     connection,
     model_or_deployment_name,
     prompt,
@@ -114,7 +113,7 @@ def get_text_trunk_score(
         # Extract the verdict and reason
         score = data["score"].lower()
         reason = data["reason"]
-        print(f"Score {ValidateObj.TEXT_TRUNK}: {score}\nReason: {reason}")
+        print(f"Score {ValidateObj.TEXT_CHUNK}: {score}\nReason: {reason}")
         try:
             score_float = float(score)
         except ValueError:
@@ -154,38 +153,3 @@ def _load_json_rsp(rsp: str):
         data = None
 
     return data
-
-
-def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
-    testset_distribution = {
-        QuestionType.SIMPLE: simple_ratio,
-        QuestionType.REASONING: reasoning_ratio,
-        QuestionType.CONDITIONAL: conditional_ratio,
-    }
-    npt.assert_almost_equal(1, sum(testset_distribution.values()), err_msg="Sum of distribution should be 1")
-    testset_distribution = dict(zip(testset_distribution.keys(), np.cumsum(list(testset_distribution.values()))))
-    return testset_distribution
-
-
-def generate_question(
-    connection,
-    model_or_deployment_name,
-    question_type,
-    seed_question,
-    reasoning_prompt: str = None,
-    conditional_prompt: str = None,
-    temperature: float = None,
-    max_tokens: int = None,
-):
-    if question_type == QuestionType.SIMPLE:
-        return seed_question
-    elif question_type == QuestionType.REASONING:
-        return llm_call(
-            connection, model_or_deployment_name, reasoning_prompt, temperature=temperature, max_tokens=max_tokens
-        )
-    elif question_type == QuestionType.CONDITIONAL:
-        return llm_call(
-            connection, model_or_deployment_name, conditional_prompt, temperature=temperature, max_tokens=max_tokens
-        )
-    else:
-        raise Exception("Invalid question type.")

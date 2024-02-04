@@ -14,7 +14,7 @@ def generate_suggested_answer(
     context: str,
     generate_suggested_answer_prompt: str,
     temperature: float = 1.0,
-    max_tokens: int = 512,
+    max_tokens: int = None,
 ):
     """
     Generates a suggested answer based on the given prompts and context information.
