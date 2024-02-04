@@ -129,5 +129,4 @@ def convert_to_abs_path(file_path: str) -> str:
         return str(path)
     else:
         abs = str(path.resolve())
-        print(f"Converting relative path to absolute: {abs}")
         return abs
