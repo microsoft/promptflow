@@ -176,13 +176,16 @@ class TestExceptions:
         assert error_type == "Exception"
         assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
-        assert is_match_error_detail("The above exception was the direct cause of the following exception:\n"
-                           "promptflow.azure._pf_client, line 260, "
-                           "return self.runs.create_or_update(run=run, **kwargs)\n"
-                           "promptflow._sdk._telemetry.activity, line 245, return f(self, *args, **kwargs)\n"
-                           "promptflow.azure.operations._run_operations, line 153, "
-                           "run._validate_for_run_create_operation()\n"
-                           "promptflow._sdk.entities._run, line 640, raise UserErrorException(\n", error_detail)
+        assert is_match_error_detail(
+            "The above exception was the direct cause of the following exception:\n"
+            "promptflow.azure._pf_client, line 260, "
+            "return self.runs.create_or_update(run=run, **kwargs)\n"
+            "promptflow._sdk._telemetry.activity, line 245, return f(self, *args, **kwargs)\n"
+            "promptflow.azure.operations._run_operations, line 153, "
+            "run._validate_for_run_create_operation()\n"
+            "promptflow._sdk.entities._run, line 640, raise UserErrorException(\n",
+            error_detail,
+        )
 
     def test_error_target_with_sdk(self, pf):
         ex = None
@@ -195,14 +198,17 @@ class TestExceptions:
         assert error_type == "UserErrorException"
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
-        assert is_match_error_detail("promptflow.azure._pf_client, line 260, "
-                           "return self.runs.create_or_update(run=run, **kwargs)\n"
-                           "promptflow._sdk._telemetry.activity, line 245, "
-                           "return f(self, *args, **kwargs)\n"
-                           "promptflow.azure.operations._run_operations, line 153, r"
-                           "un._validate_for_run_create_operation()\n"
-                           "promptflow._sdk.entities._run, line 640, "
-                           "raise UserErrorException(\n", error_detail)
+        assert is_match_error_detail(
+            "promptflow.azure._pf_client, line 260, "
+            "return self.runs.create_or_update(run=run, **kwargs)\n"
+            "promptflow._sdk._telemetry.activity, line 245, "
+            "return f(self, *args, **kwargs)\n"
+            "promptflow.azure.operations._run_operations, line 153, r"
+            "un._validate_for_run_create_operation()\n"
+            "promptflow._sdk.entities._run, line 640, "
+            "raise UserErrorException(\n",
+            error_detail,
+        )
 
     def test_error_target_with_executor(self):
         try:
