@@ -1,6 +1,6 @@
 import json
-import shutil
 import re
+import shutil
 import sys
 import time
 import typing as t
@@ -83,6 +83,7 @@ def count_non_blank_lines(file_path):
 
 def print_progress(log_file_path: str):
     from tqdm import tqdm
+
     logger = get_logger("data.gen")
     logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
     log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished (\d+) / (\d+) lines\.")
@@ -117,14 +118,18 @@ def print_progress(log_file_path: str):
 
                         break
                 elif time.time() - last_data_time > 300:
-                    logger.info("No new log line received for 5 minutes. Stop reading. "
-                                f"See the log file '{log_file_path}' for more details.")
+                    logger.info(
+                        "No new log line received for 5 minutes. Stop reading. "
+                        f"See the log file '{log_file_path}' for more details."
+                    )
                     break
                 else:
                     time.sleep(1)  # wait for 1 second if no new line is available
     except Exception as e:
-        raise Exception(f"Error occurred while printing batch run progress {e}. "
-                        f"See the log file '{log_file_path}' for more details.")
+        raise Exception(
+            f"Error occurred while printing batch run progress {e}. "
+            f"See the log file '{log_file_path}' for more details."
+        )
     finally:
         if pbar:
             pbar.close()
@@ -146,17 +151,17 @@ def copy_flow_folder_and_set_node_inputs(copied_folder, flow_folder, node_inputs
     if node_inputs_override and len(node_inputs_override) > 0:
         # Update the YAML data according to the config dict
         for node_name, inputs in node_inputs_override.items():
-            node = next((node for node in data['nodes'] if node['name'] == node_name), None)
+            node = next((node for node in data["nodes"] if node["name"] == node_name), None)
             if node is None:
                 raise ValueError(f"Node '{node_name}' not found in the flag.dag.yaml.")
             for input_name, input_value in inputs.items():
-                if input_name not in node['inputs']:
+                if input_name not in node["inputs"]:
                     raise ValueError(f"Input '{input_name}' not found in node '{node_name}'.")
 
-                if not (input_value.startswith('<') and input_value.endswith('>')):
-                    node['inputs'][input_name] = input_value
+                if not (input_value.startswith("<") and input_value.endswith(">")):
+                    node["inputs"][input_name] = input_value
 
-        with open(Path(copied_folder) / "flow.dag.yaml", 'w', encoding="utf-8") as f:
+        with open(Path(copied_folder) / "flow.dag.yaml", "w", encoding="utf-8") as f:
             dump_yaml(data, f)
 
 
@@ -167,6 +172,8 @@ def convert_to_abs_path(file_path: str) -> str:
     path = Path(file_path)
     if path.is_absolute():
         return str(path)
-    else:
+    elif path.exists():
         abs = str(path.resolve())
         return abs
+    else:
+        return file_path
