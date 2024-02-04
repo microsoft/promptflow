@@ -173,6 +173,8 @@ connection.json
 hello-world-proj/**
 # temp gen test data folder
 examples/gen_test_data/gen_test_data/*_temp
+# gen test data config
+examples/gen_test_data/config.ini
 # secrets
 **/connections.json
 

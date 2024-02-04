@@ -286,10 +286,10 @@ if __name__ == "__main__":
 
         if args.cloud:
             run_cloud(
-                args.documents_folder,
+                documents_folder,
                 args.document_chunk_size,
-                args.document_nodes_file,
-                copied_flow_folder,
+                document_nodes_file,
+                flow_folder,
                 args.subscription_id,
                 args.resource_group,
                 args.workspace_name,
@@ -304,12 +304,12 @@ if __name__ == "__main__":
             )
         else:
             run_local(
-                args.documents_folder,
+                documents_folder,
                 args.document_chunk_size,
-                args.document_nodes_file,
-                copied_flow_folder,
+                document_nodes_file,
+                flow_folder,
                 args.flow_batch_run_size,
-                args.output_folder,
+                output_folder,
                 should_skip_split_documents,
             )
     finally:
