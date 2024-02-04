@@ -144,6 +144,8 @@ class _LineRunData:
     """Basic data structure for line run, no matter if it is a main or evaluation."""
 
     line_run_id: str
+    trace_id: str
+    root_span_id: str
     inputs: typing.Dict
     outputs: typing.Dict
     start_time: datetime.datetime
@@ -180,6 +182,8 @@ class _LineRunData:
             cumulative_token_count = None
         return _LineRunData(
             line_run_id=line_run_id,
+            trace_id=span.trace_id,
+            root_span_id=span.span_id,
             inputs=json.loads(attributes[SpanAttributeFieldName.INPUTS]),
             outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
             start_time=start_time,
@@ -197,6 +201,8 @@ class LineRun:
     """Line run is an abstraction of spans related to prompt flow."""
 
     line_run_id: str
+    trace_id: str
+    root_span_id: str
     inputs: typing.Dict
     outputs: typing.Dict
     start_time: str
@@ -228,6 +234,8 @@ class LineRun:
             evaluations[eval_name] = eval_line_run_data
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
+            trace_id=main_line_run_data.trace_id,
+            root_span_id=main_line_run_data.root_span_id,
             inputs=main_line_run_data.inputs,
             outputs=main_line_run_data.outputs,
             start_time=main_line_run_data.start_time.isoformat(),
