@@ -36,7 +36,6 @@ def create_app():
         api.add_namespace(connection_api)
         api.add_namespace(run_api)
         api.add_namespace(telemetry_api)
-        # TODO: add trace namespace
         api.add_namespace(span_api)
         api.add_namespace(ui_api)
         app.register_blueprint(api_v1)

@@ -1,16 +1,15 @@
 import inspect
 
-import opentelemetry
 import pytest
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced, trace
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
+
+from ...utils import prepare_memory_exporter
+from ...process_utils import execute_function_in_subprocess
 
 
 def generator():
@@ -389,20 +388,15 @@ class TestTrace:
 
 @pytest.mark.unittest
 class TestOTelTracer:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.tracer_provider = TracerProvider()
-        self.memory_exporter = InMemorySpanExporter()
-        span_processor = SimpleSpanProcessor(self.memory_exporter)
-        self.tracer_provider.add_span_processor(span_processor)
-        opentelemetry.trace.set_tracer_provider(self.tracer_provider)
-
     def test_trace_func(self):
+        execute_function_in_subprocess(self.assert_test_func)
+
+    def assert_test_func(self):
+        memory_exporter = prepare_memory_exporter()
         traced_func = trace(sync_func)
         result = traced_func(1)
         assert result == 1
-
-        span_list = self.memory_exporter.get_finished_spans()
+        span_list = memory_exporter.get_finished_spans()
         assert len(span_list) == 1
         span = span_list[0]
         assert span.name == sync_func.__name__

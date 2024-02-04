@@ -4,7 +4,7 @@
 
 import pytest
 
-from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME
+from promptflow._constants import SpanAttributeFieldName
 from promptflow._core.operation_context import OperationContext
 from promptflow._trace._start_trace import _provision_session
 
@@ -15,7 +15,7 @@ class TestTrace:
     def test_session_id_in_operation_context(self):
         session_id = _provision_session()
         operation_context = OperationContext.get_instance()
-        assert session_id == operation_context[TRACE_SESSION_ID_OP_CTX_NAME]
+        assert session_id == operation_context._get_otel_attributes()[SpanAttributeFieldName.SESSION_ID]
 
     def test_provision_session_multiple_times(self):
         session_id = _provision_session()
