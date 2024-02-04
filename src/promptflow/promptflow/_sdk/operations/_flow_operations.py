@@ -249,7 +249,8 @@ class FlowOperations(TelemetryMixin):
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
 
-            info_msg = f"Welcome to chat flow, {submitter.dataplane_flow.name}."
+        def print_welcome_message(flow_name):
+            info_msg = f"Welcome to chat flow, {flow_name}."
             print("=" * len(info_msg))
             print(info_msg)
             print("Press Enter to send your message.")

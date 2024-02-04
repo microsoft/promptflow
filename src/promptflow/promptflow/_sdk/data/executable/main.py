@@ -1,19 +1,20 @@
 import json
 import os
-from pathlib import Path
-from PIL import Image
-import streamlit as st
-from streamlit_quill import st_quill
-from copy import copy
-from types import GeneratorType
 import time
+from copy import copy
+from pathlib import Path
+from types import GeneratorType
+
+import streamlit as st
+from PIL import Image
+from streamlit_quill import st_quill
+from utils import dict_iter_render_message, parse_image_content, parse_list_from_html, render_single_dict_message
 
 from promptflow import load_flow
+from promptflow._constants import STREAMING_ANIMATION_TIME
+from promptflow._sdk._submitter.utils import get_result_output, resolve_generator
 from promptflow._sdk._utils import dump_flow_result
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
-from promptflow._sdk._submitter.utils import get_result_output, resolve_generator
-
-from utils import dict_iter_render_message, parse_list_from_html, parse_image_content, render_single_dict_message
 
 invoker = None
 generator_record = {}
@@ -77,16 +78,18 @@ def start():
             with container:
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
-                    full_response = f"{chat_output_name}:"
+                    full_response = f"{chat_output_name}: "
+                    prefix_length = len(full_response)
                     chat_output = response.output[chat_output_name]
                     if isinstance(chat_output, GeneratorType):
                         # Simulate stream of response with milliseconds delay
                         for chunk in get_result_output(chat_output, generator_record):
                             full_response += chunk + " "
-                            time.sleep(0.05)
+                            time.sleep(STREAMING_ANIMATION_TIME)
                             # Add a blinking cursor to simulate typing
                             message_placeholder.markdown(full_response + "▌")
                         message_placeholder.markdown(full_response)
+                        response.output[chat_output_name] = full_response[prefix_length:]
                         post_process_dump_result(response, session_state_history)
                         return
 

@@ -17,6 +17,7 @@ import pydash
 from dotenv import load_dotenv
 from pydash import objects
 
+from promptflow._constants import STREAMING_ANIMATION_TIME
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
     DEFAULT_VAR_ID,
@@ -314,7 +315,7 @@ def print_chat_output(output, generator_record):
         for event in get_result_output(output, generator_record):
             print(event, end="")
             # For better animation effects
-            time.sleep(0.01)
+            time.sleep(STREAMING_ANIMATION_TIME)
         # Print a new line at the end of the response
         print()
     else:

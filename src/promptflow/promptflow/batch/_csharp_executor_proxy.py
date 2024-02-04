@@ -27,6 +27,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         port: str,
         working_dir: Path,
         temp_dag_file: Optional[Path] = None,
+        chat_output_name: Optional[str] = None,
     ):
         self._process = process
         self._port = port
@@ -34,6 +35,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             working_dir=working_dir,
         )
         self._temp_dag_file = temp_dag_file
+        self.chat_output_name = chat_output_name
 
     @property
     def api_endpoint(self) -> str:
@@ -77,6 +79,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
+        chat_output_name = kwargs.pop("chat_output_name", None)
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
         init_error_file.touch()
 
@@ -110,6 +113,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             port=port,
             temp_dag_file=temp_dag_file,
             working_dir=working_dir,
+            chat_output_name=chat_output_name,
         )
         try:
             await executor_proxy.ensure_executor_startup(init_error_file)

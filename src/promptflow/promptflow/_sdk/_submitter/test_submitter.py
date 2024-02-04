@@ -8,6 +8,8 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Mapping, Optional, Tuple, Union
 
+from colorama import Fore, init
+
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
@@ -29,6 +31,7 @@ from ...batch import AbstractExecutorProxy, CSharpExecutorProxy
 from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
+    get_result_output,
     print_chat_output,
     resolve_generator,
     show_node_log_and_output,
@@ -483,7 +486,6 @@ class TestSubmitter:
             2. Each round of chat is executed once flow test.
             3. Prefix the output for distinction.
         """
-        from colorama import Fore, init
 
         @contextlib.contextmanager
         def change_logger_level(level):
@@ -558,3 +560,227 @@ class TestSubmitter:
     def _get_generator_outputs(outputs):
         outputs = outputs or {}
         return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+
+
+class TestSubmitterViaProxy(TestSubmitter):
+    """No usage, leave here for further reference"""
+
+    def __init__(self, flow: ProtectedFlow, flow_context: FlowContext, client=None):
+        self._executor_proxy = None
+        super().__init__(flow, flow_context, client)
+
+    def flow_test(
+        self,
+        inputs: Mapping[str, Any],
+        environment_variables: dict = None,
+        stream_log: bool = True,
+        allow_generator_output: bool = False,
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = True,
+    ):
+
+        from promptflow._constants import LINE_NUMBER_KEY
+
+        chat_output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            ),
+            None,
+        )
+        if not connections:
+            connections = SubmitterHelper.resolve_used_connections(
+                flow=self.flow,
+                tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                    flow_file=self.flow.flow_dag_path,
+                    working_dir=self.flow.code,
+                ),
+                client=self._client,
+            )
+        credential_list = ConnectionManager(connections).get_secret_list()
+
+        # resolve environment variables
+        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=self.flow, environment_variables=environment_variables, client=self._client
+        )
+        environment_variables = environment_variables if environment_variables else {}
+        SubmitterHelper.init_env(environment_variables=environment_variables)
+
+        log_path = self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log"
+        with LoggerOperations(
+            file_path=log_path,
+            stream=stream_log,
+            credential_list=credential_list,
+        ):
+            try:
+                # ensure only one executor proxy is created when multiple rounds of dialogue for interactive mode chat
+                # flow.
+                if self._executor_proxy is None or not self._executor_proxy._is_executor_active():
+                    storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+                    self._executor_proxy: CSharpExecutorProxy = async_run_allowing_running_loop(
+                        CSharpExecutorProxy.create,
+                        self.flow.path,
+                        self.flow.code,
+                        connections=connections,
+                        storage=storage,
+                        log_path=log_path,
+                        chat_output_name=chat_output_name,
+                    )
+
+                line_result: LineResult = self._executor_proxy.exec_line(
+                    inputs, index=0, enable_stream_output=allow_generator_output
+                )
+                line_result.output = persist_multimedia_data(
+                    line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                )
+                if line_result.aggregation_inputs:
+                    # Convert inputs of aggregation to list type
+                    flow_inputs = {k: [v] for k, v in inputs.items()}
+                    aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+                    aggregation_results = async_run_allowing_running_loop(
+                        self._executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
+                    )
+                    line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                    line_result.run_info.metrics = aggregation_results.metrics
+                if isinstance(line_result.output, dict):
+                    # Remove line_number from output
+                    line_result.output.pop(LINE_NUMBER_KEY, None)
+                    generator_outputs = self._get_generator_outputs(line_result.output)
+                    if generator_outputs:
+                        logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+                return line_result
+            finally:
+                # client.stream api in exec_line function won't pass all response one time. For streaming c# chat flow
+                # scenario, if executor proxy is destroyed, it will kill service process and connection will close.
+                # this will result in subsequent getting generator content failed. Since dotnet process is not started
+                # in detach mode, it wll exit when parent process exit. So we won't kill executor proxy here for
+                # streaming c# chat flow scenario.
+                if not (allow_generator_output and chat_output_name):
+                    async_run_allowing_running_loop(self._executor_proxy.destroy)
+
+    def exec_with_inputs(self, inputs, enable_stream_output=False):
+        from promptflow._constants import LINE_NUMBER_KEY
+
+        chat_output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            ),
+            None,
+        )
+        # ensure only one executor proxy is created when multiple rounds of dialogue for ui mode chat flow.
+        if self._executor_proxy is None or not self._executor_proxy._is_executor_active():
+            connections = SubmitterHelper.resolve_used_connections(
+                flow=self.flow,
+                tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                    flow_file=self.flow.path,
+                    working_dir=self.flow.code,
+                ),
+                client=self._client,
+            )
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            self._executor_proxy = async_run_allowing_running_loop(
+                CSharpExecutorProxy.create,
+                self.flow.path,
+                self.flow.code,
+                connections=connections,
+                storage=storage,
+                chat_output_name=chat_output_name,
+            )
+
+        try:
+            # validate inputs
+            flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
+            line_result = self._executor_proxy.exec_line(inputs, index=0, enable_stream_output=enable_stream_output)
+            if isinstance(line_result.output, dict):
+                # Remove line_number from output
+                line_result.output.pop(LINE_NUMBER_KEY, None)
+            return line_result
+        finally:
+            # client.stream api in exec_line function won't pass all response one time. For streaming c# chat flow
+            # scenario, if executor proxy is destroyed, it will kill service process and connection will close.
+            # this will result in subsequent getting generator content failed. Since dotnet process is not started
+            # in detach mode, it wll exit when parent process exit. So we won't kill executor proxy here for
+            # streaming c# chat flow scenario.
+            if not (enable_stream_output and chat_output_name):
+                async_run_allowing_running_loop(self._executor_proxy.destroy)
+
+    def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
+        """
+        Interact with Chat Flow. Do the following:
+            1. Combine chat_history and user input as the input for each round of the chat flow.
+            2. Each round of chat is executed once flow test.
+            3. Prefix the output for distinction.
+        """
+
+        @contextlib.contextmanager
+        def change_logger_level(level):
+            origin_level = logger.level
+            logger.setLevel(level)
+            yield
+            logger.setLevel(origin_level)
+
+        init(autoreset=True)
+        chat_history = []
+        generator_record = {}
+        input_name = next(
+            filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
+        )
+        chat_output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            ),
+        )
+
+        # Pass connections to avoid duplicate calculation (especially http call)
+        connections = SubmitterHelper.resolve_used_connections(
+            flow=self.flow,
+            tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                flow_file=self.flow.flow_dag_path,
+                working_dir=self.flow.code,
+            ),
+            client=self._client,
+        )
+
+        try:
+            while True:
+                try:
+                    print(f"{Fore.GREEN}User: ", end="")
+                    input_value = input()
+                    if not input_value.strip():
+                        continue
+                except (KeyboardInterrupt, EOFError):
+                    print("Terminate the chat.")
+                    break
+                inputs = inputs or {}
+                inputs[input_name] = input_value
+                inputs[chat_history_name] = chat_history
+                with change_logger_level(level=logging.WARNING):
+                    chat_inputs, _ = self.resolve_data(inputs=inputs)
+
+                flow_result = self.flow_test(
+                    inputs=chat_inputs,
+                    environment_variables=environment_variables,
+                    stream_log=False,
+                    allow_generator_output=True,
+                    connections=connections,
+                    stream_output=True,
+                )
+                self._raise_error_when_test_failed(flow_result, show_trace=True)
+                print(f"{Fore.YELLOW}Bot: ", end="")
+                print_chat_output(flow_result.output[chat_output_name], generator_record)
+                # Convert output here since need save output to chat history. For C#, we no need resolve_generator
+                # since output in flow_result.run_info and flow_result.node_run_infos won't be GeneratorType
+                line_result_iter = get_result_output(flow_result.output[chat_output_name], generator_record)
+                full_response = ""
+                for event in line_result_iter:
+                    full_response += event
+                flow_result.output[chat_output_name] = full_response
+                flow_outputs = {k: v for k, v in flow_result.output.items()}
+                history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
+                chat_history.append(history)
+                dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
+        finally:
+            if self._executor_proxy is not None and self._executor_proxy._is_executor_active():
+                async_run_allowing_running_loop(self._executor_proxy.destroy)
