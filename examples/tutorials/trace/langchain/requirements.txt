@@ -1,0 +1,4 @@
+promptflow
+langchain>=0.1.5
+opentelemetry-instrumentation-langchain
+python-dotenv
