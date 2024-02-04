@@ -372,6 +372,7 @@ def safe_parse_object_list(obj_list, parser, message_generator):
 
 def _sanitize_python_variable_name(name: str):
     from promptflow._utils.utils import _sanitize_python_variable_name
+
     return _sanitize_python_variable_name(name)
 
 
@@ -1129,7 +1130,7 @@ def get_mac_address() -> Union[str, None]:
         eth = []
         # Query the first network card in order and obtain the MAC address of the first network card.
         # "Ethernet" is the name of the Windows network card.
-        # "ethx", "ensx", "enox" are the name of the Linux & Mac network card.
+        # "eth", "ens", "eno" are the name of the Linux & Mac network card.
         net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
         for net_interface_name in net_interface_names:
             if net_interface_name in net_address:
@@ -1167,9 +1168,10 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
     mac_address = get_mac_address()
     host_name, system, machine = get_system_info()
     if mac_address:
-        mac_address_hash = hashlib.sha256(mac_address.encode()).hexdigest()
-        system_info_hash = hashlib.sha256((host_name+system+machine).encode()).hexdigest()
-        compute_inf_hash = hashlib.sha256((mac_address_hash+system_info_hash).encode()).hexdigest()
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_inf_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
         return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_inf_hash))
     return None
 
