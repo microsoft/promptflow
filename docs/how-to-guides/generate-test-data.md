@@ -30,7 +30,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 4. [Create connections](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#create-a-connection)
 
 5. Prepare config.ini
-    - Navigate to [example_gen_test_data](../../../examples/gen_test_data) folder.
+    - Navigate to [example_gen_test_data](../../examples/gen_test_data) folder.
     - Run command to copy [`config.ini.example`](../../examples/gen_test_data/config.ini.example).
         ```
         cp config.ini.example config.ini

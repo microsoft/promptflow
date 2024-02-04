@@ -72,8 +72,8 @@ def get_question_type(testset_distribution) -> str:
 
 
 def get_suggested_answer_validation_res(
-    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float, max_tokens: int,
-    response_format: ResponseFormat = ResponseFormat.TEXT
+    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float,
+    max_tokens: int=None, response_format: ResponseFormat = ResponseFormat.TEXT
 ):
     rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens,
                    response_format=response_format)
@@ -89,7 +89,7 @@ def get_question_validation_res(
     question: str,
     response_format: ResponseFormat,
     temperature: float,
-    max_tokens: int,
+    max_tokens: int = None,
 ):
     rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
@@ -102,7 +102,7 @@ def get_text_chunk_score(
     response_format: ResponseFormat,
     score_threshold: float,
     temperature: float,
-    max_tokens: int,
+    max_tokens: int = None,
 ):
     rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
     data = _load_json_rsp(rsp)

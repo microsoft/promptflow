@@ -12,8 +12,7 @@ def generate_question(
     model_or_deployment_name: str,
     generate_question_prompt: str,
     context: str = None,
-    temperature: float = 1.0,
-    max_tokens: int = None,
+    temperature: float = 0.2
 ):
     """
     Generates a question based on the given context.
@@ -26,6 +25,6 @@ def generate_question(
         return ""
 
     seed_question = llm_call(
-        connection, model_or_deployment_name, generate_question_prompt, temperature=temperature, max_tokens=max_tokens
+        connection, model_or_deployment_name, generate_question_prompt, temperature=temperature
     )
     return seed_question
