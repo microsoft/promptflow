@@ -19,7 +19,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
     def __init__(
         self,
         *,
-        process: subprocess.Popen,
+        process: Optional[subprocess.Popen],
         port: str,
         working_dir: Path,
         chat_output_name: Optional[str] = None,
@@ -33,7 +33,11 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
 
     @property
     def api_endpoint(self) -> str:
-        return EXECUTOR_SERVICE_DOMAIN + self._port
+        return EXECUTOR_SERVICE_DOMAIN + self.port
+
+    @property
+    def port(self) -> str:
+        return self._port
 
     @property
     def chat_output_name(self) -> Optional[str]:
@@ -91,19 +95,27 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        port = cls.find_available_port()
+        port = kwargs.get("port", None)
         log_path = kwargs.get("log_path", "")
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
         init_error_file.touch()
 
-        process = subprocess.Popen(
-            cls._construct_service_startup_command(
-                port=port,
-                log_path=log_path,
-                error_file_path=init_error_file,
-                yaml_path=flow_file.as_posix(),
+        if port is None:
+            # if port is not provided, find an available port and start a new execution service
+            port = cls.find_available_port()
+
+            process = subprocess.Popen(
+                cls._construct_service_startup_command(
+                    port=port,
+                    log_path=log_path,
+                    error_file_path=init_error_file,
+                    yaml_path=flow_file.as_posix(),
+                )
             )
-        )
+        else:
+            # if port is provided, assume the execution service is already started
+            process = None
+
         outputs_definition = cls.get_outputs_definition(flow_file, working_dir=working_dir)
         chat_output_name = next(
             filter(
@@ -127,7 +139,9 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
 
     async def destroy(self):
         """Destroy the executor"""
-        if self._process and self._process.poll() is None:
+        # process is not None, it means the executor service is started by the current executor proxy
+        # and should be terminated when the executor proxy is destroyed if the service is still active
+        if self._process and self._is_executor_active():
             self._process.terminate()
             try:
                 self._process.wait(timeout=5)
@@ -136,6 +150,11 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
 
     def _is_executor_active(self):
         """Check if the process is still running and return False if it has exited"""
+        # if prot is provided on creation, assume the execution service is already started and keeps active within
+        # the lifetime of current executor proxy
+        if self._process is None:
+            return True
+
         # get the exit code of the process by poll() and if it is None, it means the process is still running
         return self._process.poll() is None
 
