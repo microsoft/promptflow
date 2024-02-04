@@ -45,4 +45,4 @@ def validate_question(
         question = generated_question
         question_type = QuestionType.SIMPLE
 
-    return {"question": question, "question_type": question_type, "validation_res": validation_res}
+    return {"question": question, "question_type": question_type, "validation_res": validation_res._asdict()}

@@ -32,6 +32,6 @@ def validate_text_chunk(
     )
     if not text_chunk_score_res.pass_validation:
         print(ErrorMsg.INVALID_TEXT_CHUNK.format(context))
-        return {"context": "", "validation_res": text_chunk_score_res}
+        return {"context": "", "validation_res": text_chunk_score_res._asdict()}
 
-    return {"context": context, "validation_res": text_chunk_score_res}
+    return {"context": context, "validation_res": text_chunk_score_res._asdict()}

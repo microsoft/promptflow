@@ -16,7 +16,7 @@ def validate_suggested_answer(
     suggested_answer: str,
     validate_suggested_answer_prompt: str,
     temperature: float = 0.2,
-    response_format: str = "text"
+    response_format: str = "text",
 ):
     """
     1. Validates the given suggested answer.
@@ -33,7 +33,7 @@ def validate_suggested_answer(
         validate_suggested_answer_prompt,
         suggested_answer,
         temperature,
-        response_format=response_format
+        response_format=response_format,
     )
     is_valid_gt = validation_res.pass_validation
     failed_reason = ""
@@ -42,4 +42,4 @@ def validate_suggested_answer(
         print(failed_reason)
         suggested_answer = ""
 
-    return {"suggested_answer": suggested_answer, "validation_res": validation_res}
+    return {"suggested_answer": suggested_answer, "validation_res": validation_res._asdict()}
