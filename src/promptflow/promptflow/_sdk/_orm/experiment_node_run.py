@@ -82,8 +82,10 @@ class ExperimentNodeRun(Base):
     @sqlite_retry
     def get_node_runs_by_experiment(experiment_name: str) -> "ExperimentNodeRun":
         with mgmt_db_session() as session:
-            node_run = session.query(ExperimentNodeRun).filter(ExperimentNodeRun.experiment_name == experiment_name)
-            return node_run
+            node_runs = (
+                session.query(ExperimentNodeRun).filter(ExperimentNodeRun.experiment_name == experiment_name).all()
+            )
+            return node_runs
 
     @sqlite_retry
     def update_status(self, status: str) -> None:

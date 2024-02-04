@@ -259,6 +259,22 @@ class ExperimentOrchestrator:
                     node_names.add(referenced_node_name)
             return node_names
 
+        def generate_node_mapping_by_nodes(from_nodes):
+            all_node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            node_edges_mapping, next_nodes = {node: all_node_edges_mapping[node] for node in from_nodes}, from_nodes
+            while next_nodes:
+                linked_nodes = set()
+                for node in next_nodes:
+                    in_degree_nodes = {k: v for k, v in all_node_edges_mapping.items() if node in v}
+                    linked_nodes.update(set(in_degree_nodes.keys()) - set(node_edges_mapping.keys()))
+                    node_edges_mapping.update(in_degree_nodes)
+                next_nodes = linked_nodes
+            all_nodes = set()
+            for nodes in node_edges_mapping.values():
+                all_nodes.update(nodes)
+            pre_nodes = all_nodes - set(node_edges_mapping.keys())
+            return node_edges_mapping, pre_nodes
+
         def get_next_executable_nodes(completed_node=None):
             """Get the node to be executed in the experiment.
 
@@ -279,25 +295,24 @@ class ExperimentOrchestrator:
                 node_edges_mapping.pop(node.name)
             return next_executable_nodes
 
-        def check_in_degree_node_outputs(node, node_edges_mapping):
+        def check_in_degree_node_outputs(pre_nodes):
             """Check the input data of nodes already exists, it not return false."""
-            in_degree_nodes = []
-            for in_degree_node, edges in node_edges_mapping.items():
-                if node in edges:
-                    in_degree_nodes.append(in_degree_node)
             node_runs = {
-                node.name: node
-                for node in ORMExperimentNodeRun.get_node_runs_by_experiment(experiment_name=self.experiment.name)
-                if node.status == ExperimentNodeRunStatus.COMPLETED
+                node_name: next(filter(lambda x: x["status"] == ExperimentNodeRunStatus.COMPLETED, node_runs), None)
+                for node_name, node_runs in self.experiment.node_runs.items()
             }
             is_in_degree_nodes_ready = True
-            for in_degree_node in in_degree_nodes:
+            for in_degree_node in pre_nodes:
                 is_in_degree_nodes_ready = in_degree_node in node_runs
-                if in_degree_node in node_runs:
-                    node_run_info = node_runs[in_degree_node]
-                    run_info_properties = json.loads(node_run_info.properties)
-                    output_path = run_info_properties.get("output_path", None)
+                if node_runs.get(in_degree_node, None):
+                    node_run_info = self.run_operations.get(node_runs[in_degree_node]["name"])
+                    self._node_runs[in_degree_node] = node_run_info
+
+                    output_path = node_run_info.properties.get("output_path", None)
                     is_in_degree_nodes_ready = is_in_degree_nodes_ready and Path(output_path).exists()
+                else:
+                    is_in_degree_nodes_ready = False
+                    logger.warning(f"Cannot find the outputs of {in_degree_node}")
             return is_in_degree_nodes_ready
 
         def stop_process():
@@ -360,25 +375,28 @@ class ExperimentOrchestrator:
         executor = ThreadPoolExecutor(max_workers=None)
         future_to_node_run = {}
 
-        node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
-        logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
-
         if from_nodes:
             # Executed from specified nodes
             # check in-degree nodes outputs exist
-            for node in from_nodes:
-                if not check_in_degree_node_outputs(node, node_edges_mapping):
-                    raise UserErrorException(f"The output of in-degree of node {node} does not exist.")
-            next_execute_nodes = from_nodes
+            node_edges_mapping, pre_nodes = generate_node_mapping_by_nodes(from_nodes)
+            if not check_in_degree_node_outputs(pre_nodes):
+                raise UserErrorException(f"The output(s) of in-degree for nodes {from_nodes} do not exist.")
+            next_execute_nodes = [self._nodes[name] for name in from_nodes]
         elif nodes:
             # Executed specified nodes
             # check in-degree nodes outputs exist
-            for node in nodes:
-                if not check_in_degree_node_outputs(node, node_edges_mapping):
-                    raise UserErrorException(f"The output of in-degree of node {node} does not exist.")
-            next_execute_nodes = nodes
+            pre_nodes = set()
+            node_mapping = {node.name: node for node in self.experiment.nodes}
+            for node_name in nodes:
+                pre_nodes.update(prepare_edges(node_mapping[node_name]))
+            if not check_in_degree_node_outputs(pre_nodes):
+                raise UserErrorException(f"The output(s) of in-degree of nodes {nodes} do not exist.")
+            node_edges_mapping = {}
+            next_execute_nodes = [self._nodes[name] for name in nodes]
         else:
             # Execute all nodes in experiment.
+            node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
             next_execute_nodes = get_next_executable_nodes()
 
         while len(next_execute_nodes) != 0 or len(future_to_node_run) != 0:
@@ -669,6 +687,7 @@ class ExperimentNodeRun(Run):
             if output_path and Path(output_path).exists():
                 # TODO Whether need to link used node output folder in the experiment run folder
                 logger.info(f"Reuse exist node run {run_info.name} for node {self.node.name}.")
+                run_info.name = self.name
                 return run_info
         # Update exp node run record
         self.update_exp_run_node(status=ExperimentNodeRunStatus.IN_PROGRESS)

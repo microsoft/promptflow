@@ -128,6 +128,41 @@ class TestExperiment:
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_start_from_nodes(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
+
+        # Test start experiment from nodes
+        exp = client._experiments.start(exp.name, from_nodes=["main"])
+        exp = self.wait_for_experiment_terminated(client, exp)
+
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert all([item["status"] == RunStatus.COMPLETED for item in val]), f"Node {key} run failed"
+        assert len(exp.node_runs["main"]) == 2
+        assert len(exp.node_runs["eval"]) == 2
+        assert len(exp.node_runs["echo"]) == 2
+
+        # Test run nodes in experiment
+        exp = client._experiments.start(exp.name, nodes=["main"])
+        exp = self.wait_for_experiment_terminated(client, exp)
+
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert all([item["status"] == RunStatus.COMPLETED for item in val]), f"Node {key} run failed"
+        assert len(exp.node_runs["main"]) == 3
+        assert len(exp.node_runs["echo"]) == 2
+
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
         # Load template and create experiment
