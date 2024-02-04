@@ -2,4 +2,3 @@ promptflow
 promptflow-tools
 llama_index
 configargparse
-pyyaml

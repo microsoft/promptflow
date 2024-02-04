@@ -3,4 +3,3 @@ promptflow-tools
 configargparse
 azure-ai-ml
 mldesigner
-pyyaml
