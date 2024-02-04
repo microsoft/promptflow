@@ -12,7 +12,6 @@ document_nodes_file = "<your-node-file-path>"
 
 ; Test data gen flow configs
 flow_folder = "<your-test-data-gen-flow-folder-path>" ; There is must one flow.dag.yaml file under this folder as entry
-connection_name = "<your-connection-name>"
 ; Override some node inputs, for example, {"node_1": {"input_1": "value", "input_2": "value"}, "node_2":{"input_1": "value", "input_2": "value"}}
 ; Ensure the node name and the input name exist in flag.dag.yaml
 ; If not fill in "node_inputs_override", we will use the values in flow.dag.yaml
