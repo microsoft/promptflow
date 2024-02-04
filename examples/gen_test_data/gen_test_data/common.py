@@ -1,7 +1,7 @@
 import json
 import shutil
-import sys
 import re
+import sys
 import time
 import typing as t
 from pathlib import Path
@@ -28,9 +28,10 @@ def split_document(chunk_size, documents_folder, document_node_output):
     # count the number of files in documents_folder, including subfolders.
     num_files = sum(1 for _ in Path(documents_folder).rglob("*") if _.is_file())
     logger.info(
-        f"Found {num_files} files in the documents folder '{documents_folder}'. Using chunk size: {chunk_size} to split.")
-    # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs,
-    # which may lead to small chunks.
+        f"Found {num_files} files in the documents folder '{documents_folder}'. "
+        f"Using chunk size: {chunk_size} to split."
+    )
+    # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.  # noqa: E501
     # TODO: improve on top of `SimpleDirectoryReader` with a better chunking algorithm.
     chunks = SimpleDirectoryReader(documents_folder, recursive=True, encoding="utf-8").load_data()
     # Convert documents into nodes
@@ -55,7 +56,7 @@ def clean_data(test_data_set: list, test_data_output_path: str):
 
     for test_data in test_data_set:
         if test_data and all(
-                val and val != "(Failed)" for key, val in test_data.items() if key.lower() != "line_number"
+            val and val != "(Failed)" for key, val in test_data.items() if key.lower() != "line_number"
         ):
             data_line = {"question": test_data["question"], "suggested_answer": test_data["suggested_answer"]}
             cleaned_data.append(data_line)
@@ -66,12 +67,14 @@ def clean_data(test_data_set: list, test_data_output_path: str):
 
     # TODO: aggregate invalid data root cause and count, and log it.
     # log debug info path.
-    logger.info(f"Removed {len(test_data_set) - len(cleaned_data)} invalid test data. "
-                f"Saved {len(cleaned_data)} valid test data to '{test_data_output_path}'.")
+    logger.info(
+        f"Removed {len(test_data_set) - len(cleaned_data)} invalid test data. "
+        f"Saved {len(cleaned_data)} valid test data to '{test_data_output_path}'."
+    )
 
 
 def count_non_blank_lines(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         lines = file.readlines()
 
     non_blank_lines = len([line for line in lines if line.strip()])
@@ -92,7 +95,7 @@ def print_progress(log_file_path: str):
 
     try:
         last_data_time = time.time()
-        with open(log_file_path, 'r') as f:
+        with open(log_file_path, "r") as f:
             while True:
                 line = f.readline().strip()
                 if line:
@@ -100,7 +103,7 @@ def print_progress(log_file_path: str):
                     match = log_pattern.match(line)
                     if not match:
                         continue
-                    
+
                     sys.stdout.write("\r" + line)  # \r will move the cursor back to the beginning of the line
                     sys.stdout.flush()  # flush the buffer to ensure the log is displayed immediately
                     finished, total = map(int, match.groups())
@@ -108,7 +111,9 @@ def print_progress(log_file_path: str):
                         logger.info("Batch run is completed.")
                         break
                 elif time.time() - last_data_time > 300:
-                    logger.info("No new log line received for 5 minutes. Stop reading. See the log file for more details.")
+                    logger.info(
+                        "No new log line received for 5 minutes. Stop reading. See the log file for more details."
+                    )
                     break  # Stop reading
                 else:
                     time.sleep(1)  # wait for 1 second if no new line is available
@@ -145,3 +150,15 @@ def copy_flow_folder_and_set_node_inputs(copied_folder, flow_folder, node_inputs
 
         with open(Path(copied_folder) / "flow.dag.yaml", 'w', encoding="utf-8") as f:
             dump_yaml(data, f)
+
+
+def convert_to_abs_path(file_path: str) -> str:
+    if not file_path:
+        return file_path
+
+    path = Path(file_path)
+    if path.is_absolute():
+        return str(path)
+    else:
+        abs = str(path.resolve())
+        return abs

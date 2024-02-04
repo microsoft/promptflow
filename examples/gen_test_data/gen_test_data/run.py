@@ -15,7 +15,8 @@ CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
 from common import clean_data, count_non_blank_lines, \
-    split_document, copy_flow_folder_and_set_node_inputs, print_progress  # noqa: E402
+    split_document, copy_flow_folder_and_set_node_inputs, \
+    print_progress, convert_to_abs_path  # noqa: E402
 from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
 
 logger = get_logger("data.gen")
@@ -31,11 +32,15 @@ def batch_run_flow(
 
     run_name = f"test_data_gen_{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}"
     # TODO: replace the separate process to submit batch run with batch run async method when it's available.
-    cmd = f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} " \
-          f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' " \
-          f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}'"
+    cmd = (
+        f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} "
+        f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' "
+        f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}'"
+    )
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logger.info(f"Submit batch run successfully. process id {process.pid}. Please wait for the batch run to complete...")
+    logger.info(
+        f"Submit batch run successfully. process id {process.pid}. Please wait for the batch run to complete..."
+    )
     return run_name
 
 
@@ -49,9 +54,9 @@ def get_batch_run_output(output_path: Path):
         if time.time() - start_time > 300:
             raise Exception(f"Output jsonl file '{output_path}' is not created within 5 minutes.")
 
-    with open(output_path, 'r') as f:
+    with open(output_path, "r") as f:
         output_lines = list(map(json.loads, f))
-    
+
     return [
         {"question": line["question"], "suggested_answer": line["suggested_answer"], "debug_info": line["debug_info"]}
         for line in output_lines
@@ -252,10 +257,18 @@ if __name__ == "__main__":
 
     try:
         should_skip_split_documents = False
-        if args.document_nodes_file and Path(args.document_nodes_file).is_file():
+        document_nodes_file = convert_to_abs_path(args.document_nodes_file)
+        documents_folder = convert_to_abs_path(args.documents_folder)
+        flow_folder = convert_to_abs_path(args.flow_folder)
+        output_folder = convert_to_abs_path(args.output_folder)
+
+        if document_nodes_file and Path(document_nodes_file).is_file():
             should_skip_split_documents = True
-        elif not args.documents_folder or not Path(args.documents_folder).is_dir():
-            parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
+        elif not documents_folder or not Path(documents_folder).is_dir():
+            parser.error(
+                "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
+                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
+            )
 
         if args.cloud:
             logger.info("Start to generate test data at cloud...")
