@@ -5,15 +5,19 @@
 
 ### Features Added
 
+- [SDK/CLI][azure] Support specify compute instance as session compute in run.yaml
+- [SDK/CLI][azure] Stop support specifying `idle_time_before_shutdown_minutes` for automatic runtime since each session will be auto deleted after execution.
 
 ### Bugs Fixed
 
 - [SDK/CLI] The inputs of node test allows the value of reference node output be passed directly in.
 - [SDK/CLI][azure] Fixed bug for cloud batch run referencing registry flow with automatic runtime.
+- [SDK/CLI] Fix "Without Import Data" in run visualize page when invalid JSON value exists in metrics.
 
 ### Improvements
 
 - [SDK/CLI] For `pf run delete`, `pf connection delete`, introducing an option to skip confirmation prompts.
+- [SDK/CLI] Move pfs extra dependency to required dependency.
 
 
 ## 1.4.0 (2024.01.22)
@@ -23,6 +27,7 @@
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+- [Tool] InputSetting of tool supports passing undefined configuration.
 - [SDK/CLI][azure] Switch automatic runtime's session provision to system wait.
 - [SDK/CLI] Add `--skip-open-browser` option to `pf flow serve` to skip opening browser.
 - [SDK/CLI][azure] Support submit flow to sovereign cloud.

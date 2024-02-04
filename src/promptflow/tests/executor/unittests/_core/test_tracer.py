@@ -1,11 +1,15 @@
 import inspect
 
 import pytest
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced, trace
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
+
+from ...utils import prepare_memory_exporter
+from ...process_utils import execute_function_in_subprocess
 
 
 def generator():
@@ -380,3 +384,24 @@ class TestTrace:
         assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
+
+
+@pytest.mark.unittest
+class TestOTelTracer:
+    def test_trace_func(self):
+        execute_function_in_subprocess(self.assert_test_func)
+
+    def assert_test_func(self):
+        memory_exporter = prepare_memory_exporter()
+        traced_func = trace(sync_func)
+        result = traced_func(1)
+        assert result == 1
+        span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) == 1
+        span = span_list[0]
+        assert span.name == sync_func.__name__
+        assert span.attributes["framework"] == "promptflow"
+        assert span.attributes["span_type"] == TraceType.FUNCTION
+        assert span.attributes["function"] == sync_func.__name__
+        assert span.attributes["inputs"] == '{\n  "a": 1\n}'
+        assert span.status.status_code == StatusCode.OK

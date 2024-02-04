@@ -5,6 +5,7 @@ from pathlib import Path
 
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 from promptflow._core.tracer import TraceType, _create_trace_from_function_call
+from promptflow._utils.utils import is_in_ci_pipeline
 
 from .record_storage import (
     Counter,
@@ -80,10 +81,13 @@ def call_func(func, args, kwargs):
             try:
                 res = func(*args, **kwargs)
             except Exception as e:
+                # Set_record will raise Exception if the record is an Exception instance
                 RecordStorage.get_instance().set_record(input_dict, e)
             obj = RecordStorage.get_instance().set_record(input_dict, res)
-    elif is_live():
+    elif is_live() and is_in_ci_pipeline():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
+    else:
+        obj = func(*args, **kwargs)
     return obj
 
 
@@ -99,8 +103,10 @@ async def call_func_async(func, args, kwargs):
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
-    elif is_live():
+    elif is_live() and is_in_ci_pipeline():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, await func(*args, **kwargs))
+    else:
+        obj = await func(*args, **kwargs)
     return obj
 
 

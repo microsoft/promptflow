@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -1505,6 +1506,35 @@ class TestCli:
             outerr = capsys.readouterr()
             assert "Cannot find the icon path" in outerr.out
 
+    def test_list_tool_cache(self, caplog, mocker):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_name = "mock_tool_package_name"
+            func_name = "func_name"
+            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
+            package_folder = Path(temp_dir) / package_name
+
+            # Package tool project
+            subprocess.check_call([sys.executable, "setup.py", "sdist", "bdist_wheel"], cwd=package_folder)
+
+            package_file = list((package_folder / "dist").glob("*.whl"))
+            assert len(package_file) == 1
+            # Install package
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package_file[0].as_posix()], cwd=package_folder
+            )
+
+            package_module = importlib.import_module(package_name)
+            # cache file in installed package
+            assert (Path(package_module.__file__).parent / "yamls" / "tools_meta.yaml").exists()
+
+            from mock_tool_package_name import utils
+
+            # Get tools meta from cache file
+            with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
+                tools_meta = utils.list_package_tools()
+            assert "List tools meta from cache file" in caplog.text
+            assert f"{package_name}.{func_name}.{func_name}" in tools_meta
+
     def test_tool_list(self, capsys):
         # List package tools in environment
         run_pf_command("tool", "list")
@@ -1961,6 +1991,29 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--experiment",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+                "--detail",
+                Path(tmpdir).as_posix(),
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
+        for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+            for node_name in ["main", "eval"]:
+                path = Path(tmpdir) / node_name / filename
+                assert path.is_file()
+
     def test_batch_run_timeout(self, local_client):
         line_timeout_seconds = "54"
         timout_index = 9
@@ -2008,15 +2061,11 @@ class TestCli:
             "--detail",
             Path(tmpdir).as_posix(),
         )
-        # when specify parameter `detail`, detail, output and log will be saved in both
-        # the specified folder and ".promptflow" under flow folder
-        for parent_folder in [
-            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
-            Path(tmpdir),
-        ]:
-            for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
-                path = parent_folder / filename
-                assert path.is_file()
+        # when specify parameter `detail`, detail, output and log will be saved in
+        # the specified folder
+        for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+            path = Path(tmpdir) / filename
+            assert path.is_file()
 
     def test_pf_flow_test_single_node_with_detail(self, tmpdir):
         node_name = "fetch_text_content_from_url"
@@ -2036,16 +2085,12 @@ class TestCli:
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
         assert output_path.exists()
 
-        # when specify parameter `detail`, node detail, output and log will be saved in both
-        # the specified folder and ".promptflow" under flow folder
-        for parent_folder in [
-            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
-            Path(tmpdir),
+        # when specify parameter `detail`, node detail, output and log will be saved in
+        # the specified folder
+        for filename in [
+            f"flow-{node_name}.node.detail.json",
+            f"flow-{node_name}.node.output.json",
+            f"{node_name}.node.log",
         ]:
-            for filename in [
-                f"flow-{node_name}.node.detail.json",
-                f"flow-{node_name}.node.output.json",
-                f"{node_name}.node.log",
-            ]:
-                path = parent_folder / filename
-                assert path.is_file()
+            path = Path(tmpdir) / filename
+            assert path.is_file()
