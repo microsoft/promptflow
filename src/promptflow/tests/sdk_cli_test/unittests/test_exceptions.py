@@ -34,7 +34,7 @@ class TestExceptions:
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
         assert is_matching(
-            "promptflow._sdk._pf_client, " "line 120, " 
+            "promptflow._sdk._pf_client, " "line 120, "
             'raise FileNotFoundError(f"flow path {flow} does not exist")\n',
             error_detail,
         )
