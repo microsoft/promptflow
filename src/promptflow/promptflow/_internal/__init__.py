@@ -108,6 +108,7 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._version import VERSION
+from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage

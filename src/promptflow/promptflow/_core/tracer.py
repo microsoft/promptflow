@@ -10,6 +10,7 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
+from threading import Lock
 from typing import Callable, Dict, List, Optional
 
 from opentelemetry.trace.status import StatusCode
@@ -153,6 +154,46 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
+class TokenCollector():
+    _lock = Lock()
+
+    def __init__(self):
+        self._span_id_to_tokens = {}
+
+    def collect_openai_tokens(self, span, output):
+        span_id = span.get_span_context().span_id
+        if not inspect.isgenerator(output) and hasattr(output, "usage") and output.usage is not None:
+            tokens = {
+                f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
+            }
+            if tokens:
+                with self._lock:
+                    self._span_id_to_tokens[span_id] = tokens
+
+    def collect_openai_tokens_for_parent_span(self, span):
+        tokens = self.try_get_openai_tokens(span.get_span_context().span_id)
+        if tokens:
+            if not hasattr(span, "parent") or span.parent is None:
+                return
+            parent_span_id = span.parent.span_id
+            with self._lock:
+                if parent_span_id in self._span_id_to_tokens:
+                    merged_tokens = {
+                        key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
+                        for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
+                    }
+                    self._span_id_to_tokens[parent_span_id] = merged_tokens
+                else:
+                    self._span_id_to_tokens[parent_span_id] = tokens
+
+    def try_get_openai_tokens(self, span_id):
+        with self._lock:
+            return self._span_id_to_tokens.get(span_id, None)
+
+
+token_collector = TokenCollector()
+
+
 def _create_trace_from_function_call(
     f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
 ):
@@ -205,6 +246,14 @@ def get_node_name_from_context():
     return None
 
 
+def enrich_span_with_context(span):
+    try:
+        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+        span.set_attributes(attrs_from_context)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with context: {e}")
+
+
 def enrich_span_with_trace(span, trace):
     try:
         operation_context = OperationContext.get_instance()
@@ -218,8 +267,7 @@ def enrich_span_with_trace(span, trace):
                 "root_run_id": operation_context.get("root-run-id", ""),
             }
         )
-        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
-        span.set_attributes(attrs_from_context)
+        enrich_span_with_context(span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
 
@@ -238,6 +286,9 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
+        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
+        if tokens:
+            span.set_attributes(tokens)
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
@@ -309,12 +360,16 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
+                if trace_type == TraceType.LLM:
+                    token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
-                return Tracer.pop(output)
+                output = Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
+        token_collector.collect_openai_tokens_for_parent_span(span)
+        return output
 
     wrapped.__original_function = func
 
@@ -354,12 +409,16 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
+                if trace_type == TraceType.LLM:
+                    token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
-                return Tracer.pop(output)
+                output = Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
+        token_collector.collect_openai_tokens_for_parent_span(span)
+        return output
 
     wrapped.__original_function = func
 

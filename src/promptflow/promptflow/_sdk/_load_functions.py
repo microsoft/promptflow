@@ -11,6 +11,7 @@ from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
+from .entities._experiment import ExperimentTemplate
 from .entities._flow import Flow
 
 logger = get_cli_sdk_logger()
@@ -105,6 +106,15 @@ def load_connection(
     source: Union[str, PathLike, IO[AnyStr]],
     **kwargs,
 ):
+    """Load connection from YAML file or .env file.
+
+    :param source: The local yaml source of a connection or .env file. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: A Connection object
+    :rtype: Connection
+    """
     if Path(source).name.endswith(".env"):
         return _load_env_to_connection(source, **kwargs)
     return load_common(_Connection, source, **kwargs)
@@ -132,3 +142,24 @@ def _load_env_to_connection(
         return CustomConnection(name=name, secrets=data)
     except Exception as e:
         raise Exception(f"Load entity error: {e}") from e
+
+
+def _load_experiment_template(
+    source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
+):
+    """Load experiment template from YAML file.
+
+    :param source: The local yaml source of an experiment template. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: An ExperimentTemplate object
+    :rtype: ExperimentTemplate
+    """
+    source_path = Path(source)
+    if source_path.is_dir():
+        source = source_path / "flow.exp.yaml"
+    if not source_path.exists():
+        raise FileNotFoundError(f"Experiment template file {source.resolve().absolute().as_posix()} not found.")
+    return load_common(ExperimentTemplate, source=source)

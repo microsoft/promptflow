@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import copy
-
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
@@ -28,6 +27,14 @@ class OperationContext(Dict):
     def _add_otel_attributes(self, key, value):
         attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
         attributes[key] = value
+        self[OperationContext._OTEL_ATTRIBUTES] = attributes
+
+    def _remove_otel_attributes(self, keys: list):
+        if isinstance(keys, str):
+            keys = [keys]
+        attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        for key in keys:
+            attributes.pop(key, None)
         self[OperationContext._OTEL_ATTRIBUTES] = attributes
 
     def _get_otel_attributes(self):
