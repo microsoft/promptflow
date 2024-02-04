@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import json
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
@@ -10,8 +11,8 @@ from typing import Any, Mapping, Optional
 
 import httpx
 
-from promptflow._constants import LINE_TIMEOUT_SEC
-from promptflow._core._errors import UnexpectedError
+from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, UnexpectedError
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
@@ -94,6 +95,62 @@ class AbstractExecutorProxy:
 
 
 class APIBasedExecutorProxy(AbstractExecutorProxy):
+    def __init__(
+        self,
+        *,
+        working_dir: Path = None,
+    ):
+        """Initialize the executor proxy with the working directory.
+
+        :param working_dir: The working directory of the executor, usually the flow directory,
+                where we can find metadata under .promptflow. Will use current working directory if not provided.
+        :type working_dir: Path
+        """
+        self._working_dir = working_dir or Path.cwd()
+
+    @property
+    def working_dir(self) -> Path:
+        """
+        The working directory of the executor, usually the flow directory,
+        where we can find metadata under .promptflow.
+        """
+        return self._working_dir
+
+    def _get_flow_meta(self) -> dict:
+        flow_meta_json_path = self.working_dir / ".promptflow" / "flow.json"
+        if not flow_meta_json_path.is_file():
+            raise MetaFileNotFound(
+                message_format=(
+                    # TODO: pf flow validate should be able to generate flow.json
+                    "Failed to fetch meta of inputs: cannot find {file_path}, please retry."
+                ),
+                file_path=flow_meta_json_path.absolute().as_posix(),
+            )
+
+        with open(flow_meta_json_path, mode="r", encoding=DEFAULT_ENCODING) as flow_meta_json_path:
+            return json.load(flow_meta_json_path)
+
+    @classmethod
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+
+        flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        if flow_tools_json_path.is_file():
+            with open(flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    raise MetaFileReadError(
+                        message_format="Failed to fetch meta of tools: {file_path} is not a valid json file.",
+                        file_path=flow_tools_json_path.absolute().as_posix(),
+                    )
+        raise MetaFileNotFound(
+            message_format=(
+                "Failed to fetch meta of tools: cannot find {file_path}, please build the flow project first."
+            ),
+            file_path=flow_tools_json_path.absolute().as_posix(),
+        )
+
     @property
     def api_endpoint(self) -> str:
         """The basic API endpoint of the executor service.
