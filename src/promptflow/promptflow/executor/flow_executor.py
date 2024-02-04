@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import contextlib
 import copy
 import functools
 import inspect
@@ -709,26 +710,43 @@ class FlowExecutor:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
-            self._update_operation_context(run_id)
-            line_result = self._exec_with_trace(
-                inputs,
-                run_id=run_id,
-                line_number=index,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
-                allow_generator_output=allow_generator_output,
-            )
+            with self._update_operation_context(run_id):
+                line_result = self._exec_with_trace(
+                    inputs,
+                    run_id=run_id,
+                    line_number=index,
+                    variant_id=variant_id,
+                    validate_inputs=validate_inputs,
+                    allow_generator_output=allow_generator_output,
+                )
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    @contextlib.contextmanager
     def _update_operation_context(self, run_id: str):
         operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow_id": self._flow_id, "root_run_id": run_id})
-        if operation_context.run_mode == RunMode.Test.name:
-            operation_context._add_otel_attributes("line_run_id", run_id)
+        original_mode = operation_context.get("run_mode", None)
+        values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
+        values_for_otel = {"line_run_id": run_id}
+        try:
+
+            operation_context.run_mode = original_mode or RunMode.Test.name
+            operation_context.update(values_for_context)
+            if operation_context.run_mode == RunMode.Test.name:
+                for k, v in values_for_otel.items():
+                    operation_context._add_otel_attributes(k, v)
+            yield
+        finally:
+            for k in values_for_context:
+                operation_context.pop(k)
+            if operation_context.run_mode == RunMode.Test.name:
+                operation_context._remove_otel_attributes(values_for_otel.keys())
+            if original_mode is None:
+                operation_context.pop("run_mode")
+            else:
+                operation_context.run_mode = original_mode
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
