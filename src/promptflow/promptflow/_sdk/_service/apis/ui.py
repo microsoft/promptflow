@@ -16,7 +16,7 @@ api = Namespace("ui", description="UI")
 
 # parsers for query parameters
 trace_parser = api.parser()
-trace_parser.add_argument("session_id", type=str, required=False)
+trace_parser.add_argument("session", type=str, required=False)
 
 
 # use @dataclass for strong type
@@ -28,7 +28,7 @@ class TraceUIParser:
     def from_request() -> "TraceUIParser":
         args = trace_parser.parse_args()
         return TraceUIParser(
-            session_id=args.session_id,
+            session_id=args.session,
         )
 
 
