@@ -205,8 +205,6 @@ def run_cloud(
     pipeline_with_flow.compute = aml_cluster
     studio_url = ml_client.jobs.create_or_update(pipeline_with_flow).studio_url
     logger.info(f"Completed to submit pipeline. Experiment Link: {studio_url}")
-    logger.info("Delete the copied flow folder...")
-    shutil.rmtree(flow_folder)
 
 
 if __name__ == "__main__":
@@ -272,32 +270,37 @@ if __name__ == "__main__":
     copied_flow_folder = args.flow_folder
     if args.node_inputs_override and len(args.node_inputs_override) > 0:
         copied_flow_folder = copy_flow_folder_and_set_node_inputs(args.flow_folder, args.node_inputs_override)
-    
-    if args.cloud:
-        run_cloud(
-            args.documents_folder,
-            args.document_chunk_size,
-            args.document_nodes_file,
-            copied_flow_folder,
-            args.subscription_id,
-            args.resource_group,
-            args.workspace_name,
-            args.aml_cluster,
-            args.prs_instance_count,
-            args.prs_mini_batch_size,
-            args.prs_max_concurrency_per_instance,
-            args.prs_max_retry_count,
-            args.prs_run_invocation_time,
-            args.prs_allowed_failed_count,
-            should_skip_split_documents,
-        )
-    else:
-        run_local(
-            args.documents_folder,
-            args.document_chunk_size,
-            args.document_nodes_file,
-            copied_flow_folder,
-            args.flow_batch_run_size,
-            args.output_folder,
-            should_skip_split_documents,
-        )
+
+    try:
+        if args.cloud:
+            run_cloud(
+                args.documents_folder,
+                args.document_chunk_size,
+                args.document_nodes_file,
+                copied_flow_folder,
+                args.subscription_id,
+                args.resource_group,
+                args.workspace_name,
+                args.aml_cluster,
+                args.prs_instance_count,
+                args.prs_mini_batch_size,
+                args.prs_max_concurrency_per_instance,
+                args.prs_max_retry_count,
+                args.prs_run_invocation_time,
+                args.prs_allowed_failed_count,
+                should_skip_split_documents,
+            )
+        else:
+            run_local(
+                args.documents_folder,
+                args.document_chunk_size,
+                args.document_nodes_file,
+                copied_flow_folder,
+                args.flow_batch_run_size,
+                args.output_folder,
+                should_skip_split_documents,
+            )
+    except Exception:
+        shutil.rmtree(copied_flow_folder)
+    finally:
+        shutil.rmtree(copied_flow_folder)

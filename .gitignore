@@ -171,6 +171,8 @@ connection.json
 .azureml
 # dummy custom tool package example
 hello-world-proj/**
+# temp gen test data folder
+examples/gen_test_data/gen_test_data/*_temp
 # secrets
 **/connections.json
 

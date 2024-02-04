@@ -13,10 +13,10 @@ document_nodes_file = "<your-node-file-abspath>"
 ; Test data gen flow configs
 flow_folder = "<your-test-data-gen-flow-folder-abspath>" ; There is must one flow.dag.yaml file under this folder as entry
 connection_name = "<your-connection-name>"
-; Override some inputs, for example, {"node_1": {"input_1": "value", "input_2": "value"}, "node_2":{"input_1": "value", "input_2": "value"}}
+; Override some node inputs, for example, {"node_1": {"input_1": "value", "input_2": "value"}, "node_2":{"input_1": "value", "input_2": "value"}}
 ; Ensure the node name and the input name exist in flag.dag.yaml
-node_inputs_override = {}
-
+; If not fill in "node_inputs_override", we will use the values in flow.dag.yaml
+node_inputs_override = {"validate_text_chunk": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "generate_question": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "validate_question": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "generate_suggested_answer": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "validate_suggested_answer": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}}
 
 [LOCAL]
 ; This section is for local test data generation related configuration.
