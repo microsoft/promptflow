@@ -342,13 +342,17 @@ class TestTelemetry:
 
         def assert_node_run(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.node_test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            assert record.msg.startswith("pf.flows.node_test"), f"'pf.flows.node_test' not found in {record.msg}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            ), f"'pf.flows.node_test' not found in {record.custom_dimensions['activity_name']}"
 
         def assert_flow_test(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.test"
+            assert record.msg.startswith("pf.flows.test"), f"'pf.flows.test' not found in {record.msg}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.test"
+            ), f"'pf.flows.test' not found in {record.custom_dimensions['activity_name']}"
 
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)

@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import tempfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Union
@@ -288,7 +289,8 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
             self.output_path = (
                 Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
             )
-        self.session = session
+        # All test run in experiment should use same session
+        self.session = session or uuid.uuid4()
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs
