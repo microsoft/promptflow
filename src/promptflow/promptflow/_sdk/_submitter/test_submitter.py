@@ -448,21 +448,23 @@ class TestSubmitterViaProxy(TestSubmitter):
             client=self._client,
         )
         storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-        flow_executor = CSharpExecutorProxy.create(
-            flow_file=self.flow.path,
-            working_dir=self.flow.code,
+        flow_executor = async_run_allowing_running_loop(
+            CSharpExecutorProxy.create,
+            self.flow.path,
+            self.flow.code,
             connections=connections,
             storage=storage,
         )
 
-        try:
-            # validate inputs
-            flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
-            # line_result = flow_executor.exec_line(inputs, index=0)
-            if isinstance(line_result.output, dict):
-                # Remove line_number from output
-                line_result.output.pop(LINE_NUMBER_KEY, None)
-            return line_result
-        finally:
-            flow_executor.destroy()
+        # try:
+        # validate inputs
+        flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
+        line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
+        # line_result = flow_executor.exec_line(inputs, index=0)
+        if isinstance(line_result.output, dict):
+            # Remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
+        return line_result
+        # comment this for now, wait for test submitter refactor pr and support c# streaming output pr
+        # finally:
+        #     flow_executor.destroy()
