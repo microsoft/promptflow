@@ -67,7 +67,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     inject_openai_api()
     # print user the UI url
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
-    print(f"You can view the trace from UI url: {ui_url}")
+    _logger.info(f"You can view the trace from UI url: {ui_url}")
 
 
 def _start_pfs(pfs_port) -> None:
