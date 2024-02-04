@@ -75,7 +75,6 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip install azure-ai-ml
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}

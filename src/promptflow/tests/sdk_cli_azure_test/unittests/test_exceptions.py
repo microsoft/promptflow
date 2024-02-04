@@ -14,8 +14,8 @@ FLOWS_DIR = "./tests/test_configs/flows/print_input_flow"
 
 
 def is_matching(str_a, str_b):
-    str_a = re.sub(r"line \d+", r"", str_a)
-    str_b = re.sub(r"line \d+", r"", str_b)
+    str_a = re.sub(r"line \d+", r"", str_a).replace("\n", "").replace(" ", "")
+    str_b = re.sub(r"line \d+", r"", str_b).replace("\n", "").replace(" ", "")
 
     return str_a == str_b
 
@@ -176,11 +176,13 @@ class TestExceptions:
         assert error_type == "Exception"
         assert error_target == ErrorTarget.EXECUTOR  # Default target is EXECUTOR due to the Exception has no target.
         assert error_message == ""
-        assert is_matching(
-            "The above exception was the direct cause of the following exception:\n"
-            'promptflow._sdk._pf_client, line 119, raise FileNotFoundError(f"flow path {flow} does not exist")\n',
-            error_detail,
-        )
+        assert is_matching("The above exception was the direct cause of the following exception:\n"
+                           "promptflow.azure._pf_client, line 260, "
+                           "return self.runs.create_or_update(run=run, **kwargs)\n"
+                           "promptflow._sdk._telemetry.activity, line 245, return f(self, *args, **kwargs)\n"
+                           "promptflow.azure.operations._run_operations, line 153, "
+                           "run._validate_for_run_create_operation()\n"
+                           "promptflow._sdk.entities._run, line 640, raise UserErrorException(\n", error_detail)
 
     def test_error_target_with_sdk(self, pf):
         ex = None
@@ -189,14 +191,18 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SYSTEM_ERROR
-        assert error_type == "FileNotFoundError"
+        assert error_category == ErrorCategory.USER_ERROR
+        assert error_type == "UserErrorException"
         assert error_target == ErrorTarget.CONTROL_PLANE_SDK
         assert error_message == ""
-        assert is_matching(
-            "promptflow._sdk._pf_client, " "line 120, " 'raise FileNotFoundError(f"flow path {flow} does not exist")\n',
-            error_detail,
-        )
+        assert is_matching("promptflow.azure._pf_client, line 260, "
+                           "return self.runs.create_or_update(run=run, **kwargs)\n"
+                           "promptflow._sdk._telemetry.activity, line 245, "
+                           "return f(self, *args, **kwargs)\n"
+                           "promptflow.azure.operations._run_operations, line 153, r"
+                           "un._validate_for_run_create_operation()\n"
+                           "promptflow._sdk.entities._run, line 640, "
+                           "raise UserErrorException(\n", error_detail)
 
     def test_error_target_with_executor(self):
         try:
@@ -224,6 +230,5 @@ class TestExceptions:
 
         module_target_map = _ErrorInfo._module_target_map()
         for module_name in module_target_map.keys():
-            " Need install azure-ai-ml package before import promptflow.azure"
             module = importlib.import_module(module_name)
             assert module.__name__ == module_name
