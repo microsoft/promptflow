@@ -274,7 +274,8 @@ class TestExecutorTraces:
         assert format_greeting_trace["system_metrics"] == {}
 
 
-@pytest.mark.unittest
+@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.e2etest
 class TestOTelTracer:
     @pytest.mark.parametrize(
         "flow_file, inputs, expected_span_length",
@@ -294,7 +295,9 @@ class TestOTelTracer:
         inputs,
         expected_span_length,
     ):
-        execute_function_in_subprocess(self.assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length)
+        execute_function_in_subprocess(
+            self.assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length
+        )
 
     def assert_otel_traces(self, dev_connections, flow_file, inputs, expected_span_length):
         memory_exporter = prepare_memory_exporter()
@@ -343,10 +346,9 @@ class TestOTelTracer:
                 tokens = {token_name: span.attributes.get(token_name, 0) for token_name in TOKEN_NAMES}
                 current_span_id = span.context.span_id
                 while True:
-                    # parent_span_id = current_span.parent.span_id
                     if current_span_id in token_dict:
                         token_dict[current_span_id] = {
-                            key: token_dict[current_span_id].get(key, 0) + tokens[key] for key in tokens
+                            key: token_dict[current_span_id][key] + tokens[key] for key in tokens
                         }
                     else:
                         token_dict[current_span_id] = tokens
@@ -358,7 +360,7 @@ class TestOTelTracer:
             span_id = span.context.span_id
             if span_id in token_dict:
                 for token_name in TOKEN_NAMES:
-                    assert span.attributes[token_name] == token_dict[span.context.span_id][token_name]
+                    assert span.attributes[token_name] == token_dict[span_id][token_name]
 
     def test_flow_with_traced_function(self):
         execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
@@ -395,4 +397,4 @@ class TestOTelTracer:
             assert "line_run_id" not in span.attributes  # The traced function is not part of the flow
         assert (
             sub_level_span.parent.span_id == top_level_span.context.span_id
-        )
+        )  # sub_level_span is a child of top_level_span
