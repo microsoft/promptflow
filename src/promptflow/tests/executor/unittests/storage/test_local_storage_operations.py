@@ -76,12 +76,12 @@ class TestLocalStorageOperations:
         node_run_info = self.get_node_run_info_example()
         local_storage.persist_node_run(node_run_info)
 
-        loaded_node_run_info = local_storage.load_node_run_info()
+        loaded_node_run_info = local_storage.load_all_node_run_info()
         assert len(loaded_node_run_info) == 1
         assert loaded_node_run_info[0]["node"] == node_run_info.node
         assert loaded_node_run_info[0]["index"] == node_run_info.index
 
-        res = local_storage.get_node_run_info_by_line_number(1)
+        res = local_storage.load_node_run_info_for_line(1)
         assert isinstance(res["node1"], RunInfo)
         assert res["node1"].node == node_run_info.node
 
@@ -91,11 +91,11 @@ class TestLocalStorageOperations:
         flow_run_info = self.get_flow_run_info_example()
         local_storage.persist_flow_run(flow_run_info)
 
-        loaded_flow_run_info = local_storage.load_flow_run_info()
+        loaded_flow_run_info = local_storage.load_all_flow_run_info()
         assert len(loaded_flow_run_info) == 1
         assert loaded_flow_run_info[0]["run_id"] == flow_run_info.run_id
         assert loaded_flow_run_info[0]["status"] == flow_run_info.status.value
 
-        res = local_storage.get_flow_run_info_by_line_number(1)
+        res = local_storage.load_flow_run_info(1)
         assert isinstance(res, FlowRunInfo)
         assert res.run_id == flow_run_info.run_id

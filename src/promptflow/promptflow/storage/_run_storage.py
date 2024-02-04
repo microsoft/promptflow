@@ -4,7 +4,7 @@
 
 from functools import partial
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
 from promptflow.contracts.multimedia import Image
@@ -31,11 +31,11 @@ class AbstractRunStorage:
 
 
 class BatchRunStorage(AbstractRunStorage):
-    def load_node_run_infos(self, line_number) -> List[NodeRunInfo]:
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for load_node_run_info.")
+    def load_node_run_info_for_line(self, line_number: int):
+        pass
 
-    def load_flow_run_info(self, line_number) -> FlowRunInfo:
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for load_flow_run_info.")
+    def load_flow_run_info(self, line_number: int):
+        pass
 
 
 class DummyRunStorage(AbstractRunStorage):

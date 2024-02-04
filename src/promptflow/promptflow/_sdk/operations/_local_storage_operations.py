@@ -49,7 +49,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import BatchRunStorage
 
 logger = get_cli_sdk_logger()
 
@@ -180,7 +180,7 @@ class LineRunRecord:
         json_dump(asdict(self), path)
 
 
-class LocalStorageOperations(AbstractRunStorage):
+class LocalStorageOperations(BatchRunStorage):
     """LocalStorageOperations."""
 
     LINE_NUMBER_WIDTH = 9
@@ -387,7 +387,7 @@ class LocalStorageOperations(AbstractRunStorage):
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
-    def load_node_run_info(self, parse_const_as_str: bool = False) -> List[NodeRunInfo]:
+    def load_all_node_run_info(self, parse_const_as_str: bool = False) -> List[NodeRunInfo]:
         json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
         node_runs = []
         for node_folder in sorted(self._node_infos_folder.iterdir()):
@@ -405,9 +405,9 @@ class LocalStorageOperations(AbstractRunStorage):
                         self._loaded_node_run_info[line_number][node_name] = node_run_info
         return node_runs
 
-    def get_node_run_info_by_line_number(self, line_number: int = None) -> List[NodeRunInfo]:
+    def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
         if not self._loaded_node_run_info:
-            self.load_node_run_info()
+            self.load_all_node_run_info()
         return self._loaded_node_run_info.get(line_number)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
@@ -427,7 +427,7 @@ class LocalStorageOperations(AbstractRunStorage):
         )
         line_run_record.dump(self._run_infos_folder / filename)
 
-    def load_flow_run_info(self, line_number: int = None, parse_const_as_str: bool = False) -> FlowRunInfo:
+    def load_all_flow_run_info(self, line_number: int = None, parse_const_as_str: bool = False) -> FlowRunInfo:
         json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
         flow_runs = []
         for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
@@ -442,9 +442,9 @@ class LocalStorageOperations(AbstractRunStorage):
                     self._loaded_flow_run_info[line_number] = flow_run_info
         return flow_runs
 
-    def get_flow_run_info_by_line_number(self, line_number: int = None) -> List[NodeRunInfo]:
+    def load_flow_run_info(self, line_number: int = None) -> List[NodeRunInfo]:
         if not self._loaded_flow_run_info:
-            self.load_flow_run_info()
+            self.load_all_flow_run_info()
         return self._loaded_flow_run_info.get(line_number)
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
