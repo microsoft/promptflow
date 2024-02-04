@@ -80,6 +80,7 @@ class TreeConsoleSpanExporter:
         pass
 
 
+resource = Resource(attributes={SERVICE_NAME: "your-service-name"})
 tracer_provider = TracerProvider(resource=resource)
 trace.set_tracer_provider(tracer_provider)
 # traceProvider = get_tracer_provider()
