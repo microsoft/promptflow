@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 import uuid
 from pathlib import Path
 
@@ -140,6 +141,8 @@ class TestExperiment:
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
+            # Sleep to wait all traces are flushed
+            time.sleep(3)
             line_runs = client._traces.list_line_runs(session_id=session)
             assert len(line_runs) == 1
             line_run = line_runs[0]
