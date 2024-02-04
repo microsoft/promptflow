@@ -100,7 +100,7 @@ def mgmt_db_session() -> Session:
             create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
             create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
 
-        session_maker = sessionmaker(bind=engine, expire_on_commit=False)
+        session_maker = sessionmaker(bind=engine)
     except Exception as e:  # pylint: disable=broad-except
         # if we cannot manage to create the connection to the management database
         # we can barely do nothing but raise the exception with printing the error message
