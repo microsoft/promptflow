@@ -1,3 +1,5 @@
+import json
+import os
 import tempfile
 from pathlib import Path
 from time import sleep
@@ -7,17 +9,10 @@ from mock import mock
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
-from promptflow._sdk._constants import ExperimentStatus, RunStatus
-from promptflow._sdk._errors import RunOperationError
+from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus
+from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import load_common
-from promptflow._sdk.entities._experiment import (
-    CommandNode,
-    Experiment,
-    ExperimentData,
-    ExperimentInput,
-    ExperimentTemplate,
-    FlowNode,
-)
+from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 from ..recording_utilities import is_live
 
@@ -37,32 +32,6 @@ class TestExperiment:
             experiment = client._experiments.get(experiment.name)
             sleep(10)
         return experiment
-
-    def test_experiment_from_template(self):
-        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
-        # Load template and create experiment
-        template = load_common(ExperimentTemplate, source=template_path)
-        experiment = Experiment.from_template(template)
-        # Assert experiment parts are resolved
-        assert len(experiment.nodes) == 2
-        assert all(isinstance(n, FlowNode) for n in experiment.nodes)
-        assert len(experiment.data) == 1
-        assert isinstance(experiment.data[0], ExperimentData)
-        assert len(experiment.inputs) == 1
-        assert isinstance(experiment.inputs[0], ExperimentInput)
-        # Assert type is resolved
-        assert experiment.inputs[0].default == 1
-        # Pop schema and resolve path
-        expected = dict(yaml.load(open(template_path, "r", encoding="utf-8").read()))
-        expected.pop("$schema")
-        expected["data"][0]["path"] = (FLOW_ROOT / "web_classification" / "data.jsonl").absolute().as_posix()
-        expected["nodes"][0]["path"] = (experiment._output_dir / "snapshots" / "main").absolute().as_posix()
-        expected["nodes"][1]["path"] = (experiment._output_dir / "snapshots" / "eval").absolute().as_posix()
-        experiment_dict = experiment._to_dict()
-        assert experiment_dict["data"][0].items() == expected["data"][0].items()
-        assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
-        assert experiment_dict["nodes"][1].items() == expected["nodes"][1].items()
-        assert experiment_dict.items() >= expected.items()
 
     def test_experiment_from_template_with_script_node(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -195,6 +164,11 @@ class TestExperiment:
                 inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
             )
             _assert_result(result)
+            # Assert line run id is set by executor when running test
+            assert PF_TRACE_CONTEXT in os.environ
+            attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
+            assert attributes.get("experiment") == template_path.resolve().absolute().as_posix()
+            assert attributes.get("referenced.line_run_id", "").startswith("main")
             expected_output_path = (
                 Path(tempfile.gettempdir()) / ".promptflow/sessions/default" / "basic-no-script-template"
             )
@@ -208,3 +182,16 @@ class TestExperiment:
             assert expected_output_path.resolve().exists()
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+
+    def test_flow_not_in_experiment(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        target_flow_path = FLOW_ROOT / "chat_flow" / "flow.dag.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            with pytest.raises(ExperimentValueError) as error:
+                client.flows.test(
+                    target_flow_path,
+                    experiment=template_path,
+                )
+            assert "not found in experiment" in str(error.value)

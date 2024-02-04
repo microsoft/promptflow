@@ -1,6 +1,11 @@
 import json
+import opentelemetry
 from pathlib import Path
 from typing import Union, Dict
+
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
@@ -120,3 +125,12 @@ class MemoryRunStorage(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo):
         self._node_runs[run_info.run_id] = run_info
+
+
+def prepare_memory_exporter():
+    tracer_provider = TracerProvider()
+    memory_exporter = InMemorySpanExporter()
+    span_processor = SimpleSpanProcessor(memory_exporter)
+    tracer_provider.add_span_processor(span_processor)
+    opentelemetry.trace.set_tracer_provider(tracer_provider)
+    return memory_exporter

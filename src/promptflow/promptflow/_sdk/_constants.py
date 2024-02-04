@@ -70,6 +70,7 @@ PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
@@ -135,6 +136,7 @@ TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"
+PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -425,3 +427,10 @@ class ExperimentNodeRunStatus(object):
     COMPLETED = "Completed"
     FAILED = "Failed"
     CANCELED = "Canceled"
+
+
+class ExperimentContextKey:
+    EXPERIMENT = "experiment"
+    # Note: referenced id not used for lineage, only for evaluation
+    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    REFERENCED_RUN_ID = "referenced.run_id"
