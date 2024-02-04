@@ -226,18 +226,22 @@ class RecordCache:
 
             output_generator = generator()
             output_type = "generator"
-        else:
+        elif isinstance(output, Exception):
             output_value = {
                 "module": output.__class__.__module__,
                 "message": str(output),
                 "type": type(output).__name__,
-                "args": output.args,
+                "args": getattr(output, "args", None),
                 "traceback": traceback.format_exc(),
                 "response": getattr(output, "response", None),
                 "body": getattr(output, "body", None),
             }
             output_generator = None
             output_type = "Exception"
+        else:
+            output_value = output
+            output_generator = None
+            output_type = type(output).__name__
         return output_value, output_generator, output_type
 
     @staticmethod

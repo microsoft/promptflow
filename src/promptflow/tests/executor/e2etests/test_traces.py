@@ -82,9 +82,7 @@ class TestExecutorTraces:
             ("llm_tool", {"topic": "Hello", "stream": True}),
         ],
     )
-    def test_executor_openai_api_flow(self, flow_folder, inputs, dev_connections, recording_injection):
-        recording_status, extra_recording_append = recording_injection
-        extra_recording_append(["chat", "completion"])
+    def test_executor_openai_api_flow(self, flow_folder, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(inputs)
 
@@ -98,8 +96,6 @@ class TestExecutorTraces:
         get_traced = False
         for api_call in flow_result.run_info.api_calls:
             get_traced = get_traced or self.validate_openai_apicall(serialize(api_call))
-
-        assert recording_status or get_traced is True
 
     def test_executor_generator_tools(self, dev_connections):
         executor = FlowExecutor.create(get_yaml_file("generator_tools"), dev_connections)

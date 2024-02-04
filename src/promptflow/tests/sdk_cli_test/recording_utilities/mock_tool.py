@@ -7,15 +7,7 @@ from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 from promptflow._utils.utils import is_in_ci_pipeline
 
-from .record_storage import (
-    Counter,
-    RecordFileMissingException,
-    RecordItemMissingException,
-    RecordStorage,
-    is_live,
-    is_record,
-    is_replay,
-)
+from .record_storage import Counter, RecordStorage, is_live, is_record, is_replay
 
 COUNT_RECORD = (Path(__file__) / "../../count.json").resolve()
 
@@ -72,18 +64,13 @@ def call_func(func, args, kwargs):
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
     elif is_record():
+        res = None
         try:
-            # prevent recording the same item twice
-            obj = RecordStorage.get_instance().get_record(input_dict)
-        except (RecordItemMissingException, RecordFileMissingException):
-            # recording the item
-            res = None
-            try:
-                res = func(*args, **kwargs)
-            except Exception as e:
-                # Set_record will raise Exception if the record is an Exception instance
-                RecordStorage.get_instance().set_record(input_dict, e)
-            obj = RecordStorage.get_instance().set_record(input_dict, res)
+            res = func(*args, **kwargs)
+        except Exception as e:
+            # Set_record will raise Exception if the record is an Exception instance
+            RecordStorage.get_instance().set_record(input_dict, e)
+        obj = RecordStorage.get_instance().set_record(input_dict, res)
     elif is_live() and is_in_ci_pipeline():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
     else:
@@ -97,12 +84,13 @@ async def call_func_async(func, args, kwargs):
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
     elif is_record():
+        res = None
         try:
-            # prevent recording the same item twice
-            obj = RecordStorage.get_instance().get_record(input_dict)
-        except (RecordItemMissingException, RecordFileMissingException):
-            # recording the item
-            obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
+            res = await func(*args, **kwargs)
+        except Exception as e:
+            # Set_record will raise Exception if the record is an Exception instance
+            RecordStorage.get_instance().set_record(input_dict, e)
+        obj = RecordStorage.get_instance().set_record(input_dict, res)
     elif is_live() and is_in_ci_pipeline():
         obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, await func(*args, **kwargs))
     else:
