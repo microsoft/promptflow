@@ -248,30 +248,29 @@ if __name__ == "__main__":
         "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
     )
     args = parser.parse_args()
-
-    should_skip_split_documents = False
-    if args.document_nodes_file and Path(args.document_nodes_file).is_file():
-        should_skip_split_documents = True
-    elif not args.documents_folder or not Path(args.documents_folder).is_dir():
-        parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
-
-    if args.cloud:
-        logger.info("Start to generate test data at cloud...")
-    else:
-        logger.info("Start to generate test data at local...")
-
-    if should_skip_split_documents:
-        logger.info(
-            "Skip step 1 'Split documents to document nodes' as received document nodes from "
-            f"input file '{args.document_nodes_file}'."
-        )
-        logger.info(f"Collected {count_non_blank_lines(args.document_nodes_file)} document nodes.")
-
-    copied_flow_folder = args.flow_folder
-    if args.node_inputs_override and len(args.node_inputs_override) > 0:
-        copied_flow_folder = copy_flow_folder_and_set_node_inputs(args.flow_folder, args.node_inputs_override)
+    copied_flow_folder = args.flow_folder + "_" + time.strftime("%b-%d-%Y-%H-%M-%S") + "_temp"
 
     try:
+        should_skip_split_documents = False
+        if args.document_nodes_file and Path(args.document_nodes_file).is_file():
+            should_skip_split_documents = True
+        elif not args.documents_folder or not Path(args.documents_folder).is_dir():
+            parser.error("Either 'documents_folder' or 'document_nodes_file' should be specified correctly.")
+
+        if args.cloud:
+            logger.info("Start to generate test data at cloud...")
+        else:
+            logger.info("Start to generate test data at local...")
+
+        if should_skip_split_documents:
+            logger.info(
+                "Skip step 1 'Split documents to document nodes' as received document nodes from "
+                f"input file '{args.document_nodes_file}'."
+            )
+            logger.info(f"Collected {count_non_blank_lines(args.document_nodes_file)} document nodes.")
+
+        copy_flow_folder_and_set_node_inputs(copied_flow_folder, args.flow_folder, args.node_inputs_override)
+
         if args.cloud:
             run_cloud(
                 args.documents_folder,
@@ -300,7 +299,6 @@ if __name__ == "__main__":
                 args.output_folder,
                 should_skip_split_documents,
             )
-    except Exception:
-        shutil.rmtree(copied_flow_folder)
     finally:
-        shutil.rmtree(copied_flow_folder)
+        if os.path.exists(copied_flow_folder):
+            shutil.rmtree(copied_flow_folder)
