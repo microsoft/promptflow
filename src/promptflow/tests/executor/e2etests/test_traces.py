@@ -78,7 +78,7 @@ class TestExecutorTraces:
         assert flow_result.run_info.api_calls is not None
 
         assert "total_tokens" in flow_result.run_info.system_metrics
-        assert flow_result.run_info.system_metrics["total_tokens"] >= 0
+        assert flow_result.run_info.system_metrics["total_tokens"] > 0
 
         get_traced = False
         for api_call in flow_result.run_info.api_calls:

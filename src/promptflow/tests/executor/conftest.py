@@ -1,6 +1,5 @@
 import contextlib
 import multiprocessing
-from asyncio import Queue
 from pathlib import Path
 from unittest.mock import patch
 
@@ -74,42 +73,16 @@ def setup_recording():
     return patches
 
 
-def _default_mock_process_wrapper(
-    executor_creation_func,
-    input_queue: Queue,
-    output_queue: Queue,
-    log_context_initialization_func,
-    operation_contexts_dict: dict,
-):
+def _default_mock_process_wrapper(*args, **kwargs):
     # Default mock implementation of _process_wrapper in recording mode
     setup_recording()
-    _process_wrapper(
-        executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
-    )
+    _process_wrapper(*args, **kwargs)
 
 
-def _default_mock_create_spawned_fork_process_manager(
-    log_context_initialization_func,
-    current_operation_context,
-    input_queues,
-    output_queues,
-    control_signal_queue,
-    flow_create_kwargs,
-    process_info,
-    process_target_func,
-):
+def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
     # Default mock implementation of create_spawned_fork_process_manager in recording mode
     setup_recording()
-    create_spawned_fork_process_manager(
-        log_context_initialization_func,
-        current_operation_context,
-        input_queues,
-        output_queues,
-        control_signal_queue,
-        flow_create_kwargs,
-        process_info,
-        process_target_func,
-    )
+    create_spawned_fork_process_manager(*args, **kwargs)
 
 
 # Placeholder for the targets of new process; One for the spawned process, one for the forked process
