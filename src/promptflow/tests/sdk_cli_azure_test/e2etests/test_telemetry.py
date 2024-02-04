@@ -342,14 +342,14 @@ class TestTelemetry:
 
         def assert_node_run(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.node_test"), f"'pf.flows.node_test' not found in {record.msg}"
+            assert record.msg.startswith("pf.flows.node_test"), f"'pf.flows.node_test' not found in {record.msg!r}"
             assert (
                 record.custom_dimensions["activity_name"] == "pf.flows.node_test"
             ), f"'pf.flows.node_test' not found in {record.custom_dimensions['activity_name']}"
 
         def assert_flow_test(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.test"), f"'pf.flows.test' not found in {record.msg}"
+            assert record.msg.startswith("pf.flows.test"), f"'pf.flows.test' not found in {record.msg!r}"
             assert (
                 record.custom_dimensions["activity_name"] == "pf.flows.test"
             ), f"'pf.flows.test' not found in {record.custom_dimensions['activity_name']}"

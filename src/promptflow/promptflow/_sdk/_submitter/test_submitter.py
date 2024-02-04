@@ -26,6 +26,7 @@ from ..._core._errors import NotSupported
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ...batch import AbstractExecutorProxy, CSharpExecutorProxy
+from .._configuration import Configuration
 from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
@@ -238,8 +239,9 @@ class TestSubmitter:
                 or {},
             )
 
-            logger.debug("Starting trace for flow test...")
-            start_trace(session=session)
+            if Configuration(overrides=self._client._config).is_internal_features_enabled():
+                logger.debug("Starting trace for flow test...")
+                start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
