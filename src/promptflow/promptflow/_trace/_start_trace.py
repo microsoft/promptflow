@@ -3,13 +3,9 @@
 # ---------------------------------------------------------
 
 import os
-import platform
-import sys
-import time
 import typing
 import uuid
 
-import requests
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -19,11 +15,10 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from promptflow._constants import SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
-time_threshold = 30
-time_delay = 10
 
 
 def start_trace(*, session: typing.Optional[str] = None, **kwargs):
@@ -38,7 +33,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
-    _start_pfs_in_background(pfs_port)
+    _start_pfs(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
 
     # provision a session
@@ -70,51 +65,18 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     print(f"You can view the trace from UI url: {ui_url}")
 
 
-def _start_pfs_in_background(pfs_port) -> None:
-    """Start a pfs process in background."""
+def _start_pfs(pfs_port) -> None:
+    from promptflow._sdk._service.entry import entry
     from promptflow._sdk._service.utils.utils import is_port_in_use
 
-    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--port", str(pfs_port)]
+    command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
-        if _check_pfs_service_status(pfs_port) is True:
+        if is_pfs_service_healthy(pfs_port) is True:
             return
         else:
-            args += ["--force"]
-    # Start a pfs process using detach mode
-    if platform.system() == "Windows":
-        os.spawnv(os.P_DETACH, sys.executable, args)
-    else:
-        os.system(" ".join(["nohup"] + args + ["&"]))
-
-    wait_time = time_delay
-    time.sleep(time_delay)
-    is_healthy = _check_pfs_service_status(pfs_port)
-    while is_healthy is False and time_threshold > wait_time:
-        _logger.info(
-            f"Pfs service is not ready. It has been waited for {wait_time}s, will wait for at most "
-            f"{time_threshold}s."
-        )
-        wait_time += time_delay
-        time.sleep(time_delay)
-        is_healthy = _check_pfs_service_status(pfs_port)
-
-    if is_healthy is False:
-        _logger.error(f"Pfs service start failed in {pfs_port}.")
-        sys.exit(1)
-
-
-def _check_pfs_service_status(pfs_port) -> bool:
-    """Check if pfs service is running."""
-    try:
-        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
-        if response.status_code == 200:
-            _logger.info(f"Pfs service is already running on port {pfs_port}.")
-            return True
-    except Exception:  # pylint: disable=broad-except
-        pass
-    _logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to start/force restart pfs.")
-    return False
+            command_args += ["--force"]
+    entry(command_args)
 
 
 def _provision_session(session_id: typing.Optional[str] = None) -> str:

@@ -23,7 +23,7 @@ api = Namespace("spans", description="Span Management")
 
 # parsers for query parameters
 list_span_parser = api.parser()
-list_span_parser.add_argument("session_id", type=str, required=False)
+list_span_parser.add_argument("session", type=str, required=False)
 list_span_parser.add_argument("parent_span_id", type=str, required=False)
 
 
@@ -37,7 +37,7 @@ class ListSpanParser:
     def from_request() -> "ListSpanParser":
         args = list_span_parser.parse_args()
         return ListSpanParser(
-            session_id=args.session_id,
+            session_id=args.session,
             parent_span_id=args.parent_span_id,
         )
 

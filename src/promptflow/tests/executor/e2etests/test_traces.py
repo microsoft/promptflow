@@ -5,7 +5,7 @@ from types import GeneratorType
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.tracer import TraceType
+from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
@@ -36,6 +36,16 @@ def get_chat_input(stream):
 
 def get_comletion_input(stream):
     return {"prompt": "What is the capital of the United States of America?", "stream": stream}
+
+
+@trace
+def top_level_function():
+    return sub_level_function()
+
+
+@trace
+def sub_level_function():
+    return "Hello, World!"
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -284,70 +294,105 @@ class TestOTelTracer:
         inputs,
         expected_span_length,
     ):
-        execute_function_in_subprocess(assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length)
+        execute_function_in_subprocess(self.assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length)
 
+    def assert_otel_traces(self, dev_connections, flow_file, inputs, expected_span_length):
+        memory_exporter = prepare_memory_exporter()
 
-def assert_otel_traces(dev_connections, flow_file, inputs, expected_span_length):
-    memory_exporter = prepare_memory_exporter()
+        executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
+        line_run_id = str(uuid.uuid4())
+        resp = executor.exec_line(inputs, run_id=line_run_id)
+        assert isinstance(resp, LineResult)
+        assert isinstance(resp.output, dict)
 
-    executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
-    line_run_id = str(uuid.uuid4())
-    resp = executor.exec_line(inputs, run_id=line_run_id)
-    assert isinstance(resp, LineResult)
-    assert isinstance(resp.output, dict)
+        span_list = memory_exporter.get_finished_spans()
+        # TODO: add flow level span
+        assert len(span_list) == expected_span_length, f"Got {len(span_list)} spans."
+        root_spans = [span for span in span_list if span.parent is None]
+        assert len(root_spans) == 1
+        root_span = root_spans[0]
+        assert root_span.attributes["span_type"] == TraceType.FLOW
+        for span in span_list:
+            assert span.status.status_code == StatusCode.OK
+            assert isinstance(span.name, str)
+            assert span.attributes["line_run_id"] == line_run_id
+            assert span.attributes["framework"] == "promptflow"
+            if span.parent is None:
+                expected_span_type = TraceType.FLOW
+            elif span.parent.span_id == root_span.context.span_id:
+                expected_span_type = TraceType.TOOL
+            elif span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
+                expected_span_type = TraceType.LLM
+            else:
+                expected_span_type = TraceType.FUNCTION
+            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
+            assert span.attributes["span_type"] == expected_span_type, msg
+            if span != root_span:  # Non-root spans should have a parent
+                assert span.attributes["function"]
+            inputs = json.loads(span.attributes["inputs"])
+            output = json.loads(span.attributes["output"])
+            assert isinstance(inputs, dict)
+            assert output is not None
+        self.validate_openai_tokens(span_list)
 
-    span_list = memory_exporter.get_finished_spans()
-    # TODO: add flow level span
-    assert len(span_list) == expected_span_length, f"Got {len(span_list)} spans."
-    root_spans = [span for span in span_list if span.parent is None]
-    assert len(root_spans) == 1
-    root_span = root_spans[0]
-    assert root_span.attributes["span_type"] == TraceType.FLOW
-    for span in span_list:
-        assert span.status.status_code == StatusCode.OK
-        assert isinstance(span.name, str)
-        assert span.attributes["line_run_id"] == line_run_id
-        assert span.attributes["framework"] == "promptflow"
-        if span.parent is None:
-            expected_span_type = TraceType.FLOW
-        elif span.parent.span_id == root_span.context.span_id:
-            expected_span_type = TraceType.TOOL
-        elif span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
-            expected_span_type = TraceType.LLM
-        else:
-            expected_span_type = TraceType.FUNCTION
-        msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
-        assert span.attributes["span_type"] == expected_span_type, msg
-        if span != root_span:  # Non-root spans should have a parent
-            assert span.attributes["function"]
-        inputs = json.loads(span.attributes["inputs"])
-        output = json.loads(span.attributes["output"])
-        assert isinstance(inputs, dict)
-        assert output is not None
-    validate_openai_tokens(span_list)
+    def validate_openai_tokens(self, span_list):
+        span_dict = {span.context.span_id: span for span in span_list}
+        token_dict = {}
+        for span in span_list:
+            if span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
+                tokens = {token_name: span.attributes.get(token_name, 0) for token_name in TOKEN_NAMES}
+                current_span_id = span.context.span_id
+                while True:
+                    # parent_span_id = current_span.parent.span_id
+                    if current_span_id in token_dict:
+                        token_dict[current_span_id] = {
+                            key: token_dict[current_span_id].get(key, 0) + tokens[key] for key in tokens
+                        }
+                    else:
+                        token_dict[current_span_id] = tokens
+                    parent_cxt = getattr(span_dict[current_span_id], "parent", None)
+                    if parent_cxt is None:
+                        break
+                    current_span_id = parent_cxt.span_id
+        for span in span_list:
+            span_id = span.context.span_id
+            if span_id in token_dict:
+                for token_name in TOKEN_NAMES:
+                    assert span.attributes[token_name] == token_dict[span.context.span_id][token_name]
 
+    def test_flow_with_traced_function(self):
+        execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
 
-def validate_openai_tokens(span_list):
-    span_dict = {span.context.span_id: span for span in span_list}
-    token_dict = {}
-    for span in span_list:
-        if span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
-            tokens = {token_name: span.attributes.get(token_name, 0) for token_name in TOKEN_NAMES}
-            current_span_id = span.context.span_id
-            while True:
-                # parent_span_id = current_span.parent.span_id
-                if current_span_id in token_dict:
-                    token_dict[current_span_id] = {
-                        key: token_dict[current_span_id].get(key, 0) + tokens[key] for key in tokens
-                    }
-                else:
-                    token_dict[current_span_id] = tokens
-                parent_cxt = getattr(span_dict[current_span_id], "parent", None)
-                if parent_cxt is None:
-                    break
-                current_span_id = parent_cxt.span_id
-    for span in span_list:
-        span_id = span.context.span_id
-        if span_id in token_dict:
-            for token_name in TOKEN_NAMES:
-                assert span.attributes[token_name] == token_dict[span.context.span_id][token_name]
+    def assert_otel_traces_run_flow_then_traced_function(self):
+        memory_exporter = prepare_memory_exporter()
+
+        executor = FlowExecutor.create(get_yaml_file("flow_with_trace"), {})
+        line_run_id = str(uuid.uuid4())
+        inputs = {"user_id": 1}
+        resp = executor.exec_line(inputs, run_id=line_run_id)
+        assert resp.output == {"output": "Hello, User 1!"}
+
+        top_level_function()  # Call a traced function and check the span list
+
+        span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) == 7, f"Got {len(span_list)} spans."  # 4 + 1 + 2 spans in total
+        root_spans = [span for span in span_list if span.parent is None]
+        assert len(root_spans) == 2, f"Expected 2 root spans, got {len(root_spans)}"
+        assert root_spans[0].attributes["span_type"] == TraceType.FLOW  # The flow span
+        top_level_span = root_spans[1]
+        assert top_level_span.attributes["function"] == "top_level_function"
+        assert top_level_span == span_list[-1]  # It should be the last span
+        sub_level_span = span_list[-2]  # It should be the second last span
+        expected_values = {
+            "framework": "promptflow",
+            "span_type": "Function",
+            "inputs": "{}",
+            "output": '"Hello, World!"',
+        }
+        for span in [top_level_span, sub_level_span]:
+            for k, v in expected_values.items():
+                assert span.attributes[k] == v, f"span.attributes[{k}] = {span.attributes[k]}, expected: {v}"
+            assert "line_run_id" not in span.attributes  # The traced function is not part of the flow
+        assert (
+            sub_level_span.parent.span_id == top_level_span.context.span_id
+        )
