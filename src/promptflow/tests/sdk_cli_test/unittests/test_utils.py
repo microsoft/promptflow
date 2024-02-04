@@ -42,7 +42,7 @@ from promptflow._sdk._utils import (
     resolve_connections_environment_variable_reference,
     snake_to_camel,
     get_mac_address,
-    gen_uuid_by_compute_info,
+    gen_uuid_by_compute_info, get_system_info,
 )
 from promptflow._utils.load_data import load_data
 from promptflow._utils.retry_utils import http_retry_wrapper, retry
@@ -491,7 +491,14 @@ class TestRetryUtils:
 
         assert mac_address == get_mac_address()
 
-    def test_gen_uuid_by_mac_id(self):
+    def test_gen_uuid_by_compute_info(self):
+        uuid1 = gen_uuid_by_compute_info()
+        uuid2 = gen_uuid_by_compute_info()
+        assert uuid1 == uuid2
+
         mac_address = get_mac_address()
+        host_name, system, machine = get_system_info()
         mac_address_hash = hashlib.sha256(mac_address.encode()).hexdigest()
-        assert str(uuid.uuid5(uuid.NAMESPACE_OID, mac_address_hash)) == gen_uuid_by_compute_info()
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_inf_hash = hashlib.sha256((mac_address_hash + system_info_hash).encode()).hexdigest()
+        assert str(uuid.uuid5(uuid.NAMESPACE_OID, compute_inf_hash)) == gen_uuid_by_compute_info()
