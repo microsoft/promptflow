@@ -224,5 +224,6 @@ class TestExceptions:
 
         module_target_map = _ErrorInfo._module_target_map()
         for module_name in module_target_map.keys():
+            " Need install azure-ai-ml package before import promptflow.azure"
             module = importlib.import_module(module_name)
             assert module.__name__ == module_name
