@@ -22,23 +22,6 @@ def is_matching(str_a, str_b):
 
 @pytest.mark.unittest
 class TestExceptions:
-    def test_error_category_with_unknow_error(self, pf):
-        ex = None
-        try:
-            pf.run("./exceptions/flows")
-        except Exception as e:
-            ex = e
-        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SYSTEM_ERROR
-        assert error_type == "FileNotFoundError"
-        assert error_target == ErrorTarget.CONTROL_PLANE_SDK
-        assert error_message == ""
-        assert is_matching(
-            "promptflow._sdk._pf_client, " "line 120, "
-            'raise FileNotFoundError(f"flow path {flow} does not exist")\n',
-            error_detail,
-        )
-
     def test_error_category_with_user_error(self, pf):
         ex = None
         try:
@@ -114,28 +97,7 @@ class TestExceptions:
         assert error_message == ""
         assert error_detail == ""
 
-    def test_error_category_with_executor_error(self):
-        try:
-            msg_format = (
-                "Invalid node definitions found in the flow graph. Non-aggregation node '{invalid_reference}' "
-                "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
-                "review and rectify the node reference."
-            )
-            raise InvalidNodeReference(message_format=msg_format, invalid_reference=None, node_name="node_name")
-        except Exception as e:
-            ex = e
-        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.USER_ERROR
-        assert error_type == "InvalidNodeReference"
-        assert error_target == ErrorTarget.EXECUTOR
-        assert error_message == (
-            "Invalid node definitions found in the flow graph. Non-aggregation node '{invalid_reference}' "
-            "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
-            "review and rectify the node reference."
-        )
-        assert error_detail == ""
-
-    def test_error_category_with_cause_exception1(self):
+    def test_error_category_with_inner_error1(self):
         ex = None
         try:
             try:
@@ -174,7 +136,7 @@ class TestExceptions:
             error_detail,
         )
 
-    def test_error_category_with_cause_exception2(self):
+    def test_error_category_with_inner_error2(self):
         ex = None
         try:
             try:
@@ -194,7 +156,7 @@ class TestExceptions:
             error_detail,
         )
 
-    def test_error_category_with_cause_exception3(self, pf):
+    def test_error_category_with_inner_error3(self, pf):
         ex = None
         try:
             try:
@@ -213,3 +175,50 @@ class TestExceptions:
             'promptflow._sdk._pf_client, line 119, raise FileNotFoundError(f"flow path {flow} does not exist")\n',
             error_detail,
         )
+
+    def test_error_target_with_sdk(self, pf):
+        ex = None
+        try:
+            pf.run("./exceptions/flows")
+        except Exception as e:
+            ex = e
+        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
+        assert error_category == ErrorCategory.SYSTEM_ERROR
+        assert error_type == "FileNotFoundError"
+        assert error_target == ErrorTarget.CONTROL_PLANE_SDK
+        assert error_message == ""
+        assert is_matching(
+            "promptflow._sdk._pf_client, " "line 120, "
+            'raise FileNotFoundError(f"flow path {flow} does not exist")\n',
+            error_detail,
+        )
+
+    def test_error_target_with_executor(self):
+        try:
+            msg_format = (
+                "Invalid node definitions found in the flow graph. Non-aggregation node '{invalid_reference}' "
+                "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
+                "review and rectify the node reference."
+            )
+            raise InvalidNodeReference(message_format=msg_format, invalid_reference=None, node_name="node_name")
+        except Exception as e:
+            ex = e
+        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
+        assert error_category == ErrorCategory.USER_ERROR
+        assert error_type == "InvalidNodeReference"
+        assert error_target == ErrorTarget.EXECUTOR
+        assert error_message == (
+            "Invalid node definitions found in the flow graph. Non-aggregation node '{invalid_reference}' "
+            "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
+            "review and rectify the node reference."
+        )
+        assert error_detail == ""
+
+    def test_module_name_in_error_target_map(self):
+        import importlib
+
+        module_target_map = _ErrorInfo._module_target_map()
+        for module_name in module_target_map.keys():
+            module = importlib.import_module(module_name)
+            assert module.__name__ == module_name
+

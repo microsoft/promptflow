@@ -288,7 +288,19 @@ class _ErrorInfo:
         if error_target != ErrorTarget.UNKNOWN:
             return error_target
 
-        module_target_map = {
+        module_target_map = cls._module_target_map()
+        exception_codes = cls._get_exception_codes(e)
+        for exception_code in exception_codes[::-1]:
+            for module_name, target in module_target_map.items():
+                # For example:  "promptflow.executor" in "promptflow.executor._errors"
+                if module_name in exception_code["module"]:
+                    return target
+
+        return ErrorTarget.RUNTIME
+
+    @classmethod
+    def _module_target_map(cls) -> dict[str, ErrorTarget]:
+        return {
             "promptflow._sdk": ErrorTarget.CONTROL_PLANE_SDK,
             "promptflow._cli": ErrorTarget.CONTROL_PLANE_SDK,
             "promptflow.azure": ErrorTarget.CONTROL_PLANE_SDK,
@@ -296,13 +308,12 @@ class _ErrorInfo:
             "promptflow.entities": ErrorTarget.CONTROL_PLANE_SDK,
             "promptflow.operations": ErrorTarget.CONTROL_PLANE_SDK,
             "promptflow.executor": ErrorTarget.EXECUTOR,
+            "promptflow._core": ErrorTarget.EXECUTOR,
+            "promptflow.batch": ErrorTarget.EXECUTOR,
+            "promptflow.contracts": ErrorTarget.EXECUTOR,
+            "promptflow._utils": ErrorTarget.EXECUTOR,
             "promptflow.tools": ErrorTarget.TOOL,
         }
-        for module_name, target in module_target_map.items():
-            if cls._is_exception_from_module(e, module_name):
-                return target
-
-        return ErrorTarget.RUNTIME
 
     @classmethod
     def _error_message(cls, e: BaseException):
@@ -310,16 +321,16 @@ class _ErrorInfo:
 
     @classmethod
     def _error_detail(cls, e: BaseException):
-        promptflow_codes = cls._error_traceback(e)
+        promptflow_codes = cls._promptflow_error_traceback(e)
         inner_exception = e.inner_exception if isinstance(e, PromptflowException) else e.__cause__
         if inner_exception:
             promptflow_codes += "The above exception was the direct cause of the following exception:\n"
-            promptflow_codes += cls._error_traceback(inner_exception)
+            promptflow_codes += cls._promptflow_error_traceback(inner_exception)
 
         return promptflow_codes
 
     @classmethod
-    def _error_traceback(cls, e: BaseException):
+    def _promptflow_error_traceback(cls, e: BaseException):
         exception_codes = cls._get_exception_codes(e)
         promptflow_codes = ""
         for item in exception_codes:
@@ -355,13 +366,3 @@ class _ErrorInfo:
             exception_codes.append(exception_code)
 
         return exception_codes
-
-    @classmethod
-    def _is_exception_from_module(cls, e: BaseException, module_name: str = ""):
-        exception_codes = cls._get_exception_codes(e)
-        for exception_code in exception_codes[::-1]:
-            # For example:  "promptflow.executor" in "promptflow.executor._errors"
-            if module_name in exception_code["module"]:
-                return True
-
-        return False
