@@ -296,7 +296,7 @@ class _ErrorInfo:
                 if module_name in exception_code["module"]:
                     return target
 
-        return ErrorTarget.RUNTIME
+        return ErrorTarget.EXECUTOR
 
     @classmethod
     def _module_target_map(cls) -> dict[str, ErrorTarget]:
@@ -312,6 +312,9 @@ class _ErrorInfo:
             "promptflow.batch": ErrorTarget.EXECUTOR,
             "promptflow.contracts": ErrorTarget.EXECUTOR,
             "promptflow._utils": ErrorTarget.EXECUTOR,
+            "promptflow._internal": ErrorTarget.EXECUTOR,
+            "promptflow.integrations": ErrorTarget.EXECUTOR,
+            "promptflow.storage": ErrorTarget.EXECUTOR,
             "promptflow.tools": ErrorTarget.TOOL,
         }
 
