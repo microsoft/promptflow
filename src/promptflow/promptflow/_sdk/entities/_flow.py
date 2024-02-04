@@ -341,12 +341,12 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk._submitter import TestSubmitter
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if self.language == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
-                result = submitter.exec_with_inputs(
+            with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
+                result = submitter.flow_test(
                     inputs=inputs,
                 )
                 return result

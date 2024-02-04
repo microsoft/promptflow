@@ -3,29 +3,25 @@
 # ---------------------------------------------------------
 
 import os
-import platform
-import sys
-import time
+import typing
 import uuid
 
-import requests
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._constants import TRACE_SESSION_ID_OP_CTX_NAME, SpanAttributeFieldName
+from promptflow._constants import SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
-time_threshold = 30
-time_delay = 10
 
 
-def start_trace():
+def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     """Start a tracing session.
 
     This will capture OpenAI and prompt flow related calls and persist traces;
@@ -33,78 +29,71 @@ def start_trace():
 
     Note that this function is still under preview, and may change at any time.
     """
+    from promptflow._sdk._constants import ExperimentContextKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
-    _start_pfs_in_background(pfs_port)
+    _start_pfs(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
+
     # provision a session
-    session_id = _provision_session()
+    session_id = _provision_session(session_id=session)
     _logger.debug("current session id is %s", session_id)
-    # init the global tracer with endpoint, context (session, run, exp)
+
+    operation_context = OperationContext.get_instance()
+
+    # honor and set attributes if user has specified
+    attributes: dict = kwargs.get("attributes", None)
+    if attributes is not None:
+        for attr_key, attr_value in attributes.items():
+            operation_context._add_otel_attributes(attr_key, attr_value)
+
+    # prompt flow related, retrieve `experiment` and `referenced.line_run_id`
+    experiment = os.environ.get(ExperimentContextKey.EXPERIMENT, None)
+    if experiment is not None:
+        operation_context._add_otel_attributes(SpanAttributeFieldName.EXPERIMENT, experiment)
+    ref_line_run_id = os.environ.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
+    if ref_line_run_id is not None:
+        operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
+
+    # init the global tracer with endpoint
     _init_otel_trace_exporter(otlp_port=pfs_port)
+    # openai instrumentation
     inject_openai_api()
     # print user the UI url
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
     print(f"You can view the trace from UI url: {ui_url}")
 
 
-def _start_pfs_in_background(pfs_port) -> None:
-    """Start a pfs process in background."""
+def _start_pfs(pfs_port) -> None:
+    from promptflow._sdk._service.entry import entry
     from promptflow._sdk._service.utils.utils import is_port_in_use
 
-    args = [sys.executable, "-m", "promptflow._sdk._service.entry", "start", "--port", str(pfs_port)]
+    command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
-        if _check_pfs_service_status(pfs_port) is True:
+        if is_pfs_service_healthy(pfs_port) is True:
             return
         else:
-            args += ["--force"]
-    # Start a pfs process using detach mode
-    if platform.system() == "Windows":
-        os.spawnv(os.P_DETACH, sys.executable, args)
-    else:
-        os.system(" ".join(["nohup"] + args + ["&"]))
-
-    wait_time = time_delay
-    time.sleep(time_delay)
-    is_healthy = _check_pfs_service_status(pfs_port)
-    while is_healthy is False and time_threshold > wait_time:
-        _logger.info(
-            f"Pfs service is not ready. It has been waited for {wait_time}s, will wait for at most "
-            f"{time_threshold}s."
-        )
-        wait_time += time_delay
-        time.sleep(time_delay)
-        is_healthy = _check_pfs_service_status(pfs_port)
-
-    if is_healthy is False:
-        _logger.error(f"Pfs service start failed in {pfs_port}.")
-        sys.exit(1)
+            command_args += ["--force"]
+    entry(command_args)
 
 
-def _check_pfs_service_status(pfs_port) -> bool:
-    """Check if pfs service is running."""
-    try:
-        response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
-        if response.status_code == 200:
-            _logger.info(f"Pfs service is already running on port {pfs_port}.")
-            return True
-    except Exception:  # pylint: disable=broad-except
-        pass
-    _logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to start/force restart pfs.")
-    return False
-
-
-def _provision_session() -> str:
+def _provision_session(session_id: typing.Optional[str] = None) -> str:
     operation_context = OperationContext.get_instance()
-    # session id is already provisioned, directly return
-    if TRACE_SESSION_ID_OP_CTX_NAME in operation_context:
-        return operation_context[TRACE_SESSION_ID_OP_CTX_NAME]
+
+    # user has specified a session id, honor and directly return it
+    if session_id is not None:
+        operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
+        return session_id
+
+    # session id is already in operation context, directly return
+    otel_attributes = operation_context._get_otel_attributes()
+    if SpanAttributeFieldName.SESSION_ID in otel_attributes:
+        return otel_attributes[SpanAttributeFieldName.SESSION_ID]
+
     # provision a new session id
     session_id = str(uuid.uuid4())
-    session_id_context_info = {TRACE_SESSION_ID_OP_CTX_NAME: session_id}
-    operation_context.update(session_id_context_info)
     operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
     return session_id
 

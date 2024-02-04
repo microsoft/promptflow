@@ -50,10 +50,8 @@ GET_PYPI_INTERVAL_DAY = 7
 
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 
+
 # trace related
-TRACE_SESSION_ID_OP_CTX_NAME = "pf_trace_session_id"
-
-
 class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
@@ -75,7 +73,7 @@ class SpanContextFieldName:
 
 
 class SpanStatusFieldName:
-    CODE = "code"
+    STATUS_CODE = "status_code"
 
 
 class SpanAttributeFieldName:
@@ -89,6 +87,11 @@ class SpanAttributeFieldName:
     FLOW_ID = "flow_id"
     RUN = "run"
     EXPERIMENT = "experiment"
+    LINE_RUN_ID = "line_run_id"
+    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
+    PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
+    TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
 
 
 class SpanResourceAttributesFieldName:

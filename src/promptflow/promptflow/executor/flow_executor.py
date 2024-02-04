@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import contextlib
 import copy
 import functools
 import inspect
@@ -25,7 +26,12 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._core.tracer import enrich_span_with_input, enrich_span_with_output, open_telemetry_tracer
+from promptflow._core.tracer import (
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_output,
+    open_telemetry_tracer,
+)
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -704,26 +710,43 @@ class FlowExecutor:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
-            self._update_operation_context(run_id)
-            line_result = self._exec_with_trace(
-                inputs,
-                run_id=run_id,
-                line_number=index,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
-                allow_generator_output=allow_generator_output,
-            )
+            with self._update_operation_context(run_id):
+                line_result = self._exec_with_trace(
+                    inputs,
+                    run_id=run_id,
+                    line_number=index,
+                    variant_id=variant_id,
+                    validate_inputs=validate_inputs,
+                    allow_generator_output=allow_generator_output,
+                )
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    @contextlib.contextmanager
     def _update_operation_context(self, run_id: str):
         operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow_id": self._flow_id, "root_run_id": run_id})
-        if operation_context.run_mode == RunMode.Test.name:
-            operation_context._add_otel_attributes("line_run_id", run_id)
+        original_mode = operation_context.get("run_mode", None)
+        values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
+        values_for_otel = {"line_run_id": run_id}
+        try:
+
+            operation_context.run_mode = original_mode or RunMode.Test.name
+            operation_context.update(values_for_context)
+            if operation_context.run_mode == RunMode.Test.name:
+                for k, v in values_for_otel.items():
+                    operation_context._add_otel_attributes(k, v)
+            yield
+        finally:
+            for k in values_for_context:
+                operation_context.pop(k)
+            if operation_context.run_mode == RunMode.Test.name:
+                operation_context._remove_otel_attributes(values_for_otel.keys())
+            if original_mode is None:
+                operation_context.pop("run_mode")
+            else:
+                operation_context.run_mode = original_mode
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
@@ -777,7 +800,7 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
-        with open_telemetry_tracer.start_as_current_span("promptflow.flow") as span:
+        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
             # initialize span
             span.set_attributes(
                 {
@@ -785,6 +808,7 @@ class FlowExecutor:
                     "span_type": TraceType.FLOW.value,
                 }
             )
+            enrich_span_with_context(span)
             # enrich span with input
             enrich_span_with_input(span, inputs)
             # invoke
@@ -1142,6 +1166,8 @@ def execute_flow(
     :type inputs: Mapping[str, Any]
     :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
     :type enable_stream_output: Optional[bool]
+    :param run_id: Run id will be set in operation context and used for session.
+    :type run_id: Optional[str]
     :param kwargs: Other keyword arguments to create flow executor.
     :type kwargs: Any
     :return: The line result of executing the flow.
@@ -1154,7 +1180,7 @@ def execute_flow(
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
         line_result = flow_executor.exec_line(
-            inputs, index=0, run_id=run_id, allow_generator_output=allow_generator_output
+            inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
         )
         # persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
