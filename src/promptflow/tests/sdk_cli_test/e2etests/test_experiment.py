@@ -142,7 +142,7 @@ class TestExperiment:
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
             # Sleep to wait all traces are flushed
-            time.sleep(5)
+            time.sleep(10)
             line_runs = client._traces.list_line_runs(session_id=session)
             assert len(line_runs) == 1
             line_run = line_runs[0]
