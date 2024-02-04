@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from _constants import (
     CONNECTION_FILE,
+    DEFAULT_COMPUTE_INSTANCE_NAME,
     DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
     DEFAULT_RUNTIME_NAME,
@@ -206,3 +207,8 @@ def enable_logger_propagate():
     logger.propagate = True
     yield
     logger.propagate = original_value
+
+
+@pytest.fixture(scope="session")
+def compute_instance_name() -> str:
+    return os.getenv("PROMPT_FLOW_COMPUTE_INSTANCE_NAME", DEFAULT_COMPUTE_INSTANCE_NAME)

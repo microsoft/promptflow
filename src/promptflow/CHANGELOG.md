@@ -5,6 +5,7 @@
 
 ### Features Added
 
+- [SDK/CLI][azure] Support specify compute instance as session compute in run.yaml
 
 ### Bugs Fixed
 
@@ -15,6 +16,7 @@
 ### Improvements
 
 - [SDK/CLI] For `pf run delete`, `pf connection delete`, introducing an option to skip confirmation prompts.
+- [SDK/CLI] Move pfs extra dependency to required dependency.
 
 
 ## 1.4.0 (2024.01.22)

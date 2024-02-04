@@ -59,9 +59,9 @@ class TestOperationContext:
     def test_setattr_non_primitive(self):
         # Test set non-primitive type
         context = OperationContext()
+        context.foo = [1, 2, 3]
 
-        with pytest.raises(TypeError):
-            context.foo = [1, 2, 3]
+        assert [1, 2, 3] == context.foo
 
     def test_getattr(self):
         context = OperationContext()

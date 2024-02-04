@@ -130,5 +130,6 @@ class TestEagerFlow:
         line_result = executor.exec_line(inputs={}, index=0)
 
         assert isinstance(line_result, LineResult)
+        assert line_result.run_info.status == Status.Completed
         assert line_result.output["flow-id"] == line_result.run_info.flow_id
         assert line_result.output["root-run-id"] == line_result.run_info.root_run_id

@@ -85,7 +85,7 @@ class RunSubmitter:
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
-            flow=flow, environment_variables=run.environment_variables
+            flow=flow, environment_variable_overrides=run.environment_variables
         )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 

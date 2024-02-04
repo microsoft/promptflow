@@ -14,6 +14,7 @@ class TraceType(str, Enum):
     TOOL = "Tool"
     FUNCTION = "Function"
     LANGCHAIN = "LangChain"
+    FLOW = "Flow"
 
 
 @dataclass
