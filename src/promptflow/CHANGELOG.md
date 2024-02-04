@@ -6,6 +6,7 @@
 ### Features Added
 
 - [SDK/CLI][azure] Support specify compute instance as session compute in run.yaml
+- [SDK/CLI][azure] Stop support specifying `idle_time_before_shutdown_minutes` for automatic runtime since each session will be auto deleted after execution.
 
 ### Bugs Fixed
 
