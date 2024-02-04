@@ -67,6 +67,8 @@ def add_show_status_action(subparsers):
 
 
 def start_service(args):
+    # User Agent will be set based on header in request, so not set globally here.
+    os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
     get_app()
 
@@ -120,9 +122,6 @@ def main():
         return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
     if len(command_args) == 0:
         command_args.append("-h")
-
-    # User Agent will be set based on header in request, so not set globally here.
-    os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     entry(command_args)
 
 

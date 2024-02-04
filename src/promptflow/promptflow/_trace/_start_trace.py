@@ -66,7 +66,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
 
 def _start_pfs(pfs_port) -> None:
-    from promptflow._sdk._service.entry import PF_NO_INTERACTIVE_LOGIN, entry
+    from promptflow._sdk._service.entry import entry
     from promptflow._sdk._service.utils.utils import is_port_in_use
 
     command_args = ["start", "--port", str(pfs_port)]
@@ -76,7 +76,6 @@ def _start_pfs(pfs_port) -> None:
             return
         else:
             command_args += ["--force"]
-    os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     entry(command_args)
 
 
