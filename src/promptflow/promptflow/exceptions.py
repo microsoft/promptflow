@@ -290,6 +290,11 @@ class _ErrorInfo:
 
         module_target_map = {
             "promptflow._sdk": ErrorTarget.CONTROL_PLANE_SDK,
+            "promptflow._cli": ErrorTarget.CONTROL_PLANE_SDK,
+            "promptflow.azure": ErrorTarget.CONTROL_PLANE_SDK,
+            "promptflow.connections": ErrorTarget.CONTROL_PLANE_SDK,
+            "promptflow.entities": ErrorTarget.CONTROL_PLANE_SDK,
+            "promptflow.operations": ErrorTarget.CONTROL_PLANE_SDK,
             "promptflow.executor": ErrorTarget.EXECUTOR,
             "promptflow.tools": ErrorTarget.TOOL,
         }
