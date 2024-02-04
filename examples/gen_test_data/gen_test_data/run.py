@@ -54,8 +54,15 @@ def get_batch_run_output(output_path: Path):
         if time.time() - start_time > 300:
             raise Exception(f"Output jsonl file '{output_path}' is not created within 5 minutes.")
 
-    with open(output_path, "r", encoding='utf-8') as f:
-        output_lines = list(map(json.loads, f))
+    output_lines = []
+    try:
+        with open(output_path, "r", encoding="utf-8") as f:
+            output_lines = list(map(json.loads, f))
+    except json.decoder.JSONDecodeError as e:
+        logger.warning(
+            f"Error reading the output file: {e}. It could be that the batch run output is empty. "
+            "Please check your flow and ensure it can run successfully."
+        )
 
     return [
         {"question": line["question"], "suggested_answer": line["suggested_answer"], "debug_info": line["debug_info"]}
