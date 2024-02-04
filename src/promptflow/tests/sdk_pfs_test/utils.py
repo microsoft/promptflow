@@ -97,7 +97,7 @@ class PFSOperations:
     def get_connections_by_provider(self, name: str, working_dir, status_code=None):
         response = self._client.get(
             f"{self.CONNECTION_URL_PREFIX}/{name}",
-            data={"working_directory": working_dir},
+            query_string={"working_directory": working_dir},
             headers=self.remote_user_header(),
         )
         if status_code:

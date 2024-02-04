@@ -94,6 +94,9 @@ setup(
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
+        "executor-service": [
+            "fastapi>=0.109.0,<1.0.0",  # used to build web executor server
+        ],
     },
     packages=find_packages(),
     scripts=["pf", "pf.bat"],

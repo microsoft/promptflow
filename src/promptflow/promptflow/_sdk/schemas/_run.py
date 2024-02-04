@@ -31,6 +31,8 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
 
     instance_type = fields.Str()
     idle_time_before_shutdown_minutes = fields.Int()
+    # compute instance name for session usage
+    compute = fields.Str()
 
 
 class RemotePathStr(fields.Str):
