@@ -4,19 +4,29 @@
 
 import json
 import os
+from contextlib import contextmanager
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter, JsonSerializedPromptflowException
-from promptflow._utils.logger_utils import LogContext, logger, service_logger
+from promptflow._utils.logger_utils import LogContext, service_logger
 from promptflow._version import VERSION
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 
 
-def get_log_context(request: BaseExecutionRequest):
-    run_mode = request.get_run_mode()
-    credential_list = ConnectionManager(request.connections).get_secret_list()
-    return LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
+@contextmanager
+def noop_context():
+    yield
+
+
+def get_log_context(request):
+    if isinstance(request, BaseExecutionRequest):
+        run_mode = request.get_run_mode()
+        credential_list = ConnectionManager(request.connections).get_secret_list()
+        return LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
+    else:
+        # return a noop context if request is not a execution request
+        return noop_context()
 
 
 def get_service_log_context(request: BaseExecutionRequest):
@@ -49,7 +59,6 @@ def generate_error_response(ex):
         error_dict = json.loads(ex.message)
     else:
         error_dict = ExceptionPresenter.create(ex).to_dict(include_debug_info=True)
-    logger.error(f"Failed to execute the flow: \n{ex}")
     return ErrorResponse.from_error_dict(error_dict)
 
 
