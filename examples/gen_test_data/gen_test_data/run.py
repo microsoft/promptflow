@@ -278,9 +278,9 @@ if __name__ == "__main__":
         if should_skip_split_documents:
             logger.info(
                 "Skip step 1 'Split documents to document nodes' as received document nodes from "
-                f"input file '{args.document_nodes_file}'."
+                f"input file path '{document_nodes_file}'."
             )
-            logger.info(f"Collected {count_non_blank_lines(args.document_nodes_file)} document nodes.")
+            logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
 
         copy_flow_folder_and_set_node_inputs(copied_flow_folder, args.flow_folder, args.node_inputs_override)
 
