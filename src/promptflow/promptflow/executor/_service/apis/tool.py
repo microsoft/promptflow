@@ -24,7 +24,7 @@ async def list_package_tools():
 
 @router.post("/meta")
 async def gen_tool_meta(request: ToolMetaRequest):
-    result = await invoke_function_in_process(request, {}, gen_meta)
+    result = await invoke_function_in_process(request, {}, gen_meta, is_async_call=False)
     # For not processed tools, treat as timeout error.
     tool_dict = result["tools"]
     error_dict = result["errors"]

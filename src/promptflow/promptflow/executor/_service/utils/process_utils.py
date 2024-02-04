@@ -17,14 +17,16 @@ from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerialized
 from promptflow._utils.logger_utils import service_logger
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionTimeoutError
-from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 from promptflow.executor._service.utils.service_utils import get_log_context
 
-EXECUTION_TIMEOUT = timedelta(days=1).total_seconds()
+ASYNC_REQUEST_TIMEOUT = timedelta(days=1).total_seconds()
+SYNC_REQUEST_TIMEOUT = 10  # seconds
 WAIT_SUBPROCESS_EXCEPTION_TIMEOUT = 10  # seconds
 
 
-async def invoke_function_in_process(request: BaseExecutionRequest, context_dict: dict, target_function: Callable):
+async def invoke_function_in_process(
+    request, context_dict: dict, target_function: Callable, is_async_call: bool = True
+):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         exception_queue = manager.Queue()
@@ -37,14 +39,15 @@ async def invoke_function_in_process(request: BaseExecutionRequest, context_dict
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
 
         # Wait for the process to finish or timeout
-        p.join(timeout=EXECUTION_TIMEOUT)
+        timeout = ASYNC_REQUEST_TIMEOUT if is_async_call else SYNC_REQUEST_TIMEOUT
+        p.join(timeout=timeout)
 
         # Terminate the process if it is still alive after timeout
         if p.is_alive():
-            service_logger.error(f"[{p.pid}] Stop process for exceeding {EXECUTION_TIMEOUT} seconds.")
+            service_logger.error(f"[{p.pid}] Stop process for exceeding {timeout} seconds.")
             p.terminate()
             p.join()
-            raise ExecutionTimeoutError(EXECUTION_TIMEOUT)
+            raise ExecutionTimeoutError(timeout)
 
         # Raise exception if the process exit code is not 0
         if p.exitcode and p.exitcode > 0:
@@ -68,7 +71,7 @@ async def invoke_function_in_process(request: BaseExecutionRequest, context_dict
 
 def execute_function(
     target_function: Callable,
-    request: BaseExecutionRequest,
+    request,
     return_dict: dict,
     exception_queue: Queue,
     context_dict: dict,
@@ -84,7 +87,7 @@ def execute_function(
 
 async def execute_function_async(
     target_function: Callable,
-    request: BaseExecutionRequest,
+    request,
     return_dict: dict,
     exception_queue: Queue,
     context_dict: dict,
