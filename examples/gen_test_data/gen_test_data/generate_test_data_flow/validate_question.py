@@ -13,8 +13,8 @@ def validate_question(
     generated_question: str,
     validate_question_prompt: str,
     response_format: str = ResponseFormat.TEXT,
-    temperature: float = 1.0,
-    max_tokens: int = 512,
+    temperature: float = 0.2,
+    max_tokens: int = None,
 ):
     """
     1. Validates the given seed question.
@@ -23,7 +23,7 @@ def validate_question(
     Returns:
         dict: The generated test question and its type.
     """
-    # text trunk is not valid, seed question not generated.
+    # text chunk is not valid, seed question not generated.
     if not generated_question:
         return {"question": "", "question_type": "", "validation_res": None}
 

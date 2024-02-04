@@ -18,7 +18,7 @@ connection_name = "<your-connection-name>"
 [LOCAL]
 ; This section is for local test data generation related configuration.
 output_folder = "<your-output-folder-abspath>"
-flow_batch_run_size = 10
+flow_batch_run_size = 4
 
 
 [CLOUD]
@@ -31,7 +31,7 @@ aml_cluster = "<your-compute-name>"
 ; Parallel run step configs
 prs_instance_count = 2
 prs_mini_batch_size = 2
-prs_max_concurrency_per_instance = 10
+prs_max_concurrency_per_instance = 4
 prs_max_retry_count = 3
 prs_run_invocation_time = 800
 prs_allowed_failed_count = -1

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from common import clean_data_and_save, split_document
+from common import clean_data, split_document
 from mldesigner import Input, Output, command_component
 
 conda_file = Path(__file__).parent.parent / "conda.yml"
@@ -34,7 +34,7 @@ def split_document_component(
 
 
 @command_component(
-    name="clean_data_and_save_component",
+    name="clean_data_component",
     display_name="clean dataset",
     description="Clean test data set to remove empty lines.",
     environment=dict(
@@ -42,7 +42,7 @@ def split_document_component(
         image=env_image,
     ),
 )
-def clean_data_and_save_component(
+def clean_data_component(
     test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")
 ) -> str:
     test_data_set_path = Path(test_data_set_folder) / "parallel_run_step.jsonl"
@@ -51,6 +51,6 @@ def clean_data_and_save_component(
         data = [json.loads(line) for line in f]
 
     test_data_output_path = test_data_output / Path("test_data_set.jsonl")
-    clean_data_and_save(data, test_data_output_path)
+    clean_data(data, test_data_output_path)
 
     return str(test_data_output_path)

@@ -16,7 +16,8 @@ def validate_suggested_answer(
     suggested_answer: str,
     validate_suggested_answer_prompt: str,
     temperature: float = 1.0,
-    max_tokens: int = 512,
+    max_tokens: int = None,
+    response_format: str = "text"
 ):
     """
     1. Validates the given suggested answer.
@@ -34,6 +35,7 @@ def validate_suggested_answer(
         suggested_answer,
         temperature,
         max_tokens,
+        response_format
     )
     is_valid_gt = validation_res.pass_validation
     failed_reason = ""

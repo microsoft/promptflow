@@ -7,13 +7,13 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 @tool
-def generate_seed_question(
+def generate_question(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
     model_or_deployment_name: str,
     generate_question_prompt: str,
     context: str = None,
     temperature: float = 1.0,
-    max_tokens: int = 512,
+    max_tokens: int = None,
 ):
     """
     Generates a question based on the given context.
@@ -21,7 +21,7 @@ def generate_seed_question(
     Returns:
         dict: The generated seed question.
     """
-    # text trunk is not valid, just skip test data gen.
+    # text chunk is not valid, just skip test data gen.
     if not context:
         return ""
 
