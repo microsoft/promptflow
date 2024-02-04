@@ -72,14 +72,15 @@ def start():
         else:
             response = run_flow(kwargs)
 
+        if response.run_info.status.value == "Failed":
+            raise Exception(response.run_info.error)
+
         if is_streaming:
             # Display assistant response in chat message container
             with container:
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
                     full_response = f"{chat_output_name}:"
-                    if response.run_info.status.value == "Failed":
-                        raise Exception(response.run_info.error)
                     chat_output = response.output[chat_output_name]
                     if isinstance(chat_output, GeneratorType):
                         # Simulate stream of response with milliseconds delay
