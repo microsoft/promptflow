@@ -8,6 +8,6 @@ from typing import Mapping
 from pydantic import BaseModel
 
 
-class ToolGenMetaRequest(BaseModel):
+class ToolMetaRequest(BaseModel):
     working_dir: Path
     tools: Mapping[str, Mapping[str, str]]
