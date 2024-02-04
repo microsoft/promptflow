@@ -1152,11 +1152,25 @@ def get_mac_address() -> Union[str, None]:
         return None
 
 
-def gen_uuid_by_mac_id() -> Union[str, None]:
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
     mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
     if mac_address:
         mac_address_hash = hashlib.sha256(mac_address.encode()).hexdigest()
-        return str(uuid.uuid5(uuid.NAMESPACE_OID, mac_address_hash))
+        system_info_hash = hashlib.sha256((host_name+system+machine).encode()).hexdigest()
+        compute_inf_hash = hashlib.sha256((mac_address_hash+system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_inf_hash))
     return None
 
 

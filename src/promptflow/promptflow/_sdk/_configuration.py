@@ -21,7 +21,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._utils import (
     call_from_extension,
     read_write_by_user,
-    gen_uuid_by_mac_id,
+    gen_uuid_by_compute_info,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -198,7 +198,7 @@ class Configuration(object):
         if installation_id:
             return installation_id
 
-        installation_id = gen_uuid_by_mac_id()
+        installation_id = gen_uuid_by_compute_info()
         if not installation_id:
             installation_id = str(uuid.uuid4())
 
