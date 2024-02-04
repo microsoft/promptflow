@@ -96,7 +96,6 @@ nodes:
     type: code
     path: generate_debug_info.py
   inputs:
-    question_type: ${validate_question.output.question_type}
     text_chunk: ${inputs.text_chunk}
     validate_suggested_answer_output: ${validate_suggested_answer.output}
     text_chunk_validation_res: ${validate_text_chunk.output.validation_res}
