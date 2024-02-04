@@ -398,11 +398,16 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
         trace = create_trace(func, args, kwargs)
         span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
-            enrich_span_with_trace(span, trace)
-
             # Should not extract these codes to a separate function here.
             # We directly call func instead of calling Tracer.invoke,
             # because we want to avoid long stack trace when hitting an exception.
+            has_line_run_id = True
+            attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+            if "line_run_id" not in attrs_from_context:
+                has_line_run_id = False
+                line_run_id = str(uuid.uuid4())
+                OperationContext.get_instance()._add_otel_attributes("line_run_id", line_run_id)
+            enrich_span_with_trace(span, trace)
             try:
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
@@ -415,6 +420,9 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
+            finally:
+                if not has_line_run_id:
+                    OperationContext.get_instance()._remove_otel_attributes(["line_run_id"])
         token_collector.collect_openai_tokens_for_parent_span(span)
         return output
 

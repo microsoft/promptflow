@@ -6,7 +6,7 @@ import json
 import typing
 from dataclasses import asdict, dataclass
 
-from flask import Response, render_template
+from flask import Response, render_template, request, jsonify
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName
 from promptflow._sdk._service import Namespace, Resource
@@ -48,6 +48,8 @@ class TraceUI(Resource):
         main_spans, eval_spans = [], []
         for span in spans:
             attributes = span._content[SpanFieldName.ATTRIBUTES]
+            if not span._content["parent_id"]:
+                span._content["parent_id"] = None
             if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
                 eval_spans.append(span)
             else:
@@ -84,6 +86,9 @@ class TraceUI(Resource):
             }
             for span in eval_spans
         ]
+
+        if request.args.get("format") == "json":
+            return jsonify(trace_ui_dict)
 
         return Response(
             render_template(
