@@ -357,8 +357,8 @@ class RecordCache:
             # no writeback
             if "generator" in output_type:
                 return output_generator
-            elif output_type == "Exception":
-                raise output_value
+            elif "Exception" in output_type:
+                raise output
             else:
                 return output_value
         else:
@@ -372,8 +372,8 @@ class RecordCache:
 
             if "generator" in output_type:
                 return output_generator
-            elif output_type == "Exception":
-                raise output_value
+            elif "Exception" in output_type:
+                raise output
             else:
                 return output_value
 
