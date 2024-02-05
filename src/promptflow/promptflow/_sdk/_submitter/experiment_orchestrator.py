@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import tempfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Union
@@ -79,14 +80,19 @@ class ExperimentOrchestrator:
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
         # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
-            template, inputs=inputs, environment_variables=environment_variables, output_path=kwargs.get("output_path")
+            template,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            output_path=kwargs.get("output_path"),
+            session=kwargs.get("session"),
         )
 
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
                 # Start nodes inputs should be updated, as original value could be a constant without data reference.
-                node.inputs = {**node.inputs, **inputs}
+                # Filter unknown key out to avoid warning (case: user input with eval key to override data).
+                node.inputs = {**node.inputs, **{k: v for k, v in inputs.items() if k in node.inputs}}
             node_result = self._test_node(node, test_context)
             test_context.add_node_result(node.name, node_result)
         logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
@@ -122,6 +128,7 @@ class ExperimentOrchestrator:
             dump_test_result=True,
             stream_output=False,
             run_id=test_context.node_name_to_id[node.name],
+            session=test_context.session,
         )
 
     def _test_command_node(self, *args, **kwargs):
@@ -259,13 +266,16 @@ class ExperimentTemplateContext:
 
 
 class ExperimentTemplateTestContext(ExperimentTemplateContext):
-    def __init__(self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None):
+    def __init__(
+        self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None, session=None
+    ):
         """
         Test context for experiment template.
         :param template: Template object to get definition of experiment.
         :param inputs: User inputs when calling test command.
         :param environment_variables: Environment variables specified for test.
         :param output_path: The custom output path.
+        :param session: The session id for the test trace.
         """
         super().__init__(template, environment_variables)
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
@@ -279,6 +289,8 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
             self.output_path = (
                 Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
             )
+        # All test run in experiment should use same session
+        self.session = session or uuid.uuid4()
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs
