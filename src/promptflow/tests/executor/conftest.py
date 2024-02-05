@@ -1,9 +1,9 @@
+import contextlib
 import multiprocessing
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from executor.process_utils import MockForkServerProcess, MockSpawnProcess
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
     delete_count_lock_file,
@@ -88,6 +88,58 @@ def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
 # Placeholder for the targets of new process; One for the spawned process, one for the forked process
 current_process_wrapper = _default_mock_process_wrapper
 current_process_manager = _default_mock_create_spawned_fork_process_manager
+
+
+@contextlib.contextmanager
+def override_process_target(process_wrapper=None, process_manager=None):
+    # Method to override the targets of new process instead of the predefined default ones
+    global current_process_wrapper, current_process_manager
+
+    # Set to the customized ones if provided
+    if process_wrapper is not None:
+        current_process_wrapper = process_wrapper
+    if process_manager is not None:
+        current_process_manager = process_manager
+
+    try:
+        yield
+    finally:
+        # Revert back to the original states
+        current_process_wrapper = _default_mock_process_wrapper
+        current_process_manager = _default_mock_create_spawned_fork_process_manager
+
+
+SpawnProcess = multiprocessing.Process
+if "spawn" in multiprocessing.get_all_start_methods():
+    SpawnProcess = multiprocessing.get_context("spawn").Process
+
+ForkServerProcess = multiprocessing.Process
+if "forkserver" in multiprocessing.get_all_start_methods():
+    ForkServerProcess = multiprocessing.get_context("forkserver").Process
+
+
+class BaseMockProcess:
+    # Base class for the mock process; This class is mainly used as the placeholder for the target mocking logic
+    def modify_target(self, target):
+        # Method to modify the target of the mock process
+        # This shall be the place to hold the target mocking logic
+        if target == _process_wrapper:
+            return current_process_wrapper
+        if target == create_spawned_fork_process_manager:
+            return current_process_manager
+        return target
+
+
+class MockSpawnProcess(SpawnProcess, BaseMockProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        modified_target = self.modify_target(target)
+        super().__init__(group, modified_target, *args, **kwargs)
+
+
+class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        modified_target = self.modify_target(target)
+        super().__init__(group, modified_target, *args, **kwargs)
 
 
 @pytest.fixture
