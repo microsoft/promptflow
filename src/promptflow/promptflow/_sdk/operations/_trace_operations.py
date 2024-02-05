@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import copy
+import json
 import typing
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName
@@ -33,7 +34,7 @@ class TraceOperations:
         grouped_orm_spans = {}
         for orm_spans in orm_spans_group_by_trace_id:
             first_orm_span = orm_spans[0]
-            attributes = first_orm_span.content[SpanFieldName.ATTRIBUTES]
+            attributes = json.loads(first_orm_span.content)[SpanFieldName.ATTRIBUTES]
             if (
                 SpanAttributeFieldName.LINE_RUN_ID not in attributes
                 and SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in attributes
