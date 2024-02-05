@@ -8,7 +8,6 @@ import json
 import multiprocessing
 import os
 from datetime import timedelta
-from multiprocessing import Queue
 from typing import Callable
 
 from promptflow._core._errors import UnexpectedError
@@ -20,8 +19,7 @@ from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.utils.service_utils import get_log_context
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
-QUICK_TIMEOUT = 10  # seconds
-WAIT_SUBPROCESS_EXCEPTION_TIMEOUT = 10  # seconds
+SHORT_WAIT_TIMEOUT = 10
 
 
 async def invoke_function_in_process(
@@ -29,11 +27,11 @@ async def invoke_function_in_process(
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
-        exception_queue = manager.Queue()
+        error_dict = manager.dict()
 
         p = multiprocessing.Process(
             target=execute_function,
-            args=(target_function, request, return_dict, exception_queue, context_dict),
+            args=(target_function, request, return_dict, error_dict, context_dict),
         )
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
@@ -50,11 +48,7 @@ async def invoke_function_in_process(
 
         # Raise exception if the process exit code is not 0
         if p.exitcode and p.exitcode > 0:
-            exception = None
-            try:
-                exception = exception_queue.get(timeout=WAIT_SUBPROCESS_EXCEPTION_TIMEOUT)
-            except Exception:
-                pass
+            exception = error_dict.get("error", None)
             if exception is None:
                 raise UnexpectedError(
                     message="Unexpected error occurred while executing the request",
@@ -72,15 +66,13 @@ def execute_function(
     target_function: Callable,
     request,
     return_dict: dict,
-    exception_queue: Queue,
+    error_dict: dict,
     context_dict: dict,
 ):
     # Create the event loop in a new process to run the asynchronous function
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(
-        execute_function_async(target_function, request, return_dict, exception_queue, context_dict)
-    )
+    loop.run_until_complete(execute_function_async(target_function, request, return_dict, error_dict, context_dict))
     loop.close()
 
 
@@ -88,11 +80,11 @@ async def execute_function_async(
     target_function: Callable,
     request,
     return_dict: dict,
-    exception_queue: Queue,
+    error_dict: dict,
     context_dict: dict,
 ):
     OperationContext.get_instance().update(context_dict)
-    with exception_wrapper(exception_queue):
+    with exception_wrapper(error_dict):
         with get_log_context(request):
             service_logger.info("Start processing request in executor service...")
             result = await target_function(request)
@@ -100,7 +92,7 @@ async def execute_function_async(
 
 
 @contextlib.contextmanager
-def exception_wrapper(exception_queue: Queue):
+def exception_wrapper(error_dict: dict):
     """Wrap the exception to a generic exception to avoid the pickle error."""
     try:
         yield
@@ -111,5 +103,5 @@ def exception_wrapper(exception_queue: Queue):
         exception_dict = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
         message = json.dumps(exception_dict)
         exception = JsonSerializedPromptflowException(message=message)
-        exception_queue.put(exception)
+        error_dict["error"] = exception
         raise exception from e
