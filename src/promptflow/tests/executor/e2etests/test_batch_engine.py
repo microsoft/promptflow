@@ -16,7 +16,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
 from ..conftest import setup_recording
-from ..process_utils import MockForkServerProcess, MockSpawnProcess
+from ..process_utils import MockForkServerProcess, MockSpawnProcess, override_process_class
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -57,15 +57,9 @@ def run_batch_with_start_method(
 
 def _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
     # The method is used as start method to construct new process in tests.
-    # We need to make sure the necessary setup in place to get pass along in new process, including:
-    # 1. Mocked process override
-    # 2. Recording injection
-    if multiprocessing_start_method == "spawn":
-        multiprocessing.Process = MockSpawnProcess
-        multiprocessing.get_context("spawn").Process = MockSpawnProcess
-    elif multiprocessing_start_method == "forkserver":
-        multiprocessing.Process = MockForkServerProcess
-        multiprocessing.get_context("forkserver").Process = MockForkServerProcess
+    # We need to make sure the necessary setup in place to get pass along in new process
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    override_process_class(process_class_dict)
 
     # recording injection again since this method is running in a new process
     setup_recording()

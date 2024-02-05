@@ -8,6 +8,7 @@ from executor.process_utils import (
     MockSpawnProcess,
     current_process_manager_var,
     current_process_wrapper_var,
+    override_process_class,
 )
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
@@ -94,23 +95,18 @@ def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
 def process_override():
     # This fixture is used to override the Process class to ensure the recording mode works
 
-    # Placeholder for the targets of new process; One for the spawned process, one for the forked process
+    # Step I: set process pool targets placeholder with customized targets
     current_process_wrapper_var.set(_default_mock_process_wrapper)
     current_process_manager_var.set(_default_mock_create_spawned_fork_process_manager)
 
-    start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
-    original_process_class = {}
-    for start_method, MockProcessClass in start_methods_mocks.items():
-        if start_method in multiprocessing.get_all_start_methods():
-            original_process_class[start_method] = multiprocessing.get_context(start_method).Process
-            multiprocessing.get_context(start_method).Process = MockProcessClass
-            if start_method == multiprocessing.get_start_method():
-                multiprocessing.Process = MockProcessClass
+    # Step II: override the process pool class
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    original_process_class = override_process_class(process_class_dict)
 
     try:
         yield
     finally:
-        for start_method, MockProcessClass in start_methods_mocks.items():
+        for start_method, MockProcessClass in process_class_dict.items():
             if start_method in multiprocessing.get_all_start_methods():
                 multiprocessing.get_context(start_method).Process = original_process_class[start_method]
                 if start_method == multiprocessing.get_start_method():

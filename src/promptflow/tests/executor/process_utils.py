@@ -73,6 +73,17 @@ class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
         super().__init__(group, modified_target, *args, **kwargs)
 
 
+def override_process_class(process_class_dict: dict):
+    original_process_class = {}
+    for start_method, MockProcessClass in process_class_dict.items():
+        if start_method in multiprocessing.get_all_start_methods():
+            original_process_class[start_method] = multiprocessing.get_context(start_method).Process
+            multiprocessing.get_context(start_method).Process = MockProcessClass
+            if start_method == multiprocessing.get_start_method():
+                multiprocessing.Process = MockProcessClass
+    return original_process_class
+
+
 @contextlib.contextmanager
 def override_process_pool_targets(process_wrapper=None, process_manager=None):
     """
