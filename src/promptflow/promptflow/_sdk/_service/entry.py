@@ -10,7 +10,7 @@ import sys
 
 from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._constants import LOGGER_NAME, PF_SERVICE_DEBUG
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
@@ -24,13 +24,13 @@ from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_a
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow.exceptions import UserErrorException
 
-app = None
-
 
 def get_app():
-    global app
-    if app is None:
-        app, _ = create_app()
+    app, _ = create_app()
+    if os.environ.get(PF_SERVICE_DEBUG) == "true":
+        app.logger.setLevel(logging.DEBUG)
+    else:
+        app.logger.setLevel(logging.INFO)
     return app
 
 
@@ -56,6 +56,16 @@ def add_start_service_action(subparsers):
     start_pfs_parser.set_defaults(action="start")
 
 
+def add_stop_service_action(subparsers):
+    """Add action to stop pfs."""
+    stop_pfs_parser = subparsers.add_parser(
+        "stop",
+        description="Stop promptflow service.",
+        help="pfs stop",
+    )
+    stop_pfs_parser.set_defaults(action="stop")
+
+
 def add_show_status_action(subparsers):
     """Add action to show pfs status."""
     show_status_parser = subparsers.add_parser(
@@ -70,10 +80,9 @@ def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
-    get_app()
     if args.debug:
-        app.logger.setLevel(logging.DEBUG)
-    app.config["DEBUG"] = args.debug
+        os.environ[PF_SERVICE_DEBUG] = "true"
+    app = get_app()
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
@@ -101,7 +110,8 @@ def start_service(args):
         "--call",
         "promptflow._sdk._service.entry:get_app",
     ]
-    # Start a pfs process using detach mode
+    # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
+    # variable to pass the debug mode, since it will inherit parent process environment variable.
     if platform.system() == "Windows":
         os.spawnv(os.P_DETACH, sys.executable, cmd)
     else:
@@ -115,8 +125,15 @@ def start_service(args):
         app.logger.warning(f"Pfs service start failed in {port}.")
 
 
+def stop_service():
+    app = get_app()
+    port = get_port_from_config()
+    if port is not None:
+        kill_exist_service(port)
+        app.logger.info(f"Pfs service stop in {port}.")
+
+
 def main():
-    sys.argv += ["start", "--debug"]
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
@@ -139,6 +156,7 @@ def entry(command_args):
     subparsers = parser.add_subparsers()
     add_start_service_action(subparsers)
     add_show_status_action(subparsers)
+    add_stop_service_action(subparsers)
 
     args = parser.parse_args(command_args)
 
@@ -165,6 +183,8 @@ def run_command(args):
             exit(1)
     elif args.action == "start":
         start_service(args)
+    elif args.action == "stop":
+        stop_service()
 
 
 if __name__ == "__main__":

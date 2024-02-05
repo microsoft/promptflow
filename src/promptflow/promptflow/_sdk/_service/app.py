@@ -46,8 +46,6 @@ def create_app():
 
         # Enable log
         app.logger.setLevel(logging.INFO)
-        if app.config["DEBUG"]:
-            app.logger.setLevel(logging.DEBUG)
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
         log_file.touch(mode=read_write_by_user(), exist_ok=True)
         # Create a rotating file handler with a max size of 1 MB and keeping up to 1 backup files
@@ -80,17 +78,9 @@ def create_app():
         @app.after_request
         def log_after_request_info(response):
             duration_time = time.perf_counter() - g.start
-            g.status_code = response.status_code
             app.logger.info(
                 "Request_url: %s, duration: %s, response code: %s", request.url, duration_time, response.status_code
             )
-
-        # @app.teardown_request
-        # def log_response_code(exception=None):
-        #     status_code = getattr(g, "status_code", None)
-        #     if status_code is not None:
-        #         app.logger.info("Response code: %s", status_code)
-        #     if exception is not None:
-        #         app.logger.error(exception, exc_info=True, stack_info=True)
+            return response
 
     return app, api
