@@ -46,9 +46,3 @@ nodes:
     thread_id: ${get_or_create_thread.output}
     download_images: true
     assistant_definition: assistant_definition.yaml
-- name: python_node_i5tz
-  type: python
-  source:
-    type: code
-    path: python_node_i5tz.py
-  inputs: {}
