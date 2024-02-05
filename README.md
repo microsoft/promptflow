@@ -105,7 +105,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 #### Deep delve into flow development
 
-[Getting started with prompt flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
+[Getting started with prompt flow](./docs/cloud/azureai/quick-start/index.md): A step by step guidance to invoke your first flow run.
 
 ### Learn from use cases
 
