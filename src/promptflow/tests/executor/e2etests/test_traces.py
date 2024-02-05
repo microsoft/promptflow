@@ -17,6 +17,8 @@ from ..utils import get_flow_sample_inputs, get_yaml_file, prepare_memory_export
 OPEN_AI_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
     "openai.resources.completions.Completions.create",
+    "openai.resources.chat.completions.AsyncCompletions.create",
+    "openai.resources.completions.AsyncCompletions.create",
 ]
 
 TOKEN_NAMES = [
@@ -314,36 +316,43 @@ class TestOTelTracer:
         root_spans = [span for span in span_list if span.parent is None]
         assert len(root_spans) == 1
         root_span = root_spans[0]
-        assert root_span.attributes["span_type"] == TraceType.FLOW
+        self.validate_openai_tokens(span_list)
         for span in span_list:
             assert span.status.status_code == StatusCode.OK
             assert isinstance(span.name, str)
-            assert span.attributes["line_run_id"] == line_run_id
-            assert span.attributes["framework"] == "promptflow"
-            if span.parent is None:
-                expected_span_type = TraceType.FLOW
-            elif span.parent.span_id == root_span.context.span_id:
-                expected_span_type = TraceType.TOOL
-            elif span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
-                expected_span_type = TraceType.LLM
-            else:
-                expected_span_type = TraceType.FUNCTION
-            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
-            assert span.attributes["span_type"] == expected_span_type, msg
-            if span != root_span:  # Non-root spans should have a parent
-                assert span.attributes["function"]
-            inputs = json.loads(span.attributes["inputs"])
-            output = json.loads(span.attributes["output"])
-            assert isinstance(inputs, dict)
-            assert output is not None
-        self.validate_openai_tokens(span_list)
+            self.validate_span_attributes(span, root_span, line_run_id)
 
+    def validate_span_attributes(self, span, root_span, line_run_id):
+        assert span.attributes["line_run_id"] == line_run_id
+        assert span.attributes["framework"] == "promptflow"
+        if span.parent is None:
+            expected_span_type = TraceType.FLOW
+        elif span.parent.span_id == root_span.context.span_id:
+            expected_span_type = TraceType.TOOL
+        elif span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
+            expected_span_type = TraceType.LLM
+        else:
+            expected_span_type = TraceType.FUNCTION
+        msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
+        assert span.attributes["span_type"] == expected_span_type, msg
+        if span != root_span:  # Non-root spans should have a parent
+            assert span.attributes["function"]
+        inputs = json.loads(span.attributes["inputs"])
+        output = json.loads(span.attributes["output"])
+        assert isinstance(inputs, dict)
+        assert output is not None
+
+    # We updated the OpenAI tokens (prompt token, completion token and total token) to the span attributes
+    # for llm tool, and aggregate them to the parent span. Use this function to validate the openai tokens
+    # are correctly aggregated.
     def validate_openai_tokens(self, span_list):
         span_dict = {span.context.span_id: span for span in span_list}
         token_dict = {}
         for span in span_list:
             if span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
-                tokens = {token_name: span.attributes.get(token_name, 0) for token_name in TOKEN_NAMES}
+                for token_name in TOKEN_NAMES:
+                    assert token_name in span.attributes
+                tokens = {token_name: span.attributes[token_name] for token_name in TOKEN_NAMES}
                 current_span_id = span.context.span_id
                 while True:
                     if current_span_id in token_dict:
