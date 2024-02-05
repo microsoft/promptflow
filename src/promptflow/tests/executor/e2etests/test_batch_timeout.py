@@ -34,6 +34,7 @@ class TestBatchTimeout:
             connections=dev_connections,
             storage=mem_run_storage,
         )
+        # set line timeout to 5 seconds for testing
         batch_engine._line_timeout_sec = 5
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples_all_timeout.json")}
