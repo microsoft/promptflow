@@ -81,14 +81,16 @@ def create_app():
         def log_after_request_info(response):
             duration_time = time.perf_counter() - g.start
             g.status_code = response.status_code
-            app.logger.info("request_url: %s, duration: %s", request.url, duration_time)
+            app.logger.info(
+                "Request_url: %s, duration: %s, response code: %s", request.url, duration_time, response.status_code
+            )
 
-        @app.teardown_request
-        def log_response_code(exception=None):
-            status_code = getattr(g, "status_code", None)
-            if status_code is not None:
-                app.logger.info("Response code: %s", status_code)
-            if exception is not None:
-                app.logger.error(exception, exc_info=True, stack_info=True)
+        # @app.teardown_request
+        # def log_response_code(exception=None):
+        #     status_code = getattr(g, "status_code", None)
+        #     if status_code is not None:
+        #         app.logger.info("Response code: %s", status_code)
+        #     if exception is not None:
+        #         app.logger.error(exception, exc_info=True, stack_info=True)
 
     return app, api

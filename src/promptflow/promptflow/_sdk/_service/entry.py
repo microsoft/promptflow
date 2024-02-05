@@ -71,6 +71,8 @@ def start_service(args):
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
     get_app()
+    if args.debug:
+        app.logger.setLevel(logging.DEBUG)
     app.config["DEBUG"] = args.debug
 
     def validate_port(port, force_start):
@@ -114,6 +116,7 @@ def start_service(args):
 
 
 def main():
+    sys.argv += ["start", "--debug"]
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
