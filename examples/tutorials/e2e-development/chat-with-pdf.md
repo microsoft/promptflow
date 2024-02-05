@@ -28,9 +28,9 @@ To go through this tutorial you should:
    pip install -r requirements.txt
 ```
 
-2. Install and configure [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) follow [Quick Start Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html). (_This extension is optional but highly recommended for flow development and debugging._)
+1. Install and configure [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) follow [Quick Start Guide](../../../docs/cloud/azureai/quick-start/index.md). (_This extension is optional but highly recommended for flow development and debugging._)
 
-3. Deploy an OpenAI or Azure OpenAI chat model (e.g. gpt4 or gpt-35-turbo-16k), and an Embedding model (text-embedding-ada-002).  Follow the [how-to](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal) for an Azure OpenAI example.
+2. Deploy an OpenAI or Azure OpenAI chat model (e.g. gpt4 or gpt-35-turbo-16k), and an Embedding model (text-embedding-ada-002).  Follow the [how-to](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal) for an Azure OpenAI example.
 
 ## Console chatbot chat_with_pdf
 A typical RAG process consists of two steps:
