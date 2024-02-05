@@ -76,7 +76,8 @@ def tool(
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
         # Calls to tool functions should be traced automatically.
-        new_f = _traced(func, trace_type=TraceType.TOOL)
+        trace_type = TraceType.RETRIEVAL if kwargs.get("trace_type") == "retrieval" else TraceType.TOOL
+        new_f = _traced(func, trace_type=trace_type)
 
         new_f.__tool = None  # This will be set when generating the tool definition.
         new_f.__name = name
