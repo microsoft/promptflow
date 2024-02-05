@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import copy
-import datetime
 import json
 import typing
 from dataclasses import dataclass
@@ -162,8 +161,8 @@ class _LineRunData:
     root_span_id: str
     inputs: typing.Dict
     outputs: typing.Dict
-    start_time: datetime.datetime
-    end_time: datetime.datetime
+    start_time: str
+    end_time: str
     status: str
     latency: float
     name: str
@@ -179,8 +178,8 @@ class _LineRunData:
         else:
             # eager flow/arbitrary script
             line_run_id = span.trace_id
-        start_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.START_TIME])
-        end_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.END_TIME])
+        start_time = span._content[SpanFieldName.START_TIME]
+        end_time = span._content[SpanFieldName.END_TIME]
         # calculate `cumulative_token_count`
         completion_token_count = int(attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0))
         prompt_token_count = int(attributes.get(SpanAttributeFieldName.PROMPT_TOKEN_COUNT, 0))
