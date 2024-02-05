@@ -17,6 +17,7 @@ from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..conftest import MockSpawnProcess, setup_recording
+from ..process_utils import MockForkServerProcess, override_process_class
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -315,8 +316,8 @@ class TestExecutor:
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
     try:
-        multiprocessing.Process = MockSpawnProcess
-        multiprocessing.get_context("spawn").Process = MockSpawnProcess
+        process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+        override_process_class(process_class_dict)
 
         # recording injection again since this method is running in a new process
         setup_recording()
