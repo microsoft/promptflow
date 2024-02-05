@@ -18,13 +18,17 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
     - The test data generator may not function effectively for non-Latin characters, such as Chinese, in certain document types. The limitation is caused by dependent text loader capabilities, such as `pypdf`.
     - The test data generator may not generate meaningful questions if the document is not well-organized or contains massive code snippets/links, such as API introduction documents or reference documents.
 
-2. Prepare local environment. Go to [example_gen_test_data](../../examples/gen_test_data) folder and install required packages `pip install -r requirements.txt`
+2. Prepare local environment. Go to [example_gen_test_data](../../examples/gen_test_data) folder and install required packages.
+
+    ```bash
+    pip install -r requirements.txt
+    ```
   
     For specific document file types, you may need to install extra packages:
       - .docx - `pip install docx2txt`
       - .pdf - `pip install pypdf`
       - .ipynb - `pip install nbconvert`
-      > !Note: We use llama index `SimpleDirectoryReador` in this process. For the latest information on required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
+      > !Note: We use llama index `SimpleDirectoryReader` to load documents. For the latest information on required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
 
 3. Install VSCode extension `Prompt flow`.
 
@@ -50,19 +54,19 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
     **Understand the prompts**
     
-    The test data generation flow contains 4 prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, suggested answers, etc., while validation prompts are used to verify the validity of the text chunk, generated question or answer.
+    The test data generation flow contains 5 prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, suggested answers, etc., while validation prompts are used to verify the validity of the text chunk, generated question or answer.
     - Generation prompts
       - [*generate question prompt*](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/generate_question_prompt.jinja2): frame a question based on the given text chunk.
       - [*generate suggested answer prompt*](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/generate_suggested_answer_prompt.jinja2): generate suggested answer for the question based on the given text chunk.
     - Validation prompts
       - [*score text chunk prompt*](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/score_text_chunk_prompt.jinja2): score 0-10 to validate if the given text chunk is worthy of framing a question. If the score is lower than `score_threshold` (default 4), validation fails.
       - [*validate question prompt*](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/validate_question_prompt.jinja2): validate if the generated question is good.
-      - [*validate suggested answer*](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/generate_suggested_answer_prompt.jinja2): validate if the generated suggested answer is good.
+      - [*validate suggested answer*](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/validate_suggested_answer_prompt.jinja2): validate if the generated suggested answer is good.
 
       If the validation fails, would lead to empty string `question`/`suggested_answer` which are removed from final output test data set.
 
 ## Generate test data
-- Navigate to [example_gen_test_data](../../examples/gen_test_data_gen) folder.
+- Navigate to [example_gen_test_data](../../examples/gen_test_data) folder.
  
 - After configuration, run the following command to generate the test data set:
   ```bash

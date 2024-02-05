@@ -12,7 +12,7 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
       - .docx - `pip install docx2txt`
       - .pdf - `pip install pypdf`
       - .ipynb - `pip install nbconvert`
-      > !Note: We use llama index `SimpleDirectoryReador` in this process. For the latest information on required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
+      > !Note: We use llama index `SimpleDirectoryReader` to load documents. For the latest information on required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
 
 4. Prepare Azure AI resources in cloud.
     - An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?view=azureml-api-2).
@@ -30,7 +30,7 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 
 ## Generate test data at cloud
 For handling larger test data, you can leverage the PRS component to run flow in cloud.
-- Navigate to [gen_test_data](../../../examples/gen_test_data) folder.
+- Navigate to [example_gen_test_data](../../../examples/gen_test_data) folder.
 - After configuration, run the following command to generate the test data set:
   ```bash
   python -m gen_test_data.run --cloud
