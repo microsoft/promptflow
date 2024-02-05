@@ -9,7 +9,7 @@ from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import collect_package_tools
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow.contracts.tool import ToolType
-from promptflow.executor._service._errors import GenerateMetaTimeout
+from promptflow.executor._service._errors import ExecutionTimeoutError, GenerateMetaTimeout
 from promptflow.executor._service.contracts.tool_request import ToolMetaRequest
 from promptflow.executor._service.utils.process_utils import QUICK_TIMEOUT, invoke_function_in_process
 from promptflow.executor._service.utils.service_utils import generate_error_response
@@ -24,13 +24,16 @@ async def list_package_tools():
 
 @router.post("/meta")
 async def gen_tool_meta(request: ToolMetaRequest):
-    result = await invoke_function_in_process(request, {}, gen_meta, wait_timeout=QUICK_TIMEOUT)
-    # For not processed tools, treat as timeout error.
-    tool_dict = result["tools"]
-    error_dict = result["errors"]
-    for source in request.tools.keys():
-        if source not in tool_dict and source not in error_dict:
-            error_dict[source] = generate_error_response(GenerateMetaTimeout(source)).to_dict()
+    result = {"tools": {}, "errors": {}}
+    try:
+        result = await invoke_function_in_process(request, {}, gen_meta, wait_timeout=QUICK_TIMEOUT)
+    except ExecutionTimeoutError:
+        # For not processed tools, treat as timeout error.
+        tool_dict = result["tools"]
+        error_dict = result["errors"]
+        for source in request.tools.keys():
+            if source not in tool_dict and source not in error_dict:
+                error_dict[source] = generate_error_response(GenerateMetaTimeout(source)).to_dict()
     return result
 
 
