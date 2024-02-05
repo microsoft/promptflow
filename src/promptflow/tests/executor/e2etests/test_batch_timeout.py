@@ -27,7 +27,6 @@ class TestBatchTimeout:
         ],
     )
     def test_batch_with_line_timeout(self, flow_folder, dev_connections):
-        # set line timeout to 1 second for testing
         mem_run_storage = MemoryRunStorage()
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder),
