@@ -64,7 +64,7 @@ class Span(Base):
                 stmt = stmt.filter(
                     text(f"trace_id in (select distinct trace_id from span where session_id = '{session_id}')")
                 )
-            stmt = stmt.order_by(text("json_extract(json_extract(span.content, '$.attributes'), '$.start_time') asc"))
+            stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
 
@@ -86,7 +86,7 @@ class LineRun:
                 raise NotImplementedError
             stmt = stmt.order_by(
                 Span.trace_id,
-                text("json_extract(json_extract(span.content, '$.attributes'), '$.start_time') asc"),
+                text("json_extract(span.content, '$.start_time') asc"),
             )
             line_runs = []
             current_spans: typing.List[Span] = []
