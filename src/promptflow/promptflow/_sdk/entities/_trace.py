@@ -11,7 +11,13 @@ from dataclasses import dataclass
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
-from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanFieldName, SpanStatusFieldName
+from promptflow._constants import (
+    DEFAULT_SESSION_ID,
+    SpanAttributeFieldName,
+    SpanContextFieldName,
+    SpanFieldName,
+    SpanStatusFieldName,
+)
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -124,6 +130,14 @@ class Span:
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
         attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
+        if SpanAttributeFieldName.SESSION_ID not in attributes:
+            # no `session_id` in attributes, which means this is a standard OpenTelemetry trace
+            # without prompt flow related fields (e.g., `session_id`, `span_type`)
+            session_id = DEFAULT_SESSION_ID
+            span_type = obj.SpanKind
+        else:
+            session_id = attributes[SpanAttributeFieldName.SESSION_ID]
+            span_type = attributes[SpanAttributeFieldName.SPAN_TYPE]
         return Span(
             name=obj.name,
             context=context,
@@ -133,8 +147,8 @@ class Span:
             status=status,
             attributes=attributes,
             resource=resource,
-            span_type=attributes[SpanAttributeFieldName.SPAN_TYPE],
-            session_id=attributes[SpanAttributeFieldName.SESSION_ID],
+            span_type=span_type,
+            session_id=session_id,
             parent_span_id=parent_span_id,
         )
 

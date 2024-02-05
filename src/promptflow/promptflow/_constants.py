@@ -101,3 +101,6 @@ class SpanResourceAttributesFieldName:
 class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"
+
+
+DEFAULT_SESSION_ID = "default"
