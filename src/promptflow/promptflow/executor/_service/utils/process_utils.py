@@ -38,8 +38,8 @@ async def invoke_function_in_process(
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
 
-        # Wait for the process to finish or timeout
-        p.join(timeout=wait_timeout)
+        # Wait for the process to finish or timeout asynchronously
+        await asyncio.get_running_loop().run_in_executor(None, p.join, wait_timeout)
 
         # Terminate the process if it is still alive after timeout
         if p.is_alive():
