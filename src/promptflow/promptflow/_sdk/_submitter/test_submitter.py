@@ -297,8 +297,8 @@ class TestSubmitter:
                     # and connection will close. this will result in subsequent getting generator content failed.
                     # Since dotnet process is not started in detach mode, it wll exit when parent process exit.
                     # So we won't kill executor proxy here for streaming c# chat flow scenario.
-                    if self._executor_proxy and not self._generator_returned:
-                        async_run_allowing_running_loop(self._executor_proxy.destroy)
+                    if self.executor_proxy and not self._generator_returned:
+                        async_run_allowing_running_loop(self.executor_proxy.destroy)
 
             self._within_init_context = False
 
@@ -448,14 +448,12 @@ class TestSubmitter:
         else:
             from promptflow._utils.multimedia_utils import persist_multimedia_data
 
-            if stream_output and allow_generator_output and self._executor_proxy.chat_output_name:
+            if stream_output and allow_generator_output and self.executor_proxy.chat_output_name:
                 self._generator_returned = True
 
             # TODO: support run_id for non-python
             # TODO: most of below code is duplicate to flow_executor.execute_flow
-            line_result: LineResult = self._executor_proxy.exec_line(
-                inputs, index=0, enable_stream_output=stream_output
-            )
+            line_result: LineResult = self.executor_proxy.exec_line(inputs, index=0, enable_stream_output=stream_output)
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.output_base, sub_dir=self.relative_flow_output_path
             )
@@ -465,7 +463,7 @@ class TestSubmitter:
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
 
                 aggregation_results = async_run_allowing_running_loop(
-                    self._executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
+                    self.executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
                 )
 
                 line_result.node_run_infos.update(aggregation_results.node_run_infos)
