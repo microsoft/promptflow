@@ -168,6 +168,7 @@ class FlowOperations(TelemetryMixin):
             environment_variables=environment_variables,
             stream_log=stream_log,
             output_path=output_path,
+            stream_output=stream_output,
             session=session,
         ) as submitter:
             if isinstance(flow, EagerFlow):
@@ -188,7 +189,6 @@ class FlowOperations(TelemetryMixin):
             else:
                 return submitter.flow_test(
                     inputs=flow_inputs,
-                    stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                     run_id=run_id,
                 )

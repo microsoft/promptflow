@@ -345,10 +345,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if self.language == FlowLanguage.CSharp:
-            with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
-                result = submitter.flow_test(
-                    inputs=inputs,
-                )
+            with TestSubmitter(flow=self, flow_context=self.context).init(
+                stream_output=self.context.streaming
+            ) as submitter:
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
                 return result
         else:
             invoker = FlowContextResolver.resolve(flow=self)
