@@ -271,14 +271,14 @@ def enrich_span_with_trace(span, trace):
 
 
 def enrich_span_with_prompt_info(span, node_name, kwargs):
-    from promptflow.executor._tool_resolver import prompt_info
+    from promptflow.executor._tool_resolver import PromptInfo
 
-    info = prompt_info.try_get_prompt_info(node_name)
+    info = PromptInfo.try_get_prompt_info(node_name)
     if info:
         variables = {key: kwargs.get(key, "") for key in info["prompt_variables"]}
         span.set_attributes({
             "prompt.template": info["prompt_template"],
-            "prompt.variables": json.dumps(variables)
+            "prompt.variables": serialize_attribute(variables)
         })
 
 

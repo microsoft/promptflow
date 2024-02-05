@@ -5,14 +5,15 @@
 import copy
 import inspect
 import types
+from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from threading import Lock
 from typing import Callable, List, Optional
 
 from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
@@ -56,6 +57,7 @@ class ToolResolver:
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
+        PromptInfo.init_prompt_info()
 
     @classmethod
     def start_resolver(
@@ -247,7 +249,7 @@ class ToolResolver:
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
-        prompt_info.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
+        PromptInfo.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
         from promptflow.tools.template_rendering import render_template_jinja2
 
         params = inspect.signature(render_template_jinja2).parameters
@@ -299,7 +301,7 @@ class ToolResolver:
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
-        prompt_info.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
+        PromptInfo.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the parameters of {node.provider}.{node.api}."
@@ -362,7 +364,7 @@ class ToolResolver:
         node = resolved_tool.node
         prompt_tpl = PromptTemplate(self._load_source_content(node))
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
-        prompt_info.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
+        PromptInfo.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the inputs of custom llm tool."
@@ -387,19 +389,26 @@ class ToolResolver:
         return resolved_tool
 
 
-class PromptInfo:
-    _lock = Lock()
+class PromptInfo(ThreadLocalSingleton):
+    CONTEXT_VAR_NAME = "PromptInfo"
+    context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
     def __init__(self):
         self._prompt_info = {}
 
-    def set_prompt_info(self, node_name: str, tpl: str, var_keys: list):
-        with self._lock:
-            self._prompt_info[node_name] = {"prompt_template": tpl, "prompt_variables": var_keys}
+    @classmethod
+    def init_prompt_info(cls):
+        prompt_info = cls()
+        prompt_info._activate_in_context()
+        return prompt_info
 
-    def try_get_prompt_info(self, node_name: str):
-        with self._lock:
-            return self._prompt_info.get(node_name, None)
+    @classmethod
+    def set_prompt_info(cls, node_name: str, tpl: str, var_keys: list):
+        if (prompt_info := cls.active_instance()) is not None:
+            prompt_info._prompt_info[node_name] = {"prompt_template": tpl, "prompt_variables": var_keys}
 
-
-prompt_info = PromptInfo()
+    @classmethod
+    def try_get_prompt_info(cls, node_name: str):
+        if (prompt_info := cls.active_instance()) is not None:
+            return prompt_info._prompt_info.get(node_name, None)
+        return None
