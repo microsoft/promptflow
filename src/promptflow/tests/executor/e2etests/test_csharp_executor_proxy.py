@@ -100,8 +100,10 @@ class TestCSharpExecutorProxy:
 
 class MockCSharpExecutorProxy(CSharpExecutorProxy):
     def __init__(self, process: multiprocessing.Process, port: str):
-        self._process = process
-        self._port = port
+        super().__init__(
+            process=process,
+            port=port,
+        )
 
     @classmethod
     async def create(
