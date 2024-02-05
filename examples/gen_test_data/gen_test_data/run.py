@@ -35,13 +35,13 @@ def batch_run_flow(
     cmd = (
         f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} "
         f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' "
-        f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}'"
+        f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}' --debug"
     )
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     logger.info(
         f"Submit batch run successfully. process id {process.pid}. Please wait for the batch run to complete..."
-    )
-    return run_name
+    ) 
+    return run_name, process
 
 
 def get_batch_run_output(output_path: Path):
@@ -87,14 +87,14 @@ def run_local(
     if not should_skip_split:
         text_chunks_path = split_document(document_chunk_size, documents_folder, output_folder)
 
-    run_name = batch_run_flow(
+    run_name, process = batch_run_flow(
         flow_folder,
         text_chunks_path,
         flow_batch_run_size
     )
 
     run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
-    print_progress(run_folder_path / "logs.txt")
+    print_progress(run_folder_path / "logs.txt", process)
     test_data_set = get_batch_run_output(run_folder_path / "outputs.jsonl")
     # Store intermedian batch run output results
     jsonl_str = "\n".join(map(json.dumps, test_data_set))
