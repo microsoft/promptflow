@@ -86,3 +86,14 @@ class TestCSharpCli:
         # Check node output
         assert "Hello world round 0: hi" in outerr.out
         assert "Hello world round 1: what is chat gpt?" in outerr.out
+
+    def test_flow_chat_ui_streaming(self):
+        # The test need to interact with user input in ui
+        flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            flow_dir,
+            "--ui",
+        )

@@ -212,7 +212,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 with client.stream("POST", url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers) as response:
                     if response.status_code != 200:
                         # process the response
-                        result = self._process_http_response(response)
+                        data = response.read()
+                        result = self._process_http_stream_response(data, response.status_code)
                         run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
                         yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
                     for line in response.iter_lines():
@@ -223,19 +224,17 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         origin_generator = generator()
         line_result = next(origin_generator)
 
-        if self.chat_output_name is None:
-            # TODO: do we support streaming output for non-chat flow and what to return if so?
-            return line_result
+        if self.chat_output_name is not None and self.chat_output_name in line_result.output:
+            first_chat_output = line_result.output[self.chat_output_name]
 
-        first_chat_output = line_result.output[self.chat_output_name]
+            def final_generator():
+                yield first_chat_output
+                for output in origin_generator:
+                    yield output.output[self.chat_output_name]
 
-        def final_generator():
-            yield first_chat_output
-            for output in origin_generator:
-                yield output.output[self.chat_output_name]
+            line_result.output[self.chat_output_name] = final_generator()
 
-        line_result.output[self.chat_output_name] = final_generator()
-
+        # TODO: do we support streaming output for non-chat flow and what to return if so?
         return line_result
 
     async def exec_line_async(
@@ -343,6 +342,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             # if the status code is 200, the response is the json dict of a line result
             return response.json()
         else:
+            self._process_http_stream_response()
             # if the status code is not 200, log the error
             message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
             bulk_logger.error(message_format.format(status_code=response.status_code, error=response.text))
@@ -356,3 +356,16 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                     message_format=message_format, status_code=response.status_code, error=response.text
                 )
                 return ExceptionPresenter.create(unexpected_error).to_dict()
+
+    def _process_http_stream_response(self, response, status_code):
+        # if the status code is not 200, log the error
+        message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
+        bulk_logger.error(message_format.format(status_code=status_code, error=response))
+        # if response can be parsed as json, return the error dict
+        # otherwise, wrap the error in an UnexpectedError and return the error dict
+        try:
+            error_dict = json.loads(response.decode("utf-8"))
+            return error_dict["error"]
+        except (JSONDecodeError, KeyError):
+            unexpected_error = UnexpectedError(message_format=message_format, status_code=status_code, error=response)
+            return ExceptionPresenter.create(unexpected_error).to_dict()
