@@ -202,8 +202,9 @@ class _LineRunData:
             line_run_id=line_run_id,
             trace_id=span.trace_id,
             root_span_id=span.span_id,
-            inputs=json.loads(attributes[SpanAttributeFieldName.INPUTS]),
-            outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
+            # for standard OpenTelemetry traces, there won't be `inputs` and `outputs` in attributes
+            inputs=json.loads(attributes.get(SpanAttributeFieldName.INPUTS, dict())),
+            outputs=json.loads(attributes.get(SpanAttributeFieldName.OUTPUT, dict())),
             start_time=start_time,
             end_time=end_time,
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
