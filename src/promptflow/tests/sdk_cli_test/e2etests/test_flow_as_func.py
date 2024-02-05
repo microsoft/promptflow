@@ -239,3 +239,13 @@ class TestFlowAsFunc:
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         for i in range(100):
             f(key="key")
+
+    def test_flow_with_default_variant(self, azure_open_ai_connection):
+        f = load_flow(f"{FLOWS_DIR}/web_classification")
+        f.context = FlowContext(
+            connections={
+                "summarize_text_content": {"connection": azure_open_ai_connection},
+            }
+        )
+        # function can successfully run with connection override
+        f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
