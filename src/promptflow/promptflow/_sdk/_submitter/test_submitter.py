@@ -227,6 +227,10 @@ class TestSubmitter:
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
+            if self.flow.language == FlowLanguage.CSharp:
+                # TODO: consider move this to Operations
+                CSharpExecutorProxy.generate_metadata(self.flow.path, self.flow.code)
+
             self._target_node = target_node
 
             SubmitterHelper.init_env(
