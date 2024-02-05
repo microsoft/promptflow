@@ -139,7 +139,7 @@ def print_progress(log_file_path: str):
 
 
 def copy_flow_folder_and_set_node_inputs(copied_folder, flow_folder, node_inputs_override):
-    logger = get_logger("node_inputs_override")
+    logger = get_logger("data.gen")
     logger.info("Overriding the values of node inputs in flag.dag.yaml...")
     if not (Path(flow_folder) / "flow.dag.yaml").is_file():
         raise ValueError(f"The file 'flag.dag.yaml' does not exist in {flow_folder}.")
