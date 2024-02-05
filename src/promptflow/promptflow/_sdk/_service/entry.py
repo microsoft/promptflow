@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import platform
-import subprocess
 import sys
 
 from promptflow._cli._utils import _get_cli_activity_name
@@ -49,9 +48,10 @@ def add_start_service_action(subparsers):
         help="If the port is used, the existing service will be terminated and restart a new service.",
     )
     start_pfs_parser.add_argument(
-        "--synchronous",
+        "-d",
+        "--debug",
         action="store_true",
-        help=argparse.SUPPRESS,
+        help="The flag to turn on debug mode for cli.",
     )
     start_pfs_parser.set_defaults(action="start")
 
@@ -71,6 +71,7 @@ def start_service(args):
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
     get_app()
+    app.config["DEBUG"] = args.debug
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
@@ -78,7 +79,7 @@ def start_service(args):
                 app.logger.warning(f"Force restart the service on the port {port}.")
                 kill_exist_service(port)
             else:
-                app.logger.warning(f"Service port {port} is used, version: {get_promptflow_sdk_version()}.")
+                app.logger.warning(f"Service port {port} is used.")
                 raise UserErrorException(f"Service port {port} is used.")
 
     if port:
@@ -98,24 +99,20 @@ def start_service(args):
         "--call",
         "promptflow._sdk._service.entry:get_app",
     ]
-    if args.synchronous:
-        subprocess.call(cmd)
+    # Start a pfs process using detach mode
+    if platform.system() == "Windows":
+        os.spawnv(os.P_DETACH, sys.executable, cmd)
     else:
-        # Start a pfs process using detach mode
-        if platform.system() == "Windows":
-            os.spawnv(os.P_DETACH, sys.executable, cmd)
-        else:
-            os.system(" ".join(["nohup"] + cmd + ["&"]))
+        os.system(" ".join(["nohup"] + cmd + ["&"]))
     is_healthy = check_pfs_service_status(port)
     if is_healthy:
-        app.logger.info(
-            f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-        )
+        app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}.)")
     else:
         app.logger.warning(f"Pfs service start failed in {port}.")
 
 
 def main():
+    sys.argv += ["start", "--port"]
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}

@@ -111,17 +111,17 @@ def is_pfs_service_healthy(pfs_port) -> bool:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
             logger.debug(f"Pfs service is already running on port {pfs_port}.")
-            return True
+            return True, response.content
     except Exception:  # pylint: disable=broad-except
         pass
     logger.warning(f"Pfs service can't be reached through port {pfs_port}, will try to start/force restart pfs.")
-    return False
+    return False, None
 
 
 def check_pfs_service_status(pfs_port, time_delay=1, time_threshold=20) -> bool:
     wait_time = time_delay
     time.sleep(time_delay)
-    is_healthy = is_pfs_service_healthy(pfs_port)
+    is_healthy, _ = is_pfs_service_healthy(pfs_port)
     while is_healthy is False and time_threshold > wait_time:
         logger.info(
             f"Pfs service is not ready. It has been waited for {wait_time}s, will wait for at most "
@@ -129,7 +129,7 @@ def check_pfs_service_status(pfs_port, time_delay=1, time_threshold=20) -> bool:
         )
         wait_time += time_delay
         time.sleep(time_delay)
-        is_healthy = is_pfs_service_healthy(pfs_port)
+        is_healthy, _ = is_pfs_service_healthy(pfs_port)
     return is_healthy
 
 
