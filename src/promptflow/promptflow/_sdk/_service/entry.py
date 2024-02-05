@@ -51,7 +51,7 @@ def add_start_service_action(subparsers):
         "-d",
         "--debug",
         action="store_true",
-        help="The flag to turn on debug mode for cli.",
+        help="The flag to turn on debug mode for pfs.",
     )
     start_pfs_parser.set_defaults(action="start")
 
