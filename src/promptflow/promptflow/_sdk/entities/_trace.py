@@ -201,8 +201,8 @@ class _LineRunData:
             # for standard OpenTelemetry traces, there won't be `inputs` and `outputs` in attributes
             inputs=json.loads(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
             outputs=json.loads(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
-            start_time=start_time,
-            end_time=end_time,
+            start_time=start_time.isoformat(),
+            end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
             name=span.name,
