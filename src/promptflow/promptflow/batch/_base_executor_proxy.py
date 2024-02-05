@@ -342,7 +342,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             # if the status code is 200, the response is the json dict of a line result
             return response.json()
         else:
-            self._process_http_stream_response()
             # if the status code is not 200, log the error
             message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
             bulk_logger.error(message_format.format(status_code=response.status_code, error=response.text))
