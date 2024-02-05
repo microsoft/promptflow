@@ -169,7 +169,8 @@
     "otel",
     "OTLP",
     "spawnv",
-    "spawnve"
+    "spawnve",
+    "addrs"
   ],
   "flagWords": [
     "Prompt Flow"
