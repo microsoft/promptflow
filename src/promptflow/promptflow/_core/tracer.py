@@ -270,6 +270,18 @@ def enrich_span_with_trace(span, trace):
         logging.warning(f"Failed to enrich span with trace: {e}")
 
 
+def enrich_span_with_prompt_info(span, node_name, kwargs):
+    from promptflow.executor._tool_resolver import prompt_info
+
+    info = prompt_info.try_get_prompt_info(node_name)
+    if info:
+        variables = {key: kwargs.get(key, "") for key in info["prompt_variables"]}
+        span.set_attributes({
+            "prompt.template": info["prompt_template"],
+            "prompt.variables": json.dumps(variables)
+        })
+
+
 def enrich_span_with_input(span, input):
     try:
         serialized_input = serialize_attribute(input)
@@ -350,6 +362,9 @@ def _traced_async(
         span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
+            if trace_type == TraceType.TOOL:
+                node_name = get_node_name_from_context()
+                enrich_span_with_prompt_info(span, node_name, kwargs)
 
             # Should not extract these codes to a separate function here.
             # We directly call func instead of calling Tracer.invoke,
@@ -399,6 +414,9 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
         span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
+            if trace_type == TraceType.TOOL:
+                node_name = get_node_name_from_context()
+                enrich_span_with_prompt_info(span, node_name, kwargs)
 
             # Should not extract these codes to a separate function here.
             # We directly call func instead of calling Tracer.invoke,

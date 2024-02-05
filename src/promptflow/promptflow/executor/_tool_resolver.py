@@ -8,6 +8,7 @@ import types
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
+from threading import Lock
 from typing import Callable, List, Optional
 
 from promptflow._core._errors import InvalidSource
@@ -246,6 +247,7 @@ class ToolResolver:
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_info.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
         from promptflow.tools.template_rendering import render_template_jinja2
 
         params = inspect.signature(render_template_jinja2).parameters
@@ -297,6 +299,7 @@ class ToolResolver:
 
         prompt_tpl = self._load_source_content(node)
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_info.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the parameters of {node.provider}.{node.api}."
@@ -359,6 +362,7 @@ class ToolResolver:
         node = resolved_tool.node
         prompt_tpl = PromptTemplate(self._load_source_content(node))
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_info.set_prompt_info(node.name, prompt_tpl, prompt_tpl_inputs_mapping.keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the inputs of custom llm tool."
@@ -381,3 +385,21 @@ class ToolResolver:
             if attr_val is not None:
                 setattr(resolved_tool.callable, attr, attr_val)
         return resolved_tool
+
+
+class PromptInfo:
+    _lock = Lock()
+
+    def __init__(self):
+        self._prompt_info = {}
+
+    def set_prompt_info(self, node_name: str, tpl: str, var_keys: list):
+        with self._lock:
+            self._prompt_info[node_name] = {"prompt_template": tpl, "prompt_variables": var_keys}
+
+    def try_get_prompt_info(self, node_name: str):
+        with self._lock:
+            return self._prompt_info.get(node_name, None)
+
+
+prompt_info = PromptInfo()
