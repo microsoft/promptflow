@@ -456,7 +456,7 @@ def _stop_orchestrator_process(orchestrator):
 
             # Connect to named pipe to stop the orchestrator process.
             win32file.CreateFile(
-                r"\\.\pipe\{}".format(orchestrator.name),
+                r"\\.\pipe\{}".format(orchestrator.experiment_name),
                 win32file.GENERIC_READ | win32file.GENERIC_WRITE,
                 0,
                 None,
