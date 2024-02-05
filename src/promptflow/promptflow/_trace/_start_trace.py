@@ -9,11 +9,11 @@ import uuid
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._constants import SpanAttributeFieldName
+from promptflow._constants import ResourceAttributeFieldName, SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import PF_TRACE_CONTEXT
@@ -55,14 +55,12 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _logger.debug("Read trace context from environment: %s", env_trace_context)
     env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
     experiment = env_attributes.get(ExperimentContextKey.EXPERIMENT, None)
-    if experiment is not None:
-        operation_context._add_otel_attributes(SpanAttributeFieldName.EXPERIMENT, experiment)
     ref_line_run_id = env_attributes.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
     if ref_line_run_id is not None:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
     # init the global tracer with endpoint
-    _init_otel_trace_exporter(otlp_port=pfs_port)
+    _init_otel_trace_exporter(otlp_port=pfs_port, session_id=session_id, experiment=experiment)
     # openai instrumentation
     inject_openai_api()
     # print user the UI url
@@ -105,12 +103,18 @@ def _provision_session(session_id: typing.Optional[str] = None) -> str:
     return session_id
 
 
-def _init_otel_trace_exporter(otlp_port: str) -> None:
-    resource = Resource(
-        attributes={
-            SERVICE_NAME: "promptflow",
-        }
-    )
+def _init_otel_trace_exporter(
+    otlp_port: str,
+    session_id: str,
+    experiment: typing.Optional[str] = None,
+) -> None:
+    resource_attributes = {
+        ResourceAttributeFieldName.SERVICE_NAME: "promptflow",
+        ResourceAttributeFieldName.SESSION_ID: session_id,
+    }
+    if experiment is not None:
+        resource_attributes[SpanAttributeFieldName.EXPERIMENT] = experiment
+    resource = Resource(attributes=resource_attributes)
     trace_provider = TracerProvider(resource=resource)
     endpoint = f"http://localhost:{otlp_port}/v1/traces"
     # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/

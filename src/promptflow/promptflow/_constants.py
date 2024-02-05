@@ -104,5 +104,11 @@ class SpanResourceFieldName:
     SCHEMA_URL = "schema_url"
 
 
+class ResourceAttributeFieldName:
+    EXPERIMENT_NAME = "experiment.name"
+    SERVICE_NAME = "service.name"
+    SESSION_ID = "session.id"
+
+
 DEFAULT_SESSION_ID = "default"
 DEFAULT_SPAN_TYPE = "default"
