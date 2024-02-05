@@ -168,6 +168,7 @@ try:
     from ._models_py3 import AssetTypeMetaInfo
     from ._models_py3 import AssetVersionPublishRequest
     from ._models_py3 import AssignedUser
+    from ._models_py3 import AttachCosmosRequest
     from ._models_py3 import AuthKeys
     from ._models_py3 import AutoClusterComputeSpecification
     from ._models_py3 import AutoDeleteSetting
@@ -237,7 +238,6 @@ try:
     from ._models_py3 import ControlInput
     from ._models_py3 import ControlOutput
     from ._models_py3 import CopyDataTask
-    from ._models_py3 import CreateFlowFromSampleRequest
     from ._models_py3 import CreateFlowRequest
     from ._models_py3 import CreateFlowRuntimeRequest
     from ._models_py3 import CreateFlowSessionRequest
@@ -691,6 +691,7 @@ try:
     from ._models_py3 import ValidationDataSettings
     from ._models_py3 import VariantIdentifier
     from ._models_py3 import VariantNode
+    from ._models_py3 import Volume
     from ._models_py3 import WebServiceComputeMetaInfo
     from ._models_py3 import WebServicePort
     from ._models_py3 import Webhook
@@ -859,6 +860,7 @@ except (SyntaxError, ImportError):
     from ._models import AssetTypeMetaInfo  # type: ignore
     from ._models import AssetVersionPublishRequest  # type: ignore
     from ._models import AssignedUser  # type: ignore
+    from ._models import AttachCosmosRequest  # type: ignore
     from ._models import AuthKeys  # type: ignore
     from ._models import AutoClusterComputeSpecification  # type: ignore
     from ._models import AutoDeleteSetting  # type: ignore
@@ -928,7 +930,6 @@ except (SyntaxError, ImportError):
     from ._models import ControlInput  # type: ignore
     from ._models import ControlOutput  # type: ignore
     from ._models import CopyDataTask  # type: ignore
-    from ._models import CreateFlowFromSampleRequest  # type: ignore
     from ._models import CreateFlowRequest  # type: ignore
     from ._models import CreateFlowRuntimeRequest  # type: ignore
     from ._models import CreateFlowSessionRequest  # type: ignore
@@ -1382,6 +1383,7 @@ except (SyntaxError, ImportError):
     from ._models import ValidationDataSettings  # type: ignore
     from ._models import VariantIdentifier  # type: ignore
     from ._models import VariantNode  # type: ignore
+    from ._models import Volume  # type: ignore
     from ._models import WebServiceComputeMetaInfo  # type: ignore
     from ._models import WebServicePort  # type: ignore
     from ._models import Webhook  # type: ignore
@@ -1544,6 +1546,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     PipelineType,
     PortAction,
     PrimaryMetrics,
+    PromptflowEngineType,
     ProvisioningState,
     RealTimeEndpointInternalStepCode,
     RealTimeEndpointOpCode,
@@ -1766,6 +1769,7 @@ __all__ = [
     'AssetTypeMetaInfo',
     'AssetVersionPublishRequest',
     'AssignedUser',
+    'AttachCosmosRequest',
     'AuthKeys',
     'AutoClusterComputeSpecification',
     'AutoDeleteSetting',
@@ -1835,7 +1839,6 @@ __all__ = [
     'ControlInput',
     'ControlOutput',
     'CopyDataTask',
-    'CreateFlowFromSampleRequest',
     'CreateFlowRequest',
     'CreateFlowRuntimeRequest',
     'CreateFlowSessionRequest',
@@ -2289,6 +2292,7 @@ __all__ = [
     'ValidationDataSettings',
     'VariantIdentifier',
     'VariantNode',
+    'Volume',
     'WebServiceComputeMetaInfo',
     'WebServicePort',
     'Webhook',
@@ -2449,6 +2453,7 @@ __all__ = [
     'PipelineType',
     'PortAction',
     'PrimaryMetrics',
+    'PromptflowEngineType',
     'ProvisioningState',
     'RealTimeEndpointInternalStepCode',
     'RealTimeEndpointOpCode',

@@ -13,7 +13,7 @@ from msrest import Deserializer, Serializer
 
 from .. import models
 from ._configuration import AzureMachineLearningDesignerServiceClientConfiguration
-from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, FlowRuntimesOperations, FlowRuntimesWorkspaceIndependentOperations, FlowSessionsOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations
+from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, FlowRuntimesOperations, FlowRuntimesWorkspaceIndependentOperations, FlowSessionsOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations, TraceSessionsOperations
 
 class AzureMachineLearningDesignerServiceClient:
     """AzureMachineLearningDesignerServiceClient.
@@ -38,6 +38,8 @@ class AzureMachineLearningDesignerServiceClient:
     :vartype flows_provider: flow.aio.operations.FlowsProviderOperations
     :ivar tools: ToolsOperations operations
     :vartype tools: flow.aio.operations.ToolsOperations
+    :ivar trace_sessions: TraceSessionsOperations operations
+    :vartype trace_sessions: flow.aio.operations.TraceSessionsOperations
     :param base_url: Service URL. Default value is ''.
     :type base_url: str
     :param api_version: Api Version. The default value is "1.0.0".
@@ -66,6 +68,7 @@ class AzureMachineLearningDesignerServiceClient:
         self.flow_sessions = FlowSessionsOperations(self._client, self._config, self._serialize, self._deserialize)
         self.flows_provider = FlowsProviderOperations(self._client, self._config, self._serialize, self._deserialize)
         self.tools = ToolsOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.trace_sessions = TraceSessionsOperations(self._client, self._config, self._serialize, self._deserialize)
 
 
     def _send_request(
