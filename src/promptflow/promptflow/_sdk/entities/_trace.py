@@ -232,7 +232,7 @@ class LineRun:
     @staticmethod
     def _from_spans(spans: typing.List[Span]) -> "LineRun":
         main_line_run_data: _LineRunData = None
-        evaluation_line_run_datas = dict()
+        evaluation_line_run_data_dict = dict()
         for span in spans:
             if span.parent_span_id:
                 continue
@@ -240,12 +240,12 @@ class LineRun:
             if SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
             elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
-                evaluation_line_run_datas[span.name] = _LineRunData._from_root_span(span)
+                evaluation_line_run_data_dict[span.name] = _LineRunData._from_root_span(span)
             else:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
         evaluations = dict()
-        for eval_name, eval_line_run_data in evaluation_line_run_datas.items():
+        for eval_name, eval_line_run_data in evaluation_line_run_data_dict.items():
             evaluations[eval_name] = eval_line_run_data
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
