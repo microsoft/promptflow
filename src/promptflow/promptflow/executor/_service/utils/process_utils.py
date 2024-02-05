@@ -19,13 +19,13 @@ from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.utils.service_utils import get_log_context
 
-ASYNC_REQUEST_TIMEOUT = timedelta(days=1).total_seconds()
-SYNC_REQUEST_TIMEOUT = 10  # seconds
+LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
+QUICK_TIMEOUT = 10  # seconds
 WAIT_SUBPROCESS_EXCEPTION_TIMEOUT = 10  # seconds
 
 
 async def invoke_function_in_process(
-    request, context_dict: dict, target_function: Callable, is_async_call: bool = True
+    request, context_dict: dict, target_function: Callable, wait_timeout: int = LONG_WAIT_TIMEOUT
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
@@ -39,15 +39,14 @@ async def invoke_function_in_process(
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
 
         # Wait for the process to finish or timeout
-        timeout = ASYNC_REQUEST_TIMEOUT if is_async_call else SYNC_REQUEST_TIMEOUT
-        p.join(timeout=timeout)
+        p.join(timeout=wait_timeout)
 
         # Terminate the process if it is still alive after timeout
         if p.is_alive():
-            service_logger.error(f"[{p.pid}] Stop process for exceeding {timeout} seconds.")
+            service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
             p.terminate()
             p.join()
-            raise ExecutionTimeoutError(timeout)
+            raise ExecutionTimeoutError(wait_timeout)
 
         # Raise exception if the process exit code is not 0
         if p.exitcode and p.exitcode > 0:

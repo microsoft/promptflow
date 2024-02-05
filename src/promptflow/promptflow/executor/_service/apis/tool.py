@@ -11,7 +11,7 @@ from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow.contracts.tool import ToolType
 from promptflow.executor._service._errors import GenerateMetaTimeout
 from promptflow.executor._service.contracts.tool_request import ToolMetaRequest
-from promptflow.executor._service.utils.process_utils import invoke_function_in_process
+from promptflow.executor._service.utils.process_utils import QUICK_TIMEOUT, invoke_function_in_process
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
 router = APIRouter(prefix="/tool")
@@ -24,7 +24,7 @@ async def list_package_tools():
 
 @router.post("/meta")
 async def gen_tool_meta(request: ToolMetaRequest):
-    result = await invoke_function_in_process(request, {}, gen_meta, is_async_call=False)
+    result = await invoke_function_in_process(request, {}, gen_meta, wait_timeout=QUICK_TIMEOUT)
     # For not processed tools, treat as timeout error.
     tool_dict = result["tools"]
     error_dict = result["errors"]
