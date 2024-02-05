@@ -57,14 +57,13 @@ class Span(Base):
     @sqlite_retry
     def list(
         session_id: typing.Optional[str] = None,
-        parent_span_id: typing.Optional[str] = None,
     ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
             stmt = session.query(Span)
             if session_id is not None:
-                stmt = stmt.filter(Span.session_id == session_id)
-            if parent_span_id is not None:
-                stmt = stmt.filter(Span.parent_span_id == parent_span_id)
+                stmt = stmt.filter(
+                    text(f"trace_id in (select distinct trace_id from span where session_id = '{session_id}')")
+                )
             return [span for span in stmt.all()]
 
 
