@@ -13,4 +13,5 @@ customize_an_llm_tool
 create-cascading-tool-inputs
 create-your-own-custom-strong-type-connection
 create-dynamic-list-tool-input
+generate-tool-input-content-through-a-function
 ```

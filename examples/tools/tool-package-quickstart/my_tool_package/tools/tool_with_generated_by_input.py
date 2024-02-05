@@ -1,7 +1,6 @@
-from typing import Union
+from typing import Union, Dict, List
 
 from promptflow import tool
-from typing import Dict, List
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, CognitiveSearchConnection
 
 
@@ -17,7 +16,7 @@ def generate_index_json(
     embedding_connection: Union[AzureOpenAIConnection, OpenAIConnection] = "",
     embedding_deployment: str = ""
 ) -> str:
-    """This is a dummy function to generate a index json based on the inputs.
+    """This is a dummy function to generate an index json based on the inputs.
     """
 
     import json
@@ -102,7 +101,7 @@ def list_fields(subscription_id, resource_group_name, workspace_name) -> List[st
     return [
         {"value": "id"},
         {"value": "content"},
-        {"value": "catelog"},
+        {"value": "catalog"},
         {"value": "sourcepage"},
         {"value": "sourcefile"},
         {"value": "title"},
