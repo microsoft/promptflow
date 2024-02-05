@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import argparse
 import copy
-import hashlib
 import json
 import os
 import platform
@@ -15,9 +14,7 @@ import uuid
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from os import PathLike
 from pathlib import Path
-from time import sleep
 from typing import Union
 
 import psutil
@@ -44,14 +41,19 @@ from promptflow._sdk._errors import (
     ExperimentNodeRunFailedError,
     ExperimentNotFoundError,
     ExperimentValueError,
-    RunOperationError,
 )
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
 from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._submitter import RunSubmitter
-from promptflow._sdk._submitter.utils import SubmitterHelper
+from promptflow._sdk._submitter.utils import (
+    SubmitterHelper,
+    _calculate_snapshot,
+    _start_process_in_background,
+    _stop_orchestrator_process,
+    _windows_stop_handler,
+)
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._sdk.entities._flow import ProtectedFlow
@@ -65,7 +67,6 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
-SNAPSHOT_IGNORES = ["__pycache__"]
 
 
 class ExperimentOrchestrator:
@@ -209,14 +210,8 @@ class ExperimentOrchestrator:
             args = args + ["--from-nodes"] + from_nodes
         # Start an orchestrator process using detach mode
         logger.debug(f"Start experiment {self.experiment.name} in background.")
-        self._start_process_in_background(args, executable_path)
+        _start_process_in_background(args, executable_path)
         return self.experiment
-
-    def _start_process_in_background(self, args, executable_path=None):
-        if platform.system() == "Windows":
-            os.spawnve(os.P_DETACH, executable_path, args, os.environ)
-        else:
-            subprocess.Popen(" ".join(["nohup"] + args + ["&"]), shell=True, env=os.environ)
 
     def _update_orchestrator_record(self, status, pid=None):
         """Update orchestrator table data"""
@@ -341,29 +336,16 @@ class ExperimentOrchestrator:
         if platform.system() == "Windows":
             import threading
 
-            def stop_handler():
-                import win32pipe
-
-                # Create a named pipe to receive the cancel signal.
-                pipe_name = r"\\.\pipe\{}".format(self.experiment.name)
-                pipe = win32pipe.CreateNamedPipe(
-                    pipe_name,
-                    win32pipe.PIPE_ACCESS_DUPLEX,
-                    win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
-                    1,
-                    65536,
-                    65536,
-                    0,
-                    None,
-                )
-                # Wait for connection to stop orchestrator
-                win32pipe.ConnectNamedPipe(pipe, None)
-                stop_process()
-
             # Because of signal handler not works well in Windows, orchestrator starts a daemon thread
             # that creates named pipe to receive cancel signals from other processes.
             # Related issue of signal handler in Windows: https://bugs.python.org/issue26350
-            pipe_thread = threading.Thread(target=stop_handler)
+            pipe_thread = threading.Thread(
+                target=_windows_stop_handler,
+                args=(
+                    self.experiment.name,
+                    stop_process,
+                ),
+            )
             pipe_thread.daemon = True
             pipe_thread.start()
         else:
@@ -456,39 +438,8 @@ class ExperimentOrchestrator:
                 target=ErrorTarget.CONTROL_PLANE_SDK,
                 message="Experiment cannot be stopped if it is not started.",
             )
-        try:
-            if platform.system() == "Windows":
-                import win32file
 
-                # Connect to named pipe to stop the orchestrator process.
-                win32file.CreateFile(
-                    r"\\.\pipe\{}".format(self.experiment.name),
-                    win32file.GENERIC_READ | win32file.GENERIC_WRITE,
-                    0,
-                    None,
-                    win32file.OPEN_EXISTING,
-                    0,
-                    None,
-                )
-            else:
-                # Send terminate signal to orchestrator process.
-                process = psutil.Process(orchestrator.pid)
-                process.terminate()
-        except psutil.NoSuchProcess:
-            logger.debug("Experiment orchestrator process terminates abnormally.")
-            return
-
-        except Exception as e:
-            raise RunOperationError(
-                message=f"Experiment stopped failed with {e}",
-            )
-        # Wait for status updated
-        try:
-            while True:
-                psutil.Process(orchestrator.pid)
-                sleep(1)
-        except psutil.NoSuchProcess:
-            logger.debug("Experiment status has been updated.")
+        _stop_orchestrator_process(orchestrator)
 
     @staticmethod
     def get_status(experiment_name):
@@ -562,7 +513,7 @@ class ExperimentNodeRun(Run):
         )
         self._resolve_column_mapping()
         self._input_data = self._resolve_input_dirs()
-        self.snapshot_id = self._calculate_snapshot()
+        self.snapshot_id = _calculate_snapshot(self.column_mapping, self._input_data, self.flow)
 
     def _resolve_column_mapping(self):
         """Resolve column mapping with experiment inputs to constant values."""
@@ -612,35 +563,6 @@ class ExperimentNodeRun(Run):
         result = {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
         logger.debug(f"Resolved node {self.node.name} input dirs {result}.")
         return result
-
-    def _calculate_snapshot(self):
-        def calculate_files_content_hash(file_path):
-            file_content = {}
-            if not isinstance(file_path, (str, PathLike)) or not Path(file_path).exists():
-                return file_path
-            if Path(file_path).is_file():
-                with open(file_path, "r") as f:
-                    file_content[file_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
-            else:
-                for root, dirs, files in os.walk(file_path):
-                    for ignore_item in SNAPSHOT_IGNORES:
-                        if ignore_item in dirs:
-                            dirs.remove(ignore_item)
-                    for file in files:
-                        with open(os.path.join(root, file), "r") as f:
-                            relative_path = (Path(root) / file).relative_to(Path(file_path)).as_posix()
-                            try:
-                                file_content[relative_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
-                            except Exception as e:
-                                raise e
-            return hashlib.md5(json.dumps(file_content, sort_keys=True).encode("utf-8")).hexdigest()
-
-        snapshot_content = {
-            "column_mapping": self.column_mapping,
-            "inputs": {key: calculate_files_content_hash(value) for key, value in self._input_data.items()},
-            "code": calculate_files_content_hash(self.flow),
-        }
-        return hashlib.md5(json.dumps(snapshot_content, sort_keys=True).encode("utf-8")).hexdigest()
 
     def _get_node_path(self):
         if self.node.type == ExperimentNodeType.FLOW:
@@ -693,7 +615,7 @@ class ExperimentNodeRun(Run):
             output_path = run_info.properties.get("output_path", None)
             if output_path and Path(output_path).exists():
                 # TODO Whether need to link used node output folder in the experiment run folder
-                logger.info(f"Reuse exist node run {run_info.name} for node {self.node.name}.")
+                logger.info(f"Reuse existing node run {run_info.name} for node {self.node.name}.")
                 run_info.name = self.name
                 return run_info
         # Update exp node run record

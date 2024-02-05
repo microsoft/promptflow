@@ -4,15 +4,21 @@
 # this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
 
 import contextlib
+import hashlib
+import json
 import os
+import platform
 import re
+import subprocess
 import tempfile
 import time
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
+from time import sleep
 from types import GeneratorType
 
+import psutil
 import pydash
 from dotenv import load_dotenv
 from pydash import objects
@@ -29,7 +35,7 @@ from promptflow._sdk._constants import (
     VARIANTS,
     ConnectionFields,
 )
-from promptflow._sdk._errors import InvalidFlowError
+from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
@@ -355,3 +361,100 @@ def resolve_generator(flow_result, generator_record):
             node.result = node_output
 
     return flow_result
+
+
+# region start experiment utils
+def _start_process_in_background(args, executable_path=None):
+    if platform.system() == "Windows":
+        os.spawnve(os.P_DETACH, executable_path, args, os.environ)
+    else:
+        subprocess.Popen(" ".join(["nohup"] + args + ["&"]), shell=True, env=os.environ)
+
+
+def _windows_stop_handler(experiment_name, post_process):
+    import win32pipe
+
+    # Create a named pipe to receive the cancel signal.
+    pipe_name = r"\\.\pipe\{}".format(experiment_name)
+    pipe = win32pipe.CreateNamedPipe(
+        pipe_name,
+        win32pipe.PIPE_ACCESS_DUPLEX,
+        win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+        1,
+        65536,
+        65536,
+        0,
+        None,
+    )
+    # Wait for connection to stop orchestrator
+    win32pipe.ConnectNamedPipe(pipe, None)
+    post_process()
+
+
+def _calculate_snapshot(column_mapping, input_data, flow_path):
+    def calculate_files_content_hash(file_path):
+        file_content = {}
+        if not isinstance(file_path, (str, PathLike)) or not Path(file_path).exists():
+            return file_path
+        if Path(file_path).is_file():
+            with open(file_path, "r") as f:
+                file_content[file_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+        else:
+            for root, dirs, files in os.walk(file_path):
+                for ignore_item in ["__pycache__"]:
+                    if ignore_item in dirs:
+                        dirs.remove(ignore_item)
+                for file in files:
+                    with open(os.path.join(root, file), "r") as f:
+                        relative_path = (Path(root) / file).relative_to(Path(file_path)).as_posix()
+                        try:
+                            file_content[relative_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+                        except Exception as e:
+                            raise e
+        return hashlib.md5(json.dumps(file_content, sort_keys=True).encode("utf-8")).hexdigest()
+
+    snapshot_content = {
+        "column_mapping": column_mapping,
+        "inputs": {key: calculate_files_content_hash(value) for key, value in input_data.items()},
+        "code": calculate_files_content_hash(flow_path),
+    }
+    return hashlib.md5(json.dumps(snapshot_content, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _stop_orchestrator_process(orchestrator):
+    try:
+        if platform.system() == "Windows":
+            import win32file
+
+            # Connect to named pipe to stop the orchestrator process.
+            win32file.CreateFile(
+                r"\\.\pipe\{}".format(orchestrator.name),
+                win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                0,
+                None,
+                win32file.OPEN_EXISTING,
+                0,
+                None,
+            )
+        else:
+            # Send terminate signal to orchestrator process.
+            process = psutil.Process(orchestrator.pid)
+            process.terminate()
+    except psutil.NoSuchProcess:
+        logger.debug("Experiment orchestrator process terminates abnormally.")
+        return
+
+    except Exception as e:
+        raise RunOperationError(
+            message=f"Experiment stopped failed with {e}",
+        )
+    # Wait for status updated
+    try:
+        while True:
+            psutil.Process(orchestrator.pid)
+            sleep(1)
+    except psutil.NoSuchProcess:
+        logger.debug("Experiment status has been updated.")
+
+
+# endregion
