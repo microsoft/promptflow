@@ -159,7 +159,7 @@ def _load_experiment_template(
     """
     source_path = Path(source)
     if source_path.is_dir():
-        source = source_path / "flow.exp.yaml"
+        source_path = source_path / "flow.exp.yaml"
     if not source_path.exists():
-        raise FileNotFoundError(f"Experiment template file {source.resolve().absolute().as_posix()} not found.")
-    return load_common(ExperimentTemplate, source=source)
+        raise FileNotFoundError(f"Experiment template file {source_path.resolve().absolute().as_posix()} not found.")
+    return load_common(ExperimentTemplate, source=source_path)
