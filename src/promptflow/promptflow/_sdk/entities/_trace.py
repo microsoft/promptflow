@@ -133,6 +133,8 @@ class Span:
         if SpanAttributeFieldName.SESSION_ID not in attributes:
             # no `session_id` in attributes, which means this is a standard OpenTelemetry trace
             # without prompt flow related fields (e.g., `session_id`, `span_type`)
+            # TODO: note that this might make these spans persisted in another partion if we split
+            #       the trace table by `session_id`.
             session_id = DEFAULT_SESSION_ID
             span_type = obj.SpanKind
         else:
