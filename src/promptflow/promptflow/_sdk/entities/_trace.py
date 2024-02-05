@@ -252,6 +252,8 @@ class LineRun:
             evaluations[eval_name] = eval_line_run_data
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
+            trace_id=main_line_run_data.trace_id,
+            root_span_id=main_line_run_data.root_span_id,
             inputs=main_line_run_data.inputs,
             outputs=main_line_run_data.outputs,
             start_time=main_line_run_data.start_time.isoformat(),
