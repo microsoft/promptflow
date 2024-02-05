@@ -694,7 +694,7 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
                 Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
             )
         # All test run in experiment should use same session
-        self.session = session or uuid.uuid4()
+        self.session = session or str(uuid.uuid4())
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs
