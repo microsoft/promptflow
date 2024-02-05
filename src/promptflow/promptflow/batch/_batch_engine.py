@@ -128,6 +128,8 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
+        resume_from_run_storage: Optional[AbstractRunStorage] = None,
+        resume_from_run_output_dir: Optional[Path] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
