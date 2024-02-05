@@ -1,10 +1,14 @@
+import json
 import os
 
 import pytest
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException, ResponseCode
+from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 from promptflow.executor._service.utils.service_utils import (
+    generate_error_response,
     get_executor_version,
     set_environment_variables,
     update_operation_context,
@@ -37,6 +41,26 @@ class TestServiceUtils:
         monkeypatch.setenv("BUILD_INFO", "")
         executor_version = get_executor_version()
         assert executor_version == "promptflow-executor/0.0.1"
+
+    def test_generate_error_response(self):
+        non_pf_ex = ValueError("Test exception")
+        base_ex = ExecutionTimeoutError(1)
+        json_ser_ex = JsonSerializedPromptflowException(json.dumps(ExceptionPresenter.create(base_ex).to_dict()))
+
+        non_pf_error_response = generate_error_response(non_pf_ex)
+        assert non_pf_error_response.message == "Test exception"
+        assert non_pf_error_response.response_code == ResponseCode.SERVICE_ERROR
+        assert non_pf_error_response.innermost_error_code == "ValueError"
+
+        base_error_response = generate_error_response(base_ex)
+        assert base_error_response.message == "Execution timeout for exceeding 1 seconds"
+        assert base_error_response.response_code == ResponseCode.CLIENT_ERROR
+        assert base_error_response.innermost_error_code == "ExecutionTimeoutError"
+
+        json_ser_error_response = generate_error_response(json_ser_ex)
+        assert json_ser_error_response.message == "Execution timeout for exceeding 1 seconds"
+        assert json_ser_error_response.response_code == ResponseCode.CLIENT_ERROR
+        assert json_ser_error_response.innermost_error_code == "ExecutionTimeoutError"
 
     def test_set_environment_variables(self):
         execution_request = BaseExecutionRequest(**MOCK_REQUEST)
