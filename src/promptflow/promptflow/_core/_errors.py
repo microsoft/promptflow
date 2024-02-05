@@ -143,7 +143,7 @@ class GenerateMetaSystemError(SystemErrorException):
     """Base system exception raised when failed to validate tool."""
 
     def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.RUNTIME, **kwargs)
+        super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
 
 
 class NoToolTypeDefined(GenerateMetaSystemError):
