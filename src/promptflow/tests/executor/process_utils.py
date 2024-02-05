@@ -74,26 +74,22 @@ class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
 
 
 @contextlib.contextmanager
-def enable_mock_in_process(process_wrapper=None, process_manager=None):
+def override_process_pool_targets(process_wrapper=None, process_manager=None):
+    """
+    Context manager to override the process pool targets for the current context
+
+    """
+    original_process_wrapper = current_process_wrapper_var.get()
+    original_process_manager = current_process_manager_var.get()
 
     if process_wrapper is not None:
         current_process_wrapper_var.set(process_wrapper)
     if process_manager is not None:
         current_process_manager_var.set(process_manager)
 
-    start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
-    original_process_class = {}
-    for start_method, MockProcessClass in start_methods_mocks.items():
-        if start_method in multiprocessing.get_all_start_methods():
-            original_process_class[start_method] = multiprocessing.get_context(start_method).Process
-            multiprocessing.get_context(start_method).Process = MockProcessClass
-            if start_method == multiprocessing.get_start_method():
-                multiprocessing.Process = MockProcessClass
     try:
         yield
     finally:
-        for start_method, MockProcessClass in start_methods_mocks.items():
-            if start_method in multiprocessing.get_all_start_methods():
-                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
-                if start_method == multiprocessing.get_start_method():
-                    multiprocessing.Process = original_process_class[start_method]
+        # Revert back to the original states
+        current_process_wrapper_var.set(original_process_wrapper)
+        current_process_manager_var.set(original_process_manager)

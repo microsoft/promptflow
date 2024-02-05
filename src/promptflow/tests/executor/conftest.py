@@ -1,4 +1,3 @@
-import contextlib
 import multiprocessing
 from pathlib import Path
 from unittest.mock import patch
@@ -91,54 +90,14 @@ def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
-# Placeholder for the targets of new process; One for the spawned process, one for the forked process
-current_process_wrapper_var.set(_default_mock_process_wrapper)
-current_process_manager_var.set(_default_mock_create_spawned_fork_process_manager)
-
-
-@contextlib.contextmanager
-def override_process_target(process_wrapper=None, process_manager=None):
-    # Method to override the targets of new process instead of the predefined default ones
-    global current_process_wrapper, current_process_manager
-
-    # Set to the customized ones if provided
-    if process_wrapper is not None:
-        current_process_wrapper = process_wrapper
-    if process_manager is not None:
-        current_process_manager = process_manager
-
-    try:
-        yield
-    finally:
-        # Revert back to the original states
-        current_process_wrapper = _default_mock_process_wrapper
-        current_process_manager = _default_mock_create_spawned_fork_process_manager
-
-
-SpawnProcess = multiprocessing.Process
-if "spawn" in multiprocessing.get_all_start_methods():
-    SpawnProcess = multiprocessing.get_context("spawn").Process
-
-ForkServerProcess = multiprocessing.Process
-if "forkserver" in multiprocessing.get_all_start_methods():
-    ForkServerProcess = multiprocessing.get_context("forkserver").Process
-
-
-@pytest.fixture
-def recording_file_override():
-    override_recording_file()
-    yield
-
-
-def override_recording_file():
-    if is_replay() or is_record():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
-        RecordStorage.get_instance(file_path)
-
-
 @pytest.fixture
 def process_override():
     # This fixture is used to override the Process class to ensure the recording mode works
+
+    # Placeholder for the targets of new process; One for the spawned process, one for the forked process
+    current_process_wrapper_var.set(_default_mock_process_wrapper)
+    current_process_manager_var.set(_default_mock_create_spawned_fork_process_manager)
+
     start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
     original_process_class = {}
     for start_method, MockProcessClass in start_methods_mocks.items():

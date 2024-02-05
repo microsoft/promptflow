@@ -16,7 +16,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from ..process_utils import enable_mock_in_process
+from ..process_utils import override_process_pool_targets
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -129,7 +129,7 @@ class TestExecutorTelemetry:
         operation_context._tracking_keys = OperationContext._DEFAULT_TRACKING_KEYS
         operation_context._tracking_keys.add("dummy_key")
 
-        with enable_mock_in_process(mock_process_wrapper, mock_process_manager):
+        with override_process_pool_targets(mock_process_wrapper, mock_process_manager):
             run_id = str(uuid.uuid4())
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
