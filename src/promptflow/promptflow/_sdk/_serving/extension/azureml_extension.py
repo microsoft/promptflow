@@ -5,6 +5,7 @@
 import json
 import os
 import re
+from typing import Any
 
 from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow._sdk._serving.extension.default_extension import AppExtension
@@ -193,8 +194,13 @@ class AzureMLExtension(AppExtension):
 
 def _get_managed_identity_credential_with_retry(**kwargs):
     from azure.identity import ManagedIdentityCredential
+    from azure.identity._constants import EnvironmentVariables
 
     class ManagedIdentityCredentialWithRetry(ManagedIdentityCredential):
+        def __init__(self, **kwargs: Any) -> None:
+            client_id = kwargs.pop("client_id", None) or os.environ.get(EnvironmentVariables.AZURE_CLIENT_ID)
+            super().__init__(client_id=client_id, **kwargs)
+
         @retry(Exception)
         def get_token(self, *scopes, **kwargs):
             return super().get_token(*scopes, **kwargs)
