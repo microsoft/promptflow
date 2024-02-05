@@ -59,9 +59,9 @@
         <Icon Id="PromptflowIcon" SourceFile="$(var.ProductResources)logo32.ico" />
 
         <Property Id="ARPPRODUCTICON" Value="PromptflowIcon" />
-        <Property Id="ARPHELPLINK" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
-        <Property Id="ARPURLINFOABOUT" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
-        <Property Id="ARPURLUPDATEINFO" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
+        <Property Id="ARPHELPLINK" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start/index.html" />
+        <Property Id="ARPURLINFOABOUT" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start/index.html" />
+        <Property Id="ARPURLUPDATEINFO" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start/index.html" />
         <Property Id="MSIFASTINSTALL" Value="7" />
         <Property Id="ApplicationFolderName" Value="promptflow" />
         <Property Id="WixAppFolder" Value="WixPerUserFolder" />
