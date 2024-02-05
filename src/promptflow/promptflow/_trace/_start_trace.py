@@ -34,7 +34,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
     _start_pfs(pfs_port)
-    _logger.debug("PFS is serving on port %s", pfs_port)
+    _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
     # provision a session
     session_id = _provision_session(session_id=session)
@@ -73,7 +73,7 @@ def _start_pfs(pfs_port) -> None:
     if is_port_in_use(pfs_port):
         is_healthy, content = is_pfs_service_healthy(pfs_port)
         if not is_healthy:
-            _logger.warning(f"Pfs service can't be reached through port {pfs_port}")
+            _logger.warning(f"Promptflow service can't be reached through port {pfs_port}")
         else:
             _logger.warning(f"Service port {pfs_port} is used, {content}.")
         if is_pfs_service_healthy(pfs_port) is True:
