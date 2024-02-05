@@ -12,11 +12,13 @@ from collections import defaultdict
 from os import PathLike
 from pathlib import Path
 from types import GeneratorType
+from typing import Any, Dict, List
 
 import pydash
 from dotenv import load_dotenv
 from pydash import objects
 
+from promptflow._constants import STREAMING_ANIMATION_TIME
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
     DEFAULT_VAR_ID,
@@ -305,36 +307,56 @@ def show_node_log_and_output(node_run_infos, show_node_output, generator_record)
             # TODO executor return a type string of generator
             node_output = node_result.output
             if isinstance(node_result.output, GeneratorType):
-                node_output = "".join(get_result_output(node_output, generator_record))
+                node_output = "".join(
+                    resolve_generator_output_with_cache(
+                        node_output, generator_record, generator_key=f"nodes.{node_name}.output"
+                    )
+                )
             print(f"{Fore.LIGHTWHITE_EX}{node_output}")
 
 
-def print_chat_output(output, generator_record):
+def print_chat_output(output, generator_record, *, generator_key: str):
     if isinstance(output, GeneratorType):
-        for event in get_result_output(output, generator_record):
+        for event in resolve_generator_output_with_cache(output, generator_record, generator_key=generator_key):
             print(event, end="")
             # For better animation effects
-            time.sleep(0.01)
+            time.sleep(STREAMING_ANIMATION_TIME)
         # Print a new line at the end of the response
         print()
     else:
         print(output)
 
 
-def get_result_output(output, generator_record):
+def resolve_generator_output_with_cache(
+    output: GeneratorType, generator_record: Dict[str, Any], *, generator_key: str
+) -> List[str]:
+    """Get the output of a generator. If the generator has been recorded, return the recorded result. Otherwise, record
+    the result and return it.
+    We use a separate generator_key instead of the output itself as the key in the generator_record in case the output
+    is not a valid dict key in some cases.
+
+    :param output: The generator to get the output from.
+    :type output: GeneratorType
+    :param generator_record: The record of the generator.
+    :type generator_record: dict
+    :param generator_key: The key of the generator in the record, need to be unique.
+    :type generator_key: str
+    :return: The output of the generator.
+    :rtype: str
+    """
     if isinstance(output, GeneratorType):
-        if output in generator_record:
-            if hasattr(generator_record[output], "items"):
-                output = iter(generator_record[output].items)
+        if generator_key in generator_record:
+            if hasattr(generator_record[generator_key], "items"):
+                output = iter(generator_record[generator_key].items)
             else:
-                output = iter(generator_record[output])
+                output = iter(generator_record[generator_key])
         else:
             if hasattr(output.gi_frame.f_locals, "proxy"):
                 proxy = output.gi_frame.f_locals["proxy"]
-                generator_record[output] = proxy
+                generator_record[generator_key] = proxy
             else:
-                generator_record[output] = list(output)
-                output = generator_record[output]
+                generator_record[generator_key] = list(output)
+                output = generator_record[generator_key]
     return output
 
 
@@ -342,7 +364,9 @@ def resolve_generator(flow_result, generator_record):
     # resolve generator in flow result
     for k, v in flow_result.run_info.output.items():
         if isinstance(v, GeneratorType):
-            flow_output = "".join(get_result_output(v, generator_record))
+            flow_output = "".join(
+                resolve_generator_output_with_cache(v, generator_record, generator_key=f"run.outputs.{k}")
+            )
             flow_result.run_info.output[k] = flow_output
             flow_result.run_info.result[k] = flow_output
             flow_result.output[k] = flow_output
@@ -350,7 +374,11 @@ def resolve_generator(flow_result, generator_record):
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():
         if isinstance(node.output, GeneratorType):
-            node_output = "".join(get_result_output(node.output, generator_record))
+            node_output = "".join(
+                resolve_generator_output_with_cache(
+                    node.output, generator_record, generator_key=f"nodes.{node_name}.output"
+                )
+            )
             node.output = node_output
             node.result = node_output
 
