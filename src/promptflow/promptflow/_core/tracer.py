@@ -292,6 +292,35 @@ def enrich_span_with_output(span, output):
     return output
 
 
+def enrich_span_with_type(span, trace_type: TraceType, inputs, output):
+    if trace_type == TraceType.LLM:
+        token_collector.collect_openai_tokens(span, output)
+    if trace_type == TraceType.RETRIEVAL:
+        if "query" in inputs:
+            span.set_attribute("retrieval.query", inputs["query"])
+        if isinstance(output, list):
+            docs = []
+            required_attributes = ["id", "score", "content", "metadata"]
+            for doc in output:
+                docs.append({f"document.{k}": doc[k] for k in required_attributes if k in doc})
+            span.set_attribute("retrieval.documents", serialize_attribute(docs))
+    if trace_type == TraceType.EMBEDDING:
+        token_collector.collect_openai_tokens(span, output)
+        from openai.types.create_embedding_response import CreateEmbeddingResponse
+        if isinstance(output, CreateEmbeddingResponse):
+            span.set_attribute("embedding.model", output.model)
+            embeddings = []
+            input_list = inputs["input"]
+            if isinstance(input_list, str):
+                input_list = [input_list]
+            for emb in output.data:
+                embeddings.append({
+                    "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
+                    "embedding.text": input_list[emb.index],
+                })
+            span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+
+
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
     try:
@@ -357,8 +386,7 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                if trace_type == TraceType.LLM:
-                    token_collector.collect_openai_tokens(span, output)
+                enrich_span_with_type(span, trace_type, trace.inputs, output)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
@@ -406,8 +434,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                if trace_type == TraceType.LLM:
-                    token_collector.collect_openai_tokens(span, output)
+                enrich_span_with_type(span, trace_type, trace.inputs, output)
                 enrich_span_with_output(span, output)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
