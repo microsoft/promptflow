@@ -4,17 +4,17 @@
 [COMMON]
 ; The COMMON section provides common values for all other sections.
 ; Configure both 'document_folder' and 'document_chunk_size' if you require document splitting.
-; However, if you wish to bypass the document split process, simply provide the 'document_node_file', which is a JSONL file.
-; When all these parameters are configured, the system will primarily use the 'document_node_file'.
 documents_folder = "<your-document-folder-path>"
 document_chunk_size = 1024
-document_nodes_file = "<your-node-file-path>"
+; However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
+; When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
+; document_nodes_file = "<your-node-file-path>"
 
 ; Test data gen flow configs
 flow_folder = "<your-test-data-gen-flow-folder-path>" ; There is must one flow.dag.yaml file under this folder as entry
 ; Override some node inputs, for example, {"node_1": {"input_1": "value", "input_2": "value"}, "node_2":{"input_1": "value", "input_2": "value"}}
 ; Ensure the node name and the input name exist in flag.dag.yaml
-; If not fill in "node_inputs_override", we will use the values in flow.dag.yaml
+; If not fill in "node_inputs_override", will use the values in flow.dag.yaml
 node_inputs_override = {"validate_text_chunk": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "generate_question": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "validate_question": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "generate_suggested_answer": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}, "validate_suggested_answer": {"connection": "<your-connection-name>", "model_or_deployment_name": "<your-model-or-deployment-name>"}}
 
 [LOCAL]
