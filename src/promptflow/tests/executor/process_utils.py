@@ -1,4 +1,5 @@
 import contextlib
+import contextvars
 import multiprocessing
 import traceback
 from multiprocessing import Queue, get_context
@@ -41,8 +42,11 @@ if "forkserver" in multiprocessing.get_all_start_methods():
     ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
 
-current_process_wrapper = _process_wrapper
-current_process_manager = create_spawned_fork_process_manager
+# Define context variables with default values
+current_process_wrapper_var = contextvars.ContextVar("current_process_wrapper", default=_process_wrapper)
+current_process_manager_var = contextvars.ContextVar(
+    "current_process_manager", default=create_spawned_fork_process_manager
+)
 
 
 class BaseMockProcess:
@@ -51,9 +55,9 @@ class BaseMockProcess:
         # Method to modify the target of the mock process
         # This shall be the place to hold the target mocking logic
         if target == _process_wrapper:
-            return current_process_wrapper
+            return current_process_wrapper_var.get()
         if target == create_spawned_fork_process_manager:
-            return current_process_manager
+            return current_process_manager_var.get()
         return target
 
 
@@ -71,12 +75,11 @@ class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
 
 @contextlib.contextmanager
 def enable_mock_in_process(process_wrapper=None, process_manager=None):
-    global current_process_wrapper, current_process_manager
 
     if process_wrapper is not None:
-        current_process_wrapper = process_wrapper
+        current_process_wrapper_var.set(process_wrapper)
     if process_manager is not None:
-        current_process_manager = process_manager
+        current_process_manager_var.set(process_manager)
 
     start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
     original_process_class = {}
