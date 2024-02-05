@@ -131,16 +131,13 @@ class Span:
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
         attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
-        if SpanAttributeFieldName.SESSION_ID not in attributes:
-            # no `session_id` in attributes, which means this is a standard OpenTelemetry trace
-            # without prompt flow related fields (e.g., `session_id`, `span_type`)
-            # TODO: note that this might make these spans persisted in another partion if we split
-            #       the trace table by `session_id`.
-            session_id = DEFAULT_SESSION_ID
-            span_type = DEFAULT_SPAN_TYPE
-        else:
-            session_id = attributes[SpanAttributeFieldName.SESSION_ID]
-            span_type = attributes[SpanAttributeFieldName.SPAN_TYPE]
+        # `session_id` and `span_type` are not standard fields in OpenTelemetry attributes
+        # for example, LangChain instrumentation, as we do not inject this;
+        # so we need to get them with default value to avoid KeyError
+        span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
+        # note that this might make these spans persisted in another partion if we split the trace table by `session_id`
+        session_id = attributes.get(SpanAttributeFieldName.SESSION_ID, DEFAULT_SESSION_ID)
+
         return Span(
             name=obj.name,
             context=context,
