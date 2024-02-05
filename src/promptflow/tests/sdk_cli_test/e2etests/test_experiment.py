@@ -4,6 +4,7 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
+from time import sleep
 
 import pytest
 from mock import mock
@@ -11,9 +12,11 @@ from ruamel.yaml import YAML
 
 from promptflow import PFClient
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus
-from promptflow._sdk._errors import ExperimentValueError
+from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import load_common
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
+
+from ..recording_utilities import is_live
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -26,6 +29,12 @@ yaml = YAML(typ="safe")
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("setup_experiment_table")
 class TestExperiment:
+    def wait_for_experiment_terminated(self, client, experiment):
+        while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
+            experiment = client._experiments.get(experiment.name)
+            sleep(10)
+        return experiment
+
     def test_experiment_from_template_with_script_node(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
         # Load template and create experiment
@@ -67,6 +76,7 @@ class TestExperiment:
         exp_get = client._experiments.get(name=exp.name)
         assert exp_get._to_dict() == exp._to_dict()
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -76,7 +86,13 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
-        assert exp.status == ExperimentStatus.TERMINATED
+
+        # Test the experiment in progress cannot be started.
+        with pytest.raises(RunOperationError) as e:
+            client._experiments.start(exp.name)
+        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+        exp = self.wait_for_experiment_terminated(client, exp)
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
@@ -91,6 +107,13 @@ class TestExperiment:
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
 
+        # Test experiment restart
+        exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
+        for name, runs in exp.node_runs.items():
+            assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -100,13 +123,68 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
         assert exp.status == ExperimentStatus.TERMINATED
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
-    def test_flow_test_with_experiment(self):
+    def test_experiment_start_from_nodes(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        exp = client._experiments.start(exp.name)
+        exp = self.wait_for_experiment_terminated(client, exp)
+
+        # Test start experiment from nodes
+        exp = client._experiments.start(exp.name, from_nodes=["main"])
+        exp = self.wait_for_experiment_terminated(client, exp)
+
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert all([item["status"] == RunStatus.COMPLETED for item in val]), f"Node {key} run failed"
+        assert len(exp.node_runs["main"]) == 2
+        assert len(exp.node_runs["eval"]) == 2
+        assert len(exp.node_runs["echo"]) == 2
+
+        # Test run nodes in experiment
+        exp = client._experiments.start(exp.name, nodes=["main"])
+        exp = self.wait_for_experiment_terminated(client, exp)
+
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert all([item["status"] == RunStatus.COMPLETED for item in val]), f"Node {key} run failed"
+        assert len(exp.node_runs["main"]) == 3
+        assert len(exp.node_runs["echo"]) == 2
+
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    def test_cancel_experiment(self):
+        template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        exp = client._experiments.start(exp.name)
+        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+        sleep(10)
+        client._experiments.stop(exp.name)
+        exp = client._experiments.get(exp.name)
+        assert exp.status == ExperimentStatus.TERMINATED
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_flow_test_with_experiment(self, monkeypatch):
+        # set queue size to 1 to make collection faster
+        monkeypatch.setenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "1")
+        monkeypatch.setenv("OTEL_BSP_SCHEDULE_DELAY", "1")
+
         def _assert_result(result):
             assert "main" in result, "Node main not in result"
             assert "category" in result["main"], "Node main.category not in result"
@@ -141,10 +219,11 @@ class TestExperiment:
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
-            # Sleep to wait all traces are flushed
+            # TODO: Task 2942400, avoid sleep/if and assert traces
             time.sleep(10)  # TODO fix this
             line_runs = client._traces.list_line_runs(session_id=session)
-            if len(line_runs) == 1:
+            if len(line_runs) > 0:
+                assert len(line_runs) == 1
                 line_run = line_runs[0]
                 assert "main_attempt" in line_run.line_run_id
                 assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
@@ -156,6 +235,9 @@ class TestExperiment:
             assert expected_output_path.resolve().exists()
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+
+        monkeypatch.delenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE")
+        monkeypatch.delenv("OTEL_BSP_SCHEDULE_DELAY")
 
     def test_flow_not_in_experiment(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"

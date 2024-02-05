@@ -17,10 +17,12 @@ from sqlalchemy.schema import CreateTable
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CONNECTION_TABLE_NAME,
+    EXP_NODE_RUN_TABLE_NAME,
     EXPERIMENT_CREATED_ON_INDEX_NAME,
     EXPERIMENT_TABLE_NAME,
     LOCAL_MGMT_DB_PATH,
     LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH,
+    ORCHESTRATOR_TABLE_NAME,
     RUN_INFO_CREATED_ON_INDEX_NAME,
     RUN_INFO_TABLENAME,
     SCHEMA_INFO_TABLENAME,
@@ -83,13 +85,15 @@ def mgmt_db_session() -> Session:
             return session_maker()
         if not LOCAL_MGMT_DB_PATH.parent.is_dir():
             LOCAL_MGMT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}", future=True)
+        engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}?check_same_thread=False", future=True)
         engine = support_transaction(engine)
 
-        from promptflow._sdk._orm import Connection, Experiment, RunInfo
+        from promptflow._sdk._orm import Connection, Experiment, ExperimentNodeRun, Orchestrator, RunInfo
 
         create_or_update_table(engine, orm_class=RunInfo, tablename=RUN_INFO_TABLENAME)
         create_table_if_not_exists(engine, CONNECTION_TABLE_NAME, Connection)
+        create_table_if_not_exists(engine, ORCHESTRATOR_TABLE_NAME, Orchestrator)
+        create_table_if_not_exists(engine, EXP_NODE_RUN_TABLE_NAME, ExperimentNodeRun)
 
         create_index_if_not_exists(engine, RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, "created_on")
         if Configuration.get_instance().is_internal_features_enabled():

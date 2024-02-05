@@ -238,10 +238,10 @@ class StreamlitFileReplicator:
         if self.is_chat_flow:
             results = {}
             for flow_input, value in self.executable.inputs.items():
-                if value.is_chat_input:
+                if not value.is_chat_history:
                     if value.type.value not in [ValueType.STRING.value, ValueType.LIST.value]:
                         raise UserErrorException(
-                            f"Only support string or list type for chat input, but got {value.type.value}."
+                            f"Only support string or list type for chat flow input, but got {value.type.value}."
                         )
                     results.update({flow_input: (value.default, value.type.value)})
         else:
