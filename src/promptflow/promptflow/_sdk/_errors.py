@@ -145,6 +145,18 @@ class ExperimentNotFoundError(SDKError):
     pass
 
 
+class MultipleExperimentTemplateError(SDKError):
+    """Exception raised if multiple experiment template yaml found."""
+
+    pass
+
+
+class NoExperimentTemplateError(SDKError):
+    """Exception raised if no experiment template yaml found."""
+
+    pass
+
+
 class ExperimentValidationError(SDKError):
     """Exception raised if experiment validation failed."""
 
