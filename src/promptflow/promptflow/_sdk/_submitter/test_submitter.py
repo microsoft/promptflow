@@ -26,6 +26,7 @@ from ..._core._errors import NotSupported
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ...batch import AbstractExecutorProxy, CSharpExecutorProxy
+from .._configuration import Configuration
 from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
@@ -200,24 +201,29 @@ class TestSubmitter:
         environment_variables: Optional[dict] = None,
         stream_log: bool = True,
         output_path: Optional[str] = None,
+        session: Optional[str] = None,
     ):
         """
         Create/Occupy dependent resources to execute the test within the context.
         Resources will be released after exiting the context.
 
-        : param connections: connection overrides.
-        : type connections: dict
-        : param target_node: target node name for node test, may only do node_test if specified.
-        : type target_node: str
-        : param environment_variables: environment variable overrides.
-        : type environment_variables: dict
-        : param stream_log: whether to stream log to stdout.
-        : type stream_log: bool
-        : param output_path: output path.
-        : type output_path: str
-        : return: TestSubmitter instance.
-        : rtype: TestSubmitter
+        :param connections: connection overrides.
+        :type connections: dict
+        :param target_node: target node name for node test, may only do node_test if specified.
+        :type target_node: str
+        :param environment_variables: environment variable overrides.
+        :type environment_variables: dict
+        :param stream_log: whether to stream log to stdout.
+        :type stream_log: bool
+        :param output_path: output path.
+        :type output_path: str
+        :param session: session id. If None, a new session id will be generated with _provision_session.
+        :type session: str
+        :return: TestSubmitter instance.
+        :rtype: TestSubmitter
         """
+        from promptflow._trace._start_trace import start_trace
+
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
@@ -232,6 +238,10 @@ class TestSubmitter:
                 )
                 or {},
             )
+
+            if Configuration(overrides=self._client._config).is_internal_features_enabled():
+                logger.debug("Starting trace for flow test...")
+                start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
