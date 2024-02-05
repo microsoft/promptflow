@@ -511,7 +511,6 @@ class TestSubmitter:
 
         init(autoreset=True)
         chat_history = []
-        generator_record = {}
         # TODO: test submitter should not interact with dataplane flow directly
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
@@ -524,6 +523,8 @@ class TestSubmitter:
         )
 
         while True:
+            # generator record should be reset for each round of chat
+            generator_record = {}
             try:
                 print(f"{Fore.GREEN}User: ", end="")
                 input_value = input()
@@ -547,7 +548,11 @@ class TestSubmitter:
             show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
-            print_chat_output(flow_result.output[output_name], generator_record)
+            print_chat_output(
+                flow_result.output[output_name],
+                generator_record,
+                generator_key=f"run.outputs.{output_name}",
+            )
             flow_result = resolve_generator(flow_result, generator_record)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}

@@ -88,6 +88,9 @@ class TestCSharpCli:
         assert "Hello world round 1: what is chat gpt?" in outerr.out
 
     def test_flow_chat_ui_streaming(self):
+        """Note that this test won't pass. Instead, it will hang and pop up a web page for user input.
+        Leave it here for debugging purpose.
+        """
         # The test need to interact with user input in ui
         flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
         run_pf_command(
@@ -97,3 +100,32 @@ class TestCSharpCli:
             flow_dir,
             "--ui",
         )
+
+    def test_flow_chat_interactive_streaming(self, monkeypatch, capsys):
+        flow_dir = f"{get_repo_base_path()}\\examples\\BasicChatFlowWithBuiltinLLM\\bin\\Debug\\net6.0"
+        # mock user input with pop so make chat list reversed
+        chat_list = ["what is chat gpt?", "hi"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            flow_dir,
+            "--interactive",
+            "--verbose",
+        )
+        output_path = Path(flow_dir) / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        outerr = capsys.readouterr()
+        # Check node output
+        assert "Chat GPT" in outerr.out

@@ -232,7 +232,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 for output in origin_generator:
                     yield output.output[self.chat_output_name]
 
+            # Note: the generator output should be saved in both line_result.output and line_result.run_info.output
             line_result.output[self.chat_output_name] = final_generator()
+            line_result.run_info.output[self.chat_output_name] = final_generator()
 
         # TODO: do we support streaming output for non-chat flow and what to return if so?
         return line_result
