@@ -30,12 +30,16 @@ class AbstractRunStorage:
         raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for persist_flow_run.")
 
 
-class BatchRunStorage(AbstractRunStorage):
+class AbstractBatchRunStorage(AbstractRunStorage):
     def load_node_run_info_for_line(self, line_number: int):
-        pass
+        raise NotImplementedError(
+            "AbstractBatchRunStorage is an abstract class, no implementation for load_node_run_info_for_line."
+        )
 
     def load_flow_run_info(self, line_number: int):
-        pass
+        raise NotImplementedError(
+            "AbstractBatchRunStorage is an abstract class, no implementation for load_flow_run_info."
+        )
 
 
 class DummyRunStorage(AbstractRunStorage):

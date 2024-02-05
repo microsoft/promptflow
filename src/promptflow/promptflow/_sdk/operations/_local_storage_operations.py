@@ -49,7 +49,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.storage._run_storage import BatchRunStorage
+from promptflow.storage._run_storage import AbstractBatchRunStorage
 
 logger = get_cli_sdk_logger()
 
@@ -180,7 +180,7 @@ class LineRunRecord:
         json_dump(asdict(self), path)
 
 
-class LocalStorageOperations(BatchRunStorage):
+class LocalStorageOperations(AbstractBatchRunStorage):
     """LocalStorageOperations."""
 
     LINE_NUMBER_WIDTH = 9
