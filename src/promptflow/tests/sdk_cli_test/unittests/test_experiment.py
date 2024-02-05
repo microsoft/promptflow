@@ -18,7 +18,7 @@ yaml = YAML(typ="safe")
 @pytest.mark.usefixtures("setup_experiment_table")
 class TestExperiment:
     def test_experiment_from_template(self):
-        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        template_path = EXP_ROOT / "basic-no-script-template"
         # Load template and create experiment
         template = _load_experiment_template(source=template_path)
         experiment = Experiment.from_template(template)
@@ -32,7 +32,7 @@ class TestExperiment:
         # Assert type is resolved
         assert experiment.inputs[0].default == 1
         # Pop schema and resolve path
-        expected = dict(yaml.load(open(template_path, "r", encoding="utf-8").read()))
+        expected = dict(yaml.load(open(template_path / "basic.exp.yaml", "r", encoding="utf-8").read()))
         expected.pop("$schema")
         expected["data"][0]["path"] = (FLOW_ROOT / "web_classification" / "data.jsonl").absolute().as_posix()
         expected["nodes"][0]["path"] = (experiment._output_dir / "snapshots" / "main").absolute().as_posix()
