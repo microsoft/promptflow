@@ -83,20 +83,6 @@ class AbstractExecutorProxy:
         """Execute a line"""
         raise NotImplementedError()
 
-    def exec_line(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-        enable_stream_output=False,
-    ) -> LineResult:
-        return async_run_allowing_running_loop(
-            self.exec_line_async,
-            inputs=inputs,
-            index=index,
-            run_id=run_id,
-        )
-
     async def exec_aggregation_async(
         self,
         batch_inputs: Mapping[str, Any],
@@ -188,6 +174,23 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         enable_stream_output=False,
     ) -> LineResult:
+        """Execute a line synchronously.
+
+        For now, we add this method to support the streaming output; maybe we can remove this method after we
+        figure out how to support streaming output in async mode.
+        If enable_stream_output is False, this method will call exec_line_async to get the line result.
+
+        :param inputs: The inputs of the line.
+        :type inputs: Mapping[str, Any]
+        :param index: The index of the line to execute.
+        :type index: Optional[int]
+        :param run_id: The id of the run.
+        :type run_id: Optional[str]
+        :param enable_stream_output: Whether to enable the stream output.
+        :type enable_stream_output: bool
+        :return: The line result.
+        :rtype: LineResult
+        """
         if not enable_stream_output:
             return super().exec_line(inputs, index, run_id)
 
