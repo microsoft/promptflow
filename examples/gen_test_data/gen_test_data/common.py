@@ -84,7 +84,7 @@ def count_non_blank_lines(file_path):
     return non_blank_lines
 
 
-def print_progress(log_file_path: str):
+def print_progress(log_file_path: str, process):
     from tqdm import tqdm
 
     logger = get_logger("data.gen")
@@ -103,6 +103,12 @@ def print_progress(log_file_path: str):
         last_data_time = time.time()
         with open(log_file_path, "r") as f:
             while True:
+                status = process.poll()
+                # status is None if not finished, 0 if finished successfully, and non-zero if failed
+                if status:
+                    stdout, _ = process.communicate()
+                    raise Exception(f"Batch run failed due to {stdout.decode('utf-8')}")
+
                 line = f.readline().strip()
                 if line:
                     last_data_time = time.time()  # Update the time when the last data was received
@@ -130,8 +136,7 @@ def print_progress(log_file_path: str):
                     time.sleep(1)  # wait for 1 second if no new line is available
     except Exception as e:
         raise Exception(
-            f"Error occurred while printing batch run progress {e}. "
-            f"See the log file '{log_file_path}' for more details."
+            f"Error occurred while printing batch run progress: {e}."
         )
     finally:
         if pbar:
