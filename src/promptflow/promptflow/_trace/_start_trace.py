@@ -16,6 +16,7 @@ from promptflow._constants import SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
+from promptflow._sdk._utils import get_promptflow_sdk_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
@@ -71,7 +72,7 @@ def _start_pfs(pfs_port) -> None:
 
     command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
-        _logger.warning(f"Service port {pfs_port} is used.")
+        _logger.warning(f"Service port {pfs_port} is used, version: {get_promptflow_sdk_version()}.")
         if is_pfs_service_healthy(pfs_port) is True:
             return
         else:

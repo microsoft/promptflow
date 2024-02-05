@@ -78,7 +78,7 @@ def start_service(args):
                 app.logger.warning(f"Force restart the service on the port {port}.")
                 kill_exist_service(port)
             else:
-                app.logger.warning(f"Service port {port} is used.")
+                app.logger.warning(f"Service port {port} is used, version: {get_promptflow_sdk_version()}.")
                 raise UserErrorException(f"Service port {port} is used.")
 
     if port:

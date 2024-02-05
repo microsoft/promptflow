@@ -118,7 +118,7 @@ def is_pfs_service_healthy(pfs_port) -> bool:
     return False
 
 
-def check_pfs_service_status(pfs_port, time_delay=5, time_threshold=30) -> bool:
+def check_pfs_service_status(pfs_port, time_delay=1, time_threshold=20) -> bool:
     wait_time = time_delay
     time.sleep(time_delay)
     is_healthy = is_pfs_service_healthy(pfs_port)
