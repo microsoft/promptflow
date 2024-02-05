@@ -173,7 +173,6 @@ class _LineRunData:
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
 
-    @staticmethod
     def _from_root_span(span: Span) -> "_LineRunData":
         attributes: dict = span._content[SpanFieldName.ATTRIBUTES]
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
@@ -234,48 +233,33 @@ class LineRun:
     evaluations: typing.Optional[typing.List[typing.Dict]] = None
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span]) -> typing.List["LineRun"]:
-        line_run_data_list: typing.List[_LineRunData] = []
-        evaluation_line_run_data_dict = dict()  # line run id -> {evaluation name -> eval line run data}
+    def _from_spans(spans: typing.List[Span]) -> "LineRun":
+        main_line_run_data: _LineRunData = None
+        evaluation_line_run_datas = dict()
         for span in spans:
             if span.parent_span_id:
                 continue
-            data = _LineRunData._from_root_span(span)
             attributes = span._content[SpanFieldName.ATTRIBUTES]
-            if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in attributes:
-                # No parent span, no referenced span, it is a main line run
-                # e.g. main run/eager flow/arbitrary script
-                line_run_data_list.append(data)
-                continue
-            if SpanAttributeFieldName.LINE_RUN_ID not in attributes:
-                # Aggregation node span only has referenced line run id, skip it for now.
-                continue
-            referenced_line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-            if referenced_line_run_id not in evaluation_line_run_data_dict:
-                evaluation_line_run_data_dict[referenced_line_run_id] = {}
-            evaluation_line_run_data_dict[referenced_line_run_id][span.name] = data
-        line_runs = []
-        for line_run_data in line_run_data_list:
-            evaluations = evaluation_line_run_data_dict.get(line_run_data.line_run_id, {})
-            # Use line run for evaluations as line run data not json serializable
-            evaluations = {k: LineRun._from_line_run_data(v, None) for k, v in evaluations.items()}
-            line_runs.append(LineRun._from_line_run_data(line_run_data, evaluations))
-        return line_runs
-
-    @staticmethod
-    def _from_line_run_data(data: _LineRunData, evaluations=None) -> "LineRun":
+            if SpanAttributeFieldName.LINE_RUN_ID in attributes:
+                main_line_run_data = _LineRunData._from_root_span(span)
+            elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
+                evaluation_line_run_datas[span.name] = _LineRunData._from_root_span(span)
+            else:
+                # eager flow/arbitrary script
+                main_line_run_data = _LineRunData._from_root_span(span)
+        evaluations = dict()
+        for eval_name, eval_line_run_data in evaluation_line_run_datas.items():
+            evaluations[eval_name] = eval_line_run_data
         return LineRun(
-            line_run_id=data.line_run_id,
-            trace_id=data.trace_id,
-            root_span_id=data.root_span_id,
-            inputs=data.inputs,
-            outputs=data.outputs,
-            start_time=data.start_time.isoformat(),
-            end_time=data.end_time.isoformat(),
-            status=data.status,
-            latency=data.latency,
-            name=data.name,
-            kind=data.kind,
-            cumulative_token_count=data.cumulative_token_count,
+            line_run_id=main_line_run_data.line_run_id,
+            inputs=main_line_run_data.inputs,
+            outputs=main_line_run_data.outputs,
+            start_time=main_line_run_data.start_time.isoformat(),
+            end_time=main_line_run_data.end_time.isoformat(),
+            status=main_line_run_data.status,
+            latency=main_line_run_data.latency,
+            name=main_line_run_data.name,
+            kind=main_line_run_data.kind,
+            cumulative_token_count=main_line_run_data.cumulative_token_count,
             evaluations=evaluations,
         )
