@@ -55,7 +55,6 @@ class FlowContextResolver:
         from promptflow._sdk._submitter import overwrite_variant
 
         if not flow_context.variant:
-            return self
             tuning_node, variant = None, None
         else:
             tuning_node, variant = parse_variant(flow_context.variant)
