@@ -19,16 +19,18 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
     def __init__(
         self,
         *,
-        process: Optional[subprocess.Popen],
+        process,
         port: str,
-        working_dir: Path,
+        working_dir: Optional[Path] = None,
         chat_output_name: Optional[str] = None,
+        enable_stream_output: bool = False,
     ):
         self._process = process
         self._port = port
         self._chat_output_name = chat_output_name
         super().__init__(
             working_dir=working_dir,
+            enable_stream_output=enable_stream_output,
         )
 
     @property
@@ -133,6 +135,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
             working_dir=working_dir,
             # TODO: remove this from the constructor after can always be inferred from flow meta?
             chat_output_name=chat_output_name,
+            enable_stream_output=kwargs.get("enable_stream_output", False),
         )
         try:
             await executor_proxy.ensure_executor_startup(init_error_file)

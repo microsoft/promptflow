@@ -78,7 +78,6 @@ class AbstractExecutorProxy:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        enable_stream_output=False,
     ) -> LineResult:
         """Execute a line"""
         raise NotImplementedError()
@@ -102,6 +101,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         self,
         *,
         working_dir: Path = None,
+        enable_stream_output: bool = False,
     ):
         """Initialize the executor proxy with the working directory.
 
@@ -110,9 +110,16 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         :type working_dir: Path
         """
         self._working_dir = working_dir or Path.cwd()
+        self._enable_stream_output = enable_stream_output
+
         # build-in integer is thread-safe in Python.
         # ref: https://stackoverflow.com/questions/6320107/are-python-ints-thread-safe
         self._active_generator_count = 0
+
+    @property
+    def enable_stream_output(self) -> bool:
+        """Whether to enable the stream output."""
+        return self._enable_stream_output
 
     @property
     def working_dir(self) -> Path:
@@ -218,7 +225,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        enable_stream_output=False,
     ) -> LineResult:
         """Execute a line synchronously.
 
@@ -237,32 +243,25 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         :return: The line result.
         :rtype: LineResult
         """
-        if not enable_stream_output:
-            return super().exec_line(inputs, index, run_id)
-
-        start_time = datetime.utcnow()
-        # call execution api to get line results
-        url = self.api_endpoint + "/execution"
-        payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-        headers = {"Accept": "text/event-stream"} if enable_stream_output else None
-
-        # TODO: always redirect to self.exec_line_async after we support stream output in async mode
-        if not enable_stream_output:
+        if not self.enable_stream_output:
             return async_run_allowing_running_loop(
                 self.exec_line_async,
                 inputs=inputs,
                 index=index,
                 run_id=run_id,
-                enable_stream_output=enable_stream_output,
             )
+
+        start_time = datetime.utcnow()
+        # call execution api to get line results
+        url = self.api_endpoint + "/execution"
+        payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
+        headers = {"Accept": "text/event-stream"}
 
         def generator():
             with httpx.Client() as client:
                 with client.stream("POST", url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers) as response:
                     if response.status_code != 200:
-                        # process the response
-                        data = response.read()
-                        result = self._process_http_stream_response(data, response.status_code)
+                        result = self._process_http_response(response)
                         run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
                         yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
                     for line in response.iter_lines():
@@ -295,9 +294,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        enable_stream_output=False,
     ) -> LineResult:
-        if enable_stream_output:
+        if self.enable_stream_output:
             # Todo: update to async, will get no result in "async for" of final_generator function in async mode
             raise NotSupported("Stream output is not supported in async mode for now")
 
@@ -395,29 +393,18 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             # if the status code is 200, the response is the json dict of a line result
             return response.json()
         else:
+            # use this instead of response.text to handle streaming response
+            response_text = response.read().decode(DEFAULT_ENCODING)
             # if the status code is not 200, log the error
             message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
-            bulk_logger.error(message_format.format(status_code=response.status_code, error=response.text))
+            bulk_logger.error(message_format.format(status_code=response.status_code, error=response_text))
             # if response can be parsed as json, return the error dict
             # otherwise, wrap the error in an UnexpectedError and return the error dict
             try:
-                error_dict = response.json()
+                error_dict = json.loads(response_text)
                 return error_dict["error"]
             except (JSONDecodeError, KeyError):
                 unexpected_error = UnexpectedError(
-                    message_format=message_format, status_code=response.status_code, error=response.text
+                    message_format=message_format, status_code=response.status_code, error=response_text
                 )
                 return ExceptionPresenter.create(unexpected_error).to_dict()
-
-    def _process_http_stream_response(self, response, status_code):
-        # if the status code is not 200, log the error
-        message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
-        bulk_logger.error(message_format.format(status_code=status_code, error=response))
-        # if response can be parsed as json, return the error dict
-        # otherwise, wrap the error in an UnexpectedError and return the error dict
-        try:
-            error_dict = json.loads(response.decode("utf-8"))
-            return error_dict["error"]
-        except (JSONDecodeError, KeyError):
-            unexpected_error = UnexpectedError(message_format=message_format, status_code=status_code, error=response)
-            return ExceptionPresenter.create(unexpected_error).to_dict()

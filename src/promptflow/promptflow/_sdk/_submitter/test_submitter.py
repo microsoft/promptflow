@@ -83,6 +83,7 @@ class TestSubmitter:
         self._connections: Optional[dict] = None
         self._target_node = None
         self._storage = None
+        self._enable_stream_output = None
         self._executor_proxy: Optional[APIBasedExecutorProxy] = None
         self._within_init_context = False
 
@@ -94,6 +95,11 @@ class TestSubmitter:
     def _raise_if_not_within_init_context(self):
         if not self._within_init_context:
             raise UserErrorException("This method should be called within the init context.")
+
+    @property
+    def enable_stream_output(self) -> bool:
+        self._raise_if_not_within_init_context()
+        return self._enable_stream_output
 
     @property
     def flow(self):
@@ -205,6 +211,7 @@ class TestSubmitter:
         stream_log: bool = True,
         output_path: Optional[str] = None,
         session: Optional[str] = None,
+        stream_output: bool = True,
     ):
         """
         Create/Occupy dependent resources to execute the test within the context.
@@ -222,6 +229,8 @@ class TestSubmitter:
         :type output_path: str
         :param session: session id. If None, a new session id will be generated with _provision_session.
         :type session: str
+        :param stream_output: whether to return a generator for streaming output.
+        :type stream_output: bool
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
@@ -236,6 +245,7 @@ class TestSubmitter:
                 CSharpExecutorProxy.generate_metadata(self.flow.path, self.flow.code)
 
             self._target_node = target_node
+            self._enable_stream_output = stream_output
 
             SubmitterHelper.init_env(
                 environment_variables=self._resolve_environment_variables(
@@ -284,6 +294,7 @@ class TestSubmitter:
                         connections=self._connections,
                         storage=self._storage,
                         log_path=log_path,
+                        enable_stream_output=stream_output,
                     )
 
                 try:
@@ -397,7 +408,6 @@ class TestSubmitter:
         self,
         inputs: Mapping[str, Any],
         allow_generator_output: bool = False,  # TODO: remove this
-        stream_output: bool = True,
         run_id: str = None,
     ) -> LineResult:
         """
@@ -431,7 +441,7 @@ class TestSubmitter:
                 output_dir=self.output_base / self.relative_flow_output_path,
                 connections=self._connections,
                 inputs=inputs,
-                enable_stream_output=stream_output,
+                enable_stream_output=self.enable_stream_output,
                 allow_generator_output=allow_generator_output,
                 entry=self.entry,
                 storage=self._storage,
@@ -442,7 +452,7 @@ class TestSubmitter:
 
             # TODO: support run_id for non-python
             # TODO: most of below code is duplicate to flow_executor.execute_flow
-            line_result: LineResult = self.executor_proxy.exec_line(inputs, index=0, enable_stream_output=stream_output)
+            line_result: LineResult = self.executor_proxy.exec_line(inputs, index=0)
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.output_base, sub_dir=self.relative_flow_output_path
             )
@@ -539,7 +549,6 @@ class TestSubmitter:
             flow_result = self.flow_test(
                 inputs=chat_inputs,
                 allow_generator_output=True,
-                stream_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
