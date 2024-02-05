@@ -40,17 +40,27 @@ class TraceOperations:
                 # no `line_run_id` or `referenced.line_run_id` in attributes
                 # standard OpenTelemetry trace, regard as a line run
                 grouped_orm_spans[first_orm_span.trace_id] = copy.deepcopy(orm_spans)
-            elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
-                # for other traces, group by `line_run_id` as a line run
+            elif (
+                SpanAttributeFieldName.LINE_RUN_ID in attributes
+                and SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in attributes
+            ):
+                # main flow trace
                 line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
                 if line_run_id not in grouped_orm_spans:
                     grouped_orm_spans[line_run_id] = []
                 grouped_orm_spans[line_run_id].extend(copy.deepcopy(orm_spans))
-            else:
+            elif (
+                SpanAttributeFieldName.LINE_RUN_ID in attributes
+                and SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes
+            ):
+                # evaluation flow trace
                 referenced_line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
                 if referenced_line_run_id not in grouped_orm_spans:
                     grouped_orm_spans[referenced_line_run_id] = []
                 grouped_orm_spans[referenced_line_run_id].extend(copy.deepcopy(orm_spans))
+            else:
+                # aggregation node, ignore for now
+                pass
         for orm_spans in grouped_orm_spans.values():
             spans = [Span._from_orm_object(orm_span) for orm_span in orm_spans]
             line_runs.append(LineRun._from_spans(spans))

@@ -144,11 +144,11 @@ class TestExperiment:
             # Sleep to wait all traces are flushed
             time.sleep(10)  # TODO fix this
             line_runs = client._traces.list_line_runs(session_id=session)
-            if len(line_runs) == 1:
-                line_run = line_runs[0]
-                assert "main_attempt" in line_run.line_run_id
-                assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
-                assert "eval_classification_accuracy" in line_run.evaluations
+            assert len(line_runs) == 1
+            line_run = line_runs[0]
+            assert "main_attempt" in line_run.line_run_id
+            assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
+            assert "eval_classification_accuracy" in line_run.evaluations
             # Test with default data and custom path
             expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
             result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
