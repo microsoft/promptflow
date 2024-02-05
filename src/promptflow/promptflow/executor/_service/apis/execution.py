@@ -88,7 +88,7 @@ async def single_node_run(node_request: NodeExecutionRequest):
     # resolve environment variables
     set_environment_variables(node_request)
     storage = DefaultRunStorage(base_dir=node_request.working_dir, sub_dir=node_request.output_dir)
-    result = FlowExecutor.load_and_exec_node(
+    return FlowExecutor.load_and_exec_node(
         node_request.flow_file,
         node_request.node_name,
         flow_inputs=node_request.flow_inputs,
@@ -97,4 +97,3 @@ async def single_node_run(node_request: NodeExecutionRequest):
         working_dir=node_request.working_dir,
         storage=storage,
     )
-    return result
