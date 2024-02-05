@@ -5,7 +5,7 @@
 import copy
 import typing
 
-from sqlalchemy import TEXT, Column, Index, text
+from sqlalchemy import TEXT, Column, Index
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
@@ -79,10 +79,6 @@ class LineRun:
             stmt = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
-                # other filters, e.g., experiment, run, path, etc.
-                stmt = stmt.filter(
-                    text("json_extract(json_extract(span.content, '$.attributes'), '$.framework') = 'promptflow'")
-                )
             else:
                 # TODO: fully support query
                 raise NotImplementedError
