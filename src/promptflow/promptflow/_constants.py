@@ -104,3 +104,4 @@ class SpanResourceFieldName:
 
 
 DEFAULT_SESSION_ID = "default"
+DEFAULT_SPAN_TYPE = "default"

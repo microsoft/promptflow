@@ -13,6 +13,7 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
     DEFAULT_SESSION_ID,
+    DEFAULT_SPAN_TYPE,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanFieldName,
@@ -136,7 +137,7 @@ class Span:
             # TODO: note that this might make these spans persisted in another partion if we split
             #       the trace table by `session_id`.
             session_id = DEFAULT_SESSION_ID
-            span_type = obj.SpanKind
+            span_type = DEFAULT_SPAN_TYPE
         else:
             session_id = attributes[SpanAttributeFieldName.SESSION_ID]
             span_type = attributes[SpanAttributeFieldName.SPAN_TYPE]
