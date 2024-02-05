@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import os
 import typing
 import uuid
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -15,6 +16,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from promptflow._constants import SpanAttributeFieldName
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._constants import PF_TRACE_CONTEXT
 from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -49,10 +51,13 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
             operation_context._add_otel_attributes(attr_key, attr_value)
 
     # prompt flow related, retrieve `experiment` and `referenced.line_run_id`
-    experiment = os.environ.get(ExperimentContextKey.EXPERIMENT, None)
+    env_trace_context = os.environ.get(PF_TRACE_CONTEXT, None)
+    _logger.debug("Read trace context from environment: %s", env_trace_context)
+    env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
+    experiment = env_attributes.get(ExperimentContextKey.EXPERIMENT, None)
     if experiment is not None:
         operation_context._add_otel_attributes(SpanAttributeFieldName.EXPERIMENT, experiment)
-    ref_line_run_id = os.environ.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
+    ref_line_run_id = env_attributes.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
     if ref_line_run_id is not None:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
@@ -62,6 +67,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     inject_openai_api()
     # print user the UI url
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
+    # print to be able to see it in notebook
     print(f"You can view the trace from UI url: {ui_url}")
 
 
@@ -73,6 +79,7 @@ def _start_pfs(pfs_port) -> None:
     if is_port_in_use(pfs_port):
         _logger.warning(f"Service port {pfs_port} is used.")
         if is_pfs_service_healthy(pfs_port) is True:
+            _logger.info(f"Service is already running on port {pfs_port}.")
             return
         else:
             command_args += ["--force"]
@@ -106,6 +113,8 @@ def _init_otel_trace_exporter(otlp_port: str) -> None:
     )
     trace_provider = TracerProvider(resource=resource)
     endpoint = f"http://localhost:{otlp_port}/v1/traces"
+    # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
+    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
     otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
     trace_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(trace_provider)

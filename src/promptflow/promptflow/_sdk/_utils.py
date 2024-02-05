@@ -13,6 +13,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
@@ -371,6 +372,7 @@ def safe_parse_object_list(obj_list, parser, message_generator):
 
 def _sanitize_python_variable_name(name: str):
     from promptflow._utils.utils import _sanitize_python_variable_name
+
     return _sanitize_python_variable_name(name)
 
 
@@ -1116,6 +1118,62 @@ def pd_read_json(file) -> "DataFrame":
 
     with read_open(file) as f:
         return pd.read_json(f, orient="records", lines=True)
+
+
+def get_mac_address() -> Union[str, None]:
+    """Get the MAC ID of the first network card."""
+    try:
+        import psutil
+
+        mac_address = None
+        net_address = psutil.net_if_addrs()
+        eth = []
+        # Query the first network card in order and obtain the MAC address of the first network card.
+        # "Ethernet" is the name of the Windows network card.
+        # "eth", "ens", "eno" are the name of the Linux & Mac network card.
+        net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
+        for net_interface_name in net_interface_names:
+            if net_interface_name in net_address:
+                eth = net_address[net_interface_name]
+                break
+        for net_interface in eth:
+            if net_interface.family == psutil.AF_LINK:  # mac address
+                mac_address = str(net_interface.address)
+                break
+
+        # If obtaining the network card MAC ID fails, obtain other MAC ID
+        if mac_address is None:
+            node = uuid.getnode()
+            if node != 0:
+                mac_address = str(uuid.UUID(int=node).hex[-12:])
+
+        return mac_address
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return None
+
+
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
+    mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
+    if mac_address:
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
+    return None
 
 
 def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
