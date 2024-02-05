@@ -83,7 +83,7 @@ class TestProcessUtils:
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             await execute_function_async(target_function_async, 1, return_dict, error_dict, MOCK_CONTEXT_DICT)
-            mock_logger.error.assert_called_once()
+            mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_execute_function_async_exception(self):
