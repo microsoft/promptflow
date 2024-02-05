@@ -9,7 +9,7 @@ from dotenv import dotenv_values
 
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
-from ._errors import MultipleExperimentTemplateError
+from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._experiment import ExperimentTemplate
@@ -169,7 +169,13 @@ def _load_experiment_template(
                 f"Multiple experiment template files found in {source_path.resolve().absolute().as_posix()}, "
                 f"please specify one."
             )
+        if not target_yaml_list:
+            raise NoExperimentTemplateError(
+                f"Experiment template file not found in {source_path.resolve().absolute().as_posix()}."
+            )
         source_path = target_yaml_list[0]
     if not source_path.exists():
-        raise FileNotFoundError(f"Experiment template file {source_path.resolve().absolute().as_posix()} not found.")
+        raise NoExperimentTemplateError(
+            f"Experiment template file {source_path.resolve().absolute().as_posix()} not found."
+        )
     return load_common(ExperimentTemplate, source=source_path)
