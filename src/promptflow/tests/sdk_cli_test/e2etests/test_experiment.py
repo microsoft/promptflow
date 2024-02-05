@@ -106,7 +106,11 @@ class TestExperiment:
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
-    def test_flow_test_with_experiment(self):
+    def test_flow_test_with_experiment(self, monkeypatch):
+        # set queue size to 1 to make collection faster
+        monkeypatch.setenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "1")
+        monkeypatch.setenv("OTEL_BSP_SCHEDULE_DELAY", "1")
+
         def _assert_result(result):
             assert "main" in result, "Node main not in result"
             assert "category" in result["main"], "Node main.category not in result"
@@ -141,10 +145,11 @@ class TestExperiment:
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
             # Assert session exists
-            # Sleep to wait all traces are flushed
+            # TODO: Task 2942400, avoid sleep/if and assert traces
             time.sleep(10)  # TODO fix this
             line_runs = client._traces.list_line_runs(session_id=session)
-            if len(line_runs) == 1:
+            if len(line_runs) > 0:
+                assert len(line_runs) == 1
                 line_run = line_runs[0]
                 assert "main_attempt" in line_run.line_run_id
                 assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
@@ -156,6 +161,9 @@ class TestExperiment:
             assert expected_output_path.resolve().exists()
             # Assert eval metric exists
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
+
+        monkeypatch.delenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE")
+        monkeypatch.delenv("OTEL_BSP_SCHEDULE_DELAY")
 
     def test_flow_not_in_experiment(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
