@@ -109,6 +109,7 @@ class TestExperiment:
     def test_flow_test_with_experiment(self, monkeypatch):
         # set queue size to 1 to make collection faster
         monkeypatch.setenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "1")
+        monkeypatch.setenv("OTEL_BSP_SCHEDULE_DELAY", "1")
 
         def _assert_result(result):
             assert "main" in result, "Node main not in result"
@@ -161,6 +162,7 @@ class TestExperiment:
             assert (expected_output_path / "eval" / "flow.metrics.json").exists()
 
         monkeypatch.delenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE")
+        monkeypatch.delenv("OTEL_BSP_SCHEDULE_DELAY")
 
     def test_flow_not_in_experiment(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
