@@ -124,7 +124,7 @@ class FlowOperations(TelemetryMixin):
         node: str = None,
         environment_variables: dict = None,
         stream_log: bool = True,
-        stream_output: bool = True,
+        stream_output: bool = False,
         allow_generator_output: bool = True,
         **kwargs,
     ):

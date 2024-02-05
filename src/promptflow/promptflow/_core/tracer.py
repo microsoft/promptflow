@@ -270,23 +270,31 @@ def enrich_span_with_trace(span, trace):
         logging.warning(f"Failed to enrich span with trace: {e}")
 
 
-def enrich_span_with_input(span, input):
+def enrich_span_with_input(span, input, trace_type: TraceType = TraceType.FUNCTION):
     try:
         serialized_input = serialize_attribute(input)
         span.set_attribute("inputs", serialized_input)
+        if trace_type == TraceType.RETRIEVAL and "query" in input:
+            span.set_attribute("retrieval.query", input["query"])
     except Exception as e:
         logging.warning(f"Failed to enrich span with input: {e}")
 
     return input
 
 
-def enrich_span_with_output(span, output):
+def enrich_span_with_output(span, output, trace_type: TraceType = TraceType.FUNCTION):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
         tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
         if tokens:
             span.set_attributes(tokens)
+        if trace_type == TraceType.RETRIEVAL and isinstance(output, list):
+            docs = []
+            required_attributes = ["id", "score", "content", "metadata"]
+            for doc in output:
+                docs.append({f"document.{k}": doc[k] for k in required_attributes if k in doc})
+            span.set_attribute("retrieval.documents", serialize_attribute(docs))
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
@@ -410,11 +418,11 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             enrich_span_with_trace(span, trace)
             try:
                 Tracer.push(trace)
-                enrich_span_with_input(span, trace.inputs)
+                enrich_span_with_input(span, trace.inputs, trace_type)
                 output = func(*args, **kwargs)
                 if trace_type == TraceType.LLM:
                     token_collector.collect_openai_tokens(span, output)
-                enrich_span_with_output(span, output)
+                enrich_span_with_output(span, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
