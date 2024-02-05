@@ -1,29 +1,59 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import argparse
 import copy
 import json
 import os
+import platform
+import signal
 import subprocess
+import sys
 import tempfile
 import uuid
+from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Union
+from typing import Union
 
-from promptflow._sdk._configuration import Configuration
+import psutil
+
+# For the process started in detach mode, stdout/std error will be none.
+# To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = sys.stdout
+
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PROMPT_FLOW_DIR_NAME,
     ExperimentContextKey,
+    ExperimentNodeRunStatus,
     ExperimentNodeType,
     ExperimentStatus,
     FlowRunProperties,
-    RunTypes,
 )
-from promptflow._sdk._errors import ExperimentCommandRunError, ExperimentHasCycle, ExperimentValueError
+from promptflow._sdk._errors import (
+    ExperimentCommandRunError,
+    ExperimentHasCycle,
+    ExperimentNodeRunFailedError,
+    ExperimentNotFoundError,
+    ExperimentValueError,
+)
+from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
+from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
+from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
+from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._submitter import RunSubmitter
-from promptflow._sdk._submitter.utils import SubmitterHelper
+from promptflow._sdk._submitter.utils import (
+    SubmitterHelper,
+    _calculate_snapshot,
+    _start_process_in_background,
+    _stop_orchestrator_process,
+    _windows_stop_handler,
+)
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._sdk.entities._flow import ProtectedFlow
@@ -34,20 +64,22 @@ from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
 
 class ExperimentOrchestrator:
-    """Experiment orchestrator, responsible for experiment running."""
+    """Experiment orchestrator, responsible for experiment running and status checking."""
 
-    def __init__(self, client):
+    def __init__(self, client, experiment: Experiment = None):
+        self.run_operations = client.runs
+        self.experiment_operations = client._experiments
         self._client = client
-        self.run_operations = self._client.runs
-        self.experiment_operations = self._client._experiments
-        self.run_submitter = ExperimentRunSubmitter(self.run_operations)
-        self.command_submitter = ExperimentCommandSubmitter(self.run_operations)
+        self.experiment = experiment
+        self._nodes = {node.name: node for node in self.experiment.nodes} if experiment else {}
+        # A key-value pair of node name and run info
+        self._node_runs = {}
 
     def test(
         self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
@@ -134,91 +166,463 @@ class ExperimentOrchestrator:
     def _test_command_node(self, *args, **kwargs):
         raise NotImplementedError
 
-    def start(self, experiment: Experiment, **kwargs):
-        """Start an experiment.
+    def start(self, nodes=None, from_nodes=None):
+        """Start an execution of an experiment.
 
-        :param experiment: Experiment to start.
-        :type experiment: ~promptflow.entities.Experiment
-        :param kwargs: Keyword arguments.
-        :type kwargs: Any
+        Start an orchestrator to schedule node execution according to topological ordering.
+
+        :param nodes: Nodes to be executed.
+        :type nodes: list
+        :param from_nodes: The branches in experiment to be executed.
+        :type from_nodes: list
+        :return: Experiment info.
+        :rtype: ~promptflow.entities.Experiment
         """
         # Start experiment
         logger.info(f"Starting experiment {experiment.name}.")
-        context = ExperimentTemplateContext(experiment)
         experiment.status = ExperimentStatus.IN_PROGRESS
         experiment.last_start_time = datetime.utcnow().isoformat()
         experiment.last_end_time = None
         self.experiment_operations.create_or_update(experiment)
-        # Ensure nodes order
-        resolved_nodes = ExperimentHelper.resolve_nodes_to_execute(experiment)
+        self._update_orchestrator_record(status=ExperimentStatus.IN_PROGRESS, pid=os.getpid())
+        self._start_orchestrator(nodes=nodes, from_nodes=from_nodes)
 
-        # Run nodes
-        run_dict = {}
+    def async_start(self, executable_path=None, nodes=None, from_nodes=None):
+        """Start an asynchronous execution of an experiment.
+
+        :param executable_path: Python path when executing the experiment.
+        :type executable_path: str
+        :param nodes: Nodes to be executed.
+        :type nodes: list
+        :param from_nodes: The branches in experiment to be executed.
+        :type from_nodes: list
+        :return: Experiment info.
+        :rtype: ~promptflow.entities.Experiment
+        """
+        logger.info(f"Queuing experiment {self.experiment.name}.")
+        self._update_orchestrator_record(status=ExperimentStatus.QUEUING)
+
+        executable_path = executable_path or sys.executable
+        args = [executable_path, __file__, "start", "--experiment", self.experiment.name]
+        if nodes:
+            args = args + ["--nodes"] + nodes
+        if from_nodes:
+            args = args + ["--from-nodes"] + from_nodes
+        # Start an orchestrator process using detach mode
+        logger.debug(f"Start experiment {self.experiment.name} in background.")
+        _start_process_in_background(args, executable_path)
+        return self.experiment
+
+    def _update_orchestrator_record(self, status, pid=None):
+        """Update orchestrator table data"""
+        orm_orchestrator = ORMOrchestrator(
+            experiment_name=self.experiment.name,
+            pid=pid,
+            status=status,
+        )
+        ORMOrchestrator.create_or_update(orm_orchestrator)
+
+        self.experiment.status = status
+        last_start_time, last_end_time = None, None
+        if status == ExperimentStatus.IN_PROGRESS:
+            last_start_time = datetime.utcnow().isoformat()
+        elif status == ExperimentStatus.TERMINATED:
+            last_end_time = datetime.utcnow().isoformat()
+        return ORMExperiment.get(name=self.experiment.name).update(
+            status=self.experiment.status,
+            last_start_time=last_start_time,
+            last_end_time=last_end_time,
+            node_runs=json.dumps(self.experiment.node_runs),
+        )
+
+    def _start_orchestrator(self, nodes=None, from_nodes=None):
+        """
+        Orchestrate the execution of nodes in the experiment.
+        Determine node execution order through topological sorting.
+
+        :param nodes: Nodes to be executed.
+        :type nodes: list
+        :param from_nodes: The branches in experiment to be executed.
+        :type from_nodes: list
+        """
+
+        def prepare_edges(node):
+            """Get all in-degree nodes of this node."""
+            node_names = set()
+            for input_value in node.inputs.values():
+                if not isinstance(input_value, str):
+                    continue
+                if (
+                    input_value.startswith("${")
+                    and not input_value.startswith("${data.")
+                    and not input_value.startswith("${inputs.")
+                ):
+                    referenced_node_name = input_value.split(".")[0].replace("${", "")
+                    node_names.add(referenced_node_name)
+            return node_names
+
+        def generate_node_mapping_by_nodes(from_nodes):
+            all_node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            node_edges_mapping, next_nodes = {node: all_node_edges_mapping[node] for node in from_nodes}, from_nodes
+            while next_nodes:
+                linked_nodes = set()
+                for node in next_nodes:
+                    in_degree_nodes = {k: v for k, v in all_node_edges_mapping.items() if node in v}
+                    linked_nodes.update(set(in_degree_nodes.keys()) - set(node_edges_mapping.keys()))
+                    node_edges_mapping.update(in_degree_nodes)
+                next_nodes = linked_nodes
+            all_nodes = set()
+            for nodes in node_edges_mapping.values():
+                all_nodes.update(nodes)
+            pre_nodes = all_nodes - set(node_edges_mapping.keys())
+            return node_edges_mapping, pre_nodes
+
+        def get_next_executable_nodes(completed_node=None):
+            """Get the node to be executed in the experiment.
+
+            :param completed_node: The completed node is used to update node-edge mapping in experiment run.
+            :type completed_node: str
+            :param next_executable_nodes: Executable node list.
+            :type next_executable_nodes: list
+            """
+            if completed_node:
+                # Update node edge mapping in current experiment run.
+                # Remove the edge of the node that has been completed.
+                for referenced_nodes in node_edges_mapping.values():
+                    referenced_nodes.discard(completed_node)
+            next_executable_nodes = [
+                self._nodes[node_name] for node_name, edges in node_edges_mapping.items() if len(edges) == 0
+            ]
+            for node in next_executable_nodes:
+                node_edges_mapping.pop(node.name)
+            return next_executable_nodes
+
+        def check_in_degree_node_outputs(pre_nodes):
+            """Check the input data of nodes already exists, it not return false."""
+            node_runs = {
+                node_name: next(filter(lambda x: x["status"] == ExperimentNodeRunStatus.COMPLETED, node_runs), None)
+                for node_name, node_runs in self.experiment.node_runs.items()
+            }
+            is_in_degree_nodes_ready = True
+            for in_degree_node in pre_nodes:
+                is_in_degree_nodes_ready = in_degree_node in node_runs
+                if node_runs.get(in_degree_node, None):
+                    node_run_info = self.run_operations.get(node_runs[in_degree_node]["name"])
+                    self._node_runs[in_degree_node] = node_run_info
+
+                    output_path = node_run_info.properties.get("output_path", None)
+                    is_in_degree_nodes_ready = is_in_degree_nodes_ready and Path(output_path).exists()
+                else:
+                    is_in_degree_nodes_ready = False
+                    logger.warning(f"Cannot find the outputs of {in_degree_node}")
+            return is_in_degree_nodes_ready
+
+        def stop_process():
+            """
+            Post process of stop experiment. It will update status of all running node to canceled.
+            And update status of experiment to terminated. Then terminate the orchestrator process.
+            """
+            executor.shutdown(wait=False)
+            for future, node in future_to_node_run.items():
+                if future.running():
+                    # Update status of running nodes to canceled.
+                    node.update_exp_run_node(status=ExperimentNodeRunStatus.CANCELED)
+                    self.experiment._append_node_run(node.node.name, ORMRunInfo.get(node.name))
+            # Update status experiment to terminated.
+            self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+            # Terminate orchestrator process.
+            sys.exit(1)
+
+        if platform.system() == "Windows":
+            import threading
+
+            # Because of signal handler not works well in Windows, orchestrator starts a daemon thread
+            # that creates named pipe to receive cancel signals from other processes.
+            # Related issue of signal handler in Windows: https://bugs.python.org/issue26350
+            pipe_thread = threading.Thread(
+                target=_windows_stop_handler,
+                args=(
+                    self.experiment.name,
+                    stop_process,
+                ),
+            )
+            pipe_thread.daemon = True
+            pipe_thread.start()
+        else:
+
+            def stop_handler(signum, frame):
+                """
+                Post-processing when the experiment is canceled.
+                Terminate all executing nodes and update node status.
+                """
+                if signum == signal.SIGTERM:
+                    stop_process()
+
+            signal.signal(signal.SIGTERM, stop_handler)
+
+        # TODO set max workers
+        executor = ThreadPoolExecutor(max_workers=None)
+        future_to_node_run = {}
+
+        if from_nodes:
+            # Executed from specified nodes
+            # check in-degree nodes outputs exist
+            node_edges_mapping, pre_nodes = generate_node_mapping_by_nodes(from_nodes)
+            if not check_in_degree_node_outputs(pre_nodes):
+                raise UserErrorException(f"The output(s) of in-degree for nodes {from_nodes} do not exist.")
+            next_execute_nodes = [self._nodes[name] for name in from_nodes]
+        elif nodes:
+            # Executed specified nodes
+            # check in-degree nodes outputs exist
+            pre_nodes = set()
+            node_mapping = {node.name: node for node in self.experiment.nodes}
+            for node_name in nodes:
+                pre_nodes.update(prepare_edges(node_mapping[node_name]))
+            if not check_in_degree_node_outputs(pre_nodes):
+                raise UserErrorException(f"The output(s) of in-degree of nodes {nodes} do not exist.")
+            node_edges_mapping = {}
+            next_execute_nodes = [self._nodes[name] for name in nodes]
+        else:
+            # Execute all nodes in experiment.
+            node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
+            next_execute_nodes = get_next_executable_nodes()
+
+        while len(next_execute_nodes) != 0 or len(future_to_node_run) != 0:
+            for node in next_execute_nodes:
+                # Start node execution.
+                logger.info(f"Running node {node.name}.")
+                exp_node_run = ExperimentNodeRun(
+                    node=node,
+                    experiment=self.experiment,
+                    node_runs=self._node_runs,
+                    run_operations=self.run_operations,
+                )
+                future_to_node_run[executor.submit(exp_node_run.submit)] = exp_node_run
+            completed_futures, _ = futures.wait(future_to_node_run.keys(), return_when=futures.FIRST_COMPLETED)
+            next_execute_nodes = []
+            for future in completed_futures:
+                try:
+                    node_name = future_to_node_run[future].node.name
+                    self._node_runs[node_name] = future.result()
+                    if not nodes:
+                        # Get next executable nodes by completed nodes.
+                        next_execute_nodes.extend(get_next_executable_nodes(completed_node=node_name))
+                    self.experiment._append_node_run(node_name, self._node_runs[node_name])
+                    del future_to_node_run[future]
+                except Exception as e:
+                    executor.shutdown(wait=False)
+                    # Handle failed execution, update orchestrator and experiment info
+                    self.experiment._append_node_run(node_name, future_to_node_run[future])
+                    self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+                    logger.warning(f"Node {future_to_node_run[future].node.name} failed to execute with error {e}.")
+                    raise ExperimentNodeRunFailedError(
+                        f"Node {future_to_node_run[future].node.name} failed to execute with error {e}."
+                    )
+        executor.shutdown(wait=False)
+        self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
+
+    def stop(self):
+        """Stop in progress experiment.
+
+        If experiment is not in progress, it will raise user error.
+        In Linux, it will send terminate signal to orchestrator process. In Windows, it will pass signal by named pipe.
+        When process receives the terminate signal, it will update running nodes to canceled and terminate the process.
+
+        :return: Stopped experiment info.
+        :rtype: ~promptflow.entities.Experiment
+        """
+        orchestrator = ORMOrchestrator.get(experiment_name=self.experiment.name)
+        if orchestrator.status in [ExperimentStatus.NOT_STARTED, ExperimentStatus.QUEUING, ExperimentStatus.TERMINATED]:
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message="Experiment cannot be stopped if it is not started.",
+            )
+
+        _stop_orchestrator_process(orchestrator)
+
+    @staticmethod
+    def get_status(experiment_name):
+        """Check the status of the orchestrator
+
+        The status recorded in database and process status may be inconsistent.
+        Need to check the orchestrator process status.
+
+        :return: Orchestrator status.
+        :rtype: str
+        """
+
+        def set_orchestrator_terminated():
+            logger.info(
+                "The orchestrator process terminates abnormally, "
+                f"status of {experiment_name} is updated to terminated."
+            )
+            orm_orchestrator.status = ExperimentStatus.TERMINATED
+            ORMOrchestrator.create_or_update(orm_orchestrator)
+            ORMExperiment.get(name=experiment_name).update(status=ExperimentStatus.TERMINATED)
+
         try:
-            for node in resolved_nodes:
-                logger.info(f"Running node {node.name}...")
-                run = self._run_node(node, experiment, context, run_dict)
-                # Update node run to experiment
-                experiment._append_node_run(node.name, run)
-                self.experiment_operations.create_or_update(experiment)
-                run_dict[node.name] = run
-                logger.info(f"Node {node.name} run {run.name} completed, outputs to {run._output_path}.")
-        except Exception as e:
-            logger.error(f"Running experiment {experiment.name} failed with error {e}.")
-        finally:
-            # End experiment
-            logger.info(f"Terminating experiment {experiment.name}.")
-            experiment.status = ExperimentStatus.TERMINATED
-            experiment.last_end_time = datetime.utcnow().isoformat()
-            return self.experiment_operations.create_or_update(experiment)
+            orm_orchestrator = ORMOrchestrator.get(experiment_name=experiment_name)
+            if orm_orchestrator.status == ExperimentStatus.IN_PROGRESS:
+                try:
+                    process = psutil.Process(orm_orchestrator.pid)
+                    if experiment_name not in process.cmdline():
+                        # This process is not the process used to start the orchestrator
+                        # update experiment to terminated.
+                        set_orchestrator_terminated()
+                    return orm_orchestrator.status
+                except psutil.NoSuchProcess:
+                    # The process is terminated abnormally, update experiment to terminated.
+                    set_orchestrator_terminated()
+                    return ExperimentStatus.TERMINATED
+            else:
+                return orm_orchestrator.status
+        except ExperimentNotFoundError:
+            return ExperimentStatus.NOT_STARTED
 
-    def _run_node(self, node, experiment, context, run_dict) -> Run:
-        if node.type == ExperimentNodeType.FLOW:
-            return self._run_flow_node(node, experiment, context, run_dict)
-        elif node.type == ExperimentNodeType.COMMAND:
-            return self._run_command_node(node, experiment, context, run_dict)
-        raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
-    def _run_flow_node(self, node, experiment, context, run_dict):
+class ExperimentNodeRun(Run):
+    """Experiment node run, includes experiment running context, like data, inputs and runs."""
+
+    def __init__(self, node, experiment, node_runs, run_operations, **kwargs):
+        from promptflow._sdk._configuration import Configuration
+
+        self.node = node
+        self.experiment = experiment
+        self.experiment_data = {data.name: data for data in experiment.data}
+        self.experiment_inputs = {input.name: input for input in experiment.inputs}
+        self.node_runs = node_runs
+        self.run_operations = run_operations
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        # Config run output path to experiment output folder
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
-        node_context = context.get_node_context(node.name, is_flow=True, test=False)
-        run = ExperimentRun(
-            node_name=node.name,
-            experiment=experiment,
-            experiment_runs=run_dict,
-            name=context.node_name_to_id[node.name],
+        super().__init__(
+            # Use node name as prefix for run name?
+            name=f"{node.name}_attempt{timestamp}",
             display_name=node.display_name or node.name,
             column_mapping=node.inputs,
-            variant=node.variant,
-            flow=node.path,
-            connections=node.connections,
-            environment_variables={**node.environment_variables, **node_context},
-            # Config run output path to experiment output folder
+            variant=getattr(node, "variant", None),
+            flow=self._get_node_path(),
+            outputs=getattr(node, "outputs", None),
+            connections=getattr(node, "connections", None),
+            command=getattr(node, "command", None),
+            environment_variables=node.environment_variables,
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
+            **kwargs,
         )
-        logger.debug(f"Creating run {run.name}")
-        return self.run_submitter.submit(run)
+        self._resolve_column_mapping()
+        self._input_data = self._resolve_input_dirs()
+        self.snapshot_id = _calculate_snapshot(self.column_mapping, self._input_data, self.flow)
 
-    def _run_command_node(self, node, experiment, context, run_dict):
-        run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
-        node_context = context.get_node_context(node.name, is_flow=False, test=False)
-        run = ExperimentRun(
-            type=RunTypes.COMMAND,
-            node_name=node.name,
-            experiment=experiment,
-            experiment_runs=run_dict,
-            name=context.node_name_to_id[node.name],
-            display_name=node.display_name or node.name,
-            column_mapping=node.inputs,
-            # Use command code path as flow path
-            flow=node.code,
-            outputs=node.outputs,
-            command=node.command,
-            environment_variables={**node.environment_variables, **node_context},
-            config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
+    def _resolve_column_mapping(self):
+        """Resolve column mapping with experiment inputs to constant values."""
+        logger.info(f"Start resolve node {self.node.name!r} column mapping.")
+        resolved_mapping = {}
+        for name, value in self.column_mapping.items():
+            if not isinstance(value, str) or not value.startswith("${inputs."):
+                resolved_mapping[name] = value
+                continue
+            input_name = value.split(".")[1].replace("}", "")
+            if input_name not in self.experiment_inputs:
+                raise ExperimentValueError(
+                    f"Node {self.node_name!r} inputs {value!r} related experiment input {input_name!r} not found."
+                )
+            resolved_mapping[name] = self.experiment_inputs[input_name].default
+        logger.debug(f"Resolved node {self.node.name!r} column mapping {resolved_mapping}.")
+        self.column_mapping = resolved_mapping
+
+    def _resolve_input_dirs(self):
+        logger.info("Start resolve node %s input dirs.", self.node.name)
+        # Get the node referenced data and run
+        referenced_data, referenced_run = ExperimentHelper.get_referenced_data_and_run(
+            node_name=self.node.name,
+            column_mapping=self.column_mapping,
+            experiment_data=self.experiment_data,
+            experiment_runs=self.node_runs,
         )
-        logger.debug(f"Creating run {run.name}")
-        return self.command_submitter.submit(run)
+        if len(referenced_data) > 1:
+            raise ExperimentValueError(
+                f"Experiment flow node {self.node.name!r} has multiple data inputs {referenced_data}, "
+                "only 1 is expected."
+            )
+        if len(referenced_run) > 1:
+            raise ExperimentValueError(
+                f"Experiment flow node {self.node.name!r} has multiple run inputs {referenced_run}, "
+                "only 1 is expected."
+            )
+        (data_name, data_obj) = next(iter(referenced_data.items())) if referenced_data else (None, None)
+        (run_name, run_obj) = next(iter(referenced_run.items())) if referenced_run else (None, None)
+        logger.debug(f"Resolve node {self.node.name} referenced data {data_name!r}, run {run_name!r}.")
+        # Build inputs from experiment data and run
+        result = {}
+        if data_obj:
+            result.update({f"data.{data_name}": data_obj.path})
+        if run_obj:
+            result.update(ExperimentHelper.resolve_binding_from_run(run_name, run_obj, self.run_operations))
+        result = {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
+        logger.debug(f"Resolved node {self.node.name} input dirs {result}.")
+        return result
+
+    def _get_node_path(self):
+        if self.node.type == ExperimentNodeType.FLOW:
+            return self.node.path
+        elif self.node.type == ExperimentNodeType.COMMAND:
+            return self.node.code
+        elif self.node.type == ExperimentNodeType.CHAT_GROUP:
+            raise NotImplementedError("Chat group node in experiment is not supported yet.")
+        raise ExperimentValueError(f"Unknown experiment node {self.node.name!r} type {self.node.type!r}")
+
+    def _run_node(self) -> Run:
+        if self.node.type == ExperimentNodeType.FLOW:
+            return self._run_flow_node()
+        elif self.node.type == ExperimentNodeType.COMMAND:
+            return self._run_command_node()
+        elif self.node.type == ExperimentNodeType.CHAT_GROUP:
+            return self._run_chat_group_node()
+        raise ExperimentValueError(f"Unknown experiment node {self.node.name!r} type {self.node.type!r}")
+
+    def _run_flow_node(self):
+        logger.debug(f"Creating flow run {self.name}")
+        exp_node_run_submitter = ExperimentFlowRunSubmitter(self.run_operations)
+        return exp_node_run_submitter.submit(self)
+
+    def _run_command_node(self):
+        logger.debug(f"Creating command run {self.name}")
+        exp_command_submitter = ExperimentCommandSubmitter(self.run_operations)
+        return exp_command_submitter.submit(self)
+
+    def _run_chat_group_node(self):
+        raise NotImplementedError("Chat group node in experiment is not supported yet.")
+
+    def update_exp_run_node(self, status):
+        node_run = ORMExperimentNodeRun(
+            run_id=self.name,
+            snapshot_id=self.snapshot_id,
+            node_name=self.node.name,
+            experiment_name=self.experiment.name,
+            status=status,
+        )
+        ORMExperimentNodeRun.create_or_update(node_run)
+
+    def submit(self):
+        # Get snapshot id from exp_node_run
+        node_run = ORMExperimentNodeRun.get_completed_node_by_snapshot_id(
+            snapshot_id=self.snapshot_id, experiment_name=self.experiment.name, raise_error=False
+        )
+        if node_run and node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
+            run_info = self.run_operations.get(node_run.run_id)
+            output_path = run_info.properties.get("output_path", None)
+            if output_path and Path(output_path).exists():
+                # TODO Whether need to link used node output folder in the experiment run folder
+                logger.info(f"Reuse existing node run {run_info.name} for node {self.node.name}.")
+                run_info.name = self.name
+                return run_info
+        # Update exp node run record
+        self.update_exp_run_node(status=ExperimentNodeRunStatus.IN_PROGRESS)
+        node_run_result = self._run_node()
+        logger.info(f"Node {self.node.name} run {self.name} completed, outputs to {node_run_result._output_path}.")
+        return node_run_result
 
 
 class ExperimentTemplateContext:
@@ -290,28 +694,13 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
                 Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
             )
         # All test run in experiment should use same session
-        self.session = session or uuid.uuid4()
+        self.session = session or str(uuid.uuid4())
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs
 
     def add_node_result(self, name, result):
         self.node_results[name] = result
-
-
-class ExperimentRun(Run):
-    """Experiment run, includes experiment running context, like data, inputs and runs."""
-
-    def __init__(self, experiment, node_name, experiment_runs: Dict[str, "ExperimentRun"], **kwargs):
-        self.node_name = node_name
-        self.experiment = experiment
-        self.experiment_data = {data.name: data for data in experiment.data}
-        self.experiment_inputs = {input.name: input for input in experiment.inputs}
-        self.experiment_runs = experiment_runs
-        super().__init__(**kwargs)
-        self.column_mapping = ExperimentHelper.resolve_column_mapping(
-            node_name, self.column_mapping, self.experiment_inputs
-        )
 
 
 class ExperimentHelper:
@@ -464,7 +853,7 @@ class ExperimentHelper:
         return binding_dict
 
 
-class ExperimentRunSubmitter(RunSubmitter):
+class ExperimentFlowRunSubmitter(RunSubmitter):
     """Experiment run submitter, override some function from RunSubmitter as experiment run could be different."""
 
     @classmethod
@@ -472,35 +861,19 @@ class ExperimentRunSubmitter(RunSubmitter):
         # Do not validate run/data field, as we will resolve them in _resolve_input_dirs.
         return
 
-    def _resolve_input_dirs(self, run: ExperimentRun):
-        logger.info("Start resolve node %s input dirs.", run.node_name)
-        logger.debug(f"Experiment context: {run.experiment_data}, {run.experiment_runs}, inputs: {run.column_mapping}")
-        # Get the node referenced data and run
-        referenced_data, referenced_run = ExperimentHelper.get_referenced_data_and_run(
-            run.node_name, run.column_mapping, run.experiment_data, run.experiment_runs
-        )
-        if len(referenced_data) > 1:
-            raise ExperimentValueError(
-                f"Experiment flow node {run.node_name!r} has multiple data inputs {referenced_data}, "
-                "only 1 is expected."
-            )
-        if len(referenced_run) > 1:
-            raise ExperimentValueError(
-                f"Experiment flow node {run.node_name!r} has multiple run inputs {referenced_run}, "
-                "only 1 is expected."
-            )
-        (data_name, data_obj) = next(iter(referenced_data.items())) if referenced_data else (None, None)
-        (run_name, run_obj) = next(iter(referenced_run.items())) if referenced_run else (None, None)
-        logger.debug(f"Resolve node {run.node_name} referenced data {data_name!r}, run {run_name!r}.")
-        # Build inputs from experiment data and run
-        result = {}
-        if data_obj:
-            result.update({f"data.{data_name}": data_obj.path})
-        if run_obj:
-            result.update(ExperimentHelper.resolve_binding_from_run(run_name, run_obj, self.run_operations))
-        result = {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
-        logger.debug(f"Resolved node {run.node_name} input dirs {result}.")
-        return result
+    def _resolve_input_dirs(self, run: ExperimentNodeRun):
+        return run._input_data
+
+    def submit(self, run: Run, stream=False, **kwargs):
+        try:
+            run.update_exp_run_node(ExperimentNodeRunStatus.IN_PROGRESS)
+            self._run_bulk(run=run, stream=stream, **kwargs)
+            run_info = self.run_operations.get(name=run.name)
+            run.update_exp_run_node(run_info.status)
+            return run_info
+        except Exception as e:
+            run.update_exp_run_node(ExperimentNodeRunStatus.FAILED)
+            raise e
 
 
 class ExperimentCommandSubmitter:
@@ -509,7 +882,7 @@ class ExperimentCommandSubmitter:
     def __init__(self, run_operations: RunOperations):
         self.run_operations = run_operations
 
-    def submit(self, run: ExperimentRun, **kwargs):
+    def submit(self, run: ExperimentNodeRun, **kwargs):
         """Submit an experiment command run.
 
         :param run: Experiment command to submit.
@@ -519,24 +892,12 @@ class ExperimentCommandSubmitter:
         self._submit_command_run(run=run, local_storage=local_storage)
         return self.run_operations.get(name=run.name)
 
-    def _resolve_inputs(self, run: ExperimentRun):
+    def _resolve_inputs(self, run: ExperimentNodeRun):
         """Resolve binding inputs to constant values."""
         # e.g. "input_path": "${data.my_data}" -> "${inputs.input_path}": "real_data_path"
-        logger.info("Start resolve node %s inputs.", run.node_name)
-        data, runs = ExperimentHelper.get_referenced_data_and_run(
-            run.node_name, run.column_mapping, run.experiment_data, run.experiment_runs
-        )
-        # prepare "${data.my_data}": real_data_path
-        binding_dict = {"${data.%s}" % name: val.path for name, val in data.items()}
-        # prepare "${run.outputs}": run_outputs_path, "${run.inputs}": run_inputs_path
-        for name, val in runs.items():
-            binding_dict.update(
-                {
-                    "${%s}" % k: v
-                    for k, v in ExperimentHelper.resolve_binding_from_run(name, val, self.run_operations).items()
-                }
-            )
-        logger.debug(f"Resolved node {run.node_name} binding inputs {binding_dict}.")
+        logger.info("Start resolve node %s inputs.", run.node.name)
+
+        logger.debug(f"Resolved node {run.node.name} binding inputs {run._input_data}.")
         # resolve inputs
         resolved_inputs = {}
         for name, value in run.column_mapping.items():
@@ -544,21 +905,22 @@ class ExperimentCommandSubmitter:
                 resolved_inputs[name] = value
                 continue
             # my_input: "${run.outputs}" -> my_input: run_outputs_path
-            if value in binding_dict:
-                resolved_inputs[name] = binding_dict[value]
+            input_key = value.lstrip("${").rstrip("}")
+            if input_key in run._input_data:
+                resolved_inputs[name] = run._input_data[input_key]
                 continue
             logger.warning(
-                f"Possibly invalid partial input value binding {value!r} found for node {run.node_name!r}. "
+                f"Possibly invalid partial input value binding {value!r} found for node {run.node.name!r}. "
                 "Only full binding is supported for command node. For example: ${data.my_data}, ${main_node.outputs}."
             )
             resolved_inputs[name] = value
-        logger.debug(f"Resolved node {run.node_name} inputs {resolved_inputs}.")
+        logger.debug(f"Resolved node {run.node.name} inputs {resolved_inputs}.")
         return resolved_inputs
 
-    def _resolve_outputs(self, run: ExperimentRun):
+    def _resolve_outputs(self, run: ExperimentNodeRun):
         """Resolve outputs to real path."""
         # e.g. "output_path": "${outputs.my_output}" -> "${outputs.output_path}": "real_output_path"
-        logger.info("Start resolve node %s outputs.", run.node_name)
+        logger.info("Start resolve node %s outputs.", run.node.name)
         # resolve outputs
         resolved_outputs = {}
         for name, value in run._outputs.items():
@@ -572,12 +934,12 @@ class ExperimentCommandSubmitter:
                 run._outputs[name] = value
             # Note: We will do nothing if user config the value, as we don't know it's a file or folder
             resolved_outputs[name] = value
-        logger.debug(f"Resolved node {run.node_name} outputs {resolved_outputs}.")
+        logger.debug(f"Resolved node {run.node.name} outputs {resolved_outputs}.")
         return resolved_outputs
 
-    def _resolve_command(self, run: ExperimentRun, inputs: dict, outputs: dict):
+    def _resolve_command(self, run: ExperimentNodeRun, inputs: dict, outputs: dict):
         """Resolve command to real command."""
-        logger.info("Start resolve node %s command.", run.node_name)
+        logger.info("Start resolve node %s command.", run.node.name)
         # resolve command
         resolved_command = run._command
         # replace inputs
@@ -586,15 +948,15 @@ class ExperimentCommandSubmitter:
         # replace outputs
         for name, value in outputs.items():
             resolved_command = resolved_command.replace(f"${{outputs.{name}}}", str(value))
-        logger.debug(f"Resolved node {run.node_name} command {resolved_command}.")
+        logger.debug(f"Resolved node {run.node.name} command {resolved_command}.")
         if "${" in resolved_command:
             logger.warning(
-                f"Possibly unresolved command value binding found for node {run.node_name!r}. "
+                f"Possibly unresolved command value binding found for node {run.node.name!r}. "
                 f"Resolved command: {resolved_command}. Please check your command again."
             )
         return resolved_command
 
-    def _submit_command_run(self, run: ExperimentRun, local_storage: LocalStorageOperations):
+    def _submit_command_run(self, run: ExperimentNodeRun, local_storage: LocalStorageOperations) -> dict:
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
@@ -647,3 +1009,33 @@ class ExperimentCommandExecutor:
             process = subprocess.Popen(command, stdout=log_file, stderr=log_file, shell=True, env=os.environ, cwd=cwd)
         process.wait()
         return process.returncode
+
+
+def add_start_orchestrator_action(subparsers):
+    """Add action to start orchestrator."""
+    start_orchestrator_parser = subparsers.add_parser(
+        "start",
+        description="Start orchestrator.",
+    )
+    start_orchestrator_parser.add_argument("--experiment", type=str, help="Experiment name")
+    start_orchestrator_parser.add_argument("--nodes", type=str, help="Nodes to be executed", nargs="+")
+    start_orchestrator_parser.add_argument("--from-nodes", type=str, help="Nodes branch to be executed", nargs="+")
+    start_orchestrator_parser.set_defaults(action="start")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Orchestrator operations",
+    )
+    subparsers = parser.add_subparsers()
+    add_start_orchestrator_action(subparsers)
+
+    args = args = parser.parse_args(sys.argv[1:])
+
+    if args.action == "start":
+        from promptflow._sdk._pf_client import PFClient
+
+        client = PFClient()
+        experiment = client._experiments.get(args.experiment)
+        ExperimentOrchestrator(client, experiment=experiment).start(nodes=args.nodes, from_nodes=args.from_nodes)

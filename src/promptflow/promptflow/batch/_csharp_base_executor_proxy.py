@@ -17,8 +17,9 @@ class CSharpBaseExecutorProxy(APIBasedExecutorProxy):
         self,
         *,
         working_dir: Path = None,
+        enable_stream_output: bool = False,
     ):
-        super().__init__(working_dir=working_dir)
+        super().__init__(working_dir=working_dir, enable_stream_output=enable_stream_output)
 
     async def exec_aggregation_async(
         self,

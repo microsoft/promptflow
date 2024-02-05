@@ -169,6 +169,7 @@
     "otel",
     "OTLP",
     "spawnv",
+    "spawnve",
     "addrs"
   ],
   "flagWords": [
