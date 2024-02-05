@@ -5,7 +5,7 @@
 import copy
 import typing
 
-from sqlalchemy import TEXT, Column, Index
+from sqlalchemy import TEXT, Column, Index, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
@@ -78,7 +78,9 @@ class LineRun:
         with trace_mgmt_db_session() as session:
             stmt = session.query(Span)
             if session_id is not None:
-                stmt = stmt.filter(Span.session_id == session_id)
+                stmt = stmt.filter(
+                    text(f"trace_id in (select distinct trace_id from span where session_id = '{session_id}')")
+                )
             else:
                 # TODO: fully support query
                 raise NotImplementedError
