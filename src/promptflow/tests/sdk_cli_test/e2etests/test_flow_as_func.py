@@ -242,7 +242,6 @@ class TestFlowAsFunc:
 
     def test_flow_with_default_variant(self, azure_open_ai_connection):
         f = load_flow(f"{FLOWS_DIR}/web_classification_default_variant_no_llm_type")
-        # f = load_flow(r"D:\code\prompt-flow\examples\flows\standard\web-classification\flow.dag.yaml")
         f.context = FlowContext(
             connections={
                 "summarize_text_content": {"connection": azure_open_ai_connection},
