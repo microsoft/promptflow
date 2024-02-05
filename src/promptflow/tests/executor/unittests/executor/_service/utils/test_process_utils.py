@@ -10,7 +10,11 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import JsonSerializedPromptflowException
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionTimeoutError
-from promptflow.executor._service.utils.process_utils import exception_wrapper, invoke_function_in_process
+from promptflow.executor._service.utils.process_utils import (
+    exception_wrapper,
+    execute_function_async,
+    invoke_function_in_process,
+)
 
 MOCK_CONTEXT_DICT = {"context_test_key": "test_value"}
 
@@ -72,6 +76,24 @@ class TestProcessUtils:
             assert exc_info.value.target == ErrorTarget.EXECUTOR
             mock_logger.info.assert_called_once()
             mock_logger.error.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_execute_function_async_completed(self):
+        return_dict = {}
+        error_dict = {}
+        with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
+            await execute_function_async(target_function_async, 1, return_dict, error_dict, MOCK_CONTEXT_DICT)
+            mock_logger.error.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_execute_function_async_exception(self):
+        return_dict = {}
+        error_dict = {}
+        with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
+            with pytest.raises(JsonSerializedPromptflowException) as exc_info:
+                await execute_function_async(target_function_async, 0, return_dict, error_dict, MOCK_CONTEXT_DICT)
+            assert json.loads(exc_info.value.message)["message"] == "Test exception"
+            mock_logger.info.assert_called_once()
 
     def test_exception_wrapper_without_exception(self):
         error_dict = {}
