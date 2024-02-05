@@ -128,4 +128,4 @@ class TestCSharpCli:
 
         outerr = capsys.readouterr()
         # Check node output
-        assert "Chat GPT" in outerr.out
+        assert "language model" in outerr.out

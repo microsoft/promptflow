@@ -27,7 +27,7 @@ from ..._constants import LINE_NUMBER_KEY, FlowLanguage
 from ..._core._errors import NotSupported
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
-from ...batch import AbstractExecutorProxy, APIBasedExecutorProxy, CSharpExecutorProxy
+from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
 from .._configuration import Configuration
 from ..entities._eager_flow import EagerFlow
 from .utils import (
@@ -86,10 +86,8 @@ class TestSubmitter:
         self._executor_proxy: Optional[APIBasedExecutorProxy] = None
         self._within_init_context = False
 
-        self._generator_returned = False
-
     @property
-    def executor_proxy(self) -> AbstractExecutorProxy:
+    def executor_proxy(self) -> APIBasedExecutorProxy:
         self._raise_if_not_within_init_context()
         return self._executor_proxy
 
@@ -291,14 +289,8 @@ class TestSubmitter:
                 try:
                     yield self
                 finally:
-                    # TODO: consider if we can destroy executor proxy even if generator is returned
-                    # client.stream api in exec_line function won't pass all response one time.
-                    # For streaming c# chat flow scenario, if executor proxy is destroyed, it will kill service process
-                    # and connection will close. this will result in subsequent getting generator content failed.
-                    # Since dotnet process is not started in detach mode, it wll exit when parent process exit.
-                    # So we won't kill executor proxy here for streaming c# chat flow scenario.
-                    if self.executor_proxy and not self._generator_returned:
-                        async_run_allowing_running_loop(self.executor_proxy.destroy)
+                    if self.executor_proxy:
+                        async_run_allowing_running_loop(self.executor_proxy.destroy_if_all_generators_exhausted)
 
             self._within_init_context = False
 
@@ -447,9 +439,6 @@ class TestSubmitter:
             )
         else:
             from promptflow._utils.multimedia_utils import persist_multimedia_data
-
-            if stream_output and allow_generator_output and self.executor_proxy.chat_output_name:
-                self._generator_returned = True
 
             # TODO: support run_id for non-python
             # TODO: most of below code is duplicate to flow_executor.execute_flow

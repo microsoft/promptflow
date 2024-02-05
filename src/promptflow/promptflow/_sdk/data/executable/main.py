@@ -91,8 +91,8 @@ def start():
                         for chunk in resolve_generator_output_with_cache(
                             chat_output, generator_record, generator_key=f"run.outputs.{chat_output_name}"
                         ):
-                            # TODO: why extra spaces between adjacent chunks?
-                            full_response += chunk + " "
+                            # there should be no extra spaces between adjacent chunks?
+                            full_response += chunk
                             time.sleep(STREAMING_ANIMATION_TIME)
                             # Add a blinking cursor to simulate typing
                             message_placeholder.markdown(full_response + "▌")

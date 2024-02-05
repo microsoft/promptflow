@@ -110,6 +110,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         :type working_dir: Path
         """
         self._working_dir = working_dir or Path.cwd()
+        # build-in integer is thread-safe in Python.
+        # ref: https://stackoverflow.com/questions/6320107/are-python-ints-thread-safe
+        self._active_generator_count = 0
 
     @property
     def working_dir(self) -> Path:
@@ -118,6 +121,49 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         where we can find metadata under .promptflow.
         """
         return self._working_dir
+
+    # region Service Lifecycle Control when Streaming Output is Enabled
+    async def _activate_generator(self):
+        """For streaming output, we will return a generator for the output, and the execution service
+        should keep alive until the generator is exhausted.
+
+        This method is used to increase the active generator count.
+        """
+        self._active_generator_count += 1
+
+    async def _deactivate_generator(self):
+        """For streaming output, we will return a generator for the output, and the execution service
+        should keep alive until the generator is exhausted.
+
+        This method is used to decrease the active generator count.
+        """
+        self._active_generator_count -= 1
+
+    async def _all_generators_exhausted(self):
+        """For streaming output, we will return a generator for the output, and the execution service
+        should keep alive until the generator is exhausted.
+
+        This method is to check if all generators are exhausted.
+        """
+        # the count should never be negative, but still check it here for safety
+        return self._active_generator_count <= 0
+
+    async def destroy_if_all_generators_exhausted(self):
+        """
+        client.stream api in exec_line function won't pass all response one time.
+        For API-based streaming chat flow, if executor proxy is destroyed, it will kill service process
+        and connection will close. this will result in subsequent getting generator content failed.
+
+        Besides, external caller usually wait for the destruction of executor proxy before it can continue and iterate
+        the generator content, so we can't keep waiting here.
+
+        On the other hand, the subprocess for execution service is not started in detach mode;
+        it wll exit when parent process exit. So we simply skip the destruction here.
+        """
+        if await self._all_generators_exhausted():
+            await self.destroy()
+
+    # endregion
 
     def _get_flow_meta(self) -> dict:
         flow_meta_json_path = self.working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
@@ -225,8 +271,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                         yield LineResult.deserialize(chunk_data)
 
         origin_generator = generator()
-        line_result = next(origin_generator)
 
+        line_result = next(origin_generator)
+        async_run_allowing_running_loop(self._activate_generator)
         if self.chat_output_name is not None and self.chat_output_name in line_result.output:
             first_chat_output = line_result.output[self.chat_output_name]
 
@@ -234,6 +281,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 yield first_chat_output
                 for output in origin_generator:
                     yield output.output[self.chat_output_name]
+                async_run_allowing_running_loop(self._deactivate_generator)
 
             # Note: the generator output should be saved in both line_result.output and line_result.run_info.output
             line_result.output[self.chat_output_name] = final_generator()
