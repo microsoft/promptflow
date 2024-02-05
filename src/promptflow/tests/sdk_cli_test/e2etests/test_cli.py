@@ -12,6 +12,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
+from time import sleep
 from typing import Dict, List
 from unittest.mock import patch
 
@@ -30,6 +31,8 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
@@ -1960,8 +1963,16 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
+        def wait_for_experiment_terminated(experiment_name):
+            experiment = local_client._experiments.get(experiment_name)
+            while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
+                sleep(10)
+                experiment = local_client._experiments.get(experiment_name)
+            return experiment
+
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             exp_name = str(uuid.uuid4())
@@ -1984,7 +1995,8 @@ class TestCli:
                 exp_name,
             )
             out, _ = capfd.readouterr()
-            assert ExperimentStatus.TERMINATED in out
+            assert ExperimentStatus.QUEUING in out
+            wait_for_experiment_terminated(exp_name)
             exp = local_client._experiments.get(name=exp_name)
             assert len(exp.node_runs) == 4
             assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
