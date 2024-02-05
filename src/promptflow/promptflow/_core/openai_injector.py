@@ -23,14 +23,16 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
     def decorator(func):
-        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+        trace_type_inner = TraceType.EMBEDDING if "Embedding" in func.__qualname__ else trace_type
+        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type_inner)
 
     return decorator
 
 
 def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
     def decorator(func):
-        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+        trace_type_inner = TraceType.EMBEDDING if "Embedding" in func.__qualname__ else trace_type
+        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type_inner)
 
     return decorator
 
