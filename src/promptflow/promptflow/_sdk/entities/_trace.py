@@ -210,7 +210,7 @@ class _LineRunData:
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
             name=span.name,
-            kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
+            kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.span_type),
             cumulative_token_count=cumulative_token_count,
         )
 
