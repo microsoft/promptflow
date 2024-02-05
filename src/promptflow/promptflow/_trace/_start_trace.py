@@ -91,7 +91,7 @@ def _provision_session(session_id: typing.Optional[str] = None) -> str:
 
     # user has specified a session id, honor and directly return it
     if session_id is not None:
-        operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
+        operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, str(session_id))
         return session_id
 
     # session id is already in operation context, directly return
