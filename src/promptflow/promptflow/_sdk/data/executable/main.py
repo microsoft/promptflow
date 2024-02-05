@@ -73,6 +73,9 @@ def start():
         else:
             response = run_flow(kwargs)
 
+        if response.run_info.status.value == "Failed":
+            raise Exception(response.run_info.error)
+
         if is_streaming:
             # Display assistant response in chat message container
             with container:

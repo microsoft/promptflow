@@ -44,13 +44,16 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         return self._chat_output_name
 
     @classmethod
-    def _generate_flow_meta(cls, flow_file: str, assembly_folder: Path):
+    def generate_metadata(cls, flow_file: Path, assembly_folder: Path):
+        """Generate metadata for the flow and save them to files under .promptflow folder.
+        including flow.json and flow.tools.json.
+        """
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
             "--flow_meta",
             "--yaml_path",
-            flow_file,
+            flow_file.absolute().as_posix(),
             "--assembly_folder",
             ".",
         ]

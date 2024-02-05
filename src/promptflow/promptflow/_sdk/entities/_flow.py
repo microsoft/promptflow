@@ -346,7 +346,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
         if self.language == FlowLanguage.CSharp:
             with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
-                result = submitter.flow_test(inputs=inputs, enable_stream_output=self.context.streaming)
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
                 return result
         else:
             invoker = FlowContextResolver.resolve(flow=self)
