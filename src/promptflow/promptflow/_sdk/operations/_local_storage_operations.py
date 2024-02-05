@@ -40,7 +40,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
-from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow._utils.multimedia_utils import get_file_reference_encoder, resolve_multimedia_data_recursively
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -369,8 +369,8 @@ class LocalStorageOperations(BatchRunStorage):
             # legacy run with local file detail.json, then directly load from the file
             return json_load(self._detail_path)
         else:
-            flow_runs = self.load_flow_run_info(parse_const_as_str=parse_const_as_str)
-            node_runs = self.load_node_run_info(parse_const_as_str=parse_const_as_str)
+            flow_runs = self.load_all_flow_run_info(parse_const_as_str=parse_const_as_str)
+            node_runs = self.load_all_node_run_info(parse_const_as_str=parse_const_as_str)
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self, *, parse_const_as_str: bool = False) -> Dict[str, Union[int, float, str]]:
@@ -396,8 +396,9 @@ class LocalStorageOperations(BatchRunStorage):
                     continue
                 with read_open(node_run_record_file) as f:
                     new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                    node_runs += new_runs
                     for new_run in new_runs:
+                        new_run = resolve_multimedia_data_recursively(node_run_record_file, new_run)
+                        node_runs.append(new_run)
                         node_run_info = NodeRunInfo.deserialize(new_run)
                         line_number = node_run_info.index
                         node_name = node_run_info.node
@@ -435,8 +436,9 @@ class LocalStorageOperations(BatchRunStorage):
                 continue
             with read_open(line_run_record_file) as f:
                 new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                flow_runs += new_runs
                 for new_run in new_runs:
+                    new_run = resolve_multimedia_data_recursively(line_run_record_file, new_run)
+                    flow_runs.append(new_run)
                     flow_run_info = FlowRunInfo.deserialize(new_run)
                     line_number = flow_run_info.index
                     self._loaded_flow_run_info[line_number] = flow_run_info

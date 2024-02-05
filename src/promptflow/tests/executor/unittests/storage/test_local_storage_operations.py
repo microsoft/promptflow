@@ -1,5 +1,6 @@
 import datetime
 import json
+from pathlib import Path
 
 import pytest
 
@@ -16,8 +17,8 @@ class TestLocalStorageOperations:
             flow_run_id="flow_run_id",
             run_id="run_id",
             status=Status.Completed,
-            inputs="inputs",
-            output="output",
+            inputs={"image1": {"data:image/png;path": "test.png"}},
+            output={"output1": {"data:image/png;path": "test.png"}},
             metrics={},
             error={},
             parent_run_id="parent_run_id",
@@ -31,8 +32,8 @@ class TestLocalStorageOperations:
             run_id="run_id",
             status=Status.Completed,
             error=None,
-            inputs="inputs",
-            output="output",
+            inputs={"image1": {"data:image/png;path": "test.png"}},
+            output={"output1": {"data:image/png;path": "test.png"}},
             metrics={},
             request="request",
             parent_run_id="parent_run_id",
@@ -77,9 +78,16 @@ class TestLocalStorageOperations:
         local_storage.persist_node_run(node_run_info)
 
         loaded_node_run_info = local_storage.load_all_node_run_info()
+        print(loaded_node_run_info)
         assert len(loaded_node_run_info) == 1
         assert loaded_node_run_info[0]["node"] == node_run_info.node
         assert loaded_node_run_info[0]["index"] == node_run_info.index
+        assert loaded_node_run_info[0]["inputs"]["image1"]["data:image/png;path"] == str(
+            Path(local_storage._node_infos_folder, node_run_info.node, "test.png")
+        )
+        assert loaded_node_run_info[0]["output"]["output1"]["data:image/png;path"] == str(
+            Path(local_storage._node_infos_folder, node_run_info.node, "test.png")
+        )
 
         res = local_storage.load_node_run_info_for_line(1)
         assert isinstance(res["node1"], RunInfo)
@@ -95,6 +103,12 @@ class TestLocalStorageOperations:
         assert len(loaded_flow_run_info) == 1
         assert loaded_flow_run_info[0]["run_id"] == flow_run_info.run_id
         assert loaded_flow_run_info[0]["status"] == flow_run_info.status.value
+        assert loaded_flow_run_info[0]["inputs"]["image1"]["data:image/png;path"] == str(
+            Path(local_storage._run_infos_folder, "test.png")
+        )
+        assert loaded_flow_run_info[0]["output"]["output1"]["data:image/png;path"] == str(
+            Path(local_storage._run_infos_folder, "test.png")
+        )
 
         res = local_storage.load_flow_run_info(1)
         assert isinstance(res, FlowRunInfo)
