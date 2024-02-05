@@ -106,13 +106,14 @@ def start_service(args):
         os.system(" ".join(["nohup"] + cmd + ["&"]))
     is_healthy = check_pfs_service_status(port)
     if is_healthy:
-        app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}.)")
+        app.logger.info(
+            f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+        )
     else:
         app.logger.warning(f"Pfs service start failed in {port}.")
 
 
 def main():
-    sys.argv += ["start", "--port"]
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
