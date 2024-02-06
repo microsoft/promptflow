@@ -711,7 +711,7 @@ class FlowExecutor:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
-            with self._update_operation_context(run_id):
+            with self._update_operation_context(run_id, index):
                 line_result = self._exec_with_trace(
                     inputs,
                     run_id=run_id,
@@ -726,24 +726,28 @@ class FlowExecutor:
         return line_result
 
     @contextlib.contextmanager
-    def _update_operation_context(self, run_id: str):
+    def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
-        values_for_otel = {"line_run_id": run_id}
+        if operation_context.run_mode == RunMode.Batch.name:
+            values_for_otel = {
+                "batch_run_id": run_id,
+                "line_number": line_number,
+                "line_run_id": f"{run_id}_{line_number}",
+            }
+        else:
+            values_for_otel = {"line_run_id": run_id}
         try:
-
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
-            if operation_context.run_mode == RunMode.Test.name:
-                for k, v in values_for_otel.items():
-                    operation_context._add_otel_attributes(k, v)
+            for k, v in values_for_otel.items():
+                operation_context._add_otel_attributes(k, v)
             yield
         finally:
             for k in values_for_context:
                 operation_context.pop(k)
-            if operation_context.run_mode == RunMode.Test.name:
-                operation_context._remove_otel_attributes(values_for_otel.keys())
+            operation_context._remove_otel_attributes(values_for_otel.keys())
             if original_mode is None:
                 operation_context.pop("run_mode")
             else:
