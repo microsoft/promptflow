@@ -3,7 +3,7 @@
 
 [COMMON]
 ; The COMMON section provides common values for all other sections.
-; Configure both 'document_folder', 'document_chunk_size', 'document_chunk_overlap' if you require document splitting.
+; Configure 'document_folder', 'document_chunk_size' and 'document_chunk_overlap' if you require document splitting.
 documents_folder = "<your-document-folder-path>"
 document_chunk_size = 1024
 document_chunk_overlap = 0
