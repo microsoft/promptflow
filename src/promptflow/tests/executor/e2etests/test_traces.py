@@ -10,9 +10,35 @@ from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
+from promptflow.executor._result import LineResult
 
 from ..process_utils import execute_function_in_subprocess
-from ..utils import get_yaml_file, prepare_memory_exporter
+from ..utils import get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter
+
+OPEN_AI_FUNCTION_NAMES = [
+    "openai.resources.chat.completions.Completions.create",
+    "openai.resources.completions.Completions.create",
+    "openai.resources.chat.completions.AsyncCompletions.create",
+    "openai.resources.completions.AsyncCompletions.create",
+]
+
+TOKEN_NAMES = [
+    "__computed__.cumulative_token_count.prompt",
+    "__computed__.cumulative_token_count.completion",
+    "__computed__.cumulative_token_count.total",
+]
+
+
+def get_chat_input(stream):
+    return {
+        "question": "What is the capital of the United States of America?",
+        "chat_history": [],
+        "stream": stream,
+    }
+
+
+def get_comletion_input(stream):
+    return {"prompt": "What is the capital of the United States of America?", "stream": stream}
 
 
 @trace
@@ -61,16 +87,6 @@ class TestExecutorTraces:
                 get_trace = get_trace or self.validate_openai_apicall(child)
 
         return get_trace
-
-    def get_chat_input(stream):
-        return {
-            "question": "What is the capital of the United States of America?",
-            "chat_history": [],
-            "stream": stream,
-        }
-
-    def get_comletion_input(stream):
-        return {"prompt": "What is the capital of the United States of America?", "stream": stream}
 
     @pytest.mark.parametrize(
         "flow_folder, inputs",
@@ -268,48 +284,100 @@ class TestExecutorTraces:
             )
 
 
-@pytest.mark.unittest
+@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.e2etest
 class TestOTelTracer:
-    @pytest.mark.parametrize("flow_file", ["flow_with_trace", "flow_with_trace_async"])
+    @pytest.mark.parametrize(
+        "flow_file, inputs, expected_span_length",
+        [
+            ("flow_with_trace", {"user_id": 1}, 5),
+            ("flow_with_trace_async", {"user_id": 1}, 5),
+            ("openai_chat_api_flow", get_chat_input(False), 3),
+            ("openai_completion_api_flow", get_comletion_input(False), 3),
+            ("llm_tool", {"topic": "Hello", "stream": False}, 4),
+            ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
+        ]
+    )
     def test_otel_trace(
         self,
+        dev_connections,
         flow_file,
+        inputs,
+        expected_span_length,
     ):
-        execute_function_in_subprocess(self.assert_otel_traces, flow_file)
+        execute_function_in_subprocess(
+            self.assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length
+        )
 
-    def assert_otel_traces(self, flow_file):
+    def assert_otel_traces(self, dev_connections, flow_file, inputs, expected_span_length):
         memory_exporter = prepare_memory_exporter()
 
-        executor = FlowExecutor.create(get_yaml_file(flow_file), {})
+        executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
         line_run_id = str(uuid.uuid4())
-        inputs = {"user_id": 1}
         resp = executor.exec_line(inputs, run_id=line_run_id)
-        assert resp.output == {"output": "Hello, User 1!"}
+        assert isinstance(resp, LineResult)
+        assert isinstance(resp.output, dict)
 
         span_list = memory_exporter.get_finished_spans()
-        assert len(span_list) == 5, f"Got {len(span_list)} spans."  # 1 + 4 spans in total
+        # TODO: add flow level span
+        assert len(span_list) == expected_span_length, f"Got {len(span_list)} spans."
         root_spans = [span for span in span_list if span.parent is None]
         assert len(root_spans) == 1
         root_span = root_spans[0]
-        assert root_span.attributes["span_type"] == TraceType.FLOW
+        self.validate_openai_tokens(span_list)
         for span in span_list:
             assert span.status.status_code == StatusCode.OK
             assert isinstance(span.name, str)
-            assert span.attributes["line_run_id"] == line_run_id
-            assert span.attributes["framework"] == "promptflow"
+            self.validate_span_attributes(span, root_span, line_run_id)
+
+    def validate_span_attributes(self, span, root_span, line_run_id):
+        assert span.attributes["line_run_id"] == line_run_id
+        assert span.attributes["framework"] == "promptflow"
+        if span.parent is None:
+            expected_span_type = TraceType.FLOW
+        elif span.parent.span_id == root_span.context.span_id:
+            expected_span_type = TraceType.TOOL
+        elif span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
+            expected_span_type = TraceType.LLM
+        else:
             expected_span_type = TraceType.FUNCTION
-            if span.parent is None:
-                expected_span_type = TraceType.FLOW
-            elif span.parent.span_id == root_span.context.span_id:
-                expected_span_type = TraceType.TOOL
-            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
-            assert span.attributes["span_type"] == expected_span_type, msg
-            if span != root_span:  # Non-root spans should have a parent
-                assert span.attributes["function"]
-            inputs = json.loads(span.attributes["inputs"])
-            output = json.loads(span.attributes["output"])
-            assert isinstance(inputs, dict)
-            assert output is not None
+        msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
+        assert span.attributes["span_type"] == expected_span_type, msg
+        if span != root_span:  # Non-root spans should have a parent
+            assert span.attributes["function"]
+        inputs = json.loads(span.attributes["inputs"])
+        output = json.loads(span.attributes["output"])
+        assert isinstance(inputs, dict)
+        assert output is not None
+
+    # We updated the OpenAI tokens (prompt token, completion token and total token) to the span attributes
+    # for llm tool, and aggregate them to the parent span. Use this function to validate the openai tokens
+    # are correctly aggregated.
+    def validate_openai_tokens(self, span_list):
+        span_dict = {span.context.span_id: span for span in span_list}
+        token_dict = {}
+        for span in span_list:
+            if span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
+                for token_name in TOKEN_NAMES:
+                    assert token_name in span.attributes
+                tokens = {token_name: span.attributes[token_name] for token_name in TOKEN_NAMES}
+                current_span_id = span.context.span_id
+                while True:
+                    if current_span_id in token_dict:
+                        token_dict[current_span_id] = {
+                            key: token_dict[current_span_id][key] + tokens[key] for key in tokens
+                        }
+                    else:
+                        token_dict[current_span_id] = tokens
+                    parent_cxt = getattr(span_dict[current_span_id], "parent", None)
+                    if parent_cxt is None:
+                        break
+                    current_span_id = parent_cxt.span_id
+        for span in span_list:
+            span_id = span.context.span_id
+            if span_id in token_dict:
+                for token_name in TOKEN_NAMES:
+                    assert span.attributes[token_name] == token_dict[span_id][token_name]
 
     def test_flow_with_traced_function(self):
         execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
