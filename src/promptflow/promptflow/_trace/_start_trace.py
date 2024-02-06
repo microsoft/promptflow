@@ -38,18 +38,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _start_pfs(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
 
-    session_id = _provision_session_id(configured_session_id=session)
-    if session is not None:
-        # if user has specified a session id, honor it
-        session_id = session
-    else:
-        if _is_tracer_provider_configured():
-            # if tracer provider is configured, session id should already exist
-            tracer_provider: TracerProvider = trace.get_tracer_provider()
-            session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
-        else:
-            # provision a new session id
-            session_id = str(uuid.uuid4())
+    session_id = _provision_session_id(specified_session_id=session)
     _logger.debug("current session id is %s", session_id)
 
     operation_context = OperationContext.get_instance()
