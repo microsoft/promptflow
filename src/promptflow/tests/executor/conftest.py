@@ -121,6 +121,7 @@ def recording_injection(recording_setup, process_override):
     finally:
         if is_replay() or is_record():
             RecordStorage.get_instance().delete_lock_file()
+        if is_live():
             delete_count_lock_file()
         recording_array_reset()
 
