@@ -2,22 +2,24 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import uuid
+
 import pytest
 
-from promptflow._constants import SpanAttributeFieldName
-from promptflow._core.operation_context import OperationContext
-from promptflow._trace._start_trace import _provision_session
+from promptflow._constants import ResourceAttributeFieldName
+from promptflow._trace._start_trace import _create_resource
 
 
 @pytest.mark.sdk_test
 @pytest.mark.unittest
-class TestTrace:
-    def test_session_id_in_operation_context(self):
-        session_id = _provision_session()
-        operation_context = OperationContext.get_instance()
-        assert session_id == operation_context._get_otel_attributes()[SpanAttributeFieldName.SESSION_ID]
+class TestStartTrace:
+    def test_create_resource(self):
+        session_id = str(uuid.uuid4())
+        resource1 = _create_resource(session_id=session_id)
+        assert resource1.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
+        assert ResourceAttributeFieldName.EXPERIMENT_NAME not in resource1.attributes
 
-    def test_provision_session_multiple_times(self):
-        session_id = _provision_session()
-        session_id_twice = _provision_session()
-        assert session_id == session_id_twice
+        experiment = "test_experiment"
+        resource2 = _create_resource(session_id=session_id, experiment=experiment)
+        assert resource2.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
+        assert resource2.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] == experiment

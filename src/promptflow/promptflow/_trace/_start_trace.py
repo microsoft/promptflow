@@ -129,7 +129,7 @@ def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -
         ResourceAttributeFieldName.SESSION_ID: session_id,
     }
     if experiment is not None:
-        resource_attributes[SpanAttributeFieldName.EXPERIMENT] = experiment
+        resource_attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] = experiment
     return Resource(attributes=resource_attributes)
 
 
