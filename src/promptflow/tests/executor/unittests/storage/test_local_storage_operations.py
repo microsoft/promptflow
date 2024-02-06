@@ -76,7 +76,7 @@ class TestLocalStorageOperations:
         local_storage = LocalStorageOperations(run_instance)
         node_run_info = self.get_node_run_info_example()
         local_storage.persist_node_run(node_run_info)
-        loaded_node_run_info = local_storage._load_run_info(load_node=True)
+        loaded_node_run_info = local_storage._load_all_node_run_info()
         assert len(loaded_node_run_info) == 1
         assert loaded_node_run_info[0]["node"] == node_run_info.node
         assert loaded_node_run_info[0]["index"] == node_run_info.index
@@ -98,7 +98,7 @@ class TestLocalStorageOperations:
         flow_run_info = self.get_flow_run_info_example()
         local_storage.persist_flow_run(flow_run_info)
 
-        loaded_flow_run_info = local_storage._load_run_info(load_node=False)
+        loaded_flow_run_info = local_storage._load_all_flow_run_info()
         assert len(loaded_flow_run_info) == 1
         assert loaded_flow_run_info[0]["run_id"] == flow_run_info.run_id
         assert loaded_flow_run_info[0]["status"] == flow_run_info.status.value
