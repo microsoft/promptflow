@@ -78,6 +78,11 @@ class RunSubmitter:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}.")
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
+            # TODO: consider moving this to Operations
+            from promptflow.batch import CSharpExecutorProxy
+
+            CSharpExecutorProxy.generate_metadata(flow_file=Path(flow.path), assembly_folder=Path(flow.code))
+            # TODO: shall we resolve connections here?
             connections = []
         else:
             with _change_working_dir(flow.code):
@@ -85,7 +90,7 @@ class RunSubmitter:
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
-            flow=flow, environment_variables=run.environment_variables
+            flow=flow, environment_variable_overrides=run.environment_variables
         )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 

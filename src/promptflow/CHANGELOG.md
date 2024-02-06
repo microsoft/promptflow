@@ -5,12 +5,16 @@
 
 ### Features Added
 
+- [SDK/CLI][azure] Support specify compute instance as session compute in run.yaml
+- [SDK/CLI][azure] Stop support specifying `idle_time_before_shutdown_minutes` for automatic runtime since each session will be auto deleted after execution.
 
 ### Bugs Fixed
 
 - [SDK/CLI] The inputs of node test allows the value of reference node output be passed directly in.
 - [SDK/CLI][azure] Fixed bug for cloud batch run referencing registry flow with automatic runtime.
 - [SDK/CLI] Fix "Without Import Data" in run visualize page when invalid JSON value exists in metrics.
+- [SDK/CLI][azure] Fix azureml serving get UAI(user assigned identity) token failure bug.
+- [SDK/CLI] Fix flow as function connection override when node has default variant.
 
 ### Improvements
 

@@ -15,6 +15,7 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -22,22 +23,19 @@ api = Namespace("spans", description="Span Management")
 
 # parsers for query parameters
 list_span_parser = api.parser()
-list_span_parser.add_argument("session_id", type=str, required=False)
-list_span_parser.add_argument("parent_span_id", type=str, required=False)
+list_span_parser.add_argument("session", type=str, required=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListSpanParser:
     session_id: typing.Optional[str] = None
-    parent_span_id: typing.Optional[str] = None
 
     @staticmethod
     def from_request() -> "ListSpanParser":
         args = list_span_parser.parse_args()
         return ListSpanParser(
-            session_id=args.session_id,
-            parent_span_id=args.parent_span_id,
+            session_id=args.session,
         )
 
 
@@ -53,7 +51,7 @@ context_model = api.model(
 status_model = api.model(
     "Status",
     {
-        SpanStatusFieldName.CODE: fields.String(required=True),
+        SpanStatusFieldName.STATUS_CODE: fields.String(required=True),
     },
 )
 attributes_model = api.model(
@@ -91,8 +89,8 @@ span_model = api.model(
         SpanFieldName.CONTEXT: fields.Nested(context_model, required=True),
         SpanFieldName.KIND: fields.String(required=True),
         SpanFieldName.PARENT_ID: fields.String,
-        SpanFieldName.START_TIME: fields.DateTime(dt_format="iso8601"),
-        SpanFieldName.END_TIME: fields.DateTime(dt_format="iso8601"),
+        SpanFieldName.START_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
+        SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model),
         SpanFieldName.ATTRIBUTES: fields.Nested(attributes_model, required=True),
         SpanFieldName.EVENTS: fields.List(fields.String),
@@ -114,6 +112,5 @@ class Spans(Resource):
         args = ListSpanParser.from_request()
         spans = client._traces.list_spans(
             session_id=args.session_id,
-            parent_span_id=args.parent_span_id,
         )
         return [span._content for span in spans]

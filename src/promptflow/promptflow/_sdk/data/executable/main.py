@@ -11,12 +11,12 @@ from streamlit_quill import st_quill
 from utils import dict_iter_render_message, parse_image_content, parse_list_from_html, render_single_dict_message
 
 from promptflow import load_flow
-from promptflow._sdk._submitter.utils import get_result_output, resolve_generator
+from promptflow._constants import STREAMING_ANIMATION_TIME
+from promptflow._sdk._submitter.utils import resolve_generator, resolve_generator_output_with_cache
 from promptflow._sdk._utils import dump_flow_result
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 
 invoker = None
-generator_record = {}
 
 
 def start():
@@ -43,7 +43,7 @@ def start():
             return st.session_state.history
         return []
 
-    def post_process_dump_result(response, session_state_history):
+    def post_process_dump_result(response, session_state_history, *, generator_record):
         response = resolve_generator(response, generator_record)
         # Get base64 for multi modal object
         resolved_outputs = {
@@ -61,6 +61,9 @@ def start():
         return resolved_outputs
 
     def submit(**kwargs) -> None:
+        # generator record should be reset for each submit
+        generator_record = {}
+
         st.session_state.messages.append(("user", kwargs))
         session_state_history = dict()
         session_state_history.update({"inputs": kwargs})
@@ -80,20 +83,25 @@ def start():
             with container:
                 with st.chat_message("assistant"):
                     message_placeholder = st.empty()
-                    full_response = f"{chat_output_name}:"
+                    full_response = f"{chat_output_name}: "
+                    prefix_length = len(full_response)
                     chat_output = response.output[chat_output_name]
                     if isinstance(chat_output, GeneratorType):
                         # Simulate stream of response with milliseconds delay
-                        for chunk in get_result_output(chat_output, generator_record):
-                            full_response += chunk + " "
-                            time.sleep(0.05)
+                        for chunk in resolve_generator_output_with_cache(
+                            chat_output, generator_record, generator_key=f"run.outputs.{chat_output_name}"
+                        ):
+                            # there should be no extra spaces between adjacent chunks?
+                            full_response += chunk
+                            time.sleep(STREAMING_ANIMATION_TIME)
                             # Add a blinking cursor to simulate typing
                             message_placeholder.markdown(full_response + "▌")
                         message_placeholder.markdown(full_response)
-                        post_process_dump_result(response, session_state_history)
+                        response.output[chat_output_name] = full_response[prefix_length:]
+                        post_process_dump_result(response, session_state_history, generator_record=generator_record)
                         return
 
-        resolved_outputs = post_process_dump_result(response, session_state_history)
+        resolved_outputs = post_process_dump_result(response, session_state_history, generator_record=generator_record)
         with container:
             render_message("assistant", resolved_outputs)
 
