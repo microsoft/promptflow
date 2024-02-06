@@ -1,4 +1,5 @@
 import json
+import sys
 import uuid
 from types import GeneratorType
 
@@ -195,9 +196,7 @@ class TestExecutorTraces:
         flow_trace = api_calls[0]
         assert flow_trace["name"] == "flow"
         assert flow_trace["type"] == "Flow"
-        assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
         assert len(flow_trace["children"]) == 1
-        assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
         assert flow_trace["system_metrics"]["prompt_tokens"] == 0
         assert flow_trace["system_metrics"]["completion_tokens"] == 0
         assert flow_trace["system_metrics"]["total_tokens"] == 0
@@ -205,6 +204,9 @@ class TestExecutorTraces:
         assert "inputs" not in flow_trace
         assert "output" not in flow_trace
         assert "error" not in flow_trace
+        if sys.platform != "darwin":
+            assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
+            assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
 
         # Assert the "greetings" tool
         greetings_trace = flow_trace["children"][0]
@@ -214,10 +216,12 @@ class TestExecutorTraces:
         assert greetings_trace["output"] == {"greeting": "Hello, User 1!"}
         assert greetings_trace["error"] is None
         assert greetings_trace["children"] is not None
-        assert greetings_trace["end_time"] - greetings_trace["start_time"] == pytest.approx(1.5, abs=0.3)
         assert len(greetings_trace["children"]) == 2
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert greetings_trace["system_metrics"] == {}
+        # This test runs for a longer time on MacOS, so we skip the time assertion on Mac.
+        if sys.platform != "darwin":
+            assert greetings_trace["end_time"] - greetings_trace["start_time"] == pytest.approx(1.5, abs=0.3)
 
         # Assert the "get_user_name" function
         get_user_name_trace = greetings_trace["children"][0]
@@ -226,10 +230,12 @@ class TestExecutorTraces:
         assert get_user_name_trace["inputs"] == {"user_id": 1}
         assert get_user_name_trace["output"] == "User 1"
         assert get_user_name_trace["error"] is None
-        assert get_user_name_trace["end_time"] - get_user_name_trace["start_time"] == pytest.approx(1.0, abs=0.2)
         assert len(get_user_name_trace["children"]) == 1
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert get_user_name_trace["system_metrics"] == {}
+        # This test runs for a longer time on MacOS, so we skip the time assertion on Mac.
+        if sys.platform != "darwin":
+            assert get_user_name_trace["end_time"] - get_user_name_trace["start_time"] == pytest.approx(1.0, abs=0.2)
 
         # Assert the "get_user_name/is_valid_name" function
         is_valid_name_trace = get_user_name_trace["children"][0]
@@ -238,11 +244,12 @@ class TestExecutorTraces:
         assert is_valid_name_trace["inputs"] == {"name": "User 1"}
         assert is_valid_name_trace["output"] is True
         assert is_valid_name_trace["error"] is None
-        # When running tests in MacOS, it will take longer. So we adjust abs to 0.15 and see if it needs to be extended.
-        assert is_valid_name_trace["end_time"] - is_valid_name_trace["start_time"] == pytest.approx(0.5, abs=0.15)
         assert is_valid_name_trace["children"] == []
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert is_valid_name_trace["system_metrics"] == {}
+        # This test runs for a longer time on MacOS, so we skip the time assertion on Mac.
+        if sys.platform != "darwin":
+            assert is_valid_name_trace["end_time"] - is_valid_name_trace["start_time"] == pytest.approx(0.5, abs=0.1)
 
         # Assert the "format_greeting" function
         format_greeting_trace = greetings_trace["children"][1]
@@ -251,11 +258,14 @@ class TestExecutorTraces:
         assert format_greeting_trace["inputs"] == {"user_name": "User 1"}
         assert format_greeting_trace["output"] == "Hello, User 1!"
         assert format_greeting_trace["error"] is None
-        # When running tests in MacOS, it will take longer. So we adjust abs to 0.15 and see if it needs to be extended.
-        assert format_greeting_trace["end_time"] - format_greeting_trace["start_time"] == pytest.approx(0.5, abs=0.15)
         assert format_greeting_trace["children"] == []
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert format_greeting_trace["system_metrics"] == {}
+        # This test runs for a longer time on MacOS, so we skip the time assertion on Mac..
+        if sys.platform != "darwin":
+            assert format_greeting_trace["end_time"] - format_greeting_trace["start_time"] == pytest.approx(
+                0.5, abs=0.1
+            )
 
 
 @pytest.mark.unittest
