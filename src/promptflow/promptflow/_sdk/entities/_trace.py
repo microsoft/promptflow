@@ -245,7 +245,8 @@ class LineRun:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
         # main line run span is absent, ignore this line run
-        # this may happen when the line is still executing, or terminated
+        # this may happen when the line is still executing, or terminated;
+        # or the line run is killed before the traces exported
         if main_line_run_data is None:
             return None
 
