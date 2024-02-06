@@ -168,7 +168,7 @@ class ExperimentOrchestrator:
         raise NotImplementedError
 
     def start(self, nodes=None, from_nodes=None):
-        """Start an execution of an experiment.
+        """Start an execution of nodes.
 
         Start an orchestrator to schedule node execution according to topological ordering.
 
@@ -180,6 +180,7 @@ class ExperimentOrchestrator:
         :rtype: ~promptflow.entities.Experiment
         """
         # Start experiment
+        experiment = self.experiment
         logger.info(f"Starting experiment {experiment.name}.")
         experiment.status = ExperimentStatus.IN_PROGRESS
         experiment.last_start_time = datetime.utcnow().isoformat()
@@ -188,6 +189,7 @@ class ExperimentOrchestrator:
         self.experiment_operations.create_or_update(experiment)
         self._update_orchestrator_record(status=ExperimentStatus.IN_PROGRESS, pid=os.getpid())
         self._start_orchestrator(nodes=nodes, from_nodes=from_nodes, context=context)
+        return experiment
 
     def async_start(self, executable_path=None, nodes=None, from_nodes=None):
         """Start an asynchronous execution of an experiment.
@@ -588,7 +590,7 @@ class ExperimentNodeRun(Run):
 
     def _run_flow_node(self):
         logger.debug(f"Creating flow run {self.name}")
-        exp_node_run_submitter = ExperimentFlowRunSubmitter(self.run_operations)
+        exp_node_run_submitter = ExperimentFlowRunSubmitter(self.client)
         # e.g. attributes: {"experiment": xxx, "reference_batch_run_id": xxx}
         return exp_node_run_submitter.submit(self, session=self.context.session, attributes=self.node_context)
 
