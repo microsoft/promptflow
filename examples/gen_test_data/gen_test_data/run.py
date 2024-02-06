@@ -234,8 +234,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--cloud", action="store_true", help="cloud flag")
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
-    parser.add_argument("--document_chunk_size", type=int, help="Document chunk size, default is 1024")
-    parser.add_argument("--document_chunk_overlap", type=int, help="Document node overlap size, default is 200")
+    parser.add_argument("--document_chunk_size", type=int, default=1024, help="Document chunk size, default is 1024")
+    parser.add_argument("--document_chunk_overlap", type=int, default=200,
+                        help="Document node overlap size, default is 200")
     parser.add_argument(
         "--document_nodes_file", type=str, help="Document nodes file, default is ./document_nodes.jsonl"
     )
@@ -254,13 +255,14 @@ if __name__ == "__main__":
     parser.add_argument("--resource_group", help="AzureML workspace resource group name")
     parser.add_argument("--workspace_name", help="AzureML workspace name")
     parser.add_argument("--aml_cluster", help="AzureML cluster name")
-    parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
-    parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
+    parser.add_argument("--prs_instance_count", type=int, default=2, help="Parallel run step instance count")
+    parser.add_argument("--prs_mini_batch_size", default=1, help="Parallel run step mini batch size")
     parser.add_argument(
-        "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
+        "--prs_max_concurrency_per_instance", type=int, default=4, help="Parallel run step max concurrency per instance"
     )
-    parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
-    parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
+    parser.add_argument("--prs_max_retry_count", type=int, default=3, help="Parallel run step max retry count")
+    parser.add_argument("--prs_run_invocation_time", type=int, default=800,
+                        help="Parallel run step run invocation time")
     parser.add_argument(
         "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
     )
