@@ -11,7 +11,7 @@ import pytest
 from marshmallow import ValidationError
 from mock.mock import Mock
 
-from promptflow._sdk._load_functions import load_run
+from promptflow import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT

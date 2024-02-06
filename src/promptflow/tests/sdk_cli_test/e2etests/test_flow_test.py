@@ -171,7 +171,7 @@ class TestFlowTest:
             "connection": "azure_open_ai_connection",
             "hello_prompt.output": "system:\n Your task is to write python program for me\nuser:\n"
             "Write a simple Hello World! program that displays "
-            "the greeting message when executed.",
+            "the greeting message.",
         }
         result = _client.test(
             flow=flow_path,
