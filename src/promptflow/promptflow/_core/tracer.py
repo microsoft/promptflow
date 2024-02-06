@@ -293,6 +293,21 @@ def enrich_span_with_openai_tokens(span, trace_type):
         span.set_attributes(span_tokens)
 
 
+def enrich_span_with_embedding(span, inputs, output):
+    from openai.types.create_embedding_response import CreateEmbeddingResponse
+
+    if isinstance(output, CreateEmbeddingResponse):
+        span.set_attribute("embedding.model", output.model)
+        embeddings = []
+        input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
+        for emb in output.data:
+            embeddings.append({
+                "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
+                "embedding.text": input_list[emb.index],
+            })
+        span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+
+
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
     try:
@@ -362,6 +377,8 @@ def _traced_async(
                     token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 enrich_span_with_openai_tokens(span, trace_type)
+                if trace_type == TraceType.EMBEDDING:
+                    enrich_span_with_embedding(span, trace.inputs, output)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -412,6 +429,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                     token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 enrich_span_with_openai_tokens(span, trace_type)
+                if trace_type == TraceType.EMBEDDING:
+                    enrich_span_with_embedding(span, trace.inputs, output)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
