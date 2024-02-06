@@ -273,6 +273,16 @@ def enrich_span_with_input(span, input):
     return input
 
 
+def enrich_span_with_trace_type(span, inputs, output, trace_type):
+    enrich_span_with_output(span, output)
+    if trace_type == TraceType.LLM:
+        token_collector.collect_openai_tokens(span, output)
+    elif trace_type == TraceType.EMBEDDING:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_embedding(span, inputs, output)
+    enrich_span_with_openai_tokens(span, trace_type)
+
+
 def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
@@ -284,28 +294,34 @@ def enrich_span_with_output(span, output):
 
 
 def enrich_span_with_openai_tokens(span, trace_type):
-    tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
-    if tokens:
-        span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
-        if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
-            llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
-            span_tokens.update(llm_tokens)
-        span.set_attributes(span_tokens)
+    try:
+        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
+        if tokens:
+            span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+            if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
+                llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+                span_tokens.update(llm_tokens)
+            span.set_attributes(span_tokens)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with openai tokens: {e}")
 
 
 def enrich_span_with_embedding(span, inputs, output):
     from openai.types.create_embedding_response import CreateEmbeddingResponse
 
-    if isinstance(output, CreateEmbeddingResponse):
-        span.set_attribute("embedding.model", output.model)
-        embeddings = []
-        input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
-        for emb in output.data:
-            embeddings.append({
-                "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
-                "embedding.text": input_list[emb.index],
-            })
-        span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+    try:
+        if isinstance(output, CreateEmbeddingResponse):
+            span.set_attribute("embedding.model", output.model)
+            embeddings = []
+            input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
+            for emb in output.data:
+                embeddings.append({
+                    "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
+                    "embedding.text": input_list[emb.index],
+                })
+            span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with embedding: {e}")
 
 
 def serialize_attribute(value):
@@ -373,12 +389,7 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
-                    token_collector.collect_openai_tokens(span, output)
-                enrich_span_with_output(span, output)
-                enrich_span_with_openai_tokens(span, trace_type)
-                if trace_type == TraceType.EMBEDDING:
-                    enrich_span_with_embedding(span, trace.inputs, output)
+                enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -425,12 +436,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
-                    token_collector.collect_openai_tokens(span, output)
-                enrich_span_with_output(span, output)
-                enrich_span_with_openai_tokens(span, trace_type)
-                if trace_type == TraceType.EMBEDDING:
-                    enrich_span_with_embedding(span, trace.inputs, output)
+                enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
