@@ -1,24 +1,71 @@
 import json
 import os
+from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException, ResponseCode
+from promptflow._utils.logger_utils import bulk_logger, flow_logger, logger, service_logger
 from promptflow.executor._service._errors import ExecutionTimeoutError
-from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
+from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest, FlowExecutionRequest
 from promptflow.executor._service.utils.service_utils import (
     generate_error_response,
     get_executor_version,
+    get_log_context,
+    get_service_log_context,
     set_environment_variables,
     update_operation_context,
 )
 
+from .....utils import load_content
 from ..contracts.test_execution_request import MOCK_REQUEST
 
 
 @pytest.mark.unittest
 class TestServiceUtils:
+    def test_get_log_context_with_execution_request(self, dev_connections):
+        request = FlowExecutionRequest(**MOCK_REQUEST)
+        request.connections = dev_connections
+        request.log_path = Path(mkdtemp()) / "log.txt"
+        with get_log_context(request):
+            flow_logger.info("Test flow_logger log")
+            bulk_logger.info("Test bulk_logger log")
+            logger.info("Test logger log")
+        logs = load_content(request.log_path)
+        key_words_in_log = ["Test flow_logger log", "Test logger log", "execution", "execution.flow"]
+        key_words_not_in_log = ["Test bulk_logger log", "execution.bulk"]
+        assert all(word in logs for word in key_words_in_log)
+        assert all(word not in logs for word in key_words_not_in_log)
+
+    def test_get_log_context_with_non_execution_request(self):
+        request = 1
+        with get_log_context(request):
+            request = 2
+        assert request == 2
+
+    def test_get_service_log_context(self):
+        request = FlowExecutionRequest(**MOCK_REQUEST)
+        request.log_path = Path(mkdtemp()) / "log.txt"
+        with get_service_log_context(request):
+            service_logger.info("Test service_logger log")
+            flow_logger.info("Test flow_logger log")
+            bulk_logger.info("Test bulk_logger log")
+            logger.info("Test logger log")
+        logs = load_content(request.log_path)
+        key_words_in_log = [
+            "Test service_logger log",
+            "Test flow_logger log",
+            "Test logger log",
+            "execution.service",
+            "execution",
+            "execution.flow",
+        ]
+        key_words_not_in_log = ["Test bulk_logger log", "execution.bulk"]
+        assert all(word in logs for word in key_words_in_log)
+        assert all(word not in logs for word in key_words_not_in_log)
+
     def test_update_operation_context(self, monkeypatch):
         headers = {
             "context-user-agent": "dummy_user_agent",
