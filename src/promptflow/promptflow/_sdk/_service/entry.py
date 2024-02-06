@@ -70,7 +70,9 @@ def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
-    get_app()
+    app = get_app()
+
+    #  app.run(port=5000, debug=True)
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
