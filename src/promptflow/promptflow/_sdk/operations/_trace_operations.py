@@ -63,5 +63,7 @@ class TraceOperations:
                 pass
         for orm_spans in grouped_orm_spans.values():
             spans = [Span._from_orm_object(orm_span) for orm_span in orm_spans]
-            line_runs.append(LineRun._from_spans(spans))
+            line_run = LineRun._from_spans(spans)
+            if line_run is not None:
+                line_runs.append(line_run)
         return line_runs

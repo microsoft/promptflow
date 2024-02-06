@@ -230,7 +230,7 @@ class LineRun:
     evaluations: typing.Optional[typing.List[typing.Dict]] = None
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span]) -> "LineRun":
+    def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
         evaluation_line_run_data_dict = dict()
         for span in spans:
@@ -244,6 +244,11 @@ class LineRun:
             else:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
+        # main line run span is absent, ignore this line run
+        # this may happen when the line is still executing, or terminated
+        if main_line_run_data is None:
+            return None
+
         evaluations = dict()
         for eval_name, eval_line_run_data in evaluation_line_run_data_dict.items():
             evaluations[eval_name] = eval_line_run_data
