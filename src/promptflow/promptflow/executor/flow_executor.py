@@ -30,6 +30,7 @@ from promptflow._core.tracer import (
     enrich_span_with_context,
     enrich_span_with_input,
     enrich_span_with_output,
+    enrich_span_with_openai_tokens,
     open_telemetry_tracer,
 )
 from promptflow._utils.context_utils import _change_working_dir
@@ -729,7 +730,7 @@ class FlowExecutor:
         operation_context = OperationContext.get_instance()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
-        if operation_context.run_mode == RunMode.Batch.name:
+        if original_mode == RunMode.Batch.name:
             values_for_otel = {
                 "batch_run_id": run_id,
                 "line_number": line_number,
@@ -828,6 +829,7 @@ class FlowExecutor:
             output = result.output
             # enrich span with output
             enrich_span_with_output(span, output)
+            enrich_span_with_openai_tokens(span, TraceType.FLOW)
             # set status
             span.set_status(StatusCode.OK)
             return result
