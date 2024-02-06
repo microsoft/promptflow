@@ -287,7 +287,7 @@ def enrich_span_with_openai_tokens(span, trace_type):
     tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
     if tokens:
         span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
-        if trace_type == TraceType.LLM:
+        if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
             llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
             span_tokens.update(llm_tokens)
         span.set_attributes(span_tokens)
@@ -358,7 +358,7 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                if trace_type == TraceType.LLM:
+                if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
                     token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 enrich_span_with_openai_tokens(span, trace_type)
@@ -408,7 +408,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                if trace_type == TraceType.LLM:
+                if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
                     token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
                 enrich_span_with_openai_tokens(span, trace_type)
