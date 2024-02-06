@@ -41,7 +41,7 @@ def merge_document_nodes(reader, chunk_size):
 
             if len(buffer_text) >= chunk_size:
                 buffer_doc.text = buffer_text
-                merged_documents.append(buffer_doc)
+                merged_documents_each_file.append(buffer_doc)
                 buffer_text = ""
                 buffer_doc = None
 
