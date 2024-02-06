@@ -200,8 +200,8 @@ class _LineRunData:
             # for standard OpenTelemetry traces, there won't be `inputs` and `outputs` in attributes
             inputs=json.loads(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
             outputs=json.loads(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
-            start_time=start_time,
-            end_time=end_time,
+            start_time=start_time.isoformat(),
+            end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
             name=span.name,
@@ -229,7 +229,7 @@ class LineRun:
     evaluations: typing.Optional[typing.List[typing.Dict]] = None
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span]) -> "LineRun":
+    def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
         evaluation_line_run_data_dict = dict()
         for span in spans:
@@ -243,6 +243,12 @@ class LineRun:
             else:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
+        # main line run span is absent, ignore this line run
+        # this may happen when the line is still executing, or terminated;
+        # or the line run is killed before the traces exported
+        if main_line_run_data is None:
+            return None
+
         evaluations = dict()
         for eval_name, eval_line_run_data in evaluation_line_run_data_dict.items():
             evaluations[eval_name] = eval_line_run_data
@@ -252,8 +258,8 @@ class LineRun:
             root_span_id=main_line_run_data.root_span_id,
             inputs=main_line_run_data.inputs,
             outputs=main_line_run_data.outputs,
-            start_time=main_line_run_data.start_time.isoformat(),
-            end_time=main_line_run_data.end_time.isoformat(),
+            start_time=main_line_run_data.start_time,
+            end_time=main_line_run_data.end_time,
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
             name=main_line_run_data.name,
