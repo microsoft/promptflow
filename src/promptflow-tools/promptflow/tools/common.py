@@ -214,11 +214,6 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
                         raise WrappedOpenAIError(e)
-                    if i == tries:
-                        # Exit retry if max retry reached
-                        print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
-                        raise ExceedMaxRetryTimes(e)
-
                     if hasattr(e, 'response') and e.response is not None:
                         retry_after_in_header = e.response.headers.get("retry-after", None)
                     else:
