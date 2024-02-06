@@ -15,8 +15,6 @@ class TraceType(str, Enum):
     FUNCTION = "Function"
     LANGCHAIN = "LangChain"
     FLOW = "Flow"
-    RETRIEVAL = "Retrieval"
-    EMBEDDING = "Embedding"
 
 
 @dataclass
