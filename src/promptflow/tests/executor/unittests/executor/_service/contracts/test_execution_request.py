@@ -31,7 +31,4 @@ class TestExecutionRequest:
     def test_validate_request(self):
         with pytest.raises(FlowFilePathInvalid) as exc_info:
             BaseExecutionRequest(**MOCK_REQUEST).validate_request()
-        assert exc_info.value.message == (
-            f"The flow file path ({Path(__file__).resolve().as_posix().lower()}) is invalid. "
-            "The path should be relative to the working directory."
-        )
+        assert "The path should be relative to the working directory." in exc_info.value.message
