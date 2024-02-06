@@ -57,17 +57,11 @@ class Tracer(ThreadLocalSingleton):
         return tracer._run_id
 
     @classmethod
-    def end_tracing(cls, run_id: Optional[str] = None, raise_ex=False):
+    def end_tracing(cls, run_id: Optional[str] = None):
         tracer = cls.active_instance()
         if not tracer:
-            msg = "Try end tracing but no active tracer in current context."
-            if raise_ex:
-                raise Exception(msg)
-            logging.warning(msg)
             return []
         if run_id is not None and tracer._run_id != run_id:
-            msg = f"Try to end tracing for run {run_id} but {tracer._run_id} is active."
-            logging.warning(msg)
             return []
         tracer._deactivate_in_context()
         return tracer.to_json()
@@ -76,7 +70,6 @@ class Tracer(ThreadLocalSingleton):
     def push(cls, trace: Trace):
         obj = cls.active_instance()
         if not obj:
-            logging.warning("Try to push trace but no active tracer in current context.")
             return
         obj._push(trace)
 
@@ -163,9 +156,7 @@ class TokenCollector():
     def collect_openai_tokens(self, span, output):
         span_id = span.get_span_context().span_id
         if not inspect.isgenerator(output) and hasattr(output, "usage") and output.usage is not None:
-            tokens = {
-                f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
-            }
+            tokens = output.usage.dict()
             if tokens:
                 with self._lock:
                     self._span_id_to_tokens[span_id] = tokens
@@ -261,9 +252,11 @@ def enrich_span_with_trace(span, trace):
                 "framework": "promptflow",
                 "span_type": trace.type.value,
                 "function": trace.name,
-                "node_name": get_node_name_from_context(),
             }
         )
+        node_name = get_node_name_from_context()
+        if node_name:
+            span.set_attribute("node_name", node_name)
         enrich_span_with_context(span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
@@ -283,9 +276,6 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
-        if tokens:
-            span.set_attributes(tokens)
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
@@ -319,6 +309,16 @@ def enrich_span_with_type(span, trace_type: TraceType, inputs, output):
                     "embedding.text": input_list[emb.index],
                 })
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+
+
+def enrich_span_with_openai_tokens(span, trace_type):
+    tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
+    if tokens:
+        span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+        if trace_type == TraceType.LLM:
+            llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+            span_tokens.update(llm_tokens)
+        span.set_attributes(span_tokens)
 
 
 def serialize_attribute(value):
@@ -388,6 +388,7 @@ def _traced_async(
                 output = await func(*args, **kwargs)
                 enrich_span_with_type(span, trace_type, trace.inputs, output)
                 enrich_span_with_output(span, output)
+                enrich_span_with_openai_tokens(span, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -436,6 +437,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 output = func(*args, **kwargs)
                 enrich_span_with_type(span, trace_type, trace.inputs, output)
                 enrich_span_with_output(span, output)
+                enrich_span_with_openai_tokens(span, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:

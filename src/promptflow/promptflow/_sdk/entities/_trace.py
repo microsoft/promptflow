@@ -11,7 +11,14 @@ from dataclasses import dataclass
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
-from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanFieldName, SpanStatusFieldName
+from promptflow._constants import (
+    DEFAULT_SESSION_ID,
+    DEFAULT_SPAN_TYPE,
+    SpanAttributeFieldName,
+    SpanContextFieldName,
+    SpanFieldName,
+    SpanStatusFieldName,
+)
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -124,6 +131,13 @@ class Span:
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
         attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
+        # `session_id` and `span_type` are not standard fields in OpenTelemetry attributes
+        # for example, LangChain instrumentation, as we do not inject this;
+        # so we need to get them with default value to avoid KeyError
+        span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
+        # note that this might make these spans persisted in another partion if we split the trace table by `session_id`
+        session_id = attributes.get(SpanAttributeFieldName.SESSION_ID, DEFAULT_SESSION_ID)
+
         return Span(
             name=obj.name,
             context=context,
@@ -133,8 +147,8 @@ class Span:
             status=status,
             attributes=attributes,
             resource=resource,
-            span_type=attributes[SpanAttributeFieldName.SPAN_TYPE],
-            session_id=attributes[SpanAttributeFieldName.SESSION_ID],
+            span_type=span_type,
+            session_id=session_id,
             parent_span_id=parent_span_id,
         )
 
@@ -184,14 +198,15 @@ class _LineRunData:
             line_run_id=line_run_id,
             trace_id=span.trace_id,
             root_span_id=span.span_id,
-            inputs=json.loads(attributes[SpanAttributeFieldName.INPUTS]),
-            outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
-            start_time=start_time,
-            end_time=end_time,
+            # for standard OpenTelemetry traces, there won't be `inputs` and `outputs` in attributes
+            inputs=json.loads(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
+            outputs=json.loads(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            start_time=start_time.isoformat(),
+            end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
             name=span.name,
-            kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
+            kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.span_type),
             cumulative_token_count=cumulative_token_count,
         )
 
@@ -215,22 +230,28 @@ class LineRun:
     evaluations: typing.Optional[typing.List[typing.Dict]] = None
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span]) -> "LineRun":
+    def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
-        evaluation_line_run_datas = dict()
+        evaluation_line_run_data_dict = dict()
         for span in spans:
             if span.parent_span_id:
                 continue
             attributes = span._content[SpanFieldName.ATTRIBUTES]
-            if SpanAttributeFieldName.LINE_RUN_ID in attributes:
+            if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
+                evaluation_line_run_data_dict[span.name] = _LineRunData._from_root_span(span)
+            elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
-            elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
-                evaluation_line_run_datas[span.name] = _LineRunData._from_root_span(span)
             else:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
+        # main line run span is absent, ignore this line run
+        # this may happen when the line is still executing, or terminated;
+        # or the line run is killed before the traces exported
+        if main_line_run_data is None:
+            return None
+
         evaluations = dict()
-        for eval_name, eval_line_run_data in evaluation_line_run_datas.items():
+        for eval_name, eval_line_run_data in evaluation_line_run_data_dict.items():
             evaluations[eval_name] = eval_line_run_data
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
@@ -238,8 +259,8 @@ class LineRun:
             root_span_id=main_line_run_data.root_span_id,
             inputs=main_line_run_data.inputs,
             outputs=main_line_run_data.outputs,
-            start_time=main_line_run_data.start_time.isoformat(),
-            end_time=main_line_run_data.end_time.isoformat(),
+            start_time=main_line_run_data.start_time,
+            end_time=main_line_run_data.end_time,
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
             name=main_line_run_data.name,

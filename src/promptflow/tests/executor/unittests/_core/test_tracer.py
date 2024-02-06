@@ -36,13 +36,8 @@ class TestTracer:
         # Assert that there is no active tracer instance after ending tracing
         assert Tracer.active_instance() is None
 
-        # Test the raise_ex argument of the end_tracing method
-        with pytest.raises(Exception):
-            # Try to end tracing again with raise_ex=True
-            Tracer.end_tracing(raise_ex=True)
-
         # Try to end tracing again with raise_ex=False
-        traces = Tracer.end_tracing(raise_ex=False)
+        traces = Tracer.end_tracing()
 
         # Assert that the traces are empty
         assert not traces
@@ -109,8 +104,6 @@ class TestTracer:
 
         # test the push method with no active tracer
         Tracer.push(trace1)
-        # assert that the warning message is logged
-        assert "Try to push trace but no active tracer in current context." in caplog.text
 
     def test_unserializable_obj_to_serializable(self):
         # assert that the function returns a str object for unserializable objects

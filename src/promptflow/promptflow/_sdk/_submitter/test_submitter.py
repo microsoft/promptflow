@@ -8,6 +8,8 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Mapping, Optional, Tuple, Union
 
+from colorama import Fore, init
+
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
@@ -25,7 +27,8 @@ from ..._constants import LINE_NUMBER_KEY, FlowLanguage
 from ..._core._errors import NotSupported
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
-from ...batch import AbstractExecutorProxy, CSharpExecutorProxy
+from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
+from .._configuration import Configuration
 from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
@@ -80,17 +83,23 @@ class TestSubmitter:
         self._connections: Optional[dict] = None
         self._target_node = None
         self._storage = None
-        self._executor_proxy = None
+        self._enable_stream_output = None
+        self._executor_proxy: Optional[APIBasedExecutorProxy] = None
         self._within_init_context = False
 
     @property
-    def executor_proxy(self) -> AbstractExecutorProxy:
+    def executor_proxy(self) -> APIBasedExecutorProxy:
         self._raise_if_not_within_init_context()
         return self._executor_proxy
 
     def _raise_if_not_within_init_context(self):
         if not self._within_init_context:
             raise UserErrorException("This method should be called within the init context.")
+
+    @property
+    def enable_stream_output(self) -> bool:
+        self._raise_if_not_within_init_context()
+        return self._enable_stream_output
 
     @property
     def flow(self):
@@ -137,6 +146,7 @@ class TestSubmitter:
             overrides=self.flow_context.overrides,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
+
             with _change_working_dir(temp_flow.code):
                 self._flow = temp_flow
                 self._tuning_node = tuning_node
@@ -200,29 +210,42 @@ class TestSubmitter:
         environment_variables: Optional[dict] = None,
         stream_log: bool = True,
         output_path: Optional[str] = None,
+        session: Optional[str] = None,
+        stream_output: bool = True,
     ):
         """
         Create/Occupy dependent resources to execute the test within the context.
         Resources will be released after exiting the context.
 
-        : param connections: connection overrides.
-        : type connections: dict
-        : param target_node: target node name for node test, may only do node_test if specified.
-        : type target_node: str
-        : param environment_variables: environment variable overrides.
-        : type environment_variables: dict
-        : param stream_log: whether to stream log to stdout.
-        : type stream_log: bool
-        : param output_path: output path.
-        : type output_path: str
-        : return: TestSubmitter instance.
-        : rtype: TestSubmitter
+        :param connections: connection overrides.
+        :type connections: dict
+        :param target_node: target node name for node test, may only do node_test if specified.
+        :type target_node: str
+        :param environment_variables: environment variable overrides.
+        :type environment_variables: dict
+        :param stream_log: whether to stream log to stdout.
+        :type stream_log: bool
+        :param output_path: output path.
+        :type output_path: str
+        :param session: session id. If None, a new session id will be generated with _provision_session.
+        :type session: str
+        :param stream_output: whether to return a generator for streaming output.
+        :type stream_output: bool
+        :return: TestSubmitter instance.
+        :rtype: TestSubmitter
         """
+        from promptflow._trace._start_trace import start_trace
+
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
+            if self.flow.language == FlowLanguage.CSharp:
+                # TODO: consider move this to Operations
+                CSharpExecutorProxy.generate_metadata(self.flow.path, self.flow.code)
+
             self._target_node = target_node
+            self._enable_stream_output = stream_output
 
             SubmitterHelper.init_env(
                 environment_variables=self._resolve_environment_variables(
@@ -232,6 +255,10 @@ class TestSubmitter:
                 )
                 or {},
             )
+
+            if Configuration(overrides=self._client._config).is_internal_features_enabled():
+                logger.debug("Starting trace for flow test...")
+                start_trace(session=session)
 
             self._output_base, log_path, output_sub = self._resolve_output_path(
                 output_base=output_path,
@@ -267,13 +294,14 @@ class TestSubmitter:
                         connections=self._connections,
                         storage=self._storage,
                         log_path=log_path,
+                        enable_stream_output=stream_output,
                     )
 
                 try:
                     yield self
                 finally:
-                    if self._executor_proxy:
-                        async_run_allowing_running_loop(self._executor_proxy.destroy)
+                    if self.executor_proxy:
+                        async_run_allowing_running_loop(self.executor_proxy.destroy_if_all_generators_exhausted)
 
             self._within_init_context = False
 
@@ -380,7 +408,6 @@ class TestSubmitter:
         self,
         inputs: Mapping[str, Any],
         allow_generator_output: bool = False,  # TODO: remove this
-        stream_output: bool = True,
         run_id: str = None,
     ) -> LineResult:
         """
@@ -414,7 +441,7 @@ class TestSubmitter:
                 output_dir=self.output_base / self.relative_flow_output_path,
                 connections=self._connections,
                 inputs=inputs,
-                enable_stream_output=stream_output,
+                enable_stream_output=self.enable_stream_output,
                 allow_generator_output=allow_generator_output,
                 entry=self.entry,
                 storage=self._storage,
@@ -425,9 +452,7 @@ class TestSubmitter:
 
             # TODO: support run_id for non-python
             # TODO: most of below code is duplicate to flow_executor.execute_flow
-            line_result: LineResult = async_run_allowing_running_loop(
-                self._executor_proxy.exec_line_async, inputs, index=0
-            )
+            line_result: LineResult = self.executor_proxy.exec_line(inputs, index=0)
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.output_base, sub_dir=self.relative_flow_output_path
             )
@@ -437,7 +462,7 @@ class TestSubmitter:
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
 
                 aggregation_results = async_run_allowing_running_loop(
-                    self._executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
+                    self.executor_proxy.exec_aggregation_async, flow_inputs, aggregation_inputs
                 )
 
                 line_result.node_run_infos.update(aggregation_results.node_run_infos)
@@ -483,7 +508,6 @@ class TestSubmitter:
             2. Each round of chat is executed once flow test.
             3. Prefix the output for distinction.
         """
-        from colorama import Fore, init
 
         @contextlib.contextmanager
         def change_logger_level(level):
@@ -494,7 +518,6 @@ class TestSubmitter:
 
         init(autoreset=True)
         chat_history = []
-        generator_record = {}
         # TODO: test submitter should not interact with dataplane flow directly
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
@@ -507,6 +530,8 @@ class TestSubmitter:
         )
 
         while True:
+            # generator record should be reset for each round of chat
+            generator_record = {}
             try:
                 print(f"{Fore.GREEN}User: ", end="")
                 input_value = input()
@@ -524,13 +549,16 @@ class TestSubmitter:
             flow_result = self.flow_test(
                 inputs=chat_inputs,
                 allow_generator_output=True,
-                stream_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
-            print_chat_output(flow_result.output[output_name], generator_record)
+            print_chat_output(
+                flow_result.output[output_name],
+                generator_record,
+                generator_key=f"run.outputs.{output_name}",
+            )
             flow_result = resolve_generator(flow_result, generator_record)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
