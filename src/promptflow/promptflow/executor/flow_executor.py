@@ -29,6 +29,7 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._core.tracer import (
     enrich_span_with_context,
     enrich_span_with_input,
+    enrich_span_with_openai_tokens,
     enrich_span_with_output,
     enrich_span_with_openai_tokens,
     open_telemetry_tracer,
@@ -829,7 +830,7 @@ class FlowExecutor:
             output = result.output
             # enrich span with output
             enrich_span_with_output(span, output)
-            enrich_span_with_openai_tokens(span, TraceType.FLOW)
+            enrich_span_with_openai_tokens(span, trace_type=TraceType.FLOW)
             # set status
             span.set_status(StatusCode.OK)
             return result
