@@ -369,8 +369,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             # legacy run with local file detail.json, then directly load from the file
             return json_load(self._detail_path)
         else:
-            flow_runs = self.load_all_flow_run_info(parse_const_as_str=parse_const_as_str)
-            node_runs = self.load_all_node_run_info(parse_const_as_str=parse_const_as_str)
+            flow_runs = self._load_run_info(load_node=False, parse_const_as_str=parse_const_as_str)
+            node_runs = self._load_run_info(load_node=True, parse_const_as_str=parse_const_as_str)
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self, *, parse_const_as_str: bool = False) -> Dict[str, Union[int, float, str]]:
@@ -387,28 +387,42 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
-    def load_all_node_run_info(self, parse_const_as_str: bool = False) -> List[NodeRunInfo]:
+    def _load_run_info(self, load_node: bool, parse_const_as_str: bool = False):
         json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
-        node_runs = []
-        for node_folder in sorted(self._node_infos_folder.iterdir()):
-            for node_run_record_file in sorted(node_folder.iterdir()):
-                if node_run_record_file.suffix.lower() != ".jsonl":
-                    continue
-                with read_open(node_run_record_file) as f:
+        folder_path = self._node_infos_folder if load_node else self._run_infos_folder
+        run_info_class = NodeRunInfo if load_node else FlowRunInfo
+        run_infos = []
+
+        def load_file(file_path):
+            if file_path.suffix.lower() == ".jsonl":
+                with read_open(file_path) as f:
                     new_runs = [json_loads(line)["run_info"] for line in list(f)]
                     for new_run in new_runs:
-                        new_run = resolve_multimedia_data_recursively(node_run_record_file, new_run)
-                        node_runs.append(new_run)
-                        node_run_info = NodeRunInfo.deserialize(new_run)
-                        line_number = node_run_info.index
-                        node_name = node_run_info.node
-                        self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, {})
-                        self._loaded_node_run_info[line_number][node_name] = node_run_info
-        return node_runs
+                        new_run = resolve_multimedia_data_recursively(file_path, new_run)
+                        run_infos.append(new_run)
+                        run_info = run_info_class.deserialize(new_run)
+                        line_number = run_info.index
+
+                        if load_node:
+                            node_name = run_info.node
+                            self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, {})
+                            self._loaded_node_run_info[line_number][node_name] = run_info
+                        else:
+                            self._loaded_flow_run_info[line_number] = run_info
+
+        if load_node:
+            for node_folder in sorted(folder_path.iterdir()):
+                for node_run_record_file in sorted(node_folder.iterdir()):
+                    load_file(node_run_record_file)
+        else:
+            for run_record_file in sorted(folder_path.iterdir()):
+                load_file(run_record_file)
+
+        return run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
         if not self._loaded_node_run_info:
-            self.load_all_node_run_info()
+            self._load_run_info(load_node=True)
         return self._loaded_node_run_info.get(line_number)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
@@ -428,25 +442,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         )
         line_run_record.dump(self._run_infos_folder / filename)
 
-    def load_all_flow_run_info(self, line_number: int = None, parse_const_as_str: bool = False) -> FlowRunInfo:
-        json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
-        flow_runs = []
-        for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
-            if line_run_record_file.suffix.lower() != ".jsonl":
-                continue
-            with read_open(line_run_record_file) as f:
-                new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                for new_run in new_runs:
-                    new_run = resolve_multimedia_data_recursively(line_run_record_file, new_run)
-                    flow_runs.append(new_run)
-                    flow_run_info = FlowRunInfo.deserialize(new_run)
-                    line_number = flow_run_info.index
-                    self._loaded_flow_run_info[line_number] = flow_run_info
-        return flow_runs
-
     def load_flow_run_info(self, line_number: int = None) -> List[NodeRunInfo]:
         if not self._loaded_flow_run_info:
-            self.load_all_flow_run_info()
+            self._load_run_info(load_node=False)
         return self._loaded_flow_run_info.get(line_number)
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
