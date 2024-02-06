@@ -6,7 +6,7 @@
 ; Configure 'document_folder', 'document_chunk_size' and 'document_chunk_overlap' if you require document splitting.
 documents_folder = "<your-document-folder-path>"
 document_chunk_size = 1024
-document_chunk_overlap = 0
+document_chunk_overlap = 200
 ; However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
 ; When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
 ; document_nodes_file = "<your-node-file-path>"
