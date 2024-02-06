@@ -191,7 +191,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            for i in range(tries + 1):
+            while True:
                 try:
                     return func(*args, **kwargs)
                 except (SystemErrorException, UserErrorException) as e:
