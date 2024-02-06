@@ -88,8 +88,9 @@ class TestLocalStorageOperations:
         )
 
         res = local_storage.load_node_run_info_for_line(1)
-        assert isinstance(res["node1"], RunInfo)
-        assert res["node1"].node == node_run_info.node
+        assert isinstance(res, list)
+        assert isinstance(res[0], RunInfo)
+        assert res[0].node == node_run_info.node
 
     def test_load_flow_run_info(self):
         run_instance = Run(flow="flow_load", name="flow_load_run_name")

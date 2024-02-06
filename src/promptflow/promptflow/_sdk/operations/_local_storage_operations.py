@@ -223,7 +223,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         self._eager_mode = self._calculate_eager_mode(run)
 
         self._loaded_flow_run_info = {}  # {line_number: flow_run_info}
-        self._loaded_node_run_info = {}  # {line_number: {node_name: node_run_info}}
+        self._loaded_node_run_info = {}  # {line_number: [node_run_info]}
 
     @property
     def eager_mode(self) -> bool:
@@ -404,9 +404,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                         line_number = run_info.index
 
                         if load_node:
-                            node_name = run_info.node
-                            self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, {})
-                            self._loaded_node_run_info[line_number][node_name] = run_info
+                            self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, [])
+                            self._loaded_node_run_info[line_number].append(run_info)
                         else:
                             self._loaded_flow_run_info[line_number] = run_info
 
