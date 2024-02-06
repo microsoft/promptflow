@@ -364,8 +364,11 @@ class LineExecutionProcessPool:
         # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
         self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
 
+        #  Wait 10 seconds to ensure the spans are exported before the process is killed.
+        time.sleep(10)
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
+
         # In fork mode, the main process and the sub spawn process communicate through _process_info.
         # We need to ensure the process has been killed before returning. Otherwise, it may cause
         # the main process have exited but the spawn process is still alive.
@@ -659,6 +662,8 @@ def _process_wrapper(
     else:
         bulk_logger.info("Current thread is not main thread, skip signal handler registration in batch process pool.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
+    from promptflow._trace._start_trace import _init_exporter_with_env
+    _init_exporter_with_env()
     if log_context_initialization_func:
         with log_context_initialization_func():
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
