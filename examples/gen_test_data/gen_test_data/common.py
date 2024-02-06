@@ -12,7 +12,7 @@ from promptflow._utils.logger_utils import get_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 
 
-def merge_document_nodes(reader, chunk_size):
+def generate_chunks(reader, chunk_size):
     try:
         from llama_index.readers.schema import Document as LlamaindexDocument
     except ImportError:
@@ -85,7 +85,7 @@ def split_document(chunk_size, chunk_overlap, documents_folder, document_node_ou
     )
     # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.  # noqa: E501
     reader = SimpleDirectoryReader(documents_folder, required_exts=SUPPORT_FILE_TYPE, recursive=True, encoding="utf-8")
-    chunks = merge_document_nodes(reader, chunk_size)
+    chunks = generate_chunks(reader, chunk_size)
     # Convert documents into nodes
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=chunk_overlap, include_metadata=True)
     chunks = t.cast(t.List[LlamaindexDocument], chunks)
