@@ -106,15 +106,20 @@ def _provision_session(session_id: typing.Optional[str] = None) -> str:
 
 
 def _init_otel_trace_exporter(otlp_port: str) -> None:
+    endpoint = f"http://localhost:{otlp_port}/v1/traces"
+    # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
+    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
+    _init_exporter_with_env()
+
+
+def _init_exporter_with_env():
     resource = Resource(
         attributes={
             SERVICE_NAME: "promptflow",
         }
     )
+    endpoint = os.environ.get(OTEL_EXPORTER_OTLP_ENDPOINT)
     trace_provider = TracerProvider(resource=resource)
-    endpoint = f"http://localhost:{otlp_port}/v1/traces"
-    # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
-    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
     otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
     trace_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(trace_provider)
