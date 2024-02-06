@@ -3,9 +3,10 @@
 
 [COMMON]
 ; The COMMON section provides common values for all other sections.
-; Configure both 'document_folder' and 'document_chunk_size' if you require document splitting.
+; Configure both 'document_folder', 'document_chunk_size', 'document_chunk_overlap' if you require document splitting.
 documents_folder = "<your-document-folder-path>"
 document_chunk_size = 1024
+document_chunk_overlap = 0
 ; However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
 ; When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
 ; document_nodes_file = "<your-node-file-path>"

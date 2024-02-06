@@ -12,7 +12,57 @@ from promptflow._utils.logger_utils import get_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 
 
-def split_document(chunk_size, documents_folder, document_node_output):
+def merge_document_nodes(reader, chunk_size):
+    try:
+        from llama_index.readers.schema import Document as LlamaindexDocument
+    except ImportError:
+        raise ImportError(
+            "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
+        )
+
+    merged_documents = []
+    merged_documents_each_file = []
+    buffer_text = ""
+    for input_file in reader.input_files:
+        doc_nodes = reader.load_file(
+            input_file=input_file,
+            file_metadata=reader.file_metadata,
+            file_extractor=reader.file_extractor,
+            filename_as_id=reader.filename_as_id,
+            encoding=reader.encoding,
+            errors=reader.errors,
+        )
+
+        buffer_doc = None
+        for doc_node in doc_nodes:
+            if buffer_doc is None:
+                buffer_doc = doc_node
+            buffer_text += doc_node.text
+
+            if len(buffer_text) >= chunk_size:
+                buffer_doc.text = buffer_text
+                merged_documents.append(buffer_doc)
+                buffer_text = ""
+                buffer_doc = None
+
+        # If there's any text left in buffer_text within the same input_file,
+        # append it to the text of the last buffer_doc in merged_documents
+        if buffer_text:
+            if not merged_documents_each_file:
+                buffer_doc.text = buffer_text
+                merged_documents_each_file.append(buffer_doc)
+            else:
+                merged_documents_each_file[-1].text += buffer_text
+            buffer_text = ""
+
+        if merged_documents_each_file:
+            merged_documents.extend(merged_documents_each_file)
+            merged_documents_each_file = []
+
+    return reader._exclude_metadata(merged_documents)
+
+
+def split_document(chunk_size, chunk_overlap, documents_folder, document_node_output):
     try:
         from llama_index import SimpleDirectoryReader
         from llama_index.node_parser import SentenceSplitter
@@ -34,11 +84,10 @@ def split_document(chunk_size, documents_folder, document_node_output):
         f"Using chunk size: {chunk_size} to split."
     )
     # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.  # noqa: E501
-    # TODO: improve on top of `SimpleDirectoryReader` with a better chunking algorithm.
-    chunks = SimpleDirectoryReader(documents_folder, required_exts=SUPPORT_FILE_TYPE, recursive=True, encoding="utf-8")\
-        .load_data()
+    reader = SimpleDirectoryReader(documents_folder, required_exts=SUPPORT_FILE_TYPE, recursive=True, encoding="utf-8")
+    chunks = merge_document_nodes(reader, chunk_size)
     # Convert documents into nodes
-    node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
+    node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=chunk_overlap, include_metadata=True)
     chunks = t.cast(t.List[LlamaindexDocument], chunks)
     document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=chunks)
     logger.info(f"Split the documents and created {len(document_nodes)} document nodes.")
