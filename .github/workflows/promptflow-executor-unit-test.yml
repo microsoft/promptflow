@@ -111,11 +111,14 @@ jobs:
       working-directory: ${{ github.workspace }}
       run: |
         pip install langchain
-        pip uninstall pytest-xdist -y
-        pytest src/promptflow/tests/executor/unittests -vv -ra `
-        --junitxml=test-results.xml --cov=promptflow --cov-report=term --cov-report=xml --cov-report=html `
-        --cov-config=src/promptflow/tests/executor/.coveragerc --log-level=info --log-format="%(asctime)s %(levelname)s %(message)s" --log-date-format="[%Y-%m-%d %H:%M:%S]" `
-        --durations=5 --cov-branch
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ env.testWorkingDirectory }}/promptflow `
+          -t ${{ env.testWorkingDirectory }}/tests/executor/unittests `
+          -l eastus `
+          -m "all" `
+          -n ${{ steps.cpu-cores.outputs.count }} `
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
+          --disable-cov-branch
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
@@ -124,6 +127,7 @@ jobs:
         path: |
           ${{ github.workspace }}/*.xml
           ${{ github.workspace }}/htmlcov/
+          ${{ env.testWorkingDirectory }}/tests/sdk_cli_test/count.json
   publish-test-results:
     name: "Publish Tests Results"
     needs: executor_unit_tests
