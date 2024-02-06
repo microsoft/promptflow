@@ -38,8 +38,18 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _start_pfs(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
 
-    # if user has specified a session id, honor it; otherwise, provision a new one
-    session_id = session if session is not None else _provision_session()
+    session_id = _provision_session_id(configured_session_id=session)
+    if session is not None:
+        # if user has specified a session id, honor it
+        session_id = session
+    else:
+        if _is_tracer_provider_configured():
+            # if tracer provider is configured, session id should already exist
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
+        else:
+            # provision a new session id
+            session_id = str(uuid.uuid4())
     _logger.debug("current session id is %s", session_id)
 
     operation_context = OperationContext.get_instance()
@@ -91,12 +101,31 @@ def _is_tracer_provider_configured() -> bool:
     return isinstance(tracer_provider, TracerProvider)
 
 
-def _provision_session() -> str:
+def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
+    # check if session id is configured in tracer provider
+    configured_session_id = None
     if _is_tracer_provider_configured():
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
-    else:
+        configured_session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
+
+    if specified_session_id is None and configured_session_id is None:
+        # user does not specify and not configured, provision a new one
         session_id = str(uuid.uuid4())
+    elif specified_session_id is None and configured_session_id is not None:
+        # user does not specify, but already configured, use the configured one
+        session_id = configured_session_id
+    elif specified_session_id is not None and configured_session_id is None:
+        # user specified, but not configured, use the specified one
+        session_id = specified_session_id
+    else:
+        # user specified while configured, log warnings and honor the configured one
+        session_id = configured_session_id
+        warning_message = (
+            f"Session is already configured with id: {session_id!r}, "
+            "we will honor it within current process; "
+            "if you expect another session, please specify it in another process."
+        )
+        _logger.warning(warning_message)
     return session_id
 
 
