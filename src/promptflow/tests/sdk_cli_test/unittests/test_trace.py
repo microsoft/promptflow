@@ -12,13 +12,18 @@ from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
 from promptflow._constants import ResourceAttributeFieldName, TraceEnvironmentVariableName
-from promptflow._trace._start_trace import _create_resource, _is_tracer_provider_configured, setup_exporter_from_environ
+from promptflow._trace._start_trace import (
+    _create_resource,
+    _is_tracer_provider_configured,
+    _provision_session_id,
+    setup_exporter_from_environ,
+)
 
 
 @pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestStartTrace:
-    def test_create_resource(self):
+    def test_create_resource(self) -> None:
         session_id = str(uuid.uuid4())
         resource1 = _create_resource(session_id=session_id)
         assert resource1.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
@@ -29,7 +34,7 @@ class TestStartTrace:
         assert resource2.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
         assert resource2.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] == experiment
 
-    def test_setup_exporter_from_environ(self):
+    def test_setup_exporter_from_environ(self) -> None:
         assert not _is_tracer_provider_configured()
 
         # set some required environment variables
@@ -51,3 +56,34 @@ class TestStartTrace:
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         assert session_id == tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
         assert experiment == tracer_provider._resource.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME]
+
+    def test_provision_session_id(self) -> None:
+        # no specified, session id should be a valid UUID
+        session_id = _provision_session_id(specified_session_id=None)
+        assert session_id == str(uuid.UUID(session_id, version=4))
+
+        # specified session id
+        specified_session_id = str(uuid.uuid4())
+        session_id = _provision_session_id(specified_session_id=specified_session_id)
+        assert session_id == specified_session_id
+
+        # within a configured tracer provider
+        endpoint = "http://localhost:23333/v1/traces"
+        configured_session_id = str(uuid.uuid4())
+        with patch.dict(
+            os.environ,
+            {
+                OTEL_EXPORTER_OTLP_ENDPOINT: endpoint,
+                TraceEnvironmentVariableName.SESSION_ID: configured_session_id,
+            },
+            clear=True,
+        ):
+            setup_exporter_from_environ()
+
+            # no specified
+            session_id = _provision_session_id(specified_session_id=None)
+            assert configured_session_id == session_id
+
+            # specified, but still honor the configured one
+            session_id = _provision_session_id(specified_session_id=str(uuid.uuid4()))
+            assert configured_session_id == session_id
