@@ -730,11 +730,10 @@ class FlowExecutor:
         operation_context = OperationContext.get_instance()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
-        if operation_context.run_mode == RunMode.Batch.name:
+        if original_mode == RunMode.Batch.name:
             values_for_otel = {
                 "batch_run_id": run_id,
                 "line_number": line_number,
-                "line_run_id": f"{run_id}_{line_number}",
             }
         else:
             values_for_otel = {"line_run_id": run_id}
