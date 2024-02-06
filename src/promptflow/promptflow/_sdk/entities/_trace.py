@@ -16,6 +16,7 @@ from promptflow._constants import (
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanFieldName,
+    SpanResourceFieldName,
     SpanStatusFieldName,
 )
 from promptflow._sdk._orm.trace import Span as ORMSpan
@@ -135,9 +136,10 @@ class Span:
         # so we need to get it with default value to avoid KeyError
         span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
 
-        # parse from resource: session id, experiment
-        session_id = resource[ResourceAttributeFieldName.SESSION_ID]
-        experiment = resource.get(ResourceAttributeFieldName.EXPERIMENT_NAME, None)
+        # parse from resource.attributes: session id, experiment
+        resource_attributes = resource[SpanResourceFieldName.ATTRIBUTES]
+        session_id = resource_attributes[ResourceAttributeFieldName.SESSION_ID]
+        experiment = resource_attributes.get(ResourceAttributeFieldName.EXPERIMENT_NAME, None)
 
         return Span(
             name=obj.name,
