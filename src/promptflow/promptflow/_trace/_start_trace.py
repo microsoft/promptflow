@@ -13,7 +13,12 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from promptflow._constants import ResourceAttributeFieldName, SpanAttributeFieldName
+from promptflow._constants import (
+    OTEL_RESOURCE_SERVICE_NAME,
+    ResourceAttributeFieldName,
+    SpanAttributeFieldName,
+    TraceEnvironmentVariableName,
+)
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import PF_TRACE_CONTEXT
@@ -120,7 +125,7 @@ def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
 
 def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -> Resource:
     resource_attributes = {
-        ResourceAttributeFieldName.SERVICE_NAME: "promptflow",
+        ResourceAttributeFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
         ResourceAttributeFieldName.SESSION_ID: session_id,
     }
     if experiment is not None:
@@ -128,20 +133,26 @@ def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -
     return Resource(attributes=resource_attributes)
 
 
-def _init_otel_trace_exporter(
-    otlp_port: str,
-    session_id: str,
-    experiment: typing.Optional[str] = None,
-) -> None:
-    resource = _create_resource(session_id=session_id, experiment=experiment)
+def setup_exporter_from_environ() -> None:
     if _is_tracer_provider_configured():
-        tracer_provider: TracerProvider = trace.get_tracer_provider()
-        tracer_provider._resource = tracer_provider._resource.merge(resource)
-    else:
-        tracer_provider = TracerProvider(resource=resource)
-        endpoint = f"http://localhost:{otlp_port}/v1/traces"
-        # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
-        os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
-        otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+        _logger.debug("tracer provider is already configured, skip setting up again.")
+        return
+    # get resource values from environment variables and create resource
+    session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID)
+    experiment = os.getenv(TraceEnvironmentVariableName.EXPERIMENT, None)
+    resource = _create_resource(session_id=session_id, experiment=experiment)
+    tracer_provider = TracerProvider(resource=resource)
+    # get OTLP endpoint from environment variable
+    endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(tracer_provider)
+
+
+def _init_otel_trace_exporter(otlp_port: str, session_id: str, experiment: typing.Optional[str] = None) -> None:
+    endpoint = f"http://localhost:{otlp_port}/v1/traces"
+    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
+    os.environ[TraceEnvironmentVariableName.SESSION_ID] = session_id
+    if experiment is not None:
+        os.environ[TraceEnvironmentVariableName.EXPERIMENT] = experiment
+    setup_exporter_from_environ()

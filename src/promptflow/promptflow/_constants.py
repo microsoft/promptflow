@@ -51,8 +51,15 @@ GET_PYPI_INTERVAL_DAY = 7
 _ENV_PF_INSTALLER = "PF_INSTALLER"
 STREAMING_ANIMATION_TIME = 0.01
 
-
 # trace related
+OTEL_RESOURCE_SERVICE_NAME = "promptflow"
+
+
+class TraceEnvironmentVariableName:
+    EXPERIMENT = "PF_TRACE_EXPERIMENT"
+    SESSION_ID = "PF_TRACE_SESSION_ID"
+
+
 class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
