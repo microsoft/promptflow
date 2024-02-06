@@ -49,7 +49,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.storage._run_storage import AbstractBatchRunStorage
+from promptflow.storage import AbstractBatchRunStorage
 
 logger = get_cli_sdk_logger()
 
