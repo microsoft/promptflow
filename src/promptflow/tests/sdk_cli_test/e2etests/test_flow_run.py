@@ -1295,7 +1295,9 @@ class TestFlowRun:
             )
 
             # remove run dag
-            shutil.rmtree(f"{temp_dir}/print_env_var")
+            # TODO 2945229: Han to check whether this is expected - can't delete the whole directory given .promptflow
+            #   is occupied
+            os.remove(f"{temp_dir}/print_env_var/flow.dag.yaml")
 
             # can still get run operations
             LocalStorageOperations(run=run)
