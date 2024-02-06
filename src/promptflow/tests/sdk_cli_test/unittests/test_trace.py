@@ -20,6 +20,16 @@ from promptflow._trace._start_trace import (
 )
 
 
+@pytest.fixture
+def reset_tracer_provider() -> None:
+    from opentelemetry.util._once import Once
+
+    with patch("opentelemetry.trace._TRACER_PROVIDER_SET_ONCE", Once()), patch(
+        "opentelemetry.trace._TRACER_PROVIDER", None
+    ):
+        yield
+
+
 @pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestStartTrace:
@@ -34,6 +44,7 @@ class TestStartTrace:
         assert resource2.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
         assert resource2.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] == experiment
 
+    @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
         assert not _is_tracer_provider_configured()
 
@@ -57,9 +68,11 @@ class TestStartTrace:
         assert session_id == tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
         assert experiment == tracer_provider._resource.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME]
 
+    @pytest.mark.usefixtures("reset_tracer_provider")
     def test_provision_session_id(self) -> None:
         # no specified, session id should be a valid UUID
         session_id = _provision_session_id(specified_session_id=None)
+        # below assert applys a UUID type check for `session_id`
         assert session_id == str(uuid.UUID(session_id, version=4))
 
         # specified session id
