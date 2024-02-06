@@ -479,17 +479,21 @@ class TestRetryUtils:
 
         mac_address = None
         net_address = psutil.net_if_addrs()
-        if sys.platform.startswith("win"):
-            for net_interface in net_address["Ethernet"]:
-                if net_interface.family == psutil.AF_LINK:
-                    mac_address = str(net_interface.address)
-                    break
-        else:
-            for net_interface in net_address["eth0"]:
-                if net_interface.family == psutil.AF_LINK:
-                    mac_address = str(net_interface.address)
-                    break
+        eth = []
+        # Query the first network card in order and obtain the MAC address of the first network card.
+        # "Ethernet" is the name of the Windows network card.
+        # "eth", "ens", "eno" are the name of the Linux & Mac network card.
+        net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
+        for net_interface_name in net_interface_names:
+            if net_interface_name in net_address:
+                eth = net_address[net_interface_name]
+                break
+        for net_interface in eth:
+            if net_interface.family == psutil.AF_LINK:  # mac address
+                mac_address = str(net_interface.address)
+                break
 
+        assert mac_address != ""
         assert mac_address == get_mac_address()
 
     def test_gen_uuid_by_compute_info(self):

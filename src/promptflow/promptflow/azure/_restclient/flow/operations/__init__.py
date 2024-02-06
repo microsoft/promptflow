@@ -13,6 +13,7 @@ from ._flows_operations import FlowsOperations
 from ._flow_sessions_operations import FlowSessionsOperations
 from ._flows_provider_operations import FlowsProviderOperations
 from ._tools_operations import ToolsOperations
+from ._trace_sessions_operations import TraceSessionsOperations
 
 __all__ = [
     'BulkRunsOperations',
@@ -24,4 +25,5 @@ __all__ = [
     'FlowSessionsOperations',
     'FlowsProviderOperations',
     'ToolsOperations',
+    'TraceSessionsOperations',
 ]
