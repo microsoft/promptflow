@@ -24,21 +24,18 @@ api = Namespace("spans", description="Span Management")
 # parsers for query parameters
 list_span_parser = api.parser()
 list_span_parser.add_argument("session", type=str, required=False)
-list_span_parser.add_argument("parent_span_id", type=str, required=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListSpanParser:
     session_id: typing.Optional[str] = None
-    parent_span_id: typing.Optional[str] = None
 
     @staticmethod
     def from_request() -> "ListSpanParser":
         args = list_span_parser.parse_args()
         return ListSpanParser(
             session_id=args.session,
-            parent_span_id=args.parent_span_id,
         )
 
 
@@ -115,6 +112,5 @@ class Spans(Resource):
         args = ListSpanParser.from_request()
         spans = client._traces.list_spans(
             session_id=args.session_id,
-            parent_span_id=args.parent_span_id,
         )
         return [span._content for span in spans]

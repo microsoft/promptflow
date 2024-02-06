@@ -84,6 +84,19 @@ for r in result["answer"]:
 
 Reference our [sample](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb) for usage.
 
+## Flow with multiple overrides
+
+**Note**: the flow context configs may affect each other in some cases. For example, using `connection` & `overrides` to override same node.
+The behavior is undefined for those scenarios. Pleas avoid such usage.
+
+```python
+# overriding `classify_with_llm`'s connection and inputs in the same time will lead to undefined behavior.
+f.context = FlowContext(
+    connections={"classify_with_llm": {"connection": connection_obj}},
+    overrides={"nodes.classify_with_llm.inputs.url": sample_url}
+)
+```
+
 ## Next steps
 
 Learn more about:

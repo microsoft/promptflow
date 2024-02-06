@@ -49,6 +49,7 @@ HINT_INTERVAL_DAY = 7
 GET_PYPI_INTERVAL_DAY = 7
 
 _ENV_PF_INSTALLER = "PF_INSTALLER"
+STREAMING_ANIMATION_TIME = 0.01
 
 
 # trace related
@@ -101,3 +102,7 @@ class SpanResourceAttributesFieldName:
 class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"
+
+
+DEFAULT_SESSION_ID = "default"
+DEFAULT_SPAN_TYPE = "default"
