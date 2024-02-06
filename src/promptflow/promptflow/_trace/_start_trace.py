@@ -38,8 +38,8 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _start_pfs(pfs_port)
     _logger.debug("PFS is serving on port %s", pfs_port)
 
-    # provision a session
-    session_id = _provision_session(session_id=session)
+    # if user has specified a session id, honor it; otherwise, provision a new one
+    session_id = session if session is not None else _provision_session()
     _logger.debug("current session id is %s", session_id)
 
     operation_context = OperationContext.get_instance()
@@ -84,23 +84,30 @@ def _start_pfs(pfs_port) -> None:
     entry(command_args)
 
 
-def _provision_session(session_id: typing.Optional[str] = None) -> str:
-    operation_context = OperationContext.get_instance()
+def _is_tracer_provider_configured() -> bool:
+    # if tracer provider is configured, `tracer_provider` should be an instance of `TracerProvider`;
+    # otherwise, it should be an instance of `ProxyTracerProvider`
+    tracer_provider = trace.get_tracer_provider()
+    return isinstance(tracer_provider, TracerProvider)
 
-    # user has specified a session id, honor and directly return it
-    if session_id is not None:
-        operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
-        return session_id
 
-    # session id is already in operation context, directly return
-    otel_attributes = operation_context._get_otel_attributes()
-    if SpanAttributeFieldName.SESSION_ID in otel_attributes:
-        return otel_attributes[SpanAttributeFieldName.SESSION_ID]
-
-    # provision a new session id
-    session_id = str(uuid.uuid4())
-    operation_context._add_otel_attributes(SpanAttributeFieldName.SESSION_ID, session_id)
+def _provision_session() -> str:
+    if _is_tracer_provider_configured():
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
+    else:
+        session_id = str(uuid.uuid4())
     return session_id
+
+
+def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -> Resource:
+    resource_attributes = {
+        ResourceAttributeFieldName.SERVICE_NAME: "promptflow",
+        ResourceAttributeFieldName.SESSION_ID: session_id,
+    }
+    if experiment is not None:
+        resource_attributes[SpanAttributeFieldName.EXPERIMENT] = experiment
+    return Resource(attributes=resource_attributes)
 
 
 def _init_otel_trace_exporter(
@@ -108,17 +115,15 @@ def _init_otel_trace_exporter(
     session_id: str,
     experiment: typing.Optional[str] = None,
 ) -> None:
-    resource_attributes = {
-        ResourceAttributeFieldName.SERVICE_NAME: "promptflow",
-        ResourceAttributeFieldName.SESSION_ID: session_id,
-    }
-    if experiment is not None:
-        resource_attributes[SpanAttributeFieldName.EXPERIMENT] = experiment
-    resource = Resource(attributes=resource_attributes)
-    trace_provider = TracerProvider(resource=resource)
-    endpoint = f"http://localhost:{otlp_port}/v1/traces"
-    # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
-    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
-    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-    trace_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
-    trace.set_tracer_provider(trace_provider)
+    resource = _create_resource(session_id=session_id, experiment=experiment)
+    if _is_tracer_provider_configured():
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        tracer_provider._resource = tracer_provider._resource.merge(resource)
+    else:
+        tracer_provider = TracerProvider(resource=resource)
+        endpoint = f"http://localhost:{otlp_port}/v1/traces"
+        # Use env var for endpoint: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
+        os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
+        otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+    trace.set_tracer_provider(tracer_provider)
