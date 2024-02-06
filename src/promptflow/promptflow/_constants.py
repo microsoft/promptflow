@@ -117,5 +117,4 @@ class ResourceAttributeFieldName:
     SESSION_ID = "session.id"
 
 
-DEFAULT_SESSION_ID = "default"
 DEFAULT_SPAN_TYPE = "default"
