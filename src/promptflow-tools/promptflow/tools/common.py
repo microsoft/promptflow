@@ -191,6 +191,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            i = 0
             while True:
                 try:
                     return func(*args, **kwargs)
@@ -238,6 +239,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         )
                         print(msg, file=sys.stderr)
                     time.sleep(retry_after_seconds)
+                    i += 1
                 except OpenAIError as e:
                     # For other non-retriable errors from OpenAIError,
                     # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
