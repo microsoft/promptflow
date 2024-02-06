@@ -11,7 +11,7 @@ from mock import mock
 from ruamel.yaml import YAML
 
 from promptflow import PFClient
-from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus
+from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import load_common
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
@@ -113,7 +113,7 @@ class TestExperiment:
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    # @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -128,6 +128,8 @@ class TestExperiment:
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+        run = client.runs.get(name=exp.node_runs["echo"][0]["name"])
+        assert run.type == RunTypes.COMMAND
 
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")

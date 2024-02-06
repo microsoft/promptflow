@@ -8,12 +8,11 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import FlowRunProperties
+from promptflow._sdk._constants import ExperimentContextKey, FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
@@ -21,6 +20,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 
 from ..._utils.logger_utils import LoggerFactory
+from .._configuration import Configuration
 from .._load_functions import load_flow
 from ..entities._eager_flow import EagerFlow
 from .utils import SubmitterHelper, variant_overwrite_context
@@ -31,14 +31,16 @@ logger = LoggerFactory.get_logger(name=__name__)
 class RunSubmitter:
     """Submit run to executor."""
 
-    def __init__(self, run_operations: RunOperations):
-        self.run_operations = run_operations
+    def __init__(self, client):
+        self._client = client
+        self.run_operations = self._client.runs
 
     def submit(self, run: Run, stream=False, **kwargs):
         self._run_bulk(run=run, stream=stream, **kwargs)
         return self.run_operations.get(name=run.name)
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
+        attributes = kwargs.get("attributes", {})
         # validate & resolve variant
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
@@ -46,6 +48,9 @@ class RunSubmitter:
             tuning_node, variant = None, None
 
         if run.run is not None:
+            # Set for flow test against run and no experiment scenario
+            if ExperimentContextKey.REFERENCED_BATCH_RUN_ID not in attributes:
+                attributes[ExperimentContextKey.REFERENCED_BATCH_RUN_ID] = run.run.name
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
@@ -58,6 +63,12 @@ class RunSubmitter:
                 error = ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
                 raise UserErrorException(message=str(error), error=error)
             run.run.outputs = self.run_operations._get_outputs(run.run)
+        # Start trace
+        if Configuration(overrides=self._client._config).is_internal_features_enabled():
+            from promptflow._trace._start_trace import start_trace
+
+            logger.debug("Starting trace for flow run...")
+            start_trace(session=kwargs.get("session", None), attributes=attributes)
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)

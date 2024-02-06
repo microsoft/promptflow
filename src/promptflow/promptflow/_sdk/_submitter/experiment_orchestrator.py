@@ -34,6 +34,7 @@ from promptflow._sdk._constants import (
     ExperimentNodeType,
     ExperimentStatus,
     FlowRunProperties,
+    RunTypes,
 )
 from promptflow._sdk._errors import (
     ExperimentCommandRunError,
@@ -183,9 +184,10 @@ class ExperimentOrchestrator:
         experiment.status = ExperimentStatus.IN_PROGRESS
         experiment.last_start_time = datetime.utcnow().isoformat()
         experiment.last_end_time = None
+        context = ExperimentTemplateContext(experiment)
         self.experiment_operations.create_or_update(experiment)
         self._update_orchestrator_record(status=ExperimentStatus.IN_PROGRESS, pid=os.getpid())
-        self._start_orchestrator(nodes=nodes, from_nodes=from_nodes)
+        self._start_orchestrator(nodes=nodes, from_nodes=from_nodes, context=context)
 
     def async_start(self, executable_path=None, nodes=None, from_nodes=None):
         """Start an asynchronous execution of an experiment.
@@ -235,11 +237,13 @@ class ExperimentOrchestrator:
             node_runs=json.dumps(self.experiment.node_runs),
         )
 
-    def _start_orchestrator(self, nodes=None, from_nodes=None):
+    def _start_orchestrator(self, context, nodes=None, from_nodes=None):
         """
         Orchestrate the execution of nodes in the experiment.
         Determine node execution order through topological sorting.
 
+        :param context: Experiment context.
+        :type context: ~promptflow._sdk._submitter.ExperimentTemplateContext
         :param nodes: Nodes to be executed.
         :type nodes: list
         :param from_nodes: The branches in experiment to be executed.
@@ -250,13 +254,7 @@ class ExperimentOrchestrator:
             """Get all in-degree nodes of this node."""
             node_names = set()
             for input_value in node.inputs.values():
-                if not isinstance(input_value, str):
-                    continue
-                if (
-                    input_value.startswith("${")
-                    and not input_value.startswith("${data.")
-                    and not input_value.startswith("${inputs.")
-                ):
+                if ExperimentHelper._is_node_reference(input_value):
                     referenced_node_name = input_value.split(".")[0].replace("${", "")
                     node_names.add(referenced_node_name)
             return node_names
@@ -275,6 +273,7 @@ class ExperimentOrchestrator:
             for nodes in node_edges_mapping.values():
                 all_nodes.update(nodes)
             pre_nodes = all_nodes - set(node_edges_mapping.keys())
+            logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}, pre nodes: {pre_nodes!r}")
             return node_edges_mapping, pre_nodes
 
         def get_next_executable_nodes(completed_node=None):
@@ -282,8 +281,6 @@ class ExperimentOrchestrator:
 
             :param completed_node: The completed node is used to update node-edge mapping in experiment run.
             :type completed_node: str
-            :param next_executable_nodes: Executable node list.
-            :type next_executable_nodes: list
             """
             if completed_node:
                 # Update node edge mapping in current experiment run.
@@ -394,16 +391,17 @@ class ExperimentOrchestrator:
                 logger.info(f"Running node {node.name}.")
                 exp_node_run = ExperimentNodeRun(
                     node=node,
+                    context=context,
                     experiment=self.experiment,
                     node_runs=self._node_runs,
-                    run_operations=self.run_operations,
+                    client=self._client,
                 )
                 future_to_node_run[executor.submit(exp_node_run.submit)] = exp_node_run
             completed_futures, _ = futures.wait(future_to_node_run.keys(), return_when=futures.FIRST_COMPLETED)
             next_execute_nodes = []
             for future in completed_futures:
+                node_name = future_to_node_run[future].node.name
                 try:
-                    node_name = future_to_node_run[future].node.name
                     self._node_runs[node_name] = future.result()
                     if not nodes:
                         # Get next executable nodes by completed nodes.
@@ -484,21 +482,27 @@ class ExperimentOrchestrator:
 class ExperimentNodeRun(Run):
     """Experiment node run, includes experiment running context, like data, inputs and runs."""
 
-    def __init__(self, node, experiment, node_runs, run_operations, **kwargs):
+    def __init__(self, node, experiment, context, node_runs, client, **kwargs):
         from promptflow._sdk._configuration import Configuration
 
         self.node = node
+        self.context = context
         self.experiment = experiment
         self.experiment_data = {data.name: data for data in experiment.data}
         self.experiment_inputs = {input.name: input for input in experiment.inputs}
         self.node_runs = node_runs
-        self.run_operations = run_operations
+        self.client = client
+        self.run_operations = self.client.runs
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        self.node_context = self.context.get_node_context(
+            node.name, is_flow=node.type == ExperimentNodeType.FLOW, test=False
+        )
         # Config run output path to experiment output folder
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
         super().__init__(
             # Use node name as prefix for run name?
+            type=RunTypes.COMMAND if node.type == ExperimentNodeType.COMMAND else RunTypes.BATCH,
             name=f"{node.name}_attempt{timestamp}",
             display_name=node.display_name or node.name,
             column_mapping=node.inputs,
@@ -526,7 +530,7 @@ class ExperimentNodeRun(Run):
             input_name = value.split(".")[1].replace("}", "")
             if input_name not in self.experiment_inputs:
                 raise ExperimentValueError(
-                    f"Node {self.node_name!r} inputs {value!r} related experiment input {input_name!r} not found."
+                    f"Node {self.node.name!r} inputs {value!r} related experiment input {input_name!r} not found."
                 )
             resolved_mapping[name] = self.experiment_inputs[input_name].default
         logger.debug(f"Resolved node {self.node.name!r} column mapping {resolved_mapping}.")
@@ -585,7 +589,8 @@ class ExperimentNodeRun(Run):
     def _run_flow_node(self):
         logger.debug(f"Creating flow run {self.name}")
         exp_node_run_submitter = ExperimentFlowRunSubmitter(self.run_operations)
-        return exp_node_run_submitter.submit(self)
+        # e.g. attributes: {"experiment": xxx, "reference_batch_run_id": xxx}
+        return exp_node_run_submitter.submit(self, session=self.context.session, attributes=self.node_context)
 
     def _run_command_node(self):
         logger.debug(f"Creating command run {self.name}")
@@ -626,10 +631,11 @@ class ExperimentNodeRun(Run):
 
 
 class ExperimentTemplateContext:
-    def __init__(self, template: ExperimentTemplate, environment_variables=None):
+    def __init__(self, template: ExperimentTemplate, environment_variables=None, session=None):
         """Context for experiment template.
         :param template: Template object to get definition of experiment.
         :param environment_variables: Environment variables specified for test.
+        :param session: The session id for the test trace.
         """
         self.template = template
         self.environment_variables = environment_variables or {}
@@ -638,12 +644,35 @@ class ExperimentTemplateContext:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
         self.node_name_to_referenced_id = self._prepare_referenced_ids()
+        # All run/line run in experiment should use same session
+        self.session = session or str(uuid.uuid4())
 
     def _prepare_referenced_ids(self):
         """Change name: [referenced_name] to name: [referenced_id]."""
-        edges = ExperimentHelper.get_experiment_node_edges(self.template.nodes)
+        edges = ExperimentHelper.get_experiment_node_edges(self.template.nodes, flow_only=True)
+        # Remove non flow node
+
+        # Calculate root parent for each node
+        node_parent = {node.name: node.name for node in self.template.nodes}
+
+        def _find_root(node_name):
+            if node_parent[node_name] != node_name:
+                node_parent[node_name] = _find_root(node_parent[node_name])
+            return node_parent[node_name]
+
+        def _union(node_name1, node_name2):
+            root1, root2 = _find_root(node_name1), _find_root(node_name2)
+            if root1 != root2:
+                node_parent[root1] = root2
+
+        # Union node by edges, e.g. edge: eval: [main]
+        for node_name, referenced_names in edges.items():
+            for referenced_name in referenced_names:
+                _union(node_name, referenced_name)
+
         result = {
-            name: [self.node_name_to_id[referenced_name] for referenced_name in edges] for name, edges in edges.items()
+            name: [self.node_name_to_id[_find_root(referenced_name)] for referenced_name in edges]
+            for name, edges in edges.items()
         }
         logger.debug(f"Resolved node name to id mapping: {self.node_name_to_id}, referenced id mapping {result}.")
         return result
@@ -657,11 +686,17 @@ class ExperimentTemplateContext:
     def get_node_context(self, node_name, is_flow, test=False):
         """Get the context for a node."""
         node_context = {**self._experiment_context}
-        referenced_key = ExperimentContextKey.REFERENCED_LINE_RUN_ID if test else ExperimentContextKey.REFERENCED_RUN_ID
+        referenced_key = (
+            ExperimentContextKey.REFERENCED_LINE_RUN_ID if test else ExperimentContextKey.REFERENCED_BATCH_RUN_ID
+        )
         referenced_ids = self.node_name_to_referenced_id.get(node_name, [])
         # Add reference context only for flow node
         if referenced_ids and is_flow:
             node_context[referenced_key] = next(iter(referenced_ids))
+        if not test:
+            # Return node context dict directly and will be set as trace attribute
+            return node_context
+        # Return the full json context for test
         global_context = os.environ.get(PF_TRACE_CONTEXT)
         # Expected global context: {"endpoint": "..", "attributes": {..}}
         global_context = json.loads(global_context) if global_context else {"endpoint": "", "attributes": {}}
@@ -681,7 +716,7 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         :param output_path: The custom output path.
         :param session: The session id for the test trace.
         """
-        super().__init__(template, environment_variables)
+        super().__init__(template, environment_variables=environment_variables, session=session)
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
@@ -693,8 +728,6 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
             self.output_path = (
                 Path(tempfile.gettempdir()) / PROMPT_FLOW_DIR_NAME / "sessions/default" / template.dir_name
             )
-        # All test run in experiment should use same session
-        self.session = session or str(uuid.uuid4())
 
     def add_node_inputs(self, name, inputs):
         self.node_inputs[name] = inputs
@@ -785,19 +818,24 @@ class ExperimentHelper:
         return node_names
 
     @staticmethod
-    def get_experiment_node_edges(nodes):
+    def get_experiment_node_edges(nodes, flow_only=False):
         """Get experiment node edges mapping."""
-        return {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
+        edges = {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
+        if flow_only:
+            nodes_to_remove = [node for node in nodes if node.type != ExperimentNodeType.FLOW]
+            ExperimentHelper._remove_nodes_from_active_edges(nodes_to_remove, edges)
+        return edges
+
+    @staticmethod
+    def _remove_nodes_from_active_edges(nodes_to_remove, edges):
+        for node in nodes_to_remove:
+            for referenced_nodes in edges.values():
+                referenced_nodes.discard(node.name)
+            del edges[node.name]
 
     @staticmethod
     def resolve_nodes_to_execute(experiment, start_nodes=None):
         """Resolve node to execute and ensure nodes order in experiment."""
-
-        def _remove_nodes_from_active_edges(nodes_to_remove):
-            for node in nodes_to_remove:
-                for referenced_nodes in active_edges.values():
-                    referenced_nodes.discard(node.name)
-                del active_edges[node.name]
 
         def _can_remove_node(node):
             # No start nodes specified, no edge linked, then node is available.
@@ -816,10 +854,10 @@ class ExperimentHelper:
         # Perform topological sort to ensure nodes order
         nodes = experiment.nodes
         resolved_nodes, start_nodes = [], start_nodes or []
-        edges = {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
+        edges = ExperimentHelper.get_experiment_node_edges(nodes)
         active_edges = copy.deepcopy(edges)
         # If start nodes specified, preprocessing them.
-        _remove_nodes_from_active_edges(start_nodes)
+        ExperimentHelper._remove_nodes_from_active_edges(start_nodes, active_edges)
         resolved_nodes.extend(start_nodes)
         logger.debug(f"Experiment start node {[node.name for node in start_nodes]}, nodes edges: {active_edges!r}")
 
@@ -828,7 +866,7 @@ class ExperimentHelper:
             logger.debug(f"Experiment available nodes: {[node.name for node in available_nodes]!r}")
             if not available_nodes:
                 break
-            _remove_nodes_from_active_edges(available_nodes)
+            ExperimentHelper._remove_nodes_from_active_edges(available_nodes, active_edges)
             resolved_nodes.extend(available_nodes)
         # If no start nodes specified, all nodes should be visited.
         if not start_nodes and len(resolved_nodes) != len(nodes):
@@ -864,7 +902,7 @@ class ExperimentFlowRunSubmitter(RunSubmitter):
     def _resolve_input_dirs(self, run: ExperimentNodeRun):
         return run._input_data
 
-    def submit(self, run: Run, stream=False, **kwargs):
+    def submit(self, run: ExperimentNodeRun, stream=False, **kwargs):
         try:
             run.update_exp_run_node(ExperimentNodeRunStatus.IN_PROGRESS)
             self._run_bulk(run=run, stream=stream, **kwargs)
