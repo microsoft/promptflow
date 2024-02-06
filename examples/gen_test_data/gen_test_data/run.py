@@ -155,7 +155,7 @@ def run_cloud(
             flow_yml_path: str,
             should_skip_doc_split: bool,
             chunk_size=1024,
-            chunk_overlap=0,
+            chunk_overlap=200,
             instance_count=1,
             mini_batch_size=1,
             max_concurrency_per_instance=2,
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     parser.add_argument("--cloud", action="store_true", help="cloud flag")
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
     parser.add_argument("--document_chunk_size", type=int, help="Document chunk size, default is 1024")
-    parser.add_argument("--document_chunk_overlap", type=int, help="Document node overlap size, default is 0")
+    parser.add_argument("--document_chunk_overlap", type=int, help="Document node overlap size, default is 200")
     parser.add_argument(
         "--document_nodes_file", type=str, help="Document nodes file, default is ./document_nodes.jsonl"
     )
