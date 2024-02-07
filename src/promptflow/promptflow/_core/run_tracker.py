@@ -182,8 +182,16 @@ class RunTracker(ThreadLocalSingleton):
         # This implementation serializes image and generator as plain string to avoid unexpected
         # side effect to run_info caused by serialization.
         # We will add generator support in the next generation of Tracer.
-        inputs = self._ensure_serializable_value(run_info.inputs)
-        output = self._ensure_serializable_value(run_info.output)
+        inputs = None
+        output = None
+        try:
+            inputs = {k: self._ensure_serializable_value(v) for k, v in run_info.inputs.items()}
+            output = self._ensure_serializable_value(run_info.output)
+        except Exception as e:
+            flow_logger.warning(
+                f"Failed to serialize inputs or output for flow run because of {e}."
+                "The inputs and output field in api_calls will be None."
+            )
         run_info.api_calls = [
             {
                 "name": "flow",
