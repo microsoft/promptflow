@@ -157,9 +157,7 @@ class TokenCollector():
     def collect_openai_tokens(self, span, output):
         span_id = span.get_span_context().span_id
         if not inspect.isgenerator(output) and hasattr(output, "usage") and output.usage is not None:
-            tokens = {
-                f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
-            }
+            tokens = output.usage.dict()
             if tokens:
                 with self._lock:
                     self._span_id_to_tokens[span_id] = tokens
@@ -279,13 +277,20 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
-        if tokens:
-            span.set_attributes(tokens)
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
     return output
+
+
+def enrich_span_with_openai_tokens(span, trace_type):
+    tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
+    if tokens:
+        span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+        if trace_type == TraceType.LLM:
+            llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+            span_tokens.update(llm_tokens)
+        span.set_attributes(span_tokens)
 
 
 def serialize_attribute(value):
@@ -356,6 +361,7 @@ def _traced_async(
                 if trace_type == TraceType.LLM:
                     token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
+                enrich_span_with_openai_tokens(span, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -405,6 +411,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 if trace_type == TraceType.LLM:
                     token_collector.collect_openai_tokens(span, output)
                 enrich_span_with_output(span, output)
+                enrich_span_with_openai_tokens(span, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
