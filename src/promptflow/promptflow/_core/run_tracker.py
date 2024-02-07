@@ -475,7 +475,6 @@ class RunTracker(ThreadLocalSingleton):
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):
         self._storage.persist_status_summary(status_summary, run_id)
 
-    @staticmethod
     def _deep_copy_and_extract_items_from_generator_proxy(self, value: object) -> object:
         """Deep copy value, and if there is a GeneratorProxy, deepcopy the items from it.
 
