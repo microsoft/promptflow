@@ -35,13 +35,6 @@ def get_app(environ, start_response):
     return app.wsgi_app(environ, start_response)
 
 
-# def get_app():
-#     global app
-#     if app is None:
-#         app, _ = create_app()
-#     return app
-
-
 def add_start_service_action(subparsers):
     """Add action to start pfs."""
     start_pfs_parser = subparsers.add_parser(
@@ -77,7 +70,7 @@ def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
-    get_app()
+    app, _ = create_app()
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
@@ -95,16 +88,6 @@ def start_service(args):
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
-    # cmd = [
-    #     sys.executable,
-    #     "-m",
-    #     "waitress",
-    #     "--host",
-    #     "127.0.0.1",
-    #     f"--port={port}",
-    #     "--call",
-    #     "promptflow._sdk._service.entry:get_app",
-    # ]
     cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
     if args.synchronous:
         subprocess.call(cmd)
