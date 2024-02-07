@@ -91,6 +91,8 @@ def start_service(args):
         validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
     if sys.executable.endswith("pfcli.exe"):
+        # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
+        # after packaged by Pyinstaller.
         app.logger.info(
             f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
         )
