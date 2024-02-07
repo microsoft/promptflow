@@ -113,7 +113,7 @@ class TestExperiment:
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
-    # @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
