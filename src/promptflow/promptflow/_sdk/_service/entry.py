@@ -30,11 +30,11 @@ from promptflow.exceptions import UserErrorException
 app = None
 
 
-def get_app(environ, start_response):
+def get_app():
     global app
     if app is None:
         app, _ = create_app()
-    return app.wsgi_app(environ, start_response)
+    return app
 
 
 def add_start_service_action(subparsers):
@@ -98,15 +98,24 @@ def start_service(args):
         )
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
-        cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
+        cmd = [
+            sys.executable,
+            "-m",
+            "waitress",
+            "--host",
+            "127.0.0.1",
+            f"--port={port}",
+            "--call",
+            "promptflow._sdk._service.entry:get_app",
+        ]
         if args.synchronous:
             subprocess.call(cmd)
         else:
             # Start a pfs process using detach mode
             if platform.system() == "Windows":
-                subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                os.spawnv(os.P_DETACH, sys.executable, cmd)
             else:
-                subprocess.Popen(cmd, start_new_session=True)
+                os.system(" ".join(["nohup"] + cmd + ["&"]))
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
             app.logger.info(
