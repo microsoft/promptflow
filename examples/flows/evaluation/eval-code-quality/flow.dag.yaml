@@ -1,3 +1,3 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 # flow is defined as python function
-entry: flow:eval_code
+entry: code_quality:eval_code
