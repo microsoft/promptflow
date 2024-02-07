@@ -440,4 +440,4 @@ class ContextAttributeKey:
 class EnvironmentVariables:
     """The environment variables."""
 
-    USE_AZURE_CLI_CREDENTIAL = "USE_AZURE_CLI_CREDENTIAL"
+    PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"

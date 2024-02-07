@@ -6,7 +6,7 @@
 
 - [SDK/CLI] Support configuring environment variable to directly use `AzureCliCredential` for `pfazure` commands.
   ```dotenv
-  USE_AZURE_CLI_CREDENTIAL=true
+  PF_USE_AZURE_CLI_CREDENTIAL=true
   ```
 
 ## 1.5.0 (2024.02.06)

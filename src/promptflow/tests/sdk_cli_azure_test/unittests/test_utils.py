@@ -47,6 +47,6 @@ class TestUtils:
         from promptflow._cli._utils import get_credentials_for_cli
         from promptflow._sdk._constants import EnvironmentVariables
 
-        with patch.dict("os.environ", {EnvironmentVariables.USE_AZURE_CLI_CREDENTIAL: "true"}):
+        with patch.dict("os.environ", {EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL: "true"}):
             cred = get_credentials_for_cli()
             assert isinstance(cred, AzureCliCredential)

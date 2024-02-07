@@ -490,4 +490,4 @@ def _try_delete_existing_run_record(run_name: str):
 
 
 def _use_azure_cli_credential():
-    return os.environ.get(EnvironmentVariables.USE_AZURE_CLI_CREDENTIAL, "false").lower() == "true"
+    return os.environ.get(EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL, "false").lower() == "true"
