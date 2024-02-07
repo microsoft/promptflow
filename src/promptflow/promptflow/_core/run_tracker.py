@@ -5,6 +5,7 @@
 import asyncio
 import json
 from contextvars import ContextVar
+from copy import deepcopy
 from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -182,6 +183,11 @@ class RunTracker(ThreadLocalSingleton):
         # which introduces duplicated logic. We should do it in the refactoring.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        # This implementation only avoid unexpected serialization of image in run info,
+        # it does not handle generator case.
+        # We will add generator support in the next generation of Tracer.
+        inputs = deepcopy(run_info.inputs)
+        output = deepcopy(run_info.output)
         run_info.api_calls = [
             {
                 "name": "flow",
@@ -191,6 +197,8 @@ class RunTracker(ThreadLocalSingleton):
                 "end_time": end_timestamp,
                 "children": self._collect_traces_from_nodes(run_id),
                 "system_metrics": run_info.system_metrics,
+                "inputs": inputs,
+                "output": output,
             }
         ]
 
