@@ -13,6 +13,7 @@ from flask import request
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
+from promptflow._constants import SpanResourceFieldName
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
 
@@ -30,8 +31,8 @@ def trace_collector():
                 attr_key, attr_value = parse_kv_from_pb_attribute(attribute_dict)
                 resource_attributes[attr_key] = attr_value
             resource = {
-                "attributes": resource_attributes,
-                "schema_url": resource_span.schema_url,
+                SpanResourceFieldName.ATTRIBUTES: resource_attributes,
+                SpanResourceFieldName.SCHEMA_URL: resource_span.schema_url,
             }
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:

@@ -29,6 +29,7 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._core.tracer import (
     enrich_span_with_context,
     enrich_span_with_input,
+    enrich_span_with_openai_tokens,
     enrich_span_with_output,
     open_telemetry_tracer,
 )
@@ -710,7 +711,7 @@ class FlowExecutor:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
-            with self._update_operation_context(run_id):
+            with self._update_operation_context(run_id, index):
                 line_result = self._exec_with_trace(
                     inputs,
                     run_id=run_id,
@@ -725,24 +726,27 @@ class FlowExecutor:
         return line_result
 
     @contextlib.contextmanager
-    def _update_operation_context(self, run_id: str):
+    def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
-        values_for_otel = {"line_run_id": run_id}
+        if original_mode == RunMode.Batch.name:
+            values_for_otel = {
+                "batch_run_id": run_id,
+                "line_number": line_number,
+            }
+        else:
+            values_for_otel = {"line_run_id": run_id}
         try:
-
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
-            if operation_context.run_mode == RunMode.Test.name:
-                for k, v in values_for_otel.items():
-                    operation_context._add_otel_attributes(k, v)
+            for k, v in values_for_otel.items():
+                operation_context._add_otel_attributes(k, v)
             yield
         finally:
             for k in values_for_context:
                 operation_context.pop(k)
-            if operation_context.run_mode == RunMode.Test.name:
-                operation_context._remove_otel_attributes(values_for_otel.keys())
+            operation_context._remove_otel_attributes(values_for_otel.keys())
             if original_mode is None:
                 operation_context.pop("run_mode")
             else:
@@ -824,6 +828,7 @@ class FlowExecutor:
             output = result.output
             # enrich span with output
             enrich_span_with_output(span, output)
+            enrich_span_with_openai_tokens(span, trace_type=TraceType.FLOW)
             # set status
             span.set_status(StatusCode.OK)
             return result
@@ -865,7 +870,6 @@ class FlowExecutor:
             root_run_id=run_id,
             run_id=line_run_id,
             parent_run_id=run_id,
-            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
             index=line_number,
             variant_id=variant_id,
         )
@@ -884,7 +888,8 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             inputs = load_multimedia_data(self._flow.inputs, inputs)
-            # Make sure the run_info with converted inputs results rather than original inputs
+            # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+            # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
             run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output

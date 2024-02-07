@@ -80,7 +80,11 @@ class FlowOperations(TelemetryMixin):
         output_path = kwargs.get("output_path", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             return self._client._experiments._test(
-                flow=flow, inputs=inputs, environment_variables=environment_variables, experiment=experiment, **kwargs
+                flow=flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                experiment=experiment,
+                **kwargs,
             )
 
         result = self._test(
@@ -148,6 +152,7 @@ class FlowOperations(TelemetryMixin):
 
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
+        session = kwargs.pop("session", None)
         # Run id will be set in operation context and used for session
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow: FlowBase = load_flow(flow)
@@ -163,6 +168,8 @@ class FlowOperations(TelemetryMixin):
             environment_variables=environment_variables,
             stream_log=stream_log,
             output_path=output_path,
+            stream_output=stream_output,
+            session=session,
         ) as submitter:
             if isinstance(flow, EagerFlow):
                 # TODO(2897153): support chat eager flow
@@ -182,7 +189,6 @@ class FlowOperations(TelemetryMixin):
             else:
                 return submitter.flow_test(
                     inputs=flow_inputs,
-                    stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                     run_id=run_id,
                 )
