@@ -234,9 +234,10 @@ if __name__ == "__main__":
 
     parser.add_argument("--cloud", action="store_true", help="cloud flag")
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
-    parser.add_argument("--document_chunk_size", type=int, default=1024, help="Document chunk size, default is 1024")
-    parser.add_argument("--document_chunk_overlap", type=int, default=200,
-                        help="Document node overlap size, default is 200")
+    parser.add_argument("--document_chunk_size", type=int, default=512,
+                        help="The token chunk size for each chunk, default is 512")
+    parser.add_argument("--document_chunk_overlap", type=int, default=100,
+                        help="The token overlap of each chunk when splitting, default is 100")
     parser.add_argument(
         "--document_nodes_file", type=str, help="Document nodes file, default is ./document_nodes.jsonl"
     )
