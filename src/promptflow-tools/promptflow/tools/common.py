@@ -228,7 +228,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         )
                         print(msg, file=sys.stderr)
                     else:
-                        retry_after_seconds = float(retry_after_in_header) + random.randint(0, 16)
+                        retry_after_seconds = float(retry_after_in_header) + random.randint(0, 30)
                         msg = (
                             f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
                             f"Back off {retry_after_seconds} seconds for retry."
