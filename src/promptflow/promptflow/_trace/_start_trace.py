@@ -36,7 +36,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
-    from promptflow._sdk._constants import ExperimentContextKey
+    from promptflow._sdk._constants import ContextAttributeKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
@@ -58,8 +58,8 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     env_trace_context = os.environ.get(PF_TRACE_CONTEXT, None)
     _logger.debug("Read trace context from environment: %s", env_trace_context)
     env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
-    experiment = env_attributes.get(ExperimentContextKey.EXPERIMENT, None)
-    ref_line_run_id = env_attributes.get(ExperimentContextKey.REFERENCED_LINE_RUN_ID, None)
+    experiment = env_attributes.get(ContextAttributeKey.EXPERIMENT, None)
+    ref_line_run_id = env_attributes.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
     if ref_line_run_id is not None:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
