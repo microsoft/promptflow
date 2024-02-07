@@ -424,7 +424,7 @@ class TestOTelTracer:
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
                 assert span.attributes.get("embedding.model", "") == "ada"
-                embeddings =  span.attributes.get("embedding.embeddings", "")
+                embeddings = span.attributes.get("embedding.embeddings", "")
                 assert "Hello" in embeddings
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
