@@ -1,6 +1,7 @@
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -36,5 +37,8 @@ class TestExecutionApis:
             inputs={"text": "text_0"},
             connections=dev_connections,
         )
-        response = self.client.post("/execution/flow", json=flow_execution_request)
-        assert response.status_code == 200
+        with patch(
+            "promptflow.executor._service.apis.execution.invoke_function_in_process", return_value="mock_result"
+        ):
+            response = self.client.post("/execution/flow", json=flow_execution_request)
+            assert response.status_code == 200
