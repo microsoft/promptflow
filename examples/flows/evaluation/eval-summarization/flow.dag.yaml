@@ -34,7 +34,7 @@ nodes:
     type: code
     path: geval.py
   inputs:
-    connection: aoai_conn
+    connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_coherence_summary.output}
     max_score: 5
     deployment_name: gpt-4
@@ -52,7 +52,7 @@ nodes:
     type: code
     path: geval.py
   inputs:
-    connection: aoai_conn
+    connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_consistency_summary.output}
     max_score: 5
     deployment_name: gpt-4
@@ -69,7 +69,7 @@ nodes:
     type: code
     path: geval.py
   inputs:
-    connection: aoai_conn
+    connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_fluency_summary.output}
     max_score: null
     deployment_name: gpt-4
@@ -87,7 +87,7 @@ nodes:
     type: code
     path: geval.py
   inputs:
-    connection: aoai_conn
+    connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_relevancy_summary.output}
     max_score: 5
     deployment_name: gpt-4
