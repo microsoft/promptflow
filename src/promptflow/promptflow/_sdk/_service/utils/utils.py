@@ -119,9 +119,8 @@ def is_pfs_service_healthy(pfs_port) -> bool:
 
 
 def check_pfs_service_status(pfs_port, time_delay=5, time_threshold=30) -> bool:
-    wait_time = time_delay
-    time.sleep(time_delay)
-    is_healthy = is_pfs_service_healthy(pfs_port)
+    wait_time = 0
+    is_healthy = False
     while is_healthy is False and time_threshold > wait_time:
         logger.info(
             f"Pfs service is not ready. It has been waited for {wait_time}s, will wait for at most "
