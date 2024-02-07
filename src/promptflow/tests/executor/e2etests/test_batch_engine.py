@@ -186,7 +186,7 @@ class TestBatch:
         exception_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=run_batch_with_start_method,
-            args=("spawn", flow_folder, inputs_mapping, dev_connections, exception_queue)
+            args=("spawn", flow_folder, inputs_mapping, dev_connections, exception_queue),
         )
         p.start()
         p.join()
@@ -221,7 +221,7 @@ class TestBatch:
         exception_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=run_batch_with_start_method,
-            args=("forkserver", flow_folder, inputs_mapping, dev_connections, exception_queue)
+            args=("forkserver", flow_folder, inputs_mapping, dev_connections, exception_queue),
         )
         p.start()
         p.join()
