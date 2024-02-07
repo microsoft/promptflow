@@ -1,0 +1,112 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  document:
+    type: string
+  summarization:
+    type: object
+outputs:
+  summary_coherence:
+    type: double
+    reference: ${score_coherence_summary.output}
+  summary_consistency:
+    type: double
+    reference: ${score_consistency_summary.output}
+  summary_fluency:
+    type: double
+    reference: ${score_fluency_summary.output}
+  summary_relevancy:
+    type: double
+    reference: ${score_relevancy_summary.output}
+nodes:
+- name: prompt_coherence_summary
+  type: prompt
+  source:
+    type: code
+    path: prompts/coherence.jinja2
+  inputs:
+    Document: ${inputs.document}
+    Summary: ${parse_summary.output}
+- name: score_coherence_summary
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: aoai_conn
+    prompt_with_src_and_gen: ${prompt_coherence_summary.output}
+    max_score: 5
+    deployment_name: gpt-4
+- name: prompt_consistency_summary
+  type: prompt
+  source:
+    type: code
+    path: prompts/consistency.jinja2
+  inputs:
+    Document: ${inputs.document}
+    Summary: ${parse_summary.output}
+- name: score_consistency_summary
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: aoai_conn
+    prompt_with_src_and_gen: ${prompt_consistency_summary.output}
+    max_score: 5
+    deployment_name: gpt-4
+- name: prompt_fluency_summary
+  type: prompt
+  source:
+    type: code
+    path: prompts/fluency.jinja2
+  inputs:
+    Summary: ${parse_summary.output}
+- name: score_fluency_summary
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: aoai_conn
+    prompt_with_src_and_gen: ${prompt_fluency_summary.output}
+    max_score: null
+    deployment_name: gpt-4
+- name: prompt_relevancy_summary
+  type: prompt
+  source:
+    type: code
+    path: prompts/relevancy.jinja2
+  inputs:
+    Document: ${inputs.document}
+    Summary: ${parse_summary.output}
+- name: score_relevancy_summary
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: aoai_conn
+    prompt_with_src_and_gen: ${prompt_relevancy_summary.output}
+    max_score: 5
+    deployment_name: gpt-4
+- name: parse_summary
+  type: python
+  source:
+    type: code
+    path: summary_parser.py
+  inputs:
+    summarization: ${inputs.summarization}
+- name: average_scores_summary
+  type: python
+  source:
+    type: code
+    path: average_scores.py
+  inputs:
+    scope: summary
+    fluency_list: ${score_fluency_summary.output}
+    consistency_list: ${score_consistency_summary.output}
+    relevancy_list: ${score_relevancy_summary.output}
+    coherence_list: ${score_coherence_summary.output}
+  aggregation: true
