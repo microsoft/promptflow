@@ -1,6 +1,6 @@
 # Release History
 
-## 1.5.0 (Upcoming)
+## 1.5.0 (2024.02.06)
 
 
 ### Features Added
@@ -14,6 +14,7 @@
 - [SDK/CLI][azure] Fixed bug for cloud batch run referencing registry flow with automatic runtime.
 - [SDK/CLI] Fix "Without Import Data" in run visualize page when invalid JSON value exists in metrics.
 - [SDK/CLI][azure] Fix azureml serving get UAI(user assigned identity) token failure bug.
+- [SDK/CLI] Fix flow as function connection override when node has default variant.
 
 ### Improvements
 

@@ -1,0 +1,16 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Basic experiment with command node
+
+inputs:
+  - name: sleep_time
+    type: int
+    default: 100
+
+nodes:
+  - name: sleep
+    type: command
+    command: python sleep.py ${inputs.sleep_time}
+    code: ./sleep
+    inputs:
+      sleep_time: ${inputs.sleep_time}

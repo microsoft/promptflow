@@ -1378,6 +1378,11 @@ class PrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MEAN_AVERAGE_PRECISION = "MeanAveragePrecision"
     IOU = "Iou"
 
+class PromptflowEngineType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    FAST_ENGINE = "FastEngine"
+    SCALABLE_ENGINE = "ScalableEngine"
+
 class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNKNOWN = "Unknown"

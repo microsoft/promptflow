@@ -14,6 +14,7 @@
     </style>
 </head>
 <body>
+    <button onclick="copyToClipboard()">Copy Content</button><br>
     Line Runs
     <table>
         <thead>
@@ -74,6 +75,24 @@
         </tbody>
     </table>
 
-    {{ trace_ui_dict }}
+    <div id="contentToCopy">{{ trace_ui_dict }}</div>
+
+    <script>
+        function copyToClipboard() {
+            // Get the text from the div
+            var content = document.getElementById('contentToCopy').innerText;
+
+            // Create a temporary textarea element to hold the text to copy
+            var tempElement = document.createElement('textarea');
+            tempElement.value = content;
+            document.body.appendChild(tempElement);
+            tempElement.select(); // Select the text inside the textarea
+            document.execCommand('copy'); // Execute the copy command
+            document.body.removeChild(tempElement); // Remove the temporary element
+
+            // Optionally, alert the user that the text has been copied
+            alert('Content copied to clipboard!');
+        }
+    </script>
 </body>
 </html>

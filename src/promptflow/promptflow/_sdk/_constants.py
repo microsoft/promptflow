@@ -80,6 +80,8 @@ RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 EXPERIMENT_TABLE_NAME = "experiment"
+ORCHESTRATOR_TABLE_NAME = "orchestrator"
+EXP_NODE_RUN_TABLE_NAME = "exp_node_run"
 EXPERIMENT_CREATED_ON_INDEX_NAME = "idx_experiment_created_on"
 BASE_PATH_CONTEXT_KEY = "base_path"
 SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
@@ -408,17 +410,28 @@ class DownloadedRun:
 
 class ExperimentNodeType(object):
     FLOW = "flow"
+    CHAT_GROUP = "chat_group"
     COMMAND = "command"
 
 
 class ExperimentStatus(object):
     NOT_STARTED = "NotStarted"
+    QUEUING = "Queuing"
     IN_PROGRESS = "InProgress"
     TERMINATED = "Terminated"
 
 
-class ExperimentContextKey:
+class ExperimentNodeRunStatus(object):
+    NOT_STARTED = "NotStarted"
+    QUEUING = "Queuing"
+    IN_PROGRESS = "InProgress"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
+    CANCELED = "Canceled"
+
+
+class ContextAttributeKey:
     EXPERIMENT = "experiment"
     # Note: referenced id not used for lineage, only for evaluation
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
-    REFERENCED_RUN_ID = "referenced.run_id"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
