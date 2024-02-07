@@ -50,7 +50,7 @@ class RunSubmitter:
         if run.run is not None:
             # Set for flow test against run and no experiment scenario
             if ExperimentContextKey.REFERENCED_BATCH_RUN_ID not in attributes:
-                attributes[ExperimentContextKey.REFERENCED_BATCH_RUN_ID] = run.run.name
+                attributes[ExperimentContextKey.REFERENCED_BATCH_RUN_ID] = run.run
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
