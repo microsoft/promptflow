@@ -659,6 +659,12 @@ def _process_wrapper(
     else:
         bulk_logger.info("Current thread is not main thread, skip signal handler registration in batch process pool.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
+
+    # set up OpenTelemetry exporter in process who executes the line
+    from promptflow._trace._start_trace import setup_exporter_from_environ
+
+    setup_exporter_from_environ()
+
     if log_context_initialization_func:
         with log_context_initialization_func():
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
