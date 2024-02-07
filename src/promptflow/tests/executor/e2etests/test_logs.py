@@ -233,3 +233,14 @@ class TestExecutorLogs:
                 "i.e. '${flow.text}' is equal to 'world'.",
             ]
             assert all(log in log_content for log in logs_list)
+
+    def test_async_log_in_worker_thread(self):
+        logs_directory = Path(mkdtemp())
+        log_path = str(logs_directory / "flow.log")
+        with LogContext(log_path, run_mode=RunMode.Test):
+            executor = FlowExecutor.create(get_yaml_file("async_tools"), {})
+            executor.exec_line(inputs={})
+            log_content = load_content(log_path)
+            # Below log is created by worker thread
+            logs_list = ["INFO     monitor_long_running_coroutine started"]
+            assert all(log in log_content for log in logs_list)
