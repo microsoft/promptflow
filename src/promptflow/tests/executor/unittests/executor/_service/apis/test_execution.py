@@ -37,8 +37,9 @@ class TestExecutionApis:
             inputs={"text": "text_0"},
             connections=dev_connections,
         )
-        with patch(
-            "promptflow.executor._service.apis.execution.invoke_function_in_process", return_value="mock_result"
-        ):
+        # run_id = flow_execution_request["run_id"]
+        # log_path = Path(flow_execution_request["log_path"])
+        with patch("promptflow.executor._service.apis.execution.invoke_function_in_process") as mock:
+            mock.side_effect = "mock_result"
             response = self.client.post("/execution/flow", json=flow_execution_request)
             assert response.status_code == 200
