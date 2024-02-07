@@ -53,6 +53,7 @@ STREAMING_ANIMATION_TIME = 0.01
 
 # trace related
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
+DEFAULT_SPAN_TYPE = "default"
 
 
 class TraceEnvironmentVariableName:
@@ -115,6 +116,3 @@ class ResourceAttributeFieldName:
     EXPERIMENT_NAME = "experiment.name"
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"
-
-
-DEFAULT_SPAN_TYPE = "default"

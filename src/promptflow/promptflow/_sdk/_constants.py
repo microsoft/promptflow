@@ -435,3 +435,9 @@ class ContextAttributeKey:
     # Note: referenced id not used for lineage, only for evaluation
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
     REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+
+
+class EnvironmentVariables:
+    """The environment variables."""
+
+    USE_AZURE_CLI_CREDENTIAL = "USE_AZURE_CLI_CREDENTIAL"
