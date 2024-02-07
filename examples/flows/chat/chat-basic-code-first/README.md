@@ -55,6 +55,8 @@ pf flow test --flow .
 
 # run chat flow with new question
 pf flow test --flow . --inputs question="What's Azure Machine Learning?"
+
+pf flow test --flow . --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 
 - Create run with multiple lines data

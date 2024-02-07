@@ -20,7 +20,7 @@ Ensure you have put your azure open ai endpoint key in [.env](.env) file. You ca
 cat .env
 ```
 
-- Test flow/node
+- Test flow
 ```bash
 # correct
 pf flow test --flow . --inputs code='print(\"Hello, world!\")'
