@@ -9,6 +9,8 @@ import platform
 import subprocess
 import sys
 
+import waitress
+
 from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
@@ -88,22 +90,28 @@ def start_service(args):
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
-    cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
-    if args.synchronous:
-        subprocess.call(cmd)
-    else:
-        # Start a pfs process using detach mode
-        if platform.system() == "Windows":
-            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-        else:
-            subprocess.Popen(cmd, start_new_session=True)
-    is_healthy = check_pfs_service_status(port)
-    if is_healthy:
+    if sys.executable.endswith("pfcli.exe"):
         app.logger.info(
             f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
         )
+        waitress.serve(app, host="127.0.0.1", port=port)
     else:
-        app.logger.warning(f"Pfs service start failed in {port}.")
+        cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
+        if args.synchronous:
+            subprocess.call(cmd)
+        else:
+            # Start a pfs process using detach mode
+            if platform.system() == "Windows":
+                subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            else:
+                subprocess.Popen(cmd, start_new_session=True)
+        is_healthy = check_pfs_service_status(port)
+        if is_healthy:
+            app.logger.info(
+                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+            )
+        else:
+            app.logger.warning(f"Pfs service start failed in {port}.")
 
 
 def main():
