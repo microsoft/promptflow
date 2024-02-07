@@ -5,13 +5,11 @@
 import asyncio
 import json
 from contextvars import ContextVar
-from copy import deepcopy
 from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
@@ -19,6 +17,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
+from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -187,8 +186,8 @@ class RunTracker(ThreadLocalSingleton):
         inputs = None
         output = None
         try:
-            inputs = self._deep_copy_and_extract_items_from_generator_proxy(run_info.inputs)
-            output = self._deep_copy_and_extract_items_from_generator_proxy(run_info.output)
+            inputs = _deep_copy_and_extract_items_from_generator_proxy(run_info.inputs)
+            output = _deep_copy_and_extract_items_from_generator_proxy(run_info.output)
         except Exception as e:
             flow_logger.warning(
                 f"Failed to serialize inputs or output for flow run because of {e}."
@@ -474,19 +473,3 @@ class RunTracker(ThreadLocalSingleton):
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):
         self._storage.persist_status_summary(status_summary, run_id)
-
-    def _deep_copy_and_extract_items_from_generator_proxy(self, value: object) -> object:
-        """Deep copy value, and if there is a GeneratorProxy, deepcopy the items from it.
-
-        :param value: Any object.
-        :type value: Object
-        :return: Deep copied value.
-        :rtype: Object
-        """
-        if isinstance(value, list):
-            return [self._deep_copy_and_extract_items_from_generator_proxy(v) for v in value]
-        elif isinstance(value, dict):
-            return {k: self._deep_copy_and_extract_items_from_generator_proxy(v) for k, v in value.items()}
-        elif isinstance(value, GeneratorProxy):
-            return deepcopy(value.items)
-        return deepcopy(value)
