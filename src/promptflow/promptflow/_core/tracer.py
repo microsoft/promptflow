@@ -25,7 +25,6 @@ from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
 
-
 open_telemetry_tracer = otel_trace.get_tracer("promptflow")
 
 
@@ -148,7 +147,7 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-class TokenCollector():
+class TokenCollector:
     _lock = Lock()
 
     def __init__(self):
@@ -347,7 +346,8 @@ def _traced_async(
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+        # Fall back to trace.name if we can't get node name for better view.
+        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
 
@@ -397,7 +397,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+        # Fall back to trace.name if we can't get node name for better view.
+        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
 
