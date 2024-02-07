@@ -34,10 +34,10 @@ class TestServiceUtils:
             bulk_logger.info("Test bulk_logger log")
             logger.info("Test logger log")
         logs = load_content(request.log_path)
-        key_words_in_log = ["Test flow_logger log", "Test logger log", "execution", "execution.flow"]
-        key_words_not_in_log = ["Test bulk_logger log", "execution.bulk"]
-        assert all(word in logs for word in key_words_in_log)
-        assert all(word not in logs for word in key_words_not_in_log)
+        keywords_in_log = ["Test flow_logger log", "Test logger log", "execution", "execution.flow"]
+        keywords_not_in_log = ["Test bulk_logger log", "execution.bulk"]
+        assert all(word in logs for word in keywords_in_log)
+        assert all(word not in logs for word in keywords_not_in_log)
 
     def test_get_log_context_with_non_execution_request(self):
         request = 1
@@ -54,7 +54,7 @@ class TestServiceUtils:
             bulk_logger.info("Test bulk_logger log")
             logger.info("Test logger log")
         logs = load_content(request.log_path)
-        key_words_in_log = [
+        keywords_in_log = [
             "Test service_logger log",
             "Test flow_logger log",
             "Test logger log",
@@ -62,9 +62,9 @@ class TestServiceUtils:
             "execution",
             "execution.flow",
         ]
-        key_words_not_in_log = ["Test bulk_logger log", "execution.bulk"]
-        assert all(word in logs for word in key_words_in_log)
-        assert all(word not in logs for word in key_words_not_in_log)
+        keywords_not_in_log = ["Test bulk_logger log", "execution.bulk"]
+        assert all(word in logs for word in keywords_in_log)
+        assert all(word not in logs for word in keywords_not_in_log)
 
     def test_update_operation_context(self, monkeypatch):
         headers = {
