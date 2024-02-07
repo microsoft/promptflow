@@ -28,11 +28,18 @@ from promptflow.exceptions import UserErrorException
 app = None
 
 
-def get_app():
+def get_app(environ, start_response):
     global app
     if app is None:
         app, _ = create_app()
-    return app
+    return app.wsgi_app(environ, start_response)
+
+
+# def get_app():
+#     global app
+#     if app is None:
+#         app, _ = create_app()
+#     return app
 
 
 def add_start_service_action(subparsers):
@@ -88,16 +95,17 @@ def start_service(args):
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
-    cmd = [
-        sys.executable,
-        "-m",
-        "waitress",
-        "--host",
-        "127.0.0.1",
-        f"--port={port}",
-        "--call",
-        "promptflow._sdk._service.entry:get_app",
-    ]
+    # cmd = [
+    #     sys.executable,
+    #     "-m",
+    #     "waitress",
+    #     "--host",
+    #     "127.0.0.1",
+    #     f"--port={port}",
+    #     "--call",
+    #     "promptflow._sdk._service.entry:get_app",
+    # ]
+    cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
     if args.synchronous:
         subprocess.call(cmd)
     else:
