@@ -822,7 +822,7 @@ class FlowExecutor:
             )
             # extract output from result
             output = result.output
-            # enrich span with output
+            # enrich span with trace type
             enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
             # set status
             span.set_status(StatusCode.OK)

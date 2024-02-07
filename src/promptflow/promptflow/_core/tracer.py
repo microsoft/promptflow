@@ -219,7 +219,7 @@ def _create_trace_from_function_call(
         all_kwargs.pop(key, None)
 
     name = f.__qualname__
-    if trace_type == TraceType.LLM and f.__module__:
+    if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         name = f"{f.__module__}.{name}"
 
     return Trace(
