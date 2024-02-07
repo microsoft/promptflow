@@ -19,6 +19,7 @@ from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
 from .operations._tool_operations import ToolOperations
+from .operations._trace_operations import TraceOperations
 
 logger = get_cli_sdk_logger()
 
@@ -33,7 +34,7 @@ class PFClient:
 
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
-        self._runs = RunOperations()
+        self._runs = RunOperations(self)
         self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
         # The credential is used as an option to override
@@ -47,6 +48,7 @@ class PFClient:
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._experiments = ExperimentOperations(self)
+        self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
@@ -119,7 +121,6 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-        # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow)
         # validate param conflicts

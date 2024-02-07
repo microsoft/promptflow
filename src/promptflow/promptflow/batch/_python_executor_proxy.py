@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Tuple
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
@@ -29,13 +29,10 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
-        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
-        flow_executor = FlowExecutor.create(
-            flow_file, connections, working_dir, entry=entry, storage=storage, raise_ex=False
-        )
+        flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
         return cls(flow_executor)
 
     async def exec_aggregation_async(
@@ -54,7 +51,8 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
-    ) -> List[LineResult]:
+        worker_count: Optional[int] = None,
+    ) -> Tuple[List[LineResult], bool]:
         # TODO: Refine the logic here since the script executor actually doesn't have the 'node' concept
         if isinstance(self._flow_executor, ScriptExecutor):
             run_tracker = RunTracker(self._flow_executor._storage)
@@ -78,13 +76,14 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 output_dir,
                 batch_timeout_sec=batch_timeout_sec,
                 line_timeout_sec=line_timeout_sec,
+                worker_count=worker_count,
             ) as pool:
                 line_number = [batch_input["line_number"] for batch_input in batch_inputs]
                 line_results = pool.run(zip(line_number, batch_inputs))
 
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results, run_tracker)
-        return line_results
+        return line_results, pool.is_timeout
 
     def get_inputs_definition(self):
         return self._flow_executor.get_inputs_definition()

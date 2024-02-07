@@ -128,7 +128,7 @@ class Run(YAMLTranslatableMixin):
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
-        self.type = RunTypes.BATCH
+        self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
         self.column_mapping = column_mapping
         self.display_name = display_name
@@ -181,6 +181,8 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
+        self._outputs = kwargs.get("outputs", None)
+        self._command = kwargs.get("command", None)
 
     @property
     def created_on(self) -> str:
@@ -204,6 +206,10 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.RUN] = run_name
             if self.variant:
                 result[FlowRunProperties.NODE_VARIANT] = self.variant
+            if self._command:
+                result[FlowRunProperties.COMMAND] = self._command
+            if self._outputs:
+                result[FlowRunProperties.OUTPUTS] = self._outputs
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             result = {
                 FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
@@ -227,6 +233,7 @@ class Run(YAMLTranslatableMixin):
             source = properties_json[FlowRunProperties.OUTPUT_PATH]
 
         return Run(
+            type=obj.type,
             name=str(obj.name),
             flow=Path(flow) if flow else None,
             source=Path(source) if source else None,
@@ -245,6 +252,9 @@ class Run(YAMLTranslatableMixin):
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
+            # experiment command node only fields
+            command=properties_json.get(FlowRunProperties.COMMAND, None),
+            outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
         )
 
     @classmethod
@@ -324,6 +334,7 @@ class Run(YAMLTranslatableMixin):
         """Convert current run entity to ORM object."""
         display_name = self._format_display_name()
         return ORMRun(
+            type=self.type,
             name=self.name,
             created_on=self.created_on,
             status=self.status,
@@ -536,12 +547,10 @@ class Run(YAMLTranslatableMixin):
             if not isinstance(self._resources, dict):
                 raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
             vm_size = self._resources.get("instance_type", None)
-            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
-            # change to seconds
-            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
+            compute_name = self._resources.get("compute", None)
         else:
             vm_size = None
-            max_idle_time_seconds = None
+            compute_name = None
 
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
@@ -563,8 +572,8 @@ class Run(YAMLTranslatableMixin):
             flow_lineage_id=self._lineage_id,
             run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             vm_size=vm_size,
-            max_idle_time_seconds=max_idle_time_seconds,
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
+            compute_name=compute_name,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):

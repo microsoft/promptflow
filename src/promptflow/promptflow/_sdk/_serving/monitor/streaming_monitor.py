@@ -9,17 +9,18 @@ from promptflow._sdk._serving.monitor.metrics import ResponseType
 class StreamingMonitor:
     """StreamingMonitor is used to collect metrics & data for streaming response."""
 
-    def __init__(self,
-                 logger,
-                 flow_id: str,
-                 start_time: float,
-                 inputs: dict,
-                 outputs: dict,
-                 req_id: str,
-                 streaming_field_name: str,
-                 metric_recorder,
-                 data_collector,
-                 ) -> None:
+    def __init__(
+        self,
+        logger,
+        flow_id: str,
+        start_time: float,
+        inputs: dict,
+        outputs: dict,
+        req_id: str,
+        streaming_field_name: str,
+        metric_recorder,
+        data_collector,
+    ) -> None:
         self.logger = logger
         self.flow_id = flow_id
         self.start_time = start_time

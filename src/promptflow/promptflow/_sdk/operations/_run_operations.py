@@ -38,8 +38,9 @@ logger = get_cli_sdk_logger()
 class RunOperations(TelemetryMixin):
     """RunOperations."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, client, **kwargs):
         super().__init__(**kwargs)
+        self._client = client
 
     @monitor_operation(activity_name="pf.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(
@@ -99,7 +100,7 @@ class RunOperations(TelemetryMixin):
         try:
             from promptflow._sdk._submitter import RunSubmitter
 
-            created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
+            created_run = RunSubmitter(client=self._client).submit(run=run, **kwargs)
             if stream:
                 self.stream(created_run)
             return created_run
@@ -338,7 +339,7 @@ class RunOperations(TelemetryMixin):
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
-                metrics=self.get_metrics(name=run.name),
+                metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
                 mode="eager" if local_storage.eager_mode else "",

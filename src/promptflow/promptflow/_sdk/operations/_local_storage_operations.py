@@ -20,13 +20,16 @@ from promptflow._sdk._constants import (
     LOCAL_STORAGE_BATCH_SIZE,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
+    RunInfoSources,
 )
 from promptflow._sdk._errors import BulkRunException, InvalidRunError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     PromptflowIgnoreFile,
     generate_flow_tools_json,
     json_dump,
     json_load,
+    json_loads_parse_const_as_str,
     pd_read_json,
     read_open,
     write_open,
@@ -37,7 +40,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
-from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow._utils.multimedia_utils import get_file_reference_encoder, resolve_multimedia_data_recursively
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -46,7 +49,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.storage import AbstractRunStorage
+from promptflow.storage import AbstractBatchRunStorage
 
 logger = get_cli_sdk_logger()
 
@@ -177,7 +180,7 @@ class LineRunRecord:
         json_dump(asdict(self), path)
 
 
-class LocalStorageOperations(AbstractRunStorage):
+class LocalStorageOperations(AbstractBatchRunStorage):
     """LocalStorageOperations."""
 
     LINE_NUMBER_WIDTH = 9
@@ -217,23 +220,29 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        if run.flow:
-            try:
-                from promptflow import load_flow
+        self._eager_mode = self._calculate_eager_mode(run)
 
-                flow_obj = load_flow(source=run.flow)
-                self._eager_mode = isinstance(flow_obj, EagerFlow)
-            except Exception as e:
-                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
-                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
-                self._eager_mode = False
-        else:
-            # TODO(2901279): support eager mode for run created from run folder
-            self._eager_mode = False
+        self._loaded_flow_run_info = {}  # {line_number: flow_run_info}
+        self._loaded_node_run_info = {}  # {line_number: [node_run_info]}
 
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
+
+    @classmethod
+    def _calculate_eager_mode(cls, run: Run) -> bool:
+        if run._run_source == RunInfoSources.LOCAL:
+            try:
+                flow_obj = load_flow(source=run.flow)
+                return isinstance(flow_obj, EagerFlow)
+            except Exception as e:
+                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
+                return False
+        elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
+            return run._properties.get("azureml.promptflow.run_mode") == "Eager"
+        # TODO(2901279): support eager mode for run created from run folder
+        return False
 
     def delete(self) -> None:
         def on_rmtree_error(func, path, exc_info):
@@ -360,32 +369,12 @@ class LocalStorageOperations(AbstractRunStorage):
             # legacy run with local file detail.json, then directly load from the file
             return json_load(self._detail_path)
         else:
-            # nan, inf and -inf are not JSON serializable
-            # according to https://docs.python.org/3/library/json.html#json.loads
-            # `parse_constant` will be called to handle these values
-            # so if parse_const_as_str is True, we will parse these values as str with a lambda function
-            json_loads = json.loads if not parse_const_as_str else partial(json.loads, parse_constant=lambda x: str(x))
-            # collect from local files and concat in the memory
-            flow_runs, node_runs = [], []
-            for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
-                # In addition to the output jsonl files, there may be multimedia files in the output folder,
-                # so we should skip them.
-                if line_run_record_file.suffix.lower() != ".jsonl":
-                    continue
-                with read_open(line_run_record_file) as f:
-                    new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                    flow_runs += new_runs
-            for node_folder in sorted(self._node_infos_folder.iterdir()):
-                for node_run_record_file in sorted(node_folder.iterdir()):
-                    if node_run_record_file.suffix.lower() != ".jsonl":
-                        continue
-                    with read_open(node_run_record_file) as f:
-                        new_runs = [json_loads(line)["run_info"] for line in list(f)]
-                        node_runs += new_runs
+            flow_runs = self._load_all_flow_run_info(parse_const_as_str=parse_const_as_str)
+            node_runs = self._load_all_node_run_info(parse_const_as_str=parse_const_as_str)
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
-    def load_metrics(self) -> Dict[str, Union[int, float, str]]:
-        return json_load(self._metrics_path)
+    def load_metrics(self, *, parse_const_as_str: bool = False) -> Dict[str, Union[int, float, str]]:
+        return json_load(self._metrics_path, parse_const_as_str=parse_const_as_str)
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
@@ -397,6 +386,33 @@ class LocalStorageOperations(AbstractRunStorage):
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
+
+    def _load_info_from_file(self, file_path, parse_const_as_str: bool = False):
+        json_loads = json.loads if not parse_const_as_str else json_loads_parse_const_as_str
+        run_infos = []
+        if file_path.suffix.lower() == ".jsonl":
+            with read_open(file_path) as f:
+                run_infos = [json_loads(line)["run_info"] for line in list(f)]
+        return run_infos
+
+    def _load_all_node_run_info(self, parse_const_as_str: bool = False) -> List[Dict]:
+        node_run_infos = []
+        for node_folder in sorted(self._node_infos_folder.iterdir()):
+            for node_run_record_file in sorted(node_folder.iterdir()):
+                new_runs = self._load_info_from_file(node_run_record_file, parse_const_as_str)
+                node_run_infos.extend(new_runs)
+                for new_run in new_runs:
+                    new_run = resolve_multimedia_data_recursively(node_run_record_file, new_run)
+                    run_info = NodeRunInfo.deserialize(new_run)
+                    line_number = run_info.index
+                    self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, [])
+                    self._loaded_node_run_info[line_number].append(run_info)
+        return node_run_infos
+
+    def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
+        if not self._loaded_node_run_info:
+            self._load_all_node_run_info()
+        return self._loaded_node_run_info.get(line_number)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
@@ -414,6 +430,23 @@ class LocalStorageOperations(AbstractRunStorage):
             f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         )
         line_run_record.dump(self._run_infos_folder / filename)
+
+    def _load_all_flow_run_info(self, parse_const_as_str: bool = False) -> List[Dict]:
+        flow_run_infos = []
+        for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+            new_runs = self._load_info_from_file(line_run_record_file, parse_const_as_str)
+            flow_run_infos.extend(new_runs)
+            for new_run in new_runs:
+                new_run = resolve_multimedia_data_recursively(line_run_record_file, new_run)
+                run_info = FlowRunInfo.deserialize(new_run)
+                line_number = run_info.index
+                self._loaded_flow_run_info[line_number] = run_info
+        return flow_run_infos
+
+    def load_flow_run_info(self, line_number: int = None) -> FlowRunInfo:
+        if not self._loaded_flow_run_info:
+            self._load_all_flow_run_info()
+        return self._loaded_flow_run_info.get(line_number)
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""

@@ -17,13 +17,18 @@ from sqlalchemy.schema import CreateTable
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CONNECTION_TABLE_NAME,
+    EXP_NODE_RUN_TABLE_NAME,
     EXPERIMENT_CREATED_ON_INDEX_NAME,
     EXPERIMENT_TABLE_NAME,
     LOCAL_MGMT_DB_PATH,
     LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH,
+    ORCHESTRATOR_TABLE_NAME,
     RUN_INFO_CREATED_ON_INDEX_NAME,
     RUN_INFO_TABLENAME,
     SCHEMA_INFO_TABLENAME,
+    SPAN_TABLENAME,
+    TRACE_MGMT_DB_PATH,
+    TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH,
 )
 from promptflow._sdk._utils import (
     get_promptflow_sdk_version,
@@ -38,7 +43,9 @@ from promptflow._sdk._utils import (
 os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
 
 session_maker = None
+trace_session_maker = None
 lock = FileLock(LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH)
+trace_lock = FileLock(TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH)
 
 
 def support_transaction(engine):
@@ -78,13 +85,15 @@ def mgmt_db_session() -> Session:
             return session_maker()
         if not LOCAL_MGMT_DB_PATH.parent.is_dir():
             LOCAL_MGMT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}", future=True)
+        engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}?check_same_thread=False", future=True)
         engine = support_transaction(engine)
 
-        from promptflow._sdk._orm import Connection, Experiment, RunInfo
+        from promptflow._sdk._orm import Connection, Experiment, ExperimentNodeRun, Orchestrator, RunInfo
 
         create_or_update_table(engine, orm_class=RunInfo, tablename=RUN_INFO_TABLENAME)
         create_table_if_not_exists(engine, CONNECTION_TABLE_NAME, Connection)
+        create_table_if_not_exists(engine, ORCHESTRATOR_TABLE_NAME, Orchestrator)
+        create_table_if_not_exists(engine, EXP_NODE_RUN_TABLE_NAME, ExperimentNodeRun)
 
         create_index_if_not_exists(engine, RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, "created_on")
         if Configuration.get_instance().is_internal_features_enabled():
@@ -245,3 +254,37 @@ def mgmt_db_rebase(mgmt_db_path: Union[Path, os.PathLike, str], customized_encry
 
     LOCAL_MGMT_DB_PATH = origin_local_db_path
     session_maker = None
+
+
+def trace_mgmt_db_session() -> Session:
+    global trace_session_maker
+    global trace_lock
+
+    if trace_session_maker is not None:
+        return trace_session_maker()
+
+    trace_lock.acquire()
+    try:
+        if trace_session_maker is not None:
+            return trace_session_maker()
+        if not TRACE_MGMT_DB_PATH.parent.is_dir():
+            TRACE_MGMT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        engine = create_engine(f"sqlite:///{str(TRACE_MGMT_DB_PATH)}", future=True)
+        engine = support_transaction(engine)
+
+        if not inspect(engine).has_table(SPAN_TABLENAME):
+            from promptflow._sdk._orm.trace import Span
+
+            Span.metadata.create_all(engine)
+
+        trace_session_maker = sessionmaker(bind=engine)
+    except Exception as e:  # pylint: disable=broad-except
+        # if we cannot manage to create the connection to the OpenTelemetry management database
+        # we can barely do nothing but raise the exception with printing the error message
+        error_message = f"Failed to create OpenTelemetry management database: {str(e)}"
+        print_red_error(error_message)
+        raise
+    finally:
+        trace_lock.release()
+
+    return trace_session_maker()

@@ -164,7 +164,13 @@
     "WBITS",
     "laddr",
     "nrows",
-    "Dumpable"
+    "Dumpable",
+    "XCLASS",
+    "otel",
+    "OTLP",
+    "spawnv",
+    "spawnve",
+    "addrs"
   ],
   "flagWords": [
     "Prompt Flow"

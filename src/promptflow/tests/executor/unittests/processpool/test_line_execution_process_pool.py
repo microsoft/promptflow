@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import sys
 import uuid
 from multiprocessing import Queue
 from pathlib import Path
@@ -13,6 +14,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
@@ -20,6 +22,7 @@ from promptflow.executor._line_execution_process_pool import (
     get_available_max_worker_count,
     log_process_status,
 )
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -53,12 +56,8 @@ def get_bulk_inputs(nlinee=4, flow_folder="", sample_inputs_file="", return_dict
     return [get_line_inputs() for _ in range(nlinee)]
 
 
-def execute_in_fork_mode_subprocess(
-    dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
-):
+def execute_in_fork_mode_subprocess(dev_connections, flow_folder, has_passed_worker_count, pf_worker_count, n_process):
     os.environ["PF_BATCH_METHOD"] = "fork"
-    if is_set_environ_pf_worker_count:
-        os.environ["PF_WORKER_COUNT"] = pf_worker_count
     executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
     run_id = str(uuid.uuid4())
     bulk_inputs = get_bulk_inputs()
@@ -70,12 +69,11 @@ def execute_in_fork_mode_subprocess(
             nlines,
             run_id,
             None,
+            worker_count=pf_worker_count if has_passed_worker_count else None,
         ) as pool:
             assert pool._n_process == n_process
-            if is_set_environ_pf_worker_count:
-                mock_logger.info.assert_any_call(
-                    f"Set process count to {pf_worker_count} with the environment " f"variable 'PF_WORKER_COUNT'."
-                )
+            if has_passed_worker_count:
+                mock_logger.info.assert_any_call(f"Set process count to {pf_worker_count}.")
             else:
                 factors = {
                     "default_worker_count": pool._DEFAULT_WORKER_COUNT,
@@ -89,15 +87,13 @@ def execute_in_fork_mode_subprocess(
 def execute_in_spawn_mode_subprocess(
     dev_connections,
     flow_folder,
-    is_set_environ_pf_worker_count,
+    has_passed_worker_count,
     is_calculation_smaller_than_set,
     pf_worker_count,
     estimated_available_worker_count,
     n_process,
 ):
     os.environ["PF_BATCH_METHOD"] = "spawn"
-    if is_set_environ_pf_worker_count:
-        os.environ["PF_WORKER_COUNT"] = pf_worker_count
     executor = FlowExecutor.create(
         get_yaml_file(flow_folder),
         dev_connections,
@@ -116,25 +112,19 @@ def execute_in_spawn_mode_subprocess(
                     nlines,
                     run_id,
                     None,
+                    worker_count=pf_worker_count if has_passed_worker_count else None,
                 ) as pool:
-
                     assert pool._n_process == n_process
-                    if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
-                        mock_logger.info.assert_any_call(
-                            f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'."
-                        )
+                    if has_passed_worker_count and is_calculation_smaller_than_set:
+                        mock_logger.info.assert_any_call(f"Set process count to {pf_worker_count}.")
                         mock_logger.warning.assert_any_call(
                             f"The current process count ({pf_worker_count}) is larger than recommended process count "
                             f"({estimated_available_worker_count}) that estimated by system available memory. This may "
                             f"cause memory exhaustion"
                         )
-                    elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
-                        mock_logger.info.assert_any_call(
-                            f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'."
-                        )
-                    elif not is_set_environ_pf_worker_count:
+                    elif has_passed_worker_count and not is_calculation_smaller_than_set:
+                        mock_logger.info.assert_any_call(f"Set process count to {pf_worker_count}.")
+                    elif not has_passed_worker_count:
                         factors = {
                             "default_worker_count": pool._DEFAULT_WORKER_COUNT,
                             "row_count": pool._nlines,
@@ -186,6 +176,10 @@ def not_set_environment_in_subprocess(dev_connections):
     line_execution_process_pool = create_line_execution_process_pool(dev_connections)
     use_fork = line_execution_process_pool._use_fork
     assert use_fork == (multiprocessing.get_start_method() == "fork")
+
+
+def custom_create_spawned_fork_process_manager(*args, **kwargs):
+    create_spawned_fork_process_manager("test", *args, **kwargs)
 
 
 @pytest.mark.unittest
@@ -263,6 +257,7 @@ class TestLineExecutionProcessPool:
             inputs=line_inputs,
             run_id=run_id,
             index=0,
+            line_timeout_sec=600,
         )
         assert isinstance(line_result, LineResult)
 
@@ -288,6 +283,7 @@ class TestLineExecutionProcessPool:
                 inputs=line_inputs,
                 run_id=run_id,
                 index=0,
+                line_timeout_sec=600,
             )
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.error["message"] == test_error_msg
@@ -325,17 +321,17 @@ class TestLineExecutionProcessPool:
             assert e.value.error_codes[0] == "UserError"
 
     @pytest.mark.parametrize(
-        ("flow_folder", "is_set_environ_pf_worker_count", "pf_worker_count", "n_process"),
-        [(SAMPLE_FLOW, True, "3", 3), (SAMPLE_FLOW, False, None, 4)],
+        ("flow_folder", "has_passed_worker_count", "pf_worker_count", "n_process"),
+        [(SAMPLE_FLOW, True, 3, 3), (SAMPLE_FLOW, False, None, 4)],
     )
     def test_process_pool_parallelism_in_fork_mode(
-        self, dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
+        self, dev_connections, flow_folder, has_passed_worker_count, pf_worker_count, n_process
     ):
         if "fork" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: fork")
         p = multiprocessing.Process(
             target=execute_in_fork_mode_subprocess,
-            args=(dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process),
+            args=(dev_connections, flow_folder, has_passed_worker_count, pf_worker_count, n_process),
         )
         p.start()
         p.join()
@@ -344,15 +340,15 @@ class TestLineExecutionProcessPool:
     @pytest.mark.parametrize(
         (
             "flow_folder",
-            "is_set_environ_pf_worker_count",
+            "has_passed_worker_count",
             "is_calculation_smaller_than_set",
             "pf_worker_count",
             "estimated_available_worker_count",
             "n_process",
         ),
         [
-            (SAMPLE_FLOW, True, False, "2", 4, 2),
-            (SAMPLE_FLOW, True, True, "6", 2, 6),
+            (SAMPLE_FLOW, True, False, 2, 4, 2),
+            (SAMPLE_FLOW, True, True, 6, 2, 6),
             (SAMPLE_FLOW, False, True, None, 2, 2),
         ],
     )
@@ -360,7 +356,7 @@ class TestLineExecutionProcessPool:
         self,
         dev_connections,
         flow_folder,
-        is_set_environ_pf_worker_count,
+        has_passed_worker_count,
         is_calculation_smaller_than_set,
         pf_worker_count,
         estimated_available_worker_count,
@@ -373,7 +369,7 @@ class TestLineExecutionProcessPool:
             args=(
                 dev_connections,
                 flow_folder,
-                is_set_environ_pf_worker_count,
+                has_passed_worker_count,
                 is_calculation_smaller_than_set,
                 pf_worker_count,
                 estimated_available_worker_count,
@@ -407,6 +403,33 @@ class TestLineExecutionProcessPool:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    @pytest.mark.skipif(sys.platform == "win32" or sys.platform == "darwin", reason="Only test on linux")
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    @patch(
+        "promptflow.executor._process_manager.create_spawned_fork_process_manager",
+        custom_create_spawned_fork_process_manager,
+    )
+    def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        run_id = str(uuid.uuid4())
+        bulk_inputs = get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        run_id = run_id or str(uuid.uuid4())
+        with pytest.raises(SpawnedForkProcessManagerStartFailure) as e:
+            with LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                None,
+            ) as pool:
+                pool.run(zip(range(nlines), bulk_inputs))
+        assert "Failed to start spawned fork process manager" in str(e.value)
 
 
 class TestGetAvailableMaxWorkerCount:

@@ -210,6 +210,13 @@ class ProcessInfoObtainedTimeout(SystemErrorException):
         super().__init__(message=f"Failed to get process info after {timeout} seconds", target=ErrorTarget.EXECUTOR)
 
 
+class SpawnedForkProcessManagerStartFailure(SystemErrorException):
+    """Exception raised when failed to start spawned fork process manager."""
+
+    def __init__(self):
+        super().__init__(message="Failed to start spawned fork process manager", target=ErrorTarget.EXECUTOR)
+
+
 class EmptyLLMApiMapping(UserErrorException):
     """Exception raised when connection_type_to_api_mapping is empty and llm node provider can't be inferred"""
 
@@ -275,8 +282,4 @@ class ResolveToolError(PromptflowException):
 
 
 class UnsupportedAssistantToolType(ValidationException):
-    pass
-
-
-class InvalidFlowFileError(UserErrorException):
     pass
