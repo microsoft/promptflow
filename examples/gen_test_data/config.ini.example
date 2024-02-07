@@ -3,9 +3,12 @@
 
 [COMMON]
 ; The COMMON section provides common values for all other sections.
-; Configure both 'document_folder' and 'document_chunk_size' if you require document splitting.
+; Configure 'document_folder', 'document_chunk_size' and 'document_chunk_overlap' if you require document splitting.
 documents_folder = "<your-document-folder-path>"
-document_chunk_size = 1024
+; The token chunk size for each chunk.
+document_chunk_size = 512
+; The token overlap of each chunk when splitting.
+document_chunk_overlap = 100
 ; However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
 ; When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
 ; document_nodes_file = "<your-node-file-path>"
@@ -33,7 +36,7 @@ aml_cluster = "<your-compute-name>"
 
 ; Parallel run step configs
 prs_instance_count = 2
-prs_mini_batch_size = 2
+prs_mini_batch_size = 1
 prs_max_concurrency_per_instance = 4
 prs_max_retry_count = 3
 prs_run_invocation_time = 800

@@ -73,6 +73,7 @@ def get_batch_run_output(output_path: Path):
 def run_local(
         documents_folder,
         document_chunk_size,
+        document_chunk_overlap,
         document_nodes_file,
         flow_folder,
         flow_batch_run_size,
@@ -85,7 +86,7 @@ def run_local(
         Path(output_folder).mkdir(parents=True, exist_ok=True)
 
     if not should_skip_split:
-        text_chunks_path = split_document(document_chunk_size, documents_folder, output_folder)
+        text_chunks_path = split_document(document_chunk_size, document_chunk_overlap, documents_folder, output_folder)
 
     run_name, process = batch_run_flow(
         flow_folder,
@@ -110,6 +111,7 @@ def run_local(
 def run_cloud(
         documents_folder,
         document_chunk_size,
+        document_chunk_overlap,
         document_nodes_file,
         flow_folder,
         subscription_id,
@@ -153,6 +155,7 @@ def run_cloud(
             flow_yml_path: str,
             should_skip_doc_split: bool,
             chunk_size=1024,
+            chunk_overlap=200,
             instance_count=1,
             mini_batch_size=1,
             max_concurrency_per_instance=2,
@@ -166,7 +169,7 @@ def run_cloud(
             data_input
             if should_skip_doc_split
             else split_document_component(
-                documents_folder=data_input, chunk_size=chunk_size
+                documents_folder=data_input, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             ).outputs.document_node_output
         )
         flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_flow"}])(
@@ -212,6 +215,7 @@ def run_cloud(
         flow_yml_path=os.path.join(flow_folder, "flow.dag.yaml"),
         should_skip_doc_split=should_skip_split,
         chunk_size=document_chunk_size,
+        chunk_overlap=document_chunk_overlap,
         **prs_configs,
     )
     pipeline_with_flow.compute = aml_cluster
@@ -230,7 +234,10 @@ if __name__ == "__main__":
 
     parser.add_argument("--cloud", action="store_true", help="cloud flag")
     parser.add_argument("--documents_folder", type=str, help="Documents folder path")
-    parser.add_argument("--document_chunk_size", type=int, help="Document chunk size, default is 1024")
+    parser.add_argument("--document_chunk_size", type=int, default=512,
+                        help="The token chunk size for each chunk, default is 512")
+    parser.add_argument("--document_chunk_overlap", type=int, default=100,
+                        help="The token overlap of each chunk when splitting, default is 100")
     parser.add_argument(
         "--document_nodes_file", type=str, help="Document nodes file, default is ./document_nodes.jsonl"
     )
@@ -249,13 +256,14 @@ if __name__ == "__main__":
     parser.add_argument("--resource_group", help="AzureML workspace resource group name")
     parser.add_argument("--workspace_name", help="AzureML workspace name")
     parser.add_argument("--aml_cluster", help="AzureML cluster name")
-    parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
-    parser.add_argument("--prs_mini_batch_size", help="Parallel run step mini batch size")
+    parser.add_argument("--prs_instance_count", type=int, default=2, help="Parallel run step instance count")
+    parser.add_argument("--prs_mini_batch_size", default=1, help="Parallel run step mini batch size")
     parser.add_argument(
-        "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
+        "--prs_max_concurrency_per_instance", type=int, default=4, help="Parallel run step max concurrency per instance"
     )
-    parser.add_argument("--prs_max_retry_count", type=int, help="Parallel run step max retry count")
-    parser.add_argument("--prs_run_invocation_time", type=int, help="Parallel run step run invocation time")
+    parser.add_argument("--prs_max_retry_count", type=int, default=3, help="Parallel run step max retry count")
+    parser.add_argument("--prs_run_invocation_time", type=int, default=800,
+                        help="Parallel run step run invocation time")
     parser.add_argument(
         "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
     )
@@ -295,6 +303,7 @@ if __name__ == "__main__":
             run_cloud(
                 documents_folder,
                 args.document_chunk_size,
+                args.document_chunk_overlap,
                 document_nodes_file,
                 copied_flow_folder,
                 args.subscription_id,
@@ -313,6 +322,7 @@ if __name__ == "__main__":
             run_local(
                 documents_folder,
                 args.document_chunk_size,
+                args.document_chunk_overlap,
                 document_nodes_file,
                 copied_flow_folder,
                 args.flow_batch_run_size,

@@ -18,7 +18,8 @@ env_image = "mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04"
     ),
 )
 def split_document_component(
-    documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
+    documents_folder: Input(type="uri_folder"), chunk_size: int, chunk_overlap: int,
+        document_node_output: Output(type="uri_folder")
 ) -> str:
     """Split documents into document nodes.
 
@@ -26,11 +27,12 @@ def split_document_component(
         documents_folder: The folder containing documents to be split.
         chunk_size: The size of each chunk.
         document_node_output: The output folder
+        chunk_overlap: The size of chunk overlap
 
     Returns:
         The folder containing the split documents.
     """
-    return split_document(chunk_size, documents_folder, document_node_output)
+    return split_document(chunk_size, chunk_overlap, documents_folder, document_node_output)
 
 
 @command_component(
