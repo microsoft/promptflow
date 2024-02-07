@@ -233,6 +233,7 @@ class Run(YAMLTranslatableMixin):
             source = properties_json[FlowRunProperties.OUTPUT_PATH]
 
         return Run(
+            type=obj.type,
             name=str(obj.name),
             flow=Path(flow) if flow else None,
             source=Path(source) if source else None,
@@ -333,6 +334,7 @@ class Run(YAMLTranslatableMixin):
         """Convert current run entity to ORM object."""
         display_name = self._format_display_name()
         return ORMRun(
+            type=self.type,
             name=self.name,
             created_on=self.created_on,
             status=self.status,

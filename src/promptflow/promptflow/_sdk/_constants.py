@@ -430,8 +430,14 @@ class ExperimentNodeRunStatus(object):
     CANCELED = "Canceled"
 
 
-class ExperimentContextKey:
+class ContextAttributeKey:
     EXPERIMENT = "experiment"
     # Note: referenced id not used for lineage, only for evaluation
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
-    REFERENCED_RUN_ID = "referenced.run_id"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+
+
+class EnvironmentVariables:
+    """The environment variables."""
+
+    PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"
