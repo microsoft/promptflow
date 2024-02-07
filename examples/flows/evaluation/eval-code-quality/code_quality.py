@@ -8,7 +8,7 @@ from jinja2 import Template
 
 from promptflow import trace
 from promptflow._sdk.entities import AzureOpenAIConnection
-from promptflow.tools.aoai import chat
+from promptflow.tools.aoai import AzureOpenAI
 
 BASE_DIR = Path(__file__).absolute().parent
 
@@ -57,8 +57,7 @@ def eval_code(code: str) -> Result:
         api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
     )
 
-    output = chat(
-        connection=connection,
+    output = AzureOpenAI(connection).chat(
         prompt=prompt,
         deployment_name="gpt-35-turbo",
         max_tokens=256,
