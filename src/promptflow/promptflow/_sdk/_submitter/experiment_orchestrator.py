@@ -29,7 +29,7 @@ if sys.stderr is None:
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PROMPT_FLOW_DIR_NAME,
-    ExperimentContextKey,
+    ContextAttributeKey,
     ExperimentNodeRunStatus,
     ExperimentNodeType,
     ExperimentStatus,
@@ -683,13 +683,13 @@ class ExperimentTemplateContext:
         """Get the experiment context required for trace."""
         if not self.template._source_path:
             return {}
-        return {ExperimentContextKey.EXPERIMENT: Path(self.template._source_path).resolve().absolute().as_posix()}
+        return {ContextAttributeKey.EXPERIMENT: Path(self.template._source_path).resolve().absolute().as_posix()}
 
     def get_node_context(self, node_name, is_flow, test=False):
         """Get the context for a node."""
         node_context = {**self._experiment_context}
         referenced_key = (
-            ExperimentContextKey.REFERENCED_LINE_RUN_ID if test else ExperimentContextKey.REFERENCED_BATCH_RUN_ID
+            ContextAttributeKey.REFERENCED_LINE_RUN_ID if test else ContextAttributeKey.REFERENCED_BATCH_RUN_ID
         )
         referenced_ids = self.node_name_to_referenced_id.get(node_name, [])
         # Add reference context only for flow node

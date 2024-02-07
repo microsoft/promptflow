@@ -430,7 +430,7 @@ class ExperimentNodeRunStatus(object):
     CANCELED = "Canceled"
 
 
-class ExperimentContextKey:
+class ContextAttributeKey:
     EXPERIMENT = "experiment"
     # Note: referenced id not used for lineage, only for evaluation
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
