@@ -35,31 +35,48 @@ class TraceOperations:
             attributes = json.loads(first_orm_span.content)[SpanFieldName.ATTRIBUTES]
             if (
                 SpanAttributeFieldName.LINE_RUN_ID not in attributes
-                and SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in attributes
+                and SpanAttributeFieldName.BATCH_RUN_ID not in attributes
             ):
-                # no `line_run_id` or `referenced.line_run_id` in attributes
                 # standard OpenTelemetry trace, regard as a line run
                 grouped_orm_spans[first_orm_span.trace_id] = copy.deepcopy(orm_spans)
-            elif (
-                SpanAttributeFieldName.LINE_RUN_ID in attributes
-                and SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in attributes
-            ):
-                # main flow trace
-                line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
-                if line_run_id not in grouped_orm_spans:
-                    grouped_orm_spans[line_run_id] = []
-                grouped_orm_spans[line_run_id].extend(copy.deepcopy(orm_spans))
-            elif (
-                SpanAttributeFieldName.LINE_RUN_ID in attributes
-                and SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes
-            ):
-                # evaluation flow trace
-                referenced_line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-                if referenced_line_run_id not in grouped_orm_spans:
-                    grouped_orm_spans[referenced_line_run_id] = []
-                grouped_orm_spans[referenced_line_run_id].extend(copy.deepcopy(orm_spans))
+            elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
+                # test scenario
+                if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in attributes:
+                    # main flow
+                    line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
+                    if line_run_id not in grouped_orm_spans:
+                        grouped_orm_spans[line_run_id] = []
+                    grouped_orm_spans[line_run_id].extend(copy.deepcopy(orm_spans))
+                else:
+                    # evaluation flow
+                    referenced_line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
+                    if referenced_line_run_id not in grouped_orm_spans:
+                        grouped_orm_spans[referenced_line_run_id] = []
+                    grouped_orm_spans[referenced_line_run_id].extend(copy.deepcopy(orm_spans))
+            elif SpanAttributeFieldName.BATCH_RUN_ID in attributes:
+                # batch run scenario
+                if SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID not in attributes:
+                    # main flow
+                    line_run_id = (
+                        attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+                        + "_"
+                        + attributes[SpanAttributeFieldName.LINE_NUMBER]
+                    )
+                    if line_run_id not in grouped_orm_spans:
+                        grouped_orm_spans[line_run_id] = []
+                    grouped_orm_spans[line_run_id].extend(copy.deepcopy(orm_spans))
+                else:
+                    # evaluation flow
+                    referenced_line_run_id = (
+                        attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID]
+                        + "_"
+                        + attributes[SpanAttributeFieldName.LINE_NUMBER]
+                    )
+                    if referenced_line_run_id not in grouped_orm_spans:
+                        grouped_orm_spans[referenced_line_run_id] = []
+                    grouped_orm_spans[referenced_line_run_id].extend(copy.deepcopy(orm_spans))
             else:
-                # aggregation node, ignore for now
+                # others, ignore for now
                 pass
         for orm_spans in grouped_orm_spans.values():
             spans = [Span._from_orm_object(orm_span) for orm_span in orm_spans]

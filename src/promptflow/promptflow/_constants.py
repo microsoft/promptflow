@@ -97,6 +97,7 @@ class SpanAttributeFieldName:
     EXPERIMENT = "experiment"
     LINE_RUN_ID = "line_run_id"
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"
     REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
