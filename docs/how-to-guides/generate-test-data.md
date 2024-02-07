@@ -48,6 +48,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
   - Fill in node inputs including `connection`, `model_or_deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode by referring to [Test flow with VS Code Extension](https://microsoft.github.io/promptflow/how-to-guides/init-and-test-a-flow.html#visual-editor-on-the-vs-code-for-prompt-flow).
 
     > !Note: Recommend to use `gpt-4` series models than the `gpt-3.5` for better performance.
+
     > !Note: Recommend to use `gpt-4` model (Azure OpenAI `gpt-4` model with version `0613`) than `gpt-4-turbo` model (Azure OpenAI `gpt-4` model with version `1106`) for better performance. Due to inferior performance of `gpt-4-turbo` model, when you use it, sometimes you might need to set the `response_format` input of nodes `validate_text_chunk`, `validate_question`, and `validate_suggested_answer` to `json`, in order to make sure the llm can generate valid json response.
 
   - [*Optional*] Customize your test data generation logic refering to [tune-prompts-with-variants](https://microsoft.github.io/promptflow/how-to-guides/tune-prompts-with-variants.html). 
