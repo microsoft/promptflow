@@ -15,14 +15,14 @@ def _run_in_subprocess(error_queue: Queue, func, args, kwargs):
         error_queue.put((repr(e), traceback.format_exc()))
 
 
-def execute_function_in_subprocess(func, *args, **kwargs):
+def execute_function_in_subprocess(func, target=_run_in_subprocess, *args, **kwargs):
     """
     Execute a function in a new process and return any exception that occurs.
     Replace pickle with dill for better serialization capabilities.
     """
     ctx = get_context("spawn")
     error_queue = ctx.Queue()
-    process = ctx.Process(target=_run_in_subprocess, args=(error_queue, func, args, kwargs))
+    process = ctx.Process(target=target, args=(error_queue, func, args, kwargs))
     process.start()
     process.join()  # Wait for the process to finish
 

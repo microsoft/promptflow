@@ -12,7 +12,14 @@ from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
 
-from ..process_utils import execute_function_in_subprocess
+from ..conftest import setup_recording
+from ..process_utils import (
+    MockForkServerProcess,
+    MockSpawnProcess,
+    _run_in_subprocess,
+    execute_function_in_subprocess,
+    override_process_class,
+)
 from ..utils import get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter
 
 OPEN_AI_FUNCTION_NAMES = [
@@ -49,6 +56,15 @@ def top_level_function():
 @trace
 def sub_level_function():
     return "Hello, World!"
+
+
+def _mock_run_in_subprocess(*args, **kwargs):
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    override_process_class(process_class_dict)
+
+    # recording injection again since this method is running in a new process
+    setup_recording()
+    _run_in_subprocess(*args, **kwargs)
 
 
 @pytest.mark.usefixtures("dev_connections", "recording_injection")
@@ -284,7 +300,7 @@ class TestExecutorTraces:
             )
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestOTelTracer:
     @pytest.mark.parametrize(
@@ -296,7 +312,7 @@ class TestOTelTracer:
             ("openai_completion_api_flow", get_comletion_input(False), 3),
             ("llm_tool", {"topic": "Hello", "stream": False}, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
-        ]
+        ],
     )
     def test_otel_trace(
         self,
@@ -306,7 +322,7 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces, _mock_run_in_subprocess, dev_connections, flow_file, inputs, expected_span_length
         )
 
     def assert_otel_traces(self, dev_connections, flow_file, inputs, expected_span_length):
@@ -380,7 +396,9 @@ class TestOTelTracer:
                     assert span.attributes[token_name] == token_dict[span_id][token_name]
 
     def test_flow_with_traced_function(self):
-        execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
+        execute_function_in_subprocess(
+            self.assert_otel_traces_run_flow_then_traced_function, target=_mock_run_in_subprocess
+        )
 
     def assert_otel_traces_run_flow_then_traced_function(self):
         memory_exporter = prepare_memory_exporter()
