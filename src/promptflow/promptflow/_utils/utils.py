@@ -280,12 +280,12 @@ def get_int_env_var(env_var_name, default_value=None):
 
 
 def prompt_y_n(msg, default=None):
-    if default not in [None, 'y', 'n']:
+    if default not in [None, "y", "n"]:
         raise ValueError("Valid values for default are 'y', 'n' or None")
-    y = 'Y' if default == 'y' else 'y'
-    n = 'N' if default == 'n' else 'n'
+    y = "Y" if default == "y" else "y"
+    n = "N" if default == "n" else "n"
     while True:
-        ans = prompt_input('{} ({}/{}): '.format(msg, y, n))
+        ans = prompt_input("{} ({}/{}): ".format(msg, y, n))
         if ans.lower() == n.lower():
             return False
         if ans.lower() == y.lower():
@@ -295,4 +295,17 @@ def prompt_y_n(msg, default=None):
 
 
 def prompt_input(msg):
-    return input('\n===> '+msg)
+    return input("\n===> " + msg)
+
+
+def _normalize_identifier_name(name):
+    normalized_name = name.lower()
+    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
+    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
+    if re.match(r"\d", normalized_name):
+        normalized_name = "n" + normalized_name  # No leading digits
+    return normalized_name
+
+
+def _sanitize_python_variable_name(name: str):
+    return _normalize_identifier_name(name).replace(" ", "_")

@@ -7,6 +7,7 @@ from unittest.mock import mock_open
 import pytest
 from jinja2 import TemplateSyntaxError
 
+from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._internal import tool
 from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
@@ -18,7 +19,6 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
-    InvalidSource,
     NodeInputValidationError,
     ResolveToolError,
     ValueTypeUnresolved,

@@ -69,13 +69,19 @@ def run_command(args):
             dispatch_experiment_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
+        # raise UserErrorException(error=ex)
+        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
         exit_code = ex.code if ex.code is not None else 1
         logger.debug(f"Code directly call sys.exit with code {exit_code}")
+        # raise UserErrorException(error=ex)
+        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except Exception as ex:
         logger.debug(f"Command {args} execute failed. {str(ex)}")
+        # raise UserErrorException(error=ex)
+        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     finally:
         # Log the invoke finish time
@@ -134,8 +140,9 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        version_dict_string = json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True,
-                                         separators=(",", ": ")) + "\n"
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
         print(version_dict_string)
         return
     if len(command_args) == 0:

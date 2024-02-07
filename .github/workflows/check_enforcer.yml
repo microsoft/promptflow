@@ -12,7 +12,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - run: git fetch origin main
+        with:
+          fetch-depth: 0
       - run: env | sort >> $GITHUB_OUTPUT
       - name: Python Setup - ubuntu-latest - Python Version 3.9
         uses: "./.github/actions/step_create_python_environment"
@@ -24,6 +25,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
-            python ${{ github.workspace }}/scripts/building/check_enforcer.py -t "${{ github.workspace }}"
+            python ${{ github.workspace }}/scripts/check_enforcer/check_enforcer.py -t "${{ github.workspace }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SNIPPET_DEBUG: 1

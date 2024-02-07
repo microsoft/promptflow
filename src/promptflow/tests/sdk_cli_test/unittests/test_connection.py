@@ -22,6 +22,7 @@ from promptflow._sdk.entities._connection import (
     _Connection,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -340,14 +341,14 @@ secrets:
 
         module_name = None
         with pytest.raises(
-            ValueError,
+            UserErrorException,
             match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
         ):
             connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
 
         custom_conn_type = None
         with pytest.raises(
-            ValueError,
+            UserErrorException,
             match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
         ):
             connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)

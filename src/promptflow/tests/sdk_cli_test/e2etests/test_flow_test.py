@@ -1,4 +1,5 @@
 import logging
+import sys
 import tempfile
 from pathlib import Path
 from types import GeneratorType
@@ -21,6 +22,13 @@ EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().
 FLOW_RESULT_KEYS = ["category", "evidence"]
 
 _client = PFClient()
+
+
+def clear_module_cache(module_name):
+    try:
+        del sys.modules[module_name]
+    except Exception:
+        pass
 
 
 @pytest.mark.usefixtures(
@@ -127,7 +135,7 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
         # Test additional includes don't exist
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
@@ -163,7 +171,7 @@ class TestFlowTest:
             "connection": "azure_open_ai_connection",
             "hello_prompt.output": "system:\n Your task is to write python program for me\nuser:\n"
             "Write a simple Hello World! program that displays "
-            "the greeting message when executed.",
+            "the greeting message.",
         }
         result = _client.test(
             flow=flow_path,
@@ -200,8 +208,37 @@ class TestFlowTest:
             "get_dict_val.output.value": result.node_run_infos["get_dict_val"].output,
             "get_dict_val.output.origin_value": result.node_run_infos["get_dict_val"].output,
         }
-        result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
-        assert result.status.value == "Completed"
+        node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert node_result.status.value == "Completed"
+
+        inputs = {
+            "val": result.node_run_infos["get_dict_val"].output,
+            "origin_val": result.node_run_infos["get_dict_val"].output,
+        }
+        node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert node_result.status.value == "Completed"
+
+    def test_pf_node_test_with_node_ref(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()
+        flow_inputs = {"key": {"input_key": "input_value"}}
+        result = _client._flows._test(flow=flow_path, inputs=flow_inputs)
+        assert result.run_info.status.value == "Completed"
+
+        # Test node ref with reference node output names
+        inputs = {
+            "get_dict_val.output.value": result.node_run_infos["get_dict_val"].output["value"],
+            "get_dict_val.output.origin_value": result.node_run_infos["get_dict_val"].output["origin_value"],
+        }
+        ref_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert ref_result.status.value == "Completed"
+
+        # Test node ref with testing node input names
+        inputs = {
+            "val": result.node_run_infos["get_dict_val"].output["value"],
+            "origin_val": result.node_run_infos["get_dict_val"].output["origin_value"],
+        }
+        variable_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert variable_result.status.value == "Completed"
 
     def test_pf_test_flow_in_notebook(self):
         notebook_path = Path(f"{TEST_ROOT}/test_configs/notebooks/dummy.ipynb").absolute()
@@ -213,38 +250,50 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
+    @pytest.mark.skip("Won't support flow test with entry now.")
     def test_eager_flow_test(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
         result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_with_yaml(self):
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_with_primitive_output(self):
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_output/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_invalid_cases(self):
-        # no entry provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
-        with pytest.raises(UserErrorException) as e:
-            _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "Entry function is not specified" in str(e.value)
-
-        # no path provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/").absolute()
+        # wrong entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
         with pytest.raises(ValidationError) as e:
             _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "'path': ['Missing data for required field.']" in str(e.value)
+        assert "Entry function my_func is not valid." in str(e.value)
 
-        # dup entries provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
-        with pytest.raises(UserErrorException) as e:
-            _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
-        assert "Specifying entry function is not allowed" in str(e.value)
-        # wrong entry provided
         # required inputs not provided
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/required_inputs/").absolute()
+
+        result = _client._flows._test(flow=flow_path)
+        assert result.run_info.status.value == "Failed"
+        assert "my_flow() missing 1 required positional argument: 'input_val'" in str(result.run_info.error)
+
+    def test_eager_flow_test_with_additional_includes(self):
+        # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
+        # but working dir will be temp dir which includes additional included files
+        clear_module_cache("flow")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
+
+    def test_eager_flow_with_nested_entry(self):
+        clear_module_cache("my_module.entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/nested_entry/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
+        assert result.output == "Hello world! val1"

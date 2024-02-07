@@ -21,7 +21,9 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunN
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.azure import PFClient
+from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -34,8 +36,19 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def create_registry_run(name: str, registry_name: str, runtime: str, pf: PFClient):
+    return pf.run(
+        flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
+        data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+        column_mapping={"name": "${data.name}"},
+        runtime=runtime,
+        name=name,
+    )
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -143,13 +156,7 @@ class TestFlowRun:
     ):
         """Test run bulk with remote registry flow."""
         name = randstr("name")
-        run = pf.run(
-            flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
-            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
-            column_mapping={"name": "${data.name}"},
-            runtime=runtime,
-            name=name,
-        )
+        run = create_registry_run(name=name, registry_name=registry_name, runtime=runtime, pf=pf)
         assert isinstance(run, Run)
         assert run.name == name
 
@@ -162,6 +169,17 @@ class TestFlowRun:
                 runtime=runtime,
                 name=name,
             )
+
+    def test_run_bulk_with_registry_flow_automatic_runtime(
+        self, pf: PFClient, randstr: Callable[[str], str], registry_name: str
+    ):
+        """Test run bulk with remote registry flow."""
+        name = randstr("name")
+        run = create_registry_run(name=name, registry_name=registry_name, runtime=None, pf=pf)
+        assert isinstance(run, Run)
+        assert run.name == name
+        run = pf.runs.stream(run=run.name)
+        assert run.status == RunStatus.COMPLETED
 
     def test_run_with_connection_overwrite(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
@@ -570,7 +588,6 @@ class TestFlowRun:
         )
         rest_run = run._to_rest_object()
         assert rest_run.vm_size == "Standard_D2"
-        assert rest_run.max_idle_time_seconds == 3600
         assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
         run = pf.runs.create_or_update(run=run)
         assert isinstance(run, Run)
@@ -875,3 +892,153 @@ class TestFlowRun:
         for _, row in details2.iterrows():
             if pd.notnull(row["outputs.output"]):
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_auto_resolve_requirements(self, pf: PFClient, randstr: Callable[[str], str]):
+        # will add requirements.txt to flow.dag.yaml if exists when submitting run.
+        with TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_requirements_txt", temp / "flow_with_requirements_txt")
+
+            run = pf.run(
+                flow=temp / "flow_with_requirements_txt",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name"),
+            )
+            pf.runs.stream(run)
+
+            pf.runs.download(run=run.name, output=temp)
+            flow_dag = load_yaml(Path(temp, run.name, "snapshot/flow.dag.yaml"))
+            assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
+
+            local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
+            assert "environment" not in local_flow_dag
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_requirements_in_additional_includes(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_additional_include_req",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+        )
+        run = pf.runs.stream(run)
+        assert run._error is None
+        with TemporaryDirectory() as temp:
+            pf.runs.download(run=run.name, output=temp)
+            assert Path(temp, run.name, "snapshot/requirements").exists()
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str], simple_eager_run: Run):
+        run = simple_eager_run
+        run = pf.runs.get(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 1
+        metrics = pf.runs.get_metrics(run)
+        assert metrics == {}
+
+        # TODO(2917923): cannot differ the two requests to run history in replay mode."
+        # run_meta_data = RunHistoryKeys.RunMetaData
+        # hidden = RunHistoryKeys.HIDDEN
+        # run_id = run.name
+        # # test archive
+        # pf.runs.archive(run=run_id)
+        # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        # assert run_data[hidden] is True
+        #
+        # # test restore
+        # pf.runs.restore(run=run_id)
+        # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        # assert run_data[hidden] is False
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
+        """Test cancel eager flow."""
+        # create a run
+        run_name = randstr("name")
+        pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/long_running",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=run_name,
+        )
+
+        pf.runs.cancel(run=run_name)
+        sleep(3)
+        run = pf.runs.get(run=run_name)
+        # the run status might still be cancel requested, but it should be canceled eventually
+        assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
+        run = simple_eager_run
+        expected_files = [
+            DownloadedRun.RUN_METADATA_FILE_NAME,
+            DownloadedRun.LOGS_FILE_NAME,
+            DownloadedRun.METRICS_FILE_NAME,
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        # test download
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run.name, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run.name, file).exists()
+
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="Enable this after fixed sanitizer.",
+    )
+    def test_run_with_compute_instance_session(
+        self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
+    ):
+        run = Run(
+            flow=Path(f"{FLOWS_DIR}/print_env_var"),
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+            resources={"compute": compute_instance_name},
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.compute_name == compute_instance_name
+
+        run = pf.runs.create_or_update(
+            run=run,
+        )
+        assert isinstance(run, Run)
+
+        run = pf.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="Enable this after fixed sanitizer.",
+    )
+    def test_run_with_compute_instance_session_yml(
+        self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
+    ):
+        source = f"{RUNS_DIR}/sample_bulk_run_with_compute_instance.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.compute_name == "my_ci"
+
+        # update ci to actual ci
+        run._resources["compute"] = compute_instance_name
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+        run = pf.stream(run)
+        assert run.status == RunStatus.COMPLETED

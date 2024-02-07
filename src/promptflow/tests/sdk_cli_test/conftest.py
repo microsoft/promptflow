@@ -2,7 +2,6 @@ import base64
 import json
 import multiprocessing
 import os
-from asyncio import Queue
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,15 +11,27 @@ from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
 
 from promptflow import PFClient
+from promptflow._core.openai_injector import inject_openai_api
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from .recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
+from .recording_utilities import (
+    RecordStorage,
+    delete_count_lock_file,
+    inject_async_with_recording,
+    inject_sync_with_recording,
+    is_live,
+    is_record,
+    is_replay,
+    mock_tool,
+    recording_array_reset,
+)
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -193,13 +204,10 @@ def serving_client_with_environment_variables(mocker: MockerFixture):
     )
 
 
-@pytest.fixture
-def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
-        RecordStorage.get_instance(file_path)
-    yield
-
+# ==================== Recording injection ====================
+# To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
+# in fork mode, this is automatically enabled.
+# in spawn mode, we need to decalre recording in each process separately.
 
 SpawnProcess = multiprocessing.get_context("spawn").Process
 
@@ -214,7 +222,7 @@ class MockSpawnProcess(SpawnProcess):
 
 
 @pytest.fixture
-def recording_injection(mocker: MockerFixture, recording_file_override):
+def recording_injection(mocker: MockerFixture):
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
@@ -223,10 +231,10 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     patches = setup_recording_injection_if_enabled()
 
     try:
-        yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
+        yield
     finally:
-        if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-            RecordStorage.get_instance().delete_lock_file()
+        RecordStorage.get_instance().delete_lock_file()
+        delete_count_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class
@@ -239,59 +247,45 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
 
 def setup_recording_injection_if_enabled():
     patches = []
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+
+    def start_patches(patch_targets):
+        for target, mock_func in patch_targets.items():
+            patcher = patch(target, mock_func)
+            patches.append(patcher)
+            patcher.start()
+
+    if is_replay() or is_record():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
-        patch_targets = ["promptflow._core.tool.tool", "promptflow._internal.tool", "promptflow.tool"]
+        patch_targets = {
+            "promptflow._core.tool.tool": mocked_tool,
+            "promptflow._internal.tool": mocked_tool,
+            "promptflow.tool": mocked_tool,
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
 
-        for target in patch_targets:
-            patcher = patch(target, mocked_tool)
-            patches.append(patcher)
-            patcher.start()
+    if is_live() and is_in_ci_pipeline():
+        patch_targets = {
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
+
+    inject_openai_api()
     return patches
 
 
-def _mock_process_wrapper(
-    executor_creation_func,
-    input_queue: Queue,
-    output_queue: Queue,
-    log_context_initialization_func,
-    operation_contexts_dict: dict,
-):
+def _mock_process_wrapper(*args, **kwargs):
     setup_recording_injection_if_enabled()
-    _process_wrapper(
-        executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
-    )
+    return _process_wrapper(*args, **kwargs)
 
 
-def _mock_create_spawned_fork_process_manager(
-    log_context_initialization_func,
-    current_operation_context,
-    input_queues,
-    output_queues,
-    control_signal_queue,
-    flow_file,
-    connections,
-    working_dir,
-    raise_ex,
-    process_info,
-    process_target_func,
-):
+def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
-    create_spawned_fork_process_manager(
-        log_context_initialization_func,
-        current_operation_context,
-        input_queues,
-        output_queues,
-        control_signal_queue,
-        flow_file,
-        connections,
-        working_dir,
-        raise_ex,
-        process_info,
-        process_target_func,
-    )
+    return create_spawned_fork_process_manager(*args, **kwargs)

@@ -11,6 +11,7 @@ import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
 
@@ -52,14 +53,13 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
-        raise_ex: bool,
+        *args,
+        **kwargs,
     ) -> None:
         self._input_queues = input_queues
         self._output_queues = output_queues
         self._process_info = process_info
         self._process_target_func = process_target_func
-        self._raise_ex = raise_ex
-
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
@@ -88,6 +88,14 @@ class AbstractProcessManager:
 
         :param i: Index of the process to terminate.
         :type i: int
+        """
+        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        This method should be implemented in subclasses to provide specific health check mechanisms.
         """
         raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
 
@@ -180,6 +188,16 @@ class SpawnProcessManager(AbstractProcessManager):
                 f"Exception: {e}"
             )
 
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        Note:
+        Health checks for spawn mode processes are currently not performed.
+        Add detailed checks in this function if needed in the future.
+        """
+        pass
+
 
 class ForkProcessManager(AbstractProcessManager):
     '''
@@ -203,12 +221,10 @@ class ForkProcessManager(AbstractProcessManager):
     """
     '''
 
-    def __init__(self, control_signal_queue: Queue, flow_file, connections, working_dir, *args, **kwargs):
+    def __init__(self, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._control_signal_queue = control_signal_queue
-        self._flow_file = flow_file
-        self._connections = connections
-        self._working_dir = working_dir
+        self._flow_create_kwargs = flow_create_kwargs
 
     def start_processes(self):
         """
@@ -223,15 +239,13 @@ class ForkProcessManager(AbstractProcessManager):
                 self._input_queues,
                 self._output_queues,
                 self._control_signal_queue,
-                self._flow_file,
-                self._connections,
-                self._working_dir,
-                self._raise_ex,
+                self._flow_create_kwargs,
                 self._process_info,
                 self._process_target_func,
             ),
         )
         process.start()
+        self._spawned_fork_process_manager_pid = process.pid
 
     def restart_process(self, i):
         """
@@ -259,6 +273,16 @@ class ForkProcessManager(AbstractProcessManager):
         :type i: int
         """
         self._control_signal_queue.put((ProcessControlSignal.START, i))
+
+    def ensure_healthy(self):
+        # A 'zombie' process is a process that has finished running but still remains in
+        # the process table, waiting for its parent process to collect and handle its exit status.
+        # The normal state of the spawned process is 'running'. If the process does not start successfully
+        # or exit unexpectedly, its state will be 'zombie'.
+        if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
+            bulk_logger.error("The spawned fork process manager failed to start.")
+            ex = SpawnedForkProcessManagerStartFailure()
+            raise ex
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):
@@ -381,10 +405,7 @@ def create_spawned_fork_process_manager(
     input_queues,
     output_queues,
     control_signal_queue,
-    flow_file,
-    connections,
-    working_dir,
-    raise_ex,
+    flow_create_kwargs,
     process_info,
     process_target_func,
 ):
@@ -392,17 +413,13 @@ def create_spawned_fork_process_manager(
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
     # Set up signal handling for process interruption.
+
     from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
 
     signal.signal(signal.SIGINT, signal_handler)
 
     # Create flow executor.
-    executor = FlowExecutor.create(
-        flow_file=flow_file,
-        connections=connections,
-        working_dir=working_dir,
-        raise_ex=raise_ex,
-    )
+    executor = FlowExecutor.create(**flow_create_kwargs)
 
     # When using fork, we use this method to create the executor to avoid reloading the flow
     # which will introduce a lot more memory.
@@ -417,7 +434,6 @@ def create_spawned_fork_process_manager(
         output_queues,
         process_info,
         process_target_func,
-        raise_ex,
     )
 
     # Initialize processes.

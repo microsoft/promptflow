@@ -1,6 +1,7 @@
 import asyncio
 import multiprocessing
 import os
+import traceback
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
@@ -36,7 +37,23 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     return batch_result
 
 
-def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+def run_batch_with_start_method(
+    multiprocessing_start_method,
+    flow_folder,
+    inputs_mapping,
+    dev_connections,
+    exception_queue,
+):
+    try:
+        _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections)
+    except BaseException as e:
+        msg = f"Hit exception: {e}\nStack trace: {traceback.format_exc()}"
+        print(msg)
+        exception_queue.put(Exception(msg))
+        raise
+
+
+def _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
@@ -166,12 +183,16 @@ class TestBatch:
     def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
+        exception_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
-            target=run_batch_with_start_method, args=("spawn", flow_folder, inputs_mapping, dev_connections)
+            target=run_batch_with_start_method,
+            args=("spawn", flow_folder, inputs_mapping, dev_connections, exception_queue)
         )
         p.start()
         p.join()
-        assert p.exitcode == 0
+        if p.exitcode != 0:
+            ex = exception_queue.get(timeout=1)
+            raise ex
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping",
@@ -197,12 +218,16 @@ class TestBatch:
     def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "forkserver" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: forkserver")
+        exception_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
-            target=run_batch_with_start_method, args=("forkserver", flow_folder, inputs_mapping, dev_connections)
+            target=run_batch_with_start_method,
+            args=("forkserver", flow_folder, inputs_mapping, dev_connections, exception_queue)
         )
         p.start()
         p.join()
-        assert p.exitcode == 0
+        if p.exitcode != 0:
+            ex = exception_queue.get(timeout=1)
+            raise ex
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(

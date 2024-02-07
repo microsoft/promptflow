@@ -4,8 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._core._errors import FlowOutputUnserializable
-from promptflow._core.tool_meta_generator import PythonParsingError
+from promptflow._core._errors import FlowOutputUnserializable, InvalidSource
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -20,7 +19,6 @@ from promptflow.executor._errors import (
     InputReferenceNotFound,
     InputTypeError,
     InvalidConnectionType,
-    InvalidSource,
     NodeCircularDependency,
     NodeInputValidationError,
     NodeReferenceNotFound,
@@ -46,7 +44,7 @@ class TestValidation:
                 (
                     "Tool load failed in 'wrong_llm': "
                     "(InvalidConnectionType) Connection type CustomConnection is not supported for LLM."
-                )
+                ),
             ),
             (
                 "nodes_names_duplicated",
@@ -154,7 +152,7 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class",
         [
-            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, PythonParsingError),
+            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, InvalidSource),
         ],
     )
     def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):
@@ -205,6 +203,22 @@ class TestValidation:
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         with pytest.raises(error_class):
             executor.exec_line(line_input)
+
+    def test_invalid_flow_run_inputs_should_not_saved_to_run_info(self, dev_connections):
+        flow_folder = "simple_flow_with_python_tool"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
+        invalid_input = {"num": "hello"}
+        result = executor.exec_line(invalid_input)
+        # For invalid inputs, we don't assigin them to run info.
+        assert result.run_info.inputs is None
+
+    def test_valid_flow_run_inpust_should_saved_to_run_info(self, dev_connections):
+        flow_folder = "simple_flow_with_python_tool"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
+        valid_input = {"num": 22}
+        result = executor.exec_line(valid_input)
+        # For valid inputs, we assigin them to run info.
+        assert result.run_info.inputs == valid_input
 
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_msg",
