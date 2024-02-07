@@ -12,11 +12,12 @@ from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
-    DEFAULT_SESSION_ID,
     DEFAULT_SPAN_TYPE,
+    ResourceAttributeFieldName,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanFieldName,
+    SpanResourceFieldName,
     SpanStatusFieldName,
 )
 from promptflow._sdk._orm.trace import Span as ORMSpan
@@ -131,12 +132,15 @@ class Span:
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
         attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
-        # `session_id` and `span_type` are not standard fields in OpenTelemetry attributes
+        # `span_type` are not standard fields in OpenTelemetry attributes
         # for example, LangChain instrumentation, as we do not inject this;
-        # so we need to get them with default value to avoid KeyError
+        # so we need to get it with default value to avoid KeyError
         span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
-        # note that this might make these spans persisted in another partion if we split the trace table by `session_id`
-        session_id = attributes.get(SpanAttributeFieldName.SESSION_ID, DEFAULT_SESSION_ID)
+
+        # parse from resource.attributes: session id, experiment
+        resource_attributes = resource[SpanResourceFieldName.ATTRIBUTES]
+        session_id = resource_attributes[ResourceAttributeFieldName.SESSION_ID]
+        experiment = resource_attributes.get(ResourceAttributeFieldName.EXPERIMENT_NAME, None)
 
         return Span(
             name=obj.name,
@@ -150,6 +154,7 @@ class Span:
             span_type=span_type,
             session_id=session_id,
             parent_span_id=parent_span_id,
+            experiment=experiment,
         )
 
 
@@ -162,8 +167,8 @@ class _LineRunData:
     root_span_id: str
     inputs: typing.Dict
     outputs: typing.Dict
-    start_time: datetime.datetime
-    end_time: datetime.datetime
+    start_time: str
+    end_time: str
     status: str
     latency: float
     name: str
