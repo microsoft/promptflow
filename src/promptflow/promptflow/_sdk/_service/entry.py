@@ -103,9 +103,9 @@ def start_service(args):
     else:
         # Start a pfs process using detach mode
         if platform.system() == "Windows":
-            os.spawnv(os.P_DETACH, sys.executable, cmd)
+            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else:
-            os.system(" ".join(["nohup"] + cmd + ["&"]))
+            subprocess.Popen(cmd, start_new_session=True)
     is_healthy = check_pfs_service_status(port)
     if is_healthy:
         app.logger.info(
