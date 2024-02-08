@@ -364,6 +364,11 @@ class LineExecutionProcessPool:
         # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
         self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
 
+        # wait 10 seconds to ensure the spans are exported before the process is killed
+        # otherwise there will be some missing spans for lines
+        # TODO (Task 2950080): make line process wait for spans flush
+        time.sleep(10)
+
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
         # In fork mode, the main process and the sub spawn process communicate through _process_info.
