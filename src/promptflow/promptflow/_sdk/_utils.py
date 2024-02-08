@@ -1120,37 +1120,23 @@ def pd_read_json(file) -> "DataFrame":
         return pd.read_json(f, orient="records", lines=True)
 
 
-def get_mac_address() -> Union[str, None]:
-    """Get the MAC ID of the first network card."""
+def get_mac_address() -> str:
+    """Obtain all MAC addresses, then sort and concatenate them."""
     try:
         import psutil
 
-        mac_address = None
-        net_address = psutil.net_if_addrs()
-        eth = []
-        # Query the first network card in order and obtain the MAC address of the first network card.
-        # "Ethernet" is the name of the Windows network card.
-        # "eth", "ens", "eno" are the name of the Linux & Mac network card.
-        net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
-        for net_interface_name in net_interface_names:
-            if net_interface_name in net_address:
-                eth = net_address[net_interface_name]
-                break
-        for net_interface in eth:
-            if net_interface.family == psutil.AF_LINK:  # mac address
-                mac_address = str(net_interface.address)
-                break
+        mac_address = []
+        net_addresses = psutil.net_if_addrs()
+        # Obtain all MAC addresses, then sort and concatenate them
+        for net_address in net_addresses.values():
+            for net_interface in net_address:
+                if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
+                    mac_address.append(net_interface.address)
 
-        # If obtaining the network card MAC ID fails, obtain other MAC ID
-        if mac_address is None:
-            node = uuid.getnode()
-            if node != 0:
-                mac_address = str(uuid.UUID(int=node).hex[-12:])
-
-        return mac_address
+        return ':'.join(mac_address)
     except Exception as e:
         logger.debug(f"get mac id error: {str(e)}")
-        return None
+        return ""
 
 
 def get_system_info() -> Tuple[str, str, str]:
@@ -1173,7 +1159,7 @@ def gen_uuid_by_compute_info() -> Union[str, None]:
         system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
         compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
         return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
-    return None
+    return str(uuid.uuid4())
 
 
 def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
