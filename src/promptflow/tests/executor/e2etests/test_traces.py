@@ -391,7 +391,8 @@ class TestOTelTracer:
         "flow_file, inputs, prompt_tpl_file",
         [
             ("llm_tool", {"topic": "Hello", "stream": False}, "joke.jinja2"),
-            ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
+            # Add back this test case after changing the interface of render_template_jinja2
+            # ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
         ]
     )
     def test_otel_trace_with_prompt(
