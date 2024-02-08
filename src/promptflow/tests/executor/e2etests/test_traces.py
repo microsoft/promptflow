@@ -218,10 +218,9 @@ class TestExecutorTraces:
         assert flow_trace["system_metrics"]["prompt_tokens"] == 0
         assert flow_trace["system_metrics"]["completion_tokens"] == 0
         assert flow_trace["system_metrics"]["total_tokens"] == 0
-        # TODO: These assertions should be fixed after added these fields to the top level trace
-        assert "inputs" not in flow_trace
-        assert "output" not in flow_trace
-        assert "error" not in flow_trace
+        assert isinstance(flow_trace["inputs"], dict)
+        assert flow_trace["output"] == {"output": "Hello, User 1!"}
+        assert flow_trace["error"] is None
         if sys.platform != "darwin":
             assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
             assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
@@ -298,7 +297,7 @@ class TestOTelTracer:
             ("openai_completion_api_flow", get_comletion_input(False), 3),
             ("llm_tool", {"topic": "Hello", "stream": False}, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
-        ]
+        ],
     )
     def test_otel_trace(
         self,
