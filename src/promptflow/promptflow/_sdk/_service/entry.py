@@ -9,6 +9,8 @@ import platform
 import subprocess
 import sys
 
+import waitress
+
 from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
@@ -70,7 +72,7 @@ def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
-    get_app()
+    app, _ = create_app()
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
@@ -88,31 +90,39 @@ def start_service(args):
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
     # Set host to localhost, only allow request from localhost.
-    cmd = [
-        sys.executable,
-        "-m",
-        "waitress",
-        "--host",
-        "127.0.0.1",
-        f"--port={port}",
-        "--call",
-        "promptflow._sdk._service.entry:get_app",
-    ]
-    if args.synchronous:
-        subprocess.call(cmd)
-    else:
-        # Start a pfs process using detach mode
-        if platform.system() == "Windows":
-            os.spawnv(os.P_DETACH, sys.executable, cmd)
-        else:
-            os.system(" ".join(["nohup"] + cmd + ["&"]))
-    is_healthy = check_pfs_service_status(port)
-    if is_healthy:
+    if sys.executable.endswith("pfcli.exe"):
+        # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
+        # after packaged by Pyinstaller.
         app.logger.info(
             f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
         )
+        waitress.serve(app, host="127.0.0.1", port=port)
     else:
-        app.logger.warning(f"Pfs service start failed in {port}.")
+        cmd = [
+            sys.executable,
+            "-m",
+            "waitress",
+            "--host",
+            "127.0.0.1",
+            f"--port={port}",
+            "--call",
+            "promptflow._sdk._service.entry:get_app",
+        ]
+        if args.synchronous:
+            subprocess.call(cmd)
+        else:
+            # Start a pfs process using detach mode
+            if platform.system() == "Windows":
+                os.spawnv(os.P_DETACH, sys.executable, cmd)
+            else:
+                os.system(" ".join(["nohup"] + cmd + ["&"]))
+        is_healthy = check_pfs_service_status(port)
+        if is_healthy:
+            app.logger.info(
+                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+            )
+        else:
+            app.logger.warning(f"Pfs service start failed in {port}.")
 
 
 def main():
