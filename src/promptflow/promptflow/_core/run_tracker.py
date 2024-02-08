@@ -180,9 +180,9 @@ class RunTracker(ThreadLocalSingleton):
         # It has to be a list for UI backward compatibility.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
-        # This implementation serializes image and generator as plain string to avoid unexpected
-        # side effect to run_info caused by serialization.
-        # We will add generator support in the next generation of Tracer.
+        # This implementation deep copies the inputs and output of the flow run, and extracts items from GeneratorProxy.
+        # So that both image and generator will be supported.
+        # It's a short term solution, while the long term one will be implemented in the next generation of Tracer.
         inputs = None
         output = None
         try:
