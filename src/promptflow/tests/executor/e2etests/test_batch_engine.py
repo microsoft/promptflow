@@ -8,6 +8,9 @@ from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._sdk._orm import RunInfo as ORMRun
+from promptflow._sdk.entities._run import Run
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._errors import EmptyInputsData
@@ -379,3 +382,76 @@ class TestBatch:
         assert aggre_node_error["message"] == "Execution failure in 'aggregate': (ZeroDivisionError) division by zero"
         assert aggre_node_error["code"] == "UserError"
         assert aggre_node_error["innerError"] == {"code": "ToolExecutionError", "innerError": None}
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run",
+        [("web_classification", "web_classification_default_20240207_165606_643000")],
+    )
+    def test_batch_resume(self, flow_folder, resume_from_run, dev_connections):
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=mem_run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="data.jsonl")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"url": "${data.url}"}
+
+        resume_from_run = Run._from_orm_object(ORMRun.get(resume_from_run))
+        resume_from_run_storage = LocalStorageOperations(resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run",
+        [("classification_accuracy_evaluation", "classification_accuracy_evaluation_default_20240208_152402_694000")],
+    )
+    def test_batch_resume_aggregation(self, flow_folder, resume_from_run, dev_connections):
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=mem_run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {
+            "variant_id": "${data.variant_id}",
+            "groundtruth": "${data.groundtruth}",
+            "prediction": "${data.prediction}",
+        }
+
+        resume_from_run = Run._from_orm_object(ORMRun.get(resume_from_run))
+        resume_from_run_storage = LocalStorageOperations(resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+        assert resume_run_batch_results.metrics == {"accuracy": 0.67}
