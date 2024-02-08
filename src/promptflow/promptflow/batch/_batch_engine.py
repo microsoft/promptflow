@@ -182,7 +182,7 @@ class BatchEngine:
                     inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    full_batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
 
                     previous_run_results = []
                     previous_run_output = (
@@ -191,13 +191,13 @@ class BatchEngine:
                     previous_run_output_dict = {
                         each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
                     }
-                    inputs_to_run = []
-                    for i, each_line_input in enumerate(batch_inputs):
+                    lines_to_run = []
+                    for i, each_line_input in enumerate(full_batch_inputs):
                         previous_run_info = (
                             resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
                         )
                         if not previous_run_info or previous_run_info.status != Status.Completed:
-                            inputs_to_run.append(each_line_input)
+                            lines_to_run.append(each_line_input["line_number"])
                         else:
                             previous_node_run_infos = (
                                 resume_from_run_storage.load_node_run_info_for_line(i)
@@ -227,12 +227,12 @@ class BatchEngine:
                     # run flow in batch mode
                     return async_run_allowing_running_loop(
                         self._exec_in_task,
-                        inputs_to_run,
+                        full_batch_inputs,
                         run_id,
                         output_dir,
                         raise_on_line_failure,
                         previous_run_results,
-                        batch_inputs,
+                        lines_to_run,
                     )
                 finally:
                     async_run_allowing_running_loop(self._executor_proxy.destroy)
@@ -281,12 +281,12 @@ class BatchEngine:
 
     async def _exec_in_task(
         self,
-        batch_inputs: List[Dict[str, Any]],
+        full_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
         previous_line_results: List[LineResult] = None,
-        full_inputs: List[Dict[str, Any]] = None,
+        lines_to_run: List[int] = None,
     ) -> BatchResult:
         # if the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
@@ -296,7 +296,7 @@ class BatchEngine:
             line_results.extend(previous_line_results)
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure, full_inputs)
+            self._exec(line_results, aggr_result, full_inputs, run_id, output_dir, raise_on_line_failure, lines_to_run)
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -313,16 +313,17 @@ class BatchEngine:
         self,
         line_results: List[LineResult],
         aggr_result: AggregationResult,
-        batch_inputs: List[Dict[str, Any]],
+        full_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
-        full_inputs: List[Dict[str, Any]] = None,
+        lines_to_run: List[int] = None,
     ) -> BatchResult:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
+        batch_inputs = full_inputs if lines_to_run is None else [full_inputs[i] for i in lines_to_run]
         if not self._is_eager_flow:
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
@@ -358,7 +359,7 @@ class BatchEngine:
         ex = None
         if not is_timeout:
             # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id, full_inputs)
+            aggr_exec_result = await self._exec_aggregation(full_inputs, line_results, run_id)
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
             self._update_aggr_result(aggr_result, aggr_exec_result)
         else:
@@ -410,10 +411,9 @@ class BatchEngine:
 
     async def _exec_aggregation(
         self,
-        batch_inputs: List[dict],
+        full_inputs: List[dict],
         line_results: List[LineResult],
         run_id: Optional[str] = None,
-        full_inputs: List[Dict[str, Any]] = None,
     ) -> AggregationResult:
         if self._is_eager_flow:
             return AggregationResult({}, {}, {})
