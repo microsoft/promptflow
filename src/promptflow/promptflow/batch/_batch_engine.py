@@ -19,6 +19,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
     collect_lines,
+    extract_aggregation_inputs,
     get_aggregation_inputs_properties,
     handle_line_failures,
 )
@@ -42,7 +43,6 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
 
@@ -192,7 +192,6 @@ class BatchEngine:
                         each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
                     }
                     inputs_to_run = []
-                    flow_executor = FlowExecutor.create(self._flow_file, self._connections, self._working_dir)
                     for i, each_line_input in enumerate(batch_inputs):
                         previous_run_info = (
                             resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
@@ -211,7 +210,7 @@ class BatchEngine:
                             previous_node_run_outputs = {
                                 node_info.node: node_info.output for node_info in previous_node_run_infos
                             }
-                            aggregation_inputs = flow_executor._extract_aggregation_inputs(previous_node_run_outputs)
+                            aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
                             self._storage.persist_flow_run(previous_run_info)
                             for node_run_info in previous_node_run_infos:
                                 self._storage.persist_node_run(node_run_info)
