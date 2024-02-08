@@ -584,11 +584,14 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True, timeout: int = 300, **kwargs) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param timeout: If the run keeps in status 'Not Started' longer than the timeout value,
+            the stream operation will abort. Default timeout value is 300 seconds.
+        :type timeout: int
         :param raise_on_error: Raises an exception if a run fails or canceled.
         :type raise_on_error: bool
         :return: The run object
@@ -614,10 +617,11 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 # if the run is not started for 5 minutes, print an error message and break the loop
                 if run.status == RunStatus.NOT_STARTED:
                     current = time.time()
-                    if current - start > 300:
+                    if current - start > timeout:
                         file_handler.write(
-                            f"The run {run.name!r} is in status 'NotStarted' for 5 minutes, streaming is stopped."
-                            "Please make sure you are using the latest runtime.\n"
+                            f"The run {run.name!r} is in status 'NotStarted' for {timeout} seconds,"
+                            "streaming is stopped. Please make sure you are using the latest runtime.\n"
+                            "For automatic runtime case, please try extending the timeout value.\n"
                         )
                         break
 
