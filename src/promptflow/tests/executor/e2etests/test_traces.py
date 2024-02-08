@@ -218,6 +218,9 @@ class TestExecutorTraces:
         assert flow_trace["system_metrics"]["prompt_tokens"] == 0
         assert flow_trace["system_metrics"]["completion_tokens"] == 0
         assert flow_trace["system_metrics"]["total_tokens"] == 0
+        assert isinstance(flow_trace["inputs"], dict)
+        assert flow_trace["output"] == {"output": "Hello, User 1!"}
+        assert flow_trace["error"] is None
         if sys.platform != "darwin":
             assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
             assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
