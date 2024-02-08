@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import logging
 import os.path
-import uuid
 from itertools import product
 from os import PathLike
 from pathlib import Path
