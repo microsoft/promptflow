@@ -16,9 +16,9 @@ outputs:
   fluency:
     type: double
     reference: ${score_fluency.output}
-  relevancy:
+  relevance:
     type: double
-    reference: ${score_relevancy.output}
+    reference: ${score_relevance.output}
 nodes:
 - name: prompt_coherence
   type: prompt
@@ -71,7 +71,7 @@ nodes:
   inputs:
     connection: open_ai_connection
     prompt_with_src_and_gen: ${prompt_fluency.output}
-    max_score: null
+    max_score: 3
     deployment_name: gpt-4
 - name: prompt_relevance
   type: prompt
