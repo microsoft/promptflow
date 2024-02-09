@@ -323,11 +323,17 @@ class BatchEngine:
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
-        batch_inputs = full_inputs if lines_to_run is None else [full_inputs[i] for i in lines_to_run]
         if not self._is_eager_flow:
-            batch_inputs = [
-                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
+            full_inputs = [
+                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in full_inputs
             ]
+        if lines_to_run is None:
+            batch_inputs = full_inputs
+        else:
+            batch_inputs = []
+            for line in full_inputs:
+                if line["line_number"] in lines_to_run:
+                    batch_inputs.append(line)
         run_id = run_id or str(uuid.uuid4())
 
         # execute lines
