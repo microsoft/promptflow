@@ -20,6 +20,7 @@ pip install -r requirements.txt
 ### 1. Test flow with single line data
 
 Testing flow/node:
+
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
@@ -32,6 +33,7 @@ pf flow test --flow . --node line_process --inputs document=ABC summary=ABC
 ```
 
 ### 2. create flow run with multi line data
+
 There are two ways to evaluate an classification flow.
 
 ```bash
@@ -40,3 +42,9 @@ pf run create --flow . --data ./data.jsonl --column-mapping document='${data.doc
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
 Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+
+## How to run unit tests
+
+1. Make sure you already finished [Prerequisites](#prerequisites)
+1. Run `pip install pytest`
+1. Run `python -m pytest tests`
