@@ -250,15 +250,15 @@ class TestExecutorWithImage:
         [
             (
                 SIMPLE_IMAGE_FLOW,
-                {"data": "inputs.jsonl"},
+                {"data": "."},
                 {"image": "${data.image}"},
                 "output",
-                2,
+                4,
                 False,
             ),
             (
                 SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
-                {"data": "inputs.jsonl"},
+                {"data": "."},
                 {"image_2": "${data.image_2}"},
                 "output",
                 4,
