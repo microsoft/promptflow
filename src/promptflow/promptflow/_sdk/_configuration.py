@@ -18,7 +18,11 @@ from promptflow._sdk._constants import (
     SERVICE_CONFIG_FILE,
     ConnectionProvider,
 )
-from promptflow._sdk._utils import call_from_extension, read_write_by_user
+from promptflow._sdk._utils import (
+    call_from_extension,
+    read_write_by_user,
+    gen_uuid_by_compute_info,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -39,7 +43,6 @@ class InvalidConfigValue(ValidationException):
 
 
 class Configuration(object):
-
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
     COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
@@ -116,7 +119,6 @@ class Configuration(object):
         if path.is_file():
             found_path = path
         else:
-
             # Based on priority
             # Look in config dirs like .azureml or plain directory
             # with None
@@ -192,13 +194,16 @@ class Configuration(object):
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""
-        user_id = self.get_config(key=self.INSTALLATION_ID)
-        if user_id:
-            return user_id
-        else:
-            user_id = str(uuid.uuid4())
-            self.set_config(key=self.INSTALLATION_ID, value=user_id)
-            return user_id
+        installation_id = self.get_config(key=self.INSTALLATION_ID)
+        if installation_id:
+            return installation_id
+
+        installation_id = gen_uuid_by_compute_info()
+        if not installation_id:
+            installation_id = str(uuid.uuid4())
+
+        self.set_config(key=self.INSTALLATION_ID, value=installation_id)
+        return installation_id
 
     def get_run_output_path(self) -> Optional[str]:
         """Get the run output path in local."""

@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Optional, Union
 
 import httpx
+from azure.core.exceptions import HttpResponseError
 from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, DownloadedRun
-from promptflow._sdk._errors import RunNotFoundError, RunOperationError
+from promptflow._sdk._errors import DownloadInternalError, RunNotFoundError, RunOperationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
@@ -45,11 +46,11 @@ class AsyncRunDownloader:
 
     async def download(self) -> str:
         """Download the run results asynchronously."""
+        error_msg_prefix = f"Failed to download run {self.run!r}"
         try:
             # pass verify=False to client to disable SSL verification.
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
-
                 tasks = [
                     # put async functions in tasks to run in coroutines
                     self._download_artifacts_and_snapshot(client),
@@ -59,8 +60,19 @@ class AsyncRunDownloader:
                     to_thread(self._download_run_logs),
                 ]
                 await asyncio.gather(*tasks)
+        except RunNotFoundError as e:
+            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
+        except HttpResponseError as e:
+            if e.status_code == 403:
+                raise RunOperationError(
+                    f"{error_msg_prefix}. User does not have permission to perform this operation on storage account "
+                    f"{self.datastore.account_name!r} container {self.datastore.container_name!r}. "
+                    f"Original azure blob error: {str(e)}"
+                )
+            else:
+                raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
         except Exception as e:
-            raise RunOperationError(f"Failed to download run {self.run!r}. Error: {e}") from e
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
 
         return self.output_folder.resolve().as_posix()
 
@@ -113,15 +125,20 @@ class AsyncRunDownloader:
             "selectJobSpecification": True,
         }
 
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            raise RunNotFoundError(f"Run {self.run!r} not found.")
+        error_msg_prefix = "Failed to get run data from run history"
+        try:
+            response = await client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
         else:
-            raise RunOperationError(
-                f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
-            )
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 404:
+                raise RunNotFoundError(f"{error_msg_prefix}. Run {self.run!r} not found.")
+            else:
+                raise DownloadInternalError(
+                    f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
+                )
 
     def _download_run_metrics(
         self,
@@ -201,16 +218,23 @@ class AsyncRunDownloader:
             "snapshotOrAssetId": snapshot_id,
         }
 
-        response = await httpx_client.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            return self._parse_snapshot_response(response.json())
-        elif response.status_code == 404:
-            raise UserErrorException(f"Snapshot {snapshot_id!r} not found.")
+        error_msg_prefix = (
+            f"Failed to download flow snapshots with snapshot id {snapshot_id}, "
+            f"because the client failed to retrieve data from content service"
+        )
+        try:
+            response = await httpx_client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
         else:
-            raise RunOperationError(
-                f"Failed to get snapshot {snapshot_id!r} from content service. "
-                f"Code: {response.status_code}, text: {response.text}"
-            )
+            if response.status_code == 200:
+                return self._parse_snapshot_response(response.json())
+            elif response.status_code == 404:
+                raise DownloadInternalError(f"{error_msg_prefix}. Error: Snapshot id not found.")
+            else:
+                raise DownloadInternalError(
+                    f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
+                )
 
     async def _get_asset_path(self, client: httpx.AsyncClient, asset_id):
         """Get the asset path from asset id."""
@@ -222,7 +246,16 @@ class AsyncRunDownloader:
             "value": asset_id,
         }
 
-        response = await client.post(url, headers=headers, json=payload)
+        error_msg_prefix = "Failed to download flow artifacts due to failed to retrieve data from data service"
+        try:
+            response = await client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
+
+        if response.status_code != 200:
+            raise DownloadInternalError(
+                f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
+            )
         response_data = response.json()
         data_path = response_data["dataVersion"]["dataUri"].split("/paths/")[-1]
         if self._use_flow_outputs:

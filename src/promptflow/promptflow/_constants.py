@@ -39,11 +39,80 @@ class AvailableIDE:
 USER_AGENT = "USER_AGENT"
 PF_USER_AGENT = "PF_USER_AGENT"
 
-CLI_PACKAGE_NAME = 'promptflow'
-CURRENT_VERSION = 'current_version'
-LATEST_VERSION = 'latest_version'
-LAST_HINT_TIME = 'last_hint_time'
-LAST_CHECK_TIME = 'last_check_time'
+CLI_PACKAGE_NAME = "promptflow"
+CURRENT_VERSION = "current_version"
+LATEST_VERSION = "latest_version"
+LAST_HINT_TIME = "last_hint_time"
+LAST_CHECK_TIME = "last_check_time"
 PF_VERSION_CHECK = "pf_version_check.json"
 HINT_INTERVAL_DAY = 7
 GET_PYPI_INTERVAL_DAY = 7
+
+_ENV_PF_INSTALLER = "PF_INSTALLER"
+STREAMING_ANIMATION_TIME = 0.01
+
+# trace related
+OTEL_RESOURCE_SERVICE_NAME = "promptflow"
+DEFAULT_SPAN_TYPE = "default"
+
+
+class TraceEnvironmentVariableName:
+    EXPERIMENT = "PF_TRACE_EXPERIMENT"
+    SESSION_ID = "PF_TRACE_SESSION_ID"
+
+
+class SpanFieldName:
+    NAME = "name"
+    CONTEXT = "context"
+    KIND = "kind"
+    PARENT_ID = "parent_id"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+    ATTRIBUTES = "attributes"
+    EVENTS = "events"
+    LINKS = "links"
+    RESOURCE = "resource"
+
+
+class SpanContextFieldName:
+    TRACE_ID = "trace_id"
+    SPAN_ID = "span_id"
+    TRACE_STATE = "trace_state"
+
+
+class SpanStatusFieldName:
+    STATUS_CODE = "status_code"
+
+
+class SpanAttributeFieldName:
+    FRAMEWORK = "framework"
+    SPAN_TYPE = "span_type"
+    FUNCTION = "function"
+    INPUTS = "inputs"
+    OUTPUT = "output"
+    SESSION_ID = "session_id"
+    PATH = "path"
+    FLOW_ID = "flow_id"
+    RUN = "run"
+    EXPERIMENT = "experiment"
+    LINE_RUN_ID = "line_run_id"
+    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
+    PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
+    TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
+
+
+class SpanResourceAttributesFieldName:
+    SERVICE_NAME = "service.name"
+
+
+class SpanResourceFieldName:
+    ATTRIBUTES = "attributes"
+    SCHEMA_URL = "schema_url"
+
+
+class ResourceAttributeFieldName:
+    EXPERIMENT_NAME = "experiment.name"
+    SERVICE_NAME = "service.name"
+    SESSION_ID = "session.id"

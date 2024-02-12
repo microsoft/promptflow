@@ -38,12 +38,10 @@ class TestRunTracker:
         # Test collect_all_run_infos_as_dicts
         run_tracker.allow_generator_types = True
         run_tracker.set_inputs(
-            "run_id_0",
-            {"input": "input_0", "connection": AzureOpenAIConnection("api_key", "api_base")}
+            "run_id_0", {"input": "input_0", "connection": AzureOpenAIConnection("api_key", "api_base")}
         )
         run_tracker.set_inputs(
-            "run_id_1",
-            {"input": "input_1", "generator": GeneratorProxy(item for item in range(10))}
+            "run_id_1", {"input": "input_1", "generator": GeneratorProxy(item for item in range(10))}
         )
         run_infos = run_tracker.collect_all_run_infos_as_dicts()
         assert len(run_infos["flow_runs"]) == 1
@@ -82,8 +80,9 @@ class TestRunTracker:
         # Test _update_flow_run_info_with_node_runs
         run_info_0.api_calls, run_info_0.system_metrics = [{"name": "caht"}], {"total_tokens": 10}
         run_info_1.api_calls, run_info_1.system_metrics = [{"name": "completion"}], {"total_tokens": 20}
-        run_info_aggr.api_calls, run_info_aggr.system_metrics = [
-            {"name": "caht"}, {"name": "completion"}], {"total_tokens": 30}
+        run_info_aggr.api_calls, run_info_aggr.system_metrics = [{"name": "caht"}, {"name": "completion"}], {
+            "total_tokens": 30
+        }
         run_tracker._update_flow_run_info_with_node_runs(run_info_flow)
 
         assert len(run_info_flow.api_calls) == 1, "There should be only one top level api call for flow run."
@@ -92,6 +91,11 @@ class TestRunTracker:
         assert run_info_flow.api_calls[0]["node_name"] == "flow"
         assert run_info_flow.api_calls[0]["type"] == "Flow"
         assert run_info_flow.api_calls[0]["system_metrics"]["total_tokens"] == 60
+        assert run_info_flow.api_calls[0]["inputs"] == flow_input
+        assert run_info_flow.api_calls[0]["output"] is None
+        assert (
+            "The output 'unserialized_value' for flow is incorrect." in run_info_flow.api_calls[0]["error"]["message"]
+        )
         assert isinstance(run_info_flow.api_calls[0]["start_time"], float)
         assert isinstance(run_info_flow.api_calls[0]["end_time"], float)
         assert len(run_info_flow.api_calls[0]["children"]) == 4, "There should be 4 children under root."

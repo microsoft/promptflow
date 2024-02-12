@@ -36,6 +36,21 @@ def get_feature_list():
             description="Support image input and output.",
             state=FeatureState.READY,
         ),
+        Feature(
+            name="EnvironmentVariablesInYaml",
+            description="Support environment variables in flow.dag.yaml.",
+            state=FeatureState.READY,
+        ),
+        Feature(
+            name="BatchTimeout",
+            description="Support batch timeout.",
+            state=FeatureState.READY,
+        ),
+        Feature(
+            name="BatchWorkerCount",
+            description="Supports users explicitly specifying the worker count for batch run.",
+            state=FeatureState.READY,
+        ),
     ]
 
     return feature_list

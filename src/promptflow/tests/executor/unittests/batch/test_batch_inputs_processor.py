@@ -5,11 +5,14 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.utils import dump_list_to_jsonl
-from promptflow.batch._batch_inputs_processor import BatchInputsProcessor, apply_inputs_mapping
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
+
+from ...utils import DATA_ROOT
 
 
 @pytest.mark.unittest
@@ -68,11 +71,12 @@ class TestBatchInputsProcessor:
     @pytest.mark.parametrize(
         "data_path",
         [
-            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
-            "./tests/test_configs/datas/load_data_cases/10k",
+            "10k.jsonl",
+            "10k",
         ],
     )
     def test_resolve_data_from_input_path_with_large_data(self, data_path):
+        data_path = DATA_ROOT / "load_data_cases" / data_path
         result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
         assert isinstance(result, list)
         assert len(result) == 10000

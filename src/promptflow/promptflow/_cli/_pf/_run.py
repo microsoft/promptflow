@@ -17,6 +17,7 @@ from promptflow._cli._params import (
     add_param_output_format,
     add_param_run_name,
     add_param_set,
+    add_param_yes,
     add_parser_build,
     base_params,
 )
@@ -33,6 +34,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_t
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
+from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
 from promptflow.exceptions import UserErrorException
 
@@ -352,7 +354,7 @@ Example:
 # Delete a run:
 pf run delete -n "<name>"
 """
-    add_params = [add_param_run_name] + base_params
+    add_params = [add_param_run_name, add_param_yes] + base_params
 
     activate_action(
         name="delete",
@@ -435,7 +437,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "export":
         export_run(args)
     elif args.sub_action == "delete":
-        delete_run(name=args.name)
+        delete_run(args.name, args.yes)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -502,7 +504,12 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     # hide additional info and debug info in run list for better user experience
-    json_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
+    parser = lambda run: run._to_dict(exclude_additional_info=True, exclude_debug_info=True)  # noqa: E731
+    json_list = safe_parse_object_list(
+        obj_list=runs,
+        parser=parser,
+        message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
+    )
     _output_result_list_with_format(result_list=json_list, output_format=output)
     return runs
 
@@ -630,8 +637,8 @@ def create_run(create_func: Callable, args):
 
 
 @exception_handler("Delete run")
-def delete_run(name: str) -> None:
-    if confirm("Are you sure to delete run irreversibly?"):
+def delete_run(name: str, skip_confirm: bool = False) -> None:
+    if confirm("Are you sure to delete run irreversibly?", skip_confirm):
         pf_client = PFClient()
         pf_client.runs.delete(name=name)
     else:

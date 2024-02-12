@@ -48,6 +48,9 @@ class ConnectionOperations(TelemetryMixin):
         :return: connection object retrieved from the database.
         :rtype: ~promptflow.sdk.entities._connection._Connection
         """
+        return self._get(name, **kwargs)
+
+    def _get(self, name: str, **kwargs) -> _Connection:
         with_secrets = kwargs.get("with_secrets", False)
         raise_error = kwargs.get("raise_error", True)
         orm_connection = ORMConnection.get(name, raise_error)

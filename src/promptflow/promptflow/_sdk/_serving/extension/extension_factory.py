@@ -25,6 +25,7 @@ class ExtensionFactory:
         extension_type = ExtensionType(extension_type_str.lower())
 
         if extension_type == ExtensionType.AzureML:
+            logger.info("Enable AzureML extension.")
             from promptflow._sdk._serving.extension.azureml_extension import AzureMLExtension
 
             return AzureMLExtension(logger=logger, **kwargs)

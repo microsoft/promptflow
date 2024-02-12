@@ -50,8 +50,8 @@ REQUIRES = [
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
-    "uvicorn>=0.25.0",  # used to start local executor service
-    "fastapi>=0.109.0",  # used to build local web executor server
+    "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
+    "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
 ]
 
 setup(
@@ -86,25 +86,22 @@ setup(
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
         "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0", "bs4"],
-        "pfs": [
-            "flask-restx>=1.2.0,<2.0.0",
-        ],
         "azureml-serving": [
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
-            # OTel dependencies for monitoring
-            "opentelemetry-api>=1.21.0,<2.0.0",
-            "opentelemetry-sdk>=1.21.0,<2.0.0",
-            "azure-monitor-opentelemetry>=1.1.1,<2.0.0",
+            "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
+        "executor-service": [
+            "fastapi>=0.109.0,<1.0.0",  # used to build web executor server
+        ],
     },
     packages=find_packages(),
+    scripts=["pf", "pf.bat"],
     entry_points={
         "console_scripts": [
-            "pf = promptflow._cli._pf.entry:main",
             "pfazure = promptflow._cli._pf_azure.entry:main",
             "pfs = promptflow._sdk._service.entry:main",
         ],

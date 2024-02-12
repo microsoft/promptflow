@@ -11,11 +11,12 @@ from marshmallow import ValidationError
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
 from promptflow._sdk._errors import InvalidFlowError
-from promptflow._sdk._load_functions import load_run
+from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 from promptflow._sdk.entities import Run
+from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.yaml_utils import load_yaml
 
@@ -25,12 +26,18 @@ RUNS_DIR = Path("./tests/test_configs/runs")
 DATAS_DIR = Path("./tests/test_configs/datas")
 
 
+@pytest.fixture
+def test_flow() -> Flow:
+    flow_path = f"{FLOWS_DIR}/web_classification"
+    return load_flow(flow_path)
+
+
 @pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestRun:
-    def test_overwrite_variant_context(self):
+    def test_overwrite_variant_context(self, test_flow: Flow):
         with variant_overwrite_context(
-            flow_path=FLOWS_DIR / "web_classification", tuning_node="summarize_text_content", variant="variant_0"
+            flow=test_flow, tuning_node="summarize_text_content", variant="variant_0"
         ) as flow:
             with open(flow.path) as f:
                 flow_dag = load_yaml(f)
@@ -38,9 +45,9 @@ class TestRun:
             node = node_name_2_node["summarize_text_content"]
             assert node["inputs"]["temperature"] == "0.2"
 
-    def test_overwrite_connections(self):
+    def test_overwrite_connections(self, test_flow: Flow):
         with variant_overwrite_context(
-            flow_path=FLOWS_DIR / "web_classification",
+            flow=test_flow,
             connections={"classify_with_llm": {"connection": "azure_open_ai", "deployment_name": "gpt-35-turbo"}},
         ) as flow:
             with open(flow.path) as f:
@@ -68,10 +75,10 @@ class TestRun:
             ({"classify_with_llm": 1}, "Invalid connection overwrite format: 1, only dict is supported."),
         ],
     )
-    def test_overwrite_connections_invalid(self, connections, error_message):
+    def test_overwrite_connections_invalid(self, connections, error_message, test_flow: Flow):
         with pytest.raises(InvalidFlowError) as e:
             with variant_overwrite_context(
-                flow_path=FLOWS_DIR / "web_classification",
+                flow=test_flow,
                 connections=connections,
             ):
                 pass
@@ -188,7 +195,7 @@ class TestRun:
         # Define input parameters
         flow_path = f"{FLOWS_DIR}/web_classification"
         client = PFClient()
-        run_submitter = RunSubmitter(client.runs)
+        run_submitter = RunSubmitter(client)
         run = Run(
             name=str(uuid.uuid4()),
             flow=Path(flow_path),

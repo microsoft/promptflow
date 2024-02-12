@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import collections
+import datetime
 import hashlib
 import json
 import multiprocessing
@@ -12,9 +13,11 @@ import shutil
 import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from functools import partial
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -65,7 +68,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -209,7 +212,14 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
 
 
 def _match_reference(env_val: str):
@@ -293,7 +303,7 @@ def resolve_connections_environment_variable_reference(connections: Dict[str, di
                 continue
             env_name = _match_env_reference(val)
             if env_name not in os.environ:
-                raise Exception(f"Environment variable {env_name} is not found.")
+                raise UserErrorException(f"Environment variable {env_name} is not found.")
             values[key] = os.environ[env_name]
     return connections
 
@@ -360,17 +370,10 @@ def safe_parse_object_list(obj_list, parser, message_generator):
     return results
 
 
-def _normalize_identifier_name(name):
-    normalized_name = name.lower()
-    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
-    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
-    if re.match(r"\d", normalized_name):
-        normalized_name = "n" + normalized_name  # No leading digits
-    return normalized_name
-
-
 def _sanitize_python_variable_name(name: str):
-    return _normalize_identifier_name(name).replace(" ", "_")
+    from promptflow._utils.utils import _sanitize_python_variable_name
+
+    return _sanitize_python_variable_name(name)
 
 
 def _get_additional_includes(yaml_path):
@@ -451,7 +454,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
+                error = ValueError(f"Unable to find additional include {item}")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message=str(error),
+                    error=error,
+                )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
@@ -483,7 +491,6 @@ def print_pf_version():
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs", "__pycache__"]
 
@@ -931,13 +938,14 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     dump_yaml(yaml_data, f)
 
 
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
     """Dump flow result for extension.
 
     :param flow_folder: The flow folder.
     :param prefix: The file prefix.
     :param flow_result: The flow result returned by exec_line.
     :param node_result: The node result when test node returned by load_and_exec_node.
+    :param custom_path: The custom path to dump flow result.
     """
     if flow_result:
         flow_serialize_result = {
@@ -949,7 +957,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             "flow_runs": [],
             "node_runs": [serialize(node_result)],
         }
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
     dump_folder.mkdir(parents=True, exist_ok=True)
 
     with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
@@ -1046,7 +1055,18 @@ def parse_remote_flow_pattern(flow: object) -> str:
     return flow_name
 
 
-def get_connection_operation(connection_provider: str):
+def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
+    """
+    Get connection operation based on connection provider.
+    This function will be called by PFClient, so please do not refer to PFClient in this function.
+
+    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+    :type connection_provider: str
+    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+    :type credential: object
+    :param user_agent: User Agent
+    :type user_agent: str
+    """
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
@@ -1055,8 +1075,137 @@ def get_connection_operation(connection_provider: str):
     elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
         from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
-        logger.debug("PFClient using local azure connection operations.")
-        connection_operation = LocalAzureConnectionOperations(connection_provider)
+        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
+        if user_agent is None:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
+        else:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
-        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+        error = ValueError(f"Unsupported connection provider: {connection_provider}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
     return connection_operation
+
+
+# extract open read/write as partial to centralize the encoding
+read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+# nan, inf and -inf are not JSON serializable according to https://docs.python.org/3/library/json.html#json.loads
+# `parse_constant` will be called to handle these values
+# similar idea for below `json_load` and its parameter `parse_const_as_str`
+json_loads_parse_const_as_str = partial(json.loads, parse_constant=lambda x: str(x))
+
+
+# extract some file operations inside this file
+def json_load(file, parse_const_as_str: bool = False) -> str:
+    with read_open(file) as f:
+        if parse_const_as_str is True:
+            return json.load(f, parse_constant=lambda x: str(x))
+        else:
+            return json.load(f)
+
+
+def json_dump(obj, file) -> None:
+    with write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
+def pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)
+
+
+def get_mac_address() -> Union[str, None]:
+    """Get the MAC ID of the first network card."""
+    try:
+        import psutil
+
+        mac_address = None
+        net_address = psutil.net_if_addrs()
+        eth = []
+        # Query the first network card in order and obtain the MAC address of the first network card.
+        # "Ethernet" is the name of the Windows network card.
+        # "eth", "ens", "eno" are the name of the Linux & Mac network card.
+        net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
+        for net_interface_name in net_interface_names:
+            if net_interface_name in net_address:
+                eth = net_address[net_interface_name]
+                break
+        for net_interface in eth:
+            if net_interface.family == psutil.AF_LINK:  # mac address
+                mac_address = str(net_interface.address)
+                break
+
+        # If obtaining the network card MAC ID fails, obtain other MAC ID
+        if mac_address is None:
+            node = uuid.getnode()
+            if node != 0:
+                mac_address = str(uuid.UUID(int=node).hex[-12:])
+
+        return mac_address
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return None
+
+
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
+    mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
+    if mac_address:
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
+    return None
+
+
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+    nanoseconds = int(time_unix_nano)
+    seconds = nanoseconds / 1_000_000_000
+    timestamp = datetime.datetime.utcfromtimestamp(seconds)
+    return timestamp.isoformat()
+
+
+def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
+    attr_key = attribute["key"]
+    # suppose all values are flattened here
+    # so simply regard the first value as the attribute value
+    attr_value = list(attribute["value"].values())[0]
+    return attr_key, attr_value
+
+
+def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
+
+
+def parse_otel_span_status_code(value: int) -> str:
+    # map int value to string
+    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
+    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
+    if value == 0:
+        return "Unset"
+    elif value == 1:
+        return "Ok"
+    else:
+        return "Error"

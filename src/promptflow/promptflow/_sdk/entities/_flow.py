@@ -92,8 +92,15 @@ class FlowContext:
 
 
 class FlowBase(abc.ABC):
-    def __init__(self, **kwargs):
+    def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
         self._context = FlowContext()
+        # flow.dag.yaml's content if provided
+        self._data = data
+        # working directory of the flow
+        self._code = Path(code).resolve()
+        # flow file path, can be script file or flow definition YAML file
+        self._path = Path(path).resolve()
+        # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
         super().__init__(**kwargs)
 
@@ -106,6 +113,26 @@ class FlowBase(abc.ABC):
         if not isinstance(val, FlowContext):
             raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
         self._context = val
+
+    @property
+    def code(self) -> Path:
+        """Working directory of the flow."""
+        return self._code
+
+    @property
+    def path(self) -> Path:
+        """Flow file path. Can be script file or flow definition YAML file."""
+        return self._path
+
+    @property
+    def language(self) -> str:
+        """Language of the flow."""
+        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+    @property
+    def additional_includes(self) -> list:
+        """Additional includes of the flow."""
+        return self._data.get("additional_includes", [])
 
     @classmethod
     # pylint: disable=unused-argument
@@ -127,33 +154,12 @@ class Flow(FlowBase):
     def __init__(
         self,
         code: Union[str, PathLike],
+        path: Union[str, PathLike],
         dag: dict,
         **kwargs,
     ):
-        self._code = Path(code)
-        path = kwargs.pop("path", None)
-        self._path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
-        self.dag = dag
-        super().__init__(**kwargs)
-
-    @property
-    def code(self) -> Path:
-        return self._code
-
-    @code.setter
-    def code(self, value: Union[str, PathLike, Path]):
-        self._code = value
-
-    @property
-    def path(self) -> Path:
-        flow_file = self._path or self.code / DAG_FILE_NAME
-        if not flow_file.is_file():
-            raise UserErrorException(
-                "The directory does not contain a valid flow.",
-                target=ErrorTarget.CONTROL_PLANE_SDK,
-            )
-        return flow_file
+        super().__init__(data=dag, code=code, path=path, **kwargs)
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
@@ -165,6 +171,7 @@ class Flow(FlowBase):
     def load(
         cls,
         source: Union[str, PathLike],
+        entry: str = None,
         **kwargs,
     ):
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -180,15 +187,15 @@ class Flow(FlowBase):
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
                 data = load_yaml_string(flow_content)
-                kwargs["content_hash"] = hash(flow_content)
+                content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
+                return EagerFlow._load(path=flow_path, data=data, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
-                return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
-        # if non-YAML file is provided, treat is as eager flow
-        return EagerFlow._load(path=flow_path, **kwargs)
+                return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+        # if non-YAML file is provided, raise user error exception
+        raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
@@ -197,7 +204,7 @@ class Flow(FlowBase):
         # this is a little wired:
         # 1. the executable is created from a temp folder when there is additional includes
         # 2. after the executable is returned, the temp folder is deleted
-        with variant_overwrite_context(self.code, tuning_node, variant) as flow:
+        with variant_overwrite_context(self, tuning_node, variant) as flow:
             from promptflow.contracts.flow import Flow as ExecutableFlow
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
@@ -223,11 +230,13 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def __init__(
         self,
-        code: str,
+        path: Path,
+        code: Path,
+        dag: dict,
         params_override: Optional[Dict] = None,
         **kwargs,
     ):
-        super().__init__(code=code, **kwargs)
+        super().__init__(path=path, code=code, dag=dag, **kwargs)
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
@@ -235,7 +244,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
-        return cls(code=path.parent.absolute().as_posix(), dag=dag, **kwargs)
+        return cls(path=path, code=path.parent, dag=dag, **kwargs)
 
     @property
     def flow_dag_path(self) -> Path:
@@ -247,11 +256,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     @property
     def display_name(self) -> str:
-        return self.dag.get("display_name", self.name)
-
-    @property
-    def language(self) -> str:
-        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+        return self._data.get("display_name", self.name)
 
     @property
     def tools_meta_path(self) -> Path:
@@ -336,17 +341,16 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk._submitter import TestSubmitter
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
-        if self.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
-                result = submitter.exec_with_inputs(
-                    inputs=inputs,
-                )
+        if self.language == FlowLanguage.CSharp:
+            with TestSubmitter(flow=self, flow_context=self.context).init(
+                stream_output=self.context.streaming
+            ) as submitter:
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
                 return result
         else:
-
             invoker = FlowContextResolver.resolve(flow=self)
             result = invoker._invoke(
                 data=inputs,

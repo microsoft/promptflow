@@ -59,9 +59,9 @@ class TestOperationContext:
     def test_setattr_non_primitive(self):
         # Test set non-primitive type
         context = OperationContext()
+        context.foo = [1, 2, 3]
 
-        with pytest.raises(TypeError):
-            context.foo = [1, 2, 3]
+        assert [1, 2, 3] == context.foo
 
     def test_getattr(self):
         context = OperationContext()
@@ -88,7 +88,7 @@ class TestOperationContext:
 
     def test_append_user_agent(self):
         context = OperationContext()
-        user_agent = ' ' + context.user_agent if 'user_agent' in context else ''
+        user_agent = " " + context.user_agent if "user_agent" in context else ""
 
         context.append_user_agent("test_agent/0.0.2")
         assert context.user_agent == "test_agent/0.0.2" + user_agent

@@ -1,10 +1,23 @@
 import functools
 import inspect
+import os
+from pathlib import Path
 
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 from promptflow._core.tracer import TraceType, _create_trace_from_function_call
+from promptflow._utils.utils import is_in_ci_pipeline
 
-from .record_storage import RecordFileMissingException, RecordItemMissingException, RecordStorage
+from .record_storage import (
+    Counter,
+    RecordFileMissingException,
+    RecordItemMissingException,
+    RecordStorage,
+    is_live,
+    is_record,
+    is_replay,
+)
+
+COUNT_RECORD = (Path(__file__) / "../../count.json").resolve()
 
 # recording array is a global variable to store the function names that need to be recorded
 recording_array = ["fetch_text_content_from_url", "my_python_tool"]
@@ -46,17 +59,8 @@ def _replace_tool_rule(func):
         func_wo_partial = func.func
     else:
         func_wo_partial = func
-    if func_wo_partial.__qualname__.startswith("AzureOpenAI"):
-        return True
-    elif func_wo_partial.__qualname__.startswith("OpenAI"):
-        return True
-    elif func_wo_partial.__module__ == "promptflow.tools.aoai":
-        return True
-    elif func_wo_partial.__module__ == "promptflow.tools.openai_gpt4v":
-        return True
-    elif func_wo_partial.__module__ == "promptflow.tools.openai":
-        return True
-    elif func_wo_partial.__qualname__ in recording_array:
+
+    if func_wo_partial.__qualname__ in recording_array:
         return True
     else:
         return False
@@ -64,32 +68,46 @@ def _replace_tool_rule(func):
 
 def call_func(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
-    if RecordStorage.is_replaying_mode():
+    if is_replay():
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
-    elif RecordStorage.is_recording_mode():
+    elif is_record():
         try:
             # prevent recording the same item twice
             obj = RecordStorage.get_instance().get_record(input_dict)
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
+    elif is_live() and is_in_ci_pipeline():
+        obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, func(*args, **kwargs))
+    else:
+        obj = func(*args, **kwargs)
     return obj
 
 
 async def call_func_async(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
-    if RecordStorage.is_replaying_mode():
+    if is_replay():
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
-    elif RecordStorage.is_recording_mode():
+    elif is_record():
         try:
             # prevent recording the same item twice
             obj = RecordStorage.get_instance().get_record(input_dict)
         except (RecordItemMissingException, RecordFileMissingException):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
+    elif is_live() and is_in_ci_pipeline():
+        obj = Counter.get_instance().set_file_record_count(COUNT_RECORD, await func(*args, **kwargs))
+    else:
+        obj = await func(*args, **kwargs)
     return obj
+
+
+def delete_count_lock_file():
+    lock_file = str(COUNT_RECORD) + ".lock"
+    if os.path.isfile(lock_file):
+        os.remove(lock_file)
 
 
 def mock_tool(original_tool):
@@ -162,7 +180,6 @@ def mock_tool(original_tool):
                 raise UserErrorException(f"Tool type {type} is not supported yet.")
 
             new_f.__original_function = func
-            func.__wrapped_function = new_f
             new_f.__tool = None  # This will be set when generating the tool definition.
             new_f.__name = name
             new_f.__description = description
@@ -176,7 +193,9 @@ def mock_tool(original_tool):
 
         # tool replacements.
         if func is not None:
-            if not _replace_tool_rule(func):
+            if _replace_tool_rule(func):
+                return tool_decorator(func)
+            else:
                 return original_tool(
                     func,
                     *args_mock,
@@ -186,7 +205,6 @@ def mock_tool(original_tool):
                     input_settings=input_settings,
                     **kwargs_mock,
                 )
-            return tool_decorator(func)
         return original_tool(  # no recording for @tool(name="func_name")
             func,
             *args_mock,
