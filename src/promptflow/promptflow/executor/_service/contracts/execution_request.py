@@ -12,6 +12,8 @@ from promptflow.executor._service._errors import FlowFilePathInvalid
 
 
 class BaseExecutionRequest(BaseModel):
+    """Base request model for execution."""
+
     run_id: str
     working_dir: Path
     flow_file: Path
@@ -34,6 +36,8 @@ class BaseExecutionRequest(BaseModel):
 
 
 class FlowExecutionRequest(BaseExecutionRequest):
+    """Request model for flow execution."""
+
     inputs: Mapping[str, Any] = None
 
     def get_run_mode(self):
@@ -41,6 +45,8 @@ class FlowExecutionRequest(BaseExecutionRequest):
 
 
 class NodeExecutionRequest(BaseExecutionRequest):
+    """Request model for node execution."""
+
     node_name: str
     flow_inputs: Mapping[str, Any] = None
     dependency_nodes_outputs: Mapping[str, Any] = None

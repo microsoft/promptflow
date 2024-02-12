@@ -23,8 +23,5 @@ class TestCommonApis:
 
         response = response.json()
         assert response["status"] == "healthy"
-        assert response["version"] == "20240131.v1"
-        assert response["build_info"] == '{"build_number": "20240131.v1"}'
-
-        feature_list = response["feature_list"]
-        assert isinstance(feature_list, list)
+        assert response["version"] == "promptflow-executor/20240131.v1"
+        assert isinstance(response["feature_list"], list)

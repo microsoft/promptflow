@@ -125,7 +125,7 @@ class ToolExecutionError(UserErrorException):
 
 
 class GenerateMetaUserError(UserErrorException):
-    """Base exception raised when failed to validate tool."""
+    """Base user exception raised when failed to validate tool."""
 
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
@@ -136,6 +136,17 @@ class MetaFileNotFound(GenerateMetaUserError):
 
 
 class MetaFileReadError(GenerateMetaUserError):
+    pass
+
+
+class GenerateMetaSystemError(SystemErrorException):
+    """Base system exception raised when failed to validate tool."""
+
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
+
+
+class NoToolTypeDefined(GenerateMetaSystemError):
     pass
 
 
