@@ -3,14 +3,15 @@
 This flow implements a reference-free automatic abstractive summarization evaluation across four dimensions: fluency, coherence, consistency, relevance. Each dimension uses a prompt to score a generated summary against the source document from which it was generated. Each dimension's prompt has been meta-evaluated against the [SummEval benchmark](https://arxiv.org/abs/2007.12626) and produces state-of-the-art scores in terms of correlation to expert human judgements.
 
 ## Introduction
- 
+
 Provide a detailed description of the flow, including its components, inputs, outputs, and any dependencies. Explain how the flow works and what problem it solves. This section should give users a clear understanding of the flow's functionality and how it can be used. -- TODO remove this when done
 
 Abstractive summarization evaluation is hard problem for which many previous automatic methods have performed poorly in-terms of correlation with human judgements. Furthermore, human expert created ground truths for summarization are hard to obtain and also hard to compare automatically to generated summaries. Thus there is a need for effective automatic reference-free summarization evaluation in which a generated summary is evaluated with respect to the document it was generated for.
 
-This flow implements G-Eval for summarization evaluation that has been adopted from the [research paper](https://arxiv.org/abs/2303.16634) and associated [Github repository](https://github.com/nlpyang/geval). This method introduces a prompt based evaluation with GPT-4 for each of the 4 standard dimensions of summariation evaluation and shows state-of-the-art results from meta-evaluation against the [SummEval benchmark](https://arxiv.org/abs/2007.12626).
+This flow implements G-Eval for summarization evaluation that has been adopted from the [research paper](https://arxiv.org/abs/2303.16634) and associated [Github repository](https://github.com/nlpyang/geval). This method introduces a prompt based evaluation with GPT-4 for each of the 4 standard dimensions of summarization evaluation and shows state-of-the-art results from meta-evaluation against the [SummEval benchmark](https://arxiv.org/abs/2007.12626).
 
 The 4 standard dimensions of summarization evaluation have been defined in prior research (see the SummEval paper for references) and a brief description of each is:
+
 - Coherence - the collective quality of all sentences in the summary, scored on 1-5 scale
 - Consistency - factual alignment between the summary and summarized source document, scored on a 1-5 scale
 - Fluency - the quality of individual sentences of the summary, scored on a 1-3 scale (note this is an implementation difference compared to the original definition which uses a 1-5 scale)
@@ -37,6 +38,7 @@ An important note regarding the implementation and use of this flow is that for 
 List all the tools (functions) used in the flow. This can include both standard tools provided by prompt flow and any custom tools created specifically for the flow. Include a brief description of each tool and its purpose within the flow.  -- TODO remove this when done
 
 Tools used in this flow：
+
 - `python` tool the implements direct calls to GPT-4 (due to the need for using n=20, which is currently unavailable as a parameter in prompt flow LLM nodes) for each dimension's evaluation
 
 ## Pre-requisites
@@ -63,17 +65,14 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 ```
 
 ## Usage Examples
- 
+
 Include usage examples that demonstrate how to run the flow and provide input data. This can include command-line instructions or code snippets. Show users how to execute the flow and explain the expected output or results.   -- TODO remove this when done
 
-### 1. Test the flow with single line data
+### 1. Test flow with single line data
 
 ```bash
 # test with flow inputs
 pf flow test --flow . --inputs document=ABC summary=ABC
-
-# test node with inputs
-pf flow test --flow . --node line_process --inputs document=ABC summary=ABC
 ```
 
 ### 2. Create flow run with multi-line data
@@ -82,20 +81,26 @@ pf flow test --flow . --node line_process --inputs document=ABC summary=ABC
 pf run create --flow . --data ./data.jsonl --column-mapping document='${data.document}' summary='${data.summary}' --stream
 ```
 
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+
+## How to run Unit Tests
+
+1. Make sure you already finished [Prerequisites](#pre-requisites)
+1. Run the following commands
+
+    ```bash
+    pip install pytest
+    python -m pytest tests
+    ```
+
 ## Troubleshooting
- 
+
 If there are any known issues or troubleshooting tips related to the flow, include them in this section. Provide solutions or workarounds for common problems that users may encounter. This will help users troubleshoot issues on their own and reduce the need for support.   -- TODO remove this when done, or remove this section if not needed
 
 ## Contact
- 
+
 If you have any questions or issues related to this flow, please reach out to either:
+
 - Bhavik Maneck [[Email](mailto:bhavikmaneck@microsoft.com) | [Linked-In](https://www.linkedin.com/in/bhavik-maneck/)]
-- Kosuke Fujimoto [TODO fill in]
-
-## Unit Tests
-
-TODO: remove this section if tests are moved into prompflow/tests
-
-1. Make sure you already finished [Prerequisites](#prerequisites)
-1. Run `pip install pytest`
-1. Run `python -m pytest tests`
+- Kosuke Fujimoto [[Email](mailto:kofuji@microsoft.com) | [Linked-In](https://www.linkedin.com/in/kosuke-fuji/)]
