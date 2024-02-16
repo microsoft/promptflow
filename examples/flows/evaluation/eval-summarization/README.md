@@ -27,11 +27,11 @@ It is recommended to use this flow and it's prompts with only a GPT-4 model vers
 
 An important note regarding the implementation and use of this flow is that for each dimension, the evaluation prompt is run with temperature=2 and n=20, from which the final score is averaged across each trial. This is done as an approximation for token probabilities which are currently unavailable for GPT-4. This is run for each dimension for each summary being evaluated (ie. 20 LLM calls per summary), which may have cost considerations for your usecase.
 
-<<TODO bhavik add section on limitations in terms of gpt-4 bias favouring LLM summaries>>
+<<TODO Bhavik add section on limitations in terms of gpt-4 bias favouring LLM summaries>>
 
-<<TODO bhavik add recommendation on using the scores outputted>>
+<<TODO Bhavik add recommendation on using the scores outputted>>
 
-<<TODO bhavik add section on doing custom meta-evaluation and tuning prompts>>
+<<TODO Bhavik add section on doing custom meta-evaluation and tuning prompts>>
 
 ## Tools Used in this Flow
 

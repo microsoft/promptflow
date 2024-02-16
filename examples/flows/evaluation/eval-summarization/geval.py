@@ -27,8 +27,6 @@ class Logger:
         logger (logging.Logger): The logger object.
     """
 
-    # when you run this with promptflow, current working directory will be "one-sentence-summary/src/flows/evaluation" so
-    # config_file path needs to start from "metrics"
     def __init__(self):
         """
         Initializes the Logger class.
@@ -74,7 +72,7 @@ def parse_output(output: str, max: float) -> float:
             score = float(matched[0])
             if score > max:
                 raise ValueError(
-                    f"Parserd number: {score} was larger than max score: {max}"
+                    f"Parsed number: {score} was larger than max score: {max}"
                 )
         else:
             raise ValueError(
@@ -150,7 +148,7 @@ def geval_summarization(
             content = response.choices[i].message.content
             all_responses.append(content)
         except KeyError:
-            # `content` won't exist in returned json when openai content_fliter is triggered
+            # `content` won't exist in returned json when openai content_filter is triggered
             logger.exception(
                 f"""data with key missing was: {response.choices[i]}\nInput prompt was: {message}"""
             )
