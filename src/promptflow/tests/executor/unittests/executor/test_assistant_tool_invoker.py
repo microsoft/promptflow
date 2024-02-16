@@ -1,14 +1,19 @@
-import pytest
 from pathlib import Path
 from typing import Callable
 
+import pytest
+
 from promptflow import tool
+from promptflow._sdk.entities import AzureOpenAIConnection
 from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 from promptflow.executor._errors import UnsupportedAssistantToolType
 
 
 @pytest.mark.unittest
 class TestAssistantToolInvoker:
+
+    conn = AzureOpenAIConnection(api_key="key_placeholder", api_base="base_placeholder")
+
     @pytest.fixture
     def tool_definitions(self):
         return [
@@ -21,7 +26,7 @@ class TestAssistantToolInvoker:
             },
         ]
 
-    @pytest.mark.parametrize("predefined_inputs", [({}), ({"input_int": 1})])
+    @pytest.mark.parametrize("predefined_inputs", [({"connection": conn}), ({"connection": conn, "input_int": 1})])
     def test_load_tools(self, predefined_inputs):
         input_int = 1
         input_str = "test"
@@ -92,7 +97,7 @@ class TestAssistantToolInvoker:
 
 
 @tool
-def sample_tool(input_int: int, input_str: str):
+def sample_tool(connection: AzureOpenAIConnection, input_int: int, input_str: str):
     """This is a sample tool.
 
     :param input_int: This is a sample input int.
@@ -100,5 +105,7 @@ def sample_tool(input_int: int, input_str: str):
     :param input_str: This is a sample input str.
     :type input_str: str
     """
-
+    assert isinstance(connection, AzureOpenAIConnection)
+    assert "placeholder" in connection.api_key
+    assert "placeholder" in connection.api_base
     return input_int, input_str
