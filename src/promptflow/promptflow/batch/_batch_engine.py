@@ -182,16 +182,16 @@ class BatchEngine:
                     inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
-                    full_batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     previous_run_results = self._copy_previous_run_result(
-                        resume_from_run_storage, resume_from_run_output_dir, full_batch_inputs
+                        resume_from_run_storage, resume_from_run_output_dir, batch_inputs
                     )
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
                     # run flow in batch mode
                     return async_run_allowing_running_loop(
                         self._exec_in_task,
-                        full_batch_inputs,
+                        batch_inputs,
                         run_id,
                         output_dir,
                         raise_on_line_failure,
@@ -218,7 +218,7 @@ class BatchEngine:
         self,
         resume_from_run_storage: AbstractBatchRunStorage,
         resume_from_run_output_dir: Path,
-        full_batch_inputs: List,
+        batch_inputs: List,
     ) -> List[LineResult]:
         """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
         to the storage of new run,
@@ -229,7 +229,7 @@ class BatchEngine:
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
-        for i in len(full_batch_inputs):
+        for i in len(batch_inputs):
             previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
             if previous_run_info and previous_run_info.status == Status.Completed:
                 previous_node_run_infos = (
@@ -281,7 +281,7 @@ class BatchEngine:
 
     async def _exec_in_task(
         self,
-        full_inputs: List[Dict[str, Any]],
+        batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
@@ -294,7 +294,7 @@ class BatchEngine:
         line_results.extend(previous_line_results or [])
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, full_inputs, run_id, output_dir, raise_on_line_failure)
+            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -311,7 +311,7 @@ class BatchEngine:
         self,
         line_results: List[LineResult],
         aggr_result: AggregationResult,
-        full_inputs: List[Dict[str, Any]],
+        batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
@@ -321,16 +321,13 @@ class BatchEngine:
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
         if not self._is_eager_flow:
-            full_inputs = [
-                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in full_inputs
+            batch_inputs = [
+                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
 
         existing_results_line_numbers = set([r.run_info[LINE_NUMBER_KEY] for r in line_results])
         bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
-        batch_inputs = []
-        for line in full_inputs:
-            if line[LINE_NUMBER_KEY] not in existing_results_line_numbers:
-                batch_inputs.append(line)
+        inputs_to_run = [input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers]
 
         run_id = run_id or str(uuid.uuid4())
 
@@ -338,7 +335,7 @@ class BatchEngine:
         is_timeout = False
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             results, is_timeout = self._executor_proxy._exec_batch(
-                batch_inputs,
+                inputs_to_run,
                 output_dir,
                 run_id,
                 batch_timeout_sec=self._batch_timeout_sec,
@@ -363,7 +360,7 @@ class BatchEngine:
         ex = None
         if not is_timeout:
             # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(full_inputs, line_results, run_id)
+            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
             self._update_aggr_result(aggr_result, aggr_exec_result)
         else:
@@ -415,7 +412,7 @@ class BatchEngine:
 
     async def _exec_aggregation(
         self,
-        full_inputs: List[dict],
+        batch_inputs: List[dict],
         line_results: List[LineResult],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
@@ -430,7 +427,7 @@ class BatchEngine:
         run_infos = [r.run_info for r in line_results]
         succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
 
-        succeeded_batch_inputs = [full_inputs[i] for i in succeeded]
+        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
             FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
         ]
