@@ -183,45 +183,9 @@ class BatchEngine:
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     full_batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-
-                    previous_run_results = []
-                    previous_run_output = (
-                        self._load_outputs(resume_from_run_output_dir) if resume_from_run_output_dir else []
+                    previous_run_results = self._copy_previous_run_result(
+                        resume_from_run_storage, resume_from_run_output_dir, full_batch_inputs
                     )
-                    previous_run_output_dict = {
-                        each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
-                    }
-                    lines_to_run = []
-                    for i, each_line_input in enumerate(full_batch_inputs):
-                        previous_run_info = (
-                            resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
-                        )
-                        if not previous_run_info or previous_run_info.status != Status.Completed:
-                            lines_to_run.append(each_line_input["line_number"])
-                        else:
-                            previous_node_run_infos = (
-                                resume_from_run_storage.load_node_run_info_for_line(i)
-                                if resume_from_run_storage
-                                else []
-                            )
-                            previous_node_run_infos_dict = {
-                                node_run.node: node_run for node_run in previous_node_run_infos
-                            }
-                            previous_node_run_outputs = {
-                                node_info.node: node_info.output for node_info in previous_node_run_infos
-                            }
-                            aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
-                            self._storage.persist_flow_run(previous_run_info)
-                            for node_run_info in previous_node_run_infos:
-                                self._storage.persist_node_run(node_run_info)
-                            previous_line_result = self._construct_line_result(
-                                previous_run_info,
-                                previous_node_run_infos_dict,
-                                previous_run_output_dict[i],
-                                aggregation_inputs=aggregation_inputs,
-                            )
-                            previous_run_results.append(previous_line_result)
-
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
                     # run flow in batch mode
@@ -232,7 +196,6 @@ class BatchEngine:
                         output_dir,
                         raise_on_line_failure,
                         previous_run_results,
-                        lines_to_run,
                     )
                 finally:
                     async_run_allowing_running_loop(self._executor_proxy.destroy)
@@ -250,6 +213,43 @@ class BatchEngine:
                     error_type_and_message=f"({e.__class__.__name__}) {e}",
                 )
                 raise unexpected_error from e
+
+    def _copy_previous_run_result(
+        self,
+        resume_from_run_storage: AbstractBatchRunStorage,
+        resume_from_run_output_dir: Path,
+        full_batch_inputs: List,
+    ) -> List[LineResult]:
+        """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
+        to the storage of new run,
+        return the list of previous line results for the usage of aggregation and summarization.
+        """
+        previous_run_results = []
+        previous_run_output = self._load_outputs(resume_from_run_output_dir) if resume_from_run_output_dir else []
+        previous_run_output_dict = {
+            each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
+        }
+        for i in len(full_batch_inputs):
+            previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
+            if previous_run_info and previous_run_info.status == Status.Completed:
+                previous_node_run_infos = (
+                    resume_from_run_storage.load_node_run_info_for_line(i) if resume_from_run_storage else []
+                )
+                previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
+                previous_node_run_outputs = {node_info.node: node_info.output for node_info in previous_node_run_infos}
+                aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
+                self._storage.persist_flow_run(previous_run_info)
+                for node_run_info in previous_node_run_infos:
+                    self._storage.persist_node_run(node_run_info)
+                previous_line_result = self._construct_line_result(
+                    previous_run_info,
+                    previous_node_run_infos_dict,
+                    previous_run_output_dict[i],
+                    aggregation_inputs=aggregation_inputs,
+                )
+                previous_run_results.append(previous_line_result)
+
+        return previous_run_results
 
     # TODO: Populate aggregation inputs
     def _construct_line_result(self, flow_run_info, node_run_infos, output, aggregation_inputs) -> LineResult:
@@ -286,17 +286,15 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
         previous_line_results: List[LineResult] = None,
-        lines_to_run: List[int] = None,
     ) -> BatchResult:
         # if the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
-        if previous_line_results:
-            line_results.extend(previous_line_results)
+        line_results.extend(previous_line_results or [])
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, full_inputs, run_id, output_dir, raise_on_line_failure, lines_to_run)
+            self._exec(line_results, aggr_result, full_inputs, run_id, output_dir, raise_on_line_failure)
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -317,7 +315,6 @@ class BatchEngine:
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
-        lines_to_run: List[int] = None,
     ) -> BatchResult:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
@@ -327,13 +324,14 @@ class BatchEngine:
             full_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in full_inputs
             ]
-        if lines_to_run is None:
-            batch_inputs = full_inputs
-        else:
-            batch_inputs = []
-            for line in full_inputs:
-                if line["line_number"] in lines_to_run:
-                    batch_inputs.append(line)
+
+        existing_results_line_numbers = set([r.run_info[LINE_NUMBER_KEY] for r in line_results])
+        bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
+        batch_inputs = []
+        for line in full_inputs:
+            if line[LINE_NUMBER_KEY] not in existing_results_line_numbers:
+                batch_inputs.append(line)
+
         run_id = run_id or str(uuid.uuid4())
 
         # execute lines
