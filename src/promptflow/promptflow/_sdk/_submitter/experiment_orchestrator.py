@@ -1044,7 +1044,7 @@ class ExperimentCommandExecutor:
     @staticmethod
     def run(command: str, cwd: str, log_path: Path):
         """Start a subprocess to run the command"""
-        logger.info(f"Start running command {command}, log path: {log_path}.")
+        logger.info(f"Start running command {command}, log path: {log_path}")
         with open(log_path, "w") as log_file:
             process = subprocess.Popen(command, stdout=log_file, stderr=log_file, shell=True, env=os.environ, cwd=cwd)
         process.wait()

@@ -8,12 +8,13 @@ from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
 
 from ..process_utils import execute_function_in_subprocess
-from ..utils import get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter
+from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter, load_content
 
 OPEN_AI_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -26,6 +27,11 @@ TOKEN_NAMES = [
     "__computed__.cumulative_token_count.prompt",
     "__computed__.cumulative_token_count.completion",
     "__computed__.cumulative_token_count.total",
+]
+
+SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES = [
+    "render_template_jinja2",
+    "AzureOpenAI.chat",
 ]
 
 
@@ -218,10 +224,9 @@ class TestExecutorTraces:
         assert flow_trace["system_metrics"]["prompt_tokens"] == 0
         assert flow_trace["system_metrics"]["completion_tokens"] == 0
         assert flow_trace["system_metrics"]["total_tokens"] == 0
-        # TODO: These assertions should be fixed after added these fields to the top level trace
-        assert "inputs" not in flow_trace
-        assert "output" not in flow_trace
-        assert "error" not in flow_trace
+        assert isinstance(flow_trace["inputs"], dict)
+        assert flow_trace["output"] == {"output": "Hello, User 1!"}
+        assert flow_trace["error"] is None
         if sys.platform != "darwin":
             assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
             assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
@@ -298,7 +303,7 @@ class TestOTelTracer:
             ("openai_completion_api_flow", get_comletion_input(False), 3),
             ("llm_tool", {"topic": "Hello", "stream": False}, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
-        ]
+        ],
     )
     def test_otel_trace(
         self,
@@ -380,6 +385,48 @@ class TestOTelTracer:
             if span_id in token_dict:
                 for token_name in TOKEN_NAMES:
                     assert span.attributes[token_name] == token_dict[span_id][token_name]
+
+    @pytest.mark.parametrize(
+        "flow_file, inputs, prompt_tpl_file",
+        [
+            ("llm_tool", {"topic": "Hello", "stream": False}, "joke.jinja2"),
+            # Add back this test case after changing the interface of render_template_jinja2
+            # ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
+        ]
+    )
+    def test_otel_trace_with_prompt(
+        self,
+        dev_connections,
+        flow_file,
+        inputs,
+        prompt_tpl_file,
+    ):
+        execute_function_in_subprocess(
+            self.assert_otel_traces_with_prompt, dev_connections, flow_file, inputs, prompt_tpl_file
+        )
+
+    def assert_otel_traces_with_prompt(self, dev_connections, flow_file, inputs, prompt_tpl_file):
+        memory_exporter = prepare_memory_exporter()
+
+        executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
+        line_run_id = str(uuid.uuid4())
+        resp = executor.exec_line(inputs, run_id=line_run_id)
+        assert isinstance(resp, LineResult)
+        assert isinstance(resp.output, dict)
+
+        prompt_tpl = load_content(get_flow_folder(flow_file) / prompt_tpl_file)
+        prompt_vars = list(get_inputs_for_prompt_template(prompt_tpl).keys())
+        span_list = memory_exporter.get_finished_spans()
+        for span in span_list:
+            assert span.status.status_code == StatusCode.OK
+            assert isinstance(span.name, str)
+            if span.attributes.get("function", "") in SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES:
+                assert "prompt.template" in span.attributes
+                assert span.attributes["prompt.template"] == prompt_tpl
+                assert "prompt.variables" in span.attributes
+                for var in prompt_vars:
+                    if var in inputs:
+                        assert var in span.attributes["prompt.variables"]
 
     def test_flow_with_traced_function(self):
         execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
