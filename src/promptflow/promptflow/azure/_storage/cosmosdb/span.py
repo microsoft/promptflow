@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from typing import Dict, Any
-from .client import get_client
+from .client import get_client, get_client_with_workspace_info
 
 
 class Span():
@@ -51,24 +51,26 @@ class Span():
         self.partition_key = attributes.get("session_id", None) if attributes else None
 
     def persist(self):
-        if self.id is None or self.partition_key is None:
+        if self.id is None or self.partition_key is None or self.resource is None:
             return
-        client = get_client(self.__container__)
+        
+        resource_attributes = self.resource.get("attributes", None)
+        if resource_attributes is None:
+            return
+        
+        client = get_client_with_workspace_info(self.__container__, resource_attributes)
         return client.create_item(body = self.to_dict())
-
+        
     @classmethod
-    def patch(self, id: str, partition_key: str, patch_operations) -> Dict[str, Any]:
-        client = get_client(self.__container__)
-        return client.patch_item(item = id, partition_key = partition_key, patch_operations=patch_operations)
-    
-    @classmethod
-    def from_cosmosdb(self, id: str, partition_key: str) -> "Span":
-        client = get_client(Span.__container__)
+    def from_cosmosdb(self, id: str, partition_key: str, 
+                      subscription_id: str,
+                      resource_group_name: str,
+                      workspace_name: str) -> "Span":
+        client = get_client(Span.__container__, subscription_id, resource_group_name, workspace_name)
         data = client.read_item(id, partition_key)
         params = {}
         for key, value in data.items():
             params[key] = value
-
         return Span(**params)
 
     def to_dict(self) -> Dict[str, Any]:
