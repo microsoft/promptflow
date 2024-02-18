@@ -41,16 +41,18 @@ class RepeatLogTimer(threading.Timer):
         self.finished.set()
 
 
-# Create a thread with the context variables from the current context.
+# Subclass of Thread to set context variables from parent context.
 # Our logger is context-aware, FileHandlerConcurrentWrapper need to get FileHandler from the context.
 # When we miss to set the context, log content in worker thread will not be written to the file.
-def create_thread_with_context_vars(target_function, daemon=False, target_args=(), target_kwargs={}):
-    # Copy the current context
-    context_vars = contextvars.copy_context()
+class ThreadWithContextVars(threading.Thread):
+    """A thread with context variables from the current context."""
 
-    def context_wrapper():
-        # Assign the context to the current thread to guarantee logger works.
-        set_context(context_vars)
-        target_function(*target_args, **target_kwargs)
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None):
+        self._context = contextvars.copy_context()
+        super().__init__(group=group, target=target, name=name, args=args, kwargs=kwargs, daemon=daemon)
 
-    return threading.Thread(target=context_wrapper, daemon=daemon)
+    def run(self):
+        """Override Thread.run method."""
+        # Set context variables from parent context.
+        set_context(self._context)
+        super().run()
