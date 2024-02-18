@@ -64,7 +64,9 @@ line_run_model = api.model(
         LineRunFieldName.NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
-        LineRunFieldName.EVALUATIONS: fields.Nested(evaluation_line_run_model),
+        LineRunFieldName.EVALUATIONS: fields.Nested,
+        # note that this is not REST, might need to change this
+        # LineRunFieldName.EVALUATIONS: fields.Nested(evaluation_line_run_model),
     },
 )
 
