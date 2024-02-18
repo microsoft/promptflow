@@ -289,7 +289,7 @@ class ToolResolver:
             if connection_from_env:
                 return connection_from_env
             raise ConnectionNotFound(
-                message_format="Connection of LLM node '{node_name}' is not set.",
+                message_format="Connection of LLM node '{node_name}' is not found.",
                 node_name=node.name,
                 target=ErrorTarget.EXECUTOR,
             )
