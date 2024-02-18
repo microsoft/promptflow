@@ -62,7 +62,7 @@ If the `flow.dag.yaml` become invalid after `overrides`, validation error will b
 After set `streaming` in flow context, the flow function will return an iterator to stream the output.
 
 ```python
-f = load_flow(source="../../examples/flows/chat/basic-chat/")
+f = load_flow(source="../../examples/flows/chat/chat-basic/")
 f.context.streaming = True
 result = f(
     chat_history=[

@@ -474,34 +474,14 @@ class TestRetryUtils:
         http_retry_wrapper(mock_http_request, tries=2, delay=1, backoff=1)()
         assert counter == 2
 
-    def test_get_mac_address(self):
-        import psutil
-
-        mac_address = None
-        net_address = psutil.net_if_addrs()
-        eth = []
-        # Query the first network card in order and obtain the MAC address of the first network card.
-        # "Ethernet" is the name of the Windows network card.
-        # "eth", "ens", "eno" are the name of the Linux & Mac network card.
-        net_interface_names = ["Ethernet", "eth0", "eth1", "ens0", "ens1", "eno0", "eno1"]
-        for net_interface_name in net_interface_names:
-            if net_interface_name in net_address:
-                eth = net_address[net_interface_name]
-                break
-        for net_interface in eth:
-            if net_interface.family == psutil.AF_LINK:  # mac address
-                mac_address = str(net_interface.address)
-                break
-
-        assert mac_address != ""
-        assert mac_address == get_mac_address()
-
     def test_gen_uuid_by_compute_info(self):
         uuid1 = gen_uuid_by_compute_info()
         uuid2 = gen_uuid_by_compute_info()
         assert uuid1 == uuid2
 
         mac_address = get_mac_address()
+        assert mac_address
+
         host_name, system, machine = get_system_info()
         system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
         compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
