@@ -4,6 +4,7 @@
 
 import copy
 import inspect
+import os
 import types
 from dataclasses import dataclass
 from functools import partial
@@ -265,18 +266,37 @@ class ToolResolver:
             if k in node_inputs:
                 del node_inputs[k]
 
-    def _get_node_connection(self, node: Node):
+    @staticmethod
+    def _resolve_llm_connection_from_env():
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            return None
+        from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
+        azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+        if azure_endpoint:
+            conn = AzureOpenAIConnection(api_key=api_key, api_base=azure_endpoint)
+            api_version = os.environ.get("OPENAI_API_VERSION")
+            if api_version:
+                conn.api_version = api_version
+            return conn
+        base_url = os.environ.get("OPENAI_BASE_URL")
+        return OpenAIConnection(api_key=api_key, base_url=base_url)
+
+    def _get_llm_node_connection(self, node: Node):
         connection = self._connection_manager.get(node.connection)
         if connection is None:
+            connection_from_env = self._resolve_llm_connection_from_env()
+            if connection_from_env:
+                return connection_from_env
             raise ConnectionNotFound(
-                message=f"Connection {node.connection!r} not found, available connection keys "
-                f"{self._connection_manager._connections.keys()}.",
+                message_format="Connection of LLM node '{node_name}' is not set.",
+                node_name=node.name,
                 target=ErrorTarget.EXECUTOR,
             )
         return connection
 
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        connection = self._get_node_connection(node)
+        connection = self._get_llm_node_connection(node)
         if not node.provider:
             if not connection_type_to_api_mapping:
                 raise EmptyLLMApiMapping()
@@ -312,7 +332,7 @@ class ToolResolver:
         return ResolvedTool(updated_node, tool, api_func, init_args)
 
     def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool) -> Node:
-        connection = self._get_node_connection(node)
+        connection = self._get_llm_node_connection(node)
         for key, input in tool.inputs.items():
             if ConnectionType.is_connection_class_name(input.type[0]):
                 if type(connection).__name__ not in input.type:
