@@ -21,11 +21,3 @@ app.include_router(execution_router)
 async def exception_handler(request, exc):
     resp = generate_error_response(exc)
     return JSONResponse(status_code=int(resp.response_code), content=resp.to_dict())
-
-
-if __name__ == "__main__":
-    command = ["uvicorn", "promptflow.executor._service.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    try:
-        subprocess.run(command)
-    except KeyboardInterrupt:
-        pass
