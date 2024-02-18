@@ -99,6 +99,7 @@ class SpanAttributeFieldName:
     CUMULATIVE_PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     CUMULATIVE_TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
     # test
+    LINE_RUN_ID = "line_run_id"
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
     # batch run
     BATCH_RUN_ID = "batch_run_id"
