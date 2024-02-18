@@ -49,7 +49,7 @@ class AssistantToolInvoker:
     def _load_tool_as_function(self, tool: dict):
         tool_resolver = ToolResolver(self._working_dir)
         node, predefined_inputs = self._generate_node_for_tool(tool)
-        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
+        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=True)
         func_name = resolved_tool.definition.function
         definition = self._generate_tool_definition(func_name, resolved_tool.definition.description, predefined_inputs)
         if resolved_tool.node.inputs:
