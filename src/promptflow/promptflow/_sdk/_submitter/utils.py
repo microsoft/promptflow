@@ -44,6 +44,7 @@ from promptflow._sdk._utils import (
     get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
+    resolve_connections_environment_variable_reference,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow, ProtectedFlow
@@ -221,9 +222,12 @@ class SubmitterHelper:
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return get_local_connections_from_executable(
+        connections = get_local_connections_from_executable(
             executable=executable, client=client, connections_to_ignore=connections_to_ignore
         )
+
+        resolve_connections_environment_variable_reference(connections)
+        return connections
 
     @staticmethod
     def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
