@@ -19,7 +19,7 @@ from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
-api = Namespace("spans", description="Span Management")
+api = Namespace("Spans", description="Spans Management")
 
 # parsers for query parameters
 list_span_parser = api.parser()
