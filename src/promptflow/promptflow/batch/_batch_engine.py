@@ -229,7 +229,7 @@ class BatchEngine:
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
-        for i in len(batch_inputs):
+        for i in range(len(batch_inputs)):
             previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
             if previous_run_info and previous_run_info.status == Status.Completed:
                 previous_node_run_infos = (
