@@ -48,6 +48,7 @@ CUMULATIVE_LLM_TOKEN_NAMES = [
 CUMULATIVE_EMBEDDING_TOKEN_NAMES = [
     "__computed__.cumulative_token_count.prompt",
     "__computed__.cumulative_token_count.total",
+]
 
 SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES = [
     "render_template_jinja2",
