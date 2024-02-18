@@ -74,6 +74,6 @@ Flow examples are available in the [GitHub repository](https://github.com/micros
 
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic)
 - [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification)
-- [basic-chat](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/basic-chat)
+- [chat-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic)
 - [chat-with-pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)
 - [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-basic)
