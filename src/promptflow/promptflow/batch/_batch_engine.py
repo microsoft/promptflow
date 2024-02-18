@@ -251,7 +251,6 @@ class BatchEngine:
 
         return previous_run_results
 
-    # TODO: Populate aggregation inputs
     def _construct_line_result(self, flow_run_info, node_run_infos, output, aggregation_inputs) -> LineResult:
         """Construct LineResult from flow_run_info, node_run_infos and output"""
         return LineResult(
