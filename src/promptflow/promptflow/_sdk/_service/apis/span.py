@@ -61,18 +61,25 @@ attributes_model = api.model(
         SpanAttributeFieldName.SPAN_TYPE: fields.String(required=True, default="Function"),
         SpanAttributeFieldName.FUNCTION: fields.String(required=True),
         SpanAttributeFieldName.INPUTS: fields.String(required=True),
-        SpanAttributeFieldName.OUTPUT: fields.String(required=True),
-        SpanAttributeFieldName.SESSION_ID: fields.String(required=True),
-        SpanAttributeFieldName.PATH: fields.String,
-        SpanAttributeFieldName.FLOW_ID: fields.String,
-        SpanAttributeFieldName.RUN: fields.String,
-        SpanAttributeFieldName.EXPERIMENT: fields.String,
+        SpanAttributeFieldName.OUTPUT: fields.String,
+        # token metrics
+        SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: fields.String,
+        SpanAttributeFieldName.PROMPT_TOKEN_COUNT: fields.String,
+        SpanAttributeFieldName.TOTAL_TOKEN_COUNT: fields.String,
+        # test
+        SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: fields.String,
+        # batch run
+        SpanAttributeFieldName.BATCH_RUN_ID: fields.String,
+        SpanAttributeFieldName.LINE_NUMBER: fields.String,
+        SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: fields.String,
     },
 )
 resource_attributes_model = api.model(
     "ResourceAttributes",
     {
-        SpanResourceAttributesFieldName.SERVICE_NAME: fields.String(default="promptflow"),
+        SpanResourceAttributesFieldName.SERVICE_NAME: fields.String(required=True, default="promptflow"),
+        SpanResourceAttributesFieldName.SESSION_ID: fields.String(required=True),
+        SpanResourceAttributesFieldName.EXPERIMENT_NAME: fields.String,
     },
 )
 resource_model = api.model(

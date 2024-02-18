@@ -91,20 +91,16 @@ class SpanAttributeFieldName:
     FUNCTION = "function"
     INPUTS = "inputs"
     OUTPUT = "output"
-    SESSION_ID = "session_id"
-    PATH = "path"
-    FLOW_ID = "flow_id"
-    RUN = "run"
-    EXPERIMENT = "experiment"
-    LINE_RUN_ID = "line_run_id"
-    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    # token metrics
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
-
-
-class SpanResourceAttributesFieldName:
-    SERVICE_NAME = "service.name"
+    # test
+    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    # batch run
+    BATCH_RUN_ID = "batch_run_id"
+    LINE_NUMBER = "line_number"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
 
 
 class SpanResourceFieldName:
@@ -112,7 +108,7 @@ class SpanResourceFieldName:
     SCHEMA_URL = "schema_url"
 
 
-class ResourceAttributeFieldName:
+class SpanResourceAttributesFieldName:
     EXPERIMENT_NAME = "experiment.name"
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"

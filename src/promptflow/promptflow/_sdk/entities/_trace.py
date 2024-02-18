@@ -13,10 +13,10 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
     DEFAULT_SPAN_TYPE,
-    ResourceAttributeFieldName,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanFieldName,
+    SpanResourceAttributesFieldName,
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
@@ -139,8 +139,8 @@ class Span:
 
         # parse from resource.attributes: session id, experiment
         resource_attributes = resource[SpanResourceFieldName.ATTRIBUTES]
-        session_id = resource_attributes[ResourceAttributeFieldName.SESSION_ID]
-        experiment = resource_attributes.get(ResourceAttributeFieldName.EXPERIMENT_NAME, None)
+        session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
+        experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
         return Span(
             name=obj.name,
