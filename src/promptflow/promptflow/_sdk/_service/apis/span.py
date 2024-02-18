@@ -66,6 +66,9 @@ attributes_model = api.model(
         SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: fields.String,
         SpanAttributeFieldName.PROMPT_TOKEN_COUNT: fields.String,
         SpanAttributeFieldName.TOTAL_TOKEN_COUNT: fields.String,
+        SpanAttributeFieldName.CUMULATIVE_COMPLETION_TOKEN_COUNT: fields.String,
+        SpanAttributeFieldName.CUMULATIVE_PROMPT_TOKEN_COUNT: fields.String,
+        SpanAttributeFieldName.CUMULATIVE_TOTAL_TOKEN_COUNT: fields.String,
         # test
         SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: fields.String,
         # batch run
