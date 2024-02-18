@@ -9,7 +9,7 @@ on:
     - cron: "40 22 * * *" # Every day starting at 6:40 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/chat/basic-chat/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_basic_chat.yml ]
+    paths: [ examples/flows/chat/chat-basic/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_basic_chat.yml ]
   workflow_dispatch:
 
 env:
@@ -38,7 +38,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples/flows/chat/chat-basic
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -49,7 +49,7 @@ jobs:
             mv .env.example .env
           fi
       - name: Create run.yml
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples/flows/chat/chat-basic
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -60,17 +60,17 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/flows/chat/basic-chat/README.md
+      - name: Extract Steps examples/flows/chat/chat-basic/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/chat/basic-chat/README.md -o examples/flows/chat/basic-chat
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/chat/chat-basic/README.md -o examples/flows/chat/chat-basic
       - name: Cat script
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples/flows/chat/chat-basic
         run: |
           cat bash_script.sh
       - name: Run scripts against canary workspace (scheduled runs only)
         if: github.event_name == 'schedule'
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples/flows/chat/chat-basic
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -80,7 +80,7 @@ jobs:
           bash bash_script.sh
       - name: Run scripts against production workspace
         if: github.event_name != 'schedule'
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples/flows/chat/chat-basic
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -90,7 +90,7 @@ jobs:
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples/flows/chat/chat-basic
         run: |
           pip list
       - name: Upload artifact
@@ -98,4 +98,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/chat/basic-chat/bash_script.sh
+          path: examples/flows/chat/chat-basic/bash_script.sh
