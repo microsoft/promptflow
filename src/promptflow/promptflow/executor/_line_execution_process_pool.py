@@ -367,7 +367,10 @@ class LineExecutionProcessPool:
         # wait 10 seconds to ensure the spans are exported before the process is killed
         # otherwise there will be some missing spans for lines
         # TODO (Task 2950080): make line process wait for spans flush
-        time.sleep(10)
+        from promptflow._trace._start_trace import _is_tracer_provider_configured
+
+        if _is_tracer_provider_configured():
+            time.sleep(10)
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
