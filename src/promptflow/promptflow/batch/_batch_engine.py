@@ -324,7 +324,7 @@ class BatchEngine:
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
 
-        existing_results_line_numbers = set([r.run_info[LINE_NUMBER_KEY] for r in line_results])
+        existing_results_line_numbers = set([r.run_info.index for r in line_results])
         bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
         inputs_to_run = [input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers]
 
