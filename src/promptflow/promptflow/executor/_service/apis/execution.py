@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import service_logger
 from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest, NodeExecutionRequest
-from promptflow.executor._service.utils.process_utils import invoke_function_in_process
+from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
 from promptflow.executor._service.utils.service_utils import (
     get_executor_version,
     get_service_log_context,
@@ -31,7 +31,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
             f"request id: {request_id}, executor version: {executor_version}."
         )
         try:
-            result = await invoke_function_in_process(flow_request, request.headers, flow_test)
+            result = await invoke_sync_function_in_process(flow_request, request.headers, flow_test)
             service_logger.info(f"Completed flow execution request, flow run id: {flow_request.run_id}.")
             return result
         except Exception as ex:
@@ -53,7 +53,7 @@ async def node_execution(request: Request, node_request: NodeExecutionRequest):
             f"request id: {request_id}, executor version: {executor_version}."
         )
         try:
-            result = await invoke_function_in_process(node_request, request.headers, single_node_run)
+            result = await invoke_sync_function_in_process(node_request, request.headers, single_node_run)
             service_logger.info(f"Completed node execution request, node name: {node_request.node_name}.")
             return result
         except Exception as ex:

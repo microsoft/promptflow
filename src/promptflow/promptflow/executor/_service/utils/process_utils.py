@@ -22,7 +22,7 @@ LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
 SHORT_WAIT_TIMEOUT = 10
 
 
-async def invoke_function_in_process(
+async def invoke_sync_function_in_process(
     request, context_dict: dict, target_function: Callable, wait_timeout: int = LONG_WAIT_TIMEOUT
 ):
     with multiprocessing.Manager() as manager:
