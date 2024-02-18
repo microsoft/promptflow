@@ -1,0 +1,17 @@
+inputs:
+  topic:
+    type: string
+    default: apple
+outputs:
+  joke:
+    type: string
+    reference: ${joke.output}
+nodes:
+- name: joke
+  type: llm
+  source:
+    type: code
+    path: joke.jinja2
+  inputs:
+    topic: ${inputs.topic}
+  api: chat

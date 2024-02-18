@@ -17,6 +17,8 @@ from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
+from ..process_utils import execute_function_in_subprocess
+
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -310,6 +312,24 @@ class TestExecutor:
         # clean up output folder
         shutil.rmtree(output_dir)
         shutil.rmtree(intermediate_dir)
+
+    def test_execute_flow_without_llm_connection(self):
+        execute_function_in_subprocess(exec_flow_without_llm_connection)
+
+
+def exec_flow_without_llm_connection():
+    flow_file = get_yaml_file("llm_no_connection")
+    os.environ["OPENAI_API_KEY"] = "wrong_key"
+    result = FlowExecutor.load_and_exec_node(flow_file, "joke")
+    assert result.status == Status.Failed
+    assert result.error is not None
+    expected_msg = "OpenAI API hits AuthenticationError:"
+    assert expected_msg in result.error["message"], f"Expected '{expected_msg}' not in '{result.error}'"
+    executor = FlowExecutor.create(flow_file, {}, raise_ex=False)
+    result = executor.exec_line({})
+    assert result.run_info.status == Status.Failed
+    assert_msg = f"Expected '{expected_msg}' not in '{result.run_info.error}'"
+    assert expected_msg in result.run_info.error["message"], assert_msg
 
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
