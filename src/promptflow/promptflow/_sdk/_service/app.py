@@ -11,6 +11,7 @@ from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
+from promptflow._sdk._service.apis.line_run import api as line_run_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
@@ -37,6 +38,7 @@ def create_app():
         api.add_namespace(run_api)
         api.add_namespace(telemetry_api)
         api.add_namespace(span_api)
+        api.add_namespace(line_run_api)
         api.add_namespace(ui_api)
         app.register_blueprint(api_v1)
 
