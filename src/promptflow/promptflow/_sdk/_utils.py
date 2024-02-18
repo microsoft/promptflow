@@ -1128,7 +1128,8 @@ def get_mac_address() -> str:
         mac_address = []
         net_addresses = psutil.net_if_addrs()
         # Obtain all MAC addresses, then sort and concatenate them
-        for net_address in net_addresses.values():
+        net_address_list = sorted(net_addresses.items())  # sort by name
+        for name, net_address in net_address_list:
             for net_interface in net_address:
                 if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
                     mac_address.append(net_interface.address)
