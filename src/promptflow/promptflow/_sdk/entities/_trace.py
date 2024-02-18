@@ -242,7 +242,10 @@ class LineRun:
             if span.parent_span_id:
                 continue
             attributes = span._content[SpanFieldName.ATTRIBUTES]
-            if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
+            if (
+                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes  # test scenario
+                or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes  # batch run scenario
+            ):
                 evaluation_line_run_data_dict[span.name] = _LineRunData._from_root_span(span)
             elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
