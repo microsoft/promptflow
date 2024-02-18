@@ -51,6 +51,7 @@ from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk._submitter.utils import (
     SubmitterHelper,
     _calculate_snapshot,
+    _set_up_experiment_log_handler,
     _start_process_in_background,
     _stop_orchestrator_process,
     _windows_stop_handler,
@@ -167,7 +168,7 @@ class ExperimentOrchestrator:
     def _test_command_node(self, *args, **kwargs):
         raise NotImplementedError
 
-    def start(self, nodes=None, from_nodes=None):
+    def start(self, nodes=None, from_nodes=None, attempt=None):
         """Start an execution of nodes.
 
         Start an orchestrator to schedule node execution according to topological ordering.
@@ -176,22 +177,31 @@ class ExperimentOrchestrator:
         :type nodes: list
         :param from_nodes: The branches in experiment to be executed.
         :type from_nodes: list
+        :param attempt: The number of attempts, it's used to records the experiment execution log.
+        :type attempt: int
         :return: Experiment info.
         :rtype: ~promptflow.entities.Experiment
         """
-        # Start experiment
-        experiment = self.experiment
-        logger.info(f"Starting experiment {experiment.name}.")
-        experiment.status = ExperimentStatus.IN_PROGRESS
-        experiment.last_start_time = datetime.utcnow().isoformat()
-        experiment.last_end_time = None
-        context = ExperimentTemplateContext(experiment)
-        self.experiment_operations.create_or_update(experiment)
-        self._update_orchestrator_record(status=ExperimentStatus.IN_PROGRESS, pid=os.getpid())
-        self._start_orchestrator(nodes=nodes, from_nodes=from_nodes, context=context)
+        # Setup file handler
+        file_handler, _ = _set_up_experiment_log_handler(experiment_path=self.experiment._output_dir, index=attempt)
+        logger.addHandler(file_handler._stream_handler)
+        try:
+            # Start experiment
+            experiment = self.experiment
+            logger.info(f"Starting experiment {experiment.name}.")
+            experiment.status = ExperimentStatus.IN_PROGRESS
+            experiment.last_start_time = datetime.utcnow().isoformat()
+            experiment.last_end_time = None
+            context = ExperimentTemplateContext(experiment)
+            self.experiment_operations.create_or_update(experiment)
+            self._update_orchestrator_record(status=ExperimentStatus.IN_PROGRESS, pid=os.getpid())
+            self._start_orchestrator(nodes=nodes, from_nodes=from_nodes, context=context)
+        except Exception as e:
+            logger.exception("Experiment failed to execute with error.")
+            raise e
         return experiment
 
-    def async_start(self, executable_path=None, nodes=None, from_nodes=None):
+    def async_start(self, executable_path=None, nodes=None, from_nodes=None, attempt=None):
         """Start an asynchronous execution of an experiment.
 
         :param executable_path: Python path when executing the experiment.
@@ -200,9 +210,14 @@ class ExperimentOrchestrator:
         :type nodes: list
         :param from_nodes: The branches in experiment to be executed.
         :type from_nodes: list
+        :param attempt: The number of attempts, it's used to records the experiment execution log.
+        :type attempt: int
         :return: Experiment info.
         :rtype: ~promptflow.entities.Experiment
         """
+        # Setup file handler
+        file_handler, index = _set_up_experiment_log_handler(experiment_path=self.experiment._output_dir, index=attempt)
+        logger.addHandler(file_handler._stream_handler)
         logger.info(f"Queuing experiment {self.experiment.name}.")
         self._update_orchestrator_record(status=ExperimentStatus.QUEUING)
 
@@ -212,6 +227,7 @@ class ExperimentOrchestrator:
             args = args + ["--nodes"] + nodes
         if from_nodes:
             args = args + ["--from-nodes"] + from_nodes
+        args = args + ["--attempt", str(index)]
         # Start an orchestrator process using detach mode
         logger.debug(f"Start experiment {self.experiment.name} in background.")
         _start_process_in_background(args, executable_path)
@@ -415,7 +431,7 @@ class ExperimentOrchestrator:
                     # Handle failed execution, update orchestrator and experiment info
                     self.experiment._append_node_run(node_name, future_to_node_run[future])
                     self._update_orchestrator_record(status=ExperimentStatus.TERMINATED)
-                    logger.warning(f"Node {future_to_node_run[future].node.name} failed to execute with error {e}.")
+                    logger.exception(f"Node {future_to_node_run[future].node.name} failed to execute with error.")
                     raise ExperimentNodeRunFailedError(
                         f"Node {future_to_node_run[future].node.name} failed to execute with error {e}."
                     )
@@ -1060,6 +1076,7 @@ def add_start_orchestrator_action(subparsers):
     start_orchestrator_parser.add_argument("--experiment", type=str, help="Experiment name")
     start_orchestrator_parser.add_argument("--nodes", type=str, help="Nodes to be executed", nargs="+")
     start_orchestrator_parser.add_argument("--from-nodes", type=str, help="Nodes branch to be executed", nargs="+")
+    start_orchestrator_parser.add_argument("--attempt", type=str, help="The number of attempt to execute experiment.")
     start_orchestrator_parser.set_defaults(action="start")
 
 
@@ -1078,4 +1095,6 @@ if __name__ == "__main__":
 
         client = PFClient()
         experiment = client._experiments.get(args.experiment)
-        ExperimentOrchestrator(client, experiment=experiment).start(nodes=args.nodes, from_nodes=args.from_nodes)
+        ExperimentOrchestrator(client, experiment=experiment).start(
+            nodes=args.nodes, from_nodes=args.from_nodes, attempt=args.attempt
+        )

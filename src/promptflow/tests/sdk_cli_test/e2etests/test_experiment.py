@@ -93,6 +93,8 @@ class TestExperiment:
         assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
         assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
         exp = self.wait_for_experiment_terminated(client, exp)
+        # Assert record log in experiment folder
+        assert (Path(exp._output_dir) / "logs" / "exp.attempt_0.log").exists()
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
@@ -112,6 +114,7 @@ class TestExperiment:
         exp = self.wait_for_experiment_terminated(client, exp)
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+        assert (Path(exp._output_dir) / "logs" / "exp.attempt_1.log").exists()
 
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
