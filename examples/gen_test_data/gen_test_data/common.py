@@ -185,3 +185,11 @@ def convert_to_abs_path(file_path: str) -> str:
         return abs
     else:
         return file_path
+
+
+def local_path_exists(path):
+    return Path(path).exists()
+
+
+def not_default_path(path):
+    return not (path.startswith("<") and path.endswith(">"))

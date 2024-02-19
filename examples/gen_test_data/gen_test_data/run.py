@@ -16,7 +16,7 @@ os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
 from common import clean_data, count_non_blank_lines, \
     split_document, copy_flow_folder_and_set_node_inputs, \
-    print_progress, convert_to_abs_path  # noqa: E402
+    print_progress, convert_to_abs_path, not_default_path, local_path_exists  # noqa: E402
 from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
 
 logger = get_logger("data.gen")
@@ -197,8 +197,10 @@ def run_cloud(
     ml_client = get_ml_client(subscription_id, resource_group, workspace_name)
 
     if should_skip_split:
+        # document_nodes_file = "azureml:document-nodes-latest:1"
         data_input = V2Input(path=document_nodes_file, type="uri_file")
     else:
+        # documents_folder = "https://yaopfeus2473337348.blob.core.windows.net/azureml-blobstore-54ee9268-b711-420d-8da1-20bb2aed93e6/UI/2024-02-19_025919_UTC/docs/"
         data_input = V2Input(path=documents_folder, type="uri_folder")
 
     prs_configs = {
@@ -276,10 +278,12 @@ if __name__ == "__main__":
         documents_folder = convert_to_abs_path(args.documents_folder)
         flow_folder = convert_to_abs_path(args.flow_folder)
         output_folder = convert_to_abs_path(args.output_folder)
+        args.cloud = True
+        valid_path = not_default_path if args.cloud else local_path_exists
 
-        if document_nodes_file and Path(document_nodes_file).is_file():
+        if document_nodes_file and valid_path(document_nodes_file):
             should_skip_split_documents = True
-        elif not documents_folder or not Path(documents_folder).is_dir():
+        elif not documents_folder or not valid_path(documents_folder):
             parser.error(
                 "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
                 f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
