@@ -59,7 +59,7 @@ class Span(Base):
         session_id: typing.Optional[str] = None,
     ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
-            stmt = session.query(Span)
+            stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
