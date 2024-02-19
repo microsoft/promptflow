@@ -83,7 +83,10 @@
     "nunit",
     "astext",
     "Likert",
-    "pfsvc"
+    "pfsvc",
+    "geval",
+    "Summ",
+    "Bhavik"
   ],
   "ignoreWords": [
     "openmpi",
