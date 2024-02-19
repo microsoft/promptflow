@@ -83,8 +83,7 @@
     "nunit",
     "astext",
     "Likert",
-    "pfsvc",
-    "uvicorn"
+    "pfsvc"
   ],
   "ignoreWords": [
     "openmpi",
