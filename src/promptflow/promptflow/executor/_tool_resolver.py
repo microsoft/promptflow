@@ -21,6 +21,7 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.executor._assistant_tool_invoker import AssistantTool
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
@@ -28,6 +29,7 @@ from promptflow.executor._errors import (
     InvalidCustomLLMTool,
     NodeInputValidationError,
     ResolveToolError,
+    UnsupportedAssistantToolType,
     ValueTypeUnresolved,
 )
 
@@ -107,7 +109,24 @@ class ToolResolver:
         file = self._working_dir / assistant_definition_path
         with open(file, "r", encoding="utf-8") as file:
             assistant_definition = load_yaml(file)
-        return AssistantDefinition.deserialize(assistant_definition)
+        assistant_def = AssistantDefinition.deserialize(assistant_definition)
+        return self._resolve_assistant_definition(assistant_def)
+
+    def _resolve_assistant_definition(self, assistant_definition: AssistantDefinition):
+        for tool in assistant_definition.tools:
+            if tool["type"] in ("code_interpreter", "retrieval"):
+                self._assistant_tools[tool["type"]] = AssistantTool(
+                    name=tool["type"], openai_definition=tool, func=None
+                )
+            elif tool["type"] == "function":
+                function_tool = self._load_tool_as_function(tool)
+                self._assistant_tools[function_tool.name] = function_tool
+            else:
+                raise UnsupportedAssistantToolType(
+                    message_format="Unsupported assistant tool type: {tool_type}",
+                    tool_type=tool["type"],
+                    target=ErrorTarget.EXECUTOR,
+                )
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
