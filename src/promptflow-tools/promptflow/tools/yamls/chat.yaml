@@ -86,10 +86,6 @@ promptflow.tools.chat.chat:
       default: 0
       type:
         - double
-    frequency_penalty:
-      default: 0
-      type:
-        - double
     response_format:
       type:
       - object
