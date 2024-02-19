@@ -58,7 +58,7 @@ evaluations_model = api.model(
     "Evaluations",
     {
         EvaluationKeyName.NAME: fields.String(required=True),
-        EvaluationKeyName.VALUE: fields.Nested(evaluation_line_run_model),
+        EvaluationKeyName.VALUE: fields.Nested(evaluation_line_run_model, skip_none=True),
     },
 )
 line_run_model = api.model(
@@ -76,7 +76,7 @@ line_run_model = api.model(
         LineRunFieldName.NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
-        LineRunFieldName.EVALUATIONS: fields.List(fields.Nested(evaluations_model)),
+        LineRunFieldName.EVALUATIONS: fields.List(fields.Nested(evaluations_model, skip_none=True)),
     },
 )
 

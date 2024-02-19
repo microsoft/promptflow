@@ -89,7 +89,7 @@ resource_attributes_model = api.model(
 resource_model = api.model(
     "Resource",
     {
-        SpanResourceFieldName.ATTRIBUTES: fields.Nested(resource_attributes_model, required=True),
+        SpanResourceFieldName.ATTRIBUTES: fields.Nested(resource_attributes_model, required=True, skip_none=True),
         SpanResourceFieldName.SCHEMA_URL: fields.String,
     },
 )
@@ -97,16 +97,16 @@ span_model = api.model(
     "Span",
     {
         SpanFieldName.NAME: fields.String(required=True),
-        SpanFieldName.CONTEXT: fields.Nested(context_model, required=True),
+        SpanFieldName.CONTEXT: fields.Nested(context_model, required=True, skip_none=True),
         SpanFieldName.KIND: fields.String(required=True),
         SpanFieldName.PARENT_ID: fields.String,
         SpanFieldName.START_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
-        SpanFieldName.STATUS: fields.Nested(status_model),
-        SpanFieldName.ATTRIBUTES: fields.Nested(attributes_model, required=True),
+        SpanFieldName.STATUS: fields.Nested(status_model, skip_none=True),
+        SpanFieldName.ATTRIBUTES: fields.Nested(attributes_model, required=True, skip_none=True),
         SpanFieldName.EVENTS: fields.List(fields.String),
         SpanFieldName.LINKS: fields.List(fields.String),
-        SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True),
+        SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
     },
 )
 
