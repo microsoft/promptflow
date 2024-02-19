@@ -49,7 +49,7 @@ class AppExtension(ABC):
         """Get customized trace exporters for current extension."""
         return try_load_customized_exporters(flow_dir, self.logger)
 
-    def get_override_connections(self, flow: Flow) -> (dict, dict):
+    def get_override_connections(self, flow: Flow) -> tuple[dict, dict]:
         """
         Get override connections for current extension.
 

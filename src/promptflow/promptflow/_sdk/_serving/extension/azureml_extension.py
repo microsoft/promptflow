@@ -87,7 +87,7 @@ class AzureMLExtension(AppExtension):
     def get_trace_exporters(self, flow_dir: str):
         return self.trace_exporters
 
-    def get_override_connections(self, flow: Flow) -> (dict, dict):
+    def get_override_connections(self, flow: Flow) -> tuple[dict, dict]:
         connection_names = flow.get_connection_names()
         connections = {}
         connections_name_overrides = {}
