@@ -7,12 +7,7 @@ from dataclasses import asdict, dataclass
 
 from flask_restx import fields
 
-from promptflow._sdk._constants import (
-    PFS_MODEL_DATETIME_FORMAT,
-    EvaluationKeyName,
-    EvaluationLineRunFieldName,
-    LineRunFieldName,
-)
+from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, EvaluationKeyName, LineRunFieldName
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -40,18 +35,18 @@ class ListLineRunParser:
 evaluation_line_run_model = api.model(
     "EvaluationLineRun",
     {
-        EvaluationLineRunFieldName.LINE_RUN_ID: fields.String(required=True),
-        EvaluationLineRunFieldName.TRACE_ID: fields.String(required=True),
-        EvaluationLineRunFieldName.ROOT_SPAN_ID: fields.String(required=True),
-        EvaluationLineRunFieldName.INPUTS: fields.Raw(required=True),
-        EvaluationLineRunFieldName.OUTPUTS: fields.Raw(required=True),
-        EvaluationLineRunFieldName.START_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
-        EvaluationLineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
-        EvaluationLineRunFieldName.STATUS: fields.String(required=True),
-        EvaluationLineRunFieldName.LATENCY: fields.String(required=True),
-        EvaluationLineRunFieldName.NAME: fields.String(required=True),
-        EvaluationLineRunFieldName.KIND: fields.String(required=True),
-        EvaluationLineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
+        LineRunFieldName.LINE_RUN_ID: fields.String(required=True),
+        LineRunFieldName.TRACE_ID: fields.String(required=True),
+        LineRunFieldName.ROOT_SPAN_ID: fields.String(required=True),
+        LineRunFieldName.INPUTS: fields.Raw(required=True),
+        LineRunFieldName.OUTPUTS: fields.Raw(required=True),
+        LineRunFieldName.START_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
+        LineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
+        LineRunFieldName.STATUS: fields.String(required=True),
+        LineRunFieldName.LATENCY: fields.String(required=True),
+        LineRunFieldName.NAME: fields.String(required=True),
+        LineRunFieldName.KIND: fields.String(required=True),
+        LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
     },
 )
 evaluations_model = api.model(
