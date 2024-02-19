@@ -7,14 +7,7 @@ from dataclasses import dataclass
 
 from flask_restx import fields
 
-from promptflow._constants import (
-    SpanAttributeFieldName,
-    SpanContextFieldName,
-    SpanFieldName,
-    SpanResourceAttributesFieldName,
-    SpanResourceFieldName,
-    SpanStatusFieldName,
-)
+from promptflow._constants import SpanContextFieldName, SpanFieldName, SpanResourceFieldName, SpanStatusFieldName
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
@@ -54,48 +47,18 @@ status_model = api.model(
         SpanStatusFieldName.STATUS_CODE: fields.String(required=True),
     },
 )
-attributes_model = api.model(
-    "Attributes",
-    {
-        SpanAttributeFieldName.FRAMEWORK: fields.String(required=True, default="promptflow"),
-        SpanAttributeFieldName.SPAN_TYPE: fields.String(required=True, default="Function"),
-        SpanAttributeFieldName.FUNCTION: fields.String(required=True),
-        SpanAttributeFieldName.INPUTS: fields.String(required=True),
-        SpanAttributeFieldName.OUTPUT: fields.String,
-        # token metrics
-        SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: fields.String,
-        SpanAttributeFieldName.PROMPT_TOKEN_COUNT: fields.String,
-        SpanAttributeFieldName.TOTAL_TOKEN_COUNT: fields.String,
-        SpanAttributeFieldName.CUMULATIVE_COMPLETION_TOKEN_COUNT: fields.String,
-        SpanAttributeFieldName.CUMULATIVE_PROMPT_TOKEN_COUNT: fields.String,
-        SpanAttributeFieldName.CUMULATIVE_TOTAL_TOKEN_COUNT: fields.String,
-        # test
-        SpanAttributeFieldName.LINE_RUN_ID: fields.String,
-        SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: fields.String,
-        # batch run
-        SpanAttributeFieldName.BATCH_RUN_ID: fields.String,
-        SpanAttributeFieldName.LINE_NUMBER: fields.String,
-        SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: fields.String,
-    },
-)
-resource_attributes_model = api.model(
-    "ResourceAttributes",
-    {
-        SpanResourceAttributesFieldName.SERVICE_NAME: fields.String(required=True, default="promptflow"),
-        SpanResourceAttributesFieldName.SESSION_ID: fields.String(required=True),
-        SpanResourceAttributesFieldName.EXPERIMENT_NAME: fields.String,
-    },
-)
 resource_model = api.model(
     "Resource",
     {
-        SpanResourceFieldName.ATTRIBUTES: fields.Nested(resource_attributes_model, required=True, skip_none=True),
+        SpanResourceFieldName.ATTRIBUTES: fields.Raw(required=True),
         SpanResourceFieldName.SCHEMA_URL: fields.String,
     },
 )
 span_model = api.model(
     "Span",
     {
+        # marshmallow fields cannot parse field name with dot (e.g., referenced.line_run_id)
+        # so for `attributes` and `resource.attributes`, not support strong type with raw dict
         SpanFieldName.NAME: fields.String(required=True),
         SpanFieldName.CONTEXT: fields.Nested(context_model, required=True, skip_none=True),
         SpanFieldName.KIND: fields.String(required=True),
@@ -103,7 +66,7 @@ span_model = api.model(
         SpanFieldName.START_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model, skip_none=True),
-        SpanFieldName.ATTRIBUTES: fields.Nested(attributes_model, required=True, skip_none=True),
+        SpanFieldName.ATTRIBUTES: fields.Raw(required=True),
         SpanFieldName.EVENTS: fields.List(fields.String),
         SpanFieldName.LINKS: fields.List(fields.String),
         SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
