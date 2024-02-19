@@ -16,7 +16,7 @@ os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
 from common import clean_data, count_non_blank_lines, \
     split_document, copy_flow_folder_and_set_node_inputs, \
-    print_progress, convert_to_abs_path  # noqa: E402
+    print_progress, convert_to_abs_path, non_padding_path, local_path_exists  # noqa: E402
 from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
 
 logger = get_logger("data.gen")
@@ -276,10 +276,11 @@ if __name__ == "__main__":
         documents_folder = convert_to_abs_path(args.documents_folder)
         flow_folder = convert_to_abs_path(args.flow_folder)
         output_folder = convert_to_abs_path(args.output_folder)
+        validate_path_func = non_padding_path if args.cloud else local_path_exists
 
-        if document_nodes_file and Path(document_nodes_file).is_file():
+        if document_nodes_file and validate_path_func(document_nodes_file):
             should_skip_split_documents = True
-        elif not documents_folder or not Path(documents_folder).is_dir():
+        elif not documents_folder or not validate_path_func(documents_folder):
             parser.error(
                 "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
                 f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
@@ -295,7 +296,8 @@ if __name__ == "__main__":
                 "Skip step 1 'Split documents to document nodes' as received document nodes from "
                 f"input file path '{document_nodes_file}'."
             )
-            logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
+            if Path(document_nodes_file).is_file():
+                logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
 
         copy_flow_folder_and_set_node_inputs(copied_flow_folder, args.flow_folder, args.node_inputs_override)
 
