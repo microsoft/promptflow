@@ -5,6 +5,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from flask import Blueprint, Flask, jsonify
+from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
@@ -27,6 +28,12 @@ def heartbeat():
 
 def create_app():
     app = Flask(__name__)
+
+    # in normal case, we don't need to handle CORS for PFS
+    # as far as we know, local UX development might need to handle this
+    # as there might be different ports in that scenario
+    CORS(app)
+
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.add_url_rule("/v1/traces", view_func=trace_collector, methods=["POST"])
     with app.app_context():
