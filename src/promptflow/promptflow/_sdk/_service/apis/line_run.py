@@ -44,7 +44,7 @@ evaluation_line_run_model = api.model(
         LineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
         LineRunFieldName.STATUS: fields.String(required=True),
         LineRunFieldName.LATENCY: fields.String(required=True),
-        LineRunFieldName.NAME: fields.String(required=True),
+        LineRunFieldName.DISPLAY_NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
     },
@@ -52,7 +52,7 @@ evaluation_line_run_model = api.model(
 evaluations_model = api.model(
     "Evaluations",
     {
-        EvaluationKeyName.NAME: fields.String(required=True),
+        EvaluationKeyName.DISPLAY_NAME: fields.String(required=True),
         EvaluationKeyName.VALUE: fields.Nested(evaluation_line_run_model, skip_none=True),
     },
 )
@@ -68,7 +68,7 @@ line_run_model = api.model(
         LineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
         LineRunFieldName.STATUS: fields.String(required=True),
         LineRunFieldName.LATENCY: fields.String(required=True),
-        LineRunFieldName.NAME: fields.String(required=True),
+        LineRunFieldName.DISPLAY_NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
         LineRunFieldName.EVALUATIONS: fields.List(fields.Nested(evaluations_model, skip_none=True)),

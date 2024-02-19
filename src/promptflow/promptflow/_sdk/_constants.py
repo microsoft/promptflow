@@ -444,7 +444,7 @@ class EnvironmentVariables:
 
 
 class EvaluationKeyName:
-    NAME = "name"
+    DISPLAY_NAME = "display_name"
     VALUE = "value"
 
 
@@ -458,7 +458,7 @@ class LineRunFieldName:
     END_TIME = "end_time"
     STATUS = "status"
     LATENCY = "latency"
-    NAME = "name"
+    DISPLAY_NAME = "display_name"
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
