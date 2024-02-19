@@ -134,6 +134,11 @@ def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -
 
 
 def setup_exporter_from_environ() -> None:
+    # if session id does not exist in environment variables, it should be in runtime environment
+    # where we have not supported tracing yet, so we don't need to setup any exporter here
+    # directly return
+    if TraceEnvironmentVariableName.SESSION_ID not in os.environ:
+        return
     if _is_tracer_provider_configured():
         _logger.debug("tracer provider is already configured, skip setting up again.")
         return
