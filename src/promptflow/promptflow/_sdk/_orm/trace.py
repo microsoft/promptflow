@@ -61,9 +61,7 @@ class Span(Base):
         with trace_mgmt_db_session() as session:
             stmt = session.query(Span)
             if session_id is not None:
-                stmt = stmt.filter(
-                    text(f"trace_id in (select distinct trace_id from span where session_id = '{session_id}')")
-                )
+                stmt = stmt.filter(Span.session_id == session_id)
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
