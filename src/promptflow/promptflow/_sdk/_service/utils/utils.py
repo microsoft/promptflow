@@ -86,7 +86,7 @@ def kill_exist_service(port):
     proc = _get_process_by_port(port)
     if proc:
         proc.terminate()
-        proc.wait(5)
+        proc.wait(10)
 
 
 def get_started_service_info(port):
