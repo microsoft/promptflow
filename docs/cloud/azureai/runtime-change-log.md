@@ -20,7 +20,7 @@ Default runtime image is continuously updated, and here we record the new featur
 NA
 
 #### Bugs fixed
-- Fix the bug that azureml serving get UAI(user assigned identity) token will fail.
+- Fix the bug that deployed promptflow endpoint fails to get user assigned identity token..
 
 ### 20240124.v3
 
