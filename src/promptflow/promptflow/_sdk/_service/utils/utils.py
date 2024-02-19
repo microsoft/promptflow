@@ -7,6 +7,7 @@ import time
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
+from typing import Union
 
 import psutil
 import requests
@@ -105,7 +106,7 @@ def make_response_no_content():
     return make_response("", 204)
 
 
-def is_pfs_service_healthy(pfs_port) -> bool:
+def is_pfs_service_healthy(pfs_port) -> Union[tuple[bool, str], tuple[bool, None]]:
     """Check if pfs service is running."""
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
