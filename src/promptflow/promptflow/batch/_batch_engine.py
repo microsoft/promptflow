@@ -42,7 +42,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
-from promptflow.storage._run_storage import AbstractRunStorage
+from promptflow.storage._run_storage import AbstractBatchRunStorage, AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
 DEFAULT_CONCURRENCY = 10
@@ -128,7 +128,7 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
-        resume_from_run_storage: Optional[AbstractRunStorage] = None,
+        resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
         resume_from_run_output_dir: Optional[Path] = None,
     ) -> BatchResult:
         """Run flow in batch mode
