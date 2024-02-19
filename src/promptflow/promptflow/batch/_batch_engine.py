@@ -42,7 +42,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
-from promptflow.storage._run_storage import AbstractRunStorage
+from promptflow.storage._run_storage import AbstractBatchRunStorage, AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
 DEFAULT_CONCURRENCY = 10
@@ -128,6 +128,8 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
+        resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
+        resume_from_run_output_dir: Optional[Path] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -143,6 +145,12 @@ class BatchEngine:
         :type max_lines_count: Optional[int]
         :param raise_on_line_failure: Whether to raise exception when a line fails.
         :type raise_on_line_failure: Optional[bool]
+        :param resume_from_run_storage: The run storage to load flow run and node run from the original
+                                        run. The resume behavior is to reuse succeeded line result of
+                                        the original run and run/rerun the remaining/failed lines.
+        :type resume_from_run_storage: Optional[AbstractRunStorage]
+        :param resume_from_run_output_dir: The output dir of the original run.
+        :type resume_from_run_output_dir: Optional[Path]
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
