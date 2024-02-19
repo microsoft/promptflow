@@ -48,7 +48,10 @@ class TraceUI(Resource):
         main_spans, eval_spans = [], []
         for span in spans:
             attributes = span._content[SpanFieldName.ATTRIBUTES]
-            if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
+            if (
+                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes  # test scenario
+                or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes  # batch run scenario
+            ):
                 eval_spans.append(span)
             else:
                 main_spans.append(span)

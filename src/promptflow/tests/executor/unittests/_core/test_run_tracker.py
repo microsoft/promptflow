@@ -91,6 +91,11 @@ class TestRunTracker:
         assert run_info_flow.api_calls[0]["node_name"] == "flow"
         assert run_info_flow.api_calls[0]["type"] == "Flow"
         assert run_info_flow.api_calls[0]["system_metrics"]["total_tokens"] == 60
+        assert run_info_flow.api_calls[0]["inputs"] == flow_input
+        assert run_info_flow.api_calls[0]["output"] is None
+        assert (
+            "The output 'unserialized_value' for flow is incorrect." in run_info_flow.api_calls[0]["error"]["message"]
+        )
         assert isinstance(run_info_flow.api_calls[0]["start_time"], float)
         assert isinstance(run_info_flow.api_calls[0]["end_time"], float)
         assert len(run_info_flow.api_calls[0]["children"]) == 4, "There should be 4 children under root."

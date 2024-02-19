@@ -53,6 +53,7 @@ STREAMING_ANIMATION_TIME = 0.01
 
 # trace related
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
+DEFAULT_SPAN_TYPE = "default"
 
 
 class TraceEnvironmentVariableName:
@@ -97,6 +98,9 @@ class SpanAttributeFieldName:
     EXPERIMENT = "experiment"
     LINE_RUN_ID = "line_run_id"
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    BATCH_RUN_ID = "batch_run_id"
+    LINE_NUMBER = "line_number"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
     COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
@@ -115,6 +119,3 @@ class ResourceAttributeFieldName:
     EXPERIMENT_NAME = "experiment.name"
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"
-
-
-DEFAULT_SPAN_TYPE = "default"
