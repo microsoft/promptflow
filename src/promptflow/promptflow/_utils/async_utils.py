@@ -3,7 +3,10 @@
 # ---------------------------------------------------------
 
 import asyncio
+import contextvars
 from concurrent.futures import ThreadPoolExecutor
+
+from promptflow._utils.utils import set_context
 
 
 def _has_running_loop() -> bool:
@@ -31,7 +34,7 @@ def async_run_allowing_running_loop(async_func, *args, **kwargs):
     event loop, we run _exec_batch in a new thread; otherwise, we run it in the current thread.
     """
     if _has_running_loop():
-        with ThreadPoolExecutor(1) as executor:
+        with ThreadPoolExecutor(1, initializer=set_context, initargs=(contextvars.copy_context(),)) as executor:
             return executor.submit(lambda: asyncio.run(async_func(*args, **kwargs))).result()
     else:
         return asyncio.run(async_func(*args, **kwargs))

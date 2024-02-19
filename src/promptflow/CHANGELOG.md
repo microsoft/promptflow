@@ -1,5 +1,14 @@
 # Release History
 
+## 1.6.0 (TBD)
+
+### Features Added
+
+- [SDK/CLI] Support configuring environment variable to directly use `AzureCliCredential` for `pfazure` commands.
+  ```dotenv
+  PF_USE_AZURE_CLI_CREDENTIAL=true
+  ```
+
 ## 1.5.0 (2024.02.06)
 
 

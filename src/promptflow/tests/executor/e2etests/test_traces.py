@@ -8,6 +8,7 @@ from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
@@ -20,19 +21,45 @@ from ..process_utils import (
     execute_function_in_subprocess,
     override_process_class,
 )
-from ..utils import get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter
+from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, load_content, prepare_memory_exporter
 
-OPEN_AI_FUNCTION_NAMES = [
+LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
     "openai.resources.completions.Completions.create",
     "openai.resources.chat.completions.AsyncCompletions.create",
     "openai.resources.completions.AsyncCompletions.create",
 ]
 
-TOKEN_NAMES = [
+EMBEDDING_FUNCTION_NAMES = [
+    "openai.resources.embeddings.Embeddings.create",
+    "openai.resources.embeddings.AsyncEmbeddings.create",
+]
+
+LLM_TOKEN_NAMES = [
+    "llm.token_count.prompt",
+    "llm.token_count.completion",
+    "llm.token_count.total",
+]
+
+EMBEDDING_TOKEN_NAMES = [
+    "embedding.token_count.prompt",
+    "embedding.token_count.total",
+]
+
+CUMULATIVE_LLM_TOKEN_NAMES = [
     "__computed__.cumulative_token_count.prompt",
     "__computed__.cumulative_token_count.completion",
     "__computed__.cumulative_token_count.total",
+]
+
+CUMULATIVE_EMBEDDING_TOKEN_NAMES = [
+    "__computed__.cumulative_token_count.prompt",
+    "__computed__.cumulative_token_count.total",
+]
+
+SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES = [
+    "render_template_jinja2",
+    "AzureOpenAI.chat",
 ]
 
 
@@ -232,10 +259,9 @@ class TestExecutorTraces:
         assert flow_trace["system_metrics"]["prompt_tokens"] == 0
         assert flow_trace["system_metrics"]["completion_tokens"] == 0
         assert flow_trace["system_metrics"]["total_tokens"] == 0
-        # TODO: These assertions should be fixed after added these fields to the top level trace
-        assert "inputs" not in flow_trace
-        assert "output" not in flow_trace
-        assert "error" not in flow_trace
+        assert isinstance(flow_trace["inputs"], dict)
+        assert flow_trace["output"] == {"output": "Hello, User 1!"}
+        assert flow_trace["error"] is None
         if sys.platform != "darwin":
             assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
             assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
@@ -312,6 +338,7 @@ class TestOTelTracer:
             ("openai_completion_api_flow", get_comletion_input(False), 3),
             ("llm_tool", {"topic": "Hello", "stream": False}, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
+            ("openai_embedding_api_flow", {"input": "Hello"}, 3),
         ],
     )
     def test_otel_trace(
@@ -335,65 +362,133 @@ class TestOTelTracer:
         assert isinstance(resp.output, dict)
 
         span_list = memory_exporter.get_finished_spans()
-        # TODO: add flow level span
         assert len(span_list) == expected_span_length, f"Got {len(span_list)} spans."
         root_spans = [span for span in span_list if span.parent is None]
         assert len(root_spans) == 1
         root_span = root_spans[0]
+        self.validate_span_list(span_list, root_span, line_run_id)
+
+    def validate_span_list(self, span_list, root_span, line_run_id):
+        # Validate the general attributes of the spans.
+        self.validate_span_attributes(span_list, root_span, line_run_id)
+        # We updated the OpenAI tokens (prompt_token/completion_token/total_token) to the span attributes
+        # for llm and embedding traces, and aggregate them to the parent span. Use this function to validate
+        # the openai tokens are correctly set.
         self.validate_openai_tokens(span_list)
+        # Validate the embedding attributes are correctly set in the embedding trace.
+        self.validate_embedding_span(span_list)
+
+    def validate_span_attributes(self, span_list, root_span, line_run_id):
         for span in span_list:
             assert span.status.status_code == StatusCode.OK
             assert isinstance(span.name, str)
-            self.validate_span_attributes(span, root_span, line_run_id)
+            assert span.attributes["line_run_id"] == line_run_id
+            assert span.attributes["framework"] == "promptflow"
+            if span.parent is None:
+                expected_span_type = TraceType.FLOW
+            elif span.parent.span_id == root_span.context.span_id:
+                expected_span_type = TraceType.TOOL
+            elif span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+                expected_span_type = TraceType.LLM
+            elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+                expected_span_type = TraceType.EMBEDDING
+            else:
+                expected_span_type = TraceType.FUNCTION
+            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
+            assert span.attributes["span_type"] == expected_span_type, msg
+            if span != root_span:  # Non-root spans should have a parent
+                assert span.attributes["function"]
+            inputs = json.loads(span.attributes["inputs"])
+            output = json.loads(span.attributes["output"])
+            assert isinstance(inputs, dict)
+            assert output is not None
 
-    def validate_span_attributes(self, span, root_span, line_run_id):
-        assert span.attributes["line_run_id"] == line_run_id
-        assert span.attributes["framework"] == "promptflow"
-        if span.parent is None:
-            expected_span_type = TraceType.FLOW
-        elif span.parent.span_id == root_span.context.span_id:
-            expected_span_type = TraceType.TOOL
-        elif span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
-            expected_span_type = TraceType.LLM
-        else:
-            expected_span_type = TraceType.FUNCTION
-        msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
-        assert span.attributes["span_type"] == expected_span_type, msg
-        if span != root_span:  # Non-root spans should have a parent
-            assert span.attributes["function"]
-        inputs = json.loads(span.attributes["inputs"])
-        output = json.loads(span.attributes["output"])
-        assert isinstance(inputs, dict)
-        assert output is not None
-
-    # We updated the OpenAI tokens (prompt token, completion token and total token) to the span attributes
-    # for llm tool, and aggregate them to the parent span. Use this function to validate the openai tokens
-    # are correctly aggregated.
     def validate_openai_tokens(self, span_list):
         span_dict = {span.context.span_id: span for span in span_list}
-        token_dict = {}
+        expected_tokens = {}
         for span in span_list:
-            if span.attributes.get("function", "") in OPEN_AI_FUNCTION_NAMES:
-                for token_name in TOKEN_NAMES:
+            tokens = None
+            # Validate the openai tokens are correctly set in the llm trace.
+            if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+                for token_name in LLM_TOKEN_NAMES + CUMULATIVE_LLM_TOKEN_NAMES:
                     assert token_name in span.attributes
-                tokens = {token_name: span.attributes[token_name] for token_name in TOKEN_NAMES}
+                tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_LLM_TOKEN_NAMES}
+            # Validate the openai tokens are correctly set in the embedding trace.
+            if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+                for token_name in EMBEDDING_TOKEN_NAMES + CUMULATIVE_EMBEDDING_TOKEN_NAMES:
+                    assert token_name in span.attributes
+                tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_EMBEDDING_TOKEN_NAMES}
+            # Aggregate the tokens to the parent span.
+            if tokens is not None:
                 current_span_id = span.context.span_id
                 while True:
-                    if current_span_id in token_dict:
-                        token_dict[current_span_id] = {
-                            key: token_dict[current_span_id][key] + tokens[key] for key in tokens
+                    if current_span_id in expected_tokens:
+                        expected_tokens[current_span_id] = {
+                            key: expected_tokens[current_span_id][key] + tokens[key] for key in tokens
                         }
                     else:
-                        token_dict[current_span_id] = tokens
+                        expected_tokens[current_span_id] = tokens
                     parent_cxt = getattr(span_dict[current_span_id], "parent", None)
                     if parent_cxt is None:
                         break
                     current_span_id = parent_cxt.span_id
+        # Validate the aggregated tokens are correctly set in the parent span.
         for span in span_list:
             span_id = span.context.span_id
-            if span_id in token_dict:
-                for token_name in TOKEN_NAMES:
-                    assert span.attributes[token_name] == token_dict[span_id][token_name]
+            if span_id in expected_tokens:
+                for token_name in expected_tokens[span_id]:
+                    assert span.attributes[token_name] == expected_tokens[span_id][token_name]
+
+    def validate_embedding_span(self, span_list):
+        for span in span_list:
+            if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+                assert span.attributes.get("embedding.model", "") == "ada"
+                embeddings = span.attributes.get("embedding.embeddings", "")
+                assert "Hello" in embeddings
+                assert "embedding.vector" in embeddings
+                assert "embedding.text" in embeddings
+
+    @pytest.mark.parametrize(
+        "flow_file, inputs, prompt_tpl_file",
+        [
+            ("llm_tool", {"topic": "Hello", "stream": False}, "joke.jinja2"),
+            # Add back this test case after changing the interface of render_template_jinja2
+            # ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
+        ],
+    )
+    def test_otel_trace_with_prompt(
+        self,
+        dev_connections,
+        flow_file,
+        inputs,
+        prompt_tpl_file,
+    ):
+        execute_function_in_subprocess(
+            self.assert_otel_traces_with_prompt, dev_connections, flow_file, inputs, prompt_tpl_file
+        )
+
+    def assert_otel_traces_with_prompt(self, dev_connections, flow_file, inputs, prompt_tpl_file):
+        memory_exporter = prepare_memory_exporter()
+
+        executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
+        line_run_id = str(uuid.uuid4())
+        resp = executor.exec_line(inputs, run_id=line_run_id)
+        assert isinstance(resp, LineResult)
+        assert isinstance(resp.output, dict)
+
+        prompt_tpl = load_content(get_flow_folder(flow_file) / prompt_tpl_file)
+        prompt_vars = list(get_inputs_for_prompt_template(prompt_tpl).keys())
+        span_list = memory_exporter.get_finished_spans()
+        for span in span_list:
+            assert span.status.status_code == StatusCode.OK
+            assert isinstance(span.name, str)
+            if span.attributes.get("function", "") in SHOULD_INCLUDE_PROMPT_FUNCTION_NAMES:
+                assert "prompt.template" in span.attributes
+                assert span.attributes["prompt.template"] == prompt_tpl
+                assert "prompt.variables" in span.attributes
+                for var in prompt_vars:
+                    if var in inputs:
+                        assert var in span.attributes["prompt.variables"]
 
     def test_flow_with_traced_function(self):
         execute_function_in_subprocess(

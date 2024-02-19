@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import logging
 import os.path
-import uuid
 from itertools import product
 from os import PathLike
 from pathlib import Path
@@ -199,9 +198,6 @@ class Configuration(object):
             return installation_id
 
         installation_id = gen_uuid_by_compute_info()
-        if not installation_id:
-            installation_id = str(uuid.uuid4())
-
         self.set_config(key=self.INSTALLATION_ID, value=installation_id)
         return installation_id
 
