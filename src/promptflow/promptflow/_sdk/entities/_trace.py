@@ -20,7 +20,6 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._constants import EvaluationKeyName
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -247,12 +246,7 @@ class LineRun:
                 SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes  # test scenario
                 or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes  # batch run scenario
             ):
-                evaluations.append(
-                    {
-                        EvaluationKeyName.DISPLAY_NAME: span.name,
-                        EvaluationKeyName.VALUE: _LineRunData._from_root_span(span),
-                    }
-                )
+                evaluations.append(_LineRunData._from_root_span(span))
             elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
             else:

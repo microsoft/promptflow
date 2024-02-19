@@ -443,11 +443,6 @@ class EnvironmentVariables:
     PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"
 
 
-class EvaluationKeyName:
-    DISPLAY_NAME = "display_name"
-    VALUE = "value"
-
-
 class LineRunFieldName:
     LINE_RUN_ID = "line_run_id"
     TRACE_ID = "trace_id"
