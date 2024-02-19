@@ -30,24 +30,25 @@ async def invoke_sync_function_in_process(
         error_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=execute_function,
+            target=execute_target_function,
             args=(target_function, request, return_dict, error_dict, context_dict),
         )
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
 
         # Wait for the process to finish or timeout asynchronously
-        await asyncio.get_running_loop().run_in_executor(None, p.join, wait_timeout)
-
-        # Terminate the process if it is still alive after timeout
-        if p.is_alive():
-            service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
-            p.terminate()
-            p.join()
-            raise ExecutionTimeoutError(wait_timeout)
+        try:
+            await asyncio.wait_for(asyncio.to_thread(p.join), timeout=wait_timeout)
+        except asyncio.TimeoutError:
+            # Terminate the process if it is still alive after timeout
+            if p.is_alive():
+                service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
+                p.terminate()
+                p.join()
+                raise ExecutionTimeoutError(wait_timeout)
 
         # Raise exception if the process exit code is not 0
-        if p.exitcode and p.exitcode > 0:
+        if p.exitcode != 0:
             exception = error_dict.get("error", None)
             if exception is None:
                 raise UnexpectedError(
@@ -62,21 +63,7 @@ async def invoke_sync_function_in_process(
         return return_dict.get("result", {})
 
 
-def execute_function(
-    target_function: Callable,
-    request,
-    return_dict: dict,
-    error_dict: dict,
-    context_dict: dict,
-):
-    # Create the event loop in a new process to run the asynchronous function
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(execute_function_async(target_function, request, return_dict, error_dict, context_dict))
-    loop.close()
-
-
-async def execute_function_async(
+def execute_target_function(
     target_function: Callable,
     request,
     return_dict: dict,
@@ -87,7 +74,7 @@ async def execute_function_async(
     with exception_wrapper(error_dict):
         with get_log_context(request):
             service_logger.info("Start processing request in executor service...")
-            result = await target_function(request)
+            result = target_function(request)
             return_dict["result"] = result
 
 
