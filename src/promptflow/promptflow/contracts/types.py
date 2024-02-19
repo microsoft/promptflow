@@ -2,7 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List
 
 
 class Secret(str):
@@ -30,12 +31,20 @@ class FilePath(str):
 
 
 @dataclass
+class AssistantTool:
+    name: str
+    openai_definition: dict
+    func: Callable
+
+
+@dataclass
 class AssistantDefinition:
     """This class is used to define an assistant definition."""
 
     model: str
     instructions: str
-    tools: list
+    tools: List  # The raw tool definition
+    assistant_tools: Dict[str, AssistantTool] = field(default_factory=dict)  # The resolved tool definition by name
 
     @staticmethod
     def deserialize(data: dict) -> "AssistantDefinition":
@@ -53,4 +62,4 @@ class AssistantDefinition:
     def init_tool_invoker(self):
         from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 
-        return AssistantToolInvoker.init(self.tools)
+        return AssistantToolInvoker.init(self)

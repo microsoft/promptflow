@@ -311,11 +311,6 @@ class TestExecutor:
         shutil.rmtree(output_dir)
         shutil.rmtree(intermediate_dir)
 
-    def test_assistant_connection(self, dev_connections) -> None:
-        executor = FlowExecutor.create(get_yaml_file("tool_with_assistant_definition", FLOW_ROOT), dev_connections)
-        flow_result = executor.exec_line({"message": "Hello World!"})
-        print(flow_result)
-
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
     try:

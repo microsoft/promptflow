@@ -50,9 +50,9 @@ async def get_openai_api_client(conn: OpenAIConnection):
     return cli
 
 
-@trace
+
 async def get_assisant_tool_invoker(assistant_definition: AssistantDefinition):
-    invoker = AssistantToolInvoker.init(assistant_definition.tools)
+    invoker = AssistantToolInvoker.init(assistant_definition)
     return invoker
 
 

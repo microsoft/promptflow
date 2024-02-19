@@ -10,7 +10,8 @@ from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 def test_assistant_definition(message: str, assistant_definition: AssistantDefinition):
     assert assistant_definition.model == "mock_model"
     assert assistant_definition.instructions == "mock_instructions"
-    invoker = AssistantToolInvoker.init(assistant_definition.tools, working_dir=Path(__file__).parent)
+    assert len(assistant_definition.assistant_tools) == len(assistant_definition.tools) ==1
+    invoker = AssistantToolInvoker.init(assistant_definition)
     openai_definition = invoker.to_openai_tools()
     assert len(openai_definition) == 1
     assert openai_definition[0]["function"]["description"] == "This tool is used to echo the message back."
