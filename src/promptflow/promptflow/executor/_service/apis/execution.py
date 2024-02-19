@@ -64,7 +64,7 @@ async def node_execution(request: Request, node_request: NodeExecutionRequest):
             raise ex
 
 
-async def flow_test(flow_request: FlowExecutionRequest):
+def flow_test(flow_request: FlowExecutionRequest):
     # validate request
     flow_request.validate_request()
     # resolve environment variables
@@ -82,7 +82,7 @@ async def flow_test(flow_request: FlowExecutionRequest):
     )
 
 
-async def single_node_run(node_request: NodeExecutionRequest):
+def single_node_run(node_request: NodeExecutionRequest):
     # validate request
     node_request.validate_request()
     # resolve environment variables
