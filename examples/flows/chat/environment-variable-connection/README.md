@@ -1,0 +1,3 @@
+# Sample flow to show Environment Variable with Connection 
+
+This is a sample flow to test set environment varialbes in flow. The flow node doesn't use any connection to get AOAI API keys. It retrieve from environment variable directly. So by modifying the environment variable value in flow.dag.yaml and run.yml, we can test in different scenarios whether the environment variables take effect. We can set the value of environment variable to real value or conneciton(${some_connection.field_name}).

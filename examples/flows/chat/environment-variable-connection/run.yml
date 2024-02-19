@@ -1,0 +1,10 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: .
+data: data.jsonl
+environment_variables:
+  # environment variables from connection
+  AZURE_OPENAI_API_KEY: ${anthu_140112.api_key}
+  AZURE_OPENAI_ENDPOINT: ${anthu_140112.api_base}
+  # AZURE_OPENAI_API_TYPE: azure
+column_mapping:
+  question: ${data.question}

@@ -1,0 +1,33 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+    default: []
+  question:
+    type: string
+    is_chat_input: true
+    default: What is ChatGPT?
+outputs:
+  answer:
+    type: string
+    reference: ${python_node.output}
+    is_chat_output: true
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: python_node.py
+  inputs:
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+environment_variables:
+  # support pure values
+  # AZURE_OPENAI_API_KEY: somekey
+  # AZURE_OPENAI_ENDPOINT: https://anthu-aoai-cus.openai.azure.com/
+  AZURE_OPENAI_API_KEY: ${aoai.api_key}
+  AZURE_OPENAI_ENDPOINT: ${aoai.api_base}
+
