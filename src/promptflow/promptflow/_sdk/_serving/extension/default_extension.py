@@ -6,6 +6,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Tuple
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._sdk._configuration import Configuration
@@ -49,7 +50,7 @@ class AppExtension(ABC):
         """Get customized trace exporters for current extension."""
         return try_load_customized_exporters(flow_dir, self.logger)
 
-    def get_override_connections(self, flow: Flow) -> tuple[dict, dict]:
+    def get_override_connections(self, flow: Flow) -> Tuple[dict, dict]:
         """
         Get override connections for current extension.
 

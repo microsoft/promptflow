@@ -5,7 +5,7 @@
 import json
 import os
 import re
-from typing import Any
+from typing import Any, Tuple
 
 from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow._sdk._serving.extension.default_extension import AppExtension
@@ -87,7 +87,7 @@ class AzureMLExtension(AppExtension):
     def get_trace_exporters(self, flow_dir: str):
         return self.trace_exporters
 
-    def get_override_connections(self, flow: Flow) -> tuple[dict, dict]:
+    def get_override_connections(self, flow: Flow) -> Tuple[dict, dict]:
         connection_names = flow.get_connection_names()
         connections = {}
         connections_name_overrides = {}
