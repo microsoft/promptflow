@@ -82,13 +82,10 @@ def _start_pfs(pfs_port) -> None:
         is_healthy, content = is_pfs_service_healthy(pfs_port)
         if not is_healthy:
             _logger.warning(f"Promptflow service can't be reached through port {pfs_port}")
-        else:
-            _logger.warning(f"Service port {pfs_port} is used, {content}.")
-        if is_pfs_service_healthy(pfs_port) is True:
-            _logger.info(f"Service is already running on port {pfs_port}.")
-            return
-        else:
             command_args += ["--force"]
+        else:
+            _logger.info(f"Service is already running on port {pfs_port}, {content}")
+            return
     entry(command_args)
 
 
