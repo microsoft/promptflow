@@ -149,7 +149,7 @@ def try_load_customized_exporters(flow_dir: str, logger):
         import importlib.util as imp
         absolute_loader_path = os.path.join(flow_dir, customized_loader_path)
         with inject_sys_path(flow_dir):
-            print(f"try_load_aggre: loader_dir={flow_dir}")
+            print(f"Try loading exporters from: {absolute_loader_path}")
             main_module_spec = imp.spec_from_file_location("entry_module", absolute_loader_path)
             user_module = imp.module_from_spec(main_module_spec)
             main_module_spec.loader.exec_module(user_module)
