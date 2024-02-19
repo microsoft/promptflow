@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow import ToolProvider, tool
+from promptflow._core.tool import ToolProvider, tool
 from promptflow._core.tool_meta_generator import ToolValidationError
 from promptflow._sdk._pf_client import PFClient
 from promptflow.entities import DynamicList, InputSetting
@@ -432,3 +432,29 @@ class TestTool:
         assert result._kwargs["invalid_count"] == 1
         assert len(result._errors) == 1
         assert "1 is not of type 'string'" in result._errors[0].message
+
+    def test_generate_tools_meta(self):
+        flow_path = TEST_ROOT / "test_configs" / "flows" / "flow-with_tool_settings" / "flow.dag.yaml"
+        tools_meta, errors = _client.flows._generate_tools_meta(flow=flow_path)
+        assert "tool_with_input_settings.py" in tools_meta["code"]
+        expect_tool_meta = {
+            "type": "python",
+            "inputs": {
+                "user_type": {"type": ["string"], "enum": ["student", "teacher"]},
+                "student_id": {
+                    "type": ["string"],
+                    "enabled_by": "user_type",
+                    "enabled_by_value": ["student"],
+                    "undefined_field": {"key": "value"},
+                },
+                "teacher_id": {"type": ["string"], "enabled_by": "user_type", "enabled_by_value": ["teacher"]},
+            },
+            "description": "tool with input settings",
+            "source": "tool_with_input_settings.py",
+            "function": "tool_with_input_settings",
+            "unknown_key": "value",
+        }
+        assert expect_tool_meta == tools_meta["code"]["tool_with_input_settings.py"]
+        assert "tool_with_invalid_input_settings.py" in errors
+        expect_error_msg = 'Cannot find the input \\"invalid_input\\" for the enabled_by of teacher_id.'
+        assert expect_error_msg in errors["tool_with_invalid_input_settings.py"]

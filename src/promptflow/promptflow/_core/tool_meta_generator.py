@@ -239,9 +239,12 @@ def collect_tool_function_in_module(m):
 
 
 def generate_python_tool(name, content, source=None):
+    from promptflow._sdk.operations._tool_operations import ToolOperations
+
     m = load_python_module(content, source)
+    tool_operations = ToolOperations()
     f, initialize_inputs = collect_tool_function_in_module(m)
-    tool = _parse_tool_from_function(f, initialize_inputs=initialize_inputs)
+    tool, input_settings, extra_info = tool_operations._parse_tool_from_func(f, initialize_inputs=initialize_inputs)
     tool.module = None
     if name is not None:
         tool.name = name
@@ -249,11 +252,15 @@ def generate_python_tool(name, content, source=None):
         tool.code = content
     else:
         tool.source = source
-    return tool
+    construct_tool, validate_result = tool_operations._serialize_tool(tool, input_settings, extra_info, f)
+    validate_result.try_raise(raise_error=True)
+    # Handler string enum in tool dict
+    construct_tool = json.loads(json.dumps(construct_tool))
+    return construct_tool
 
 
 def generate_python_meta_dict(name, content, source=None):
-    return asdict_without_none(generate_python_tool(name, content, source))
+    return generate_python_tool(name, content, source)
 
 
 # Only used in non-code first experience.
