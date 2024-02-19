@@ -11,6 +11,8 @@ document_chunk_size = 512
 document_chunk_overlap = 100
 ; However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
 ; When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
+; In local mode, we first attempt to use the configured `document_nodes_file` if it's valid, otherwise, we fall back to `documents_folder`. In cloud mode, `document_nodes_file` is used if configured, without any validity checks.
+; For cloud mode, both local files and data assets can be used.
 ; document_nodes_file = "<your-node-file-path>"
 
 ; Test data gen flow configs
