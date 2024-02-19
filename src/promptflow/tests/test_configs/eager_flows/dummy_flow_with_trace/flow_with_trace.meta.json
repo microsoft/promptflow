@@ -1,0 +1,17 @@
+{
+    "function": "my_flow",
+    "entry": "flow_with_trace:my_flow",
+    "inputs": {
+        "text": {
+            "type": [
+                "string"
+            ]
+        },
+        "models": {
+            "type": [
+                "list"
+            ]
+        }
+    },
+    "source": "flow_with_trace.py"
+}

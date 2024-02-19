@@ -101,6 +101,7 @@ def collect_tool_functions_in_module(m):
 
 
 def collect_flow_entry_in_module(m, entry):
+    entry = entry.split(":")[-1]
     for _, obj in inspect.getmembers(m):
         if isinstance(obj, types.FunctionType):
             if obj.__name__ == entry:
@@ -318,40 +319,23 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
         )
 
 
-def generate_flow_meta_dict_by_file(path: str, entry: str, source=None):
-    file = Path(path)
-    if not file.is_file():
-        raise MetaFileNotFound(
-            message_format="Generate flow meta failed for entry {entry}. Meta file '{file_path}' can not be found.",
-            entry=entry,
-            file_path=path,  # Use a relative path here to make the error message more readable.
-        )
-    try:
-        content = file.read_text(encoding="utf-8")
-    except Exception as e:
-        error_type_and_message = f"({e.__class__.__name__}) {e}"
-        raise MetaFileReadError(
-            message_format=(
-                "Generate flow meta failed for entry {entry}. "
-                "Read meta file '{file_path}' failed: {error_type_and_message}"
-            ),
-            entry=entry,
-            file_path=path,
-            error_type_and_message=error_type_and_message,
-        ) from e
-
-    m = load_python_module(content, source)
+def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
+    m = load_python_module_from_file(Path(path))
     f = collect_flow_entry_in_module(m, entry)
     tool = _parse_tool_from_function(f)
 
-    meta = {"inputs": {}, "outputs": {}, "entry": entry, "function": f.__name__}
-    if source is not None:
-        meta["source"] = source
-    for k, v in tool.inputs.items():
-        meta["inputs"][k] = {"type": [t.value for t in v.type]}
-    for k, v in tool.outputs.items():
-        meta["outputs"][k] = {"type": [t.value for t in v.type]}
-    return meta
+    flow_meta = {"entry": entry, "function": f.__name__}
+    if source:
+        flow_meta["source"] = source
+    if tool.inputs:
+        flow_meta["inputs"] = {}
+        for k, v in tool.inputs.items():
+            flow_meta["inputs"][k] = {"type": [t.value for t in v.type]}
+    if tool.outputs:
+        flow_meta["outputs"] = {}
+        for k, v in tool.outputs.items():
+            flow_meta["outputs"][k] = {"type": [t.value for t in v.type]}
+    return flow_meta
 
 
 class ToolValidationError(UserErrorException):

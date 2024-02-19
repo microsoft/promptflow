@@ -13,13 +13,14 @@ from promptflow._core.tool_meta_generator import (
     NoToolDefined,
     PythonLoadError,
     PythonParsingError,
+    generate_flow_meta_dict_by_file,
     generate_prompt_meta,
     generate_python_meta,
     generate_tool_meta_dict_by_file,
 )
 from promptflow._utils.exception_utils import ExceptionPresenter
 
-from ...utils import FLOW_ROOT, load_json
+from ...utils import EAGER_FLOW_ROOT, FLOW_ROOT, load_json
 
 TEST_ROOT = Path(__file__).parent.parent.parent.parent
 TOOLS_ROOT = TEST_ROOT / "test_configs/wrong_tools"
@@ -30,6 +31,15 @@ def cd_and_run(working_dir, source_path, tool_type):
     sys.path.insert(0, working_dir)
     try:
         return generate_tool_meta_dict_by_file(source_path, tool_type)
+    except Exception as e:
+        return f"({e.__class__.__name__}) {e}"
+
+
+def cd_and_run_generate_flow_meta(working_dir, source_path, entry, source=None):
+    os.chdir(working_dir)
+    sys.path.insert(0, working_dir)
+    try:
+        return generate_flow_meta_dict_by_file(source_path, entry, source)
     except Exception as e:
         return f"({e.__class__.__name__}) {e}"
 
@@ -85,6 +95,20 @@ class TestToolMetaUtils:
         expected_dict = load_json(target_file)
         if tool_type == "llm":
             expected_dict["type"] = "llm"  # We use prompt as default for jinja2
+        assert meta_dict == expected_dict
+
+    @pytest.mark.parametrize(
+        "flow_dir, entry_path, entry",
+        [
+            ("dummy_flow_with_trace", "flow_with_trace.py", "flow_with_trace:my_flow"),
+        ]
+    )
+    def test_generate_flow_meta(self, flow_dir, entry_path, entry):
+        wd = str((EAGER_FLOW_ROOT / flow_dir).resolve())
+        meta_dict = cd_and_run_generate_flow_meta(wd, entry_path, entry, source=entry_path)
+        assert isinstance(meta_dict, dict), "Call cd_and_run_generate_flow_meta failed:\n" + meta_dict
+        target_file = (Path(wd) / entry_path).with_suffix(".meta.json")
+        expected_dict = load_json(target_file)
         assert meta_dict == expected_dict
 
     @pytest.mark.parametrize(
