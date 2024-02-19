@@ -6,6 +6,7 @@ import os
 import time
 import base64
 import zlib
+from pathlib import Path
 
 from flask import jsonify, request
 
@@ -17,6 +18,7 @@ from promptflow._sdk._serving._errors import (
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow.contracts.flow import Flow as FlowContract
 from promptflow.exceptions import ErrorTarget
+from promptflow._utils.context_utils import inject_sys_path
 
 
 def load_request_data(flow, raw_data, logger):
@@ -137,3 +139,30 @@ def encode_dict(data: dict) -> str:
     b64_data = base64.b64encode(zipped_data)
     # bytes -> str
     return b64_data.decode()
+
+
+def try_load_customized_exporters(flow_dir: str, logger):
+    # relative path to flow folder
+    customized_loader_path = os.getenv("PROMPTFLOW_CUSTOMIZED_EXPORTERS_PROVIDER", None)
+    if not customized_loader_path:
+        return None
+    try:
+        import importlib.util as imp
+        absolute_loader_path = os.path.join(flow_dir, customized_loader_path)
+        with inject_sys_path(flow_dir):
+            print(f"try_load_aggre: loader_dir={flow_dir}")
+            main_module_spec = imp.spec_from_file_location("entry_module", absolute_loader_path)
+            user_module = imp.module_from_spec(main_module_spec)
+            main_module_spec.loader.exec_module(user_module)
+            if hasattr(user_module, "get_trace_exporters"):
+                # TODO: do we need to define some annotation for this? or hard-coded name is enough?
+                load_func = user_module.get_trace_exporters
+                result = load_func()
+                return result
+            else:
+                logger.warn("Customized exporters module does not have 'get_trace_exporters' function.")
+    except ImportError as e:
+        logger.warn(f"Load customized trace exporters failed: {e}")
+    except Exception as e:
+        logger.warn(f"Load customized trace exporters failed: {e}")
+    return None

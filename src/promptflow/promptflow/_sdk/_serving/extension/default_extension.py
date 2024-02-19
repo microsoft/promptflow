@@ -12,6 +12,7 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
 from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
+from promptflow._sdk._serving.utils import try_load_customized_exporters
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
@@ -43,6 +44,10 @@ class AppExtension(ABC):
     def get_blueprints(self):
         """Get blueprints for current extension."""
         pass
+
+    def get_trace_exporters(self, flow_dir: str):
+        """Get customized trace exporters for current extension."""
+        return try_load_customized_exporters(flow_dir, self.logger)
 
     def get_override_connections(self, flow: Flow) -> (dict, dict):
         """

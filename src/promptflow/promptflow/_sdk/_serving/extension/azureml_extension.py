@@ -12,6 +12,7 @@ from promptflow._sdk._serving.extension.default_extension import AppExtension
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
 from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
+from promptflow._sdk._serving.monitor.mdc_exporter import MdcExporter
 from promptflow._sdk._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
 from promptflow._utils.retry_utils import retry
 from promptflow._version import VERSION
@@ -61,6 +62,12 @@ class AzureMLExtension(AppExtension):
         self.flow_monitor = FlowMonitor(
             self.logger, self.get_flow_name(), data_collector, metrics_recorder=metrics_recorder
         )
+        # initialize customize trace exporters
+        mdc_exporter = MdcExporter(self.logger)
+        self.trace_exporters = [mdc_exporter]
+        customized_exporters = super(AzureMLExtension, self).get_trace_exporters(flow_dir)
+        if customized_exporters:
+            self.trace_exporters.extend(customized_exporters)
 
     def get_flow_project_path(self) -> str:
         return self.project_path
@@ -76,6 +83,9 @@ class AzureMLExtension(AppExtension):
 
     def get_flow_monitor(self) -> FlowMonitor:
         return self.flow_monitor
+
+    def get_trace_exporters(self, flow_dir: str):
+        return self.trace_exporters
 
     def get_override_connections(self, flow: Flow) -> (dict, dict):
         connection_names = flow.get_connection_names()
