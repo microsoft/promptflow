@@ -7,7 +7,12 @@ from dataclasses import asdict, dataclass
 
 from flask_restx import fields
 
-from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, EvaluationLineRunFieldName, LineRunFieldName
+from promptflow._sdk._constants import (
+    PFS_MODEL_DATETIME_FORMAT,
+    EvaluationKeyName,
+    EvaluationLineRunFieldName,
+    LineRunFieldName,
+)
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -49,6 +54,13 @@ evaluation_line_run_model = api.model(
         EvaluationLineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
     },
 )
+evaluations_model = api.model(
+    "Evaluations",
+    {
+        EvaluationKeyName.NAME: fields.String(required=True),
+        EvaluationKeyName.VALUE: fields.Nested(evaluation_line_run_model),
+    },
+)
 line_run_model = api.model(
     "LineRun",
     {
@@ -64,9 +76,7 @@ line_run_model = api.model(
         LineRunFieldName.NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.String,
-        LineRunFieldName.EVALUATIONS: fields.Raw,
-        # note that this is not REST, might need to change this
-        # LineRunFieldName.EVALUATIONS: fields.Nested(evaluation_line_run_model),
+        LineRunFieldName.EVALUATIONS: fields.List(fields.Nested(evaluations_model)),
     },
 )
 

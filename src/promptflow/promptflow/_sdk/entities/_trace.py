@@ -20,6 +20,7 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import EvaluationKeyName
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -258,9 +259,14 @@ class LineRun:
         if main_line_run_data is None:
             return None
 
-        evaluations = dict()
+        evaluations = []
         for eval_name, eval_line_run_data in evaluation_line_run_data_dict.items():
-            evaluations[eval_name] = eval_line_run_data
+            evaluations.append(
+                {
+                    EvaluationKeyName.NAME: eval_name,
+                    EvaluationKeyName.VALUE: eval_line_run_data,
+                }
+            )
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
             trace_id=main_line_run_data.trace_id,

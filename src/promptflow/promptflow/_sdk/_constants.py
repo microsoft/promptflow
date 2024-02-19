@@ -458,6 +458,11 @@ class EvaluationLineRunFieldName:
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
 
 
+class EvaluationKeyName:
+    NAME = "name"
+    VALUE = "value"
+
+
 class LineRunFieldName:
     LINE_RUN_ID = "line_run_id"
     TRACE_ID = "trace_id"
