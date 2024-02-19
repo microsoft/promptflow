@@ -79,11 +79,10 @@ def _start_pfs(pfs_port) -> None:
 
     command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
-        is_healthy, content = is_pfs_service_healthy(pfs_port)
+        is_healthy = is_pfs_service_healthy(pfs_port)
         if not is_healthy:
             command_args += ["--force"]
         else:
-            _logger.info(f"Service is already running on port {pfs_port}, {content}")
             return
     entry(command_args)
 
