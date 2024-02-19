@@ -191,5 +191,5 @@ def local_path_exists(path):
     return Path(path).exists()
 
 
-def not_default_path(path):
+def non_padding_path(path):
     return not (path.startswith("<") and path.endswith(">"))

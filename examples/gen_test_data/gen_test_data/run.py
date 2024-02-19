@@ -16,7 +16,7 @@ os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
 from common import clean_data, count_non_blank_lines, \
     split_document, copy_flow_folder_and_set_node_inputs, \
-    print_progress, convert_to_abs_path, not_default_path, local_path_exists  # noqa: E402
+    print_progress, convert_to_abs_path, non_padding_path, local_path_exists  # noqa: E402
 from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
 
 logger = get_logger("data.gen")
@@ -276,7 +276,7 @@ if __name__ == "__main__":
         documents_folder = convert_to_abs_path(args.documents_folder)
         flow_folder = convert_to_abs_path(args.flow_folder)
         output_folder = convert_to_abs_path(args.output_folder)
-        validate_path_func = not_default_path if args.cloud else local_path_exists
+        validate_path_func = non_padding_path if args.cloud else local_path_exists
 
         if document_nodes_file and validate_path_func(document_nodes_file):
             should_skip_split_documents = True
