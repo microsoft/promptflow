@@ -65,7 +65,7 @@ class AzureMLExtension(AppExtension):
         # initialize customize trace exporters
         mdc_exporter = MdcExporter(self.logger)
         self.trace_exporters = [mdc_exporter]
-        customized_exporters = super(AzureMLExtension, self).get_trace_exporters(flow_dir)
+        customized_exporters = super(AzureMLExtension, self).get_trace_exporters(self.project_path)
         if customized_exporters:
             self.trace_exporters.extend(customized_exporters)
 
