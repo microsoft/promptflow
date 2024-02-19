@@ -66,7 +66,7 @@ async def add_message(cli: AsyncOpenAI, message: list, thread_id: str):
     content = extract_text_from_message(message)
     file_ids = await extract_file_ids_from_message(cli, message)
     msg = await cli.beta.threads.messages.create(thread_id=thread_id, role="user", content=content, file_ids=file_ids)
-    print("Created message message_id: {msg.id}, assistant_id: {assistant_id}, thread_id: {thread_id}")
+    print(f"Created message message_id: {msg.id}, thread_id: {thread_id}")
     return msg
 
 
@@ -188,26 +188,30 @@ async def extract_file_ids_from_message(cli: AsyncOpenAI, message: list):
 
 async def get_openai_file_references(content: list, download_image: bool, conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     file_id_references = {}
+    file_id = None
     for item in content:
         if isinstance(item, MessageContentImageFile):
             file_id = item.image_file.file_id
             if download_image:
                 file_id_references[file_id] = {
                     "content": await download_openai_image(file_id, conn),
-                    "url": URL_PREFIX + file_id,
                 }
-            else:
-                file_id_references[file_id] = {"url": URL_PREFIX + file_id}
         elif isinstance(item, MessageContentText):
             for annotation in item.text.annotations:
                 if annotation.type == "file_path":
                     file_id = annotation.file_path.file_id
-                    file_id_references[file_id] = {"url": URL_PREFIX + file_id}
                 elif annotation.type == "file_citation":
                     file_id = annotation.file_citation.file_id
-                    file_id_references[file_id] = {"url": URL_PREFIX + file_id}
         else:
             raise Exception(f"Unsupported content type: '{type(item)}'.")
+        
+        if file_id:
+            if file_id not in file_id_references:
+                file_id_references[file_id] = {}
+            if isinstance(conn, AzureOpenAIConnection):
+                file_id_references[file_id]["url"] = file_id
+            else:
+                file_id_references[file_id]["url"] = URL_PREFIX + file_id
     return file_id_references
 
 

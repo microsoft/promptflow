@@ -3,11 +3,11 @@ inputs:
   assistant_input:
     type: list
     default:
-      - type: text
-        text: Please generate the calories report for my meal plan.
-      - type: file_path
-        file_path:
-          path: ./meal_plan.csv
+    - type: text
+      text: Please generate the calories report for my meal plan.
+    - type: file_path
+      file_path:
+        path: ./meal_plan.csv
   assistant_id:
     type: string
     default: ""
@@ -22,23 +22,23 @@ outputs:
     type: string
     reference: ${get_or_create_thread.output}
 nodes:
-  - name: get_or_create_thread
-    type: python
-    source:
-      type: code
-      path: get_or_create_thread.py
-    inputs:
-      conn: azure_open_ai_connection
-      thread_id: ${inputs.thread_id}
-  - name: add_message_and_run
-    type: python
-    source:
-      type: code
-      path: add_message_and_run.py
-    inputs:
-      conn: azure_open_ai_connection
-      message: ${inputs.assistant_input}
-      assistant_id: ${inputs.assistant_id}
-      thread_id: ${get_or_create_thread.output}
-      assistant_definition: assistant_definition.yaml
-      download_images: true
+- name: get_or_create_thread
+  type: python
+  source:
+    type: code
+    path: get_or_create_thread.py
+  inputs:
+    conn: azure_open_ai_connection
+    thread_id: ${inputs.thread_id}
+- name: add_message_and_run
+  type: python
+  source:
+    type: code
+    path: add_message_and_run.py
+  inputs:
+    conn: azure_open_ai_connection
+    message: ${inputs.assistant_input}
+    assistant_id: ${inputs.assistant_id}
+    thread_id: ${get_or_create_thread.output}
+    assistant_definition: assistant_definition.yaml
+    download_images: true
