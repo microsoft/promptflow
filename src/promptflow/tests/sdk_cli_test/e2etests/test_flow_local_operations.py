@@ -472,7 +472,7 @@ class TestFlowLocalOperations:
         assert tools_meta["code"] == {
             "my_script_tool.py": {
                 "function": "my_tool",
-                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_param": {"type": ["string"]}},
+                "inputs": {"connection": {"custom_type": ["CustomConnection"]}, "input_param": {"type": ["string"]}},
                 "source": "my_script_tool.py",
                 "type": "python",
             }
