@@ -34,7 +34,7 @@ class PFClient:
 
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
-        self._runs = RunOperations()
+        self._runs = RunOperations(self)
         self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
         # The credential is used as an option to override

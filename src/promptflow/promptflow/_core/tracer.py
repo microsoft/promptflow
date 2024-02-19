@@ -20,11 +20,11 @@ from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
+from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
 from .thread_local_singleton import ThreadLocalSingleton
-
 
 open_telemetry_tracer = otel_trace.get_tracer("promptflow")
 
@@ -58,17 +58,11 @@ class Tracer(ThreadLocalSingleton):
         return tracer._run_id
 
     @classmethod
-    def end_tracing(cls, run_id: Optional[str] = None, raise_ex=False):
+    def end_tracing(cls, run_id: Optional[str] = None):
         tracer = cls.active_instance()
         if not tracer:
-            msg = "Try end tracing but no active tracer in current context."
-            if raise_ex:
-                raise Exception(msg)
-            logging.warning(msg)
             return []
         if run_id is not None and tracer._run_id != run_id:
-            msg = f"Try to end tracing for run {run_id} but {tracer._run_id} is active."
-            logging.warning(msg)
             return []
         tracer._deactivate_in_context()
         return tracer.to_json()
@@ -77,7 +71,6 @@ class Tracer(ThreadLocalSingleton):
     def push(cls, trace: Trace):
         obj = cls.active_instance()
         if not obj:
-            logging.warning("Try to push trace but no active tracer in current context.")
             return
         obj._push(trace)
 
@@ -155,7 +148,7 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-class TokenCollector():
+class TokenCollector:
     _lock = Lock()
 
     def __init__(self):
@@ -164,9 +157,7 @@ class TokenCollector():
     def collect_openai_tokens(self, span, output):
         span_id = span.get_span_context().span_id
         if not inspect.isgenerator(output) and hasattr(output, "usage") and output.usage is not None:
-            tokens = {
-                f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in output.usage.dict().items()
-            }
+            tokens = output.usage.dict()
             if tokens:
                 with self._lock:
                     self._span_id_to_tokens[span_id] = tokens
@@ -228,7 +219,7 @@ def _create_trace_from_function_call(
         all_kwargs.pop(key, None)
 
     name = f.__qualname__
-    if trace_type == TraceType.LLM and f.__module__:
+    if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
         name = f"{f.__module__}.{name}"
 
     return Trace(
@@ -262,12 +253,30 @@ def enrich_span_with_trace(span, trace):
                 "framework": "promptflow",
                 "span_type": trace.type.value,
                 "function": trace.name,
-                "node_name": get_node_name_from_context(),
             }
         )
+        node_name = get_node_name_from_context()
+        if node_name:
+            span.set_attribute("node_name", node_name)
         enrich_span_with_context(span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with trace: {e}")
+
+
+def enrich_span_with_prompt_info(span, func, kwargs):
+    try:
+        # Assume there is only one prompt template parameter in the function,
+        # we use the first one by default if there are multiple.
+        prompt_tpl_param_name = get_prompt_param_name_from_func(func)
+        if prompt_tpl_param_name is not None:
+            prompt_tpl = kwargs.get(prompt_tpl_param_name)
+            prompt_vars = {
+                key: kwargs.get(key) for key in get_inputs_for_prompt_template(prompt_tpl) if key in kwargs
+            }
+            prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
+            span.set_attributes(prompt_info)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with prompt info: {e}")
 
 
 def enrich_span_with_input(span, input):
@@ -280,17 +289,55 @@ def enrich_span_with_input(span, input):
     return input
 
 
+def enrich_span_with_trace_type(span, inputs, output, trace_type):
+    enrich_span_with_output(span, output)
+    if trace_type == TraceType.LLM:
+        token_collector.collect_openai_tokens(span, output)
+    elif trace_type == TraceType.EMBEDDING:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_embedding(span, inputs, output)
+    enrich_span_with_openai_tokens(span, trace_type)
+
+
 def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
-        if tokens:
-            span.set_attributes(tokens)
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
     return output
+
+
+def enrich_span_with_openai_tokens(span, trace_type):
+    try:
+        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
+        if tokens:
+            span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+            if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
+                llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+                span_tokens.update(llm_tokens)
+            span.set_attributes(span_tokens)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with openai tokens: {e}")
+
+
+def enrich_span_with_embedding(span, inputs, output):
+    from openai.types.create_embedding_response import CreateEmbeddingResponse
+
+    try:
+        if isinstance(output, CreateEmbeddingResponse):
+            span.set_attribute("embedding.model", output.model)
+            embeddings = []
+            input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
+            for emb in output.data:
+                embeddings.append({
+                    "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
+                    "embedding.text": input_list[emb.index],
+                })
+            span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with embedding: {e}")
 
 
 def serialize_attribute(value):
@@ -347,9 +394,11 @@ def _traced_async(
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+        # Fall back to trace.name if we can't get node name for better view.
+        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
+            enrich_span_with_prompt_info(span, func, kwargs)
 
             # Should not extract these codes to a separate function here.
             # We directly call func instead of calling Tracer.invoke,
@@ -358,9 +407,7 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                if trace_type == TraceType.LLM:
-                    token_collector.collect_openai_tokens(span, output)
-                enrich_span_with_output(span, output)
+                enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -396,9 +443,11 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+        # Fall back to trace.name if we can't get node name for better view.
+        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
+            enrich_span_with_prompt_info(span, func, kwargs)
 
             # Should not extract these codes to a separate function here.
             # We directly call func instead of calling Tracer.invoke,
@@ -407,9 +456,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                if trace_type == TraceType.LLM:
-                    token_collector.collect_openai_tokens(span, output)
-                enrich_span_with_output(span, output)
+                enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:

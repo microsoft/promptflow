@@ -62,7 +62,7 @@ If the `flow.dag.yaml` become invalid after `overrides`, validation error will b
 After set `streaming` in flow context, the flow function will return an iterator to stream the output.
 
 ```python
-f = load_flow(source="../../examples/flows/chat/basic-chat/")
+f = load_flow(source="../../examples/flows/chat/chat-basic/")
 f.context.streaming = True
 result = f(
     chat_history=[
@@ -83,6 +83,19 @@ for r in result["answer"]:
 ```
 
 Reference our [sample](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb) for usage.
+
+## Flow with multiple overrides
+
+**Note**: the flow context configs may affect each other in some cases. For example, using `connection` & `overrides` to override same node.
+The behavior is undefined for those scenarios. Pleas avoid such usage.
+
+```python
+# overriding `classify_with_llm`'s connection and inputs in the same time will lead to undefined behavior.
+f.context = FlowContext(
+    connections={"classify_with_llm": {"connection": connection_obj}},
+    overrides={"nodes.classify_with_llm.inputs.url": sample_url}
+)
+```
 
 ## Next steps
 

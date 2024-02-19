@@ -13,6 +13,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
@@ -371,6 +372,7 @@ def safe_parse_object_list(obj_list, parser, message_generator):
 
 def _sanitize_python_variable_name(name: str):
     from promptflow._utils.utils import _sanitize_python_variable_name
+
     return _sanitize_python_variable_name(name)
 
 
@@ -1116,6 +1118,49 @@ def pd_read_json(file) -> "DataFrame":
 
     with read_open(file) as f:
         return pd.read_json(f, orient="records", lines=True)
+
+
+def get_mac_address() -> str:
+    """Obtain all MAC addresses, then sort and concatenate them."""
+    try:
+        import psutil
+
+        mac_address = []
+        net_addresses = psutil.net_if_addrs()
+        # Obtain all MAC addresses, then sort and concatenate them
+        net_address_list = sorted(net_addresses.items())  # sort by name
+        for name, net_address in net_address_list:
+            for net_interface in net_address:
+                if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
+                    mac_address.append(net_interface.address)
+
+        return ':'.join(mac_address)
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return ""
+
+
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
+    mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
+    if mac_address:
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
+    return str(uuid.uuid4())
 
 
 def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
