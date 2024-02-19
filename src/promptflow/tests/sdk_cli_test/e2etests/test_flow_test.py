@@ -267,6 +267,7 @@ class TestFlowTest:
         flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_output/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
+        assert result.output == {"output": "Hello world! val1"}
 
     def test_eager_flow_test_invalid_cases(self):
         # wrong entry provided
@@ -296,7 +297,7 @@ class TestFlowTest:
         flow_path = Path(f"{EAGER_FLOWS_DIR}/nested_entry/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
-        assert result.output == "Hello world! val1"
+        assert result.output == {"output": "Hello world! val1"}
 
     def test_eager_flow_with_dataclass_output(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_dataclass_output/").absolute()

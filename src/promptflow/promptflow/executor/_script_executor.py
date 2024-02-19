@@ -88,6 +88,7 @@ class ScriptExecutor(FlowExecutor):
         finally:
             run_tracker.persist_flow_run(run_info)
         # Make sure line result output is a mapping like dag flow
+        # For primitive type output, we'll convert it to dict with key 'output'
         line_result = LineResult(output_dict, {}, run_info, {})
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
