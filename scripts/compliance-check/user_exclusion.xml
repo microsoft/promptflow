@@ -1,5 +1,5 @@
 <PoliCheckExclusions>
   <!-- All strings must be UPPER CASE -->
   <!--index-xxx.js is an auto-generated javascript file - skipped given it's not expected to be readable -->
-  <Exclusion Type="FileType">.JS</Exclusion>
+  <Exclusion Type="FileType">.MIN.JS</Exclusion>
 </PoliCheckExclusions>
