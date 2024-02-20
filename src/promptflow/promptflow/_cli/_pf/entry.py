@@ -6,10 +6,12 @@ import json
 import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, is_format_exception
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
+from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow.exceptions import PromptflowException
 
 # Log the start time
 start_time = time.perf_counter()
@@ -30,7 +32,7 @@ from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
     print_pf_version,
-    setup_user_agent_to_operation_context,
+    setup_user_agent_to_operation_context, print_red_error,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 
@@ -69,19 +71,13 @@ def run_command(args):
             dispatch_experiment_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
         exit_code = ex.code if ex.code is not None else 1
         logger.debug(f"Code directly call sys.exit with code {exit_code}")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except Exception as ex:
         logger.debug(f"Command {args} execute failed. {str(ex)}")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     finally:
         # Log the invoke finish time
@@ -127,12 +123,21 @@ def entry(argv):
     logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(
-        logger,
-        activity_name,
-        activity_type=ActivityType.PUBLICAPI,
-    ):
-        run_command(args)
+    try:
+        with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
+            run_command(args)
+    except Exception as e:
+        if is_format_exception():
+            # When the flag format_exception is set in command,
+            # it will write a json with exception info and command to stderr.
+            error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            error_msg["command"] = " ".join(sys.argv)
+            sys.stderr.write(json.dumps(error_msg))
+        if isinstance(e, PromptflowException):
+            print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+            exit(1)
+        else:
+            raise e
 
 
 def main():

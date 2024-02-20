@@ -11,6 +11,7 @@ import sys
 import traceback
 from collections import namedtuple
 from configparser import ConfigParser
+from contextvars import ContextVar
 from functools import wraps
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -353,32 +354,6 @@ def is_format_exception():
     return False
 
 
-def exception_handler(command: str):
-    """Catch known cli exceptions."""
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                if is_format_exception():
-                    # When the flag format_exception is set in command,
-                    # it will write a json with exception info and command to stderr.
-                    error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
-                    error_msg["command"] = " ".join(sys.argv)
-                    sys.stderr.write(json.dumps(error_msg))
-                if isinstance(e, PromptflowException):
-                    print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
-                    exit(1)
-                else:
-                    raise e
-
-        return wrapper
-
-    return decorator
-
-
 def get_secret_input(prompt, mask="*"):
     """Get secret input with mask printed on screen in CLI.
 
@@ -477,6 +452,15 @@ def _get_cli_activity_name(cli, args):
         activity_name += f".{args.sub_action}"
 
     return activity_name
+
+
+def record_cli_command(command):
+    default_cli_command = {"pf.flow.test", "pf.run.create", "pf.connection.show"
+                           "pf.flow.node_test", "pfazure.run.create", "pf.connection.create",
+                           "pf.run.visualize", "pf.run.show-details", "pf.run.show-metrics",
+                           "pf.flow.serve", "pfazure.flow.create"}
+
+    cli_command = ContextVar("cli_command_context", default=None)
 
 
 def _try_delete_existing_run_record(run_name: str):

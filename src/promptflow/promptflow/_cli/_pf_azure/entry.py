@@ -7,8 +7,10 @@ import time
 
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
 from promptflow._cli._user_agent import USER_AGENT
-from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
+from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli, is_format_exception
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow.exceptions import PromptflowException
 
 # Log the start time
 start_time = time.perf_counter()
@@ -23,7 +25,7 @@ from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
     print_pf_version,
-    setup_user_agent_to_operation_context,
+    setup_user_agent_to_operation_context, print_red_error,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 
@@ -113,13 +115,27 @@ def entry(argv):
         setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
     custom_dimensions = _get_workspace_info(args)
-    with log_activity(
-        logger,
-        _get_cli_activity_name(cli=prog, args=args),
-        activity_type=ActivityType.PUBLICAPI,
-        custom_dimensions=custom_dimensions,
-    ):
-        run_command(args)
+    activity_name = _get_cli_activity_name(cli=prog, args=args)
+    try:
+        with log_activity(
+                logger,
+                _get_cli_activity_name(cli=prog, args=args),
+                activity_type=ActivityType.PUBLICAPI,
+                custom_dimensions=custom_dimensions,
+        ):
+            run_command(args)
+    except Exception as e:
+        if is_format_exception():
+            # When the flag format_exception is set in command,
+            # it will write a json with exception info and command to stderr.
+            error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+            error_msg["command"] = " ".join(sys.argv)
+            sys.stderr.write(json.dumps(error_msg))
+        if isinstance(e, PromptflowException):
+            print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+            exit(1)
+        else:
+            raise e
 
 
 def main():
