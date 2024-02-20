@@ -25,7 +25,6 @@ promptflow.tools.chat.chat:
       type:
       - AzureOpenAIConnection
       - OpenAIConnection
-      - SeverlessModelConnection
     deployment_name:
       type:
         - string
