@@ -19,11 +19,11 @@ from opentelemetry.trace.status import StatusCode
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
+from .._utils.utils import default_json_encoder
 from .thread_local_singleton import ThreadLocalSingleton
 
 open_telemetry_tracer = otel_trace.get_tracer("promptflow")
@@ -270,9 +270,7 @@ def enrich_span_with_prompt_info(span, func, kwargs):
         prompt_tpl_param_name = get_prompt_param_name_from_func(func)
         if prompt_tpl_param_name is not None:
             prompt_tpl = kwargs.get(prompt_tpl_param_name)
-            prompt_vars = {
-                key: kwargs.get(key) for key in get_inputs_for_prompt_template(prompt_tpl) if key in kwargs
-            }
+            prompt_vars = {key: kwargs.get(key) for key in get_inputs_for_prompt_template(prompt_tpl) if key in kwargs}
             prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
             span.set_attributes(prompt_info)
     except Exception as e:
@@ -331,10 +329,12 @@ def enrich_span_with_embedding(span, inputs, output):
             embeddings = []
             input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
             for emb in output.data:
-                embeddings.append({
-                    "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
-                    "embedding.text": input_list[emb.index],
-                })
+                embeddings.append(
+                    {
+                        "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
+                        "embedding.text": input_list[emb.index],
+                    }
+                )
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
