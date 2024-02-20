@@ -4,6 +4,8 @@ import tempfile
 import threading
 import time
 import uuid
+from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
 
@@ -203,6 +205,17 @@ class TestExperiment:
             client = PFClient()
             session = str(uuid.uuid4())
             # Test with inputs, use separate thread to avoid OperationContext somehow cleared by other tests
+            with ThreadPoolExecutor() as pool:
+                task = pool.submit(
+                    client.flows.test,
+                    flow=target_flow_path,
+                    experiment=template_path,
+                    session=session,
+                    inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                )
+                futures.wait([task], return_when=futures.ALL_COMPLETED)
+                result = task.result()
+            assert result
             thread = threading.Thread(
                 target=client.flows.test,
                 args=(target_flow_path,),
