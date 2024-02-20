@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 from pydantic import BaseModel
 
@@ -18,9 +18,9 @@ class BaseExecutionRequest(BaseModel):
     working_dir: Path
     flow_file: Path
     output_dir: Path
-    connections: Mapping[str, Any] = None
-    environment_variables: Mapping[str, Any] = None
     log_path: str
+    connections: Optional[Mapping[str, Any]] = None
+    environment_variables: Optional[Mapping[str, Any]] = None
 
     def get_run_mode(self):
         raise NotImplementedError(f"Request type {self.__class__.__name__} is not implemented.")
