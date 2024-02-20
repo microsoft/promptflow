@@ -353,6 +353,32 @@ def is_format_exception():
     return False
 
 
+def exception_handler(func, activity_name, custom_dimensions=None):
+    def wrapper(*args, **kwargs):
+        try:
+            with log_activity(
+                    logger,
+                    activity_name,
+                    activity_type=ActivityType.PUBLICAPI,
+                    custom_dimensions=custom_dimensions,
+            ):
+                func(*args, **kwargs)
+        except Exception as e:
+            if is_format_exception():
+                # When the flag format_exception is set in command,
+                # it will write a json with exception info and command to stderr.
+                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                error_msg["command"] = " ".join(sys.argv)
+                sys.stderr.write(json.dumps(error_msg))
+            if isinstance(e, PromptflowException):
+                print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+                exit(1)
+            else:
+                raise e
+
+    return wrapper
+
+
 def get_secret_input(prompt, mask="*"):
     """Get secret input with mask printed on screen in CLI.
 
@@ -451,32 +477,6 @@ def _get_cli_activity_name(cli, args):
         activity_name += f".{args.sub_action}"
 
     return activity_name
-
-
-def exception_handler(func, activity_name, custom_dimensions=None):
-    def wrapper(*args, **kwargs):
-        try:
-            with log_activity(
-                    logger,
-                    activity_name,
-                    activity_type=ActivityType.PUBLICAPI,
-                    custom_dimensions=custom_dimensions,
-            ):
-                func(*args, **kwargs)
-        except Exception as e:
-            if is_format_exception():
-                # When the flag format_exception is set in command,
-                # it will write a json with exception info and command to stderr.
-                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
-                error_msg["command"] = " ".join(sys.argv)
-                sys.stderr.write(json.dumps(error_msg))
-            if isinstance(e, PromptflowException):
-                print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
-                exit(1)
-            else:
-                raise e
-
-    return wrapper
 
 
 def _try_delete_existing_run_record(run_name: str):
