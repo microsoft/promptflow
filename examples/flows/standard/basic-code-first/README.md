@@ -1,5 +1,5 @@
 # Basic standard flow (code-first)
-A basic standard flow using code-first approach calls Azure OpenAI with connection info stored in environment variables. 
+A basic standard flow using code-first approach calls Azure OpenAI with connection info stored in environment variables.
 
 ## Prerequisites
 
@@ -74,14 +74,14 @@ pf connection show -n open_ai_connection
 **Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
 
 ```bash
-# test with default input value in flow.dag.yaml 
-pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}'
+# test with default input value in flow.dag.yaml
+pf flow test --flow . --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}'
 ```
 
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}' --column-mapping text='${data.text}'
+pf run create --flow . --data ./data.jsonl --stream --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping text='${data.text}'
 # create run using yaml file
 pf run create --file run.yml --stream
 
@@ -100,10 +100,10 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 
 - Create run
 ```bash
-# run with environment variable reference connection in azureml workspace 
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}' --column-mapping text='${data.text}' --stream 
+# run with environment variable reference connection in azureml workspace
+pfazure run create --flow . --data ./data.jsonl --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping text='${data.text}' --stream
 # run using yaml file
-pfazure run create --file run.yml --stream 
+pfazure run create --file run.yml --stream
 ```
 
 - List and show run meta

@@ -13,9 +13,7 @@ BASE_DIR = Path(__file__).absolute().parent
 
 
 @trace
-def load_prompt(
-    jinja2_template: str, answer: str, statement: str, examples: list
-) -> str:
+def load_prompt(jinja2_template: str, answer: str, statement: str, examples: list) -> str:
     """Load prompt function."""
     with open(BASE_DIR / jinja2_template, "r", encoding="utf-8") as f:
         tmpl = Template(f.read(), trim_blocks=True, keep_trailing_newline=True)
@@ -50,17 +48,17 @@ def check(answer: str, statement: str):
 
     prompt = load_prompt("prompt.md", answer, statement, examples)
 
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
+    if "OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
 
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
+    if "OPENAI_API_KEY" not in os.environ:
+        raise Exception("Please specify environment variables: OPENAI_API_KEY")
 
     connection = AzureOpenAIConnection(
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_base=os.environ["AZURE_OPENAI_API_BASE"],
-        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
+        api_key=os.environ["OPENAI_API_KEY"],
+        api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_version=os.environ.get("OPENAI_API_VERSION", "2023-07-01-preview"),
     )
 
     output = chat(

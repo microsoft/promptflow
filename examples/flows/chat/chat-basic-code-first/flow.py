@@ -31,17 +31,17 @@ def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> R
     """Flow entry function."""
 
     prompt = load_prompt("chat.jinja2", question, chat_history)
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
+    if "OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
 
-    if "AZURE_OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
+    if "OPENAI_API_KEY" not in os.environ:
+        raise Exception("Please specify environment variables: OPENAI_API_KEY")
 
     connection = AzureOpenAIConnection(
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_base=os.environ["AZURE_OPENAI_API_BASE"],
-        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
+        api_key=os.environ["OPENAI_API_KEY"],
+        api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_version=os.environ.get("OPENAI_API_VERSION", "2023-07-01-preview"),
     )
 
     output = chat(
