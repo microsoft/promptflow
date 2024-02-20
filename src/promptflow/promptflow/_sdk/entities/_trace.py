@@ -20,6 +20,7 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import CumulativeTokenCountFieldName
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -193,9 +194,9 @@ class _LineRunData:
         # if there is no token usage, set `cumulative_token_count` to None
         if total_token_count > 0:
             cumulative_token_count = {
-                "completion": completion_token_count,
-                "prompt": prompt_token_count,
-                "total": total_token_count,
+                CumulativeTokenCountFieldName.COMPLETION: completion_token_count,
+                CumulativeTokenCountFieldName.PROMPT: prompt_token_count,
+                CumulativeTokenCountFieldName.TOTAL: total_token_count,
             }
         else:
             cumulative_token_count = None

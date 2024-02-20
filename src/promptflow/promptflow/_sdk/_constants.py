@@ -443,6 +443,12 @@ class EnvironmentVariables:
     PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"
 
 
+class CumulativeTokenCountFieldName:
+    COMPLETION = "completion"
+    PROMPT = "prompt"
+    TOTAL = "total"
+
+
 class LineRunFieldName:
     LINE_RUN_ID = "line_run_id"
     TRACE_ID = "trace_id"
