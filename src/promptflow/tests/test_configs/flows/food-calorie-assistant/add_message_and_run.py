@@ -208,10 +208,11 @@ async def get_openai_file_references(content: list, download_image: bool, conn: 
         if file_id:
             if file_id not in file_id_references:
                 file_id_references[file_id] = {}
-            if isinstance(conn, AzureOpenAIConnection):
-                file_id_references[file_id]["url"] = file_id
-            else:
+            if isinstance(conn, OpenAIConnection):
                 file_id_references[file_id]["url"] = URL_PREFIX + file_id
+            else:
+                # For AzureOpenAIConnection, the url is not avaliable. Shall fullfill it later.
+                pass
     return file_id_references
 
 
