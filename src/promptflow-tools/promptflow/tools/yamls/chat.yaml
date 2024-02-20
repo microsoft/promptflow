@@ -85,16 +85,16 @@ promptflow.tools.chat.chat:
       default: 0
       type:
         - double
-    response_format:
-      type:
-      - object
-      advanced: false
-      ui_hints:
-        text_box_size: lg
-      enum:
-      - type: json_object
-      - type: text
-      allow_manual_entry: true
+    # response_format:
+    #   type:
+    #   - object
+    #   advanced: false
+    #   ui_hints:
+    #     text_box_size: lg
+    #   enum:
+    #   - type: json_object
+    #   - type: text
+    #   allow_manual_entry: true
     frequency_penalty:
       type:
       - int
