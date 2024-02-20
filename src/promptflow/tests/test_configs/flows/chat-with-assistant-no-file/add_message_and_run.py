@@ -46,9 +46,8 @@ async def add_message_and_run(
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
 
-@trace
 async def get_assisant_tool_invoker(assistant_definition: AssistantDefinition):
-    invoker = AssistantToolInvoker.init(assistant_definition.tools)
+    invoker = AssistantToolInvoker.init(assistant_definition)
     return invoker
 
 
