@@ -30,7 +30,6 @@ from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException
 
 from ..recording_utilities import is_live
 
@@ -798,7 +797,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(SystemExit) as ex:
+            with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
                     "init",
@@ -1193,7 +1192,7 @@ class TestCli:
             shutil.rmtree(output_path, ignore_errors=True)
 
     def test_flow_build_with_ua(self):
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
                 "build",
