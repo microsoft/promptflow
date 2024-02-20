@@ -1,0 +1,20 @@
+model: gpt-4
+instructions: |
+  You are a helpful assistant to generate single synonym for a given word.
+  Please use deployment of "gpt-35-turbo" as default for the synonym generation.
+  Please use below prompt format:
+  "
+  system:
+    You task is to generate what I ask
+  user:
+    Please give a simple synonym for {{word}}.
+  "
+tools:
+  - type: function
+    source:
+      type: code
+      path: get_synonym.py
+    tool_type: python
+    predefined_inputs:
+      connection: azure_open_ai_connection
+

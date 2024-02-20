@@ -22,5 +22,3 @@ tools:
       type: code
       path: get_temperature.py
     tool_type: python
-    predefined_inputs:
-      connection: chw-manager-OpenWeatherMap

@@ -25,6 +25,7 @@ from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
+    FailedToParseAssistantTool,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     NodeInputValidationError,
@@ -156,29 +157,32 @@ class ToolResolver:
         return node, list(predefined_inputs.keys())
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
-        to_openai_type = {
-            "str": "string",
-            "int": "number",
-            "float": "number",
-            "bool": "boolean",
-            "list": "array",
-            "dict": "object",
-        }
-        description, params = DocstringParser.parse(description)
-        for input in predefined_inputs:
-            if input in params:
-                params.pop(input)
-        for _, param in params.items():
-            param["type"] = to_openai_type[param["type"]] if param["type"] in to_openai_type else param["type"]
+        try:
+            to_openai_type = {
+                "str": "string",
+                "int": "number",
+                "float": "number",
+                "bool": "boolean",
+                "list": "array",
+                "dict": "object",
+            }
+            description, params = DocstringParser.parse(description)
+            for input in predefined_inputs:
+                if input in params:
+                    params.pop(input)
+            for _, param in params.items():
+                param["type"] = to_openai_type[param["type"]] if param["type"] in to_openai_type else param["type"]
 
-        return {
-            "type": "function",
-            "function": {
-                "name": func_name,
-                "description": description,
-                "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
-            },
-        }
+            return {
+                "type": "function",
+                "function": {
+                    "name": func_name,
+                    "description": description,
+                    "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+                },
+            }
+        except Exception as e:
+            raise FailedToParseAssistantTool(func_name=func_name) from e
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
