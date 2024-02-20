@@ -11,6 +11,7 @@ import sys
 import traceback
 from collections import namedtuple
 from configparser import ConfigParser
+from functools import wraps
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -354,6 +355,9 @@ def is_format_exception():
 
 
 def exception_handler(func, activity_name, custom_dimensions=None):
+    """Catch known cli exceptions."""
+
+    @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             with log_activity(
@@ -362,7 +366,7 @@ def exception_handler(func, activity_name, custom_dimensions=None):
                     activity_type=ActivityType.PUBLICAPI,
                     custom_dimensions=custom_dimensions,
             ):
-                func(*args, **kwargs)
+                return func(*args, **kwargs)
         except Exception as e:
             if is_format_exception():
                 # When the flag format_exception is set in command,
