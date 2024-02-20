@@ -411,9 +411,6 @@ class TestBatch:
         run_folder = RUNS_ROOT / resume_from_run_name
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
-
-        # resume_from_run = Run._from_orm_object(ORMRun.get(resume_from_run))
-        # resume_from_run_storage = LocalStorageOperations(resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
         resume_run_batch_results = batch_engine.run(
             input_dirs,
