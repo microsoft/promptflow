@@ -238,7 +238,7 @@ def collect_tool_function_in_module(m):
         return tool_methods[0]
 
 
-def generate_python_tool(name, content, source=None):
+def generate_python_tool_meta_dict(name, content, source=None):
     from promptflow._sdk.operations._tool_operations import ToolOperations
 
     m = load_python_module(content, source)
@@ -254,18 +254,14 @@ def generate_python_tool(name, content, source=None):
         tool.source = source
     construct_tool, validate_result = tool_operations._serialize_tool(tool, input_settings, extra_info, f)
     validate_result.try_raise(raise_error=True)
-    # Handler string enum in tool dict
+    # Handle string enum in tool dict
     construct_tool = json.loads(json.dumps(construct_tool))
     return construct_tool
 
 
-def generate_python_meta_dict(name, content, source=None):
-    return generate_python_tool(name, content, source)
-
-
 # Only used in non-code first experience.
 def generate_python_meta(name, content, source=None):
-    return json.dumps(generate_python_meta_dict(name, content, source), indent=2)
+    return json.dumps(generate_python_tool_meta_dict(name, content, source), indent=2)
 
 
 def generate_prompt_meta(name, content, prompt_only=False, source=None):
@@ -300,7 +296,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
 
     name = file.stem
     if tool_type == ToolType.PYTHON:
-        return generate_python_meta_dict(name, content, path)
+        return generate_python_tool_meta_dict(name, content, path)
     elif tool_type == ToolType.LLM:
         return generate_prompt_meta_dict(name, content, source=path)
     elif tool_type == ToolType.PROMPT:
