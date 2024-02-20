@@ -454,15 +454,6 @@ def _get_cli_activity_name(cli, args):
     return activity_name
 
 
-def record_cli_command(command):
-    default_cli_command = {"pf.flow.test", "pf.run.create", "pf.connection.show"
-                           "pf.flow.node_test", "pfazure.run.create", "pf.connection.create",
-                           "pf.run.visualize", "pf.run.show-details", "pf.run.show-metrics",
-                           "pf.flow.serve", "pfazure.flow.create"}
-
-    cli_command = ContextVar("cli_command_context", default=None)
-
-
 def _try_delete_existing_run_record(run_name: str):
     from promptflow._sdk._errors import RunNotFoundError
     from promptflow._sdk._orm import RunInfo as ORMRun
