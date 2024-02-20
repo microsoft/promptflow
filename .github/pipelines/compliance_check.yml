@@ -28,7 +28,7 @@ steps:
     targetType: 'F'
     targetArgument: '$(sourceLocation)'
     optionsPE: '1'
-    optionsUEPATH: '$(sourceLocation)\scripts\compliance-check\user_exclusion.xml'
+    optionsUEPATH: 'scripts\compliance-check\user_exclusion.xml'
     result: '$(sourceLocation)\scripts\compliance-check\result.tsv'
     optionsXCLASS: 'Geopolitical'
 
