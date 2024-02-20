@@ -1,15 +1,17 @@
 import asyncio
 import json
+from typing import Union
 
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.beta.threads import MessageContentImageFile, MessageContentText
 
 from promptflow import tool, trace
-from promptflow.connections import OpenAIConnection
+from promptflow.connections import OpenAIConnection, _Connection, AzureOpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.types import AssistantDefinition
 from promptflow.exceptions import SystemErrorException
 from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
+from get_assistant_client import get_assistant_client
 
 URL_PREFIX = "https://platform.openai.com/files/"
 RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
@@ -17,14 +19,14 @@ RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
 
 @tool
 async def add_message_and_run(
-    conn: OpenAIConnection,
+    conn: Union[AzureOpenAIConnection, OpenAIConnection],
     assistant_id: str,
     thread_id: str,
     message: list,
     assistant_definition: AssistantDefinition,
     download_images: bool,
 ):
-    cli = await get_openai_api_client(conn)
+    cli = await get_assistant_client(conn)
     invoker = await get_assisant_tool_invoker(assistant_definition)
     # Check if assistant id is valid. If not, create a new assistant.
     # Note: tool registration at run creation, rather than at assistant creation.
@@ -45,14 +47,8 @@ async def add_message_and_run(
 
 
 @trace
-async def get_openai_api_client(conn: OpenAIConnection):
-    cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
-    return cli
-
-
-
 async def get_assisant_tool_invoker(assistant_definition: AssistantDefinition):
-    invoker = AssistantToolInvoker.init(assistant_definition)
+    invoker = AssistantToolInvoker.init(assistant_definition.tools)
     return invoker
 
 
@@ -70,7 +66,7 @@ async def add_message(cli: AsyncOpenAI, message: list, thread_id: str):
     content = extract_text_from_message(message)
     file_ids = await extract_file_ids_from_message(cli, message)
     msg = await cli.beta.threads.messages.create(thread_id=thread_id, role="user", content=content, file_ids=file_ids)
-    print(f"Created message message_id: {msg.id}, assistant_id: {assistant_id}, thread_id: {thread_id}")
+    print(f"Created message message_id: {msg.id}, thread_id: {thread_id}")
     return msg
 
 
@@ -190,28 +186,33 @@ async def extract_file_ids_from_message(cli: AsyncOpenAI, message: list):
     return file_ids
 
 
-async def get_openai_file_references(content: list, download_image: bool, conn: OpenAIConnection):
+async def get_openai_file_references(content: list, download_image: bool, conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     file_id_references = {}
+    file_id = None
     for item in content:
         if isinstance(item, MessageContentImageFile):
             file_id = item.image_file.file_id
             if download_image:
                 file_id_references[file_id] = {
                     "content": await download_openai_image(file_id, conn),
-                    "url": URL_PREFIX + file_id,
                 }
-            else:
-                file_id_references[file_id] = {"url": URL_PREFIX + file_id}
         elif isinstance(item, MessageContentText):
             for annotation in item.text.annotations:
                 if annotation.type == "file_path":
                     file_id = annotation.file_path.file_id
-                    file_id_references[file_id] = {"url": URL_PREFIX + file_id}
                 elif annotation.type == "file_citation":
                     file_id = annotation.file_citation.file_id
-                    file_id_references[file_id] = {"url": URL_PREFIX + file_id}
         else:
             raise Exception(f"Unsupported content type: '{type(item)}'.")
+        
+        if file_id:
+            if file_id not in file_id_references:
+                file_id_references[file_id] = {}
+            if isinstance(conn, OpenAIConnection):
+                file_id_references[file_id]["url"] = URL_PREFIX + file_id
+            else:
+                # For AzureOpenAIConnection, the url is not avaliable. Shall fullfill it later.
+                pass
     return file_id_references
 
 
@@ -241,7 +242,7 @@ def to_pf_content(content: list):
     return pf_content
 
 
-async def download_openai_image(file_id: str, conn: OpenAIConnection):
-    cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
+async def download_openai_image(file_id: str, conn: Union[AzureOpenAIConnection, OpenAIConnection]):
+    cli = await get_assistant_client(conn)
     image_data = await cli.files.content(file_id)
     return Image(image_data.read())
