@@ -1,5 +1,6 @@
 include promptflow/azure/resources/*
 include promptflow/_sdk/_serving/static/*
+include promptflow/_sdk/_service/static/*
 include promptflow/_sdk/_service/templates/*
 recursive-include promptflow/_cli/data *
 recursive-include promptflow/_sdk/data *
