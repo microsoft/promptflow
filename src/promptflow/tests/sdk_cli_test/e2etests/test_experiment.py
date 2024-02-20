@@ -204,7 +204,13 @@ class TestExperiment:
             session = str(uuid.uuid4())
             # Test with inputs, use separate thread to avoid OperationContext somehow cleared by other tests
             thread = threading.Thread(
-                target=client.flows.test, args=(target_flow_path,), kwargs={"experiment": template_path}
+                target=client.flows.test,
+                args=(target_flow_path,),
+                kwargs={
+                    "experiment": template_path,
+                    "inputs": {"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                    "session": session,
+                },
             )
             thread.start()
             thread.join()
