@@ -132,7 +132,8 @@ class Span:
         status = {
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
-        attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
+        # we have observed in some scenarios, there is not `attributes` field
+        attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
         # `span_type` are not standard fields in OpenTelemetry attributes
         # for example, LangChain instrumentation, as we do not inject this;
         # so we need to get it with default value to avoid KeyError
