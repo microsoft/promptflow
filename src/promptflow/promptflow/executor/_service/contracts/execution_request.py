@@ -5,13 +5,12 @@
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from pydantic import BaseModel
-
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._service._errors import FlowFilePathInvalid
+from promptflow.executor._service.contracts.base_request import BaseRequest
 
 
-class BaseExecutionRequest(BaseModel):
+class BaseExecutionRequest(BaseRequest):
     """Base request model for execution."""
 
     run_id: str
