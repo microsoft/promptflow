@@ -282,6 +282,8 @@ class TestFlowTest:
 
         result = _client._flows._test(flow=flow_path)
         assert result.run_info.status.value == "Failed"
+        # output will be empty as flow failed
+        assert result.output == {}
         assert "my_flow() missing 1 required positional argument: 'input_val'" in str(result.run_info.error)
 
     def test_eager_flow_test_with_additional_includes(self):

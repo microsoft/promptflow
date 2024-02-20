@@ -69,6 +69,7 @@ class ScriptExecutor(FlowExecutor):
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
         inputs = {k: inputs[k] for k in self._inputs if k in inputs}
         output = None
+        output_dict = {}
         traces = []
         try:
             Tracer.start_tracing(line_run_id)
