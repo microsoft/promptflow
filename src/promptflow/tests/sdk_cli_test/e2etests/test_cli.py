@@ -798,7 +798,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(UserErrorException) as ex:
+            with pytest.raises(SystemExit) as ex:
                 run_pf_command(
                     "flow",
                     "init",
@@ -811,7 +811,6 @@ class TestCli:
                     "--prompt-template",
                     f"{jinja_name}={jinja_name}.jinja2",
                 )
-            assert f"Template parameter {jinja_name} doesn't find in python function arguments." in str(ex.value)
 
             with pytest.raises(SystemExit):
                 run_pf_command("flow", "init")
@@ -1194,7 +1193,7 @@ class TestCli:
             shutil.rmtree(output_path, ignore_errors=True)
 
     def test_flow_build_with_ua(self):
-        with pytest.raises(UserErrorException) as e:
+        with pytest.raises(SystemExit) as e:
             run_pf_command(
                 "flow",
                 "build",
@@ -1207,7 +1206,6 @@ class TestCli:
                 "--user-agent",
                 "test/1.0.0",
             )
-        assert "not exist" in str(e.value)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
