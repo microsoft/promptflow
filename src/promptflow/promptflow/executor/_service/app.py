@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import subprocess
-
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 

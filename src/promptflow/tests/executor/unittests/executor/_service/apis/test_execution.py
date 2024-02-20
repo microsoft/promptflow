@@ -41,7 +41,7 @@ class TestExecutionApis:
         log_path = Path(flow_execution_request["log_path"])
         # send request
         mock_result = {"result": "mock_result"}
-        with patch("promptflow.executor._service.apis.execution.invoke_function_in_process") as mock:
+        with patch("promptflow.executor._service.apis.execution.invoke_sync_function_in_process") as mock:
             mock.return_value = mock_result
             response = self.client.post(
                 url="/execution/flow", json=flow_execution_request, headers={"context-request-id": "test-request-id"}
