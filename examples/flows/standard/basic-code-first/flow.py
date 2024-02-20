@@ -31,7 +31,7 @@ def flow_entry(text: str = "Hello World!") -> Result:
 
 
 if __name__ == "__main__":
-    from promptflow._trace._start_trace import start_trace  # TODO move to public API
+    from promptflow import start_trace
 
     start_trace()
 

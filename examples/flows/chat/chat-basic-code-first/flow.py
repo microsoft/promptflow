@@ -55,7 +55,7 @@ def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> R
 
 
 if __name__ == "__main__":
-    from promptflow._trace._start_trace import start_trace  # TODO move to public API
+    from promptflow import start_trace
 
     start_trace()
 
