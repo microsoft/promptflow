@@ -11,8 +11,6 @@ import sys
 import traceback
 from collections import namedtuple
 from configparser import ConfigParser
-from contextvars import ContextVar
-from functools import wraps
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -21,11 +19,10 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._constants import CLIListOutputFormat, EnvironmentVariables
-from promptflow._sdk._utils import print_red_error, print_yellow_warning
-from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._sdk._utils import print_yellow_warning
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
-from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
