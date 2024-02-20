@@ -26,9 +26,9 @@ steps:
   inputs:
     targetType: inline
     script: |
-      cd ./src/promptflow/promptflow/_sdk/data/
-      rm ./bulkTestDetails.min.js
-  displayName: 'Remove JavaScript visualize bundle'
+      rm ./src/promptflow/promptflow/_sdk/data/bulkTestDetails.min.js
+      rm ./src/promptflow/promptflow/_sdk/_service/static/TraceViewPage.min.js
+  displayName: 'Remove min.js'
 
 # https://eng.ms/docs/microsoft-security/cloud-ecosystem-security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/sdl-azdo-extension/PoliCheck-build-task
 - task: PoliCheck@2
