@@ -13,10 +13,10 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
     DEFAULT_SPAN_TYPE,
-    ResourceAttributeFieldName,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanFieldName,
+    SpanResourceAttributesFieldName,
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
@@ -139,8 +139,8 @@ class Span:
 
         # parse from resource.attributes: session id, experiment
         resource_attributes = resource[SpanResourceFieldName.ATTRIBUTES]
-        session_id = resource_attributes[ResourceAttributeFieldName.SESSION_ID]
-        experiment = resource_attributes.get(ResourceAttributeFieldName.EXPERIMENT_NAME, None)
+        session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
+        experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
         return Span(
             name=obj.name,
@@ -171,7 +171,7 @@ class _LineRunData:
     end_time: str
     status: str
     latency: float
-    name: str
+    display_name: str
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
 
@@ -210,7 +210,7 @@ class _LineRunData:
             end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
-            name=span.name,
+            display_name=span.name,
             kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.span_type),
             cumulative_token_count=cumulative_token_count,
         )
@@ -229,7 +229,7 @@ class LineRun:
     end_time: str
     status: str
     latency: float
-    name: str
+    display_name: str
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None
     evaluations: typing.Optional[typing.List[typing.Dict]] = None
@@ -237,7 +237,7 @@ class LineRun:
     @staticmethod
     def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
-        evaluation_line_run_data_dict = dict()
+        evaluations = []
         for span in spans:
             if span.parent_span_id:
                 continue
@@ -246,7 +246,7 @@ class LineRun:
                 SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes  # test scenario
                 or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes  # batch run scenario
             ):
-                evaluation_line_run_data_dict[span.name] = _LineRunData._from_root_span(span)
+                evaluations.append(_LineRunData._from_root_span(span))
             elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
             else:
@@ -258,9 +258,6 @@ class LineRun:
         if main_line_run_data is None:
             return None
 
-        evaluations = dict()
-        for eval_name, eval_line_run_data in evaluation_line_run_data_dict.items():
-            evaluations[eval_name] = eval_line_run_data
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
             trace_id=main_line_run_data.trace_id,
@@ -271,7 +268,7 @@ class LineRun:
             end_time=main_line_run_data.end_time,
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
-            name=main_line_run_data.name,
+            display_name=main_line_run_data.display_name,
             kind=main_line_run_data.kind,
             cumulative_token_count=main_line_run_data.cumulative_token_count,
             evaluations=evaluations,
