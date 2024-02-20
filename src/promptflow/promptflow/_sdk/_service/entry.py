@@ -11,7 +11,7 @@ import sys
 
 import waitress
 
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, exception_handler
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
@@ -23,7 +23,6 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     kill_exist_service,
 )
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow.exceptions import UserErrorException
 
@@ -152,10 +151,7 @@ def entry(command_args):
     args = parser.parse_args(command_args)
 
     activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
-    logger = get_telemetry_logger()
-
-    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
-        run_command(args)
+    exception_handler(run_command, activity_name)(args)
 
 
 def run_command(args):

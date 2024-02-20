@@ -19,10 +19,12 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._constants import CLIListOutputFormat, EnvironmentVariables
-from promptflow._sdk._utils import print_yellow_warning
+from promptflow._sdk._telemetry import log_activity, ActivityType
+from promptflow._sdk._utils import print_yellow_warning, print_red_error
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, PromptflowException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
@@ -449,6 +451,32 @@ def _get_cli_activity_name(cli, args):
         activity_name += f".{args.sub_action}"
 
     return activity_name
+
+
+def exception_handler(func, activity_name, custom_dimensions=None):
+    def wrapper(*args, **kwargs):
+        try:
+            with log_activity(
+                    logger,
+                    activity_name,
+                    activity_type=ActivityType.PUBLICAPI,
+                    custom_dimensions=custom_dimensions,
+            ):
+                func(*args, **kwargs)
+        except Exception as e:
+            if is_format_exception():
+                # When the flag format_exception is set in command,
+                # it will write a json with exception info and command to stderr.
+                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                error_msg["command"] = " ".join(sys.argv)
+                sys.stderr.write(json.dumps(error_msg))
+            if isinstance(e, PromptflowException):
+                print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+                exit(1)
+            else:
+                raise e
+
+    return wrapper
 
 
 def _try_delete_existing_run_record(run_name: str):
