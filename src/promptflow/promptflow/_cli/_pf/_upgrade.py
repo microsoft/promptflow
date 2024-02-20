@@ -40,10 +40,13 @@ def upgrade_version(args):
     from packaging.version import parse
 
     from promptflow._constants import _ENV_PF_INSTALLER, CLI_PACKAGE_NAME
-    from promptflow._utils.version_hint_utils import get_latest_version_from_pypi
+    from promptflow._utils.version_hint_utils import get_latest_version
     from promptflow._version import VERSION as local_version
 
-    latest_version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
+    installer = os.getenv(_ENV_PF_INSTALLER) or ""
+    installer = installer.upper()
+    print(f"installer: {installer}")
+    latest_version = get_latest_version(CLI_PACKAGE_NAME, installer=installer)
     if not latest_version:
         logger.warning("Failed to get the latest prompt flow version.")
         return
@@ -53,9 +56,6 @@ def upgrade_version(args):
 
     yes = args.yes
     exit_code = 0
-    installer = os.getenv(_ENV_PF_INSTALLER) or ""
-    installer = installer.upper()
-    print(f"installer: {installer}")
     latest_version_msg = (
         "Upgrading prompt flow CLI version to {}.".format(latest_version)
         if yes
@@ -82,7 +82,7 @@ def upgrade_version(args):
             "pip",
             "install",
             "--upgrade",
-            "promptflow[azure,executable,azureml-serving]",
+            "promptflow[azure,executable,azureml-serving,executor-service]",
             "-vv",
             "--disable-pip-version-check",
             "--no-cache-dir",
