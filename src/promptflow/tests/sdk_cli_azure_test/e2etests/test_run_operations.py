@@ -853,6 +853,9 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
+    # it is a known issue that executor/runtime might write duplicate storage for line records,
+    # this will lead to the lines that assert line count (`len(detail)`) fails.
+    @pytest.mark.xfail(reason="BUG 2819328: Duplicate line in flow artifacts jsonl", run=True, strict=False)
     def test_get_details_against_partial_completed_run(
         self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
     ) -> None:
