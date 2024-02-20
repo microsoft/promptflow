@@ -15,8 +15,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
-    ResourceAttributeFieldName,
     SpanAttributeFieldName,
+    SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
 from promptflow._core.openai_injector import inject_openai_api
@@ -99,7 +99,7 @@ def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
     configured_session_id = None
     if _is_tracer_provider_configured():
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        configured_session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
+        configured_session_id = tracer_provider._resource.attributes[SpanResourceAttributesFieldName.SESSION_ID]
 
     if specified_session_id is None and configured_session_id is None:
         # user does not specify and not configured, provision a new one
@@ -124,11 +124,11 @@ def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
 
 def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -> Resource:
     resource_attributes = {
-        ResourceAttributeFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
-        ResourceAttributeFieldName.SESSION_ID: session_id,
+        SpanResourceAttributesFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
+        SpanResourceAttributesFieldName.SESSION_ID: session_id,
     }
     if experiment is not None:
-        resource_attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] = experiment
+        resource_attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME] = experiment
     return Resource(attributes=resource_attributes)
 
 

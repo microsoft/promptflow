@@ -11,7 +11,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
-from promptflow._constants import ResourceAttributeFieldName, TraceEnvironmentVariableName
+from promptflow._constants import SpanResourceAttributesFieldName, TraceEnvironmentVariableName
 from promptflow._trace._start_trace import (
     _create_resource,
     _is_tracer_provider_configured,
@@ -36,13 +36,13 @@ class TestStartTrace:
     def test_create_resource(self) -> None:
         session_id = str(uuid.uuid4())
         resource1 = _create_resource(session_id=session_id)
-        assert resource1.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
-        assert ResourceAttributeFieldName.EXPERIMENT_NAME not in resource1.attributes
+        assert resource1.attributes[SpanResourceAttributesFieldName.SESSION_ID] == session_id
+        assert SpanResourceAttributesFieldName.EXPERIMENT_NAME not in resource1.attributes
 
         experiment = "test_experiment"
         resource2 = _create_resource(session_id=session_id, experiment=experiment)
-        assert resource2.attributes[ResourceAttributeFieldName.SESSION_ID] == session_id
-        assert resource2.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] == experiment
+        assert resource2.attributes[SpanResourceAttributesFieldName.SESSION_ID] == session_id
+        assert resource2.attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME] == experiment
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_setup_exporter_from_environ(self) -> None:
@@ -65,8 +65,8 @@ class TestStartTrace:
 
         assert _is_tracer_provider_configured()
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        assert session_id == tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
-        assert experiment == tracer_provider._resource.attributes[ResourceAttributeFieldName.EXPERIMENT_NAME]
+        assert session_id == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.SESSION_ID]
+        assert experiment == tracer_provider._resource.attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME]
 
     @pytest.mark.usefixtures("reset_tracer_provider")
     def test_provision_session_id(self) -> None:

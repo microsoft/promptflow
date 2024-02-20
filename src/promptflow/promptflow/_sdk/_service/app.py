@@ -6,12 +6,14 @@ import time
 from logging.handlers import RotatingFileHandler
 
 from flask import Blueprint, Flask, g, jsonify, request
+from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
+from promptflow._sdk._service.apis.line_run import api as line_run_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
@@ -27,6 +29,12 @@ def heartbeat():
 
 def create_app():
     app = Flask(__name__)
+
+    # in normal case, we don't need to handle CORS for PFS
+    # as far as we know, local UX development might need to handle this
+    # as there might be different ports in that scenario
+    CORS(app)
+
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.add_url_rule("/v1/traces", view_func=trace_collector, methods=["POST"])
     with app.app_context():
@@ -38,6 +46,7 @@ def create_app():
         api.add_namespace(run_api)
         api.add_namespace(telemetry_api)
         api.add_namespace(span_api)
+        api.add_namespace(line_run_api)
         api.add_namespace(ui_api)
         app.register_blueprint(api_v1)
 
