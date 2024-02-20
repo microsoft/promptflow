@@ -119,7 +119,7 @@ def entry(argv):
     try:
         with log_activity(
                 logger,
-                _get_cli_activity_name(cli=prog, args=args),
+                activity_name,
                 activity_type=ActivityType.PUBLICAPI,
                 custom_dimensions=custom_dimensions,
         ):
