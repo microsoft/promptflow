@@ -477,7 +477,9 @@ def collect_tool_function_in_module(m):
 def generate_python_tool_meta_dict(name, content, source=None):
     m = load_python_module(content, source)
     f, initialize_inputs = collect_tool_function_in_module(m)
-    tool = _parse_tool_from_function(f, initialize_inputs=initialize_inputs)
+    tool = _parse_tool_from_function(
+        f, initialize_inputs=initialize_inputs, gen_custom_type_conn=True, skip_prompt_template=True
+    )
     extra_info = getattr(f, "__extra_info")
     input_settings = getattr(f, "__input_settings")
     tool.module = None
