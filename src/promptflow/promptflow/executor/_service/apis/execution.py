@@ -5,6 +5,7 @@
 from fastapi import APIRouter, Request
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import service_logger
 from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest, NodeExecutionRequest
 from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
@@ -88,12 +89,13 @@ def single_node_run(node_request: NodeExecutionRequest):
     # resolve environment variables
     set_environment_variables(node_request)
     storage = DefaultRunStorage(base_dir=node_request.working_dir, sub_dir=node_request.output_dir)
-    return FlowExecutor.load_and_exec_node(
-        node_request.flow_file,
-        node_request.node_name,
-        flow_inputs=node_request.flow_inputs,
-        dependency_nodes_outputs=node_request.dependency_nodes_outputs,
-        connections=node_request.connections,
-        working_dir=node_request.working_dir,
-        storage=storage,
-    )
+    with _change_working_dir(node_request.working_dir):
+        return FlowExecutor.load_and_exec_node(
+            node_request.flow_file,
+            node_request.node_name,
+            flow_inputs=node_request.flow_inputs,
+            dependency_nodes_outputs=node_request.dependency_nodes_outputs,
+            connections=node_request.connections,
+            working_dir=node_request.working_dir,
+            storage=storage,
+        )
