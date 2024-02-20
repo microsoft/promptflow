@@ -102,12 +102,10 @@ def collect_tool_functions_in_module(m):
 
 def collect_flow_entry_in_module(m, entry):
     entry = entry.split(":")[-1]
-    for _, obj in inspect.getmembers(m):
-        if isinstance(obj, types.FunctionType):
-            if obj.__name__ == entry:
-                return obj
+    func = getattr(m, entry, None)
+    if isinstance(func, types.FunctionType):
+        return func
     return None
-
 
 def collect_tool_methods_in_module(m):
     tools = []
@@ -322,6 +320,8 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
 def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
     m = load_python_module_from_file(Path(path))
     f = collect_flow_entry_in_module(m, entry)
+    # Since the flow meta is generated from the entry function, we leverage the function
+    # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
     tool = _parse_tool_from_function(f)
 
     flow_meta = {"entry": entry, "function": f.__name__}
@@ -330,11 +330,11 @@ def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
     if tool.inputs:
         flow_meta["inputs"] = {}
         for k, v in tool.inputs.items():
-            flow_meta["inputs"][k] = {"type": [t.value for t in v.type]}
+            flow_meta["inputs"][k] = {"type": [v.type[0].value] if v.type else []}
     if tool.outputs:
         flow_meta["outputs"] = {}
         for k, v in tool.outputs.items():
-            flow_meta["outputs"][k] = {"type": [t.value for t in v.type]}
+            flow_meta["outputs"][k] = {"type": [v.type[0].value] if v.type else []}
     return flow_meta
 
 
