@@ -1,7 +1,6 @@
 import json
 import os
 import tempfile
-import threading
 import time
 import uuid
 from concurrent import futures
@@ -216,17 +215,6 @@ class TestExperiment:
                 futures.wait([task], return_when=futures.ALL_COMPLETED)
                 result = task.result()
             assert result
-            thread = threading.Thread(
-                target=client.flows.test,
-                args=(target_flow_path,),
-                kwargs={
-                    "experiment": template_path,
-                    "inputs": {"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
-                    "session": session,
-                },
-            )
-            thread.start()
-            thread.join()
             # Assert line run id is set by executor when running test
             assert PF_TRACE_CONTEXT in os.environ
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
@@ -246,8 +234,8 @@ class TestExperiment:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
                 assert "main_attempt" in line_run.line_run_id
-                assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
-                assert "eval_classification_accuracy" in line_run.evaluations
+                assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
+                assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
             # Test with default data and custom path
             expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
             result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)

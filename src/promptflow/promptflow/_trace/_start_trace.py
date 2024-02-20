@@ -60,8 +60,8 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
     experiment = env_attributes.get(ContextAttributeKey.EXPERIMENT, None)
     ref_line_run_id = env_attributes.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
-    if ref_line_run_id is not None:
-        operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
+    # Set reference line run id even if it's None to avoid stale value set by previous node
+    operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
     # init the global tracer with endpoint
     _init_otel_trace_exporter(otlp_port=pfs_port, session_id=session_id, experiment=experiment)
