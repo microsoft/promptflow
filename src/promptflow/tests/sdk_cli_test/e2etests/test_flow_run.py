@@ -1302,3 +1302,30 @@ class TestFlowRun:
 
             # can to_dict
             run._to_dict()
+
+    def test_eager_flow_run_with_environment_variables(self, pf):
+        # run's environment variables will override flow's environment variables
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "RUN"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! RUN"]}
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
