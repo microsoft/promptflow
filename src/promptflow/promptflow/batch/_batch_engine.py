@@ -245,27 +245,20 @@ class BatchEngine:
                 previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
                 previous_node_run_outputs = {node_info.node: node_info.output for node_info in previous_node_run_infos}
                 aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
+
                 self._storage.persist_flow_run(previous_run_info)
                 for node_run_info in previous_node_run_infos:
                     self._storage.persist_node_run(node_run_info)
-                previous_line_result = self._construct_line_result(
-                    previous_run_info,
-                    previous_node_run_infos_dict,
-                    previous_run_output_dict[i],
+
+                previous_line_result = LineResult(
+                    output=previous_run_output_dict[i],
                     aggregation_inputs=aggregation_inputs,
+                    run_info=previous_run_info,
+                    node_run_infos=previous_node_run_infos_dict,
                 )
                 previous_run_results.append(previous_line_result)
 
         return previous_run_results
-
-    def _construct_line_result(self, flow_run_info, node_run_infos, output, aggregation_inputs) -> LineResult:
-        """Construct LineResult from flow_run_info, node_run_infos and output"""
-        return LineResult(
-            output=output,
-            aggregation_inputs=aggregation_inputs,
-            run_info=flow_run_info,
-            node_run_infos=node_run_infos,
-        )
 
     def _load_outputs(self, output_dir: Path) -> List[Dict[str, Any]]:
         """Load the outputs of a batch run from output dir
