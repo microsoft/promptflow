@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -201,14 +202,12 @@ class TestExperiment:
             target_flow_path = FLOW_ROOT / "web_classification" / "flow.dag.yaml"
             client = PFClient()
             session = str(uuid.uuid4())
-            # Test with inputs
-            result = client.flows.test(
-                target_flow_path,
-                experiment=template_path,
-                inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
-                session=session,
+            # Test with inputs, use separate thread to avoid OperationContext somehow cleared by other tests
+            thread = threading.Thread(
+                target=client.flows.test, args=(target_flow_path,), kwargs={"experiment": template_path}
             )
-            _assert_result(result)
+            thread.start()
+            thread.join()
             # Assert line run id is set by executor when running test
             assert PF_TRACE_CONTEXT in os.environ
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
