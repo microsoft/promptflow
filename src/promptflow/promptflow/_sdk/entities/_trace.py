@@ -118,7 +118,7 @@ class Span:
 
     @staticmethod
     def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
-        span_dict = json.loads(MessageToJson(obj))
+        span_dict: dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
         context = {
@@ -140,7 +140,7 @@ class Span:
         span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
 
         # parse from resource.attributes: session id, experiment
-        resource_attributes = resource[SpanResourceFieldName.ATTRIBUTES]
+        resource_attributes: dict = resource[SpanResourceFieldName.ATTRIBUTES]
         session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
