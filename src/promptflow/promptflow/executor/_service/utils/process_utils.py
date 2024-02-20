@@ -7,7 +7,7 @@ import contextlib
 import json
 import multiprocessing
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Callable
 
 from promptflow._core._errors import UnexpectedError
@@ -37,15 +37,16 @@ async def invoke_sync_function_in_process(
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
 
         # Wait for the process to finish or timeout asynchronously
-        try:
-            await asyncio.wait_for(asyncio.to_thread(p.join), timeout=wait_timeout)
-        except asyncio.TimeoutError:
-            # Terminate the process if it is still alive after timeout
-            if p.is_alive():
-                service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
-                p.terminate()
-                p.join()
-                raise ExecutionTimeoutError(wait_timeout)
+        start_time = datetime.utcnow()
+        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and p.is_alive():
+            await asyncio.sleep(1)
+
+        # Terminate the process if it is still alive after timeout
+        if p.is_alive():
+            service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
+            p.terminate()
+            p.join()
+            raise ExecutionTimeoutError(wait_timeout)
 
         # Raise exception if the process exit code is not 0
         if p.exitcode != 0:
