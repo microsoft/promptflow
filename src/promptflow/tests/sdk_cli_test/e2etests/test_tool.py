@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._core.tool import ToolProvider, tool
-from promptflow._core.tool_meta_generator import ToolValidationError
+from promptflow._core.tool_meta_generator import ToolValidationError, _serialize_tool
 from promptflow._sdk._pf_client import PFClient
 from promptflow.entities import DynamicList, InputSetting
 from promptflow.exceptions import UserErrorException
@@ -401,7 +401,7 @@ class TestTool:
 
         tool_operation = ToolOperations()
         tool_obj, input_settings, extra_info = tool_operation._parse_tool_from_func(my_tool)
-        construct_tool, validate_result = tool_operation._serialize_tool(tool_obj, input_settings, extra_info, my_tool)
+        construct_tool, validate_result = _serialize_tool(tool_obj, input_settings, extra_info, my_tool)
         assert validate_result.passed
         assert construct_tool["inputs"]["input_text"]["undefined_field1"] == 1
         assert construct_tool["inputs"]["input_text"]["undefined_field2"] is True

@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from pathlib import Path
 
 CONNECTION_NAME_PROPERTY = "__connection_name"
 CONNECTION_SECRET_KEYS = "__secret_keys"
@@ -16,6 +17,14 @@ CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
+
+# Tool meta info
+ICON_DARK = "icon_dark"
+ICON_LIGHT = "icon_light"
+ICON = "icon"
+UIONLY_HIDDEN = "uionly_hidden"
+SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
+TOOL_SCHEMA = Path(__file__).parent / "_sdk" / "data" / "tool.schema.json"
 
 DEFAULT_ENCODING = "utf-8"
 

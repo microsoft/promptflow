@@ -7,6 +7,7 @@ This file can generate a meta file for the given prompt template or a python fil
 """
 import importlib.util
 import inspect
+import io
 import json
 import re
 import types
@@ -14,13 +15,17 @@ from dataclasses import asdict
 from pathlib import Path
 from traceback import TracebackException
 
+import jsonschema
 from jinja2 import TemplateSyntaxError
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
+from promptflow._constants import ICON, ICON_DARK, ICON_LIGHT, SKIP_FUNC_PARAMS, TOOL_SCHEMA
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
 from promptflow._core.tool import ToolProvider
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -161,6 +166,237 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     )
 
 
+def _validate_tool_function(tool, input_settings, extra_info, func_name=None, func_path=None):
+    """
+    Check whether the icon and input settings of the tool are legitimate.
+
+    :param tool: The tool object
+    :type tool: Tool
+    :param input_settings: Input settings of the tool
+    :type input_settings: Dict[str, InputSetting]
+    :param extra_info: Extra info about the tool
+    :type extra_info: Dict[str, obj]
+    :param func_name: Function name of the tool
+    :type func_name: str
+    :param func_path: Script path of the tool
+    :type func_path: str
+    :return: Validation result of the tool
+    :rtype: ValidationResult
+    """
+    from promptflow._sdk.entities._validation import ValidationResultBuilder
+
+    validate_result = ValidationResultBuilder.success()
+
+    if extra_info:
+        if ICON in extra_info:
+            if ICON_LIGHT in extra_info or ICON_DARK in extra_info:
+                validate_result.append_error(
+                    yaml_path=None,
+                    message=f"Cannot provide both `icon` and `{ICON_LIGHT}` or `{ICON_DARK}`.",
+                    function_name=func_name,
+                    location=func_path,
+                    key="function_name",
+                )
+    if input_settings:
+        input_settings_validate_result = _validate_input_settings(tool.inputs, input_settings, func_name, func_path)
+        validate_result.merge_with(input_settings_validate_result)
+    return validate_result
+
+
+def _validate_tool_schema(tool_dict, func_name=None, func_path=None):
+    """
+    Check whether the generated schema of the tool are legitimate.
+
+    :param tool_dict: The generated tool dict
+    :type tool_dict: Dict[str, obj]
+    :param func_name: Function name of the tool
+    :type func_name: str
+    :param func_path: Script path of the tool
+    :type func_path: str
+    :return: Validation result of the tool
+    :rtype: ValidationResult
+    """
+    from promptflow._sdk.entities._validation import ValidationResultBuilder
+
+    validate_result = ValidationResultBuilder.success()
+    try:
+        with open(TOOL_SCHEMA, "r") as f:
+            tool_schema = json.load(f)
+
+        jsonschema.validate(instance=tool_dict, schema=tool_schema)
+    except jsonschema.exceptions.ValidationError as e:
+        validate_result.append_error(
+            message=str(e), yaml_path=None, function_name=func_name, location=func_path, key="function_name"
+        )
+    return validate_result
+
+
+def _validate_input_settings(tool_inputs, input_settings, func_name=None, func_path=None):
+    """
+    Check whether input settings of the tool are legitimate.
+
+    :param tool_inputs: Tool inputs
+    :type tool_inputs: Dict[str, obj]
+    :param input_settings: Input settings of the tool
+    :type input_settings: Dict[str, InputSetting]
+    :param extra_info: Extra info about the tool
+    :type extra_info: Dict[str, obj]
+    :param func_name: Function name of the tool
+    :type func_name: str
+    :param func_path: Script path of the tool
+    :type func_path: str
+    :return: Validation result of the tool
+    :rtype: ValidationResult
+    """
+    from promptflow._sdk.entities._validation import ValidationResultBuilder
+
+    validate_result = ValidationResultBuilder.success()
+    for input_name, settings in input_settings.items():
+        if input_name not in tool_inputs:
+            validate_result.append_error(
+                yaml_path=None,
+                message=f"Cannot find {input_name} in tool inputs.",
+                function_name=func_name,
+                location=func_path,
+                key="function_name",
+            )
+        if settings.enabled_by and settings.enabled_by not in tool_inputs:
+            validate_result.append_error(
+                yaml_path=None,
+                message=f'Cannot find the input "{settings.enabled_by}" for the enabled_by of {input_name}.',
+                function_name=func_name,
+                location=func_path,
+                key="function_name",
+            )
+        if settings.dynamic_list:
+            dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
+            has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
+            required_inputs = [
+                k
+                for k, v in dynamic_func_inputs.items()
+                if v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD and k not in SKIP_FUNC_PARAMS
+            ]
+            if settings.dynamic_list._input_mapping:
+                # Validate input mapping in dynamic_list
+                for func_input, reference_input in settings.dynamic_list._input_mapping.items():
+                    # Check invalid input name of dynamic list function
+                    if not has_kwargs and func_input not in dynamic_func_inputs:
+                        validate_result.append_error(
+                            yaml_path=None,
+                            message=f"Cannot find {func_input} in the inputs of "
+                            f"dynamic_list func {settings.dynamic_list.func_path}",
+                            function_name=func_name,
+                            location=func_path,
+                            key="function_name",
+                        )
+                    # Check invalid input name of tool
+                    if reference_input not in tool_inputs:
+                        validate_result.append_error(
+                            yaml_path=None,
+                            message=f"Cannot find {reference_input} in the tool inputs.",
+                            function_name=func_name,
+                            location=func_path,
+                            key="function_name",
+                        )
+                    if func_input in required_inputs:
+                        required_inputs.remove(func_input)
+            # Check required input of dynamic_list function
+            if len(required_inputs) != 0:
+                validate_result.append_error(
+                    yaml_path=None,
+                    message=f"Missing required input(s) of dynamic_list function: {required_inputs}",
+                    function_name=func_name,
+                    location=func_path,
+                    key="function_name",
+                )
+    return validate_result
+
+
+def _serialize_tool(tool, input_settings, extra_info, tool_func):
+    """
+    Serialize tool obj to dict.
+
+    :param tool: Tool object
+    :type tool: promptflow.contracts.tool.Tool
+    :param input_settings: Input settings of the tool
+    :type input_settings: Dict[str, obj]
+    :param extra_info: Extra settings of the tool
+    :type extra_info: Dict[str, obj]
+    :param tool_func: Package tool function
+    :type tool_func: callable
+    :return: serialized tool
+    :rtype: Dict[str, str]
+    """
+    tool_func_name = tool_func.__name__
+    tool_script_path = inspect.getsourcefile(getattr(tool_func, "__original_function", tool_func))
+    validate_result = _validate_tool_function(tool, input_settings, extra_info, tool_func_name, tool_script_path)
+    if validate_result.passed:
+        construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
+        if extra_info:
+            if ICON in extra_info:
+                extra_info[ICON] = _serialize_icon_data(extra_info["icon"])
+            if ICON_LIGHT in extra_info:
+                icon = extra_info.get("icon", {})
+                icon["light"] = _serialize_icon_data(extra_info[ICON_LIGHT])
+                extra_info[ICON] = icon
+            if ICON_DARK in extra_info:
+                icon = extra_info.get("icon", {})
+                icon["dark"] = _serialize_icon_data(extra_info[ICON_DARK])
+                extra_info[ICON] = icon
+            construct_tool.update(extra_info)
+
+        # Update tool input settings
+        if input_settings:
+            tool_inputs = construct_tool.get("inputs", {})
+            generated_by_inputs = {}
+            for input_name, settings in input_settings.items():
+                tool_inputs[input_name].update(asdict_without_none(settings))
+                kwargs = settings._kwargs or {}
+                for k, v in kwargs.items():
+                    if k in tool_inputs[input_name]:
+                        if isinstance(v, dict):
+                            tool_inputs[input_name][k].update(v)
+                        elif isinstance(v, list):
+                            tool_inputs[input_name][k].append(v)
+                        else:
+                            tool_inputs[input_name][k] = v
+                    else:
+                        tool_inputs[input_name][k] = v
+                if settings.generated_by:
+                    generated_by_inputs.update(settings.generated_by._input_settings)
+            tool_inputs.update(generated_by_inputs)
+        schema_validate_result = _validate_tool_schema(construct_tool, tool_func_name, tool_script_path)
+        validate_result.merge_with(schema_validate_result)
+        return construct_tool, validate_result
+    else:
+        return {}, validate_result
+
+
+def _serialize_icon_data(icon):
+    if not Path(icon).exists():
+        raise UserErrorException(f"Cannot find the icon path {icon}.")
+    return _serialize_image_data(icon)
+
+
+def _serialize_image_data(image_path):
+    """Serialize image to base64."""
+    from PIL import Image as PIL_Image
+
+    with open(image_path, "rb") as image_file:
+        # Create a BytesIO object from the image file
+        image_data = io.BytesIO(image_file.read())
+
+    # Open the image and resize it
+    img = PIL_Image.open(image_data)
+    if img.size != (16, 16):
+        img = img.resize((16, 16), PIL_Image.Resampling.LANCZOS)
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    icon_image = Image(buffered.getvalue(), mime_type="image/png")
+    image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
+    return image_url
+
+
 def generate_python_tools_in_module(module):
     tool_functions = collect_tool_functions_in_module(module)
     tool_methods = collect_tool_methods_in_module(module)
@@ -239,12 +475,11 @@ def collect_tool_function_in_module(m):
 
 
 def generate_python_tool_meta_dict(name, content, source=None):
-    from promptflow._sdk.operations._tool_operations import ToolOperations
-
     m = load_python_module(content, source)
-    tool_operations = ToolOperations()
     f, initialize_inputs = collect_tool_function_in_module(m)
-    tool, input_settings, extra_info = tool_operations._parse_tool_from_func(f, initialize_inputs=initialize_inputs)
+    tool = _parse_tool_from_function(f, initialize_inputs=initialize_inputs)
+    extra_info = getattr(f, "__extra_info")
+    input_settings = getattr(f, "__input_settings")
     tool.module = None
     if name is not None:
         tool.name = name
@@ -252,7 +487,7 @@ def generate_python_tool_meta_dict(name, content, source=None):
         tool.code = content
     else:
         tool.source = source
-    construct_tool, validate_result = tool_operations._serialize_tool(tool, input_settings, extra_info, f)
+    construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
     validate_result.try_raise(raise_error=True)
     # Handle string enum in tool dict
     construct_tool = json.loads(json.dumps(construct_tool))
