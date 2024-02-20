@@ -23,6 +23,10 @@ def construct_flow_execution_request_json(flow_folder, inputs=None, connections=
         "connections": connections,
         "log_path": log_path.as_posix(),
         "inputs": inputs,
+        "operation_context": {
+            "request_id": "test-request-id",
+            "user_agent": "test-user-agent",
+        },
     }
 
 
@@ -43,9 +47,7 @@ class TestExecutionApis:
         mock_result = {"result": "mock_result"}
         with patch("promptflow.executor._service.apis.execution.invoke_sync_function_in_process") as mock:
             mock.return_value = mock_result
-            response = self.client.post(
-                url="/execution/flow", json=flow_execution_request, headers={"context-request-id": "test-request-id"}
-            )
+            response = self.client.post(url="/execution/flow", json=flow_execution_request)
         # assert response
         assert response.status_code == 200
         assert response.json() == mock_result
@@ -53,6 +55,7 @@ class TestExecutionApis:
         logs = load_content(log_path)
         keywords_in_log = [
             "execution.service",
+            "test-user-agent",
             f"Received flow execution request, flow run id: {run_id}, request id: test-request-id, executor version:",
             f"Completed flow execution request, flow run id: {run_id}.",
         ]

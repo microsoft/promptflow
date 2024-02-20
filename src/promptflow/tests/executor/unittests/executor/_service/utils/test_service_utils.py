@@ -5,7 +5,6 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException, ResponseCode
 from promptflow._utils.logger_utils import bulk_logger, flow_logger, logger, service_logger
 from promptflow.executor._service._errors import ExecutionTimeoutError
@@ -16,7 +15,7 @@ from promptflow.executor._service.utils.service_utils import (
     get_log_context,
     get_service_log_context,
     set_environment_variables,
-    update_operation_context,
+    update_and_get_operation_context,
 )
 
 from .....utils import load_content
@@ -66,16 +65,15 @@ class TestServiceUtils:
         assert all(word in logs for word in keywords_in_log)
         assert all(word not in logs for word in keywords_not_in_log)
 
-    def test_update_operation_context(self, monkeypatch):
-        headers = {
-            "context-user-agent": "dummy_user_agent",
-            "context-request-id": "dummy_request_id",
+    def test_update_and_get_operation_context(self, monkeypatch):
+        context_dict = {
+            "user_agent": "dummy_user_agent",
+            "request_id": "dummy_request_id",
         }
         # mock the BUILD_INFO env variable
         monkeypatch.setenv("BUILD_INFO", '{"build_number": "20240131.v1"}')
 
-        update_operation_context(headers)
-        operation_context = OperationContext.get_instance()
+        operation_context = update_and_get_operation_context(context_dict)
         assert operation_context.user_agent == "dummy_user_agent promptflow-executor/20240131.v1"
         assert operation_context.request_id == "dummy_request_id"
 

@@ -5,6 +5,7 @@
 import json
 import os
 from contextlib import contextmanager
+from typing import Any, Mapping
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.operation_context import OperationContext
@@ -34,15 +35,14 @@ def get_service_log_context(request: BaseExecutionRequest):
     return LogContext(file_path=request.log_path, run_mode=run_mode, input_logger=service_logger)
 
 
-def update_operation_context(headers: dict):
+def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> OperationContext:
     operation_context = OperationContext.get_instance()
+    # update operation context with context_dict
+    operation_context.update(context_dict)
     # update user agent to operation context
-    operation_context.user_agent = headers.get("context-user-agent", "")
     executor_user_agent = get_executor_version()
     operation_context.append_user_agent(executor_user_agent)
-    # update request id to operation context
-    request_id = headers.get("context-request-id", "")
-    operation_context.request_id = request_id
+    return operation_context
 
 
 def get_executor_version():
