@@ -9,7 +9,7 @@ document_chunk_overlap: 100
 # However, if you wish to bypass the document split process, simply provide the 'document_nodes_file', which is a JSONL file.
 # When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
 # For cloud mode, both local files and data assets can be used.
-# document_nodes_file = "<your-node-file-path>"
+# document_nodes_file: "<your-node-file-path>"
 # Test data gen flow configs
 flow_folder: "<your-test-data-gen-flow-folder-path>"
 # Override some node inputs, for example, `validate_text_chunk` is a node in flow.dag.yaml, `connection` and `model_or_deployment_name` are the inputs of `validate_text_chunk`.
