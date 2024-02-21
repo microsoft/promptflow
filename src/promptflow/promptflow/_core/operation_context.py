@@ -39,7 +39,8 @@ class OperationContext(Dict):
 
     def _get_otel_attributes(self):
         attr_dict = self.get(OperationContext._OTEL_ATTRIBUTES, {})
-        # Filter None value out to avoid error
+        # Filter None value out to avoid error.
+        # case: Experiment run may set 'reference.batch_run_id' to None which cause some exception.
         return {k: v for k, v in attr_dict.items() if v is not None}
 
     @classmethod
