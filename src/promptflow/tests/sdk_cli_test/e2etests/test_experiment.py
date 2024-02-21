@@ -23,6 +23,7 @@ from ..recording_utilities import is_live
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
 yaml = YAML(typ="safe")
@@ -259,3 +260,19 @@ class TestExperiment:
                     experiment=template_path,
                 )
             assert "not found in experiment" in str(error.value)
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_eager_flow_test_with_experiment(self, monkeypatch):
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+
+            template_path = EXP_ROOT / "eager-flow-exp-template" / "flow.exp.yaml"
+            target_flow_path = EAGER_FLOW_ROOT / "flow_with_dataclass_output" / "flow.dag.yaml"
+            client = PFClient()
+            result = client.flows.test(target_flow_path, experiment=template_path)
+            assert result == {
+                "main": {"models": ["model"], "text": "text"},
+                "main2": {"output": "Hello world! text"},
+                "main3": {"output": "Hello world! Hello world! text"},
+            }
