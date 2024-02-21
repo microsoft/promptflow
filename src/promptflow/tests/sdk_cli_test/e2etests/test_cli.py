@@ -810,6 +810,8 @@ class TestCli:
                     "--prompt-template",
                     f"{jinja_name}={jinja_name}.jinja2",
                 )
+                _, err = capsys.readouterr()
+                assert f"Template parameter {jinja_name} doesn't find in python function arguments." in err
 
             with pytest.raises(SystemExit):
                 run_pf_command("flow", "init")
@@ -1191,7 +1193,7 @@ class TestCli:
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
 
-    def test_flow_build_with_ua(self):
+    def test_flow_build_with_ua(self, capsys):
         with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
@@ -1205,6 +1207,8 @@ class TestCli:
                 "--user-agent",
                 "test/1.0.0",
             )
+            _, err = capsys.readouterr()
+            assert "not exist" in err
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
