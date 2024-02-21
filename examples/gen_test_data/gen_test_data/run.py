@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import shutil
@@ -5,11 +6,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import configargparse
-
 from promptflow._utils.logger_utils import get_logger
+from promptflow._utils.yaml_utils import load_yaml
 
-CONFIG_FILE = (Path(__file__).parents[1] / "config.ini").resolve()
+CONFIG_FILE = (Path(__file__).parents[1] / "config.yml").resolve()
 
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
@@ -224,67 +224,36 @@ def run_cloud(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cloud", action="store_true", help="cloud flag")
+    args = parser.parse_args()
+
     if Path(CONFIG_FILE).is_file():
-        parser = configargparse.ArgParser(default_config_files=[CONFIG_FILE])
+        with open(CONFIG_FILE, 'r') as stream:
+            config = load_yaml(stream)
     else:
         raise Exception(
             f"'{CONFIG_FILE}' does not exist. "
             + "Please check if you are under the wrong directory or the file is missing."
         )
 
-    parser.add_argument("--cloud", action="store_true", help="cloud flag")
-    parser.add_argument("--documents_folder", type=str, help="Documents folder path")
-    parser.add_argument("--document_chunk_size", type=int, default=512,
-                        help="The token chunk size for each chunk, default is 512")
-    parser.add_argument("--document_chunk_overlap", type=int, default=100,
-                        help="The token overlap of each chunk when splitting, default is 100")
-    parser.add_argument(
-        "--document_nodes_file", type=str, help="Document nodes file, default is ./document_nodes.jsonl"
-    )
-
-    parser.add_argument("--flow_folder", required=True, type=str, help="Test data generation flow folder path")
-    parser.add_argument(
-        "--flow_batch_run_size",
-        type=int,
-        help="Test data generation flow batch run size, default is 16",
-    )
-    parser.add_argument("--node_inputs_override", type=json.loads, help="The inputs need to override")
-    # Configs for local
-    parser.add_argument("--output_folder", type=str, help="Output folder path.")
-    # Configs for cloud
-    parser.add_argument("--subscription_id", help="AzureML workspace subscription id")
-    parser.add_argument("--resource_group", help="AzureML workspace resource group name")
-    parser.add_argument("--workspace_name", help="AzureML workspace name")
-    parser.add_argument("--aml_cluster", help="AzureML cluster name")
-    parser.add_argument("--prs_instance_count", type=int, default=2, help="Parallel run step instance count")
-    parser.add_argument("--prs_mini_batch_size", default=1, help="Parallel run step mini batch size")
-    parser.add_argument(
-        "--prs_max_concurrency_per_instance", type=int, default=4, help="Parallel run step max concurrency per instance"
-    )
-    parser.add_argument("--prs_max_retry_count", type=int, default=3, help="Parallel run step max retry count")
-    parser.add_argument("--prs_run_invocation_time", type=int, default=800,
-                        help="Parallel run step run invocation time")
-    parser.add_argument(
-        "--prs_allowed_failed_count", type=int, help="Number of failed mini batches that could be ignored"
-    )
-    args = parser.parse_args()
-    copied_flow_folder = args.flow_folder + "_" + time.strftime("%b-%d-%Y-%H-%M-%S") + "_temp"
-
+    copied_flow_folder = config["flow_folder"] + "_" + time.strftime("%b-%d-%Y-%H-%M-%S") + "_temp"
     try:
         should_skip_split_documents = False
-        document_nodes_file = convert_to_abs_path(args.document_nodes_file)
-        documents_folder = convert_to_abs_path(args.documents_folder)
-        flow_folder = convert_to_abs_path(args.flow_folder)
-        output_folder = convert_to_abs_path(args.output_folder)
+        document_nodes_file = convert_to_abs_path(config["document_nodes_file"]) \
+            if "document_nodes_file" in config.keys() else None
+        documents_folder = convert_to_abs_path(config["documents_folder"]) \
+            if "documents_folder" in config.keys() else None
+        flow_folder = convert_to_abs_path(config["flow_folder"])
+        output_folder = convert_to_abs_path(config["output_folder"])
         validate_path_func = non_padding_path if args.cloud else local_path_exists
 
         if document_nodes_file and validate_path_func(document_nodes_file):
             should_skip_split_documents = True
         elif not documents_folder or not validate_path_func(documents_folder):
-            parser.error(
+            raise Exception(
                 "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
-                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
-            )
+                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'")
 
         if args.cloud:
             logger.info("Start to generate test data at cloud...")
@@ -299,35 +268,35 @@ if __name__ == "__main__":
             if Path(document_nodes_file).is_file():
                 logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
 
-        copy_flow_folder_and_set_node_inputs(copied_flow_folder, args.flow_folder, args.node_inputs_override)
+        copy_flow_folder_and_set_node_inputs(copied_flow_folder, config["flow_folder"], config["node_inputs_override"])
 
         if args.cloud:
             run_cloud(
                 documents_folder,
-                args.document_chunk_size,
-                args.document_chunk_overlap,
+                config["document_chunk_size"],
+                config["document_chunk_overlap"],
                 document_nodes_file,
                 copied_flow_folder,
-                args.subscription_id,
-                args.resource_group,
-                args.workspace_name,
-                args.aml_cluster,
-                args.prs_instance_count,
-                args.prs_mini_batch_size,
-                args.prs_max_concurrency_per_instance,
-                args.prs_max_retry_count,
-                args.prs_run_invocation_time,
-                args.prs_allowed_failed_count,
+                config["subscription_id"],
+                config["resource_group"],
+                config["workspace_name"],
+                config["aml_cluster"],
+                config["prs_instance_count"],
+                config["prs_mini_batch_size"],
+                config["prs_max_concurrency_per_instance"],
+                config["prs_max_retry_count"],
+                config["prs_run_invocation_time"],
+                config["prs_allowed_failed_count"],
                 should_skip_split_documents,
             )
         else:
             run_local(
                 documents_folder,
-                args.document_chunk_size,
-                args.document_chunk_overlap,
+                config["document_chunk_size"],
+                config["document_chunk_overlap"],
                 document_nodes_file,
                 copied_flow_folder,
-                args.flow_batch_run_size,
+                config["flow_batch_run_size"],
                 output_folder,
                 should_skip_split_documents,
             )

@@ -36,11 +36,11 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
 5. Prepare config.ini
     - Navigate to [example_gen_test_data](../../examples/gen_test_data) folder.
-    - Run command to copy [`config.ini.example`](../../examples/gen_test_data/config.ini.example).
+    - Run command to copy [`config.yml.example`](../../examples/gen_test_data/config.yml.example).
         ```
-        cp config.ini.example config.ini
+        cp config.yml.example config.yml
         ```
-    - Update the configurations in the `configs.ini`. Fill in the values in `COMMON` and `LOCAL` section following inline comment instruction.
+    - Update the configurations in the `configs.yml`. Fill in the values in `COMMON` and `LOCAL` section following inline comment instruction.
 
 
 ## Create a test data generation flow
