@@ -79,6 +79,7 @@ class BatchEngine:
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         batch_timeout_sec: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
         **kwargs,
     ):
@@ -94,6 +95,8 @@ class BatchEngine:
         :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
         :param batch_timeout: The timeout of batch run in seconds
         :type batch_timeout: Optional[int]
+        :param line_timeout: The timeout of each line in seconds
+        :type line_timeout: Optional[int]
         :param worker_count: The concurrency limit of batch run
         :type worker_count: Optional[int]
         :param kwargs: The keyword arguments related to creating the executor proxy class
@@ -114,7 +117,7 @@ class BatchEngine:
         self._kwargs = kwargs
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
-        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
 
         # set it to True when the batch run is canceled
