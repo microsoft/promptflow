@@ -24,7 +24,7 @@ from ..contracts.test_execution_request import MOCK_REQUEST
 
 @pytest.mark.unittest
 class TestServiceUtils:
-    def test_get_log_context_with_execution_request(self, dev_connections):
+    def test_get_log_context(self, dev_connections):
         request = FlowExecutionRequest(**MOCK_REQUEST)
         request.connections = dev_connections
         request.log_path = Path(mkdtemp()) / "log.txt"
@@ -37,12 +37,6 @@ class TestServiceUtils:
         keywords_not_in_log = ["Test bulk_logger log", "execution.bulk"]
         assert all(word in logs for word in keywords_in_log)
         assert all(word not in logs for word in keywords_not_in_log)
-
-    def test_get_log_context_with_non_execution_request(self):
-        request = 1
-        with get_log_context(request):
-            request = 2
-        assert request == 2
 
     def test_get_service_log_context(self):
         request = FlowExecutionRequest(**MOCK_REQUEST)

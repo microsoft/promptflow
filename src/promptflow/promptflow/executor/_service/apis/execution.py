@@ -9,6 +9,7 @@ from promptflow._utils.logger_utils import service_logger
 from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest, NodeExecutionRequest
 from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
 from promptflow.executor._service.utils.service_utils import (
+    get_log_context,
     get_service_log_context,
     set_environment_variables,
     update_and_get_operation_context,
@@ -25,10 +26,10 @@ async def flow_execution(request: FlowExecutionRequest):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received flow execution request, flow run id: {request.run_id}, "
-            f"request id: {operation_context.request_id}, executor version: {operation_context.user_agent}."
+            f"request id: {operation_context.get_request_id()}, executor version: {operation_context.get_user_agent()}."
         )
         try:
-            result = await invoke_sync_function_in_process(request, request.operation_context, flow_test)
+            result = await invoke_sync_function_in_process(flow_test, request, context_dict=request.operation_context)
             service_logger.info(f"Completed flow execution request, flow run id: {request.run_id}.")
             return result
         except Exception as ex:
@@ -45,10 +46,12 @@ async def node_execution(request: NodeExecutionRequest):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received node execution request, node name: {request.node_name}, "
-            f"request id: {operation_context.request_id}, executor version: {operation_context.user_agent}."
+            f"request id: {operation_context.get_request_id()}, executor version: {operation_context.get_user_agent()}."
         )
         try:
-            result = await invoke_sync_function_in_process(request, request.operation_context, single_node_run)
+            result = await invoke_sync_function_in_process(
+                single_node_run, request, context_dict=request.operation_context
+            )
             service_logger.info(f"Completed node execution request, node name: {request.node_name}.")
             return result
         except Exception as ex:
@@ -66,15 +69,16 @@ def flow_test(request: FlowExecutionRequest):
     set_environment_variables(request)
     # execute flow
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
-    return execute_flow(
-        request.flow_file,
-        request.working_dir,
-        request.output_dir,
-        request.connections,
-        request.inputs,
-        run_id=request.run_id,
-        storage=storage,
-    )
+    with get_log_context(request):
+        return execute_flow(
+            request.flow_file,
+            request.working_dir,
+            request.output_dir,
+            request.connections,
+            request.inputs,
+            run_id=request.run_id,
+            storage=storage,
+        )
 
 
 def single_node_run(request: NodeExecutionRequest):
@@ -83,7 +87,7 @@ def single_node_run(request: NodeExecutionRequest):
     # resolve environment variables
     set_environment_variables(request)
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
-    with _change_working_dir(request.working_dir):
+    with _change_working_dir(request.working_dir), get_log_context(request):
         return FlowExecutor.load_and_exec_node(
             request.flow_file,
             request.node_name,

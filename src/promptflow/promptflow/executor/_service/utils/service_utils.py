@@ -4,7 +4,6 @@
 
 import json
 import os
-from contextlib import contextmanager
 from typing import Any, Mapping
 
 from promptflow._core.connection_manager import ConnectionManager
@@ -15,19 +14,10 @@ from promptflow._version import VERSION
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 
 
-@contextmanager
-def noop_context():
-    yield
-
-
-def get_log_context(request):
-    if isinstance(request, BaseExecutionRequest):
-        run_mode = request.get_run_mode()
-        credential_list = ConnectionManager(request.connections).get_secret_list()
-        return LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
-    else:
-        # return a noop context if request is not a execution request
-        return noop_context()
+def get_log_context(request: BaseExecutionRequest):
+    run_mode = request.get_run_mode()
+    credential_list = ConnectionManager(request.connections).get_secret_list()
+    return LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
 
 
 def get_service_log_context(request: BaseExecutionRequest):
@@ -37,6 +27,8 @@ def get_service_log_context(request: BaseExecutionRequest):
 
 def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> OperationContext:
     operation_context = OperationContext.get_instance()
+    if not context_dict:
+        return operation_context
     # update operation context with context_dict
     operation_context.update(context_dict)
     # update user agent to operation context

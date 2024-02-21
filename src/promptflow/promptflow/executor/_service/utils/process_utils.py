@@ -16,14 +16,13 @@ from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerialized
 from promptflow._utils.logger_utils import service_logger
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionTimeoutError
-from promptflow.executor._service.utils.service_utils import get_log_context
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
 SHORT_WAIT_TIMEOUT = 10
 
 
 async def invoke_sync_function_in_process(
-    request, context_dict: dict, target_function: Callable, wait_timeout: int = LONG_WAIT_TIMEOUT
+    target_function: Callable, *args, context_dict: dict = None, wait_timeout: int = LONG_WAIT_TIMEOUT, **kwargs
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
@@ -31,7 +30,7 @@ async def invoke_sync_function_in_process(
 
         p = multiprocessing.Process(
             target=execute_target_function,
-            args=(target_function, request, return_dict, error_dict, context_dict),
+            args=(target_function, args, kwargs, return_dict, error_dict, context_dict),
         )
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
@@ -66,17 +65,18 @@ async def invoke_sync_function_in_process(
 
 def execute_target_function(
     target_function: Callable,
-    request,
+    args: tuple,
+    kwargs: dict,
     return_dict: dict,
     error_dict: dict,
     context_dict: dict,
 ):
-    OperationContext.get_instance().update(context_dict)
     with exception_wrapper(error_dict):
-        with get_log_context(request):
-            service_logger.info("Start processing request in executor service...")
-            result = target_function(request)
-            return_dict["result"] = result
+        if context_dict:
+            OperationContext.get_instance().update(context_dict)
+        service_logger.info("Start processing request in executor service...")
+        result = target_function(*args, **kwargs)
+        return_dict["result"] = result
 
 
 @contextlib.contextmanager
