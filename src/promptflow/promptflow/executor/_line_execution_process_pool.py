@@ -293,6 +293,9 @@ class LineExecutionProcessPool:
                 # Monitor process aliveness.
                 crashed = not self._is_process_alive(process_id)
                 if crashed:
+                    with open(".promptflow/fork_process_stderr.log", "r") as f:
+                        error_logs = "".join(f.readlines())
+                        bulk_logger.error(error_logs)
                     break
 
                 # Handle output queue message.
@@ -662,6 +665,8 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    sys.stderr = open(".promptflow/fork_process_stderr.log", "w")
+
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)
     else:
