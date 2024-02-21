@@ -402,7 +402,7 @@ class TestTool:
         tool_operation = ToolOperations()
         tool_obj, input_settings, extra_info = tool_operation._parse_tool_from_func(my_tool)
         construct_tool, validate_result = _serialize_tool(tool_obj, input_settings, extra_info, my_tool)
-        assert validate_result.passed
+        assert len(validate_result) == 0
         assert construct_tool["inputs"]["input_text"]["undefined_field1"] == 1
         assert construct_tool["inputs"]["input_text"]["undefined_field2"] is True
         assert construct_tool["inputs"]["input_text"]["undefined_field3"] == {"key": "value"}
@@ -456,5 +456,5 @@ class TestTool:
         }
         assert expect_tool_meta == tools_meta["code"]["tool_with_input_settings.py"]
         assert "tool_with_invalid_input_settings.py" in errors
-        expect_error_msg = 'Cannot find the input \\"invalid_input\\" for the enabled_by of teacher_id.'
+        expect_error_msg = 'Cannot find the input "invalid_input" for the enabled_by of teacher_id.'
         assert expect_error_msg in errors["tool_with_invalid_input_settings.py"]

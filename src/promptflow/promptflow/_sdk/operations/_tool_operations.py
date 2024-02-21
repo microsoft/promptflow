@@ -42,6 +42,20 @@ class ToolOperations:
             target._get_extra_info(INVALID_COUNT, 0) + source._get_extra_info(INVALID_COUNT, 0),
         )
 
+    def _merge_validation_result_by_list(self, tool_func, validate_results):
+        tool_func_name = tool_func.__name__
+        tool_script_path = inspect.getsourcefile(getattr(tool_func, "__original_function", tool_func))
+        tool_validate_result = ValidationResultBuilder.success()
+        for error_msg in validate_results:
+            tool_validate_result.append_error(
+                yaml_path=None,
+                message=error_msg,
+                function_name=tool_func_name,
+                location=tool_script_path,
+                key="function_name",
+            )
+        return tool_validate_result
+
     def _list_tools_in_package(self, package_name: str, raise_error: bool = False):
         """
         List the meta of all tools in the package. Raise user error if raise_error=True and found incorrect tools.
@@ -110,16 +124,8 @@ class ToolOperations:
                 construct_tools[tool_name] = construct_tool
             else:
                 invalid_tool_count = invalid_tool_count + 1
-                tool_func_name = f.__name__
-                tool_script_path = inspect.getsourcefile(getattr(f, "__original_function", f))
-                for error_msg in validate_result:
-                    tool_validate_result.append_error(
-                        yaml_path=None,
-                        message=error_msg,
-                        function_name=tool_func_name,
-                        location=tool_script_path,
-                        key="function_name",
-                    )
+                validate_result = self._merge_validation_result_by_list(f, validate_result)
+                tool_validate_result.merge_with(validate_result)
         for f, initialize_inputs in tool_methods:
             tool, input_settings, extra_info = self._parse_tool_from_func(f, initialize_inputs)
             construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
@@ -128,16 +134,8 @@ class ToolOperations:
                 construct_tools[tool_name] = construct_tool
             else:
                 invalid_tool_count = invalid_tool_count + 1
-                tool_func_name = f.__name__
-                tool_script_path = inspect.getsourcefile(getattr(f, "__original_function", f))
-                for error_msg in validate_result:
-                    tool_validate_result.append_error(
-                        yaml_path=None,
-                        message=error_msg,
-                        function_name=tool_func_name,
-                        location=tool_script_path,
-                        key="function_name",
-                    )
+                validate_result = self._merge_validation_result_by_list(f, validate_result)
+                tool_validate_result.merge_with(validate_result)
         # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
         tools = json.loads(json.dumps(construct_tools))
         tool_validate_result._set_extra_info(TOTAL_COUNT, len(tool_functions) + len(tool_methods))
@@ -249,6 +247,7 @@ class ToolOperations:
         def validate_tool_function(tool_func, init_inputs=None):
             tool, input_settings, extra_info = self._parse_tool_from_func(tool_func, init_inputs)
             _, validate_result = _serialize_tool(tool, input_settings, extra_info, source)
+            validate_result = self._merge_validation_result_by_list(tool_func, validate_result)
             validate_result._set_extra_info(TOTAL_COUNT, 1)
             validate_result._set_extra_info(INVALID_COUNT, 0 if validate_result.passed else 1)
             return validate_result
