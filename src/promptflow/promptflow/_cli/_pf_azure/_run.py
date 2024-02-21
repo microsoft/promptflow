@@ -141,8 +141,8 @@ pfazure run stream --name <name> --timeout 600
             type=int,
             default=300,
             help=(
-                "Timeout in seconds. If the run keeps in status 'Not Started' longer than the timeout value,"
-                "the stream operation will abort. Default value is 300 seconds.",
+                "Timeout in seconds. If the run stays in the same status and produce no new logs in a period "
+                "longer than the timeout value, the stream operation will abort. Default value is 300 seconds.",
             ),
         )
 

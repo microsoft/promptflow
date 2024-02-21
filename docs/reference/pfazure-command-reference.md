@@ -306,7 +306,7 @@ Name of the run.
 
 `--timeout`
 
-Timeout in seconds. If the run keeps in status `NotStarted` longer than the timeout value, the stream operation will abort. Default value is 300 seconds
+Timeout in seconds. If the run stays in the same status and produce no new logs in a period longer than the timeout value, the stream operation will abort. Default value is 300 seconds
 
 `--subscription`
 

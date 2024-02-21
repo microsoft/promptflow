@@ -589,8 +589,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
-        :param timeout: If the run keeps in status 'Not Started' longer than the timeout value,
-            the stream operation will abort. Default timeout value is 300 seconds.
+        :param timeout: If the run stays in the same status and produce no new logs in a period
+             longer than the timeout value, the stream operation will abort. Default timeout value is 300 seconds.
         :type timeout: int
         :param raise_on_error: Raises an exception if a run fails or canceled.
         :type raise_on_error: bool
