@@ -11,7 +11,7 @@ import sys
 
 import waitress
 
-from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_temeletry_handler
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
@@ -151,7 +151,7 @@ def entry(command_args):
     args = parser.parse_args(command_args)
 
     activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
-    cli_exception_and_temeletry_handler(run_command, activity_name)(args)
+    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
 
 
 def run_command(args):

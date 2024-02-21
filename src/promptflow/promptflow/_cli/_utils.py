@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._constants import CLIListOutputFormat, EnvironmentVariables
-from promptflow._sdk._telemetry import log_activity, ActivityType
+from promptflow._sdk._telemetry import log_activity, ActivityType, get_telemetry_logger
 from promptflow._sdk._utils import print_yellow_warning, print_red_error
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -354,14 +354,15 @@ def is_format_exception():
     return False
 
 
-def cli_exception_and_temeletry_handler(func, activity_name, custom_dimensions=None):
+def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=None):
     """Catch known cli exceptions."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
+            telemetry_logger = get_telemetry_logger()
             with log_activity(
-                    logger,
+                    telemetry_logger,
                     activity_name,
                     activity_type=ActivityType.PUBLICAPI,
                     custom_dimensions=custom_dimensions,
