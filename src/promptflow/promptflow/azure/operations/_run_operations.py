@@ -709,7 +709,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         return flow.path
 
-    def _get_session_id(self, flow):
+    def _get_session_id(self, flow, run):
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
@@ -717,7 +717,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             user_alias = "unknown_user"
         flow_id = get_flow_lineage_id(flow_dir=flow)
         # for different environment, use different session id to avoid image cache
-        env = self._resolve_environment(run=flow)
+        env = self._resolve_environment(run=run)
         env_hash = hashlib.sha256(json.dumps(env, sort_keys=True).encode()).hexdigest()
         session_id = f"{user_alias}_{flow_id}_{env_hash}"
         # hash and truncate to avoid the session id getting too long
@@ -830,7 +830,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         runtime = run._runtime or runtime
         # for remote flow case, leave session id to None and let service side resolve
         # for local flow case, use flow path to calculate session id
-        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow_path)
+        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow_path, run=run)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
