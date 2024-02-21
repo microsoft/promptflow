@@ -5,17 +5,17 @@
 from pathlib import Path
 from typing import Any, Mapping
 
-from pydantic import BaseModel
+from promptflow.executor._service.contracts.base_request import BaseRequest
 
 
-class ToolMetaRequest(BaseModel):
+class ToolMetaRequest(BaseRequest):
     """Request model for generating tool meta."""
 
     working_dir: Path
     tools: Mapping[str, Mapping[str, str]]
 
 
-class RetrieveToolFuncResultRequest(BaseModel):
+class RetrieveToolFuncResultRequest(BaseRequest):
     """Request model for retrieving tool function result."""
 
     func_path: str
