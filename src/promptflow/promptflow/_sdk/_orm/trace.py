@@ -110,7 +110,7 @@ class LineRun:
     @staticmethod
     def _construct_query_with_line_run_id(session: Session, line_run_id: str) -> Query:
         # TODO: maybe we need a LineRun table
-        stmt: Query = session.query(Span).filter(and_(Span.trace_id == line_run_id, Span.parent_span_id is None))
+        stmt: Query = session.query(Span).filter(and_(Span.trace_id == line_run_id, Span.parent_span_id == ""))
         span: Span = stmt.first()
         attributes = json.loads(span.content).get(SpanFieldName.ATTRIBUTES, dict())
         stmt: Query = session.query(Span)
@@ -135,14 +135,15 @@ class LineRun:
             )
         # batch run scenario
         else:
-            expected_batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
             stmt = stmt.filter(
                 or_(
                     text(
-                        f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') = '{expected_batch_run_id}'"  # noqa: E501
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') = '{batch_run_id}' and json_extract(json_extract(span.content, '$.attributes'), '$.line_number') = '{line_number}'"  # noqa: E501
                     ),
                     text(
-                        f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') = '{expected_batch_run_id}'"  # noqa: E501
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') = '{batch_run_id}' and json_extract(json_extract(span.content, '$.attributes'), '$.line_number') = '{line_number}'"  # noqa: E501
                     ),
                 )
             )
