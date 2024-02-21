@@ -69,8 +69,9 @@ promptflow.tools.chat.chat:
         - double
       ui_hints:
         text_box_size: xs
+      advanced: true
     max_tokens:
-      default: 512
+      default: ""
       type:
         - int
       ui_hints:
@@ -85,6 +86,7 @@ promptflow.tools.chat.chat:
       default: 0
       type:
         - double
+      advanced: true
     # response_format:
     #   type:
     #   - object

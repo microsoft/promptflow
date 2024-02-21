@@ -5,6 +5,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
     post_process_chat_api_response, validate_functions, process_function_call
 from promptflow.tools.exception import InvalidConnectionType
+from promptflow.contracts.types import PromptTemplate
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -64,10 +65,11 @@ def list_deployment_names(
 
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
-            cur_item = {
-                "value": deployment.name,
-                "display_value": deployment.name,
-            }
+            if deployment.model_name.startswith("gpt-"):
+                cur_item = {
+                    "value": deployment.name,
+                    "display_value": deployment.name,
+                }
             res.append(cur_item)
 
     except Exception as e:
@@ -85,7 +87,7 @@ def list_deployment_names(
 @handle_openai_error()
 def chat(
     connection: Union[AzureOpenAIConnection, OpenAIConnection], 
-    prompt: str,
+    prompt: PromptTemplate,
     deployment_name: str = "", model: str = "",
     temperature: float = 1.0,
     top_p: float = 1.0,
