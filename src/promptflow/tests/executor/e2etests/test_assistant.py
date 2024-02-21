@@ -8,7 +8,7 @@ from ..utils import get_yaml_file
 
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
-class TestLangchain:
+class TestAssistant:
     @pytest.mark.parametrize(
         "flow_folder, line_input",
         [
