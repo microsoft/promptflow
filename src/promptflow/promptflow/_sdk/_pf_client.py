@@ -10,6 +10,7 @@ from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
+from ._restclient.pfs_caller import PFSCaller
 from ._user_agent import USER_AGENT
 from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
@@ -49,6 +50,7 @@ class PFClient:
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._experiments = ExperimentOperations(self)
         self._traces = TraceOperations()
+        self._service_caller = PFSCaller()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(

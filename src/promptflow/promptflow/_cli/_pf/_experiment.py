@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import argparse
 import json
+import sys
 
 from promptflow._cli._params import (
     add_param_all_results,
@@ -14,7 +15,6 @@ from promptflow._cli._params import (
 from promptflow._cli._utils import activate_action, exception_handler
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
@@ -175,16 +175,8 @@ def dispatch_experiment_commands(args: argparse.Namespace):
 
 @exception_handler("Create experiment")
 def create_experiment(args: argparse.Namespace):
-    from promptflow._sdk._load_functions import _load_experiment_template
-
-    template_path = args.template
-    logger.debug("Loading experiment template from %s", template_path)
-    template = _load_experiment_template(source=template_path)
-    logger.debug("Creating experiment from template %s", template.dir_name)
-    experiment = Experiment.from_template(template, name=args.name)
-    logger.debug("Creating experiment %s", experiment.name)
-    exp = _get_pf_client()._experiments.create_or_update(experiment)
-    print(json.dumps(exp._to_dict(), indent=4))
+    exp = _get_pf_client()._service_caller.create_experiment(name=args.name, template=args.template)
+    print(json.dumps(exp, indent=4))
 
 
 @exception_handler("List experiment")
@@ -196,17 +188,20 @@ def list_experiment(args: argparse.Namespace):
 
 @exception_handler("Show experiment")
 def show_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments.get(args.name)
-    print(json.dumps(result._to_dict(), indent=4))
+    result = _get_pf_client()._service_caller.get_experiment(args.name)
+    print(json.dumps(result, indent=4))
 
 
 @exception_handler("Start experiment")
 def start_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments.start(args.name)
-    print(json.dumps(result._to_dict(), indent=4))
+    result = _get_pf_client()._service_caller.start_experiment(
+        name=args.name,
+        executable_path=sys.executable,
+    )
+    print(json.dumps(result, indent=4))
 
 
 @exception_handler("Stop experiment")
 def stop_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments.stop(args.name)
-    print(json.dumps(result._to_dict(), indent=4))
+    result = _get_pf_client()._service_caller.stop_experiment(args.name)
+    print(json.dumps(result, indent=4))

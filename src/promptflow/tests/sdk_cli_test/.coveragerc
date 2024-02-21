@@ -5,4 +5,5 @@ source =
     */promptflow/azure/*
 omit =
     */promptflow/azure/_restclient/*
+    */promptflow/_sdk/_restclient/*
     *__init__.py*

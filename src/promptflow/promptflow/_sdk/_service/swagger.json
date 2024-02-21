@@ -5,9 +5,6 @@
         "/Connections/": {
             "get": {
                 "responses": {
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    },
                     "200": {
                         "description": "Success",
                         "schema": {
@@ -16,6 +13,9 @@
                                 "$ref": "#/definitions/Connection"
                             }
                         }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "List all connection",
@@ -61,14 +61,14 @@
             ],
             "put": {
                 "responses": {
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Update connection",
@@ -89,14 +89,14 @@
             },
             "get": {
                 "responses": {
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Get connection",
@@ -114,6 +114,12 @@
             },
             "delete": {
                 "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
                     "403": {
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
@@ -126,14 +132,14 @@
             },
             "post": {
                 "responses": {
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Create connection",
@@ -164,14 +170,14 @@
             ],
             "get": {
                 "responses": {
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    },
                     "200": {
                         "description": "Connection details with secret",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Get connection with secret",
@@ -185,6 +191,250 @@
                 ],
                 "tags": [
                     "Connections"
+                ]
+            }
+        },
+        "/Experiments/": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Experiments",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentList"
+                        }
+                    }
+                },
+                "description": "List all experiments",
+                "operationId": "get_experiment_list",
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/{name}": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Update experiment",
+                "operationId": "put_experiment",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Get experiment",
+                "operationId": "get_experiment",
+                "tags": [
+                    "Experiments"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete experiment",
+                "operationId": "delete_experiment",
+                "tags": [
+                    "Experiments"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Create experiment",
+                "operationId": "post_experiment",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/{name}/clone": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Clone experiment",
+                "operationId": "post_experiment_stop",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/{name}/start": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Start experiment",
+                "operationId": "post_experiment_start",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/{name}/stop": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Stop experiment",
+                "operationId": "get_experiment_stop",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/{name}/test": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Test experiment",
+                "operationId": "post_experiment_test",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
                 ]
             }
         },
@@ -288,6 +538,21 @@
                 },
                 "description": "Get run",
                 "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
                 "tags": [
                     "Runs"
                 ]
@@ -505,8 +770,8 @@
         "/Telemetries/": {
             "post": {
                 "responses": {
-                    "403": {
-                        "description": "Telemetry is disabled or X-Remote-User is not set.",
+                    "200": {
+                        "description": "Create telemetry record",
                         "headers": {
                             "x-ms-promptflow-request-id": {
                                 "type": "string"
@@ -521,8 +786,8 @@
                             }
                         }
                     },
-                    "200": {
-                        "description": "Create telemetry record",
+                    "403": {
+                        "description": "Telemetry is disabled or X-Remote-User is not set.",
                         "headers": {
                             "x-ms-promptflow-request-id": {
                                 "type": "string"
@@ -544,6 +809,39 @@
                 ],
                 "tags": [
                     "Telemetries"
+                ]
+            }
+        },
+        "/spans/list": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Span"
+                            }
+                        }
+                    }
+                },
+                "description": "List spans",
+                "operationId": "get_spans",
+                "tags": [
+                    "spans"
+                ]
+            }
+        },
+        "/ui/traces": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "get_trace_ui",
+                "tags": [
+                    "ui"
                 ]
             }
         }
@@ -568,8 +866,20 @@
             "description": "Runs Management"
         },
         {
+            "name": "Experiments",
+            "description": "Experiments Management"
+        },
+        {
             "name": "Telemetries",
             "description": "Telemetry Management"
+        },
+        {
+            "name": "spans",
+            "description": "Span Management"
+        },
+        {
+            "name": "ui",
+            "description": "UI"
         }
     ],
     "definitions": {
@@ -635,6 +945,16 @@
             }
         },
         "RunDict": {
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "ExperimentList": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/ExperimentDict"
+            }
+        },
+        "ExperimentDict": {
             "additionalProperties": true,
             "type": "object"
         },
@@ -721,6 +1041,157 @@
                 "errorDetails": {
                     "type": "string",
                     "description": "The error details of the activity."
+                }
+            },
+            "type": "object"
+        },
+        "Span": {
+            "required": [
+                "attributes",
+                "context",
+                "kind",
+                "name",
+                "resource"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "context": {
+                    "$ref": "#/definitions/Context"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "end_time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "status": {
+                    "$ref": "#/definitions/Status"
+                },
+                "attributes": {
+                    "$ref": "#/definitions/Attributes"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "resource": {
+                    "$ref": "#/definitions/Resource"
+                }
+            },
+            "type": "object"
+        },
+        "Context": {
+            "required": [
+                "span_id",
+                "trace_id",
+                "trace_state"
+            ],
+            "properties": {
+                "trace_id": {
+                    "type": "string"
+                },
+                "span_id": {
+                    "type": "string"
+                },
+                "trace_state": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Status": {
+            "required": [
+                "status_code"
+            ],
+            "properties": {
+                "status_code": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Attributes": {
+            "required": [
+                "framework",
+                "function",
+                "inputs",
+                "output",
+                "session_id",
+                "span_type"
+            ],
+            "properties": {
+                "framework": {
+                    "type": "string",
+                    "default": "promptflow"
+                },
+                "span_type": {
+                    "type": "string",
+                    "default": "Function"
+                },
+                "function": {
+                    "type": "string"
+                },
+                "inputs": {
+                    "type": "string"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "flow_id": {
+                    "type": "string"
+                },
+                "run": {
+                    "type": "string"
+                },
+                "experiment": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Resource": {
+            "required": [
+                "attributes"
+            ],
+            "properties": {
+                "attributes": {
+                    "$ref": "#/definitions/ResourceAttributes"
+                },
+                "schema_url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "ResourceAttributes": {
+            "properties": {
+                "service.name": {
+                    "type": "string",
+                    "default": "promptflow"
                 }
             },
             "type": "object"
