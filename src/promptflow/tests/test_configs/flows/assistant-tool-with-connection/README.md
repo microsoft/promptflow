@@ -1,13 +1,11 @@
-# Chat with Calorie Assistant
+# Assistant Tool with Connection
 
-This sample demonstrates how to chat with the PromptFlow Assistant tool facilitates calorie calculations by considering your location, the duration of your exercise, and the type of sport. Currently, it supports two types of sports: jogging and swimming.
+This flow is used as example to illustrate how to use inner tool with connection in Assistant.
 
 Tools used in this flow：
 - `add_message_and_run` tool, assistant tool, provisioned with below inner functions:
-   - `get_current_location``: get current city
-   - `get_temperature(location)``: get temperature of the city
-   - `get_calorie_by_jogging(duration, temperature)``: calculate calorie for jogging exercise
-   - `get_calorie_by_jogging(duration, temperature)``: calculate calorie for swimming exercise
+   - `say_thanks``: express thanks statement
+
 
 ## Prerequisites
 
@@ -33,11 +31,13 @@ Currently, only "Open AI" connection type are supported for assistant tool. Plea
 pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key>
 ```
 
-Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+Note:
+1) In [flow.dag.yaml](flow.dag.yaml) we are using connection named `aoai_assistant_connection`.
 ```bash
 # show registered connection
-pf connection show --name open_ai_connection
+pf connection show --name aoai_assistant_connection
 ```
+2) For aoai assistant, it works only in limited scope of connection support. Please refer to https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/assistant
 
 ### 2. Create or get assistant/thread
 

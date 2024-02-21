@@ -43,8 +43,10 @@ class AssistantDefinition:
 
     model: str
     instructions: str
-    tools: List  # The raw tool definition
-    assistant_tools: Dict[str, AssistantTool] = field(default_factory=dict)  # The resolved tool definition by name
+    # The raw tool definition in json string
+    tools: List
+    # The resolved tool definition by name. This property is addon and will not be part of pickling.
+    assistant_tools: Dict[str, AssistantTool] = field(default_factory=dict)
 
     @staticmethod
     def deserialize(data: dict) -> "AssistantDefinition":
