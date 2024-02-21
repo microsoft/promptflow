@@ -510,6 +510,7 @@ def _set_up_experiment_log_handler(experiment_path, index=None):
                     logger.debug(f"Get index of log file failed: {e}")
 
     log_path = Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
+    logger.info(f"Experiment execution log records in {log_path}")
     file_handler = FileHandler(file_path=log_path)
     return file_handler, index
 
