@@ -179,13 +179,7 @@ class _LineRunData:
 
     def _from_root_span(span: Span) -> "_LineRunData":
         attributes: dict = span._content[SpanFieldName.ATTRIBUTES]
-        if SpanAttributeFieldName.LINE_RUN_ID in attributes:
-            line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
-        elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
-            line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-        else:
-            # eager flow/arbitrary script
-            line_run_id = span.trace_id
+        line_run_id = span.trace_id
         start_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.START_TIME])
         end_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.END_TIME])
         # calculate `cumulative_token_count`
