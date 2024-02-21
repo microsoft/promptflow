@@ -70,7 +70,7 @@ def list_deployment_names(
                     "value": deployment.name,
                     "display_value": deployment.name,
                 }
-            res.append(cur_item)
+                res.append(cur_item)
 
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 403:
