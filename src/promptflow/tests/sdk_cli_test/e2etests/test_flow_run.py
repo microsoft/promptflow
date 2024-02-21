@@ -1329,3 +1329,31 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
+
+    def test_eager_flow_run_with_evc(self, pf):
+        # run's evc can work
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+
+        # flow evc can work
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables_connection")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}

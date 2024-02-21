@@ -303,3 +303,9 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs={})
         assert result.run_info.status.value == "Completed", result.run_info.error
         assert result.output == "Hello world! VAL"
+
+    def test_eager_flow_with_evc(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables_connection/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! azure"
