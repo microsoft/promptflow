@@ -1,9 +1,10 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import asyncio
 import json
+import os
+import shutil
 import signal
 import threading
 import uuid
@@ -11,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -189,12 +190,13 @@ class BatchEngine:
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-                    previous_run_results = self._copy_previous_run_result(
-                        resume_from_run_storage, resume_from_run_output_dir, batch_inputs
-                    )
-
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+
+                    previous_run_results = self._copy_previous_run_result(
+                        resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir
+                    )
+
                     # run flow in batch mode
                     return async_run_allowing_running_loop(
                         self._exec_in_task,
@@ -221,11 +223,39 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
 
+    def copy_files_except(self, src_dir, dst_dir, exclude_file):
+        """
+        Copy all files from src_dir to dst_dir recursively, excluding a specific file
+        directly under the root of src_dir.
+
+        :param src_dir: Source directory path
+        :type src_dir: str
+        :param dst_dir: Destination directory path
+        :type dst_dir: str
+        :param exclude_file: Name of the file to exclude from copying
+        :type exclude_file: str
+        """
+        os.makedirs(dst_dir, exist_ok=True)
+
+        for root, dirs, files in os.walk(src_dir):
+            rel_path = os.path.relpath(root, src_dir)
+            current_dst_dir = os.path.join(dst_dir, rel_path)
+
+            os.makedirs(current_dst_dir, exist_ok=True)
+
+            for file in files:
+                if rel_path == "." and file == exclude_file:
+                    continue  # Skip the excluded file
+                src_file_path = os.path.join(root, file)
+                dst_file_path = os.path.join(current_dst_dir, file)
+                shutil.copy2(src_file_path, dst_file_path)
+
     def _copy_previous_run_result(
         self,
         resume_from_run_storage: AbstractBatchRunStorage,
         resume_from_run_output_dir: Path,
         batch_inputs: List,
+        output_dir: Path,
     ) -> List[LineResult]:
         """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
         to the storage of new run,
@@ -236,6 +266,10 @@ class BatchEngine:
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
+
+        if resume_from_run_output_dir:
+            self.copy_files_except(resume_from_run_output_dir, output_dir, "output.jsonl")
+
         for i in range(len(batch_inputs)):
             previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
             if previous_run_info and previous_run_info.status == Status.Completed:
@@ -269,7 +303,7 @@ class BatchEngine:
         """
         path = output_dir / "output.jsonl"
         outputs = []
-        with open(path, "r", encoding="utf-8") as fin:
+        with open(path, "r", encoding=DEFAULT_ENCODING) as fin:
             for line in fin:
                 outputs.append(json.loads(line))
         return outputs
