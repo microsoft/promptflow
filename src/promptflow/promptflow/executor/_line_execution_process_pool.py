@@ -666,6 +666,9 @@ def _process_wrapper(
     operation_contexts_dict: dict,
 ):
     sys.stderr = open("fork_process_stderr.log", "w")
+    cwd = os.getcwd()
+    file_path = os.path.join(cwd, "fork_process_stderr.log")
+    bulk_logger.info(file_path)
 
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)

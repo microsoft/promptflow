@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import queue
 import signal
 import sys
@@ -415,6 +416,9 @@ def create_spawned_fork_process_manager(
     process_target_func,
 ):
     sys.stderr = open("spawned_fork_process_manager_stderr.log", "w")
+    cwd = os.getcwd()
+    file_path = os.path.join(cwd, "spawned_fork_process_manager_stderr.log")
+    bulk_logger.info(file_path)
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
