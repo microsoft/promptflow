@@ -68,7 +68,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-_logger = get_cli_sdk_logger()
+logger = get_cli_sdk_logger()
 
 
 class ExperimentOrchestrator:
