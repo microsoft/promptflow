@@ -166,7 +166,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     )
 
 
-def _validate_tool_function(tool, input_settings, extra_info, func_name=None, func_path=None):
+def _validate_tool_function(tool, input_settings, extra_info):
     """
     Check whether the icon and input settings of the tool are legitimate.
 
@@ -176,30 +176,18 @@ def _validate_tool_function(tool, input_settings, extra_info, func_name=None, fu
     :type input_settings: Dict[str, InputSetting]
     :param extra_info: Extra info about the tool
     :type extra_info: Dict[str, obj]
-    :param func_name: Function name of the tool
-    :type func_name: str
-    :param func_path: Script path of the tool
-    :type func_path: str
     :return: Validation result of the tool
-    :rtype: ValidationResult
+    :rtype: List[str]
     """
-    from promptflow._sdk.entities._validation import ValidationResultBuilder
-
-    validate_result = ValidationResultBuilder.success()
+    validate_result = []
 
     if extra_info:
         if ICON in extra_info:
             if ICON_LIGHT in extra_info or ICON_DARK in extra_info:
-                validate_result.append_error(
-                    yaml_path=None,
-                    message=f"Cannot provide both `icon` and `{ICON_LIGHT}` or `{ICON_DARK}`.",
-                    function_name=func_name,
-                    location=func_path,
-                    key="function_name",
-                )
+                validate_result.append(f"Cannot provide both `icon` and `{ICON_LIGHT}` or `{ICON_DARK}`.")
     if input_settings:
-        input_settings_validate_result = _validate_input_settings(tool.inputs, input_settings, func_name, func_path)
-        validate_result.merge_with(input_settings_validate_result)
+        input_settings_validate_result = _validate_input_settings(tool.inputs, input_settings)
+        validate_result.extend(input_settings_validate_result)
     return validate_result
 
 
@@ -214,24 +202,18 @@ def _validate_tool_schema(tool_dict, func_name=None, func_path=None):
     :param func_path: Script path of the tool
     :type func_path: str
     :return: Validation result of the tool
-    :rtype: ValidationResult
+    :rtype: str
     """
-    from promptflow._sdk.entities._validation import ValidationResultBuilder
-
-    validate_result = ValidationResultBuilder.success()
     try:
         with open(TOOL_SCHEMA, "r") as f:
             tool_schema = json.load(f)
 
         jsonschema.validate(instance=tool_dict, schema=tool_schema)
     except jsonschema.exceptions.ValidationError as e:
-        validate_result.append_error(
-            message=str(e), yaml_path=None, function_name=func_name, location=func_path, key="function_name"
-        )
-    return validate_result
+        return str(e)
 
 
-def _validate_input_settings(tool_inputs, input_settings, func_name=None, func_path=None):
+def _validate_input_settings(tool_inputs, input_settings):
     """
     Check whether input settings of the tool are legitimate.
 
@@ -241,33 +223,17 @@ def _validate_input_settings(tool_inputs, input_settings, func_name=None, func_p
     :type input_settings: Dict[str, InputSetting]
     :param extra_info: Extra info about the tool
     :type extra_info: Dict[str, obj]
-    :param func_name: Function name of the tool
-    :type func_name: str
-    :param func_path: Script path of the tool
-    :type func_path: str
     :return: Validation result of the tool
-    :rtype: ValidationResult
+    :rtype: List[str]
     """
-    from promptflow._sdk.entities._validation import ValidationResultBuilder
-
-    validate_result = ValidationResultBuilder.success()
+    validate_result = []
     for input_name, settings in input_settings.items():
         if input_name not in tool_inputs:
-            validate_result.append_error(
-                yaml_path=None,
-                message=f"Cannot find {input_name} in tool inputs.",
-                function_name=func_name,
-                location=func_path,
-                key="function_name",
+            validate_result.append(
+                f"Cannot find {input_name} in tool inputs.",
             )
         if settings.enabled_by and settings.enabled_by not in tool_inputs:
-            validate_result.append_error(
-                yaml_path=None,
-                message=f'Cannot find the input "{settings.enabled_by}" for the enabled_by of {input_name}.',
-                function_name=func_name,
-                location=func_path,
-                key="function_name",
-            )
+            validate_result.append(f'Cannot find the input "{settings.enabled_by}" for the enabled_by of {input_name}.')
         if settings.dynamic_list:
             dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
             has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
@@ -281,34 +247,18 @@ def _validate_input_settings(tool_inputs, input_settings, func_name=None, func_p
                 for func_input, reference_input in settings.dynamic_list._input_mapping.items():
                     # Check invalid input name of dynamic list function
                     if not has_kwargs and func_input not in dynamic_func_inputs:
-                        validate_result.append_error(
-                            yaml_path=None,
-                            message=f"Cannot find {func_input} in the inputs of "
-                            f"dynamic_list func {settings.dynamic_list.func_path}",
-                            function_name=func_name,
-                            location=func_path,
-                            key="function_name",
+                        validate_result.append(
+                            f"Cannot find {func_input} in the inputs of "
+                            f"dynamic_list func {settings.dynamic_list.func_path}"
                         )
                     # Check invalid input name of tool
                     if reference_input not in tool_inputs:
-                        validate_result.append_error(
-                            yaml_path=None,
-                            message=f"Cannot find {reference_input} in the tool inputs.",
-                            function_name=func_name,
-                            location=func_path,
-                            key="function_name",
-                        )
+                        validate_result.append(f"Cannot find {reference_input} in the tool inputs.")
                     if func_input in required_inputs:
                         required_inputs.remove(func_input)
             # Check required input of dynamic_list function
             if len(required_inputs) != 0:
-                validate_result.append_error(
-                    yaml_path=None,
-                    message=f"Missing required input(s) of dynamic_list function: {required_inputs}",
-                    function_name=func_name,
-                    location=func_path,
-                    key="function_name",
-                )
+                validate_result.append(f"Missing required input(s) of dynamic_list function: {required_inputs}")
     return validate_result
 
 
@@ -324,13 +274,13 @@ def _serialize_tool(tool, input_settings, extra_info, tool_func):
     :type extra_info: Dict[str, obj]
     :param tool_func: Package tool function
     :type tool_func: callable
-    :return: serialized tool
-    :rtype: Dict[str, str]
+    :return: serialized tool, validation result
+    :rtype: Dict[str, str], List[str]
     """
     tool_func_name = tool_func.__name__
     tool_script_path = inspect.getsourcefile(getattr(tool_func, "__original_function", tool_func))
-    validate_result = _validate_tool_function(tool, input_settings, extra_info, tool_func_name, tool_script_path)
-    if validate_result.passed:
+    validate_result = _validate_tool_function(tool, input_settings, extra_info)
+    if not validate_result:
         construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
         if extra_info:
             if ICON in extra_info:
@@ -366,7 +316,8 @@ def _serialize_tool(tool, input_settings, extra_info, tool_func):
                     generated_by_inputs.update(settings.generated_by._input_settings)
             tool_inputs.update(generated_by_inputs)
         schema_validate_result = _validate_tool_schema(construct_tool, tool_func_name, tool_script_path)
-        validate_result.merge_with(schema_validate_result)
+        if schema_validate_result:
+            validate_result.append(schema_validate_result)
         return construct_tool, validate_result
     else:
         return {}, validate_result
@@ -490,7 +441,8 @@ def generate_python_tool_meta_dict(name, content, source=None):
     else:
         tool.source = source
     construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
-    validate_result.try_raise(raise_error=True)
+    if validate_result:
+        raise UserErrorException(f"Tool validation failed: {';'.join(validate_result)}")
     # Handle string enum in tool dict
     construct_tool = json.loads(json.dumps(construct_tool))
     return construct_tool

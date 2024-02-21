@@ -105,21 +105,39 @@ class ToolOperations:
         for f in tool_functions:
             tool, input_settings, extra_info = self._parse_tool_from_func(f)
             construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
-            if validate_result.passed:
+            if not validate_result:
                 tool_name = self._get_tool_name(tool)
                 construct_tools[tool_name] = construct_tool
             else:
                 invalid_tool_count = invalid_tool_count + 1
-                tool_validate_result.merge_with(validate_result)
+                tool_func_name = f.__name__
+                tool_script_path = inspect.getsourcefile(getattr(f, "__original_function", f))
+                for error_msg in validate_result:
+                    tool_validate_result.append_error(
+                        yaml_path=None,
+                        message=error_msg,
+                        function_name=tool_func_name,
+                        location=tool_script_path,
+                        key="function_name",
+                    )
         for f, initialize_inputs in tool_methods:
             tool, input_settings, extra_info = self._parse_tool_from_func(f, initialize_inputs)
             construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
-            if validate_result.passed:
+            if not validate_result:
                 tool_name = self._get_tool_name(tool)
                 construct_tools[tool_name] = construct_tool
             else:
                 invalid_tool_count = invalid_tool_count + 1
-                tool_validate_result.merge_with(validate_result)
+                tool_func_name = f.__name__
+                tool_script_path = inspect.getsourcefile(getattr(f, "__original_function", f))
+                for error_msg in validate_result:
+                    tool_validate_result.append_error(
+                        yaml_path=None,
+                        message=error_msg,
+                        function_name=tool_func_name,
+                        location=tool_script_path,
+                        key="function_name",
+                    )
         # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
         tools = json.loads(json.dumps(construct_tools))
         tool_validate_result._set_extra_info(TOTAL_COUNT, len(tool_functions) + len(tool_methods))
