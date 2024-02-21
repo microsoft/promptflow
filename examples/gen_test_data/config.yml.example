@@ -10,7 +10,6 @@ document_chunk_overlap: 100
 # When both `documents_folder` and `document_nodes_file` are configured, will use 'document_nodes_file' and ignore 'documents_folder'.
 # For cloud mode, both local files and data assets can be used.
 # document_nodes_file = "<your-node-file-path>"
-
 # Test data gen flow configs
 flow_folder: "<your-test-data-gen-flow-folder-path>"
 # Override some node inputs, for example, `validate_text_chunk` is a node in flow.dag.yaml, `connection` and `model_or_deployment_name` are the inputs of `validate_text_chunk`.
@@ -44,7 +43,6 @@ subscription_id: "<your-sub-id>"
 resource_group: "<your-resource-group>"
 workspace_name: "<your-workspace-name>"
 aml_cluster: "<your-compute-name>"
-
 # Parallel run step configs
 prs_instance_count: 2
 prs_mini_batch_size: 1
