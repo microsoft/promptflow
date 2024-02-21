@@ -605,7 +605,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         try:
             printed = 0
             stream_count = 0
-            start = time.time()
+            prev_active_time = time.time()
+            prev_active_log = ""
+            prev_active_status = run.status
+
             while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
                 file_handler.flush()
                 stream_count += 1
@@ -614,19 +617,24 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     # print prompt every 3 times
                     file_handler.write(f"(Run status is {run.status!r}, continue streaming...)\n")
 
-                # if the run is not started for 5 minutes, print an error message and break the loop
-                if run.status == RunStatus.NOT_STARTED:
-                    current = time.time()
-                    if current - start > timeout:
-                        file_handler.write(
-                            f"The run {run.name!r} is in status 'NotStarted' for {timeout} seconds,"
-                            "streaming is stopped. Please make sure you are using the latest runtime.\n"
-                            "For automatic runtime case, please try extending the timeout value.\n"
-                        )
-                        break
-
                 available_logs = self._get_log(flow_run_id=run.name)
                 printed = incremental_print(available_logs, printed, file_handler)
+
+                # if the run status is not changed, and the log is not changed, and it lasts for timeout seconds,
+                # we assume the run is stuck, and we should stop the streaming.
+                if available_logs != prev_active_log or run.status != prev_active_status:
+                    prev_active_log = available_logs
+                    prev_active_status = run.status
+                    prev_active_time = time.time()
+                elif time.time() - prev_active_time > timeout:
+                    file_handler.write(
+                        f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
+                        "streaming is stopped. If the final status is 'NotStarted', "
+                        "Please make sure you are using the latest runtime.\n"
+                        "For automatic runtime case, please try extending the timeout value.\n"
+                    )
+                    break
+
                 time.sleep(10)
                 run = self.get(run=run.name)
             # ensure all logs are printed
