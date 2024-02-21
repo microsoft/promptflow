@@ -18,6 +18,7 @@ from promptflow._core.tool_meta_generator import (
     generate_python_meta,
     generate_tool_meta_dict_by_file,
 )
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ExceptionPresenter
 
 from ...utils import EAGER_FLOW_ROOT, FLOW_ROOT, load_json
@@ -36,12 +37,11 @@ def cd_and_run(working_dir, source_path, tool_type):
 
 
 def cd_and_run_generate_flow_meta(working_dir, source_path, entry, source=None):
-    os.chdir(working_dir)
-    sys.path.insert(0, working_dir)
-    try:
-        return generate_flow_meta_dict_by_file(source_path, entry, source)
-    except Exception as e:
-        return f"({e.__class__.__name__}) {e}"
+    with _change_working_dir(working_dir):
+        try:
+            return generate_flow_meta_dict_by_file(source_path, entry, source)
+        except Exception as e:
+            return f"({e.__class__.__name__}) {e}"
 
 
 def cd_and_run_with_read_text_error(working_dir, source_path, tool_type):

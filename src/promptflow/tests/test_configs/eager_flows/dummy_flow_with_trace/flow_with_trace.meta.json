@@ -13,5 +13,12 @@
             ]
         }
     },
+    "outputs": {
+        "output": {
+            "type": [
+                "string"
+            ]
+        }
+    },
     "source": "flow_with_trace.py"
 }

@@ -105,7 +105,11 @@ def collect_flow_entry_in_module(m, entry):
     func = getattr(m, entry, None)
     if isinstance(func, types.FunctionType):
         return func
-    return None
+    raise PythonParsingError(
+        message_format="Failed to collect flow entry '{entry}' in module '{module}'.",
+        entry=entry,
+        module=m.__name__,
+    )
 
 
 def collect_tool_methods_in_module(m):
@@ -128,7 +132,9 @@ def collect_tool_methods_with_init_inputs_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False):
+def _parse_tool_from_function(
+    f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, include_outputs=False
+):
     try:
         tool_type = getattr(f, "__type", None) or ToolType.PYTHON
     except Exception as e:
@@ -140,7 +146,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _, enable_kwargs = function_to_interface(
+        inputs, outputs, _, enable_kwargs = function_to_interface(
             f,
             initialize_inputs=initialize_inputs,
             gen_custom_type_conn=gen_custom_type_conn,
@@ -161,6 +167,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         name=tool_name or f.__qualname__,
         description=description or inspect.getdoc(f),
         inputs=inputs,
+        outputs=outputs if include_outputs else None,
         type=tool_type,
         class_name=class_name,
         function=f.__name__,
@@ -323,7 +330,7 @@ def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
     f = collect_flow_entry_in_module(m, entry)
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
-    tool = _parse_tool_from_function(f)
+    tool = _parse_tool_from_function(f, include_outputs=True)
 
     flow_meta = {"entry": entry, "function": f.__name__}
     if source:
