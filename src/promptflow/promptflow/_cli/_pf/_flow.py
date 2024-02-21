@@ -231,6 +231,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_experiment = lambda parser: parser.add_argument(  # noqa: E731
         "--experiment", type=str, help="the experiment template path of flow."
     )
+    add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
+        "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_flow,
@@ -244,6 +247,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_ui,
         add_param_config,
         add_param_detail,
+        add_param_skip_browser,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -435,7 +439,7 @@ def _test_flow_multi_modal(args, pf_client):
             ).generate_to_file(script)
         main_script_path = os.path.join(temp_dir, "main.py")
         logger.info("Start streamlit with main script generated at: %s", main_script_path)
-        pf_client.flows._chat_with_ui(script=main_script_path)
+        pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):

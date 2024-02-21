@@ -104,7 +104,7 @@ class FlowNode(YAMLTranslatableMixin):
     ):
         self.type = ExperimentNodeType.FLOW
         self.data = data
-        self.inputs = inputs
+        self.inputs = inputs or {}
         self.display_name = display_name
         self.description = description
         self.tags = tags

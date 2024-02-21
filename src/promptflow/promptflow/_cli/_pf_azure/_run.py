@@ -129,9 +129,25 @@ Example:
 
 # Stream run logs:
 pfazure run stream --name <name>
+
+# Stream run logs with timeout:
+pfazure run stream --name <name> --timeout 600
 """
+
+    def add_param_timeout(parser):
+        parser.add_argument(
+            "--timeout",
+            type=int,
+            default=600,
+            help=(
+                "Timeout in seconds. If the run stays in the same status and produce no new logs in a period "
+                "longer than the timeout value, the stream operation will abort. Default value is 600 seconds.",
+            ),
+        )
+
     add_params = [
         add_param_run_name,
+        add_param_timeout,
         _set_workspace_argument_for_subparsers,
     ] + base_params
 
@@ -422,7 +438,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "show-metrics":
         show_metrics(args.subscription, args.resource_group, args.workspace_name, args.name)
     elif args.sub_action == "stream":
-        stream_run(args.subscription, args.resource_group, args.workspace_name, args.name, args.debug)
+        stream_run(args)
     elif args.sub_action == "visualize":
         visualize(
             args.subscription,
@@ -498,10 +514,10 @@ def show_metrics(subscription_id, resource_group, workspace_name, run_name):
     print(json.dumps(metrics, indent=4))
 
 
-def stream_run(subscription_id, resource_group, workspace_name, run_name, debug=False):
+def stream_run(args: argparse.Namespace):
     """Stream run logs from cloud."""
-    pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
-    run = pf.runs.stream(run_name)
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    run = pf.runs.stream(args.name, timeout=args.timeout)
     print("\n")
     print(json.dumps(run._to_dict(), indent=4))
 

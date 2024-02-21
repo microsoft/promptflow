@@ -13,6 +13,7 @@ import tempfile
 import uuid
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -693,8 +694,9 @@ class ExperimentTemplateContext:
         )
         referenced_ids = self.node_name_to_referenced_id.get(node_name, [])
         # Add reference context only for flow node
-        if referenced_ids and is_flow:
-            node_context[referenced_key] = next(iter(referenced_ids))
+        if is_flow:
+            # Set reference line run id even if it's None to avoid stale value set by previous node
+            node_context[referenced_key] = next(iter(referenced_ids)) if referenced_ids else None
         if not test:
             # Return node context dict directly and will be set as trace attribute
             return node_context
@@ -735,6 +737,18 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         self.node_inputs[name] = inputs
 
     def add_node_result(self, name, result):
+        if is_dataclass(result):
+            # Convert dataclass to dict to ensure reference work
+            result = result.__dict__
+        supported_none_dict_types = (list, tuple, set, str, int, float, bool, type(None))
+        if isinstance(result, supported_none_dict_types):
+            # Convert primitive type to dict
+            result = {"output": result}
+        if not isinstance(result, dict):
+            raise ExperimentValueError(
+                f"Unsupported node {name!r} result type {type(result)}, "
+                f"only dict, dataclass object and primitive type is supported."
+            )
         self.node_results[name] = result
 
 

@@ -3,6 +3,8 @@ import os
 import tempfile
 import time
 import uuid
+from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
 
@@ -21,6 +23,7 @@ from ..recording_utilities import is_live
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
 yaml = YAML(typ="safe")
@@ -201,14 +204,18 @@ class TestExperiment:
             target_flow_path = FLOW_ROOT / "web_classification" / "flow.dag.yaml"
             client = PFClient()
             session = str(uuid.uuid4())
-            # Test with inputs
-            result = client.flows.test(
-                target_flow_path,
-                experiment=template_path,
-                inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
-                session=session,
-            )
-            _assert_result(result)
+            # Test with inputs, use separate thread to avoid OperationContext somehow cleared by other tests
+            with ThreadPoolExecutor() as pool:
+                task = pool.submit(
+                    client.flows.test,
+                    flow=target_flow_path,
+                    experiment=template_path,
+                    session=session,
+                    inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                )
+                futures.wait([task], return_when=futures.ALL_COMPLETED)
+                result = task.result()
+            assert result
             # Assert line run id is set by executor when running test
             assert PF_TRACE_CONTEXT in os.environ
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
@@ -228,8 +235,8 @@ class TestExperiment:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
                 assert "main_attempt" in line_run.line_run_id
-                assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
-                assert "eval_classification_accuracy" in line_run.evaluations
+                assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
+                assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
             # Test with default data and custom path
             expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
             result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
@@ -253,3 +260,19 @@ class TestExperiment:
                     experiment=template_path,
                 )
             assert "not found in experiment" in str(error.value)
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_eager_flow_test_with_experiment(self, monkeypatch):
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+
+            template_path = EXP_ROOT / "eager-flow-exp-template" / "flow.exp.yaml"
+            target_flow_path = EAGER_FLOW_ROOT / "flow_with_dataclass_output" / "flow.dag.yaml"
+            client = PFClient()
+            result = client.flows.test(target_flow_path, experiment=template_path)
+            assert result == {
+                "main": {"models": ["model"], "text": "text"},
+                "main2": {"output": "Hello world! text"},
+                "main3": {"output": "Hello world! Hello world! text"},
+            }
