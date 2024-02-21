@@ -281,7 +281,7 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            with open(".promptflow/spawned_fork_process_manager_stderr.log", "r") as f:
+            with open("spawned_fork_process_manager_stderr.log", "r") as f:
                 error_logs = "".join(f.readlines())
             if error_logs:
                 bulk_logger.error("The spawned fork process manager failed to start.")
@@ -414,7 +414,7 @@ def create_spawned_fork_process_manager(
     process_info,
     process_target_func,
 ):
-    sys.stderr = open(".promptflow/spawned_fork_process_manager_stderr.log", "w")
+    sys.stderr = open("spawned_fork_process_manager_stderr.log", "w")
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
