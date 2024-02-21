@@ -10,7 +10,7 @@ inputs:
     default: asst_YhXYM7AQpno4XMb1apf7qElY
   thread_id:
     type: string
-    default: thread_4XY3KFUgMB1v4t4ABMsxoBCt
+    default: ""
 outputs:
   answer:
     type: string
