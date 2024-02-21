@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import hashlib
+import importlib
 import json
 import os
 import shelve
@@ -132,13 +133,14 @@ class RecordCache:
     File often stored in .promptflow/node_cache.shelve
     Currently only text input/output could be recorded.
     Example of cached items:
-    {
+    "openai_version": {
         "/record/file/resolved": {  <-- file_records_pointer
             "hash_value": { <-- line_record_pointer   hash_value is sha1 of dict, accelerate the search
                 "input": {
                     "key1": "value1", # Converted to string, type info dropped
                 },
-                "output": "output_convert_to_string",
+                "output": "output_convert_to_string", # openai object such as ChatCompletion,
+                                                        this may vary with openai version.
                 "output_type": "output_type" # Currently support only simple strings.
             }
         }
@@ -219,10 +221,15 @@ class RecordCache:
 
             output_generator = generator()
             output_type = "generator"
-        else:
+        elif isinstance(output, (bool, int, float, str)):
             output_value = output
             output_generator = None
             output_type = type(output).__name__
+        else:
+            # output should be type pydantic.BaseModel
+            output_value = output.json()
+            output_generator = None
+            output_type = f"{type(output).__module__}.{type(output).__name__}"
         return output_value, output_generator, output_type
 
     @staticmethod
@@ -246,6 +253,7 @@ class RecordCache:
                     output_generator[k] = vgenerator()
                 else:
                     output_generator[k] = v
+            return output_generator
         elif output_type == "generator":
 
             def generator():
@@ -253,7 +261,21 @@ class RecordCache:
                     yield item
 
             output_generator = generator()
-        return output_generator
+            return output_generator
+        elif output_type == "bool":
+            return bool(output)
+        elif output_type == "int":
+            return int(output)
+        elif output_type == "float":
+            return float(output)
+        elif output_type == "str":
+            return output
+        else:
+            output_cls = output_type.split(".")[-1]
+            module_name = ".".join(output_type.split(".")[:-1])
+            module = importlib.import_module(module_name)
+            output_instance = getattr(module, output_cls).model_validate_json(output)
+            return output_instance
 
     def get_record(self, input_dict: Dict) -> object:
         """
@@ -280,10 +302,7 @@ class RecordCache:
         # not all items are reserved in the output dict.
         output = line_record_pointer["output"]
         output_type = line_record_pointer["output_type"]
-        if "generator" in output_type:
-            return RecordCache._create_output_generator(output, output_type)
-        else:
-            return output
+        return RecordCache._create_output_generator(output, output_type)
 
     def write_back(self, hash_value):
         self.cached_items[self.record_file.record_file_str] = self.file_records_pointer
@@ -320,7 +339,7 @@ class RecordCache:
             if "generator" in output_type:
                 return output_generator
             else:
-                return output_value
+                return output
         else:
             self.file_records_pointer[hash_value] = {
                 "input": input_dict,
@@ -333,7 +352,7 @@ class RecordCache:
             if "generator" in output_type:
                 return output_generator
             else:
-                return output_value
+                return output
 
 
 class RecordStorage:
