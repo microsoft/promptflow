@@ -38,7 +38,7 @@ class TestProcessUtils:
     @pytest.mark.asyncio
     async def test_invoke_sync_function_in_process_completed(self):
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
-            result = await invoke_sync_function_in_process(1, MOCK_CONTEXT_DICT, target_function)
+            result = await invoke_sync_function_in_process(target_function, args=(1,), context_dict=MOCK_CONTEXT_DICT)
             assert result == 1
             assert mock_logger.info.call_count == 2
             mock_logger.error.assert_not_called()
@@ -47,7 +47,9 @@ class TestProcessUtils:
     async def test_invoke_sync_function_in_process_timeout(self):
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             with pytest.raises(ExecutionTimeoutError) as exc_info:
-                await invoke_sync_function_in_process(10, MOCK_CONTEXT_DICT, target_function, wait_timeout=2)
+                await invoke_sync_function_in_process(
+                    target_function, args=(10,), context_dict=MOCK_CONTEXT_DICT, wait_timeout=2
+                )
             assert exc_info.value.message == "Execution timeout for exceeding 2 seconds"
             assert exc_info.value.target == ErrorTarget.EXECUTOR
             mock_logger.info.assert_called_once()
@@ -57,7 +59,7 @@ class TestProcessUtils:
     async def test_invoke_sync_function_in_process_exception(self):
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             with pytest.raises(JsonSerializedPromptflowException) as exc_info:
-                await invoke_sync_function_in_process(0, MOCK_CONTEXT_DICT, target_function)
+                await invoke_sync_function_in_process(target_function, args=(0,), context_dict=MOCK_CONTEXT_DICT)
             assert json.loads(exc_info.value.message)["message"] == "Test exception"
             mock_logger.info.assert_called_once()
             mock_logger.error.assert_not_called()
@@ -66,7 +68,7 @@ class TestProcessUtils:
     async def test_invoke_sync_function_in_process_unexpected_error(self):
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             with pytest.raises(UnexpectedError) as exc_info:
-                await invoke_sync_function_in_process(-1, MOCK_CONTEXT_DICT, target_function)
+                await invoke_sync_function_in_process(target_function, args=(-1,), context_dict=MOCK_CONTEXT_DICT)
             assert exc_info.value.message == "Unexpected error occurred while executing the request"
             assert exc_info.value.target == ErrorTarget.EXECUTOR
             mock_logger.info.assert_called_once()
@@ -77,7 +79,7 @@ class TestProcessUtils:
         return_dict = {}
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
-            execute_target_function(target_function, 1, return_dict, error_dict, MOCK_CONTEXT_DICT)
+            execute_target_function(target_function, (1,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT)
             mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
@@ -86,7 +88,7 @@ class TestProcessUtils:
         error_dict = {}
         with patch("promptflow.executor._service.utils.process_utils.service_logger") as mock_logger:
             with pytest.raises(JsonSerializedPromptflowException) as exc_info:
-                execute_target_function(target_function, 0, return_dict, error_dict, MOCK_CONTEXT_DICT)
+                execute_target_function(target_function, (0,), {}, return_dict, error_dict, MOCK_CONTEXT_DICT)
             assert json.loads(exc_info.value.message)["message"] == "Test exception"
             mock_logger.info.assert_called_once()
 

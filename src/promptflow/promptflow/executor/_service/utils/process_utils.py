@@ -22,7 +22,12 @@ SHORT_WAIT_TIMEOUT = 10
 
 
 async def invoke_sync_function_in_process(
-    target_function: Callable, *args, context_dict: dict = None, wait_timeout: int = LONG_WAIT_TIMEOUT, **kwargs
+    target_function: Callable,
+    *,
+    args: tuple = (),
+    kwargs: dict = {},
+    context_dict: dict = None,
+    wait_timeout: int = LONG_WAIT_TIMEOUT,
 ):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
