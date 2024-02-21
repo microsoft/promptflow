@@ -5,7 +5,7 @@
       "api_key": "aoai-api-key",
       "api_base": "aoai-api-endpoint",
       "api_type": "azure",
-      "api_version": "2023-07-01-preview"
+      "api_version": "2024-02-15-preview"
     },
     "module": "promptflow.connections"
   },
