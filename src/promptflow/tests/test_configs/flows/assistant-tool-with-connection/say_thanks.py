@@ -24,14 +24,14 @@ def get_client(connection: AzureOpenAIConnection):
 
 @tool
 def say_thanks(
-    word: str,
+    name: str,
     connection: AzureOpenAIConnection = None,
     **kwargs,
 ) -> str:
     """Generates a synonym for a given word or phrase using a specified deployment.
 
-    :param word: The word or phrase to generate synonyms for.
-    :type word: str
+    :param name: The name to be say thanks to.
+    :type name: str
     :param connection: The connection to Azure OpenAI.
     :type connection: AzureOpenAIConnection
     """
@@ -39,7 +39,7 @@ def say_thanks(
             system:
               You task is to generate what I ask
             user:
-              Please repeat this 'Thanks for your help, {word}!'
+              Please repeat this 'Thanks for your help, {name}!'
             """
     print(f"Get synonym with prompt: {prompt}")
     deployment_name="gpt-35-turbo"

@@ -2,9 +2,9 @@ environment:
   python_requirements_txt: requirements.txt
 version: 2
 inputs:
-  word:
+  name:
     type: string
-    default: excellent
+    default: Mike
   assistant_id:
     type: string
     default: asst_YhXYM7AQpno4XMb1apf7qElY
@@ -35,7 +35,7 @@ nodes:
       path: add_message_and_run.py
     inputs:
       conn: azure_open_ai_connection
-      message: ${inputs.word}
+      message: ${inputs.name}
       assistant_id: ${inputs.assistant_id}
       thread_id: ${get_or_create_thread.output}
       download_images: true
