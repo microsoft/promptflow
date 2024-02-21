@@ -2,16 +2,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import base64
 import os
 import uuid
+from typing import Dict
 from unittest.mock import patch
 
 import pytest
 from opentelemetry import trace
+from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
-from promptflow._constants import SpanResourceAttributesFieldName, TraceEnvironmentVariableName
+from promptflow._constants import SpanResourceAttributesFieldName, SpanResourceFieldName, TraceEnvironmentVariableName
+from promptflow._sdk.entities._trace import Span
 from promptflow._trace._start_trace import (
     _create_resource,
     _is_tracer_provider_configured,
@@ -21,13 +25,24 @@ from promptflow._trace._start_trace import (
 
 
 @pytest.fixture
-def reset_tracer_provider() -> None:
+def reset_tracer_provider():
     from opentelemetry.util._once import Once
 
     with patch("opentelemetry.trace._TRACER_PROVIDER_SET_ONCE", Once()), patch(
         "opentelemetry.trace._TRACER_PROVIDER", None
     ):
         yield
+
+
+@pytest.fixture
+def mock_resource() -> Dict:
+    return {
+        SpanResourceFieldName.ATTRIBUTES: {
+            SpanResourceAttributesFieldName.SERVICE_NAME: "promptflow",
+            SpanResourceAttributesFieldName.SESSION_ID: str(uuid.uuid4()),
+        },
+        SpanResourceFieldName.SCHEMA_URL: "",
+    }
 
 
 @pytest.mark.sdk_test
@@ -100,3 +115,21 @@ class TestStartTrace:
             # specified, but still honor the configured one
             session_id = _provision_session_id(specified_session_id=str(uuid.uuid4()))
             assert configured_session_id == session_id
+
+    def test_trace_without_attributes_collection(self, mock_resource: Dict) -> None:
+        # generate a span without attributes
+        # below magic numbers come from a real case from `azure-search-documents`
+        pb_span = PBSpan()
+        pb_span.trace_id = base64.b64decode("4WIgbhNyYmYKOWeAxbRm4g==")
+        pb_span.span_id = base64.b64decode("lvxVSnvNhWo=")
+        pb_span.name = "DocumentsOperations.search_post"
+        pb_span.start_time_unix_nano = 1708420657948895100
+        pb_span.end_time_unix_nano = 1708420659479925700
+        pb_span.parent_span_id = base64.b64decode("C+++WS+OuxI=")
+        pb_span.kind = PBSpan.SpanKind.SPAN_KIND_INTERNAL
+        # below line should execute successfully
+        span = Span._from_protobuf_object(pb_span, resource=mock_resource)
+        # as the above span do not have any attributes, so the parsed span should not have any attributes
+        attributes = span._content["attributes"]
+        assert isinstance(attributes, dict)
+        assert len(attributes) == 0
