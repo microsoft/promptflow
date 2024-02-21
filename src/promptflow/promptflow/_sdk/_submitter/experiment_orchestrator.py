@@ -63,12 +63,12 @@ from promptflow._sdk.operations import RunOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-logger = LoggerFactory.get_logger(name=__name__)
+_logger = get_cli_sdk_logger()
 
 
 class ExperimentOrchestrator:
