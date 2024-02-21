@@ -142,7 +142,12 @@ async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: Assis
         elif run.status == "in_progress" or run.status == "completed":
             continue
         else:
-            raise Exception(f"The assistant tool runs in '{run.status}' status. Message: {run.last_error.message}")
+            if run.last_error is not None:
+                error_message = f"The assistant tool runs in '{run.status}' status. " \
+                    f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
+            else:
+                error_message = f"The assistant tool runs in '{run.status}' status without a specific error message."
+            raise Exception(error_message)
 
 
 @trace

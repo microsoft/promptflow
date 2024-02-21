@@ -28,7 +28,7 @@ def say_thanks(
     connection: AzureOpenAIConnection = None,
     **kwargs,
 ) -> str:
-    """Generates a synonym for a given word or phrase using a specified deployment.
+    """Generate thanks statement
 
     :param name: The name to be say thanks to.
     :type name: str
@@ -39,9 +39,10 @@ def say_thanks(
             system:
               You task is to generate what I ask
             user:
-              Please repeat this 'Thanks for your help, {name}!'
+              Please repeat below:
+              'Thanks for your help, {name}!'
             """
-    print(f"Get synonym with prompt: {prompt}")
+    print(f"Say thanks with prompt: {prompt}")
     deployment_name="gpt-35-turbo"
     max_tokens=120
     temperature = 1.0

@@ -19,12 +19,12 @@ RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
 
 @tool
 async def add_message_and_run(
-        conn: Union[AzureOpenAIConnection, OpenAIConnection],
-        assistant_id: str,
-        thread_id: str,
-        message: list,
-        assistant_definition: AssistantDefinition,
-        download_images: bool,
+    conn: Union[AzureOpenAIConnection, OpenAIConnection],
+    assistant_id: str,
+    thread_id: str,
+    message: list,
+    assistant_definition: AssistantDefinition,
+    download_images: bool,
 ):
     cli = await get_assistant_client(conn)
     invoker = await get_assisant_tool_invoker(assistant_definition)
@@ -71,11 +71,11 @@ async def add_message(cli: AsyncOpenAI, message: list, thread_id: str):
 
 @trace
 async def start_run(
-        cli: AsyncOpenAI,
-        assistant_id: str,
-        thread_id: str,
-        assistant_definition: AssistantDefinition,
-        invoker: AssistantToolInvoker,
+    cli: AsyncOpenAI,
+    assistant_id: str,
+    thread_id: str,
+    assistant_definition: AssistantDefinition,
+    invoker: AssistantToolInvoker,
 ):
     tools = invoker.to_openai_tools()
     run = await cli.beta.threads.runs.create(
@@ -91,6 +91,7 @@ async def start_run(
 
 async def wait_for_status_check():
     await asyncio.sleep(RUN_STATUS_POLLING_INTERVAL_IN_MILSEC / 1000.0)
+
 
 
 async def get_run_status(cli: AsyncOpenAI, thread_id: str, run_id: str):
@@ -141,7 +142,12 @@ async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: Assis
         elif run.status == "in_progress" or run.status == "completed":
             continue
         else:
-            raise Exception(f"The assistant tool runs in '{run.status}' status. Message: {run.last_error.message}")
+            if run.last_error is not None:
+                error_message = f"The assistant tool runs in '{run.status}' status. " \
+                    f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
+            else:
+                error_message = f"The assistant tool runs in '{run.status}' status without a specific error message."
+            raise Exception(error_message)
 
 
 @trace
@@ -184,8 +190,7 @@ async def extract_file_ids_from_message(cli: AsyncOpenAI, message: list):
     return file_ids
 
 
-async def get_openai_file_references(content: list, download_image: bool,
-                                     conn: Union[AzureOpenAIConnection, OpenAIConnection]):
+async def get_openai_file_references(content: list, download_image: bool, conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     file_id_references = {}
     file_id = None
     for item in content:
@@ -203,7 +208,7 @@ async def get_openai_file_references(content: list, download_image: bool,
                     file_id = annotation.file_citation.file_id
         else:
             raise Exception(f"Unsupported content type: '{type(item)}'.")
-
+        
         if file_id:
             if file_id not in file_id_references:
                 file_id_references[file_id] = {}

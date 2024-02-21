@@ -1,5 +1,6 @@
 import pytest
 
+from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
 from ..utils import get_yaml_file
@@ -18,6 +19,7 @@ class TestLangchain:
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(line_input)
         print(flow_result.output)
+        assert flow_result.run_info.status == Status.Completed
         assert len(flow_result.output["answer"]["content"]) == 1
         assert flow_result.output["answer"]["content"][0]["type"] == "text"
         expected_text = f"Thanks for your help, {line_input['name']}!"
