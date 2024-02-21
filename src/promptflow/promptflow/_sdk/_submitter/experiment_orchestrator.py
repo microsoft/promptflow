@@ -693,8 +693,9 @@ class ExperimentTemplateContext:
         )
         referenced_ids = self.node_name_to_referenced_id.get(node_name, [])
         # Add reference context only for flow node
-        if referenced_ids and is_flow:
-            node_context[referenced_key] = next(iter(referenced_ids))
+        if is_flow:
+            # Set reference line run id even if it's None to avoid stale value set by previous node
+            node_context[referenced_key] = next(iter(referenced_ids)) if referenced_ids else None
         if not test:
             # Return node context dict directly and will be set as trace attribute
             return node_context

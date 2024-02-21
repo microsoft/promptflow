@@ -41,7 +41,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
     _start_pfs(pfs_port)
-    _logger.debug("PFS is serving on port %s", pfs_port)
+    _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
     session_id = _provision_session_id(specified_session_id=session)
     _logger.debug("current session id is %s", session_id)
@@ -60,7 +60,10 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
     experiment = env_attributes.get(ContextAttributeKey.EXPERIMENT, None)
     ref_line_run_id = env_attributes.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
-    if ref_line_run_id is not None:
+    # Remove reference line run id if it's None to avoid stale value set by previous node
+    if ref_line_run_id is None:
+        operation_context._remove_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID)
+    else:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
     # init the global tracer with endpoint
@@ -79,12 +82,11 @@ def _start_pfs(pfs_port) -> None:
 
     command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
-        _logger.warning(f"Service port {pfs_port} is used.")
-        if is_pfs_service_healthy(pfs_port) is True:
-            _logger.info(f"Service is already running on port {pfs_port}.")
-            return
-        else:
+        is_healthy = is_pfs_service_healthy(pfs_port)
+        if not is_healthy:
             command_args += ["--force"]
+        else:
+            return
     entry(command_args)
 
 

@@ -2,9 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import time
 from logging.handlers import RotatingFileHandler
 
-from flask import Blueprint, Flask, jsonify
+from flask import Blueprint, Flask, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
@@ -76,5 +77,19 @@ def create_app():
                 asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v}),
                 formatted_exception.status_code,
             )
+
+        @app.before_request
+        def log_before_request_info():
+            g.start = time.perf_counter()
+            app.logger.debug("Headers: %s", request.headers)
+            app.logger.debug("Body: %s", request.get_data())
+
+        @app.after_request
+        def log_after_request_info(response):
+            duration_time = time.perf_counter() - g.start
+            app.logger.info(
+                "Request_url: %s, duration: %s, response code: %s", request.url, duration_time, response.status_code
+            )
+            return response
 
     return app, api
