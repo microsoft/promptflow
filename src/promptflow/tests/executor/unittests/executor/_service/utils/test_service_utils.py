@@ -13,7 +13,6 @@ from promptflow.executor._service.utils.service_utils import (
     generate_error_response,
     get_executor_version,
     get_log_context,
-    get_service_log_context,
     set_environment_variables,
     update_and_get_operation_context,
 )
@@ -38,10 +37,10 @@ class TestServiceUtils:
         assert all(word in logs for word in keywords_in_log)
         assert all(word not in logs for word in keywords_not_in_log)
 
-    def test_get_service_log_context(self):
+    def test_get_log_context_with_service_logger(self):
         request = FlowExecutionRequest(**MOCK_REQUEST)
         request.log_path = Path(mkdtemp()) / "log.txt"
-        with get_service_log_context(request):
+        with get_log_context(request, enable_service_logger=True):
             service_logger.info("Test service_logger log")
             flow_logger.info("Test flow_logger log")
             bulk_logger.info("Test bulk_logger log")
