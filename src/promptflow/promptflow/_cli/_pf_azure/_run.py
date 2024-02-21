@@ -139,10 +139,10 @@ pfazure run stream --name <name> --timeout 600
         parser.add_argument(
             "--timeout",
             type=int,
-            default=300,
+            default=600,
             help=(
                 "Timeout in seconds. If the run stays in the same status and produce no new logs in a period "
-                "longer than the timeout value, the stream operation will abort. Default value is 300 seconds.",
+                "longer than the timeout value, the stream operation will abort. Default value is 600 seconds.",
             ),
         )
 

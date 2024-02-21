@@ -584,13 +584,13 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run], raise_on_error: bool = True, timeout: int = 300, **kwargs) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True, timeout: int = 600, **kwargs) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
         :param timeout: If the run stays in the same status and produce no new logs in a period
-             longer than the timeout value, the stream operation will abort. Default timeout value is 300 seconds.
+             longer than the timeout value, the stream operation will abort. Default timeout value is 600 seconds.
         :type timeout: int
         :param raise_on_error: Raises an exception if a run fails or canceled.
         :type raise_on_error: bool
