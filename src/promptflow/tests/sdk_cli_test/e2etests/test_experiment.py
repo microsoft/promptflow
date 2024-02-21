@@ -16,6 +16,7 @@ from promptflow import PFClient
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 from ..recording_utilities import is_live
@@ -79,7 +80,6 @@ class TestExperiment:
         exp_get = client._experiments.get(name=exp.name)
         assert exp_get._to_dict() == exp._to_dict()
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -88,14 +88,19 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
-
-        # Test the experiment in progress cannot be started.
-        with pytest.raises(RunOperationError) as e:
-            client._experiments.start(exp.name)
-        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
-        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
-        exp = self.wait_for_experiment_terminated(client, exp)
+        session = str(uuid.uuid4())
+        if is_live():
+            # Async start
+            exp = client._experiments.start(exp.name, session=session)
+            # Test the experiment in progress cannot be started.
+            with pytest.raises(RunOperationError) as e:
+                client._experiments.start(exp.name)
+            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+            exp = self.wait_for_experiment_terminated(client, exp)
+        else:
+            exp = client._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(client, exp).start(session=session)
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
@@ -109,6 +114,14 @@ class TestExperiment:
         assert eval_run.display_name == "eval"
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
+        # Assert Trace
+        line_runs = client._traces.list_line_runs(session_id=session)
+        if len(line_runs) > 0:
+            assert len(line_runs) == 3
+            line_run = line_runs[0]
+            assert "main_attempt" in line_run.line_run_id
+            assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
+            assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
 
         # Test experiment restart
         exp = client._experiments.start(exp.name)
@@ -116,7 +129,6 @@ class TestExperiment:
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -125,8 +137,13 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
-        exp = self.wait_for_experiment_terminated(client, exp)
+        if is_live():
+            # Async start
+            exp = client._experiments.start(exp.name)
+            exp = self.wait_for_experiment_terminated(client, exp)
+        else:
+            exp = client._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(client, exp).start()
         assert exp.status == ExperimentStatus.TERMINATED
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
