@@ -36,7 +36,6 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolPyGenerator,
     copy_extra_files,
 )
-from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -380,7 +379,6 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         _init_standard_or_evaluation_flow(flow_name=flow_name, flow_path=flow_path, flow_type=flow_type)
 
 
-@exception_handler("Flow test")
 def test_flow(args):
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)

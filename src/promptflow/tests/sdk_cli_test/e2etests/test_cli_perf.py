@@ -50,7 +50,7 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
     ) as get_user_agent_fun, mock.patch(
         "promptflow._sdk._telemetry.activity.log_activity", side_effect=mock_log_activity
     ), mock.patch(
-        "promptflow._cli._pf.entry.log_activity", side_effect=mock_log_activity
+        "promptflow._cli._utils.log_activity", side_effect=mock_log_activity
     ):
         # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
