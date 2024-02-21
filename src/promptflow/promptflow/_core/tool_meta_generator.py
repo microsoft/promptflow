@@ -331,11 +331,11 @@ def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
     if tool.inputs:
         flow_meta["inputs"] = {}
         for k, v in tool.inputs.items():
-            flow_meta["inputs"][k] = {"type": [v.type[0].value] if v.type else []}
+            flow_meta["inputs"][k] = {"type": [v.type[0].value]}
     if tool.outputs:
         flow_meta["outputs"] = {}
         for k, v in tool.outputs.items():
-            flow_meta["outputs"][k] = {"type": [v.type[0].value] if v.type else []}
+            flow_meta["outputs"][k] = {"type": [v.type[0].value]}
     return flow_meta
 
 
