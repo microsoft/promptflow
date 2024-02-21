@@ -18,3 +18,12 @@ class ExecutionTimeoutError(UserErrorException):
             timeout=timeout,
             target=ErrorTarget.EXECUTOR,
         )
+
+
+class GenerateMetaTimeout(UserErrorException):
+    """Exception raised when gen meta timeout"""
+
+    def __init__(self, source):
+        super().__init__(
+            message="Generate meta timeout for source '{source}'.", source=source, target=ErrorTarget.EXECUTOR
+        )
