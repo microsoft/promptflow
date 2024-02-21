@@ -17,8 +17,8 @@ from promptflow.executor._service.utils.service_utils import (
     set_environment_variables,
     update_and_get_operation_context,
 )
-from promptflow.tests.executor.utils import load_content
 
+from .....utils import load_content
 from ..contracts.test_execution_request import MOCK_REQUEST
 
 

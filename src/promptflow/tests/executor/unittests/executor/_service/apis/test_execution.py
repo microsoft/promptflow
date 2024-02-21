@@ -7,7 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from promptflow.executor._service.app import app
-from promptflow.tests.executor.utils import get_flow_folder, load_content
+
+from .....utils import get_flow_folder, load_content
 
 
 def construct_flow_execution_request_json(flow_folder, inputs=None, connections=None):
