@@ -15,8 +15,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from promptflow._constants import (
     OTEL_RESOURCE_SERVICE_NAME,
-    ResourceAttributeFieldName,
     SpanAttributeFieldName,
+    SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
 from promptflow._core.openai_injector import inject_openai_api
@@ -41,7 +41,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
     _start_pfs(pfs_port)
-    _logger.debug("PFS is serving on port %s", pfs_port)
+    _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
     session_id = _provision_session_id(specified_session_id=session)
     _logger.debug("current session id is %s", session_id)
@@ -60,7 +60,10 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     env_attributes = json.loads(env_trace_context).get("attributes") if env_trace_context else {}
     experiment = env_attributes.get(ContextAttributeKey.EXPERIMENT, None)
     ref_line_run_id = env_attributes.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
-    if ref_line_run_id is not None:
+    # Remove reference line run id if it's None to avoid stale value set by previous node
+    if ref_line_run_id is None:
+        operation_context._remove_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID)
+    else:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
     # init the global tracer with endpoint
@@ -79,12 +82,11 @@ def _start_pfs(pfs_port) -> None:
 
     command_args = ["start", "--port", str(pfs_port)]
     if is_port_in_use(pfs_port):
-        _logger.warning(f"Service port {pfs_port} is used.")
-        if is_pfs_service_healthy(pfs_port) is True:
-            _logger.info(f"Service is already running on port {pfs_port}.")
-            return
-        else:
+        is_healthy = is_pfs_service_healthy(pfs_port)
+        if not is_healthy:
             command_args += ["--force"]
+        else:
+            return
     entry(command_args)
 
 
@@ -100,7 +102,7 @@ def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
     configured_session_id = None
     if _is_tracer_provider_configured():
         tracer_provider: TracerProvider = trace.get_tracer_provider()
-        configured_session_id = tracer_provider._resource.attributes[ResourceAttributeFieldName.SESSION_ID]
+        configured_session_id = tracer_provider._resource.attributes[SpanResourceAttributesFieldName.SESSION_ID]
 
     if specified_session_id is None and configured_session_id is None:
         # user does not specify and not configured, provision a new one
@@ -125,15 +127,20 @@ def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
 
 def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -> Resource:
     resource_attributes = {
-        ResourceAttributeFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
-        ResourceAttributeFieldName.SESSION_ID: session_id,
+        SpanResourceAttributesFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
+        SpanResourceAttributesFieldName.SESSION_ID: session_id,
     }
     if experiment is not None:
-        resource_attributes[ResourceAttributeFieldName.EXPERIMENT_NAME] = experiment
+        resource_attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME] = experiment
     return Resource(attributes=resource_attributes)
 
 
 def setup_exporter_from_environ() -> None:
+    # if session id does not exist in environment variables, it should be in runtime environment
+    # where we have not supported tracing yet, so we don't need to setup any exporter here
+    # directly return
+    if TraceEnvironmentVariableName.SESSION_ID not in os.environ:
+        return
     if _is_tracer_provider_configured():
         _logger.debug("tracer provider is already configured, skip setting up again.")
         return

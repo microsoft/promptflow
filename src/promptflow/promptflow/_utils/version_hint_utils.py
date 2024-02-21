@@ -6,17 +6,16 @@ import json
 import logging
 
 from promptflow._constants import (
-    LAST_HINT_TIME,
-    LAST_CHECK_TIME,
-    PF_VERSION_CHECK,
     CLI_PACKAGE_NAME,
-    HINT_INTERVAL_DAY,
-    GET_PYPI_INTERVAL_DAY,
-    LATEST_VERSION,
     CURRENT_VERSION,
+    GET_PYPI_INTERVAL_DAY,
+    HINT_INTERVAL_DAY,
+    LAST_CHECK_TIME,
+    LAST_HINT_TIME,
+    LATEST_VERSION,
+    PF_VERSION_CHECK,
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
-
 
 HINT_ACTIVITY_NAME = [
     "pf.flows.test",
@@ -44,20 +43,26 @@ def dump_cached_versions(cached_versions):
         json.dump(cached_versions, f)
 
 
-def get_latest_version_from_pypi(package_name):
-    pypi_url = f"https://pypi.org/pypi/{package_name}/json"
+def get_latest_version(package_name, installer="PIP"):
+    if installer == "MSI":
+        url = "https://promptflowartifact.blob.core.windows.net/msi-installer/latest_version.json"
+    else:
+        url = f"https://pypi.org/pypi/{package_name}/json"
     try:
         import requests
 
-        response = requests.get(pypi_url, timeout=3)
+        response = requests.get(url, timeout=3)
         if response.status_code == 200:
             data = response.json()
-            latest_version = data["info"]["version"]
+            if installer == "MSI":
+                latest_version = data[package_name]
+            else:
+                latest_version = data["info"]["version"]
             return latest_version
         else:
             return None
     except Exception as ex:  # pylint: disable=broad-except
-        logger.debug(f"Failed to get the latest version from '{pypi_url}'. {str(ex)}")
+        logger.debug(f"Failed to get the latest version from '{url}'. {str(ex)}")
         return None
 
 
@@ -73,7 +78,8 @@ def check_latest_version():
     if last_check_time is None or (
         datetime.datetime.now() > last_check_time + datetime.timedelta(days=GET_PYPI_INTERVAL_DAY)
     ):
-        version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
+        # For hint, we can't know pfazure installed way for now, so we only check the latest version from pypi.
+        version = get_latest_version(CLI_PACKAGE_NAME)
         if version is not None:
             cached_versions[LATEST_VERSION] = version
             cached_versions[LAST_CHECK_TIME] = str(datetime.datetime.now())
