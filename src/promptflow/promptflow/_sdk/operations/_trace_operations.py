@@ -25,9 +25,11 @@ class TraceOperations:
     def list_line_runs(
         self,
         session_id: typing.Optional[str] = None,
+        line_run_id: typing.Optional[str] = None,
+        include_spans: bool = False,
     ) -> typing.List[LineRun]:
         line_runs = []
-        orm_spans_group_by_trace_id = ORMLineRun.list(session_id=session_id)
+        orm_spans_group_by_trace_id = ORMLineRun.list(session_id=session_id, line_run_id=line_run_id)
         # merge spans with same `line_run_id` or `referenced.line_run_id` (if exists)
         grouped_orm_spans = {}
         for orm_spans in orm_spans_group_by_trace_id:
@@ -80,7 +82,7 @@ class TraceOperations:
                 pass
         for orm_spans in grouped_orm_spans.values():
             spans = [Span._from_orm_object(orm_span) for orm_span in orm_spans]
-            line_run = LineRun._from_spans(spans)
+            line_run = LineRun._from_spans(spans, include_spans=include_spans)
             if line_run is not None:
                 line_runs.append(line_run)
         return line_runs

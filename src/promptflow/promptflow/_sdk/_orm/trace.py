@@ -3,12 +3,14 @@
 # ---------------------------------------------------------
 
 import copy
+import json
 import typing
 
-from sqlalchemy import TEXT, Column, Index, text
+from sqlalchemy import TEXT, Column, Index, and_, or_, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, declarative_base
+from sqlalchemy.orm import Query, Session, declarative_base
 
+from promptflow._constants import SpanAttributeFieldName, SpanFieldName
 from promptflow._sdk._constants import SPAN_TABLENAME
 
 from .retry import sqlite_retry
@@ -72,14 +74,18 @@ class LineRun:
     @staticmethod
     def list(
         session_id: typing.Optional[str] = None,
+        line_run_id: typing.Optional[str] = None,
     ) -> typing.List[typing.List[Span]]:
         with trace_mgmt_db_session() as session:
-            stmt: Query = session.query(Span)
-            if session_id is not None:
-                stmt = stmt.filter(Span.session_id == session_id)
+            if line_run_id is not None:
+                stmt = LineRun._construct_query_with_line_run_id(session, line_run_id)
             else:
-                # TODO: fully support query
-                raise NotImplementedError
+                stmt: Query = session.query(Span)
+                if session_id is not None:
+                    stmt = stmt.filter(Span.session_id == session_id)
+                else:
+                    # TODO: fully support query
+                    raise NotImplementedError
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
@@ -100,3 +106,44 @@ class LineRun:
             if len(current_spans) > 0:
                 line_runs.append(copy.deepcopy(current_spans))
             return line_runs
+
+    @staticmethod
+    def _construct_query_with_line_run_id(session: Session, line_run_id: str) -> Query:
+        # TODO: maybe we need a LineRun table
+        stmt: Query = session.query(Span).filter(and_(Span.trace_id == line_run_id, Span.parent_span_id is None))
+        span: Span = stmt.first()
+        attributes = json.loads(span.content).get(SpanFieldName.ATTRIBUTES, dict())
+        stmt: Query = session.query(Span)
+        # standard OpenTelemetry trace
+        if (
+            SpanAttributeFieldName.LINE_RUN_ID not in attributes
+            and SpanAttributeFieldName.BATCH_RUN_ID not in attributes
+        ):
+            stmt = stmt.filter(Span.trace_id == line_run_id)
+        # test scenario
+        elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
+            expected_line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
+            stmt = stmt.filter(
+                or_(
+                    text(
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.line_run_id') = '{expected_line_run_id}'"  # noqa: E501
+                    ),
+                    text(
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.line_run_id\"') = '{expected_line_run_id}'"  # noqa: E501
+                    ),
+                )
+            )
+        # batch run scenario
+        else:
+            expected_batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            stmt = stmt.filter(
+                or_(
+                    text(
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') = '{expected_batch_run_id}'"  # noqa: E501
+                    ),
+                    text(
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') = '{expected_batch_run_id}'"  # noqa: E501
+                    ),
+                )
+            )
+        return stmt

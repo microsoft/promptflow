@@ -463,3 +463,4 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+    SPANS = "spans"

@@ -16,18 +16,24 @@ api = Namespace("LineRuns", description="Line runs management")
 # parsers for query parameters
 list_line_run_parser = api.parser()
 list_line_run_parser.add_argument("session", type=str, required=False)
+list_line_run_parser.add_argument("line_run_id", type=str, required=False)
+list_line_run_parser.add_argument("include_spans", type=bool, required=False, default=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListLineRunParser:
+    include_spans: bool = False
     session_id: typing.Optional[str] = None
+    line_run_id: typing.Optional[str] = None
 
     @staticmethod
     def from_request() -> "ListLineRunParser":
         args = list_line_run_parser.parse_args()
         return ListLineRunParser(
+            include_spans=args.include_spans,
             session_id=args.session,
+            line_run_id=args.line_run_id,
         )
 
 
@@ -73,6 +79,7 @@ line_run_model = api.model(
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.Nested(cumulative_token_count_model, skip_none=True),
         LineRunFieldName.EVALUATIONS: fields.List(fields.Nested(evaluation_line_run_model, skip_none=True)),
+        LineRunFieldName.SPANS: fields.List(fields.Raw),
     },
 )
 
@@ -89,5 +96,7 @@ class LineRuns(Resource):
         args = ListLineRunParser.from_request()
         line_runs = client._traces.list_line_runs(
             session_id=args.session_id,
+            line_run_id=args.line_run_id,
+            include_spans=args.include_spans,
         )
         return [asdict(line_run) for line_run in line_runs]
