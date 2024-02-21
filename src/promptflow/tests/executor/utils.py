@@ -1,8 +1,8 @@
 import json
-import opentelemetry
 from pathlib import Path
-from typing import Union, Dict
+from typing import Dict, Union
 
+import opentelemetry
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -21,17 +21,17 @@ WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 EAGER_FLOWS_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
-def get_flow_folder(folder_name, root: str = FLOW_ROOT):
+def get_flow_folder(folder_name, root: str = FLOW_ROOT) -> Path:
     flow_folder_path = Path(root) / folder_name
     return flow_folder_path
 
 
-def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml"):
+def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml") -> Path:
     yaml_file = get_flow_folder(folder_name, root) / file_name
     return yaml_file
 
 
-def get_entry_file(folder_name, root: str = EAGER_FLOW_ROOT, file_name: str = "entry.py"):
+def get_entry_file(folder_name, root: str = EAGER_FLOW_ROOT, file_name: str = "entry.py") -> Path:
     entry_file = get_flow_folder(folder_name, root) / file_name
     return entry_file
 
@@ -42,7 +42,7 @@ def get_flow_from_folder(folder_name, root: str = FLOW_ROOT, file_name: str = "f
         return Flow.deserialize(load_yaml(fin))
 
 
-def get_flow_inputs_file(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl"):
+def get_flow_inputs_file(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl") -> Path:
     inputs_file = get_flow_folder(folder_name, root) / file_name
     return inputs_file
 

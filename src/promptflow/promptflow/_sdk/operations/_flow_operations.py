@@ -269,7 +269,7 @@ class FlowOperations(TelemetryMixin):
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
-    def _chat_with_ui(self, script):
+    def _chat_with_ui(self, script, skip_open_browser: bool = False):
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
@@ -286,6 +286,8 @@ class FlowOperations(TelemetryMixin):
             "--client.toolbarMode=viewer",
             "--browser.gatherUsageStats=false",
         ]
+        if skip_open_browser:
+            sys.argv += ["--server.headless=true"]
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):

@@ -292,6 +292,7 @@ Stream run logs to the console.
 
 ```bash
 pfazure run stream --name
+                   [--timeout]
                    [--subscription]
                    [--resource-group]
                    [--workspace-name]
@@ -302,6 +303,10 @@ pfazure run stream --name
 `--name -n`
 
 Name of the run.
+
+`--timeout`
+
+Timeout in seconds. If the run stays in the same status and produce no new logs in a period longer than the timeout value, the stream operation will abort. Default value is 600 seconds
 
 `--subscription`
 
