@@ -179,7 +179,18 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
     return result if include_image else chat_str
 
 
-def handle_openai_error(tries: int = 10, delay: float = 8.0):
+def generate_retry_interval(retry_count: int) -> float:
+    minBackoffInSec = 3
+    maxBackoffInSec = 60
+    retry_interval = minBackoffInSec + ((2 ** retry_count) - 1)
+
+    if retry_interval > maxBackoffInSec:
+        retry_interval = maxBackoffInSec
+    return retry_interval
+
+
+# TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
+def handle_openai_error(tries: int = 100):
     """
     A decorator function that used to handle OpenAI error.
     OpenAI Error falls into retriable vs non-retriable ones.
@@ -193,7 +204,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             i = 0
-            while True:
+            for i in range(tries + 1):
                 try:
                     return func(*args, **kwargs)
                 except (SystemErrorException, UserErrorException) as e:
@@ -215,27 +226,31 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
                         raise WrappedOpenAIError(e)
+                    if i == tries:
+                        # Exit retry if max retry reached
+                        print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
+                        raise ExceedMaxRetryTimes(e)
+                    
                     if hasattr(e, 'response') and e.response is not None:
                         retry_after_in_header = e.response.headers.get("retry-after", None)
                     else:
                         retry_after_in_header = None
 
                     if not retry_after_in_header:
-                        retry_after_seconds = delay + (2 ** i)
+                        retry_after_seconds = generate_retry_interval(i)
                         msg = (
                             f"{type(e).__name__} #{i}, but no Retry-After header, "
                             + f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     else:
-                        retry_after_seconds = float(retry_after_in_header) + random.randint(0, 30)
+                        retry_after_seconds = float(retry_after_in_header)
                         msg = (
                             f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
                             f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     time.sleep(retry_after_seconds)
-                    i += 1
                 except OpenAIError as e:
                     # For other non-retriable errors from OpenAIError,
                     # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
