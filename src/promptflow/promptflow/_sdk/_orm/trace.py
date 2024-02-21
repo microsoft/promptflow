@@ -7,7 +7,7 @@ import typing
 
 from sqlalchemy import TEXT, Column, Index, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import Query, declarative_base
 
 from promptflow._sdk._constants import SPAN_TABLENAME
 
@@ -59,11 +59,9 @@ class Span(Base):
         session_id: typing.Optional[str] = None,
     ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
-            stmt = session.query(Span)
+            stmt: Query = session.query(Span)
             if session_id is not None:
-                stmt = stmt.filter(
-                    text(f"trace_id in (select distinct trace_id from span where session_id = '{session_id}')")
-                )
+                stmt = stmt.filter(Span.session_id == session_id)
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
@@ -76,11 +74,9 @@ class LineRun:
         session_id: typing.Optional[str] = None,
     ) -> typing.List[typing.List[Span]]:
         with trace_mgmt_db_session() as session:
-            stmt = session.query(Span)
+            stmt: Query = session.query(Span)
             if session_id is not None:
-                stmt = stmt.filter(
-                    text(f"trace_id in (select distinct trace_id from span where session_id = '{session_id}')")
-                )
+                stmt = stmt.filter(Span.session_id == session_id)
             else:
                 # TODO: fully support query
                 raise NotImplementedError
