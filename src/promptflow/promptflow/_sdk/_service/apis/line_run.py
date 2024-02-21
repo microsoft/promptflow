@@ -55,7 +55,7 @@ line_run_model = api.model(
         LineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
         LineRunFieldName.STATUS: fields.String(required=True),
         LineRunFieldName.LATENCY: fields.String(required=True),
-        LineRunFieldName.DISPLAY_NAME: fields.String(required=True),
+        LineRunFieldName.NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.Nested(cumulative_token_count_model, skip_none=True),
         LineRunFieldName.EVALUATIONS: fields.Raw,
