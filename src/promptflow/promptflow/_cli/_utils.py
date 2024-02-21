@@ -354,7 +354,7 @@ def is_format_exception():
     return False
 
 
-def exception_handler(func, activity_name, custom_dimensions=None):
+def cli_exception_and_temeletry_handler(func, activity_name, custom_dimensions=None):
     """Catch known cli exceptions."""
 
     @wraps(func)

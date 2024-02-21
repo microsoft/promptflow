@@ -6,7 +6,7 @@ import json
 import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
-from promptflow._cli._utils import _get_cli_activity_name, exception_handler
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_temeletry_handler
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry.activity import update_activity_name
 
@@ -119,7 +119,7 @@ def entry(argv):
         setup_user_agent_to_operation_context(args.user_agent)
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    exception_handler(run_command, activity_name)(args)
+    cli_exception_and_temeletry_handler(run_command, activity_name)(args)
 
 
 def main():
