@@ -8,4 +8,4 @@ tools:
       path: say_thanks.py
     tool_type: python
     predefined_inputs:
-      connection: azure_open_ai_connection
+      connection: aoai_assistant_connection

@@ -2,6 +2,16 @@
   "azure_open_ai_connection": {
     "type": "AzureOpenAIConnection",
     "value": {
+      "api_key": "aoai-api-key",
+      "api_base": "aoai-api-endpoint",
+      "api_type": "azure",
+      "api_version": "2023-07-01-preview"
+    },
+    "module": "promptflow.connections"
+  },
+  "aoai_assistant_connection": {
+    "type": "AzureOpenAIConnection",
+    "value": {
       "api_key": "aoai-api-key-eastus2",
       "api_base": "aoai-api-endpoint-eastus2",
       "api_type": "azure",
