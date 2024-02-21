@@ -38,7 +38,9 @@ class OperationContext(Dict):
         self[OperationContext._OTEL_ATTRIBUTES] = attributes
 
     def _get_otel_attributes(self):
-        return self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        attr_dict = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        # Filter None value out to avoid error
+        return {k: v for k, v in attr_dict.items() if v is not None}
 
     @classmethod
     def get_instance(cls):
