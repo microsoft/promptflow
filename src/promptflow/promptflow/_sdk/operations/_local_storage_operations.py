@@ -415,7 +415,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
         node_run_infos = []
-        for node_folder in sorted(self._node_infos_folder.iterdir()):
+        for node_folder in self._node_infos_folder.iterdir():
             filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
             node_run_record_file = node_folder / filename
             if node_run_record_file.is_file():
@@ -423,7 +423,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 if runs:
                     run = runs[0]
                 run = resolve_multimedia_data_recursively(node_run_record_file, run)
-                load_multimedia_data_recursively(run)
+                run = load_multimedia_data_recursively(run)
                 run_info = NodeRunInfo.deserialize(run)
                 node_run_infos.append(run_info)
         return node_run_infos
@@ -468,12 +468,12 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         if not file_path.is_file():
             return None
         runs = self._load_info_from_file(file_path)
-        run = next((run for run in runs if run.get(LINE_NUMBER) == line_number), None)
+        run = next((run for run in runs if run.get("index") == line_number), None)
         if not run:
             return None
 
         run = resolve_multimedia_data_recursively(self._run_infos_folder, run)
-        load_multimedia_data_recursively(run)
+        run = load_multimedia_data_recursively(run)
         run_info = FlowRunInfo.deserialize(run)
         return run_info
 
