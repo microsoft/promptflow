@@ -1,4 +1,4 @@
-# Common section: this section provides common values for all other sections.
+# Common section: this section provides common values for all other sections. Required.
 # Configure 'document_folder', 'document_chunk_size' and 'document_chunk_overlap' if you require document splitting.
 documents_folder: "<your-document-folder-path>"
 document_chunk_size: 512 # The token chunk size for each chunk.
@@ -29,12 +29,12 @@ node_inputs_override: # Override some node inputs, if not fill in "node_inputs_o
     model_or_deployment_name: "<your-model-or-deployment-name>"
 
 
-# Local section: this section is for local test data generation related configuration.
+# Local section: this section is for local test data generation related configuration. Can skip if not run in local.
 output_folder: "<your-output-folder-path>"
 flow_batch_run_size: 4
 
 
-# Cloud section: this section is for cloud test data generation related configuration.
+# Cloud section: this section is for cloud test data generation related configuration. Can skip if not run in cloud.
 subscription_id: "<your-sub-id>"
 resource_group: "<your-resource-group>"
 workspace_name: "<your-workspace-name>"
