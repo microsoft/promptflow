@@ -118,7 +118,7 @@ class ToolOperations:
         tool_validate_result = ValidationResultBuilder.success()
         for f in tool_functions:
             tool, input_settings, extra_info = self._parse_tool_from_func(f)
-            construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
+            construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info)
             if not validate_result:
                 tool_name = self._get_tool_name(tool)
                 construct_tools[tool_name] = construct_tool
@@ -128,7 +128,7 @@ class ToolOperations:
                 tool_validate_result.merge_with(validate_result)
         for f, initialize_inputs in tool_methods:
             tool, input_settings, extra_info = self._parse_tool_from_func(f, initialize_inputs)
-            construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
+            construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info)
             if not validate_result:
                 tool_name = self._get_tool_name(tool)
                 construct_tools[tool_name] = construct_tool
@@ -246,7 +246,7 @@ class ToolOperations:
 
         def validate_tool_function(tool_func, init_inputs=None):
             tool, input_settings, extra_info = self._parse_tool_from_func(tool_func, init_inputs)
-            _, validate_result = _serialize_tool(tool, input_settings, extra_info, source)
+            _, validate_result = _serialize_tool(tool, input_settings, extra_info)
             validate_result = self._merge_validation_result_by_list(tool_func, validate_result)
             validate_result._set_extra_info(TOTAL_COUNT, 1)
             validate_result._set_extra_info(INVALID_COUNT, 0 if validate_result.passed else 1)

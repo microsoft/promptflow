@@ -307,13 +307,16 @@ class TestTool:
         result = _client.tools.validate(tool_script_path)
         assert result.passed
 
-        tool_script_path = TOOL_ROOT / "invalid_tool.py"
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_schema.py"
         result = _client.tools.validate(tool_script_path)
-        assert len(result._errors) == 4
         assert "1 is not of type 'string'" in result.error_messages["invalid_schema_type"]
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_icon.py"
+        result = _client.tools.validate(tool_script_path)
         assert (
             "Cannot provide both `icon` and `icon_light` or `icon_dark`." in result.error_messages["invalid_tool_icon"]
         )
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_enabled_by.py"
+        result = _client.tools.validate(tool_script_path)
         assert (
             'Cannot find the input "invalid_input" for the enabled_by of teacher_id.'
             in result.error_messages["invalid_input_settings"]
@@ -325,7 +328,7 @@ class TestTool:
         assert all(str(tool_script_path) == item.location for item in result._errors)
 
         with pytest.raises(ToolValidationError):
-            _client.tools.validate(TOOL_ROOT / "invalid_tool.py", raise_error=True)
+            _client.tools.validate(TOOL_ROOT / "tool_with_invalid_schema.py", raise_error=True)
 
     def test_validate_tool_func(self):
         def load_module_by_path(source):
@@ -343,7 +346,7 @@ class TestTool:
         result = _client.tools.validate(tool_func)
         assert result.passed
 
-        tool_script_path = TOOL_ROOT / "invalid_tool.py"
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_schema.py"
         module = load_module_by_path(tool_script_path)
         tool_func = getattr(module, "invalid_schema_type")
         result = _client.tools.validate(tool_func)
@@ -401,7 +404,7 @@ class TestTool:
 
         tool_operation = ToolOperations()
         tool_obj, input_settings, extra_info = tool_operation._parse_tool_from_func(my_tool)
-        construct_tool, validate_result = _serialize_tool(tool_obj, input_settings, extra_info, my_tool)
+        construct_tool, validate_result = _serialize_tool(tool_obj, input_settings, extra_info)
         assert len(validate_result) == 0
         assert construct_tool["inputs"]["input_text"]["undefined_field1"] == 1
         assert construct_tool["inputs"]["input_text"]["undefined_field2"] is True

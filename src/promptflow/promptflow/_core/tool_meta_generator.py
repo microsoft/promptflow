@@ -7,33 +7,24 @@ This file can generate a meta file for the given prompt template or a python fil
 """
 import importlib.util
 import inspect
-import io
 import json
 import re
 import types
-from dataclasses import asdict
 from pathlib import Path
 from traceback import TracebackException
 
-import jsonschema
 from jinja2 import TemplateSyntaxError
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
-from promptflow._constants import ICON, ICON_DARK, ICON_LIGHT, SKIP_FUNC_PARAMS, TOOL_SCHEMA
+from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
 from promptflow._core.tool import ToolProvider
+from promptflow._core.tool_settings_parser import _parser_tool_icon, _parser_tool_input_settings
+from promptflow._core.tool_validation import _validate_tool_function, _validate_tool_schema
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
-from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
-from promptflow.contracts.multimedia import Image
+from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
-
-PF_MAIN_MODULE_NAME = "__pf_main__"
-
-
-def asdict_without_none(obj):
-    return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
 def generate_prompt_tool(name, content, prompt_only=False, source=None):
@@ -166,103 +157,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     )
 
 
-def _validate_tool_function(tool, input_settings, extra_info):
-    """
-    Check whether the icon and input settings of the tool are legitimate.
-
-    :param tool: The tool object
-    :type tool: Tool
-    :param input_settings: Input settings of the tool
-    :type input_settings: Dict[str, InputSetting]
-    :param extra_info: Extra info about the tool
-    :type extra_info: Dict[str, obj]
-    :return: Validation result of the tool
-    :rtype: List[str]
-    """
-    validate_result = []
-
-    if extra_info:
-        if ICON in extra_info:
-            if ICON_LIGHT in extra_info or ICON_DARK in extra_info:
-                validate_result.append(f"Cannot provide both `icon` and `{ICON_LIGHT}` or `{ICON_DARK}`.")
-    if input_settings:
-        input_settings_validate_result = _validate_input_settings(tool.inputs, input_settings)
-        validate_result.extend(input_settings_validate_result)
-    return validate_result
-
-
-def _validate_tool_schema(tool_dict, func_name=None, func_path=None):
-    """
-    Check whether the generated schema of the tool are legitimate.
-
-    :param tool_dict: The generated tool dict
-    :type tool_dict: Dict[str, obj]
-    :param func_name: Function name of the tool
-    :type func_name: str
-    :param func_path: Script path of the tool
-    :type func_path: str
-    :return: Validation result of the tool
-    :rtype: str
-    """
-    try:
-        with open(TOOL_SCHEMA, "r") as f:
-            tool_schema = json.load(f)
-
-        jsonschema.validate(instance=tool_dict, schema=tool_schema)
-    except jsonschema.exceptions.ValidationError as e:
-        return str(e)
-
-
-def _validate_input_settings(tool_inputs, input_settings):
-    """
-    Check whether input settings of the tool are legitimate.
-
-    :param tool_inputs: Tool inputs
-    :type tool_inputs: Dict[str, obj]
-    :param input_settings: Input settings of the tool
-    :type input_settings: Dict[str, InputSetting]
-    :param extra_info: Extra info about the tool
-    :type extra_info: Dict[str, obj]
-    :return: Validation result of the tool
-    :rtype: List[str]
-    """
-    validate_result = []
-    for input_name, settings in input_settings.items():
-        if input_name not in tool_inputs:
-            validate_result.append(
-                f"Cannot find {input_name} in tool inputs.",
-            )
-        if settings.enabled_by and settings.enabled_by not in tool_inputs:
-            validate_result.append(f'Cannot find the input "{settings.enabled_by}" for the enabled_by of {input_name}.')
-        if settings.dynamic_list:
-            dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
-            has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
-            required_inputs = [
-                k
-                for k, v in dynamic_func_inputs.items()
-                if v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD and k not in SKIP_FUNC_PARAMS
-            ]
-            if settings.dynamic_list._input_mapping:
-                # Validate input mapping in dynamic_list
-                for func_input, reference_input in settings.dynamic_list._input_mapping.items():
-                    # Check invalid input name of dynamic list function
-                    if not has_kwargs and func_input not in dynamic_func_inputs:
-                        validate_result.append(
-                            f"Cannot find {func_input} in the inputs of "
-                            f"dynamic_list func {settings.dynamic_list.func_path}"
-                        )
-                    # Check invalid input name of tool
-                    if reference_input not in tool_inputs:
-                        validate_result.append(f"Cannot find {reference_input} in the tool inputs.")
-                    if func_input in required_inputs:
-                        required_inputs.remove(func_input)
-            # Check required input of dynamic_list function
-            if len(required_inputs) != 0:
-                validate_result.append(f"Missing required input(s) of dynamic_list function: {required_inputs}")
-    return validate_result
-
-
-def _serialize_tool(tool, input_settings, extra_info, tool_func):
+def _serialize_tool(tool, input_settings, extra_info):
     """
     Serialize tool obj to dict.
 
@@ -272,80 +167,26 @@ def _serialize_tool(tool, input_settings, extra_info, tool_func):
     :type input_settings: Dict[str, obj]
     :param extra_info: Extra settings of the tool
     :type extra_info: Dict[str, obj]
-    :param tool_func: Package tool function
-    :type tool_func: callable
     :return: serialized tool, validation result
     :rtype: Dict[str, str], List[str]
     """
-    tool_func_name = tool_func.__name__
-    tool_script_path = inspect.getsourcefile(getattr(tool_func, "__original_function", tool_func))
     validate_result = _validate_tool_function(tool, input_settings, extra_info)
     if not validate_result:
-        construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
+        construct_tool = asdict_without_none(tool)
         if extra_info:
-            if ICON in extra_info:
-                extra_info[ICON] = _serialize_icon_data(extra_info["icon"])
-            if ICON_LIGHT in extra_info:
-                icon = extra_info.get("icon", {})
-                icon["light"] = _serialize_icon_data(extra_info[ICON_LIGHT])
-                extra_info[ICON] = icon
-            if ICON_DARK in extra_info:
-                icon = extra_info.get("icon", {})
-                icon["dark"] = _serialize_icon_data(extra_info[ICON_DARK])
-                extra_info[ICON] = icon
+            _parser_tool_icon(extra_info)
             construct_tool.update(extra_info)
 
         # Update tool input settings
         if input_settings:
             tool_inputs = construct_tool.get("inputs", {})
-            generated_by_inputs = {}
-            for input_name, settings in input_settings.items():
-                tool_inputs[input_name].update(asdict_without_none(settings))
-                kwargs = settings._kwargs or {}
-                for k, v in kwargs.items():
-                    if k in tool_inputs[input_name]:
-                        if isinstance(v, dict):
-                            tool_inputs[input_name][k].update(v)
-                        elif isinstance(v, list):
-                            tool_inputs[input_name][k].append(v)
-                        else:
-                            tool_inputs[input_name][k] = v
-                    else:
-                        tool_inputs[input_name][k] = v
-                if settings.generated_by:
-                    generated_by_inputs.update(settings.generated_by._input_settings)
-            tool_inputs.update(generated_by_inputs)
-        schema_validate_result = _validate_tool_schema(construct_tool, tool_func_name, tool_script_path)
+            _parser_tool_input_settings(tool_inputs, input_settings)
+        schema_validate_result = _validate_tool_schema(construct_tool)
         if schema_validate_result:
             validate_result.append(schema_validate_result)
         return construct_tool, validate_result
     else:
         return {}, validate_result
-
-
-def _serialize_icon_data(icon):
-    if not Path(icon).exists():
-        raise UserErrorException(f"Cannot find the icon path {icon}.")
-    return _serialize_image_data(icon)
-
-
-def _serialize_image_data(image_path):
-    """Serialize image to base64."""
-    from PIL import Image as PIL_Image
-
-    with open(image_path, "rb") as image_file:
-        # Create a BytesIO object from the image file
-        image_data = io.BytesIO(image_file.read())
-
-    # Open the image and resize it
-    img = PIL_Image.open(image_data)
-    if img.size != (16, 16):
-        img = img.resize((16, 16), PIL_Image.Resampling.LANCZOS)
-    buffered = io.BytesIO()
-    img.save(buffered, format="PNG")
-    icon_image = Image(buffered.getvalue(), mime_type="image/png")
-    image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
-    return image_url
 
 
 def generate_python_tools_in_module(module):
@@ -362,7 +203,7 @@ def generate_python_tools_in_module_as_dict(module):
 def load_python_module_from_file(src_file: Path):
     # Here we hard code the module name as __pf_main__ since it is invoked as a main script in pf.
     src_file = Path(src_file).resolve()  # Make sure the path is absolute to align with python import behavior.
-    spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
+    spec = importlib.util.spec_from_file_location(PF_MAIN_MODULE_NAME, location=src_file)
     if spec is None or spec.loader is None:
         raise PythonLoaderNotFound(
             message_format="Failed to load python file '{src_file}'. Please make sure it is a valid .py file.",
@@ -440,7 +281,7 @@ def generate_python_tool_meta_dict(name, content, source=None):
         tool.code = content
     else:
         tool.source = source
-    construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info, f)
+    construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info)
     if validate_result:
         raise UserErrorException(f"Tool validation failed: {';'.join(validate_result)}")
     # Handle string enum in tool dict
