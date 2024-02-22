@@ -4,6 +4,6 @@
 import os
 
 
-def my_flow():
+def env_var_flow():
     """Simple flow without yaml."""
     return f"Hello world! {os.environ.get('TEST')}"
