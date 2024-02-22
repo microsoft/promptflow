@@ -1294,8 +1294,8 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
-            # remove run dag
-            shutil.rmtree(f"{temp_dir}/print_env_var")
+            # remove flow dag
+            os.unlink(f"{temp_dir}/print_env_var/flow.dag.yaml")
 
             # can still get run operations
             LocalStorageOperations(run=run)
