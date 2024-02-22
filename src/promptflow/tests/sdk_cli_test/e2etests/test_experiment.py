@@ -3,6 +3,8 @@ import os
 import tempfile
 import time
 import uuid
+from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
 
@@ -14,6 +16,7 @@ from promptflow import PFClient
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 from ..recording_utilities import is_live
@@ -21,6 +24,7 @@ from ..recording_utilities import is_live
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
 yaml = YAML(typ="safe")
@@ -76,7 +80,6 @@ class TestExperiment:
         exp_get = client._experiments.get(name=exp.name)
         assert exp_get._to_dict() == exp._to_dict()
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -85,16 +88,22 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
-
-        # Test the experiment in progress cannot be started.
-        with pytest.raises(RunOperationError) as e:
-            client._experiments.start(exp.name)
-        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
-        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
-        exp = self.wait_for_experiment_terminated(client, exp)
+        session = str(uuid.uuid4())
+        if is_live():
+            # Async start
+            exp = client._experiments.start(exp.name, session=session)
+            # Test the experiment in progress cannot be started.
+            with pytest.raises(RunOperationError) as e:
+                client._experiments.start(exp.name)
+            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+            exp = self.wait_for_experiment_terminated(client, exp)
+        else:
+            exp = client._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(client, exp).start(session=session)
         # Assert record log in experiment folder
         assert (Path(exp._output_dir) / "logs" / "exp.attempt_0.log").exists()
+
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
@@ -108,6 +117,14 @@ class TestExperiment:
         assert eval_run.display_name == "eval"
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
+        # Assert Trace
+        line_runs = client._traces.list_line_runs(session_id=session)
+        if len(line_runs) > 0:
+            assert len(line_runs) == 3
+            line_run = line_runs[0]
+            assert "main_attempt" in line_run.line_run_id
+            assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
+            assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
 
         # Test experiment restart
         exp = client._experiments.start(exp.name)
@@ -116,7 +133,6 @@ class TestExperiment:
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
         assert (Path(exp._output_dir) / "logs" / "exp.attempt_1.log").exists()
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -125,8 +141,13 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
-        exp = self.wait_for_experiment_terminated(client, exp)
+        if is_live():
+            # Async start
+            exp = client._experiments.start(exp.name)
+            exp = self.wait_for_experiment_terminated(client, exp)
+        else:
+            exp = client._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(client, exp).start()
         assert exp.status == ExperimentStatus.TERMINATED
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
@@ -204,14 +225,18 @@ class TestExperiment:
             target_flow_path = FLOW_ROOT / "web_classification" / "flow.dag.yaml"
             client = PFClient()
             session = str(uuid.uuid4())
-            # Test with inputs
-            result = client.flows.test(
-                target_flow_path,
-                experiment=template_path,
-                inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
-                session=session,
-            )
-            _assert_result(result)
+            # Test with inputs, use separate thread to avoid OperationContext somehow cleared by other tests
+            with ThreadPoolExecutor() as pool:
+                task = pool.submit(
+                    client.flows.test,
+                    flow=target_flow_path,
+                    experiment=template_path,
+                    session=session,
+                    inputs={"url": "https://www.youtube.com/watch?v=kYqRtjDBci8", "answer": "Channel"},
+                )
+                futures.wait([task], return_when=futures.ALL_COMPLETED)
+                result = task.result()
+            assert result
             # Assert line run id is set by executor when running test
             assert PF_TRACE_CONTEXT in os.environ
             attributes = json.loads(os.environ[PF_TRACE_CONTEXT]).get("attributes")
@@ -231,8 +256,8 @@ class TestExperiment:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
                 assert "main_attempt" in line_run.line_run_id
-                assert len(line_run.evaluations) > 0, "line run evaluation not exists!"
-                assert "eval_classification_accuracy" in line_run.evaluations
+                assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
+                assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
             # Test with default data and custom path
             expected_output_path = Path(tempfile.gettempdir()) / ".promptflow/my_custom"
             result = client.flows.test(target_flow_path, experiment=template_path, output_path=expected_output_path)
@@ -256,3 +281,19 @@ class TestExperiment:
                     experiment=template_path,
                 )
             assert "not found in experiment" in str(error.value)
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_eager_flow_test_with_experiment(self, monkeypatch):
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+
+            template_path = EXP_ROOT / "eager-flow-exp-template" / "flow.exp.yaml"
+            target_flow_path = EAGER_FLOW_ROOT / "flow_with_dataclass_output" / "flow.dag.yaml"
+            client = PFClient()
+            result = client.flows.test(target_flow_path, experiment=template_path)
+            assert result == {
+                "main": {"models": ["model"], "text": "text"},
+                "main2": {"output": "Hello world! text"},
+                "main3": {"output": "Hello world! Hello world! text"},
+            }

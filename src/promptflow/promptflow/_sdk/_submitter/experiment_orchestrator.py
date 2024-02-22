@@ -13,6 +13,7 @@ import tempfile
 import uuid
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -168,7 +169,7 @@ class ExperimentOrchestrator:
     def _test_command_node(self, *args, **kwargs):
         raise NotImplementedError
 
-    def start(self, nodes=None, from_nodes=None, attempt=None):
+    def start(self, nodes=None, from_nodes=None, attempt=None, **kwargs):
         """Start an execution of nodes.
 
         Start an orchestrator to schedule node execution according to topological ordering.
@@ -182,17 +183,16 @@ class ExperimentOrchestrator:
         :return: Experiment info.
         :rtype: ~promptflow.entities.Experiment
         """
-        # Setup file handler
-        file_handler, _ = _set_up_experiment_log_handler(experiment_path=self.experiment._output_dir, index=attempt)
+        # Start experiment
+        experiment = self.experiment
+        file_handler, index = _set_up_experiment_log_handler(experiment_path=self.experiment._output_dir, index=attempt)
         logger.addHandler(file_handler._stream_handler)
         try:
-            # Start experiment
-            experiment = self.experiment
             logger.info(f"Starting experiment {experiment.name}.")
             experiment.status = ExperimentStatus.IN_PROGRESS
             experiment.last_start_time = datetime.utcnow().isoformat()
             experiment.last_end_time = None
-            context = ExperimentTemplateContext(experiment)
+            context = ExperimentTemplateContext(experiment, session=kwargs.get("session"))
             self.experiment_operations.create_or_update(experiment)
             self._update_orchestrator_record(status=ExperimentStatus.IN_PROGRESS, pid=os.getpid())
             self._start_orchestrator(nodes=nodes, from_nodes=from_nodes, context=context)
@@ -201,7 +201,7 @@ class ExperimentOrchestrator:
             raise e
         return experiment
 
-    def async_start(self, executable_path=None, nodes=None, from_nodes=None, attempt=None):
+    def async_start(self, executable_path=None, nodes=None, from_nodes=None, attempt=None, **kwargs):
         """Start an asynchronous execution of an experiment.
 
         :param executable_path: Python path when executing the experiment.
@@ -227,6 +227,8 @@ class ExperimentOrchestrator:
             args = args + ["--nodes"] + nodes
         if from_nodes:
             args = args + ["--from-nodes"] + from_nodes
+        if kwargs.get("session"):
+            args = args + ["--session", kwargs.get("session")]
         args = args + ["--attempt", str(index)]
         # Start an orchestrator process using detach mode
         logger.debug(f"Start experiment {self.experiment.name} in background.")
@@ -512,7 +514,6 @@ class ExperimentNodeRun(Run):
         self.client = client
         self.run_operations = self.client.runs
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_context = self.context.get_node_context(
             node.name, is_flow=node.type == ExperimentNodeType.FLOW, test=False
         )
@@ -521,7 +522,7 @@ class ExperimentNodeRun(Run):
         super().__init__(
             # Use node name as prefix for run name?
             type=RunTypes.COMMAND if node.type == ExperimentNodeType.COMMAND else RunTypes.BATCH,
-            name=f"{node.name}_attempt{timestamp}",
+            name=self.context.node_name_to_id[node.name],
             display_name=node.display_name or node.name,
             column_mapping=node.inputs,
             variant=getattr(node, "variant", None),
@@ -709,8 +710,10 @@ class ExperimentTemplateContext:
         )
         referenced_ids = self.node_name_to_referenced_id.get(node_name, [])
         # Add reference context only for flow node
-        if referenced_ids and is_flow:
-            node_context[referenced_key] = next(iter(referenced_ids))
+        if is_flow:
+            # Set reference line run id even if it's None to avoid stale value set by previous node
+            node_context[referenced_key] = next(iter(referenced_ids)) if referenced_ids else None
+        logger.debug(f"Node {node_name!r} node_context {node_context}.")
         if not test:
             # Return node context dict directly and will be set as trace attribute
             return node_context
@@ -751,6 +754,18 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         self.node_inputs[name] = inputs
 
     def add_node_result(self, name, result):
+        if is_dataclass(result):
+            # Convert dataclass to dict to ensure reference work
+            result = result.__dict__
+        supported_none_dict_types = (list, tuple, set, str, int, float, bool, type(None))
+        if isinstance(result, supported_none_dict_types):
+            # Convert primitive type to dict
+            result = {"output": result}
+        if not isinstance(result, dict):
+            raise ExperimentValueError(
+                f"Unsupported node {name!r} result type {type(result)}, "
+                f"only dict, dataclass object and primitive type is supported."
+            )
         self.node_results[name] = result
 
 

@@ -6,9 +6,8 @@ import json
 import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
 
 # Log the start time
@@ -69,19 +68,13 @@ def run_command(args):
             dispatch_experiment_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
         exit_code = ex.code if ex.code is not None else 1
         logger.debug(f"Code directly call sys.exit with code {exit_code}")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     except Exception as ex:
         logger.debug(f"Command {args} execute failed. {str(ex)}")
-        # raise UserErrorException(error=ex)
-        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise ex
     finally:
         # Log the invoke finish time
@@ -124,15 +117,9 @@ def entry(argv):
     prog, args = get_parser_args(argv)
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
-    logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(
-        logger,
-        activity_name,
-        activity_type=ActivityType.PUBLICAPI,
-    ):
-        run_command(args)
+    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
 
 
 def main():
