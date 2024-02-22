@@ -2,9 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import asyncio
-import json
-import os
-import shutil
 import signal
 import threading
 import uuid
@@ -12,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -26,8 +23,10 @@ from promptflow._utils.execution_utils import (
 )
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import (
+    _copy_file_except,
     dump_list_to_jsonl,
     get_int_env_var,
+    load_list_from_jsonl,
     log_progress,
     resolve_dir_to_absolute,
     transpose,
@@ -223,33 +222,6 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
 
-    def copy_files_except(self, src_dir, dst_dir, exclude_file):
-        """
-        Copy all files from src_dir to dst_dir recursively, excluding a specific file
-        directly under the root of src_dir.
-
-        :param src_dir: Source directory path
-        :type src_dir: str
-        :param dst_dir: Destination directory path
-        :type dst_dir: str
-        :param exclude_file: Name of the file to exclude from copying
-        :type exclude_file: str
-        """
-        os.makedirs(dst_dir, exist_ok=True)
-
-        for root, dirs, files in os.walk(src_dir):
-            rel_path = os.path.relpath(root, src_dir)
-            current_dst_dir = os.path.join(dst_dir, rel_path)
-
-            os.makedirs(current_dst_dir, exist_ok=True)
-
-            for file in files:
-                if rel_path == "." and file == exclude_file:
-                    continue  # Skip the excluded file
-                src_file_path = os.path.join(root, file)
-                dst_file_path = os.path.join(current_dst_dir, file)
-                shutil.copy2(src_file_path, dst_file_path)
-
     def _copy_previous_run_result(
         self,
         resume_from_run_storage: AbstractBatchRunStorage,
@@ -262,13 +234,15 @@ class BatchEngine:
         return the list of previous line results for the usage of aggregation and summarization.
         """
         previous_run_results = []
-        previous_run_output = self._load_outputs(resume_from_run_output_dir) if resume_from_run_output_dir else []
+        previous_run_output = (
+            load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl") if resume_from_run_output_dir else []
+        )
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
 
         if resume_from_run_output_dir:
-            self.copy_files_except(resume_from_run_output_dir, output_dir, "output.jsonl")
+            _copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
 
         for i in range(len(batch_inputs)):
             previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
@@ -293,20 +267,6 @@ class BatchEngine:
                 previous_run_results.append(previous_line_result)
 
         return previous_run_results
-
-    def _load_outputs(self, output_dir: Path) -> List[Dict[str, Any]]:
-        """Load the outputs of a batch run from output dir
-        :param output_dir: Output dir of a batch run
-        :type output_dir: Path
-        :return: List of output dicts
-        :rtype: List[Dict[str, Any]]
-        """
-        path = output_dir / "output.jsonl"
-        outputs = []
-        with open(path, "r", encoding=DEFAULT_ENCODING) as fin:
-            for line in fin:
-                outputs.append(json.loads(line))
-        return outputs
 
     def cancel(self):
         """Cancel the batch run"""

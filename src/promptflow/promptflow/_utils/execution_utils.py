@@ -62,10 +62,10 @@ def collect_lines(indexes: List[int], kvs: Mapping[str, List]) -> Mapping[str, L
 def extract_aggregation_inputs(flow: Flow, nodes_outputs: dict) -> Dict[str, Any]:
     """Extract the aggregation inputs of a flow from the nodes outputs."""
     _aggregation_inputs_references = get_aggregation_inputs_properties(flow)
-    return {prop: _extract_aggregation_input(nodes_outputs, prop) for prop in _aggregation_inputs_references}
+    return {prop: _parse_aggregation_input(nodes_outputs, prop) for prop in _aggregation_inputs_references}
 
 
-def _extract_aggregation_input(nodes_outputs: dict, aggregation_input_property: str):
+def _parse_aggregation_input(nodes_outputs: dict, aggregation_input_property: str):
     """Parse the value of the aggregation input from the nodes outputs."""
     assign = InputAssignment.deserialize(aggregation_input_property)
     return _input_assignment_parser.parse_value(assign, nodes_outputs, {})

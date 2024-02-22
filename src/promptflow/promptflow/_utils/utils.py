@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import time
 import traceback
 from datetime import datetime
@@ -309,3 +310,39 @@ def _normalize_identifier_name(name):
 
 def _sanitize_python_variable_name(name: str):
     return _normalize_identifier_name(name).replace(" ", "_")
+
+
+def _copy_file_except(src_dir, dst_dir, exclude_file):
+    """
+    Copy all files from src_dir to dst_dir recursively, excluding a specific file
+    directly under the root of src_dir.
+
+    :param src_dir: Source directory path
+    :type src_dir: str
+    :param dst_dir: Destination directory path
+    :type dst_dir: str
+    :param exclude_file: Name of the file to exclude from copying
+    :type exclude_file: str
+    """
+    os.makedirs(dst_dir, exist_ok=True)
+
+    for root, dirs, files in os.walk(src_dir):
+        rel_path = os.path.relpath(root, src_dir)
+        current_dst_dir = os.path.join(dst_dir, rel_path)
+
+        os.makedirs(current_dst_dir, exist_ok=True)
+
+        for file in files:
+            if rel_path == "." and file == exclude_file:
+                continue  # Skip the excluded file
+            src_file_path = os.path.join(root, file)
+            dst_file_path = os.path.join(current_dst_dir, file)
+            shutil.copy2(src_file_path, dst_file_path)
+
+
+def load_list_from_jsonl(file: Path):
+    content = []
+    with open(file, "r", encoding=DEFAULT_ENCODING) as fin:
+        for line in fin:
+            content.append(json.loads(line))
+    return content
