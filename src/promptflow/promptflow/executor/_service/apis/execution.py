@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from fastapi import APIRouter
+from fastapi.responses import PlainTextResponse
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import service_logger
@@ -72,6 +73,7 @@ async def node_execution(request: NodeExecutionRequest):
 @router.post("/cancel")
 async def cancel_execution(request: CancelExecutionRequest):
     ProcessManager().end_process(request.run_id)
+    return PlainTextResponse("canceled")
 
 
 def flow_test(request: FlowExecutionRequest):
