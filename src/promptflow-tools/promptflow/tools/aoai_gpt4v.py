@@ -152,7 +152,11 @@ class AzureOpenAI(ToolProvider):
         api_version = self._connection_dict.get("api_version")
         api_key = self._connection_dict.get("api_key")
 
-        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
+        self._client = AzureOpenAIClient(
+            azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key,
+            # disable OpenAI's built-in retry mechanism by using our own retry
+            # for better debuggability and real-time status updates.
+            max_retries=0)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
