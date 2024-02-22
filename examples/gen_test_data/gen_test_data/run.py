@@ -284,7 +284,7 @@ if __name__ == "__main__":
                 config.get("prs_max_concurrency_per_instance", 4),
                 config.get("prs_max_retry_count", 3),
                 config.get("prs_run_invocation_time", 800),
-                config.get("prs_allowed_failed_count", None),
+                config.get("prs_allowed_failed_count", -1),
                 should_skip_split_documents,
             )
         else:
