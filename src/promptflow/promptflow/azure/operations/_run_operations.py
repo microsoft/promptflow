@@ -50,7 +50,6 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow._utils.yaml_utils import load_yaml
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -707,17 +706,17 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
             ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
-        return flow.path
+        return flow
 
-    def _get_session_id(self, flow, run):
+    def _get_session_id(self, flow):
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        flow_id = get_flow_lineage_id(flow_dir=flow)
+        flow_id = get_flow_lineage_id(flow_dir=flow.path)
         # for different environment, use different session id to avoid image cache
-        env = self._resolve_environment(run=run)
+        env = flow._environment
         env_hash = hashlib.sha256(json.dumps(env, sort_keys=True).encode()).hexdigest()
         session_id = f"{user_alias}_{flow_id}_{env_hash}"
         # hash and truncate to avoid the session id getting too long
@@ -794,31 +793,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         print(f"Web View: {portal_url}")
 
     @classmethod
-    def _resolve_environment(cls, run):
-        from promptflow._sdk._constants import DAG_FILE_NAME
-        from promptflow.azure._constants._flow import PYTHON_REQUIREMENTS_TXT
-
-        flow = run.flow
-        if os.path.isdir(flow):
-            flow = os.path.join(flow, DAG_FILE_NAME)
-        flow_dict = load_yaml(flow)
-        environment = flow_dict.get("environment", {})
-
-        if not isinstance(environment, dict):
-            raise TypeError(f"environment should be a dict, got {type(environment)} for {environment}")
-        # TODO: resolve additional includes here
-        if PYTHON_REQUIREMENTS_TXT in environment:
-            req_path = os.path.join(os.path.dirname(flow), environment[PYTHON_REQUIREMENTS_TXT])
-            if not os.path.exists(req_path):
-                raise FileNotFoundError(
-                    f"File {environment[PYTHON_REQUIREMENTS_TXT]} in environment for flow {flow} not found."
-                )
-            with open(req_path, "r") as f:
-                requirements = f.read().splitlines()
-            environment[PYTHON_REQUIREMENTS_TXT] = requirements
-        return environment
-
-    @classmethod
     def _resolve_automatic_runtime(cls):
         logger.warning(
             f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
@@ -827,11 +801,11 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         runtime_name = AUTOMATIC_RUNTIME_NAME
         return runtime_name
 
-    def _resolve_runtime(self, run, flow_path, runtime):
+    def _resolve_runtime(self, run, flow, runtime):
         runtime = run._runtime or runtime
         # for remote flow case, leave session id to None and let service side resolve
         # for local flow case, use flow path to calculate session id
-        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow_path, run=run)
+        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
@@ -840,7 +814,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return runtime, session_id
 
     def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
-        flow_path = run.flow
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
@@ -850,8 +823,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
-        run.flow = task_results[1]
-        runtime, session_id = self._resolve_runtime(run=run, flow_path=flow_path, runtime=runtime)
+        flow = task_results[1]
+        run.flow = flow.path
+
+        runtime, session_id = self._resolve_runtime(run=run, flow=flow, runtime=runtime)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
