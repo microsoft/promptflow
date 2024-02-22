@@ -129,10 +129,8 @@ class ScriptExecutor(FlowExecutor):
             module_name, func_name = entry.split(":")
         except Exception as e:
             raise InvalidFlowEntry(
-                message_format="Invalid entry '{entry}' in flow file '{flow_file}'. "
-                "The entry should be in the format of 'module:function'.",
+                message_format="Invalid entry '{entry}'.The entry should be in the format of '<module>:<function>'.",
                 entry=entry,
-                flow_file=self._flow_file,
                 target=ErrorTarget.EXECUTOR,
             ) from e
         return module_name, func_name
