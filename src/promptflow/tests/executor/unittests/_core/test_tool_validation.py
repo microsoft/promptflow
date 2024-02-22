@@ -61,4 +61,4 @@ class TestToolValidation:
             "type": "python",
         }
         validate_result = _validate_tool_schema(invalid_tool_dict)
-        assert "1 is not of type string" in validate_result
+        assert "1 is not of type 'string'" in validate_result
