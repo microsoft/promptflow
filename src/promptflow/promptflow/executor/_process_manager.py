@@ -233,6 +233,10 @@ class ForkProcessManager(AbstractProcessManager):
         Initiates a process with "spawn" method to establish a clean environment.
         """
         context = multiprocessing.get_context("spawn")
+        cwd = os.getcwd()
+        bulk_logger.info(f"start_processes cwd:{cwd}")
+        for filename in os.listdir("."):
+            bulk_logger.info(f"start_processes filename: {filename}")
         process = context.Process(
             target=create_spawned_fork_process_manager,
             args=(
@@ -277,6 +281,10 @@ class ForkProcessManager(AbstractProcessManager):
         self._control_signal_queue.put((ProcessControlSignal.START, i))
 
     def ensure_healthy(self):
+        cwd = os.getcwd()
+        bulk_logger.info(f"ensure_healthy cwd:{cwd}")
+        for filename in os.listdir("."):
+            bulk_logger.info(f"ensure_healthy filename: {filename}")
         # A 'zombie' process is a process that has finished running but still remains in
         # the process table, waiting for its parent process to collect and handle its exit status.
         # The normal state of the spawned process is 'running'. If the process does not start successfully

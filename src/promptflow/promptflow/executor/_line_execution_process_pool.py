@@ -293,6 +293,10 @@ class LineExecutionProcessPool:
                 # Monitor process aliveness.
                 crashed = not self._is_process_alive(process_id)
                 if crashed:
+                    cwd = os.getcwd()
+                    bulk_logger.info(f"crashed cwd:{cwd}")
+                    for filename in os.listdir("."):
+                        bulk_logger.info(f"crashed filename: {filename}")
                     with open("fork_process_stderr.log", "r") as f:
                         error_logs = "".join(f.readlines())
                         bulk_logger.error(error_logs)
@@ -665,6 +669,10 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    cwd = os.getcwd()
+    bulk_logger.info(f"_process_wrapper cwd:{cwd}")
+    for filename in os.listdir("."):
+        bulk_logger.info(f"_process_wrapper filename: {filename}")
     sys.stderr = open("fork_process_stderr.log", "w")
     cwd = os.getcwd()
     file_path = os.path.join(cwd, "fork_process_stderr.log")
