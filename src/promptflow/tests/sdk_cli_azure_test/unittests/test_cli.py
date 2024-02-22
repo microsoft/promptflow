@@ -281,6 +281,29 @@ class TestAzureCli:
         )
         mocked.assert_called_with(flow=flow_dir, random_key="random_value")
 
+    def test_flow_update(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
+        mocked = mocker.patch.object(FlowOperations, "_update_azure_flow")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "flow",
+            "update",
+            "--flow",
+            "test_flow",
+            "--set",
+            "display_name=test_flow_display_name",
+            "description='test_description'",
+            "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_with(
+            flow="test_flow",
+            display_name="test_flow_display_name",
+            description="test_description",
+            tags={"key1": "value1"},
+        )
+
     def test_flow_list(
         self,
         mocker: MockFixture,

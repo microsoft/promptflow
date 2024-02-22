@@ -23,6 +23,7 @@ data_dir = tests_root_dir / "test_configs/datas"
     "single_worker_thread_pool",
     "vcr_recording",
 )
+@pytest.mark.xdist_group(name="pfazure_flow")
 class TestFlow:
     def test_create_flow(self, created_flow: Flow):
         # most of the assertions are in the fixture itself
@@ -35,6 +36,32 @@ class TestFlow:
         attributes = vars(result)
         for attr in attributes:
             assert getattr(result, attr) == getattr(created_flow, attr), f"Assertion failed for attribute: {attr!r}"
+
+    def test_update_flow(self, pf, created_flow: Flow):
+
+        original_meta = {
+            "display_name": created_flow.display_name,
+            "description": created_flow.description,
+            "tags": created_flow.tags,
+        }
+        test_meta = {
+            "display_name": "test flow 2",
+            "description": "test flow description 2",
+            "tags": {"key1": "value1", "key2": "value2"},
+        }
+        # update flow
+        updated_flow = pf.flows.create_or_update(flow=created_flow.name, **test_meta)
+
+        assert updated_flow.display_name == test_meta["display_name"]
+        assert updated_flow.description == test_meta["description"]
+        assert updated_flow.tags == test_meta["tags"]
+
+        # reset flow
+        updated_flow = pf.flows.create_or_update(flow=created_flow.name, **original_meta)
+
+        assert updated_flow.display_name == original_meta["display_name"]
+        assert updated_flow.description == original_meta["description"]
+        assert updated_flow.tags == original_meta["tags"]
 
     @pytest.mark.skipif(
         condition=not is_live(),

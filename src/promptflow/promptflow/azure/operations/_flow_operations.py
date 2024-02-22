@@ -93,8 +93,14 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
         """Create a flow to remote from local source, or update the metadata of an existing flow.
 
-        .. note::
-            Functionality of updating flow metadata is yet to be supported.
+        .. admonition::  Update a flow
+
+            To update an existing flow, you can only update the display name, description, and tags of the flow.
+            The flow name is a guid that can be found from 2 ways:
+
+            - After creating a flow to azure, it can be found in the printed message in "name" attribute.
+            - Open a flow in azure portal, the guid is in the url. e.g. ``https://ml.azure.com/prompts/flow/<workspace-id>/<flow-name>/xxx``
+
 
         :param flow: The source of the flow to create.
         :type flow: Union[str, Path]
@@ -108,7 +114,13 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :type description: str
         :param tags: The tags of the flow to create. Default to be the tags in flow yaml file.
         :type tags: Dict[str, str]
-        """
+        """  # noqa: E501
+        # if the flow is not a local path, try to update the flow
+        if isinstance(flow, str) and not Path(flow).exists():
+            logger.info(f"Flow {flow!r} is not an existing local path, will try to update the existing remote flow.")
+            return self._update_azure_flow(flow=flow, display_name=display_name, **kwargs)
+
+        logger.info(f"Creating flow from local source {flow!r}.")
         # validate the parameters
         azure_flow, flow_display_name, flow_type, kwargs = FlowOperations._validate_flow_creation_parameters(
             flow, display_name, type, **kwargs
@@ -131,6 +143,37 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         print(f"Flow created successfully:\n{json.dumps(flow_dict, indent=4)}")
 
         return result_flow
+
+    def _update_azure_flow(self, flow: str, display_name, **kwargs):
+        """Update an existing flow in azure."""
+        body = {
+            "flow_name": display_name,
+            "description": kwargs.get("description", None),
+            "tags": kwargs.get("tags", None),
+        }
+        body = {k: v for k, v in body.items() if v is not None}
+        logger.debug(f"Updating flow {flow!r} with data {body}.")
+
+        try:
+            self._service_caller.update_flow(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_id=flow,
+                body=body,
+            )
+        except Exception as e:
+            raise FlowOperationError(
+                f"Failed to update azure flow {flow!r} due to: {str(e)}. If the flow is not found in azure, "
+                f"please make sure the flow name is correct. If you are trying to create a new flow "
+                f"from local flow folder, please make sure the flow folder exists and try again."
+            ) from e
+
+        updated_flow = self.get(flow)
+        flow_dict = updated_flow._to_dict()
+        print(f"Flow updated successfully:\n{json.dumps(flow_dict, indent=4)}")
+
+        return updated_flow
 
     @staticmethod
     def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):

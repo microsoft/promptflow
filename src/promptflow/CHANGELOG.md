@@ -9,6 +9,7 @@
   PF_USE_AZURE_CLI_CREDENTIAL=true
   ```
 - [SDK/CLI] Support setting timeout for `pfazure run stream`.
+- [SDK/CLI] Support `pfazure flow update` to update flow's metadata like `display_name`, `description` or `tags`.
 
 ## 1.5.0 (2024.02.06)
 
