@@ -7,8 +7,6 @@ from typing import Any, Dict
 from promptflow._constants import SpanFieldName
 from promptflow._sdk.entities._trace import Span as SpanEntity
 
-from .client import get_client, get_client_with_workspace_info
-
 
 class Span:
     __container__ = "Span"
@@ -42,7 +40,7 @@ class Span:
         self.partition_key = span.session_id
         self.id = span.span_id
 
-    def persist(self):
+    def persist(self, client):
         if self.id is None or self.partition_key is None or self.resource is None:
             return
 
@@ -50,7 +48,6 @@ class Span:
         if resource_attributes is None:
             return
 
-        client = get_client_with_workspace_info(self.__container__, resource_attributes)
         return client.create_item(body=self.to_dict())
 
     @classmethod
