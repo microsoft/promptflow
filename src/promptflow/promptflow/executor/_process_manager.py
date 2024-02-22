@@ -15,7 +15,7 @@ from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
-SpawnedForkProcessManagerLogPath = ".promptflow/spawned_fork_process_manager_stderr.log"
+SpawnedForkProcessManagerLogPath = "spawned_fork_process_manager_stderr.log"
 
 
 @dataclass

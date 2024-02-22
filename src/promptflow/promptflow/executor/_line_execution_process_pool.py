@@ -43,7 +43,7 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-LogPath = ".promptflow/process_stderr.log"
+LogPath = "process_stderr.log"
 
 
 def signal_handler(signum, frame):
