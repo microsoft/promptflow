@@ -414,9 +414,19 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         return node_run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
-        if not self._loaded_node_run_info:
-            self._load_all_node_run_info()
-        return self._loaded_node_run_info.get(line_number)
+        node_run_infos = []
+        for node_folder in sorted(self._node_infos_folder.iterdir()):
+            filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+            node_run_record_file = node_folder / filename
+            if node_run_record_file.is_file():
+                runs = self._load_info_from_file(node_run_record_file)
+                if runs:
+                    run = runs[0]
+                run = resolve_multimedia_data_recursively(node_run_record_file, run)
+                load_multimedia_data_recursively(run)
+                run_info = NodeRunInfo.deserialize(run)
+                node_run_infos.append(run_info)
+        return node_run_infos
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
