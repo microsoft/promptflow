@@ -179,12 +179,12 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
 
 
 def generate_retry_interval(retry_count: int) -> float:
-    minBackoffInSec = 3
-    maxBackoffInSec = 60
-    retry_interval = minBackoffInSec + ((2 ** retry_count) - 1)
+    min_backoff_in_sec = 3
+    max_backoff_in_sec = 60
+    retry_interval = min_backoff_in_sec + ((2 ** retry_count) - 1)
 
-    if retry_interval > maxBackoffInSec:
-        retry_interval = maxBackoffInSec
+    if retry_interval > max_backoff_in_sec:
+        retry_interval = max_backoff_in_sec
     return retry_interval
 
 
