@@ -38,6 +38,7 @@ class BaseFlowSchema(YamlFileSchema):
 
     additional_includes = fields.List(fields.Str())
     environment = fields.Dict()
+    environment_variables = fields.Dict()
 
     # metadata
     type = fields.Str(validate=validate.OneOf(FlowType.get_all_values()))
