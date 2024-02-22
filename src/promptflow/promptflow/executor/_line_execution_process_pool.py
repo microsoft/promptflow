@@ -297,9 +297,9 @@ class LineExecutionProcessPool:
                     bulk_logger.info(f"crashed cwd:{cwd}")
                     for filename in os.listdir("."):
                         bulk_logger.info(f"crashed filename: {filename}")
-                    with open("fork_process_stderr.log", "r") as f:
-                        error_logs = "".join(f.readlines())
-                        bulk_logger.error(error_logs)
+                    # with open("fork_process_stderr.log", "r") as f:
+                    #     error_logs = "".join(f.readlines())
+                    #     bulk_logger.error(error_logs)
                     break
 
                 # Handle output queue message.
@@ -673,10 +673,10 @@ def _process_wrapper(
     bulk_logger.info(f"_process_wrapper cwd:{cwd}")
     for filename in os.listdir("."):
         bulk_logger.info(f"_process_wrapper filename: {filename}")
-    sys.stderr = open("fork_process_stderr.log", "w")
-    cwd = os.getcwd()
-    file_path = os.path.join(cwd, "fork_process_stderr.log")
-    bulk_logger.info(file_path)
+    # sys.stderr = open("fork_process_stderr.log", "w")
+    # cwd = os.getcwd()
+    # file_path = os.path.join(cwd, "fork_process_stderr.log")
+    # bulk_logger.info(file_path)
 
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)

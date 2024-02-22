@@ -2,7 +2,6 @@ import multiprocessing
 import os
 import queue
 import signal
-import sys
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -290,8 +289,9 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            with open("spawned_fork_process_manager_stderr.log", "r") as f:
-                error_logs = "".join(f.readlines())
+            # with open("spawned_fork_process_manager_stderr.log", "r") as f:
+            #     error_logs = "".join(f.readlines())
+            error_logs = "test"
             if error_logs:
                 bulk_logger.error("The spawned fork process manager failed to start.")
                 bulk_logger.error(error_logs)
@@ -423,10 +423,10 @@ def create_spawned_fork_process_manager(
     process_info,
     process_target_func,
 ):
-    sys.stderr = open("spawned_fork_process_manager_stderr.log", "w")
-    cwd = os.getcwd()
-    file_path = os.path.join(cwd, "spawned_fork_process_manager_stderr.log")
-    bulk_logger.info(file_path)
+    # sys.stderr = open("spawned_fork_process_manager_stderr.log", "w")
+    # cwd = os.getcwd()
+    # file_path = os.path.join(cwd, "spawned_fork_process_manager_stderr.log")
+    # bulk_logger.info(file_path)
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
