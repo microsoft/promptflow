@@ -337,6 +337,7 @@ class ConnectionType(str, Enum):
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
     CUSTOM = "Custom"
 
 
