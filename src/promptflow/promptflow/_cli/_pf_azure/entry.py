@@ -7,8 +7,7 @@ import time
 
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
 from promptflow._cli._user_agent import USER_AGENT
-from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli, cli_exception_and_telemetry_handler
 
 # Log the start time
 start_time = time.perf_counter()
@@ -111,15 +110,9 @@ def entry(argv):
     prog, args = get_parser_args(argv)
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
-    logger = get_telemetry_logger()
     custom_dimensions = _get_workspace_info(args)
-    with log_activity(
-        logger,
-        _get_cli_activity_name(cli=prog, args=args),
-        activity_type=ActivityType.PUBLICAPI,
-        custom_dimensions=custom_dimensions,
-    ):
-        run_command(args)
+    activity_name = _get_cli_activity_name(cli=prog, args=args)
+    cli_exception_and_telemetry_handler(run_command, activity_name, custom_dimensions)(args)
 
 
 def main():
