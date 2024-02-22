@@ -16,7 +16,6 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
@@ -561,14 +560,14 @@ class TestToolResolver:
 
         assistant_definitions = AssistantDefinition(model="model", instructions="instructions", tools=tool_definitions)
         assistant_definitions.tools = tool_definitions
-        assert len(assistant_definitions.assistant_tools) == 0
+        assert assistant_definitions.tool_invoker is None
 
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
         tool_resolver._resolve_assistant_tool(assistant_definitions)
-        invoker = AssistantToolInvoker.init(assistant_definitions)
-        assert len(assistant_definitions.assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
+        invoker = assistant_definitions.tool_invoker
+        assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
         for tool_name, assistant_tool in invoker._assistant_tools.items():
             assert tool_name in ("code_interpreter", "retrieval", "sample_tool")
             assert assistant_tool.name == tool_name
