@@ -7,6 +7,7 @@ import pytest
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult, LineResult
 from promptflow.contracts.run_info import Status
+from promptflow.executor._errors import InvalidFlowEntry
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -80,6 +81,13 @@ class TestEagerFlow:
         assert line_result.output is None
         assert line_result.run_info.status == Status.Failed
         assert "dummy exception" in line_result.run_info.error["message"]
+
+    def test_flow_run_with_invalid_entry(self):
+        flow_folder = "dummy_flow_with_invalid_entry"
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        with pytest.raises(InvalidFlowEntry) as e:
+            ScriptExecutor(flow_file=flow_file)
+        assert "Invalid entry" in e.value.message
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping, ensure_output",
