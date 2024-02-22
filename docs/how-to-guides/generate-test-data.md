@@ -40,7 +40,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
         ```
         cp config.yml.example config.yml
         ```
-    - Update the configurations in the `configs.yml`. Fill in the values in `COMMON` and `LOCAL` section following inline comment instruction.
+    - Update the configurations in the `configs.yml`. Fill in the values in `Common` and `Local` section following inline comment instruction.
 
 
 ## Create a test data generation flow

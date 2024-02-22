@@ -25,7 +25,7 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
         ```
         cp config.yml.example config.yml
         ```
-    - Update the configurations in the `configs.yml`. Fill in the values in `COMMON` and `CLOUD` section following inline comment instruction.
+    - Update the configurations in the `configs.yml`. Fill in the values in `Common` and `Cloud` section following inline comment instruction.
 
 
 ## Generate test data at cloud

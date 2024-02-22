@@ -242,8 +242,8 @@ if __name__ == "__main__":
         should_skip_split_documents = False
         document_nodes_file = convert_to_abs_path(config.get("document_nodes_file", None))
         documents_folder = convert_to_abs_path(config.get("documents_folder", None))
-        flow_folder = convert_to_abs_path(config.get("flow_folder", "./"))
-        output_folder = convert_to_abs_path(config.get("output_folder", "./"))
+        flow_folder = convert_to_abs_path(config.get("flow_folder", None))
+        output_folder = convert_to_abs_path(config.get("output_folder", None))
         validate_path_func = non_padding_path if args.cloud else local_path_exists
 
         if document_nodes_file and validate_path_func(document_nodes_file):

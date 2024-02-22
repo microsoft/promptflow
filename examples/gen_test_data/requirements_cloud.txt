@@ -1,5 +1,4 @@
 promptflow>=1.4.0
 promptflow-tools
-configargparse
 azure-ai-ml
 mldesigner
