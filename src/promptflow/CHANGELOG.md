@@ -4,10 +4,14 @@
 
 ### Features Added
 
-- [SDK/CLI] Support configuring environment variable to directly use `AzureCliCredential` for `pfazure` commands.
+- [CLI] Support configuring environment variable to directly use `AzureCliCredential` for `pfazure` commands.
   ```dotenv
   PF_USE_AZURE_CLI_CREDENTIAL=true
   ```
+- [SDK/CLI] Support setting timeout for `pfazure run stream`.
+
+### Improvements
+- Bump `cryptography` lower bound to 42.0.4.
 
 ## 1.5.0 (2024.02.06)
 

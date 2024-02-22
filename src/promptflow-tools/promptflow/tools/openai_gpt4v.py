@@ -16,7 +16,11 @@ class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
         self._connection_dict = normalize_connection_config(connection)
-        self._client = OpenAIClient(**self._connection_dict)
+        self._client = OpenAIClient(
+            # disable OpenAI's built-in retry mechanism by using our own retry
+            # for better debuggability and real-time status updates.
+            max_retries=0,
+            **self._connection_dict)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()

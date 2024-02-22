@@ -21,6 +21,7 @@ class OperationContext(Dict):
     _OTEL_ATTRIBUTES = "_otel_attributes"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
     USER_AGENT_KEY = "user_agent"
+    REQUEST_ID_KEY = "request_id"
     _DEFAULT_TRACKING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source"}
     _TRACKING_KEYS = "_tracking_keys"
 
@@ -38,7 +39,10 @@ class OperationContext(Dict):
         self[OperationContext._OTEL_ATTRIBUTES] = attributes
 
     def _get_otel_attributes(self):
-        return self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        attr_dict = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        # Filter None value out to avoid error.
+        # case: Experiment run may set 'reference.batch_run_id' to None which cause some exception.
+        return {k: v for k, v in attr_dict.items() if v is not None}
 
     @classmethod
     def get_instance(cls):
@@ -144,6 +148,11 @@ class OperationContext(Dict):
                 self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:
             self.user_agent = user_agent
+
+    def get_request_id(self):
+        if OperationContext.REQUEST_ID_KEY in self:
+            return self.get(OperationContext.REQUEST_ID_KEY)
+        return "unknown"
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.

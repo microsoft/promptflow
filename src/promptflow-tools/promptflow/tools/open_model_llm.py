@@ -775,7 +775,7 @@ class MIRCompleteFormatter(ContentFormatterBase):
 
         error_message = f"Unexpected response format. Response: {response_json}"
         print(error_message, file=sys.stderr)
-        raise OpenSourceLLMOnlineEndpointError(message=error_message)
+        raise OpenModelLLMOnlineEndpointError(message=error_message)
 
 
 class LlamaContentFormatter(ContentFormatterBase):

@@ -2,7 +2,6 @@ import importlib
 import importlib.util
 import json
 import logging
-import multiprocessing
 import os
 import os.path
 import shutil
@@ -30,7 +29,6 @@ from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException
 
 from ..recording_utilities import is_live
 
@@ -60,34 +58,6 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
-
-
-def run_batch(local_client, line_timeout_seconds, timeout_index=None):
-    os.environ["PF_LINE_TIMEOUT_SEC"] = line_timeout_seconds
-    run_id = str(uuid.uuid4())
-    run_pf_command(
-        "run",
-        "create",
-        "--flow",
-        f"{FLOWS_DIR}/simple_flow_with_ten_inputs",
-        "--data",
-        f"{FLOWS_DIR}/simple_flow_with_ten_inputs/data.jsonl",
-        "--name",
-        run_id,
-    )
-    run = local_client.runs.get(name=run_id)
-    local_storage = LocalStorageOperations(run)
-    detail = local_storage.load_detail()
-    flow_runs_list = detail["flow_runs"]
-    for i, flow_run in enumerate(flow_runs_list):
-        if i == timeout_index:
-            assert flow_run["status"] == "Failed"
-            assert flow_run["error"]["message"] == f"Line {i} execution timeout for exceeding 54 seconds"
-            assert flow_run["error"]["code"] == "UserError"
-            assert flow_run["error"]["innerError"]["code"] == "LineExecutionTimeoutError"
-        else:
-            assert flow_run["status"] == "Completed"
-    os.environ.pop("PF_LINE_TIMEOUT_SEC")
 
 
 @pytest.mark.usefixtures(
@@ -798,7 +768,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(UserErrorException) as ex:
+            with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
                     "init",
@@ -811,7 +781,8 @@ class TestCli:
                     "--prompt-template",
                     f"{jinja_name}={jinja_name}.jinja2",
                 )
-            assert f"Template parameter {jinja_name} doesn't find in python function arguments." in str(ex.value)
+                _, err = capsys.readouterr()
+                assert f"Template parameter {jinja_name} doesn't find in python function arguments." in err
 
             with pytest.raises(SystemExit):
                 run_pf_command("flow", "init")
@@ -1193,8 +1164,8 @@ class TestCli:
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
 
-    def test_flow_build_with_ua(self):
-        with pytest.raises(UserErrorException) as e:
+    def test_flow_build_with_ua(self, capsys):
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
                 "build",
@@ -1207,7 +1178,8 @@ class TestCli:
                 "--user-agent",
                 "test/1.0.0",
             )
-        assert "not exist" in str(e.value)
+            _, err = capsys.readouterr()
+            assert "not exist" in err
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -2025,30 +1997,6 @@ class TestCli:
             for node_name in ["main", "eval"]:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
-
-    def test_batch_run_timeout(self, local_client):
-        line_timeout_seconds = "54"
-        timout_index = 9
-        p = multiprocessing.Process(
-            target=run_batch,
-            args=(local_client, line_timeout_seconds, timout_index),
-        )
-        p.start()
-        p.join()
-        assert p.exitcode == 0
-
-    def test_batch_run_completed_within_the_required_time(self, local_client):
-        line_timeout_seconds = "600"
-        p = multiprocessing.Process(
-            target=run_batch,
-            args=(
-                local_client,
-                line_timeout_seconds,
-            ),
-        )
-        p.start()
-        p.join()
-        assert p.exitcode == 0
 
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run

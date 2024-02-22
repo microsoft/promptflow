@@ -33,7 +33,7 @@ REQUIRES = [
     "keyring>=24.2.0,<25.0.0",  # control plane sdk requirements, to access system keyring service
     "pydash>=6.0.0,<8.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
     # vulnerability: https://github.com/advisories/GHSA-5cpq-8wj7-hf2v
-    "cryptography>=41.0.3,<42.0.0",  # control plane sdk requirements to support connection encryption
+    "cryptography>=42.0.4",  # control plane sdk requirements to support connection encryption
     "colorama>=0.4.6,<0.5.0",  # producing colored terminal text for testing chat flow
     "tabulate>=0.9.0,<1.0.0",  # control plane sdk requirements, to print table in console
     "filelock>=3.4.0,<4.0.0",  # control plane sdk requirements, to lock for multiprocessing
@@ -52,6 +52,7 @@ REQUIRES = [
     "docutils",  # used to generate description for tools
     "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
     "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
+    "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
 ]
 
 setup(

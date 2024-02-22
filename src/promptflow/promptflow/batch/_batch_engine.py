@@ -42,7 +42,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
-from promptflow.storage._run_storage import AbstractRunStorage
+from promptflow.storage._run_storage import AbstractBatchRunStorage, AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
 DEFAULT_CONCURRENCY = 10
@@ -79,6 +79,7 @@ class BatchEngine:
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         batch_timeout_sec: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
         **kwargs,
     ):
@@ -94,6 +95,8 @@ class BatchEngine:
         :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
         :param batch_timeout: The timeout of batch run in seconds
         :type batch_timeout: Optional[int]
+        :param line_timeout: The timeout of each line in seconds
+        :type line_timeout: Optional[int]
         :param worker_count: The concurrency limit of batch run
         :type worker_count: Optional[int]
         :param kwargs: The keyword arguments related to creating the executor proxy class
@@ -114,7 +117,7 @@ class BatchEngine:
         self._kwargs = kwargs
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
-        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
 
         # set it to True when the batch run is canceled
@@ -128,6 +131,8 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
+        resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
+        resume_from_run_output_dir: Optional[Path] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -143,6 +148,12 @@ class BatchEngine:
         :type max_lines_count: Optional[int]
         :param raise_on_line_failure: Whether to raise exception when a line fails.
         :type raise_on_line_failure: Optional[bool]
+        :param resume_from_run_storage: The run storage to load flow run and node run from the original
+                                        run. The resume behavior is to reuse succeeded line result of
+                                        the original run and run/rerun the remaining/failed lines.
+        :type resume_from_run_storage: Optional[AbstractRunStorage]
+        :param resume_from_run_output_dir: The output dir of the original run.
+        :type resume_from_run_output_dir: Optional[Path]
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """

@@ -312,7 +312,6 @@ class _ErrorInfo:
             "promptflow._core": ErrorTarget.EXECUTOR,
             "promptflow.batch": ErrorTarget.EXECUTOR,
             "promptflow.contracts": ErrorTarget.EXECUTOR,
-            "promptflow._utils": ErrorTarget.EXECUTOR,
             "promptflow._internal": ErrorTarget.EXECUTOR,
             "promptflow.integrations": ErrorTarget.EXECUTOR,
             "promptflow.storage": ErrorTarget.EXECUTOR,
