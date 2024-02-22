@@ -40,7 +40,11 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
-from promptflow._utils.multimedia_utils import get_file_reference_encoder, resolve_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import (
+    get_file_reference_encoder,
+    load_multimedia_data_recursively,
+    resolve_multimedia_data_recursively,
+)
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -443,10 +447,25 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 self._loaded_flow_run_info[line_number] = run_info
         return flow_run_infos
 
-    def load_flow_run_info(self, line_number: int = None) -> FlowRunInfo:
-        if not self._loaded_flow_run_info:
-            self._load_all_flow_run_info()
-        return self._loaded_flow_run_info.get(line_number)
+    def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
+        lower_bound = line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
+        upper_bound = lower_bound + LOCAL_STORAGE_BATCH_SIZE - 1
+        filename = (
+            f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
+            f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+        )
+        file_path = self._run_infos_folder / filename
+        if not file_path.is_file():
+            return None
+        runs = self._load_info_from_file(file_path)
+        run = next((run for run in runs if run.get(LINE_NUMBER) == line_number), None)
+        if not run:
+            return None
+
+        run = resolve_multimedia_data_recursively(self._run_infos_folder, run)
+        load_multimedia_data_recursively(run)
+        run_info = FlowRunInfo.deserialize(run)
+        return run_info
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""
