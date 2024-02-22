@@ -9,7 +9,7 @@ This is an experimental feature, and may change at any time. Learn [more](faq.md
 Promptflow allows you to load a flow and use it as a function in your code.
 This feature is useful when building a service on top of a flow, reference [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/create-service-with-flow) for a simple example service with flow function consumption.
 
-## Load an invoke the flow function
+## Load and invoke the flow function
 
 To use the flow-as-function feature, you first need to load a flow using the `load_flow` function.
 Then you can consume the flow object like a function by providing key-value arguments for it.
