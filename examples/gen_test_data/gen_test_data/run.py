@@ -266,7 +266,7 @@ if __name__ == "__main__":
             if Path(document_nodes_file).is_file():
                 logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
 
-        copy_flow_folder_and_set_node_inputs(copied_flow_folder, config["flow_folder"], config["node_inputs_override"])
+        copy_flow_folder_and_set_node_inputs(copied_flow_folder, flow_folder, config.get("node_inputs_override", None))
 
         if args.cloud:
             run_cloud(
