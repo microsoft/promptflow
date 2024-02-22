@@ -240,12 +240,10 @@ if __name__ == "__main__":
     copied_flow_folder = config["flow_folder"] + "_" + time.strftime("%b-%d-%Y-%H-%M-%S") + "_temp"
     try:
         should_skip_split_documents = False
-        document_nodes_file = convert_to_abs_path(config["document_nodes_file"]) \
-            if "document_nodes_file" in config.keys() else None
-        documents_folder = convert_to_abs_path(config["documents_folder"]) \
-            if "documents_folder" in config.keys() else None
-        flow_folder = convert_to_abs_path(config["flow_folder"])
-        output_folder = convert_to_abs_path(config["output_folder"])
+        document_nodes_file = convert_to_abs_path(config.get("document_nodes_file", None))
+        documents_folder = convert_to_abs_path(config.get("documents_folder", None))
+        flow_folder = convert_to_abs_path(config.get("flow_folder", "./"))
+        output_folder = convert_to_abs_path(config.get("output_folder", "./"))
         validate_path_func = non_padding_path if args.cloud else local_path_exists
 
         if document_nodes_file and validate_path_func(document_nodes_file):
@@ -273,30 +271,30 @@ if __name__ == "__main__":
         if args.cloud:
             run_cloud(
                 documents_folder,
-                config["document_chunk_size"],
-                config["document_chunk_overlap"],
+                config.get("document_chunk_size", 512),
+                config.get("document_chunk_overlap", 100),
                 document_nodes_file,
                 copied_flow_folder,
                 config["subscription_id"],
                 config["resource_group"],
                 config["workspace_name"],
                 config["aml_cluster"],
-                config["prs_instance_count"],
-                config["prs_mini_batch_size"],
-                config["prs_max_concurrency_per_instance"],
-                config["prs_max_retry_count"],
-                config["prs_run_invocation_time"],
-                config["prs_allowed_failed_count"],
+                config.get("prs_instance_count", 2),
+                config.get("prs_mini_batch_size", 1),
+                config.get("prs_max_concurrency_per_instance", 4),
+                config.get("prs_max_retry_count", 3),
+                config.get("prs_run_invocation_time", 800),
+                config.get("prs_allowed_failed_count", None),
                 should_skip_split_documents,
             )
         else:
             run_local(
                 documents_folder,
-                config["document_chunk_size"],
-                config["document_chunk_overlap"],
+                config.get("document_chunk_size", 512),
+                config.get("document_chunk_overlap", 100),
                 document_nodes_file,
                 copied_flow_folder,
-                config["flow_batch_run_size"],
+                config.get("flow_batch_run_size", 16),
                 output_folder,
                 should_skip_split_documents,
             )
