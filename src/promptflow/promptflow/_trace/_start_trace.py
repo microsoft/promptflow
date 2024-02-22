@@ -51,6 +51,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     # honor and set attributes if user has specified
     attributes: dict = kwargs.get("attributes", None)
     if attributes is not None:
+        _logger.debug("User specified attributes: %s", attributes)
         for attr_key, attr_value in attributes.items():
             operation_context._add_otel_attributes(attr_key, attr_value)
 
