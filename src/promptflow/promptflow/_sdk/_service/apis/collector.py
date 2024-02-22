@@ -16,12 +16,15 @@ from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTrace
 from promptflow._constants import SpanResourceFieldName
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
+from promptflow.azure._storage.cosmosdb.client import get_client_with_workspace_info
 from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
 from promptflow.azure._storage.cosmosdb.summary import Summary
 
 
 def trace_collector():
     content_type = request.headers.get("Content-Type")
+    line_summary_client = get_client_with_workspace_info("LineSummary", {})
+    span_client = get_client_with_workspace_info("Span", {})
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
         traces_request = ExportTraceServiceRequest()
@@ -41,8 +44,8 @@ def trace_collector():
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource)
                     span._persist()
-                    SpanCosmosDB(span).persist()
-                    Summary(span).persist()
+                    SpanCosmosDB(span).persist(span_client)
+                    Summary(span).persist(line_summary_client)
         return "Traces received", 200
 
     # JSON protobuf encoding
