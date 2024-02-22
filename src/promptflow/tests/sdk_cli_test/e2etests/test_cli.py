@@ -30,7 +30,6 @@ from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException
 
 from ..recording_utilities import is_live
 
@@ -798,7 +797,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(UserErrorException) as ex:
+            with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
                     "init",
@@ -811,7 +810,8 @@ class TestCli:
                     "--prompt-template",
                     f"{jinja_name}={jinja_name}.jinja2",
                 )
-            assert f"Template parameter {jinja_name} doesn't find in python function arguments." in str(ex.value)
+                _, err = capsys.readouterr()
+                assert f"Template parameter {jinja_name} doesn't find in python function arguments." in err
 
             with pytest.raises(SystemExit):
                 run_pf_command("flow", "init")
@@ -1193,8 +1193,8 @@ class TestCli:
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
 
-    def test_flow_build_with_ua(self):
-        with pytest.raises(UserErrorException) as e:
+    def test_flow_build_with_ua(self, capsys):
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
                 "build",
@@ -1207,7 +1207,8 @@ class TestCli:
                 "--user-agent",
                 "test/1.0.0",
             )
-        assert "not exist" in str(e.value)
+            _, err = capsys.readouterr()
+            assert "not exist" in err
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",

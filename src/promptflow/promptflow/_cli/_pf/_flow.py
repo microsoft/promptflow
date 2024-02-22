@@ -36,7 +36,6 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolPyGenerator,
     copy_extra_files,
 )
-from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -232,6 +231,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_experiment = lambda parser: parser.add_argument(  # noqa: E731
         "--experiment", type=str, help="the experiment template path of flow."
     )
+    add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
+        "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_flow,
@@ -245,6 +247,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_ui,
         add_param_config,
         add_param_detail,
+        add_param_skip_browser,
     ] + base_params
 
     if Configuration.get_instance().is_internal_features_enabled():
@@ -376,7 +379,6 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         _init_standard_or_evaluation_flow(flow_name=flow_name, flow_path=flow_path, flow_type=flow_type)
 
 
-@exception_handler("Flow test")
 def test_flow(args):
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
@@ -437,7 +439,7 @@ def _test_flow_multi_modal(args, pf_client):
             ).generate_to_file(script)
         main_script_path = os.path.join(temp_dir, "main.py")
         logger.info("Start streamlit with main script generated at: %s", main_script_path)
-        pf_client.flows._chat_with_ui(script=main_script_path)
+        pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):

@@ -2,14 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import json
-import os
-
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
 from promptflow._utils.feature_utils import get_feature_list
-from promptflow._version import VERSION
+from promptflow.executor._service.utils.service_utils import get_executor_version
 
 router = APIRouter()
 
@@ -21,16 +18,8 @@ async def health_check():
 
 @router.get("/version")
 async def version():
-    build_info = os.environ.get("BUILD_INFO", "")
-    try:
-        build_info_dict = json.loads(build_info)
-        version = build_info_dict["build_number"]
-    except Exception:
-        version = VERSION
-
     return {
         "status": "healthy",
-        "build_info": build_info,
-        "version": version,
+        "version": get_executor_version(),
         "feature_list": get_feature_list(),
     }
