@@ -11,17 +11,13 @@ from promptflow._utils.logger_utils import service_logger
 
 class ProcessManager:
     _instance = None
-    _initialized = False
+    _processes_mapping: Dict[str, int]
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(ProcessManager, cls).__new__(cls)
+            cls._instance._processes_mapping = {}
         return cls._instance
-
-    def __init__(self) -> None:
-        if not self._initialized:
-            self._processes_mapping: Dict[str, int] = {}
-            self._initialized = True
 
     def start_process(self, run_id: str, process_id: int):
         self._processes_mapping[run_id] = process_id

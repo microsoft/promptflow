@@ -16,6 +16,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerialized
 from promptflow._utils.logger_utils import service_logger
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionTimeoutError
+from promptflow.executor._service.utils.process_manager import ProcessManager
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
 SHORT_WAIT_TIMEOUT = 10
@@ -30,8 +31,6 @@ async def invoke_sync_function_in_process(
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
 ):
-    from promptflow.executor._service.app import process_manager
-
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         error_dict = manager.dict()
@@ -43,7 +42,7 @@ async def invoke_sync_function_in_process(
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
         if run_id:
-            process_manager.start_process(run_id, p.pid)
+            ProcessManager().start_process(run_id, p.pid)
 
         # Wait for the process to finish or timeout asynchronously
         start_time = datetime.utcnow()
@@ -74,7 +73,7 @@ async def invoke_sync_function_in_process(
             return return_dict.get("result", {})
         finally:
             if run_id:
-                process_manager.remove_process(run_id)
+                ProcessManager().remove_process(run_id)
 
 
 def execute_target_function(
