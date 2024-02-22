@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from dataclasses import dataclass, field
-from typing import Callable, Dict, List
+from dataclasses import dataclass
+from typing import List
 
 
 class Secret(str):
@@ -31,22 +31,12 @@ class FilePath(str):
 
 
 @dataclass
-class AssistantTool:
-    name: str
-    openai_definition: dict
-    func: Callable
-
-
-@dataclass
 class AssistantDefinition:
     """This class is used to define an assistant definition."""
 
     model: str
     instructions: str
-    # The raw tool definition in json string
-    tools: List
-    # The resolved tool definition by name. This property is addon and will not be part of pickling.
-    assistant_tools: Dict[str, AssistantTool] = field(default_factory=dict)
+    tools: List  # The raw tool definition in json string
 
     @staticmethod
     def deserialize(data: dict) -> "AssistantDefinition":
@@ -61,7 +51,6 @@ class AssistantDefinition:
             "tools": self.tools,
         }
 
-    def init_tool_invoker(self):
-        from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
-
-        return AssistantToolInvoker.init(self)
+    def __post_init__(self):
+        # Implicitly introduce the 'tool_invoker' attribute here
+        self.tool_invoker = None  # reserved attribute for tool invoker injection

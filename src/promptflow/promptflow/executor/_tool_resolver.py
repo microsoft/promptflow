@@ -19,8 +19,9 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_pro
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
-from promptflow.contracts.types import AssistantDefinition, AssistantTool, PromptTemplate
+from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.executor._assistant_tool_invoker import AssistantTool, AssistantToolInvoker
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -111,25 +112,24 @@ class ToolResolver:
         with open(file, "r", encoding="utf-8") as file:
             assistant_definition = load_yaml(file)
         assistant_def = AssistantDefinition.deserialize(assistant_definition)
-        self._resolve_assistant_definition(assistant_def)
+        self._resolve_assistant_tool(assistant_def)
         return assistant_def
 
-    def _resolve_assistant_definition(self, assistant_definition: AssistantDefinition):
-        assistant_definition.assistant_tools = {}
+    def _resolve_assistant_tool(self, assistant_definition: AssistantDefinition):
+        resolved_tools = {}
         for tool in assistant_definition.tools:
             if tool["type"] in ("code_interpreter", "retrieval"):
-                assistant_definition.assistant_tools[tool["type"]] = AssistantTool(
-                    name=tool["type"], openai_definition=tool, func=None
-                )
+                resolved_tools[tool["type"]] = AssistantTool(name=tool["type"], openai_definition=tool, func=None)
             elif tool["type"] == "function":
                 function_tool = self._load_tool_as_function(tool)
-                assistant_definition.assistant_tools[function_tool.name] = function_tool
+                resolved_tools[function_tool.name] = function_tool
             else:
                 raise UnsupportedAssistantToolType(
                     message_format="Unsupported assistant tool type: {tool_type}",
                     tool_type=tool["type"],
                     target=ErrorTarget.EXECUTOR,
                 )
+        assistant_definition.tool_invoker = AssistantToolInvoker(resolved_tools)
 
     def _load_tool_as_function(self, tool: dict):
         node, predefined_inputs = self._create_node_for_assistant_tool(tool)

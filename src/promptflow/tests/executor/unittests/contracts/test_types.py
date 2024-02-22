@@ -1,6 +1,6 @@
 import pytest
-from promptflow.contracts.types import AssistantDefinition, Secret, PromptTemplate, FilePath
-from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
+
+from promptflow.contracts.types import AssistantDefinition, FilePath, PromptTemplate, Secret
 
 
 @pytest.mark.unittest
@@ -32,4 +32,4 @@ def test_assistant_definition():
     assert assistant_definition.instructions == "instructions"
     assert assistant_definition.tools == []
     assert assistant_definition.serialize() == data
-    assert isinstance(assistant_definition.init_tool_invoker(), AssistantToolInvoker)
+    assert assistant_definition.tool_invoker is None

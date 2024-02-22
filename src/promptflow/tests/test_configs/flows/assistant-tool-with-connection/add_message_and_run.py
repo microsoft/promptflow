@@ -27,7 +27,7 @@ async def add_message_and_run(
     download_images: bool,
 ):
     cli = await get_assistant_client(conn)
-    invoker = await get_assisant_tool_invoker(assistant_definition)
+    invoker = assistant_definition.tool_invoker
     # Check if assistant id is valid. If not, create a new assistant.
     # Note: tool registration at run creation, rather than at assistant creation.
     if not assistant_id:
@@ -45,10 +45,6 @@ async def add_message_and_run(
     file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
-
-async def get_assisant_tool_invoker(assistant_definition: AssistantDefinition):
-    invoker = AssistantToolInvoker.init(assistant_definition)
-    return invoker
 
 
 @trace
