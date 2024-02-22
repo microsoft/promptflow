@@ -1,7 +1,6 @@
 import functools
 import json
 import re
-import random
 import sys
 import time
 from typing import List, Mapping
@@ -203,7 +202,6 @@ def handle_openai_error(tries: int = 100):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            i = 0
             for i in range(tries + 1):
                 try:
                     return func(*args, **kwargs)
@@ -230,7 +228,7 @@ def handle_openai_error(tries: int = 100):
                         # Exit retry if max retry reached
                         print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
                         raise ExceedMaxRetryTimes(e)
-                    
+
                     if hasattr(e, 'response') and e.response is not None:
                         retry_after_in_header = e.response.headers.get("retry-after", None)
                     else:
