@@ -167,13 +167,6 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
     return pfbytes_file_reference_encoder
 
 
-def default_json_encoder(obj):
-    if isinstance(obj, PFBytes):
-        return str(obj)
-    else:
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}

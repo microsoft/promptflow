@@ -28,14 +28,14 @@ class TestBatchTimeout:
     )
     def test_batch_with_line_timeout(self, flow_folder, dev_connections):
         mem_run_storage = MemoryRunStorage()
+        # set line timeout to 5 seconds for testing
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder),
             get_flow_folder(flow_folder),
             connections=dev_connections,
             storage=mem_run_storage,
+            line_timeout_sec=5,
         )
-        # set line timeout to 5 seconds for testing
-        batch_engine._line_timeout_sec = 5
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples_all_timeout.json")}
         output_dir = Path(mkdtemp())
@@ -79,14 +79,14 @@ class TestBatchTimeout:
     )
     def test_batch_with_one_line_timeout(self, flow_folder, dev_connections):
         mem_run_storage = MemoryRunStorage()
+        # set line timeout to 5 seconds for testing
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder),
             get_flow_folder(flow_folder),
             connections=dev_connections,
             storage=mem_run_storage,
+            line_timeout_sec=5,
         )
-        batch_engine._line_timeout_sec = 5
-        # set line timeout to 5 seconds for testing
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
         output_dir = Path(mkdtemp())
@@ -137,9 +137,9 @@ class TestBatchTimeout:
             get_flow_folder(flow_folder),
             connections={},
             storage=mem_run_storage,
+            line_timeout_sec=line_timeout_sec,
+            batch_timeout_sec=batch_timeout_sec,
         )
-        batch_engine._line_timeout_sec = line_timeout_sec
-        batch_engine._batch_timeout_sec = batch_timeout_sec
 
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
         output_dir = Path(mkdtemp())

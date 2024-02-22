@@ -21,6 +21,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING
+from promptflow.contracts.multimedia import PFBytes
+from promptflow.contracts.types import AssistantDefinition
 
 T = TypeVar("T")
 
@@ -310,6 +312,15 @@ def _normalize_identifier_name(name):
 
 def _sanitize_python_variable_name(name: str):
     return _normalize_identifier_name(name).replace(" ", "_")
+
+
+def default_json_encoder(obj):
+    if isinstance(obj, PFBytes):
+        return str(obj)
+    if isinstance(obj, AssistantDefinition):
+        return obj.serialize()
+    else:
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def _copy_file_except(src_dir, dst_dir, exclude_file):

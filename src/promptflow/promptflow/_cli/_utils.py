@@ -20,11 +20,12 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._constants import CLIListOutputFormat, EnvironmentVariables
-from promptflow._sdk._utils import print_red_error, print_yellow_warning
+from promptflow._sdk._telemetry import log_activity, ActivityType, get_telemetry_logger
+from promptflow._sdk._utils import print_yellow_warning, print_red_error
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
-from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, PromptflowException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
@@ -353,30 +354,34 @@ def is_format_exception():
     return False
 
 
-def exception_handler(command: str):
+def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=None):
     """Catch known cli exceptions."""
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            telemetry_logger = get_telemetry_logger()
+            with log_activity(
+                    telemetry_logger,
+                    activity_name,
+                    activity_type=ActivityType.PUBLICAPI,
+                    custom_dimensions=custom_dimensions,
+            ):
                 return func(*args, **kwargs)
-            except Exception as e:
-                if is_format_exception():
-                    # When the flag format_exception is set in command,
-                    # it will write a json with exception info and command to stderr.
-                    error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
-                    error_msg["command"] = " ".join(sys.argv)
-                    sys.stderr.write(json.dumps(error_msg))
-                if isinstance(e, PromptflowException):
-                    print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
-                    exit(1)
-                else:
-                    raise e
+        except Exception as e:
+            if is_format_exception():
+                # When the flag format_exception is set in command,
+                # it will write a json with exception info and command to stderr.
+                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                error_msg["command"] = " ".join(sys.argv)
+                sys.stderr.write(json.dumps(error_msg))
+            if isinstance(e, PromptflowException):
+                print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+                exit(1)
+            else:
+                raise e
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 def get_secret_input(prompt, mask="*"):

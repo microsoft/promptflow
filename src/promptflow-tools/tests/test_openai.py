@@ -35,6 +35,8 @@ class TestOpenAI:
             chat_history=chat_history,
         )
         assert "trend 2" in result.lower()
+        # verify if openai built-in retry mechanism is disabled
+        assert openai_provider._client.max_retries == 0
 
     def test_openai_stream_chat(self, openai_provider, example_prompt_template, chat_history):
         result = openai_provider.chat(

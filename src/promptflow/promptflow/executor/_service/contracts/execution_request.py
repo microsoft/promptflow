@@ -3,22 +3,23 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Any, Mapping
-
-from pydantic import BaseModel
+from typing import Any, Mapping, Optional
 
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._service._errors import FlowFilePathInvalid
+from promptflow.executor._service.contracts.base_request import BaseRequest
 
 
-class BaseExecutionRequest(BaseModel):
+class BaseExecutionRequest(BaseRequest):
+    """Base request model for execution."""
+
     run_id: str
     working_dir: Path
     flow_file: Path
     output_dir: Path
-    connections: Mapping[str, Any] = None
-    environment_variables: Mapping[str, Any] = None
     log_path: str
+    connections: Optional[Mapping[str, Any]] = None
+    environment_variables: Optional[Mapping[str, Any]] = None
 
     def get_run_mode(self):
         raise NotImplementedError(f"Request type {self.__class__.__name__} is not implemented.")
@@ -34,6 +35,8 @@ class BaseExecutionRequest(BaseModel):
 
 
 class FlowExecutionRequest(BaseExecutionRequest):
+    """Request model for flow execution."""
+
     inputs: Mapping[str, Any] = None
 
     def get_run_mode(self):
@@ -41,6 +44,8 @@ class FlowExecutionRequest(BaseExecutionRequest):
 
 
 class NodeExecutionRequest(BaseExecutionRequest):
+    """Request model for node execution."""
+
     node_name: str
     flow_inputs: Mapping[str, Any] = None
     dependency_nodes_outputs: Mapping[str, Any] = None

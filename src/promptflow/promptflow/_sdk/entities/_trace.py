@@ -20,6 +20,7 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import CumulativeTokenCountFieldName
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -117,7 +118,7 @@ class Span:
 
     @staticmethod
     def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
-        span_dict = json.loads(MessageToJson(obj))
+        span_dict: dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
         context = {
@@ -131,14 +132,15 @@ class Span:
         status = {
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
         }
-        attributes = flatten_pb_attributes(span_dict[SpanFieldName.ATTRIBUTES])
+        # we have observed in some scenarios, there is not `attributes` field
+        attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
         # `span_type` are not standard fields in OpenTelemetry attributes
         # for example, LangChain instrumentation, as we do not inject this;
         # so we need to get it with default value to avoid KeyError
         span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
 
         # parse from resource.attributes: session id, experiment
-        resource_attributes = resource[SpanResourceFieldName.ATTRIBUTES]
+        resource_attributes: dict = resource[SpanResourceFieldName.ATTRIBUTES]
         session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
@@ -193,9 +195,9 @@ class _LineRunData:
         # if there is no token usage, set `cumulative_token_count` to None
         if total_token_count > 0:
             cumulative_token_count = {
-                "completion": completion_token_count,
-                "prompt": prompt_token_count,
-                "total": total_token_count,
+                CumulativeTokenCountFieldName.COMPLETION: completion_token_count,
+                CumulativeTokenCountFieldName.PROMPT: prompt_token_count,
+                CumulativeTokenCountFieldName.TOTAL: total_token_count,
             }
         else:
             cumulative_token_count = None
