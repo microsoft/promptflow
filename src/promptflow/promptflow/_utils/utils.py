@@ -71,6 +71,14 @@ def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
             jsonl_file.write("\n")
 
 
+def load_list_from_jsonl(file: Union[str, Path]):
+    content = []
+    with open(file, "r", encoding=DEFAULT_ENCODING) as fin:
+        for line in fin:
+            content.append(json.loads(line))
+    return content
+
+
 def transpose(values: List[Dict[str, Any]], keys: Optional[List] = None) -> Dict[str, List]:
     keys = keys or list(values[0].keys())
     return {key: [v.get(key) for v in values] for key in keys}
@@ -323,7 +331,7 @@ def default_json_encoder(obj):
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def _copy_file_except(src_dir, dst_dir, exclude_file):
+def copy_file_except(src_dir, dst_dir, exclude_file):
     """
     Copy all files from src_dir to dst_dir recursively, excluding a specific file
     directly under the root of src_dir.
@@ -349,11 +357,3 @@ def _copy_file_except(src_dir, dst_dir, exclude_file):
             src_file_path = os.path.join(root, file)
             dst_file_path = os.path.join(current_dst_dir, file)
             shutil.copy2(src_file_path, dst_file_path)
-
-
-def load_list_from_jsonl(file: Path):
-    content = []
-    with open(file, "r", encoding=DEFAULT_ENCODING) as fin:
-        for line in fin:
-            content.append(json.loads(line))
-    return content

@@ -23,7 +23,7 @@ from promptflow._utils.execution_utils import (
 )
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import (
-    _copy_file_except,
+    copy_file_except,
     dump_list_to_jsonl,
     get_int_env_var,
     load_list_from_jsonl,
@@ -245,7 +245,7 @@ class BatchEngine:
         }
 
         if resume_from_run_output_dir:
-            _copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
+            copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
 
         for i in range(len(batch_inputs)):
             previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
