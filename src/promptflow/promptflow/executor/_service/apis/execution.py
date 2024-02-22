@@ -30,7 +30,7 @@ async def flow_execution(request: FlowExecutionRequest):
         )
         try:
             result = await invoke_sync_function_in_process(
-                flow_test, args=(request,), context_dict=request.operation_context
+                flow_test, args=(request,), run_id=request.run_id, context_dict=request.operation_context
             )
             service_logger.info(f"Completed flow execution request, flow run id: {request.run_id}.")
             return result
@@ -52,7 +52,7 @@ async def node_execution(request: NodeExecutionRequest):
         )
         try:
             result = await invoke_sync_function_in_process(
-                single_node_run, args=(request,), context_dict=request.operation_context
+                single_node_run, args=(request,), run_id=request.run_id, context_dict=request.operation_context
             )
             service_logger.info(f"Completed node execution request, node name: {request.node_name}.")
             return result

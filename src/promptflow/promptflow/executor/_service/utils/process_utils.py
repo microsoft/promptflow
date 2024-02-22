@@ -26,9 +26,12 @@ async def invoke_sync_function_in_process(
     *,
     args: tuple = (),
     kwargs: dict = {},
+    run_id: str = None,
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
 ):
+    from promptflow.executor._service.app import process_manager
+
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         error_dict = manager.dict()
@@ -39,33 +42,39 @@ async def invoke_sync_function_in_process(
         )
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
+        if run_id:
+            process_manager.start_process(run_id, p.pid)
 
         # Wait for the process to finish or timeout asynchronously
         start_time = datetime.utcnow()
         while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and p.is_alive():
             await asyncio.sleep(1)
 
-        # Terminate the process if it is still alive after timeout
-        if p.is_alive():
-            service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
-            p.terminate()
-            p.join()
-            raise ExecutionTimeoutError(wait_timeout)
+        try:
+            # Terminate the process if it is still alive after timeout
+            if p.is_alive():
+                service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
+                p.terminate()
+                p.join()
+                raise ExecutionTimeoutError(wait_timeout)
 
-        # Raise exception if the process exit code is not 0
-        if p.exitcode != 0:
-            exception = error_dict.get("error", None)
-            if exception is None:
-                raise UnexpectedError(
-                    message="Unexpected error occurred while executing the request",
-                    target=ErrorTarget.EXECUTOR,
-                )
-            # JsonSerializedPromptflowException will be raised here
-            # no need to change to PromptflowException since it will be handled in app.exception_handler
-            raise exception
+            # Raise exception if the process exit code is not 0
+            if p.exitcode != 0:
+                exception = error_dict.get("error", None)
+                if exception is None:
+                    raise UnexpectedError(
+                        message="Unexpected error occurred while executing the request",
+                        target=ErrorTarget.EXECUTOR,
+                    )
+                # JsonSerializedPromptflowException will be raised here
+                # no need to change to PromptflowException since it will be handled in app.exception_handler
+                raise exception
 
-        service_logger.info(f"[{p.pid}] Process finished.")
-        return return_dict.get("result", {})
+            service_logger.info(f"[{p.pid}] Process finished.")
+            return return_dict.get("result", {})
+        finally:
+            if run_id:
+                process_manager.remove_process(run_id)
 
 
 def execute_target_function(

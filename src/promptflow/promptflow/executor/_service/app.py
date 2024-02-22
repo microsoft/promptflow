@@ -7,9 +7,12 @@ from fastapi.responses import JSONResponse
 
 from promptflow.executor._service.apis.common import router as common_router
 from promptflow.executor._service.apis.execution import router as execution_router
+from promptflow.executor._service.utils.process_manager import ProcessManager
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
 app = FastAPI()
+
+process_manager = ProcessManager()
 
 app.include_router(common_router)
 app.include_router(execution_router)
