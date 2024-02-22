@@ -202,6 +202,9 @@ bulk_logger = get_logger("execution.bulk")
 # such as error logs.
 logger = get_logger("execution")
 
+# Logs by service_logger will be shown in executor service mode.
+service_logger = get_logger("execution.service")
+
 
 logger_contexts = []
 

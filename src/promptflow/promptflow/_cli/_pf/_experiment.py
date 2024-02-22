@@ -11,7 +11,7 @@ from promptflow._cli._params import (
     add_param_max_results,
     base_params,
 )
-from promptflow._cli._utils import activate_action, exception_handler
+from promptflow._cli._utils import activate_action
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._experiment import Experiment
@@ -173,7 +173,6 @@ def dispatch_experiment_commands(args: argparse.Namespace):
         pass
 
 
-@exception_handler("Create experiment")
 def create_experiment(args: argparse.Namespace):
     from promptflow._sdk._load_functions import _load_experiment_template
 
@@ -187,26 +186,22 @@ def create_experiment(args: argparse.Namespace):
     print(json.dumps(exp._to_dict(), indent=4))
 
 
-@exception_handler("List experiment")
 def list_experiment(args: argparse.Namespace):
     list_view_type = get_list_view_type(archived_only=args.archived_only, include_archived=args.include_archived)
     results = _get_pf_client()._experiments.list(args.max_results, list_view_type=list_view_type)
     print(json.dumps([result._to_dict() for result in results], indent=4))
 
 
-@exception_handler("Show experiment")
 def show_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.get(args.name)
     print(json.dumps(result._to_dict(), indent=4))
 
 
-@exception_handler("Start experiment")
 def start_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.start(args.name)
     print(json.dumps(result._to_dict(), indent=4))
 
 
-@exception_handler("Stop experiment")
 def stop_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.stop(args.name)
     print(json.dumps(result._to_dict(), indent=4))

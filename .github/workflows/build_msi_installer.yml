@@ -56,13 +56,6 @@ jobs:
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
 
-      - name: Setup and Install dev promptflow
-        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
-        uses: "./.github/actions/step_sdk_setup"
-        with:
-          setupType: promptflow_with_extra
-          scriptPath: ${{ env.testWorkingDirectory }}
-
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
@@ -97,6 +90,24 @@ jobs:
           INPUT_VERSION: ${{ github.event.inputs.version }}
           MSI_PRIVATE_VERSION: ${{ github.event.inputs.set_msi_private_version }}
         shell: pwsh
+
+      - name: Update promptflow package version when set msi private version
+        if: ${{ github.event.inputs.set_msi_private_version != null && github.event.inputs.set_msi_private_version != '' }}
+        run: |
+          $override_version = 'VERSION = "{0}"' -f $env:MSI_PRIVATE_VERSION
+          Write-Host "'$override_version' as version"
+          $override_version | Out-File -FilePath "./src/promptflow/promptflow/_version.py" -Encoding ASCII
+        shell: pwsh
+        env:
+          MSI_PRIVATE_VERSION: ${{ github.event.inputs.set_msi_private_version }}
+
+      - name: Setup and Install dev promptflow
+        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
+        uses: "./.github/actions/step_sdk_setup"
+        with:
+          setupType: promptflow_with_extra
+          scriptPath: ${{ env.testWorkingDirectory }}
+
 
       - name: Build Pyinstaller project
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
