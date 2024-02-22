@@ -155,6 +155,7 @@ def function_to_interface(
     if typ is inspect.Signature.empty:
         output_type = [ValueType.OBJECT]
     else:
+        # If the output annotation is a union type, then it should be a list.
         output_type = [ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
     outputs = {"output": OutputDefinition(type=output_type)}
 
