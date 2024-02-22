@@ -72,6 +72,7 @@ SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
+PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
@@ -114,7 +115,6 @@ TIMESTAMP_MACRO = "${timestamp}"
 DEFAULT_VARIANT = "variant_0"
 # run visualize constants
 VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_JS_BUNDLE_FILENAME = "bulkTestDetails.min.js"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
@@ -430,8 +430,36 @@ class ExperimentNodeRunStatus(object):
     CANCELED = "Canceled"
 
 
-class ExperimentContextKey:
+class ContextAttributeKey:
     EXPERIMENT = "experiment"
     # Note: referenced id not used for lineage, only for evaluation
     REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
-    REFERENCED_RUN_ID = "referenced.run_id"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+
+
+class EnvironmentVariables:
+    """The environment variables."""
+
+    PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"
+
+
+class CumulativeTokenCountFieldName:
+    COMPLETION = "completion"
+    PROMPT = "prompt"
+    TOTAL = "total"
+
+
+class LineRunFieldName:
+    LINE_RUN_ID = "line_run_id"
+    TRACE_ID = "trace_id"
+    ROOT_SPAN_ID = "root_span_id"
+    INPUTS = "inputs"
+    OUTPUTS = "outputs"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+    LATENCY = "latency"
+    DISPLAY_NAME = "display_name"
+    KIND = "kind"
+    CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
+    EVALUATIONS = "evaluations"

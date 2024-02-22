@@ -49,7 +49,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        with self._update_operation_context(run_id):
+        with self._update_operation_context(run_id, index):
             return self._exec_line(inputs, index, run_id)
 
     def _exec_line(

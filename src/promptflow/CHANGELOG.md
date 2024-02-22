@@ -1,6 +1,16 @@
 # Release History
 
-## 1.5.0 (Upcoming)
+## 1.6.0 (TBD)
+
+### Features Added
+
+- [CLI] Support configuring environment variable to directly use `AzureCliCredential` for `pfazure` commands.
+  ```dotenv
+  PF_USE_AZURE_CLI_CREDENTIAL=true
+  ```
+- [SDK/CLI] Support setting timeout for `pfazure run stream`.
+
+## 1.5.0 (2024.02.06)
 
 
 ### Features Added

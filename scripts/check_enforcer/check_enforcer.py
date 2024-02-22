@@ -36,7 +36,7 @@ github_workspace = os.path.expanduser("~/promptflow/")
 # Please notice that the key should be the Job Name in the pipeline.
 special_care = {
     "sdk_cli_tests": 4,
-    "sdk_cli_azure_test": 4,
+    "sdk_cli_azure_test_replay": 4,
     # "samples_connections_connection": 0,
 }
 
@@ -52,10 +52,10 @@ checks = {
         "scripts/building/**",
         ".github/workflows/promptflow-global-config-test.yml",
     ],
-    "sdk_cli_azure_test": [
+    "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
         "scripts/building/**",
-        ".github/workflows/promptflow-sdk-cli-azure-test.yml",
+        ".github/workflows/promptflow-sdk-cli-azure-test-pull-request.yml",
     ],
 }
 

@@ -21,6 +21,8 @@ class TestOpenAIGPT4V:
             image_input=example_image,
         )
         assert "10" == result
+        # verify if openai built-in retry mechanism is disabled
+        assert openai_provider._client.max_retries == 0
 
     def test_openai_gpt4v_stream_chat(self, openai_provider, example_prompt_template_with_image, example_image):
         result = openai_provider.chat(

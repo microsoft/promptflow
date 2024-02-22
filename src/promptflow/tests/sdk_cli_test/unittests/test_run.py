@@ -195,7 +195,7 @@ class TestRun:
         # Define input parameters
         flow_path = f"{FLOWS_DIR}/web_classification"
         client = PFClient()
-        run_submitter = RunSubmitter(client.runs)
+        run_submitter = RunSubmitter(client)
         run = Run(
             name=str(uuid.uuid4()),
             flow=Path(flow_path),
