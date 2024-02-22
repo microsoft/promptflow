@@ -806,6 +806,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         if not isinstance(environment, dict):
             raise TypeError(f"environment should be a dict, got {type(environment)} for {environment}")
+        # TODO: resolve additional includes here
         if PYTHON_REQUIREMENTS_TXT in environment:
             req_path = os.path.join(os.path.dirname(flow), environment[PYTHON_REQUIREMENTS_TXT])
             if not os.path.exists(req_path):
