@@ -6,7 +6,11 @@ from fastapi import APIRouter
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import service_logger
-from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest, NodeExecutionRequest
+from promptflow.executor._service.contracts.execution_request import (
+    CancelExecutionRequest,
+    FlowExecutionRequest,
+    NodeExecutionRequest,
+)
 from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
 from promptflow.executor._service.utils.service_utils import (
     get_log_context,
@@ -62,6 +66,13 @@ async def node_execution(request: NodeExecutionRequest):
                 f"Failed to execute node, node name: {request.node_name}. Error: {error_type_and_message}"
             )
             raise ex
+
+
+@router.post("/cancel")
+async def cancel_execution(request: CancelExecutionRequest):
+    from promptflow.executor._service.app import process_manager
+
+    process_manager.end_process(request.run_id)
 
 
 def flow_test(request: FlowExecutionRequest):

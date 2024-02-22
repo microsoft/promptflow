@@ -52,3 +52,9 @@ class NodeExecutionRequest(BaseExecutionRequest):
 
     def get_run_mode(self):
         return RunMode.SingleNode
+
+
+class CancelExecutionRequest(BaseRequest):
+    """Request model for canceling execution."""
+
+    run_id: str
