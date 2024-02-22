@@ -3,21 +3,15 @@
     "entry": "flow_with_trace:my_flow",
     "inputs": {
         "text": {
-            "type": [
-                "string"
-            ]
+            "type": "string"
         },
         "models": {
-            "type": [
-                "list"
-            ]
+            "type": "list"
         }
     },
     "outputs": {
         "output": {
-            "type": [
-                "string"
-            ]
+            "type": "string"
         }
     },
     "source": "flow_with_trace.py"

@@ -339,11 +339,12 @@ def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
         flow_meta["inputs"] = {}
         for k, v in tool.inputs.items():
             # We didn't support specifying multiple types for inputs, so we only take the first one.
-            flow_meta["inputs"][k] = {"type": [v.type[0].value]}
+            flow_meta["inputs"][k] = {"type": v.type[0].value}
     if tool.outputs:
         flow_meta["outputs"] = {}
         for k, v in tool.outputs.items():
-            flow_meta["outputs"][k] = {"type": [v.type[0].value]}
+            # We didn't support specifying multiple types for outputs, so we only take the first one.
+            flow_meta["outputs"][k] = {"type": v.type[0].value}
     return flow_meta
 
 
