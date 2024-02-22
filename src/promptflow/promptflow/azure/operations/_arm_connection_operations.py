@@ -38,6 +38,7 @@ class ConnectionCategory:
     OpenAI = "OpenAI"
     Serp = "Serp"
     Serverless = "Serverless"
+    BingLLMSearch = "BingLLMSearch"
 
 
 def get_case_insensitive_key(d, key, default=None):
