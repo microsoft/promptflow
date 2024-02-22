@@ -360,7 +360,7 @@ class RecordCache:
             elif "Exception" in output_type:
                 raise output
             else:
-                return output_value
+                return output
         else:
             self.file_records_pointer[hash_value] = {
                 "input": input_dict,
@@ -375,7 +375,7 @@ class RecordCache:
             elif "Exception" in output_type:
                 raise output
             else:
-                return output_value
+                return output
 
 
 class RecordStorage:
