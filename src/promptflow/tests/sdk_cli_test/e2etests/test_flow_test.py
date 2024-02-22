@@ -289,11 +289,25 @@ class TestFlowTest:
         clear_module_cache("flow")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert result.run_info.status.value == "Completed"
+        assert result.run_info.status.value == "Completed", result.run_info.error
 
     def test_eager_flow_with_nested_entry(self):
         clear_module_cache("my_module.entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/nested_entry/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert result.run_info.status.value == "Completed"
+        assert result.run_info.status.value == "Completed", result.run_info.error
         assert result.output == "Hello world! val1"
+
+    def test_eager_flow_with_environment_variables(self):
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! VAL"
+
+    def test_eager_flow_with_evc(self):
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables_connection/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! azure"
