@@ -473,7 +473,7 @@ class TestFlowLocalOperations:
             "my_script_tool.py": {
                 "function": "my_tool",
                 "inputs": {
-                    "connection": {"custom_type": ["MyCustomConnection"], "type": ["CustomConnection"]},
+                    "connection": {"type": ["CustomConnection"]},
                     "input_param": {"type": ["string"]},
                 },
                 "source": "my_script_tool.py",
