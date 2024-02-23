@@ -22,7 +22,7 @@ from promptflow._sdk._constants import (
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
-from promptflow._sdk._errors import UnsecureConnectionError, SDKError
+from promptflow._sdk._errors import SDKError, UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -43,11 +43,12 @@ from promptflow._sdk.schemas._connection import (
     OpenAIConnectionSchema,
     QdrantConnectionSchema,
     SerpConnectionSchema,
+    ServerlessConnectionSchema,
     WeaviateConnectionSchema,
 )
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
-from promptflow.exceptions import ValidationException, UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -459,6 +460,39 @@ class OpenAIConnection(_StrongTypeConnection):
     def base_url(self, value):
         """Set the connection api base."""
         self.configs["base_url"] = value
+
+
+class ServerlessConnection(_StrongTypeConnection):
+    """Serverless connection.
+
+    :param api_key: The api key.
+    :type api_key: str
+    :param api_base: The api base.
+    :type api_base: str
+    :param name: Connection name.
+    :type name: str
+    """
+
+    TYPE = ConnectionType.SERVERLESS
+
+    def __init__(self, api_key: str, api_base: str, **kwargs):
+        secrets = {"api_key": api_key}
+        configs = {"api_base": api_base}
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ServerlessConnectionSchema
+
+    @property
+    def api_base(self):
+        """Return the connection api base."""
+        return self.configs.get("api_base")
+
+    @api_base.setter
+    def api_base(self, value):
+        """Set the connection api base."""
+        self.configs["api_base"] = value
 
 
 class SerpConnection(_StrongTypeConnection):

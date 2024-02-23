@@ -61,6 +61,12 @@ class OpenAIConnectionSchema(ConnectionSchema):
     base_url = fields.Str()
 
 
+class ServerlessConnectionSchema(ConnectionSchema):
+    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.SERVERLESS), required=True)
+    api_key = fields.Str(required=True)
+    api_base = fields.Str(required=True)
+
+
 class EmbeddingStoreConnectionSchema(ConnectionSchema):
     module = fields.Str(dump_default="promptflow_vectordb.connections")
     api_key = fields.Str(required=True)
