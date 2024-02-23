@@ -10,6 +10,7 @@ from flask_restx import fields
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, CumulativeTokenCountFieldName, LineRunFieldName
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow._sdk.entities._trace import LineRun
 
 api = Namespace("LineRuns", description="Line runs management")
 
@@ -82,9 +83,11 @@ class LineRuns(Resource):
 
         client: PFClient = get_client_from_request()
         args = ListLineRunParser.from_request()
-        line_runs = client._traces.list_line_runs(
+        line_runs: typing.List[LineRun] = client._traces.list_line_runs(
             session_id=args.session_id,
             run=args.runs,
             experiment=args.experiments,
         )
+        # order by start_time desc
+        line_runs.sort(key=lambda x: x.start_time, reverse=True)
         return [asdict(line_run) for line_run in line_runs]
