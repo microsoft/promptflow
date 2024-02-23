@@ -270,6 +270,9 @@ class FlowOperations(TelemetryMixin):
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
     def _chat_with_ui(self, script, skip_open_browser: bool = False):
+        # import threading
+        # if threading.current_thread() is not threading.main_thread():
+        #     raise Exception("_chat_with_ui must be called from the main thread.")
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
@@ -288,7 +291,13 @@ class FlowOperations(TelemetryMixin):
         ]
         if skip_open_browser:
             sys.argv += ["--server.headless=true"]
-        st_cli.main()
+
+        import webbrowser
+        process = subprocess.Popen(sys.argv)
+        if not skip_open_browser:
+            webbrowser.open("http://localhost:8501")
+        process.wait()
+        # st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = load_yaml(flow_dag_path)
