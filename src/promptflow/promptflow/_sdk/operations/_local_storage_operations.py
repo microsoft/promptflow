@@ -388,7 +388,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
-        filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+        filename = self._get_node_run_info_file_name(line_number)
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
     def _load_info_from_file(self, file_path, parse_const_as_str: bool = False):
@@ -416,7 +416,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
         node_run_infos = []
         for node_folder in self._node_infos_folder.iterdir():
-            filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+            filename = self._get_node_run_info_file_name(line_number)
             node_run_record_file = node_folder / filename
             if node_run_record_file.is_file():
                 runs = self._load_info_from_file(node_run_record_file)
@@ -435,14 +435,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             return
         self._persist_run_multimedia(run_info, self._run_infos_folder)
         line_run_record = LineRunRecord.from_flow_run_info(run_info)
-        # calculate filename according to the batch size
-        # note that if batch_size > 1, need to well handle concurrent write scenario
-        lower_bound = line_run_record.line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
-        upper_bound = lower_bound + LOCAL_STORAGE_BATCH_SIZE - 1
-        filename = (
-            f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
-            f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
-        )
+        filename = self._get_flow_run_info_file_name(run_info.index)
         line_run_record.dump(self._run_infos_folder / filename)
 
     def _load_all_flow_run_info(self, parse_const_as_str: bool = False) -> List[Dict]:
@@ -458,12 +451,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         return flow_run_infos
 
     def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
-        lower_bound = line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
-        upper_bound = lower_bound + LOCAL_STORAGE_BATCH_SIZE - 1
-        filename = (
-            f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
-            f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
-        )
+        filename = self._get_flow_run_info_file_name(line_number)
         file_path = self._run_infos_folder / filename
         if not file_path.is_file():
             return None
@@ -552,3 +540,20 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                         current_outputs[LINE_NUMBER] = line_number
                         outputs.append(copy.deepcopy(current_outputs))
         return pd.DataFrame(inputs), pd.DataFrame(outputs)
+
+    def _get_flow_run_info_file_name(self, line_number: int) -> str:
+        """Calculate flow_run_info filename according to the LOCAL_STORAGE_BATCH_SIZE.
+        Note that if LOCAL_STORAGE_BATCH_SIZE > 1, need to well handle concurrent write scenario.
+        So currently we just set LOCAL_STORAGE_BATCH_SIZE to 1.
+        """
+        lower_bound = line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
+        upper_bound = lower_bound + LOCAL_STORAGE_BATCH_SIZE - 1
+        filename = (
+            f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
+            f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+        )
+        return filename
+
+    def _get_node_run_info_file_name(self, line_number: int) -> str:
+        """Get node_run_info filename."""
+        return f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
