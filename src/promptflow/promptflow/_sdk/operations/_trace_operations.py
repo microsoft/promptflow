@@ -16,9 +16,11 @@ class TraceOperations:
     def list_spans(
         self,
         session_id: typing.Optional[str] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[Span]:
         orm_spans = ORMSpan.list(
             session_id=session_id,
+            trace_ids=trace_ids,
         )
         return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
 

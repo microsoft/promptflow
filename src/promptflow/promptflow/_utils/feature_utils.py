@@ -51,6 +51,11 @@ def get_feature_list():
             description="Supports users explicitly specifying the worker count for batch run.",
             state=FeatureState.READY,
         ),
+        Feature(
+            name="ResumeBatchRun",
+            description="Support resuming batch run.",
+            state=FeatureState.E2ETEST,
+        ),
     ]
 
     return feature_list

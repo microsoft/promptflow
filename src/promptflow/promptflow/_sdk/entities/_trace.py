@@ -173,19 +173,13 @@ class _LineRunData:
     end_time: str
     status: str
     latency: float
-    display_name: str
+    name: str
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
 
     def _from_root_span(span: Span) -> "_LineRunData":
         attributes: dict = span._content[SpanFieldName.ATTRIBUTES]
-        if SpanAttributeFieldName.LINE_RUN_ID in attributes:
-            line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
-        elif SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
-            line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-        else:
-            # eager flow/arbitrary script
-            line_run_id = span.trace_id
+        line_run_id = span.trace_id
         start_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.START_TIME])
         end_time = datetime.datetime.fromisoformat(span._content[SpanFieldName.END_TIME])
         # calculate `cumulative_token_count`
@@ -212,7 +206,7 @@ class _LineRunData:
             end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
-            display_name=span.name,
+            name=span.name,
             kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.span_type),
             cumulative_token_count=cumulative_token_count,
         )
@@ -231,15 +225,15 @@ class LineRun:
     end_time: str
     status: str
     latency: float
-    display_name: str
+    name: str
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None
-    evaluations: typing.Optional[typing.List[typing.Dict]] = None
+    evaluations: typing.Optional[typing.Dict[str, _LineRunData]] = None
 
     @staticmethod
     def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
-        evaluations = []
+        evaluations = dict()
         for span in spans:
             if span.parent_span_id:
                 continue
@@ -248,7 +242,7 @@ class LineRun:
                 SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes  # test scenario
                 or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes  # batch run scenario
             ):
-                evaluations.append(_LineRunData._from_root_span(span))
+                evaluations[span.name] = _LineRunData._from_root_span(span)
             elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
                 main_line_run_data = _LineRunData._from_root_span(span)
             else:
@@ -270,7 +264,7 @@ class LineRun:
             end_time=main_line_run_data.end_time,
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
-            display_name=main_line_run_data.display_name,
+            name=main_line_run_data.name,
             kind=main_line_run_data.kind,
             cumulative_token_count=main_line_run_data.cumulative_token_count,
             evaluations=evaluations,

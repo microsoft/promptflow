@@ -57,11 +57,14 @@ class Span(Base):
     @sqlite_retry
     def list(
         session_id: typing.Optional[str] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
     ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
+            if trace_ids is not None:
+                stmt = stmt.filter(Span.trace_id.in_(trace_ids))
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
