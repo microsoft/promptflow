@@ -26,7 +26,6 @@ def get_client_with_workspace_info(container_name: str, workspace_info: dict) ->
     if subscription_id is None or resource_group_name is None or workspace_name is None:
         current_app.logger.info("No workspace info found. Skip getting client.")
         return None
-    current_app.logger.info(f"sub id:{subscription_id}  rg:{resource_group_name}  ws:{workspace_name}")
     return get_client(container_name, subscription_id, resource_group_name, workspace_name)
 
 

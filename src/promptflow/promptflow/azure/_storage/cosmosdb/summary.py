@@ -3,6 +3,7 @@ import json
 import typing
 from dataclasses import asdict, dataclass, field
 
+from azure.cosmos.container import ContainerProxy
 from flask import current_app
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanStatusFieldName
@@ -62,7 +63,7 @@ class Summary:
     def __init__(self, span: Span) -> None:
         self.span = span
 
-    def persist(self, client):
+    def persist(self, client: ContainerProxy):
         if self.span.parent_span_id:
             # This is not the root span
             return
@@ -86,7 +87,7 @@ class Summary:
         ):
             self._insert_evaluation(client)
 
-    def _persist_line_run(self, client):
+    def _persist_line_run(self, client: ContainerProxy):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
 
         session_id = self.span.session_id
@@ -136,7 +137,7 @@ class Summary:
         current_app.logger.info(f"Persist main run for LineSummary id: {item.id}")
         return client.create_item(body=asdict(item))
 
-    def _insert_evaluation(self, client):
+    def _insert_evaluation(self, client: ContainerProxy):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
         partition_key = self.span.session_id
         name = self.span.name
@@ -146,7 +147,18 @@ class Summary:
             outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
-            main_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
+            # Query to get item id from line run id.
+            line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
+            query = "SELECT * FROM c WHERE c.line_run_id = @line_run_id"
+            parameters = [
+                {"name": "@line_run_id", "value": line_run_id},
+            ]
+            items = list(client.query_items(query=query, parameters=parameters, partition_key=partition_key))
+            if items:
+                main_id = items[0]["id"]
+            else:
+                current_app.logger.error(f"Cannot find main run for line run id: {line_run_id}")
+                return
             line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
             item.line_run_id = line_run_id
         else:
