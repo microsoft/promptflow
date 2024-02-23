@@ -1045,3 +1045,21 @@ class TestFlowRun:
 
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
+
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
+    def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
+        # delete the .promptflow/ folder
+        run = pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=randstr("name"),
+        )
+        pf.runs.stream(run)
+        run = pf.runs.get(run)
+        assert run.status == RunStatus.COMPLETED
+
+        # download the run and check .promptflow/flow.meta.json
+        pass
