@@ -16,6 +16,8 @@ api = Namespace("LineRuns", description="Line runs management")
 # parsers for query parameters
 list_line_run_parser = api.parser()
 list_line_run_parser.add_argument("session", type=str, required=False)
+list_line_run_parser.add_argument("run", type=str, required=False)
+list_line_run_parser.add_argument("experiment", type=str, required=False)
 
 
 # use @dataclass for strong type
