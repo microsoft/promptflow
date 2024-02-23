@@ -3,7 +3,6 @@ import json
 import typing
 from dataclasses import asdict, dataclass, field
 
-from azure.cosmos.container import ContainerProxy
 from flask import current_app
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanStatusFieldName
@@ -58,6 +57,8 @@ class LineEvaluation:
 
 
 class Summary:
+    from azure.cosmos.container import ContainerProxy
+
     __container__ = "LineSummary"
 
     def __init__(self, span: Span) -> None:
