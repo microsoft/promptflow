@@ -74,6 +74,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     # print user the UI url
     ui_url = _determine_trace_url(
         pfs_port=pfs_port,
+        session_configured=session is not None,
         experiment=experiment,
         run=kwargs.get("run", None),
         session_id=session_id,
@@ -173,6 +174,7 @@ def _init_otel_trace_exporter(otlp_port: str, session_id: str, experiment: typin
 
 def _determine_trace_url(
     pfs_port: str,
+    session_configured: bool,
     experiment: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
     session_id: typing.Optional[str] = None,
@@ -182,6 +184,6 @@ def _determine_trace_url(
         ui_url += f"?experiment={experiment}"
     elif run is not None:
         ui_url += f"?run={run}"
-    elif session_id is not None:
+    elif session_configured and session_id is not None:
         ui_url += f"?session={session_id}"
     return ui_url
