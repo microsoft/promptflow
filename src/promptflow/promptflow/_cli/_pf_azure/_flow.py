@@ -22,7 +22,8 @@ from promptflow._cli._utils import (
     _set_workspace_argument_for_subparsers,
     activate_action,
 )
-from promptflow._sdk._constants import get_list_view_type
+from promptflow._sdk._constants import AzureFlowSource, get_list_view_type
+from promptflow.azure._entities._flow import Flow
 
 
 def add_parser_flow(subparsers):
@@ -206,13 +207,13 @@ def add_parser_flow_download(subparsers):
 
 def dispatch_flow_commands(args: argparse.Namespace):
     if args.sub_action == "create":
-        create_or_update_flow(args)
+        create_flow(args)
     elif args.sub_action == "show":
         show_flow(args)
     elif args.sub_action == "list":
         list_flows(args)
     elif args.sub_action == "update":
-        create_or_update_flow(args)
+        update_flow(args)
 
 
 def _get_flow_operation(subscription_id, resource_group, workspace_name):
@@ -220,11 +221,19 @@ def _get_flow_operation(subscription_id, resource_group, workspace_name):
     return pf_client._flows
 
 
-def create_or_update_flow(args: argparse.Namespace):
+def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     params = _parse_flow_metadata_args(args.params_override)
     pf.flows.create_or_update(flow=args.flow, **params)
+
+
+def update_flow(args: argparse.Namespace):
+    """Update a flow for promptflow."""
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    params = _parse_flow_metadata_args(args.params_override)
+    flow_object = Flow(name=args.flow, flow_source=AzureFlowSource.PF_SERVICE)
+    pf.flows.create_or_update(flow=flow_object, **params)
 
 
 def show_flow(args: argparse.Namespace):

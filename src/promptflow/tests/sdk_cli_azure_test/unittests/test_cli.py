@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 from typing import List
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -298,7 +298,7 @@ class TestAzureCli:
             *operation_scope_args,
         )
         mocked.assert_called_with(
-            flow="test_flow",
+            flow=ANY,
             display_name="test_flow_display_name",
             description="test_description",
             tags={"key1": "value1"},

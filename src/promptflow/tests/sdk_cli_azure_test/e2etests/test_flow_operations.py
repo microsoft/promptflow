@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from promptflow.azure._entities._flow import Flow
+from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -45,11 +46,16 @@ class TestFlow:
             "tags": {"owner": "sdk-test", "key1": "value1"},
         }
         # update flow
-        updated_flow = pf.flows.create_or_update(flow=created_flow.name, **test_meta)
+        updated_flow = pf.flows.create_or_update(flow=created_flow, **test_meta)
 
         assert updated_flow.display_name == test_meta["display_name"]
         assert updated_flow.description == test_meta["description"]
         assert updated_flow.tags == test_meta["tags"]
+
+        # test update with wrong flow id
+        with pytest.raises(UserErrorException, match=r"Flow with id fake_flow_name not found"):
+            updated_flow.name = "fake_flow_name"
+            pf.flows.create_or_update(updated_flow, display_name="A new test flow")
 
     @pytest.mark.skipif(
         condition=not is_live(),

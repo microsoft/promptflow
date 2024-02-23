@@ -30,7 +30,7 @@ class Flow(AdditionalIncludesMixin):
 
     def __init__(
         self,
-        path: Union[str, PathLike],
+        path: Optional[Union[str, PathLike]] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
         description: Optional[str] = None,
