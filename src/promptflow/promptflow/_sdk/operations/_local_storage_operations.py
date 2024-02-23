@@ -226,9 +226,6 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         self._dump_meta_file()
         self._eager_mode = self._calculate_eager_mode(run)
 
-        self._loaded_flow_run_info = {}  # {line_number: flow_run_info}
-        self._loaded_node_run_info = {}  # {line_number: [node_run_info]}
-
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
@@ -410,10 +407,6 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 node_run_infos.extend(new_runs)
                 for new_run in new_runs:
                     new_run = resolve_multimedia_data_recursively(node_run_record_file, new_run)
-                    run_info = NodeRunInfo.deserialize(new_run)
-                    line_number = run_info.index
-                    self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, [])
-                    self._loaded_node_run_info[line_number].append(run_info)
         return node_run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
@@ -451,9 +444,6 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             flow_run_infos.extend(new_runs)
             for new_run in new_runs:
                 new_run = resolve_multimedia_data_recursively(line_run_record_file, new_run)
-                run_info = FlowRunInfo.deserialize(new_run)
-                line_number = run_info.index
-                self._loaded_flow_run_info[line_number] = run_info
         return flow_run_infos
 
     def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
