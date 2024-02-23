@@ -174,4 +174,4 @@ Alternatively, you can test your tool package using the script below to ensure t
 - [Use File Path as Tool Input](use-file-path-as-tool-input.md)  
 - [Create a Dynamic List Tool Input](create-dynamic-list-tool-input.md)  
 - [Create Cascading Tool Inputs](create-cascading-tool-inputs.md)
-- [Generate Tool Input Content through a Function](generate-tool-input-content-through-a-function.md)  
+- [Generate a Tool Input by a Function](generate-a-tool-input-by-a-function.md)  
