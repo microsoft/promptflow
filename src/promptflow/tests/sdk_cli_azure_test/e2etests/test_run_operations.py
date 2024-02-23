@@ -19,7 +19,7 @@ import pytest
 
 from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
-from promptflow._sdk._load_functions import load_flow, load_run
+from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -31,6 +31,7 @@ from promptflow.azure._constants._flow import (
     SESSION_ID_PROPERTY,
 )
 from promptflow.azure._entities._flow import Flow
+from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -713,8 +714,8 @@ class TestFlowRun:
 
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
-            assert flow_session_id == body.session_id
             assert flow_lineage_id == body.flow_lineage_id
+            assert flow_session_id == body.session_id
             return body
 
         # flow session id is same with or without session creation
