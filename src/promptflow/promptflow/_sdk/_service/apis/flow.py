@@ -4,6 +4,9 @@
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow._utils.yaml_utils import load_yaml
+from promptflow._utils.flow_utils import resolve_flow_path
+from pathlib import Path
 
 api = Namespace("Flows", description="Flows Management")
 
@@ -50,3 +53,16 @@ class FlowTest(Resource):
                 output_path=args.detail,
             )
         return result
+
+
+@api.route("/get")
+class FlowGet(Resource):
+    @api.response(code=200, description="Get flow snapshot", model=dict_field)
+    @api.doc(parser=flow_test_parser, description="Get flow snapshot")
+    def get(self):
+
+        args = flow_test_parser.parse_args()
+        source_path = Path(args.flow)
+        flow_path = resolve_flow_path(source_path)
+        flow_info = load_yaml(flow_path)
+        return flow_info
