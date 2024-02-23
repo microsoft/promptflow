@@ -30,6 +30,7 @@ class EagerFlow(FlowBase):
         self.entry = entry
         # entry file name
         try:
+            # TODO: remove this after gen meta removed entry file
             self.entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
         except Exception as e:
             raise UserErrorException(f"Entry function {entry} is not valid: {e}")
