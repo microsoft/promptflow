@@ -1,4 +1,3 @@
 promptflow>=1.4.0
 promptflow-tools
 llama_index
-configargparse
