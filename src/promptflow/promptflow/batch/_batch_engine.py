@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
-from promptflow._core._errors import UnexpectedError
+from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
@@ -195,9 +195,11 @@ class BatchEngine:
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
-                    previous_run_results = self._copy_previous_run_result(
-                        resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir
-                    )
+                    previous_run_results = None
+                    if resume_from_run_storage and resume_from_run_output_dir:
+                        previous_run_results = self._copy_previous_run_result(
+                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir
+                        )
 
                     # run flow in batch mode
                     return async_run_allowing_running_loop(
@@ -236,40 +238,54 @@ class BatchEngine:
         to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
-        previous_run_results = []
-        previous_run_output = (
-            load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl") if resume_from_run_output_dir else []
-        )
+        # Load the previous flow run output from output.jsonl
+        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl")
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
 
-        if resume_from_run_output_dir:
-            copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
+        # Copy other files from resume_from_run_output_dir to output_dir in case there are images
+        copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
 
-        for i in range(len(batch_inputs)):
-            previous_run_info = resume_from_run_storage.load_flow_run_info(i) if resume_from_run_storage else None
-            if previous_run_info and previous_run_info.status == Status.Completed:
-                previous_node_run_infos = (
-                    resume_from_run_storage.load_node_run_info_for_line(i) if resume_from_run_storage else []
-                )
-                previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
-                previous_node_run_outputs = {node_info.node: node_info.output for node_info in previous_node_run_infos}
-                aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
+        try:
+            previous_run_results = []
+            for i in range(len(batch_inputs)):
+                previous_run_info = resume_from_run_storage.load_flow_run_info(i)
 
-                self._storage.persist_flow_run(previous_run_info)
-                for node_run_info in previous_node_run_infos:
-                    self._storage.persist_node_run(node_run_info)
+                if previous_run_info and previous_run_info.status == Status.Completed:
+                    # Load previous node run info
+                    previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
+                    previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
+                    previous_node_run_outputs = {
+                        node_info.node: node_info.output for node_info in previous_node_run_infos
+                    }
 
-                previous_line_result = LineResult(
-                    output=previous_run_output_dict[i],
-                    aggregation_inputs=aggregation_inputs,
-                    run_info=previous_run_info,
-                    node_run_infos=previous_node_run_infos_dict,
-                )
-                previous_run_results.append(previous_line_result)
+                    # Extract aggregation inputs for flow with aggregation node
+                    aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
-        return previous_run_results
+                    # Persist previous run info and node run info
+                    self._storage.persist_flow_run(previous_run_info)
+                    for node_run_info in previous_node_run_infos:
+                        self._storage.persist_node_run(node_run_info)
+
+                    # Create LineResult object for previous line result
+                    previous_line_result = LineResult(
+                        output=previous_run_output_dict[i],
+                        aggregation_inputs=aggregation_inputs,
+                        run_info=previous_run_info,
+                        node_run_infos=previous_node_run_infos_dict,
+                    )
+                    previous_run_results.append(previous_line_result)
+
+            return previous_run_results
+        except Exception as e:
+            bulk_logger.error(f"Error occurred while copying previous run result. Exception: {str(e)}")
+            resume_copy_error = ResumeCopyError(
+                target=ErrorTarget.BATCH,
+                message_format="Failed to copy results when resuming the run. Error: {error_type_and_message}.",
+                error_type_and_message=f"({e.__class__.__name__}) {e}",
+            )
+            raise resume_copy_error from e
 
     def cancel(self):
         """Cancel the batch run"""
