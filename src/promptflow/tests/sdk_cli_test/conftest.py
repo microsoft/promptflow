@@ -235,6 +235,7 @@ def recording_injection(mocker: MockerFixture):
     finally:
         if is_replay() or is_record():
             RecordStorage.get_instance().delete_lock_file()
+        if is_live():
             delete_count_lock_file()
         recording_array_reset()
 
