@@ -9,8 +9,6 @@ from promptflow._sdk.entities._trace import Span as SpanEntity
 
 
 class Span:
-    from azure.cosmos.container import ContainerProxy
-
     __container__ = "Span"
 
     name: str = None
@@ -42,7 +40,7 @@ class Span:
         self.partition_key = span.session_id
         self.id = span.span_id
 
-    def persist(self, client: ContainerProxy):
+    def persist(self, client):
         if self.id is None or self.partition_key is None or self.resource is None:
             return
 
