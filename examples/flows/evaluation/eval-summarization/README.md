@@ -35,15 +35,11 @@ An important note regarding the implementation and use of this flow is that for 
 
 ## Tools Used in this Flow
 
-List all the tools (functions) used in the flow. This can include both standard tools provided by prompt flow and any custom tools created specifically for the flow. Include a brief description of each tool and its purpose within the flow.  -- TODO remove this when done
-
 Tools used in this flow：
 
 - `python` tool the implements direct calls to GPT-4 (due to the need for using n=20, which is currently unavailable as a parameter in prompt flow LLM nodes) for each dimension's evaluation
 
 ## Pre-requisites
-
-List any pre-requisites that are required to run the flow. This can include any specific versions of prompt flow or other dependencies. If there are any specific configurations or settings that need to be applied, make sure to mention them in this section. -- TODO remove this when done
 
 Install Prompt Flow SDK and other dependencies in this folder:
 
@@ -52,8 +48,6 @@ pip install -r requirements.txt
 ```
 
 ## Getting Started
- 
-Provide step-by-step instructions on how to get started with the flow. This should include any necessary setup or configuration steps, such as installing dependencies or setting up connections. If there are specific requirements or prerequisites, make sure to mention them in this section.  -- TODO remove this when done
 
 ### Setup connection
 
@@ -64,9 +58,9 @@ Prepare your Azure Open AI resource follow this [instruction](https://learn.micr
 pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
-## Usage Examples
+Note that this evaluation flow is only validated to work with certain GPT-4 models versions (see meta-evaluation section).
 
-Include usage examples that demonstrate how to run the flow and provide input data. This can include command-line instructions or code snippets. Show users how to execute the flow and explain the expected output or results.   -- TODO remove this when done
+## Usage Examples
 
 ### 1. Test flow with single line data
 
@@ -93,10 +87,6 @@ Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `co
     pip install pytest
     python -m pytest tests
     ```
-
-## Troubleshooting
-
-If there are any known issues or troubleshooting tips related to the flow, include them in this section. Provide solutions or workarounds for common problems that users may encounter. This will help users troubleshoot issues on their own and reduce the need for support.   -- TODO remove this when done, or remove this section if not needed
 
 ## Contact
 
