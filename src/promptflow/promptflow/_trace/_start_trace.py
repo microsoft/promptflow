@@ -72,7 +72,12 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     # openai instrumentation
     inject_openai_api()
     # print user the UI url
-    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
+    ui_url = _determine_trace_url(
+        pfs_port=pfs_port,
+        experiment=experiment,
+        run=kwargs.get("run", None),
+        session_id=session_id,
+    )
     # print to be able to see it in notebook
     print(f"You can view the trace from UI url: {ui_url}")
 
@@ -164,3 +169,19 @@ def _init_otel_trace_exporter(otlp_port: str, session_id: str, experiment: typin
     if experiment is not None:
         os.environ[TraceEnvironmentVariableName.EXPERIMENT] = experiment
     setup_exporter_from_environ()
+
+
+def _determine_trace_url(
+    pfs_port: str,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> str:
+    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    if experiment is not None:
+        ui_url += f"?experiment={experiment}"
+    elif run is not None:
+        ui_url += f"?run={run}"
+    elif session_id is not None:
+        ui_url += f"?session={session_id}"
+    return ui_url
