@@ -42,13 +42,13 @@ def _parser_tool_input_settings(tool_inputs, input_settings):
 def _parser_tool_icon(extra_info):
     """parser tool icon to base64."""
     if ICON in extra_info:
-        extra_info[ICON] = _serialize_icon_data(extra_info["icon"])
+        extra_info[ICON] = _serialize_icon_data(extra_info[ICON])
     if ICON_LIGHT in extra_info:
-        icon = extra_info.get("icon", {})
+        icon = extra_info.get(ICON, {})
         icon["light"] = _serialize_icon_data(extra_info.pop(ICON_LIGHT))
         extra_info[ICON] = icon
     if ICON_DARK in extra_info:
-        icon = extra_info.get("icon", {})
+        icon = extra_info.get(ICON, {})
         icon["dark"] = _serialize_icon_data(extra_info.pop(ICON_DARK))
         extra_info[ICON] = icon
     return extra_info

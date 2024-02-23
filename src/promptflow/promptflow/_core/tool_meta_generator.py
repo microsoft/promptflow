@@ -96,6 +96,18 @@ def collect_tool_functions_in_module(m):
     return tools
 
 
+def collect_flow_entry_in_module(m, entry):
+    entry = entry.split(":")[-1]
+    func = getattr(m, entry, None)
+    if isinstance(func, types.FunctionType):
+        return func
+    raise PythonParsingError(
+        message_format="Failed to collect flow entry '{entry}' in module '{module}'.",
+        entry=entry,
+        module=m.__name__,
+    )
+
+
 def collect_tool_methods_in_module(m):
     tools = []
     for _, obj in inspect.getmembers(m):
@@ -116,7 +128,9 @@ def collect_tool_methods_with_init_inputs_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False):
+def _parse_tool_from_function(
+    f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, include_outputs=False
+):
     try:
         tool_type = getattr(f, "__type", None) or ToolType.PYTHON
     except Exception as e:
@@ -128,7 +142,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _, enable_kwargs = function_to_interface(
+        inputs, outputs, _, enable_kwargs = function_to_interface(
             f,
             initialize_inputs=initialize_inputs,
             gen_custom_type_conn=gen_custom_type_conn,
@@ -149,6 +163,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         name=tool_name or f.__qualname__,
         description=description or inspect.getdoc(f),
         inputs=inputs,
+        outputs=outputs if include_outputs else None,
         type=tool_type,
         class_name=class_name,
         function=f.__name__,
@@ -170,8 +185,8 @@ def _serialize_tool(tool, input_settings, extra_info):
     :return: serialized tool, validation result
     :rtype: Dict[str, str], List[str]
     """
-    validate_result = _validate_tool_function(tool, input_settings, extra_info)
-    if not validate_result:
+    validation_result = _validate_tool_function(tool, input_settings, extra_info)
+    if not validation_result:
         construct_tool = asdict_without_none(tool)
         if extra_info:
             _parser_tool_icon(extra_info)
@@ -181,12 +196,12 @@ def _serialize_tool(tool, input_settings, extra_info):
         if input_settings:
             tool_inputs = construct_tool.get("inputs", {})
             _parser_tool_input_settings(tool_inputs, input_settings)
-        schema_validate_result = _validate_tool_schema(construct_tool)
-        if schema_validate_result:
-            validate_result.append(schema_validate_result)
-        return construct_tool, validate_result
+        schema_validation_result = _validate_tool_schema(construct_tool)
+        if schema_validation_result:
+            validation_result.append(schema_validation_result)
+        return construct_tool, validation_result
     else:
-        return {}, validate_result
+        return {}, validation_result
 
 
 def generate_python_tools_in_module(module):
@@ -279,9 +294,9 @@ def generate_python_tool_meta_dict(name, content, source=None):
         tool.code = content
     else:
         tool.source = source
-    construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info)
-    if validate_result:
-        raise UserErrorException(f"Tool validation failed: {';'.join(validate_result)}")
+    construct_tool, is_invlid_result = _serialize_tool(tool, input_settings, extra_info)
+    if is_invlid_result:
+        raise UserErrorException(f"Tool validation failed: {';'.join(is_invlid_result)}")
     # Handle string enum in tool dict
     construct_tool = json.loads(json.dumps(construct_tool))
     return construct_tool
@@ -339,6 +354,29 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
             tool_type=tool_type.value,
             supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
         )
+
+
+def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
+    m = load_python_module_from_file(Path(path))
+    f = collect_flow_entry_in_module(m, entry)
+    # Since the flow meta is generated from the entry function, we leverage the function
+    # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
+    tool = _parse_tool_from_function(f, include_outputs=True)
+
+    flow_meta = {"entry": entry, "function": f.__name__}
+    if source:
+        flow_meta["source"] = source
+    if tool.inputs:
+        flow_meta["inputs"] = {}
+        for k, v in tool.inputs.items():
+            # We didn't support specifying multiple types for inputs, so we only take the first one.
+            flow_meta["inputs"][k] = {"type": v.type[0].value}
+    if tool.outputs:
+        flow_meta["outputs"] = {}
+        for k, v in tool.outputs.items():
+            # We didn't support specifying multiple types for outputs, so we only take the first one.
+            flow_meta["outputs"][k] = {"type": v.type[0].value}
+    return flow_meta
 
 
 class ToolValidationError(UserErrorException):

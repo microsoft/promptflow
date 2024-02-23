@@ -17,7 +17,15 @@ from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ToolType, ValueType
+from ..contracts.tool import (
+    ConnectionType,
+    InputDefinition,
+    OutputDefinition,
+    Tool,
+    ToolFuncCallScenario,
+    ToolType,
+    ValueType,
+)
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
@@ -148,8 +156,15 @@ def function_to_interface(
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
-    outputs = {}
-    # Note: We don't have output definition now
+    # Resolve output to definition
+    typ = resolve_annotation(sign.return_annotation)
+    if typ is inspect.Signature.empty:
+        output_type = [ValueType.OBJECT]
+    else:
+        # If the output annotation is a union type, then it should be a list.
+        output_type = [ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
+    outputs = {"output": OutputDefinition(type=output_type)}
+
     return input_defs, outputs, connection_types, enable_kwargs
 
 

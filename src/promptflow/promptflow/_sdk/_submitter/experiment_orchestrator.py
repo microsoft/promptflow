@@ -1076,6 +1076,7 @@ def add_start_orchestrator_action(subparsers):
     start_orchestrator_parser.add_argument("--experiment", type=str, help="Experiment name")
     start_orchestrator_parser.add_argument("--nodes", type=str, help="Nodes to be executed", nargs="+")
     start_orchestrator_parser.add_argument("--from-nodes", type=str, help="Nodes branch to be executed", nargs="+")
+    start_orchestrator_parser.add_argument("--session", type=str, help="Session id of experiment execution.")
     start_orchestrator_parser.set_defaults(action="start")
 
 
@@ -1094,4 +1095,6 @@ if __name__ == "__main__":
 
         client = PFClient()
         experiment = client._experiments.get(args.experiment)
-        ExperimentOrchestrator(client, experiment=experiment).start(nodes=args.nodes, from_nodes=args.from_nodes)
+        ExperimentOrchestrator(client, experiment=experiment).start(
+            nodes=args.nodes, from_nodes=args.from_nodes, session=args.session
+        )
