@@ -3,7 +3,6 @@ import json
 import typing
 from dataclasses import asdict, dataclass, field
 
-from azure.cosmos.container import ContainerProxy
 from flask import current_app
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanStatusFieldName
@@ -63,7 +62,7 @@ class Summary:
     def __init__(self, span: Span) -> None:
         self.span = span
 
-    def persist(self, client: ContainerProxy):
+    def persist(self, client):
         if self.span.parent_span_id:
             # This is not the root span
             return
@@ -87,7 +86,7 @@ class Summary:
         ):
             self._insert_evaluation(client)
 
-    def _persist_line_run(self, client: ContainerProxy):
+    def _persist_line_run(self, client):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
 
         session_id = self.span.session_id
@@ -137,7 +136,7 @@ class Summary:
         current_app.logger.info(f"Persist main run for LineSummary id: {item.id}")
         return client.create_item(body=asdict(item))
 
-    def _insert_evaluation(self, client: ContainerProxy):
+    def _insert_evaluation(self, client):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
         partition_key = self.span.session_id
         name = self.span.name
