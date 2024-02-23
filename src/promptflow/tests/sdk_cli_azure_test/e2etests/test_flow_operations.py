@@ -39,15 +39,10 @@ class TestFlow:
 
     def test_update_flow(self, pf, created_flow: Flow):
 
-        original_meta = {
-            "display_name": created_flow.display_name,
-            "description": created_flow.description,
-            "tags": created_flow.tags,
-        }
         test_meta = {
-            "display_name": "test flow 2",
-            "description": "test flow description 2",
-            "tags": {"key1": "value1", "key2": "value2"},
+            "display_name": "SDK test flow",
+            "description": "SDK test flow description",
+            "tags": {"owner": "sdk-test", "key1": "value1"},
         }
         # update flow
         updated_flow = pf.flows.create_or_update(flow=created_flow.name, **test_meta)
@@ -55,13 +50,6 @@ class TestFlow:
         assert updated_flow.display_name == test_meta["display_name"]
         assert updated_flow.description == test_meta["description"]
         assert updated_flow.tags == test_meta["tags"]
-
-        # reset flow
-        updated_flow = pf.flows.create_or_update(flow=created_flow.name, **original_meta)
-
-        assert updated_flow.display_name == original_meta["display_name"]
-        assert updated_flow.description == original_meta["description"]
-        assert updated_flow.tags == original_meta["tags"]
 
     @pytest.mark.skipif(
         condition=not is_live(),
