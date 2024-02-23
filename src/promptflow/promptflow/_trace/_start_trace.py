@@ -69,8 +69,6 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     # init the global tracer with endpoint
     _init_otel_trace_exporter(otlp_port=pfs_port, session_id=session_id, experiment=experiment)
-    # openai instrumentation
-    inject_openai_api()
     # print user the UI url
     ui_url = _determine_trace_url(
         pfs_port=pfs_port,
@@ -143,6 +141,10 @@ def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -
 
 
 def setup_exporter_from_environ() -> None:
+    # openai instrumentation
+    # in eager mode, the code cannot reach executor logic to apply injection
+    # explicitly inject here, so that it can work in new process/thread
+    inject_openai_api()
     # if session id does not exist in environment variables, it should be in runtime environment
     # where we have not supported tracing yet, so we don't need to setup any exporter here
     # directly return
