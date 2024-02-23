@@ -77,9 +77,6 @@ class LineRun:
             stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
-            else:
-                # TODO: fully support query
-                raise NotImplementedError
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
