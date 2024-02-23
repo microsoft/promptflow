@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import hashlib
 import typing
 from dataclasses import asdict, dataclass
 
@@ -11,8 +10,6 @@ from flask_restx import fields
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, CumulativeTokenCountFieldName, LineRunFieldName
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
-
-HASH_HEADER_IN_LINE_RUNS_LIST = "X-Line-Runs-List-Hash"
 
 api = Namespace("LineRuns", description="Line runs management")
 
@@ -76,16 +73,4 @@ class LineRuns(Resource):
         line_runs = client._traces.list_line_runs(
             session_id=args.session_id,
         )
-
-        line_runs_id_list, line_runs_dict = [], []
-        for line_run in line_runs:
-            line_runs_id_list.append(line_run.line_run_id)
-            line_runs_dict.append(asdict(line_run))
-
-        # create a hash of the sorted list of line run ids
-        # and add it to the response header
-        # so that UX can use it to determine if the line runs have changed
-        line_runs_id_list.sort()
-        line_runs_hash = hashlib.sha256(",".join(line_runs_id_list).encode()).hexdigest()
-
-        return line_runs_dict, 200, {HASH_HEADER_IN_LINE_RUNS_LIST: line_runs_hash}
+        return [asdict(line_run) for line_run in line_runs]
