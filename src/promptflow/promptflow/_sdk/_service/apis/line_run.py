@@ -24,12 +24,22 @@ list_line_run_parser.add_argument("experiment", type=str, required=False)
 @dataclass
 class ListLineRunParser:
     session_id: typing.Optional[str] = None
+    run: typing.Optional[typing.List[str]] = None
+    experiment: typing.Optional[typing.List[str]] = None
+
+    @staticmethod
+    def _parse_string_list(value: typing.Optional[str]) -> typing.Optional[typing.List[str]]:
+        if value is None:
+            return None
+        return value.split(",")
 
     @staticmethod
     def from_request() -> "ListLineRunParser":
         args = list_line_run_parser.parse_args()
         return ListLineRunParser(
             session_id=args.session,
+            run=ListLineRunParser._parse_string_list(args.run),
+            experiment=ListLineRunParser._parse_string_list(args.experiment),
         )
 
 
