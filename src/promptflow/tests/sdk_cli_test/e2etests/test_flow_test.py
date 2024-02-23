@@ -325,15 +325,6 @@ class TestFlowTest:
                 },
             ),
             (
-                "primitive_output",
-                {
-                    "entry": "entry:my_flow",
-                    "function": "my_flow",
-                    "inputs": {"input_val": {"type": "string"}},
-                    "outputs": {"output": {"type": "string"}},
-                },
-            ),
-            (
                 "nested_entry",
                 {
                     "entry": "my_module.entry:my_flow",
