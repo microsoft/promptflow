@@ -330,6 +330,7 @@ def default_json_encoder(obj):
     else:
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
+
 def _match_reference(env_val: str):
     env_val = env_val.strip()
     m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
@@ -337,6 +338,7 @@ def _match_reference(env_val: str):
         return None, None
     name, key = m.groups()
     return name, key
+
 
 def copy_file_except(src_dir, dst_dir, exclude_file):
     """
