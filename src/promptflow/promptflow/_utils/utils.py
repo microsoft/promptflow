@@ -320,3 +320,12 @@ def default_json_encoder(obj):
         return obj.serialize()
     else:
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _match_reference(env_val: str):
+    env_val = env_val.strip()
+    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
+    if not m:
+        return None, None
+    name, key = m.groups()
+    return name, key
