@@ -12,7 +12,6 @@ from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
-import webbrowser
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -271,9 +270,6 @@ class FlowOperations(TelemetryMixin):
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
     def _chat_with_ui(self, script, skip_open_browser: bool = False):
-        # import threading
-        # if threading.current_thread() is not threading.main_thread():
-        #     raise Exception("_chat_with_ui must be called from the main thread.")
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
@@ -290,12 +286,9 @@ class FlowOperations(TelemetryMixin):
             "--client.toolbarMode=viewer",
             "--browser.gatherUsageStats=false",
         ]
-        process = subprocess.Popen(sys.argv)
-        if not skip_open_browser:
-            target = "http://localhost:8501"
-            logger.info(f"Opening browser {target}...")
-            webbrowser.open(target)
-        process.wait()
+        if skip_open_browser:
+            sys.argv += ["--server.headless=true"]
+        st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = load_yaml(flow_dag_path)
