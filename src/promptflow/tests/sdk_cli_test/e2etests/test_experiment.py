@@ -12,10 +12,10 @@ import pytest
 from mock import mock
 from ruamel.yaml import YAML
 
-from promptflow import PFClient
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
-from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._load_functions import _load_experiment, load_common
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
@@ -293,3 +293,14 @@ class TestExperiment:
                 "main2": {"output": "Hello world! text"},
                 "main3": {"output": "Hello world! Hello world! text"},
             }
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_with_script_run(self):
+        experiment_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        experiment = _load_experiment(experiment_path)
+        client = PFClient()
+        exp = client._experiments.run(experiment, stream=True)
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"

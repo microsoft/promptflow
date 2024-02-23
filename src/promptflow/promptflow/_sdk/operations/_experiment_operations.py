@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import shutil
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -120,6 +121,24 @@ class ExperimentOperations(TelemetryMixin):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
         ExperimentOrchestrator(self._client, self.get(name)).stop()
         return self.get(name)
+
+    @monitor_operation(activity_name="pf.experiment.run", activity_type=ActivityType.PUBLICAPI)
+    def run(self, experiment: Experiment, stream=False, **kwargs) -> Experiment:
+        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        self.create_or_update(experiment)
+
+        logger.debug("Start saving snapshot and update node.")
+        snapshots = experiment._output_dir / "snapshots"
+        if snapshots.exists():
+            shutil.rmtree(snapshots)
+        experiment._save_snapshot_and_update_node()
+
+        # execute experiment
+        if stream:
+            return ExperimentOrchestrator(self._client, experiment).start(**kwargs)
+        else:
+            return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
 
     def _test(
         self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs
