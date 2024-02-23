@@ -400,6 +400,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         return run_infos
 
     def _load_all_node_run_info(self, parse_const_as_str: bool = False) -> List[Dict]:
+        if not self._node_infos_folder.is_dir():
+            return []
+
         node_run_infos = []
         for node_folder in sorted(self._node_infos_folder.iterdir()):
             for node_run_record_file in sorted(node_folder.iterdir()):
@@ -414,6 +417,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         return node_run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
+        if not self._node_infos_folder.is_dir():
+            return []
+
         node_run_infos = []
         for node_folder in self._node_infos_folder.iterdir():
             filename = self._get_node_run_info_file_name(line_number)

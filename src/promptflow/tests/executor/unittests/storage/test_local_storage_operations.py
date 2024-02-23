@@ -1,5 +1,7 @@
 import datetime
 import json
+import os
+import shutil
 
 import pytest
 
@@ -8,6 +10,16 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._utils.multimedia_utils import create_image
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
+
+
+def _clear_folder_contents(folder_path):
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isfile(item_path) or os.path.islink(item_path):
+            os.unlink(item_path)
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+    print(f"All contents of the folder '{folder_path}' have been removed.")
 
 
 @pytest.fixture
@@ -61,6 +73,7 @@ def flow_run_info():
 @pytest.mark.unittest
 class TestLocalStorageOperations:
     def test_persist_node_run(self, local_storage, node_run_info):
+        _clear_folder_contents(local_storage.path)
         local_storage.persist_node_run(node_run_info)
         expected_file_path = local_storage.path / "node_artifacts" / node_run_info.node / "000000001.jsonl"
         assert expected_file_path.exists()
@@ -71,6 +84,7 @@ class TestLocalStorageOperations:
             assert node_run_info_dict["line_number"] == node_run_info.index
 
     def test_persist_flow_run(self, local_storage, flow_run_info):
+        _clear_folder_contents(local_storage.path)
         local_storage.persist_flow_run(flow_run_info)
         expected_file_path = local_storage.path / "flow_artifacts" / "000000001_000000001.jsonl"
         assert expected_file_path.exists()
@@ -81,6 +95,9 @@ class TestLocalStorageOperations:
             assert flow_run_info_dict["line_number"] == flow_run_info.index
 
     def test_load_node_run_info(self, local_storage, node_run_info):
+        _clear_folder_contents(local_storage.path)
+        assert local_storage.load_node_run_info_for_line(1) == []
+
         local_storage.persist_node_run(node_run_info)
         loaded_node_run_info = local_storage.load_node_run_info_for_line(1)
 
@@ -94,6 +111,9 @@ class TestLocalStorageOperations:
         assert local_storage.load_node_run_info_for_line(2) == []
 
     def test_load_flow_run_info(self, local_storage, flow_run_info):
+        _clear_folder_contents(local_storage.path)
+        assert local_storage.load_flow_run_info(1) is None
+
         local_storage.persist_flow_run(flow_run_info)
         loaded_flow_run_info = local_storage.load_flow_run_info(1)
 
