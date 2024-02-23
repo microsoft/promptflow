@@ -48,18 +48,12 @@ class Span:
         if resource_attributes is None:
             return
 
-        return client.create_item(body=self.to_dict())
+        from azure.cosmos.exceptions import CosmosResourceExistsError
 
-    @classmethod
-    def from_cosmosdb(
-        self, id: str, partition_key: str, subscription_id: str, resource_group_name: str, workspace_name: str
-    ) -> "Span":
-        client = get_client(Span.__container__, subscription_id, resource_group_name, workspace_name)
-        data = client.read_item(id, partition_key)
-        params = {}
-        for key, value in data.items():
-            params[key] = value
-        return params
+        try:
+            return client.create_item(body=self.to_dict())
+        except CosmosResourceExistsError:
+            return None
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
