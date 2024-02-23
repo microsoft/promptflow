@@ -84,5 +84,7 @@ class LineRuns(Resource):
         args = ListLineRunParser.from_request()
         line_runs = client._traces.list_line_runs(
             session_id=args.session_id,
+            run=args.run,
+            experiment=args.experiment,
         )
         return [asdict(line_run) for line_run in line_runs]
