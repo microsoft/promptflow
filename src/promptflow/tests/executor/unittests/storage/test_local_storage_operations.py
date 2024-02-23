@@ -91,6 +91,8 @@ class TestLocalStorageOperations:
         assert isinstance(loaded_node_run_info[0].inputs["image1"], Image)
         assert isinstance(loaded_node_run_info[0].output["output1"], Image)
 
+        assert local_storage.load_node_run_info_for_line(2) == []
+
     def test_load_flow_run_info(self, local_storage, flow_run_info):
         local_storage.persist_flow_run(flow_run_info)
         loaded_flow_run_info = local_storage.load_flow_run_info(1)
@@ -100,3 +102,5 @@ class TestLocalStorageOperations:
         assert loaded_flow_run_info.status == flow_run_info.status
         assert isinstance(loaded_flow_run_info.inputs["image1"], Image)
         assert isinstance(loaded_flow_run_info.output["output1"], Image)
+
+        assert local_storage.load_flow_run_info(2) is None
