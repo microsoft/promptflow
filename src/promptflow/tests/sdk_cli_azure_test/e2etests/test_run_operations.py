@@ -5,6 +5,7 @@
 import copy
 import json
 import shutil
+import tempfile
 from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -21,9 +22,14 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunN
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.azure import PFClient
-from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._constants._flow import (
+    ENVIRONMENT,
+    PYTHON_REQUIREMENTS_TXT,
+    RUNTIME_PROPERTY,
+    SESSION_ID_PROPERTY,
+)
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -1045,3 +1051,53 @@ class TestFlowRun:
 
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
+
+    def test_session_id_with_different_env(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_environment",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name1"),
+        )
+        assert run.properties[RUNTIME_PROPERTY] == "automatic"
+        session_id_1 = run.properties[SESSION_ID_PROPERTY]
+
+        # same flow will get same session id
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_environment",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name2"),
+        )
+        session_id_2 = run.properties[SESSION_ID_PROPERTY]
+        assert session_id_2 == session_id_1
+
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_environment", temp / "flow_with_environment")
+            # update image
+            flow_dict = load_yaml(temp / "flow_with_environment" / "flow.dag.yaml")
+            flow_dict["environment"]["image"] = "python:3.9-slim"
+
+            with open(temp / "flow_with_environment" / "flow.dag.yaml", "w", encoding="utf-8") as f:
+                dump_yaml(flow_dict, f)
+
+            run = pf.run(
+                flow=temp / "flow_with_environment",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name3"),
+            )
+            session_id_3 = run.properties[SESSION_ID_PROPERTY]
+
+            assert session_id_3 != session_id_2
+
+            # update requirements
+            with open(temp / "flow_with_environment" / "requirements", "w", encoding="utf-8") as f:
+                f.write("pandas==1.3.3")
+
+            run = pf.run(
+                flow=temp / "flow_with_environment",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name4"),
+            )
+            session_id_4 = run.properties[SESSION_ID_PROPERTY]
+
+            assert session_id_4 != session_id_3
