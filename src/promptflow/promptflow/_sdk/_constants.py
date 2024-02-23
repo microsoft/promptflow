@@ -337,6 +337,7 @@ class ConnectionType(str, Enum):
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
     CUSTOM = "Custom"
 
 
@@ -459,7 +460,7 @@ class LineRunFieldName:
     END_TIME = "end_time"
     STATUS = "status"
     LATENCY = "latency"
-    DISPLAY_NAME = "display_name"
+    NAME = "name"
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"

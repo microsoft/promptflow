@@ -17,18 +17,21 @@ api = Namespace("Spans", description="Spans Management")
 # parsers for query parameters
 list_span_parser = api.parser()
 list_span_parser.add_argument("session", type=str, required=False)
+list_span_parser.add_argument("trace_ids", type=str, required=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListSpanParser:
     session_id: typing.Optional[str] = None
+    trace_ids: typing.Optional[typing.List[str]] = None
 
     @staticmethod
     def from_request() -> "ListSpanParser":
         args = list_span_parser.parse_args()
         return ListSpanParser(
             session_id=args.session,
+            trace_ids=args.trace_ids.split(",") if args.trace_ids is not None else args.trace_ids,
         )
 
 
@@ -86,5 +89,6 @@ class Spans(Resource):
         args = ListSpanParser.from_request()
         spans = client._traces.list_spans(
             session_id=args.session_id,
+            trace_ids=args.trace_ids,
         )
         return [span._content for span in spans]

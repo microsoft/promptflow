@@ -40,23 +40,6 @@ cumulative_token_count_model = api.model(
         CumulativeTokenCountFieldName.TOTAL: fields.Integer,
     },
 )
-evaluation_line_run_model = api.model(
-    "EvaluationLineRun",
-    {
-        LineRunFieldName.LINE_RUN_ID: fields.String(required=True),
-        LineRunFieldName.TRACE_ID: fields.String(required=True),
-        LineRunFieldName.ROOT_SPAN_ID: fields.String(required=True),
-        LineRunFieldName.INPUTS: fields.Raw(required=True),
-        LineRunFieldName.OUTPUTS: fields.Raw(required=True),
-        LineRunFieldName.START_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
-        LineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
-        LineRunFieldName.STATUS: fields.String(required=True),
-        LineRunFieldName.LATENCY: fields.String(required=True),
-        LineRunFieldName.DISPLAY_NAME: fields.String(required=True),
-        LineRunFieldName.KIND: fields.String(required=True),
-        LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.Nested(cumulative_token_count_model, skip_none=True),
-    },
-)
 line_run_model = api.model(
     "LineRun",
     {
@@ -69,10 +52,10 @@ line_run_model = api.model(
         LineRunFieldName.END_TIME: fields.DateTime(required=True, dt_format=PFS_MODEL_DATETIME_FORMAT),
         LineRunFieldName.STATUS: fields.String(required=True),
         LineRunFieldName.LATENCY: fields.String(required=True),
-        LineRunFieldName.DISPLAY_NAME: fields.String(required=True),
+        LineRunFieldName.NAME: fields.String(required=True),
         LineRunFieldName.KIND: fields.String(required=True),
         LineRunFieldName.CUMULATIVE_TOKEN_COUNT: fields.Nested(cumulative_token_count_model, skip_none=True),
-        LineRunFieldName.EVALUATIONS: fields.List(fields.Nested(evaluation_line_run_model, skip_none=True)),
+        LineRunFieldName.EVALUATIONS: fields.Raw,
     },
 )
 
