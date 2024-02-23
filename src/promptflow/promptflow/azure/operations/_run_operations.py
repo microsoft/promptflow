@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
@@ -697,16 +697,20 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         return test_data
 
-    def _resolve_flow(self, run: Run):
+    def _resolve_flow_and_session_id(self, run: Run) -> Tuple[str, Optional[str]]:
+        """Resolve flow to remote flow and session id."""
+        # for remote flow case, leave session id to None and let service side resolve
         if run._use_remote_flow:
-            return self._resolve_flow_definition_resource_id(run=run)
+            return self._resolve_flow_definition_resource_id(run=run), None
         flow = load_flow(run.flow)
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
             ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
-        return flow
+        # for local flow case, use flow path to calculate session id
+        session_id = self._get_session_id(flow=flow)
+        return flow.path, session_id
 
     def _get_session_id(self, flow):
         try:
@@ -801,32 +805,28 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         runtime_name = AUTOMATIC_RUNTIME_NAME
         return runtime_name
 
-    def _resolve_runtime(self, run, flow, runtime):
+    def _resolve_runtime(self, run, runtime):
         runtime = run._runtime or runtime
-        # for remote flow case, leave session id to None and let service side resolve
-        # for local flow case, use flow path to calculate session id
-        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-        return runtime, session_id
+        return runtime
 
     def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
-                pool.submit(self._resolve_flow, run=run),
+                pool.submit(self._resolve_flow_and_session_id, run=run),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
-        flow = task_results[1]
-        run.flow = flow.path
+        run.flow, session_id = task_results[1]
 
-        runtime, session_id = self._resolve_runtime(run=run, flow=flow, runtime=runtime)
+        runtime = self._resolve_runtime(run=run, runtime=runtime)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime

@@ -19,7 +19,7 @@ import pytest
 
 from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
-from promptflow._sdk._load_functions import load_run
+from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -486,7 +486,9 @@ class TestFlowRun:
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
         mock_run._use_remote_flow = False
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+        ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -500,7 +502,9 @@ class TestFlowRun:
                 # retry policy
                 assert mock_request.call_count == 1
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+        ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -517,7 +521,9 @@ class TestFlowRun:
                     remote_client.runs.create_or_update(run=mock_run)
                 assert mock_request.call_count == 1
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+        ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -702,7 +708,8 @@ class TestFlowRun:
 
         flow_path = f"{FLOWS_DIR}/print_env_var"
         flow_lineage_id = get_flow_lineage_id(flow_path)
-        flow_session_id = pf._runs._get_session_id(flow_path)
+        flow = load_flow(flow_path)
+        flow_session_id = pf._runs._get_session_id(flow)
 
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
