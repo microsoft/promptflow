@@ -144,6 +144,9 @@ class Span:
         session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
+        # if `batch_run_id` exists, record the run
+        run = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
+
         return Span(
             name=obj.name,
             context=context,
@@ -156,6 +159,7 @@ class Span:
             span_type=span_type,
             session_id=session_id,
             parent_span_id=parent_span_id,
+            run=run,
             experiment=experiment,
         )
 
