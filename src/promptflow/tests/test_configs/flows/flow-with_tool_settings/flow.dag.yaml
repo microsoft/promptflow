@@ -1,0 +1,23 @@
+inputs:
+  user_type:
+    type: string
+    default: hod
+outputs:
+  result:
+    type: string
+    reference: ${hello_world.output}
+nodes:
+- name: tool_with_input_settings
+  type: python
+  source:
+    type: code
+    path: tool_with_input_settings.py
+  inputs:
+    user_type: ${inputs.user_type}
+- name: tool_with_invalid_input_settings
+  type: python
+  source:
+    type: code
+    path: tool_with_invalid_input_settings.py
+  inputs:
+    user_type: ${inputs.user_type}

@@ -10,25 +10,21 @@ import inspect
 import json
 import re
 import types
-from dataclasses import asdict
 from pathlib import Path
 from traceback import TracebackException
 
 from jinja2 import TemplateSyntaxError
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
+from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
 from promptflow._core.tool import ToolProvider
+from promptflow._core.tool_settings_parser import _parser_tool_icon, _parser_tool_input_settings
+from promptflow._core.tool_validation import _validate_tool_function, _validate_tool_schema
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
-from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
+from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
-
-PF_MAIN_MODULE_NAME = "__pf_main__"
-
-
-def asdict_without_none(obj):
-    return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
 def generate_prompt_tool(name, content, prompt_only=False, source=None):
@@ -176,6 +172,38 @@ def _parse_tool_from_function(
     )
 
 
+def _serialize_tool(tool, input_settings, extra_info):
+    """
+    Serialize tool obj to dict.
+
+    :param tool: Tool object
+    :type tool: promptflow.contracts.tool.Tool
+    :param input_settings: Input settings of the tool
+    :type input_settings: Dict[str, obj]
+    :param extra_info: Extra settings of the tool
+    :type extra_info: Dict[str, obj]
+    :return: serialized tool, validation result
+    :rtype: Dict[str, str], List[str]
+    """
+    validation_result = _validate_tool_function(tool, input_settings, extra_info)
+    if not validation_result:
+        construct_tool = asdict_without_none(tool)
+        if extra_info:
+            _parser_tool_icon(extra_info)
+            construct_tool.update(extra_info)
+
+        # Update tool input settings
+        if input_settings:
+            tool_inputs = construct_tool.get("inputs", {})
+            _parser_tool_input_settings(tool_inputs, input_settings)
+        schema_validation_result = _validate_tool_schema(construct_tool)
+        if schema_validation_result:
+            validation_result.append(schema_validation_result)
+        return construct_tool, validation_result
+    else:
+        return {}, validation_result
+
+
 def generate_python_tools_in_module(module):
     tool_functions = collect_tool_functions_in_module(module)
     tool_methods = collect_tool_methods_in_module(module)
@@ -190,7 +218,7 @@ def generate_python_tools_in_module_as_dict(module):
 def load_python_module_from_file(src_file: Path):
     # Here we hard code the module name as __pf_main__ since it is invoked as a main script in pf.
     src_file = Path(src_file).resolve()  # Make sure the path is absolute to align with python import behavior.
-    spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
+    spec = importlib.util.spec_from_file_location(PF_MAIN_MODULE_NAME, location=src_file)
     if spec is None or spec.loader is None:
         raise PythonLoaderNotFound(
             message_format="Failed to load python file '{src_file}'. Please make sure it is a valid .py file.",
@@ -253,10 +281,12 @@ def collect_tool_function_in_module(m):
         return tool_methods[0]
 
 
-def generate_python_tool(name, content, source=None):
+def generate_python_tool_meta_dict(name, content, source=None):
     m = load_python_module(content, source)
     f, initialize_inputs = collect_tool_function_in_module(m)
     tool = _parse_tool_from_function(f, initialize_inputs=initialize_inputs)
+    extra_info = getattr(f, "__extra_info")
+    input_settings = getattr(f, "__input_settings")
     tool.module = None
     if name is not None:
         tool.name = name
@@ -264,16 +294,17 @@ def generate_python_tool(name, content, source=None):
         tool.code = content
     else:
         tool.source = source
-    return tool
-
-
-def generate_python_meta_dict(name, content, source=None):
-    return asdict_without_none(generate_python_tool(name, content, source))
+    construct_tool, is_invlid_result = _serialize_tool(tool, input_settings, extra_info)
+    if is_invlid_result:
+        raise UserErrorException(f"Tool validation failed: {';'.join(is_invlid_result)}")
+    # Handle string enum in tool dict
+    construct_tool = json.loads(json.dumps(construct_tool))
+    return construct_tool
 
 
 # Only used in non-code first experience.
 def generate_python_meta(name, content, source=None):
-    return json.dumps(generate_python_meta_dict(name, content, source), indent=2)
+    return json.dumps(generate_python_tool_meta_dict(name, content, source), indent=2)
 
 
 def generate_prompt_meta(name, content, prompt_only=False, source=None):
@@ -308,7 +339,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
 
     name = file.stem
     if tool_type == ToolType.PYTHON:
-        return generate_python_meta_dict(name, content, path)
+        return generate_python_tool_meta_dict(name, content, path)
     elif tool_type == ToolType.LLM:
         return generate_prompt_meta_dict(name, content, source=path)
     elif tool_type == ToolType.PROMPT:
