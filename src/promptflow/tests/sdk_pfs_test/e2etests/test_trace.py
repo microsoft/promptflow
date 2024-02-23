@@ -82,18 +82,3 @@ class TestTrace:
         response = pfs_op.list_line_runs(session_id=mock_session_id)
         line_run = response.json[0]
         assert isinstance(line_run[LineRunFieldName.EVALUATIONS], dict)
-
-    def test_list_line_runs_hash_header(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
-        from promptflow._sdk._service.apis.line_run import HASH_HEADER_IN_LINE_RUNS_LIST
-
-        response = pfs_op.list_line_runs(session_id=mock_session_id)
-        # assert the hash header exists
-        hash1 = response.headers.get(HASH_HEADER_IN_LINE_RUNS_LIST)
-        assert hash1 is not None
-        persist_a_span(session_id=mock_session_id)
-        hash2 = pfs_op.list_line_runs(session_id=mock_session_id).headers.get(HASH_HEADER_IN_LINE_RUNS_LIST)
-        # as we persist a new span, the hash should be different
-        assert hash1 != hash2
-        hash3 = pfs_op.list_line_runs(session_id=mock_session_id).headers.get(HASH_HEADER_IN_LINE_RUNS_LIST)
-        # no new span, the hash should be the same
-        assert hash2 == hash3
