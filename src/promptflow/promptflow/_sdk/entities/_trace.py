@@ -15,6 +15,7 @@ from promptflow._constants import (
     DEFAULT_SPAN_TYPE,
     SpanAttributeFieldName,
     SpanContextFieldName,
+    SpanEventsFieldName,
     SpanFieldName,
     SpanResourceAttributesFieldName,
     SpanResourceFieldName,
@@ -117,6 +118,23 @@ class Span:
         )
 
     @staticmethod
+    def _from_protobuf_events(obj: typing.List[PBSpan.Event]) -> typing.List[typing.Dict]:
+        events = []
+        if len(obj) == 0:
+            return events
+        for pb_event in obj:
+            event_dict: dict = json.loads(MessageToJson(pb_event))
+            event = {
+                SpanEventsFieldName.NAME: pb_event.name,
+                SpanEventsFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano),
+                SpanEventsFieldName.ATTRIBUTES: flatten_pb_attributes(
+                    event_dict.get(SpanEventsFieldName.ATTRIBUTES, dict())
+                ),
+            }
+            events.append(event)
+        return events
+
+    @staticmethod
     def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
         span_dict: dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
@@ -144,6 +162,8 @@ class Span:
         session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
+        events = Span._from_protobuf_events(obj.events)
+
         return Span(
             name=obj.name,
             context=context,
@@ -156,6 +176,7 @@ class Span:
             span_type=span_type,
             session_id=session_id,
             parent_span_id=parent_span_id,
+            events=events,
             experiment=experiment,
         )
 

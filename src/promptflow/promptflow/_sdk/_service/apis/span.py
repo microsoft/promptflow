@@ -70,7 +70,7 @@ span_model = api.model(
         SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model, skip_none=True),
         SpanFieldName.ATTRIBUTES: fields.Raw(required=True),
-        SpanFieldName.EVENTS: fields.List(fields.String),
+        SpanFieldName.EVENTS: fields.List(fields.Raw),
         SpanFieldName.LINKS: fields.List(fields.String),
         SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
     },
