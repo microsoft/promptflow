@@ -28,6 +28,11 @@ class EagerFlow(FlowBase):
         code = Path(code)
         # entry function name
         self.entry = entry
+        # entry file name
+        try:
+            self.entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
+        except Exception as e:
+            raise UserErrorException(f"Entry function {entry} is not valid: {e}")
         # TODO(2910062): support eager flow execution cache
         super().__init__(data=data, path=path, code=code, content_hash=None, **kwargs)
 
