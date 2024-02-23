@@ -85,8 +85,8 @@ class LineRuns(Resource):
         args = ListLineRunParser.from_request()
         line_runs: typing.List[LineRun] = client._traces.list_line_runs(
             session_id=args.session_id,
-            run=args.runs,
-            experiment=args.experiments,
+            runs=args.runs,
+            experiments=args.experiments,
         )
         # order by start_time desc
         line_runs.sort(key=lambda x: x.start_time, reverse=True)
