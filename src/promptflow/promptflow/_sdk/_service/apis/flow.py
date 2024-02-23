@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._errors import UserErrorException
-from promptflow.exceptions import ErrorTarget
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
@@ -30,21 +28,15 @@ class FlowTest(Resource):
     def post(self):
         args = flow_test_parser.parse_args()
         if Configuration.get_instance().is_internal_features_enabled() and args.experiment:
-            if args.variant is not None or args.node is not None:
-                error = ValueError("--variant or --node is not supported experiment is specified.")
-                raise UserErrorException(
-                    target=ErrorTarget.CONTROL_PLANE_SDK,
-                    message=str(error),
-                    error=error,
-                )
-            node_results = get_client_from_request().flows.test(
+            result = get_client_from_request().flows.test(
                 flow=args.flow,
                 inputs=args.inputs,
                 environment_variables=args.environment_variables,
+                variant=args.variant,
+                node=args.node,
                 experiment=args.experiment,
                 output_path=args.detail,
             )
-            return node_results
         else:
             result = get_client_from_request().flows.test(
                 flow=args.flow,
@@ -57,4 +49,4 @@ class FlowTest(Resource):
                 dump_test_result=True,
                 output_path=args.detail,
             )
-            return result
+        return result

@@ -35,7 +35,7 @@ from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ErrorTarget
 
 
 class FlowOperations(TelemetryMixin):
@@ -79,6 +79,13 @@ class FlowOperations(TelemetryMixin):
         experiment = kwargs.pop("experiment", None)
         output_path = kwargs.get("output_path", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            if variant is not None or node is not None:
+                error = ValueError("--variant or --node is not supported experiment is specified.")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message=str(error),
+                    error=error,
+                )
             return self._client._experiments._test(
                 flow=flow,
                 inputs=inputs,
