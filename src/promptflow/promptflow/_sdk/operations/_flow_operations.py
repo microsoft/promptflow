@@ -12,6 +12,7 @@ from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
+import webbrowser
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -289,15 +290,12 @@ class FlowOperations(TelemetryMixin):
             "--client.toolbarMode=viewer",
             "--browser.gatherUsageStats=false",
         ]
-        if skip_open_browser:
-            sys.argv += ["--server.headless=true"]
-
-        import webbrowser
         process = subprocess.Popen(sys.argv)
         if not skip_open_browser:
-            webbrowser.open("http://localhost:8501")
+            target = "http://localhost:8501"
+            logger.info(f"Opening browser {target}...")
+            webbrowser.open(target)
         process.wait()
-        # st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = load_yaml(flow_dag_path)

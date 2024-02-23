@@ -88,6 +88,7 @@ class FlowTest(Resource):
                 api.logger.info("Start streamlit with main script generated at: %s", main_script_path)
                 get_client_from_request().flows._chat_with_ui(script=main_script_path,
                                                               skip_open_browser=args["skip-open-browser"])
+            return
         if args.interactive is True:
             get_client_from_request().flows._chat(
                 flow=args.flow,
