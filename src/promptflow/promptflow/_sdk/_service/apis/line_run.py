@@ -24,8 +24,8 @@ list_line_run_parser.add_argument("experiment", type=str, required=False)
 @dataclass
 class ListLineRunParser:
     session_id: typing.Optional[str] = None
-    run: typing.Optional[typing.List[str]] = None
-    experiment: typing.Optional[typing.List[str]] = None
+    runs: typing.Optional[typing.List[str]] = None
+    experiments: typing.Optional[typing.List[str]] = None
 
     @staticmethod
     def _parse_string_list(value: typing.Optional[str]) -> typing.Optional[typing.List[str]]:
@@ -38,8 +38,8 @@ class ListLineRunParser:
         args = list_line_run_parser.parse_args()
         return ListLineRunParser(
             session_id=args.session,
-            run=ListLineRunParser._parse_string_list(args.run),
-            experiment=ListLineRunParser._parse_string_list(args.experiment),
+            runs=ListLineRunParser._parse_string_list(args.run),
+            experiments=ListLineRunParser._parse_string_list(args.experiment),
         )
 
 
@@ -84,7 +84,7 @@ class LineRuns(Resource):
         args = ListLineRunParser.from_request()
         line_runs = client._traces.list_line_runs(
             session_id=args.session_id,
-            run=args.run,
-            experiment=args.experiment,
+            run=args.runs,
+            experiment=args.experiments,
         )
         return [asdict(line_run) for line_run in line_runs]

@@ -75,11 +75,17 @@ class LineRun:
     @staticmethod
     def list(
         session_id: typing.Optional[str] = None,
+        runs: typing.Optional[typing.List[str]] = None,
+        experiments: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[typing.List[Span]]:
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
+            if runs is not None:
+                stmt = stmt.filter(Span.run.in_(runs))
+            if experiments is not None:
+                stmt = stmt.filter(Span.experiment.in_(experiments))
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
