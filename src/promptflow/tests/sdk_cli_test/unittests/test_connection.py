@@ -18,6 +18,7 @@ from promptflow._sdk.entities._connection import (
     OpenAIConnection,
     QdrantConnection,
     SerpConnection,
+    ServerlessConnection,
     WeaviateConnection,
     _Connection,
 )
@@ -168,6 +169,19 @@ class TestConnection:
                 {
                     "module": "promptflow_vectordb.connections",
                     "type": "weaviate",
+                },
+            ),
+            (
+                "serverless_connection.yaml",
+                ServerlessConnection,
+                {
+                    "name": "my_serverless_connection",
+                    "api_key": "<to-be-replaced>",
+                    "api_base": "https://mock.api.base",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "serverless",
                 },
             ),
         ],

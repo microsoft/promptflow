@@ -20,6 +20,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING
+from promptflow.contracts.multimedia import PFBytes
+from promptflow.contracts.types import AssistantDefinition
 
 T = TypeVar("T")
 
@@ -296,3 +298,25 @@ def prompt_y_n(msg, default=None):
 
 def prompt_input(msg):
     return input("\n===> " + msg)
+
+
+def _normalize_identifier_name(name):
+    normalized_name = name.lower()
+    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
+    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
+    if re.match(r"\d", normalized_name):
+        normalized_name = "n" + normalized_name  # No leading digits
+    return normalized_name
+
+
+def _sanitize_python_variable_name(name: str):
+    return _normalize_identifier_name(name).replace(" ", "_")
+
+
+def default_json_encoder(obj):
+    if isinstance(obj, PFBytes):
+        return str(obj)
+    if isinstance(obj, AssistantDefinition):
+        return obj.serialize()
+    else:
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")

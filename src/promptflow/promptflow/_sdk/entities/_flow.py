@@ -190,12 +190,12 @@ class Flow(FlowBase):
                 content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, entry=entry, data=data, **kwargs)
+                return EagerFlow._load(path=flow_path, data=data, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
                 return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
-        # if non-YAML file is provided, treat is as eager flow
-        return EagerFlow._load(path=flow_path, entry=entry, **kwargs)
+        # if non-YAML file is provided, raise user error exception
+        raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
@@ -341,17 +341,16 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk._submitter import TestSubmitter
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if self.language == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
-                result = submitter.exec_with_inputs(
-                    inputs=inputs,
-                )
+            with TestSubmitter(flow=self, flow_context=self.context).init(
+                stream_output=self.context.streaming
+            ) as submitter:
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
                 return result
         else:
-
             invoker = FlowContextResolver.resolve(flow=self)
             result = invoker._invoke(
                 data=inputs,

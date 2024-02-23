@@ -13,6 +13,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
@@ -369,17 +370,10 @@ def safe_parse_object_list(obj_list, parser, message_generator):
     return results
 
 
-def _normalize_identifier_name(name):
-    normalized_name = name.lower()
-    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
-    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
-    if re.match(r"\d", normalized_name):
-        normalized_name = "n" + normalized_name  # No leading digits
-    return normalized_name
-
-
 def _sanitize_python_variable_name(name: str):
-    return _normalize_identifier_name(name).replace(" ", "_")
+    from promptflow._utils.utils import _sanitize_python_variable_name
+
+    return _sanitize_python_variable_name(name)
 
 
 def _get_additional_includes(yaml_path):
@@ -1126,6 +1120,49 @@ def pd_read_json(file) -> "DataFrame":
         return pd.read_json(f, orient="records", lines=True)
 
 
+def get_mac_address() -> str:
+    """Obtain all MAC addresses, then sort and concatenate them."""
+    try:
+        import psutil
+
+        mac_address = []
+        net_addresses = psutil.net_if_addrs()
+        # Obtain all MAC addresses, then sort and concatenate them
+        net_address_list = sorted(net_addresses.items())  # sort by name
+        for name, net_address in net_address_list:
+            for net_interface in net_address:
+                if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
+                    mac_address.append(net_interface.address)
+
+        return ':'.join(mac_address)
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return ""
+
+
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
+    mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
+    if mac_address:
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
+    return str(uuid.uuid4())
+
+
 def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
     nanoseconds = int(time_unix_nano)
     seconds = nanoseconds / 1_000_000_000
@@ -1147,3 +1184,15 @@ def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
         attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
         flattened_attributes[attr_key] = attr_value
     return flattened_attributes
+
+
+def parse_otel_span_status_code(value: int) -> str:
+    # map int value to string
+    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
+    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
+    if value == 0:
+        return "Unset"
+    elif value == 1:
+        return "Ok"
+    else:
+        return "Error"

@@ -4,7 +4,7 @@
 import contextlib
 import getpass
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from unittest import mock
 
 import werkzeug
@@ -49,6 +49,7 @@ class PFSOperations:
     CONNECTION_URL_PREFIX = "/v1.0/Connections"
     RUN_URL_PREFIX = "/v1.0/Runs"
     TELEMETRY_PREFIX = "/v1.0/Telemetries"
+    LINE_RUNS_PREFIX = "/v1.0/LineRuns"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -97,7 +98,7 @@ class PFSOperations:
     def get_connections_by_provider(self, name: str, working_dir, status_code=None):
         response = self._client.get(
             f"{self.CONNECTION_URL_PREFIX}/{name}",
-            data={"working_directory": working_dir},
+            query_string={"working_directory": working_dir},
             headers=self.remote_user_header(),
         )
         if status_code:
@@ -217,4 +218,17 @@ class PFSOperations:
         )
         if status_code:
             assert status_code == response.status_code, response.text
+        return response
+
+    # trace APIs
+    # LineRuns
+    def list_line_runs(self, *, session_id: Optional[str] = None):
+        query_string = {}
+        if session_id is not None:
+            query_string["session"] = session_id
+        response = self._client.get(
+            f"{self.LINE_RUNS_PREFIX}/list",
+            query_string=query_string,
+            headers=self.remote_user_header(),
+        )
         return response

@@ -2,11 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import typing
 
-from sqlalchemy import TEXT, Column, Index
+from sqlalchemy import TEXT, Column, Index, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import Query, declarative_base
 
 from promptflow._sdk._constants import SPAN_TABLENAME
 
@@ -56,12 +57,49 @@ class Span(Base):
     @sqlite_retry
     def list(
         session_id: typing.Optional[str] = None,
-        parent_span_id: typing.Optional[str] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
     ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
-            stmt = session.query(Span)
+            stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
-            if parent_span_id is not None:
-                stmt = stmt.filter(Span.parent_span_id == parent_span_id)
+            if trace_ids is not None:
+                stmt = stmt.filter(Span.trace_id.in_(trace_ids))
+            stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
+
+
+class LineRun:
+    """Line run is an abstraction of spans, which is not persisted in the database."""
+
+    @staticmethod
+    def list(
+        session_id: typing.Optional[str] = None,
+    ) -> typing.List[typing.List[Span]]:
+        with trace_mgmt_db_session() as session:
+            stmt: Query = session.query(Span)
+            if session_id is not None:
+                stmt = stmt.filter(Span.session_id == session_id)
+            else:
+                # TODO: fully support query
+                raise NotImplementedError
+            stmt = stmt.order_by(
+                Span.trace_id,
+                text("json_extract(span.content, '$.start_time') asc"),
+            )
+            line_runs = []
+            current_spans: typing.List[Span] = []
+            span: Span
+            for span in stmt.all():
+                if len(current_spans) == 0:
+                    current_spans.append(span)
+                    continue
+                current_trace_id = current_spans[0].trace_id
+                if span.trace_id == current_trace_id:
+                    current_spans.append(span)
+                    continue
+                line_runs.append(copy.deepcopy(current_spans))
+                current_spans = [span]
+            if len(current_spans) > 0:
+                line_runs.append(copy.deepcopy(current_spans))
+            return line_runs

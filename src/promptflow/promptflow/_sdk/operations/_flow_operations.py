@@ -5,22 +5,17 @@ import contextlib
 import glob
 import json
 import os
-import shutil
 import subprocess
 import sys
+import uuid
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import (
-    CHAT_HISTORY,
-    DEFAULT_ENCODING,
-    FLOW_TOOLS_JSON_GEN_TIMEOUT,
-    LOCAL_MGMT_DB_PATH,
-    PROMPT_FLOW_DIR_NAME,
-)
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
@@ -36,7 +31,7 @@ from promptflow._sdk._utils import (
     parse_variant,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, ProtectedFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -78,18 +73,26 @@ class FlowOperations(TelemetryMixin):
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
-        :param entry: Entry function. Required when flow is script.
-        :type entry: str
         :return: The result of flow or node
         :rtype: dict
         """
+        experiment = kwargs.pop("experiment", None)
+        output_path = kwargs.get("output_path", None)
+        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            return self._client._experiments._test(
+                flow=flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                experiment=experiment,
+                **kwargs,
+            )
+
         result = self._test(
             flow=flow,
             inputs=inputs,
             variant=variant,
             node=node,
             environment_variables=environment_variables,
-            entry=entry,
             **kwargs,
         )
 
@@ -98,49 +101,21 @@ class FlowOperations(TelemetryMixin):
             # Dump flow/node test info
             flow = load_flow(flow)
             if node:
-                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node")
-            else:
-                if variant:
-                    tuning_node, node_variant = parse_variant(variant)
-                    prefix = f"flow-{tuning_node}-{node_variant}"
-                else:
-                    prefix = "flow"
-                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
-
-        additional_output_path = kwargs.get("detail", None)
-        if additional_output_path:
-            if not dump_test_result:
-                flow = load_flow(flow)
-            if node:
-                # detail and output
                 dump_flow_result(
-                    flow_folder=flow.code,
-                    node_result=result,
-                    prefix=f"flow-{node}.node",
-                    custom_path=additional_output_path,
+                    flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node", custom_path=output_path
                 )
-                # log
-                log_src_path = Path(flow.code) / PROMPT_FLOW_DIR_NAME / f"{node}.node.log"
-                log_dst_path = Path(additional_output_path) / f"{node}.node.log"
-                shutil.copy(log_src_path, log_dst_path)
             else:
                 if variant:
                     tuning_node, node_variant = parse_variant(variant)
                     prefix = f"flow-{tuning_node}-{node_variant}"
                 else:
                     prefix = "flow"
-                # detail and output
                 dump_flow_result(
                     flow_folder=flow.code,
                     flow_result=result,
                     prefix=prefix,
-                    custom_path=additional_output_path,
+                    custom_path=output_path,
                 )
-                # log
-                log_src_path = Path(flow.code) / PROMPT_FLOW_DIR_NAME / "flow.log"
-                log_dst_path = Path(additional_output_path) / "flow.log"
-                shutil.copy(log_src_path, log_dst_path)
-
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
@@ -155,7 +130,6 @@ class FlowOperations(TelemetryMixin):
         stream_log: bool = True,
         stream_output: bool = True,
         allow_generator_output: bool = True,
-        entry: str = None,
         **kwargs,
     ):
         """Test flow or node.
@@ -172,50 +146,31 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-        :param entry: The entry function, only works when source is a code file.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
-        flow = load_flow(flow, entry=entry)
+        output_path = kwargs.get("output_path", None)
+        session = kwargs.pop("session", None)
+        # Run id will be set in operation context and used for session
+        run_id = kwargs.get("run_id", str(uuid.uuid4()))
+        flow: FlowBase = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
             if variant or node:
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
-        else:
-            if entry:
-                logger.warning("entry is only supported for eager flow, will be ignored")
         flow.context.variant = variant
-        from promptflow._constants import FlowLanguage
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
-        if flow.language == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-                )
-
-                if node:
-                    return submitter.node_test(
-                        node_name=node,
-                        flow_inputs=flow_inputs,
-                        dependency_nodes_outputs=dependency_nodes_outputs,
-                        environment_variables=environment_variables,
-                        stream=True,
-                    )
-                else:
-                    return submitter.flow_test(
-                        inputs=flow_inputs,
-                        environment_variables=environment_variables,
-                        stream_log=stream_log,
-                        stream_output=stream_output,
-                        allow_generator_output=allow_generator_output and is_chat_flow,
-                    )
-
-        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
+            target_node=node,
+            environment_variables=environment_variables,
+            stream_log=stream_log,
+            output_path=output_path,
+            stream_output=stream_output,
+            session=session,
+        ) as submitter:
             if isinstance(flow, EagerFlow):
                 # TODO(2897153): support chat eager flow
                 is_chat_flow, chat_history_input_name = False, None
@@ -228,19 +183,14 @@ class FlowOperations(TelemetryMixin):
 
             if node:
                 return submitter.node_test(
-                    node_name=node,
                     flow_inputs=flow_inputs,
                     dependency_nodes_outputs=dependency_nodes_outputs,
-                    environment_variables=environment_variables,
-                    stream=True,
                 )
             else:
                 return submitter.flow_test(
                     inputs=flow_inputs,
-                    environment_variables=environment_variables,
-                    stream_log=stream_log,
-                    stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
+                    run_id=run_id,
                 )
 
     @staticmethod
@@ -294,9 +244,13 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow = load_flow(flow)
+        flow: FlowBase = load_flow(flow)
         flow.context.variant = variant
-        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
+            environment_variables=environment_variables,
+            stream_log=False,  # no need to stream log in chat mode
+        ) as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -307,15 +261,15 @@ class FlowOperations(TelemetryMixin):
             print("Press Enter to send your message.")
             print("You can quit with ctrl+C.")
             print("=" * len(info_msg))
+
             submitter._chat_flow(
                 inputs=inputs,
                 chat_history_name=chat_history_input_name,
-                environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
-    def _chat_with_ui(self, script):
+    def _chat_with_ui(self, script, skip_open_browser: bool = False):
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
@@ -332,6 +286,8 @@ class FlowOperations(TelemetryMixin):
             "--client.toolbarMode=viewer",
             "--browser.gatherUsageStats=false",
         ]
+        if skip_open_browser:
+            sys.argv += ["--server.headless=true"]
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
@@ -439,7 +395,7 @@ class FlowOperations(TelemetryMixin):
         that the flow involves no additional includes, symlink, or variant.
         :param output_dir: output directory to export connections
         """
-        flow: ProtectedFlow = load_flow(built_flow_dag_path)
+        flow: FlowBase = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -624,7 +580,7 @@ class FlowOperations(TelemetryMixin):
         output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow: ProtectedFlow = load_flow(flow)
+        flow: FlowBase = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
@@ -771,7 +727,7 @@ class FlowOperations(TelemetryMixin):
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow: ProtectedFlow = load_flow(source=flow)
+        flow: FlowBase = load_flow(source=flow)
         if not isinstance(flow, ProtectedFlow):
             # No tools meta for eager flow
             return {}, {}

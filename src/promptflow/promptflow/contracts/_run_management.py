@@ -6,8 +6,6 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from promptflow._sdk._constants import VIS_JS_BUNDLE_FILENAME
-
 
 @dataclass
 class RunDetail:
@@ -46,7 +44,6 @@ class RunVisualization:
 @dataclass
 class VisualizationRender:
     data: dict
-    js_path: str = VIS_JS_BUNDLE_FILENAME
 
     def __post_init__(self):
         self.data = json.dumps(json.dumps(self.data))  # double json.dumps to match JS requirements

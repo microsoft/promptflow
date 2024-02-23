@@ -25,7 +25,6 @@ from promptflow._cli._utils import (
     _output_result_list_with_format,
     activate_action,
     confirm,
-    exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
@@ -464,7 +463,6 @@ def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], O
     return display_name, description, tags
 
 
-@exception_handler("Update run")
 def update_run(name: str, params: List[Dict[str, str]]) -> None:
     # params_override can have multiple items when user specifies with
     # `--set key1=value1 key2=value`
@@ -480,14 +478,12 @@ def update_run(name: str, params: List[Dict[str, str]]) -> None:
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Stream run")
 def stream_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.stream(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("List runs")
 def list_runs(
     max_results: int,
     all_results: bool,
@@ -514,42 +510,36 @@ def list_runs(
     return runs
 
 
-@exception_handler("Show run")
 def show_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.get(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Show run details")
 def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
     details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
     pretty_print_dataframe_as_table(details)
 
 
-@exception_handler("Show run metrics")
 def show_run_metrics(name: str) -> None:
     pf_client = PFClient()
     metrics = pf_client.runs.get_metrics(name=name)
     print(json.dumps(metrics, indent=4))
 
 
-@exception_handler("Visualize run")
 def visualize_run(names: str, html_path: Optional[str] = None) -> None:
     run_names = [name.strip() for name in names.split(",")]
     pf_client = PFClient()
     pf_client.runs.visualize(run_names, html_path=html_path)
 
 
-@exception_handler("Archive run")
 def archive_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.archive(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Restore run")
 def restore_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.restore(name=name)
@@ -567,7 +557,6 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
     return result
 
 
-@exception_handler("Create run")
 def create_run(create_func: Callable, args):
     file = args.file
     flow = args.flow
@@ -636,7 +625,6 @@ def create_run(create_func: Callable, args):
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Delete run")
 def delete_run(name: str, skip_confirm: bool = False) -> None:
     if confirm("Are you sure to delete run irreversibly?", skip_confirm):
         pf_client = PFClient()

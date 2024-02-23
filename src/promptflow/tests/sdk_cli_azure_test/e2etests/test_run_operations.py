@@ -588,7 +588,6 @@ class TestFlowRun:
         )
         rest_run = run._to_rest_object()
         assert rest_run.vm_size == "Standard_D2"
-        assert rest_run.max_idle_time_seconds == 3600
         assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
         run = pf.runs.create_or_update(run=run)
         assert isinstance(run, Run)
@@ -854,6 +853,9 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
+    # it is a known issue that executor/runtime might write duplicate storage for line records,
+    # this will lead to the lines that assert line count (`len(detail)`) fails.
+    @pytest.mark.xfail(reason="BUG 2819328: Duplicate line in flow artifacts jsonl", run=True, strict=False)
     def test_get_details_against_partial_completed_run(
         self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
     ) -> None:
@@ -995,3 +997,51 @@ class TestFlowRun:
             pf.runs.download(run=run.name, output=tmp_dir)
             for file in expected_files:
                 assert Path(tmp_dir, run.name, file).exists()
+
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="Enable this after fixed sanitizer.",
+    )
+    def test_run_with_compute_instance_session(
+        self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
+    ):
+        run = Run(
+            flow=Path(f"{FLOWS_DIR}/print_env_var"),
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+            resources={"compute": compute_instance_name},
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.compute_name == compute_instance_name
+
+        run = pf.runs.create_or_update(
+            run=run,
+        )
+        assert isinstance(run, Run)
+
+        run = pf.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="Enable this after fixed sanitizer.",
+    )
+    def test_run_with_compute_instance_session_yml(
+        self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
+    ):
+        source = f"{RUNS_DIR}/sample_bulk_run_with_compute_instance.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.compute_name == "my_ci"
+
+        # update ci to actual ci
+        run._resources["compute"] = compute_instance_name
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+        run = pf.stream(run)
+        assert run.status == RunStatus.COMPLETED

@@ -49,9 +49,16 @@ HINT_INTERVAL_DAY = 7
 GET_PYPI_INTERVAL_DAY = 7
 
 _ENV_PF_INSTALLER = "PF_INSTALLER"
+STREAMING_ANIMATION_TIME = 0.01
 
 # trace related
-TRACE_SESSION_ID_ENV_VAR = "PF_TRACE_SESSION_ID"
+OTEL_RESOURCE_SERVICE_NAME = "promptflow"
+DEFAULT_SPAN_TYPE = "default"
+
+
+class TraceEnvironmentVariableName:
+    EXPERIMENT = "PF_TRACE_EXPERIMENT"
+    SESSION_ID = "PF_TRACE_SESSION_ID"
 
 
 class SpanFieldName:
@@ -75,7 +82,7 @@ class SpanContextFieldName:
 
 
 class SpanStatusFieldName:
-    CODE = "code"
+    STATUS_CODE = "status_code"
 
 
 class SpanAttributeFieldName:
@@ -84,15 +91,32 @@ class SpanAttributeFieldName:
     FUNCTION = "function"
     INPUTS = "inputs"
     OUTPUT = "output"
-    SESSION_ID = "session_id"
-    PATH = "path"
-    FLOW_ID = "flow_id"
-    RUN = "run"
-    EXPERIMENT = "experiment"
+    # token metrics
+    COMPLETION_TOKEN_COUNT = "llm.token_count.completion"
+    PROMPT_TOKEN_COUNT = "llm.token_count.prompt"
+    TOTAL_TOKEN_COUNT = "llm.token_count.total"
+    CUMULATIVE_COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
+    CUMULATIVE_PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
+    CUMULATIVE_TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
+    # test
+    LINE_RUN_ID = "line_run_id"
+    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    BATCH_RUN_ID = "batch_run_id"
+    LINE_NUMBER = "line_number"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+    COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
+    PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
+    TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
 
 
 class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
+    SESSION_ID = "session.id"
+    EXPERIMENT_NAME = "experiment.name"
+    # batch run
+    BATCH_RUN_ID = "batch_run_id"
+    LINE_NUMBER = "line_number"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
 
 
 class SpanResourceFieldName:

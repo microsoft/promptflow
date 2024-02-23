@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import contextlib
 import copy
 import functools
 import inspect
@@ -12,6 +13,8 @@ from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -23,6 +26,12 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tracer import (
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_trace_type,
+    open_telemetry_tracer,
+)
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -40,14 +49,11 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
-from promptflow.executor._errors import (
-    NodeOutputNotFound,
-    OutputReferenceNotExist,
-    SingleNodeValidationError,
-)
+from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -704,24 +710,46 @@ class FlowExecutor:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
-            self._update_operation_context(run_id)
-            line_result = self._exec(
-                inputs,
-                run_id=run_id,
-                line_number=index,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
-                allow_generator_output=allow_generator_output,
-            )
+            with self._update_operation_context(run_id, index):
+                line_result = self._exec(
+                    inputs,
+                    run_id=run_id,
+                    line_number=index,
+                    variant_id=variant_id,
+                    validate_inputs=validate_inputs,
+                    allow_generator_output=allow_generator_output,
+                )
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
-    def _update_operation_context(self, run_id: str):
+    @contextlib.contextmanager
+    def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-        operation_context.update({"flow-id": self._flow_id, "root-run-id": run_id})
+        original_mode = operation_context.get("run_mode", None)
+        values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
+        if original_mode == RunMode.Batch.name:
+            values_for_otel = {
+                "batch_run_id": run_id,
+                "line_number": line_number,
+            }
+        else:
+            values_for_otel = {"line_run_id": run_id}
+        try:
+            operation_context.run_mode = original_mode or RunMode.Test.name
+            operation_context.update(values_for_context)
+            for k, v in values_for_otel.items():
+                operation_context._add_otel_attributes(k, v)
+            yield
+        finally:
+            for k in values_for_context:
+                operation_context.pop(k)
+            operation_context._remove_otel_attributes(values_for_otel.keys())
+            if original_mode is None:
+                operation_context.pop("run_mode")
+            else:
+                operation_context.run_mode = original_mode
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
@@ -745,6 +773,68 @@ class FlowExecutor:
             if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
+
+    def _exec_inner_with_trace(
+        self,
+        inputs: Mapping[str, Any],
+        run_info: FlowRunInfo,
+        run_tracker: RunTracker,
+        context: FlowExecutionContext,
+        validate_inputs=False,
+        allow_generator_output=False,
+    ):
+        with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
+            # initialize span
+            span.set_attributes(
+                {
+                    "framework": "promptflow",
+                    "span_type": TraceType.FLOW.value,
+                }
+            )
+            enrich_span_with_context(span)
+            # enrich span with input
+            enrich_span_with_input(span, inputs)
+            # invoke
+            output, aggregation_inputs = self._exec_inner(
+                inputs,
+                run_info,
+                run_tracker,
+                context,
+                validate_inputs,
+                allow_generator_output,
+            )
+            # enrich span with trace type
+            enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
+            # set status
+            span.set_status(StatusCode.OK)
+            return output, aggregation_inputs
+
+    def _exec_inner(
+        self,
+        inputs: Mapping[str, Any],
+        run_info: FlowRunInfo,
+        run_tracker: RunTracker,
+        context: FlowExecutionContext,
+        validate_inputs=False,
+        allow_generator_output=False,
+    ):
+        if validate_inputs:
+            inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
+        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+        # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
+        run_info.inputs = inputs
+        output, nodes_outputs = self._traverse_nodes(inputs, context)
+        output = self._stringify_generator_output(output) if not allow_generator_output else output
+        # Persist the node runs for the nodes that have a generator output
+        generator_output_nodes = [
+            nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+        ]
+        run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
+        run_tracker.allow_generator_types = allow_generator_output
+        run_tracker.end_run(run_info.run_id, result=output)
+        aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+        return output, aggregation_inputs
 
     def _exec(
         self,
@@ -783,7 +873,6 @@ class FlowExecutor:
             root_run_id=run_id,
             run_id=line_run_id,
             parent_run_id=run_id,
-            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
             index=line_number,
             variant_id=variant_id,
         )
@@ -799,21 +888,14 @@ class FlowExecutor:
         output = {}
         aggregation_inputs = {}
         try:
-            if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-            inputs = load_multimedia_data(self._flow.inputs, inputs)
-            # Make sure the run_info with converted inputs results rather than original inputs
-            run_info.inputs = inputs
-            output, nodes_outputs = self._traverse_nodes(inputs, context)
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
-            # Persist the node runs for the nodes that have a generator output
-            generator_output_nodes = [
-                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
-            ]
-            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
-            run_tracker.allow_generator_types = allow_generator_output
-            run_tracker.end_run(line_run_id, result=output)
-            aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+            output, aggregation_inputs = self._exec_inner_with_trace(
+                inputs,
+                run_info,
+                run_tracker,
+                context,
+                validate_inputs,
+                allow_generator_output,
+            )
         except KeyboardInterrupt as ex:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
@@ -936,7 +1018,7 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
+        from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 
         return apply_inputs_mapping(inputs, inputs_mapping)
 
@@ -1064,6 +1146,7 @@ def execute_flow(
     connections: dict,
     inputs: Mapping[str, Any],
     *,
+    run_id: str = None,
     run_aggregation: bool = True,
     enable_stream_output: bool = False,
     allow_generator_output: bool = False,  # TODO: remove this
@@ -1083,6 +1166,8 @@ def execute_flow(
     :type inputs: Mapping[str, Any]
     :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
     :type enable_stream_output: Optional[bool]
+    :param run_id: Run id will be set in operation context and used for session.
+    :type run_id: Optional[str]
     :param kwargs: Other keyword arguments to create flow executor.
     :type kwargs: Any
     :return: The line result of executing the flow.
@@ -1094,14 +1179,18 @@ def execute_flow(
         # execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
-        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+        line_result = flow_executor.exec_line(
+            inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
+        )
         # persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if run_aggregation and line_result.aggregation_inputs:
             # convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}
             aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-            aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+            aggregation_results = flow_executor.exec_aggregation(
+                flow_inputs, aggregation_inputs=aggregation_inputs, run_id=run_id
+            )
             line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
             line_result.run_info.metrics = aggregation_results.metrics
         if isinstance(line_result.output, dict):

@@ -1247,9 +1247,8 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
-    @pytest.mark.skip("Enable this when executor change merges")
+    @pytest.mark.skip("Won't support this kind of usage.")
     def test_eager_flow_run_without_yaml(self, pf):
-        # TODO(2898455): support this
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
         run = pf.run(
             flow=flow_path,
@@ -1258,7 +1257,6 @@ class TestFlowRun:
         )
         assert run.status == "Completed"
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
         run = pf.run(
@@ -1269,25 +1267,15 @@ class TestFlowRun:
         assert "error" not in run._to_dict()
 
     def test_eager_flow_test_invalid_cases(self, pf):
-        # no entry provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
-        with pytest.raises(UserErrorException) as e:
-            pf.run(
-                flow=flow_path,
-                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            )
-        assert "Entry function is not specified" in str(e.value)
-
-        # no path provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/")
+        # incorrect entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/")
         with pytest.raises(ValidationError) as e:
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             )
-        assert "'path': ['Missing data for required field.']" in str(e.value)
+        assert "Entry function my_func is not valid" in str(e.value)
 
-    @pytest.mark.skip("Executor only support yaml file for eager flow, will update the test later.")
     def test_eager_flow_run_with_additional_includes(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes")
         run = pf.run(
@@ -1306,11 +1294,66 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
-            # remove run dag
-            shutil.rmtree(f"{temp_dir}/print_env_var")
+            # remove flow dag
+            os.unlink(f"{temp_dir}/print_env_var/flow.dag.yaml")
 
             # can still get run operations
             LocalStorageOperations(run=run)
 
             # can to_dict
             run._to_dict()
+
+    def test_eager_flow_run_with_environment_variables(self, pf):
+        # run's environment variables will override flow's environment variables
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "RUN"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! RUN"]}
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
+
+    def test_eager_flow_run_with_evc(self, pf):
+        # run's evc can work
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+
+        # flow evc can work
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables_connection")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
