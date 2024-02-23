@@ -1,8 +1,7 @@
 ## Installation
 * Install promptflow private wheel:
 ```cmd
-pip install "promptflow==0.0.119223932" --extra-index-url
-https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install "promptflow==0.0.119481577" --extra-index-url https://azuremlsdktestpypi.azureedge.net/test-promptflow/
 ```
 * Enable internal features in your conda env
 ```cmd
@@ -14,7 +13,7 @@ Today, DAG prompt flow has a way to track and visualize node level inputs/output
 ### LLM Trace
 * `start_trace()` to enable trace for LLM calls
 
-Let's start with the simplest example, add single line code to enalbe trace for LLM calls in your application.
+Let's start with the simplest example, add single line code to enable trace for LLM calls in your application.
 ```python
 from openai import OpenAI
 import promptflow as pf
@@ -42,7 +41,7 @@ Click on line record, the LLM detail will be displayed with chat window experien
 ![LLM-trace-detail](./img/LLM-trace-detail.png)
 
 * `@trace` to add your own trace for any function
-More common scenario is the applicaton has complicated code structure, and developer would like to add trace on critical path that they would like to 
+More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to 
 
 There're more examples of using 
 
