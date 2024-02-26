@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 try:
     from openai import OpenAI as OpenAIClient
