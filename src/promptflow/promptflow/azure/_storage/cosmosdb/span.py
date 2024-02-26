@@ -9,7 +9,6 @@ from promptflow._sdk.entities._trace import Span as SpanEntity
 
 
 class Span:
-    __container__ = "Span"
 
     name: str = None
     context: dict = None

@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 from flask import current_app
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanStatusFieldName
+from promptflow._sdk._utils import json_loads_parse_const_as_str
 from promptflow._sdk.entities._trace import Span
 
 
@@ -57,8 +58,6 @@ class LineEvaluation:
 
 
 class Summary:
-    __container__ = "LineSummary"
-
     def __init__(self, span: Span) -> None:
         self.span = span
 
@@ -115,8 +114,8 @@ class Summary:
             session_id=session_id,
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
-            inputs=json.loads(attributes[SpanAttributeFieldName.INPUTS]),
-            outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
+            inputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.INPUTS]),
+            outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
             start_time=start_time,
             end_time=end_time,
             status=self.span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],

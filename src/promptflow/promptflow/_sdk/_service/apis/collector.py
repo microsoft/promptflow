@@ -14,7 +14,7 @@ from flask import request
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
-from promptflow._constants import SpanResourceFieldName
+from promptflow._constants import CosmosDBContainerName, SpanResourceFieldName
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
 
@@ -41,8 +41,10 @@ def trace_collector():
         from promptflow.azure._storage.cosmosdb.client import get_client
 
         subscription_id, resource_group_name, workspace_name = _get_workspace_info()
-        span_client = get_client("Span", subscription_id, resource_group_name, workspace_name)
-        line_summary_client = get_client("LineSummary", subscription_id, resource_group_name, workspace_name)
+        span_client = get_client(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
+        line_summary_client = get_client(
+            CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
+        )
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
         traces_request = ExportTraceServiceRequest()

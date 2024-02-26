@@ -61,6 +61,11 @@ class TraceEnvironmentVariableName:
     SESSION_ID = "PF_TRACE_SESSION_ID"
 
 
+class CosmosDBContainerName:
+    SPAN = "Span"
+    LINE_SUMMARY = "LineSummary"
+
+
 class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
