@@ -19,7 +19,7 @@ def list_apis(
     connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection],
 ) -> List[Dict[str, str]]:
     # suppprt completion for backword compatibility.
-    if isinstance(connection, Union[AzureOpenAIConnection, OpenAIConnection]):
+    if isinstance(connection, (AzureOpenAIConnection, OpenAIConnection)):
         return [
             {"value": "chat", "display_value": "chat"},
             {"value": "completion", "display_value": "completion"},
@@ -96,6 +96,8 @@ def list_deployment_names(
             if api_name == "completion" and deployment.model_name in completion_model_names:
                 res.append(cur_item)
             elif api_name == "chat" and deployment.model_name not in completion_model_names:
+                res.append(cur_item)
+            elif api_name == "":
                 res.append(cur_item)
 
     except Exception as e:
