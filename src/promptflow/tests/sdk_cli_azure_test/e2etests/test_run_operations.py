@@ -710,7 +710,7 @@ class TestFlowRun:
         flow_path = f"{FLOWS_DIR}/print_env_var"
         flow_lineage_id = get_flow_lineage_id(flow_path)
         flow = load_flow(flow_path)
-        flow_session_id = pf._runs._get_session_id(flow)
+        flow_session_id = pf._runs._get_session_id(flow, flow_path)
 
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
