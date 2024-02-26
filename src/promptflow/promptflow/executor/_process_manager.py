@@ -141,6 +141,7 @@ class SpawnProcessManager(AbstractProcessManager):
                 self._output_queues[i],
                 self._log_context_initialization_func,
                 self._current_operation_context,
+                i,
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
