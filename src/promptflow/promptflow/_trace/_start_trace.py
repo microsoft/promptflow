@@ -21,7 +21,7 @@ from promptflow._constants import (
 )
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._constants import PF_TRACE_CONTEXT
+from promptflow._sdk._constants import PF_TRACE_CONTEXT, AzureMLWorkspaceTriad
 from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -79,6 +79,8 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     )
     # print to be able to see it in notebook
     print(f"You can view the trace from UI url: {ui_url}")
+    # if user has enabled the local to cloud feature, also print the url for cloud
+    _trace_url_for_cloud(session_id=session_id)
 
 
 def _start_pfs(pfs_port) -> None:
@@ -189,3 +191,32 @@ def _determine_trace_url(
     elif session_configured and session_id is not None:
         ui_url += f"?session={session_id}"
     return ui_url
+
+
+def _get_workspace_triad() -> typing.Optional[AzureMLWorkspaceTriad]:
+    # TODO: we have no conclusion on the local to cloud experience yet
+    #       one might be experience is `pf config xxx`, and we should get the triad via config;
+    #       before that, use below environ name temporarily
+    subscription_id = os.getenv("pf_test_subscription_id", None)
+    resource_group_name = os.getenv("pf_test_resource_group_name", None)
+    workspace_name = os.getenv("pf_test_workspace_name", None)
+    if all([subscription_id, resource_group_name, workspace_name]):
+        return AzureMLWorkspaceTriad(
+            subscription_id=subscription_id, resource_group_name=resource_group_name, workspace_name=workspace_name
+        )
+    else:
+        return None
+
+
+def _trace_url_for_cloud(session_id: str) -> None:
+    workspace_triad = _get_workspace_triad()
+    if workspace_triad is None:
+        return
+    url_for_cloud = (
+        f"https://int.ml.azure.com/prompts/trace/session/{session_id}"
+        f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
+        f"/resourceGroups/{workspace_triad.resource_group_name}"
+        "/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{workspace_triad.workspace_name}"
+    )
+    print(f"You can view the trace in cloud from this link: {url_for_cloud}")
