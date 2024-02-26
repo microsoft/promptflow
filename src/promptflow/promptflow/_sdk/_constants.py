@@ -139,6 +139,8 @@ TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
+UX_INPUTS_JSON = (HOME_PROMPT_FLOW_DIR / "ux.inputs.json").resolve()
+
 
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
