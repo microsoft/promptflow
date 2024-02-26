@@ -10,6 +10,7 @@
   ```
 - [SDK/CLI] Support setting timeout for `pfazure run stream`.
 - [SDK/CLI] Support `pfazure flow update` to update flow's metadata like `display_name`, `description` or `tags`.
+- [Executor] Support resuming batch run in batch engine.
 
 ### Bugs Fixed
 
