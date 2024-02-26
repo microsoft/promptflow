@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow import ToolProvider, tool
-from promptflow._core.tool_meta_generator import ToolValidationError
+from promptflow._core.tool import ToolProvider, tool
+from promptflow._core.tool_meta_generator import ToolValidationError, _serialize_tool
 from promptflow._sdk._pf_client import PFClient
 from promptflow.entities import DynamicList, InputSetting
 from promptflow.exceptions import UserErrorException
@@ -307,13 +307,16 @@ class TestTool:
         result = _client.tools.validate(tool_script_path)
         assert result.passed
 
-        tool_script_path = TOOL_ROOT / "invalid_tool.py"
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_schema.py"
         result = _client.tools.validate(tool_script_path)
-        assert len(result._errors) == 4
         assert "1 is not of type 'string'" in result.error_messages["invalid_schema_type"]
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_icon.py"
+        result = _client.tools.validate(tool_script_path)
         assert (
             "Cannot provide both `icon` and `icon_light` or `icon_dark`." in result.error_messages["invalid_tool_icon"]
         )
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_enabled_by.py"
+        result = _client.tools.validate(tool_script_path)
         assert (
             'Cannot find the input "invalid_input" for the enabled_by of teacher_id.'
             in result.error_messages["invalid_input_settings"]
@@ -325,7 +328,7 @@ class TestTool:
         assert all(str(tool_script_path) == item.location for item in result._errors)
 
         with pytest.raises(ToolValidationError):
-            _client.tools.validate(TOOL_ROOT / "invalid_tool.py", raise_error=True)
+            _client.tools.validate(TOOL_ROOT / "tool_with_invalid_schema.py", raise_error=True)
 
     def test_validate_tool_func(self):
         def load_module_by_path(source):
@@ -343,7 +346,7 @@ class TestTool:
         result = _client.tools.validate(tool_func)
         assert result.passed
 
-        tool_script_path = TOOL_ROOT / "invalid_tool.py"
+        tool_script_path = TOOL_ROOT / "tool_with_invalid_schema.py"
         module = load_module_by_path(tool_script_path)
         tool_func = getattr(module, "invalid_schema_type")
         result = _client.tools.validate(tool_func)
@@ -401,8 +404,8 @@ class TestTool:
 
         tool_operation = ToolOperations()
         tool_obj, input_settings, extra_info = tool_operation._parse_tool_from_func(my_tool)
-        construct_tool, validate_result = tool_operation._serialize_tool(tool_obj, input_settings, extra_info, my_tool)
-        assert validate_result.passed
+        construct_tool, validate_result = _serialize_tool(tool_obj, input_settings, extra_info)
+        assert len(validate_result) == 0
         assert construct_tool["inputs"]["input_text"]["undefined_field1"] == 1
         assert construct_tool["inputs"]["input_text"]["undefined_field2"] is True
         assert construct_tool["inputs"]["input_text"]["undefined_field3"] == {"key": "value"}
@@ -432,3 +435,29 @@ class TestTool:
         assert result._kwargs["invalid_count"] == 1
         assert len(result._errors) == 1
         assert "1 is not of type 'string'" in result._errors[0].message
+
+    def test_generate_tools_meta(self):
+        flow_path = TEST_ROOT / "test_configs" / "flows" / "flow-with_tool_settings" / "flow.dag.yaml"
+        tools_meta, errors = _client.flows._generate_tools_meta(flow=flow_path)
+        assert "tool_with_input_settings.py" in tools_meta["code"]
+        expect_tool_meta = {
+            "type": "python",
+            "inputs": {
+                "user_type": {"type": ["string"], "enum": ["student", "teacher"]},
+                "student_id": {
+                    "type": ["string"],
+                    "enabled_by": "user_type",
+                    "enabled_by_value": ["student"],
+                    "undefined_field": {"key": "value"},
+                },
+                "teacher_id": {"type": ["string"], "enabled_by": "user_type", "enabled_by_value": ["teacher"]},
+            },
+            "description": "tool with input settings",
+            "source": "tool_with_input_settings.py",
+            "function": "tool_with_input_settings",
+            "unknown_key": "value",
+        }
+        assert expect_tool_meta == tools_meta["code"]["tool_with_input_settings.py"]
+        assert "tool_with_invalid_input_settings.py" in errors
+        expect_error_msg = 'Cannot find the input "invalid_input" for the enabled_by of teacher_id.'
+        assert expect_error_msg in errors["tool_with_invalid_input_settings.py"]

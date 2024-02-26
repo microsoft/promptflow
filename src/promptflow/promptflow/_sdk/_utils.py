@@ -66,6 +66,7 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -220,15 +221,6 @@ def parse_variant(variant: str) -> Tuple[str, str]:
             message=str(error),
             error=error,
         )
-
-
-def _match_reference(env_val: str):
-    env_val = env_val.strip()
-    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
-    if not m:
-        return None, None
-    name, key = m.groups()
-    return name, key
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -1134,7 +1126,7 @@ def get_mac_address() -> str:
                 if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
                     mac_address.append(net_interface.address)
 
-        return ':'.join(mac_address)
+        return ":".join(mac_address)
     except Exception as e:
         logger.debug(f"get mac id error: {str(e)}")
         return ""
