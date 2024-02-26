@@ -29,6 +29,7 @@ class ProcessControlSignal(str, Enum):
     START = "start"
     RESTART = "restart"
     END = "end"
+    SPAWN_END = "spawn_end"
 
 
 class AbstractProcessManager:
@@ -285,7 +286,6 @@ class ForkProcessManager(AbstractProcessManager):
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
             with open(SpawnedForkProcessManagerLogPath, "r") as f:
                 error_logs = "".join(f.readlines())
-            if error_logs:
                 bulk_logger.error("The spawned fork process manager failed to start.")
                 bulk_logger.error(error_logs)
                 ex = SpawnedForkProcessManagerStartFailure()
@@ -450,8 +450,6 @@ def create_spawned_fork_process_manager(
 
     # Main loop to handle control signals and manage process lifecycle.
     while True:
-        all_processes_stopped = True
-
         try:
             process_info_list = process_info.items()
         except Exception as e:
@@ -463,20 +461,18 @@ def create_spawned_fork_process_manager(
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
                 process = psutil.Process(pid)
-                if process.status() != "zombie":
-                    all_processes_stopped = False
-                else:
+                if process.status() == "zombie":
                     # If do not call wait(), the child process may become a zombie process,
                     # and psutil.pid_exists(pid) is always true, which will cause spawn proces
                     # never exit.
                     process.wait()
 
-        # If all fork child processes exit, exit the loop.
-        if all_processes_stopped:
-            break
         try:
             control_signal, i = control_signal_queue.get(timeout=1)
-            manager.handle_signals(control_signal, i)
+            if control_signal == ProcessControlSignal.SPAWN_END and i is True:
+                break
+            else:
+                manager.handle_signals(control_signal, i)
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass

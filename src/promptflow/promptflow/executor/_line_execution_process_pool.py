@@ -546,6 +546,12 @@ class LineExecutionProcessPool:
                             last_log_count = current_result_count
                         # Check every 1 second
                         async_result.wait(1)
+
+                    if self._use_fork:
+                        from ._process_manager import ProcessControlSignal
+
+                        self._control_signal_queue.put((ProcessControlSignal.SPAWN_END, self._use_fork))
+
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
                     # The exceptions raised will be re-raised by the get() method.
                     # Related link:
