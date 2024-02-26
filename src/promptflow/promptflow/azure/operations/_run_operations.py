@@ -48,7 +48,6 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
@@ -709,20 +708,19 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
         # for local flow case, use flow path to calculate session id
-        session_id = self._get_session_id(flow=flow, flow_dir=run.flow)
+        session_id = self._get_session_id(flow=flow, flow_lineage_id=run._lineage_id)
         return flow.path, session_id
 
-    def _get_session_id(self, flow, flow_dir):
+    def _get_session_id(self, flow, flow_lineage_id):
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        flow_id = get_flow_lineage_id(flow_dir=flow_dir)
         # for different environment, use different session id to avoid image cache
         env = flow._environment
         env_hash = hashlib.sha256(json.dumps(env, sort_keys=True).encode()).hexdigest()
-        session_id = f"{user_alias}_{flow_id}_{env_hash}"
+        session_id = f"{user_alias}_{flow_lineage_id}_{env_hash}"
         # hash and truncate to avoid the session id getting too long
         # backend has a 64 bit limit for session id.
         # use hexdigest to avoid non-ascii characters in session id
