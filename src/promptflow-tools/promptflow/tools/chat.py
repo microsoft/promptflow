@@ -113,8 +113,6 @@ def list_deployment_names(
                 res.append(cur_item)
             elif api_name == "chat" and deployment.model_name not in completion_model_names:
                 res.append(cur_item)
-            elif api_name == "":
-                res.append(cur_item)
 
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 403:

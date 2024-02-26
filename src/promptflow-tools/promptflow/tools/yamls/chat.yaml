@@ -38,6 +38,8 @@ promptflow.tools.chat.chat:
           reference: ${inputs.connection}
         allow_manual_entry: false
         is_multi_select: false
+      ui_hints:
+        text_box_size: s
     deployment_name:
       type:
         - string
