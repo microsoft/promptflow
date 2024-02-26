@@ -551,7 +551,8 @@ class LineExecutionProcessPool:
                     if self._use_fork:
                         from ._process_manager import ProcessControlSignal
 
-                        self._control_signal_queue.put((ProcessControlSignal.SPAWN_END, self._use_fork))
+                        # In fork mode, put the end signal to exit the spawned process manager
+                        self._control_signal_queue.put((ProcessControlSignal.SPAWNED_MANAGER_END, self._use_fork))
 
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
                     # The exceptions raised will be re-raised by the get() method.

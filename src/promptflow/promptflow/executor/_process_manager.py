@@ -29,7 +29,7 @@ class ProcessControlSignal(str, Enum):
     START = "start"
     RESTART = "restart"
     END = "end"
-    SPAWN_END = "spawn_end"
+    SPAWNED_MANAGER_END = "spawned_manager_end"
 
 
 class AbstractProcessManager:
@@ -470,7 +470,8 @@ def create_spawned_fork_process_manager(
 
         try:
             control_signal, i = control_signal_queue.get(timeout=1)
-            if control_signal == ProcessControlSignal.SPAWN_END and i is True:
+            # Exit the spawned process manager.
+            if control_signal == ProcessControlSignal.SPAWNED_MANAGER_END and i is True:
                 break
             else:
                 manager.handle_signals(control_signal, i)
