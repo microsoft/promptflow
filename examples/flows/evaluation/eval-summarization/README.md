@@ -6,7 +6,7 @@ This flow implements a reference-free automatic abstractive summarization evalua
 
 ### Background
 
-Abstractive summarization evaluation is hard problem for which many previous automatic methods have performed poorly in-terms of correlation with human judgements. Expert human created ground truths for summarization are hard to obtain and also hard to compare automatically to generated summaries. Prior research defines four dimensions to abstractive summary quality (each scored on a 1-5 Likert scale):
+Abstractive summarization evaluation is a hard problem for which many previous automatic methods have performed poorly in-terms of correlation with human judgements. Expert human created ground truths for summarization are hard to obtain and also hard to compare automatically to generated summaries. Prior research defines four dimensions to abstractive summary quality (each scored on a 1-5 Likert scale):
 - Coherence - the collective quality of all sentences in the summary
 - Consistency - factual alignment between the summary and source document
 - Fluency - the quality of individual sentences of the summary
