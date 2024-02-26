@@ -4,7 +4,7 @@
 # flake8: noqa
 
 # This file is part of scripts\generate_json_schema.py in sdk-cli-v2, which is used to generate json schema
-# To use this script, run `python <this_file>` in promptflow env, 
+# To use this script, run `python <this_file>` in promptflow env,
 # and the json schema will be generated in the same folder.
 
 
@@ -18,6 +18,8 @@ from marshmallow import Schema, fields, missing
 from marshmallow.class_registry import get_class
 from marshmallow_jsonschema import JSONSchema
 
+class Flow(YamlFileSchema):
+    pass
 
 class PatchedJSONSchema(JSONSchema):
     required = fields.Method("get_required")
@@ -139,24 +141,31 @@ class PatchedJSONSchema(JSONSchema):
 
 from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, OpenAIConnectionSchema, \
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
-FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema
+FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema, ServerlessConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
+import argparse
 
 
 if __name__ == "__main__":
-    cls_list = [FlowSchema, EagerFlowSchema]
-    schema_list = []
-    for cls in cls_list:
-        target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
-        # print(target_schema)
-        file_name = cls.__name__
-        file_name = file_name.replace("Schema", "")
-        schema_list.append(target_schema["definitions"][cls.__name__])
-        print(target_schema)
-    schema = {
-        "type": "object",
-        "oneOf": schema_list
-    }
-    with open((f"Flow.schema.json"), "w") as f:
-        f.write(json.dumps(schema, indent=4))
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--output-file', nargs='+', help='Specify output file names')
+    args = parser.parse_args()
+
+    if "Flow" in args.output_file:
+        cls_list = [FlowSchema, EagerFlowSchema]
+        schema_list = []
+        for cls in cls_list:
+            target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
+            # print(target_schema)
+            file_name = cls.__name__
+            file_name = file_name.replace("Schema", "")
+            schema_list.append(target_schema["definitions"][cls.__name__])
+            print(target_schema)
+        schema = {
+            "type": "object",
+            "oneOf": schema_list
+        }
+        with open((f"Flow.schema.json"), "w") as f:
+            f.write(json.dumps(schema, indent=4))
