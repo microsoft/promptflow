@@ -32,11 +32,9 @@ promptflow.tools.chat.chat:
       dynamic_list:
         func_path: promptflow.tools.chat.list_apis
         func_kwargs:
-        - name: connection
+        - name: connection_name
           type: 
-          - AzureOpenAIConnection
-          - OpenAIConnection
-          - ServerlessConnection
+          - string
           reference: ${inputs.connection}
         allow_manual_entry: false
         is_multi_select: false
@@ -50,7 +48,7 @@ promptflow.tools.chat.chat:
         func_kwargs:
         - name: connection
           type: 
-          - AzureOpenAIConnection
+          - string
           reference: ${inputs.connection}
         - name: api_name
           type: 
@@ -66,9 +64,9 @@ promptflow.tools.chat.chat:
       dynamic_list:
         func_path: promptflow.tools.chat.list_models
         func_kwargs:
-        - name: connection
+        - name: connection_name
           type: 
-          - OpenAIConnection
+          - string
           reference: ${inputs.connection}
         - name: api_name
           type: 

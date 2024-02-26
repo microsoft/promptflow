@@ -16,10 +16,26 @@ from typing import List, Dict
 
 
 def list_apis(
-    connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection],
+    subscription_id,
+    resource_group_name,
+    workspace_name,
+    connection_name: str
 ) -> List[Dict[str, str]]:
+    if not connection_name:
+        return []
+
+    credential = _get_credential()
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
+    connection = ArmConnectionOperations._build_connection_dict(
+        name=connection_name,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group_name,
+        workspace_name=workspace_name,
+        credential=credential
+    )
     # suppprt completion for backword compatibility.
-    if isinstance(connection, (AzureOpenAIConnection, OpenAIConnection)):
+    if connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}:
         return [
             {"value": "chat", "display_value": "chat"},
             {"value": "completion", "display_value": "completion"},
@@ -34,7 +50,7 @@ def list_deployment_names(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection: AzureOpenAIConnection,
+    connection: str,
     api_name: str,
 ) -> List[Dict[str, str]]:
     res = []
@@ -112,10 +128,26 @@ def list_deployment_names(
 
 
 def list_models(
-    connection: OpenAIConnection,
+    subscription_id,
+    resource_group_name,
+    workspace_name,
+    connection_name: str,
     api_name: str,
 ):
-    if not isinstance(connection, OpenAIConnection):
+    if not connection_name:
+        return []
+
+    credential = _get_credential()
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
+    connection = ArmConnectionOperations._build_connection_dict(
+        name=connection_name,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group_name,
+        workspace_name=workspace_name,
+        credential=credential
+    )
+    if connection["type"] != "OpenAIConnection":
         return []
 
     if api_name == "chat":
