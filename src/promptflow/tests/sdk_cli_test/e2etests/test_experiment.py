@@ -12,14 +12,15 @@ import pytest
 from mock import mock
 from ruamel.yaml import YAML
 
-from promptflow import PFClient
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 from ..recording_utilities import is_live
+from ..recording_utilities.orchestrator_inject_record import mock_start_process_in_background
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -89,18 +90,18 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         session = str(uuid.uuid4())
-        if is_live():
+        with mock.patch(
+            "promptflow._sdk._submitter.experiment_orchestrator._start_process_in_background",
+            side_effect=mock_start_process_in_background,
+        ):
             # Async start
             exp = client._experiments.start(exp.name, session=session)
             # Test the experiment in progress cannot be started.
             with pytest.raises(RunOperationError) as e:
                 client._experiments.start(exp.name)
-            assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
-            assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
-            exp = self.wait_for_experiment_terminated(client, exp)
-        else:
-            exp = client._experiments.get(exp.name)
-            exp = ExperimentOrchestrator(client, exp).start(session=session)
+        assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
+        assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
+        exp = self.wait_for_experiment_terminated(client, exp)
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
