@@ -317,7 +317,7 @@ class LineExecutionProcessPool:
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     LogName_i = "{}_{}.log".format(LogName, index)
-                    with open(os.path.join(LogPath, LogName_i, "r")) as f:
+                    with open(os.path.join(LogPath, LogName_i), "r") as f:
                         error_logs = "".join(f.readlines())
                         bulk_logger.error(error_logs)
                     ex = ProcessCrashError(line_number)
@@ -679,7 +679,7 @@ def _process_wrapper(
 ):
     LogName_i = "{}_{}.log".format(LogName, i)
     os.makedirs(LogPath, exist_ok=True)
-    sys.stderr = open(os.path.join(LogPath, LogName_i, "w"))
+    sys.stderr = open(os.path.join(LogPath, LogName_i), "w")
 
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)
