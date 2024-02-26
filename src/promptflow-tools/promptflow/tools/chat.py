@@ -10,15 +10,32 @@ from promptflow.contracts.types import PromptTemplate
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 from promptflow.tools.aoai_gpt4v import _get_credential, _parse_resource_id, ListDeploymentsError, _build_deployment_dict
 from typing import List, Dict
+
+
+def list_apis(
+    connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection],
+) -> List[Dict[str, str]]:
+    # suppprt completion for backword compatibility.
+    if isinstance(connection, Union[AzureOpenAIConnection, OpenAIConnection]):
+        return [
+            {"value": "chat", "display_value": "chat"},
+            {"value": "completion", "display_value": "completion"},
+        ]
+    else:
+        return [
+            {"value": "chat", "display_value": "chat"},
+        ]
+
 
 def list_deployment_names(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection: AzureOpenAIConnection = None,
+    connection: AzureOpenAIConnection,
+    api_name: str,
 ) -> List[Dict[str, str]]:
     res = []
     try:
@@ -63,13 +80,22 @@ def list_deployment_names(
             account_name=conn_account,
         )
 
+        completion_model_names = {
+            "gpt-35-turbo-instruct"
+        }
+
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
-            if deployment.model_name.startswith("gpt-"):
-                cur_item = {
-                    "value": deployment.name,
-                    "display_value": deployment.name,
-                }
+            if not deployment.model_name.startswith("gpt-"):
+                continue
+
+            cur_item = {
+                "value": deployment.name,
+                "display_value": deployment.name,
+            }
+            if api_name == "completion" and deployment.model_name in completion_model_names:
+                res.append(cur_item)
+            elif api_name == "chat" and deployment.model_name not in completion_model_names:
                 res.append(cur_item)
 
     except Exception as e:
@@ -81,6 +107,33 @@ def list_deployment_names(
             raise ListDeploymentsError(msg=msg) from e
 
     return res
+
+
+def list_models(
+    connection: OpenAIConnection,
+    api_name: str,
+):
+    if not isinstance(connection, OpenAIConnection):
+        return []
+
+    if api_name == "chat":
+        return [
+            {"value": "gpt-4", "display_value": "gpt-4"},
+            {"value": "gpt-4-0314", "display_value": "gpt-4-0314"},
+            {"value": "gpt-4-32k", "display_value": "gpt-4-32k"},
+            {"value": "gpt-4-32k-0314", "display_value": "gpt-4-32k-0314"},
+            {"value": "gpt-3.5-turbo", "display_value": "gpt-3.5-turbo"},
+            {"value": "gpt-3.5-turbo-0301", "display_value": "gpt-3.5-turbo-0301"},
+            {"value": "gpt-3.5-turbo-16k", "display_value": "gpt-3.5-turbo-16k"},
+            {"value": "gpt-3.5-turbo-1106", "display_value": "gpt-3.5-turbo-1106"},
+            {"value": "gpt-4-1106-preview", "display_value": "gpt-4-1106-preview"},
+        ]
+    elif api_name == "completion":
+        return [
+            {"value": "gpt-3.5-turbo-instruct", "display_value": "gpt-3.5-turbo-instruct"},
+        ]
+    else:
+        return []
 
 
 @tool
