@@ -47,7 +47,7 @@ class LineEvaluation:
     outputs: typing.Dict
     trace_id: str
     root_span_id: str
-    display_name: str = None
+    display_name: str
     flow_id: str = None
     # Only for batch run
     batch_run_id: str = None
@@ -67,8 +67,6 @@ class Summary:
             # This is not the root span
             return
         attributes = self.span._content[SpanFieldName.ATTRIBUTES]
-        # Remove this log
-        current_app.logger.info(f"robbenwang debug print session id: {self.span.session_id} attributes: {attributes} ")
 
         if (
             SpanAttributeFieldName.LINE_RUN_ID not in attributes
@@ -144,6 +142,7 @@ class Summary:
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
             outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
+            display_name=name,
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
             # Query to get item id from line run id.

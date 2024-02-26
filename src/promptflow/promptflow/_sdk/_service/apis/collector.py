@@ -44,8 +44,11 @@ def trace_collector():
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource)
                     span._persist()
-                    SpanCosmosDB(span).persist(span_client)
-                    Summary(span).persist(line_summary_client)
+                    if line_summary_client and span_client:
+                        result = SpanCosmosDB(span).persist(span_client)
+                        # None means the span already exists, then we don't need to persist the summary also.
+                        if result is not None:
+                            Summary(span).persist(line_summary_client)
         return "Traces received", 200
 
     # JSON protobuf encoding
