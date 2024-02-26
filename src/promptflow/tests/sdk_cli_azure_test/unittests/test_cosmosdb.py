@@ -1,6 +1,7 @@
 import pytest
-from promptflow.azure._storage.cosmosdb.span import Span
+
 from promptflow._sdk.entities._trace import Span as SpanEntity
+from promptflow.azure._storage.cosmosdb.span import Span
 
 
 @pytest.mark.unittest
@@ -24,7 +25,6 @@ class TestSpan:
                 resource={},
                 span_type=None,
                 session_id=None,
-
             )
         )
         assert span.to_dict() == {
@@ -34,8 +34,8 @@ class TestSpan:
             "start_time": "test",
             "end_time": "test",
             "context": {
-                    "trace_id": "0xacf2291a630af328da8fabd6bf49f653",
-                    "span_id": "0x9ded7ce65d5f7775",
+                "trace_id": "0xacf2291a630af328da8fabd6bf49f653",
+                "span_id": "0x9ded7ce65d5f7775",
             },
             "id": "0x9ded7ce65d5f7775",
         }
@@ -69,8 +69,8 @@ class TestSpan:
             "attributes": {"line_run_id": "test_line_run_id"},
             "partition_key": "test_session_id",
             "context": {
-                    "trace_id": "0xacf2291a630af328da8fabd6bf49f653",
-                    "span_id": "0x9ded7ce65d5f7775",
+                "trace_id": "0xacf2291a630af328da8fabd6bf49f653",
+                "span_id": "0x9ded7ce65d5f7775",
             },
             "id": "0x9ded7ce65d5f7775",
             "partition_key": "test_session_id",

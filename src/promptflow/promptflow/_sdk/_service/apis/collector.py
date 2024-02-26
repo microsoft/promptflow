@@ -8,6 +8,7 @@
 # to provide OTLP/HTTP endpoint as OTEL collector
 
 import json
+import os
 
 from flask import request
 from google.protobuf.json_format import MessageToJson
@@ -16,15 +17,32 @@ from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTrace
 from promptflow._constants import SpanResourceFieldName
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
-from promptflow.azure._storage.cosmosdb.client import get_client_with_workspace_info
-from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
-from promptflow.azure._storage.cosmosdb.summary import Summary
+
+
+# Check if the AML workspace is configured
+# If not, don't import any AML related modules
+def _is_workspace_configured():
+    subscription_id, resource_group_name, workspace_name = _get_workspace_info()
+    return subscription_id is not None and resource_group_name is not None and workspace_name is not None
+
+
+def _get_workspace_info():
+    # TODO: Change to workspace triad
+    return (
+        os.environ.get("pf_test_subscription_id"),
+        os.environ.get("pf_test_resource_group_name"),
+        os.environ.get("pf_test_workspace_name"),
+    )
 
 
 def trace_collector():
     content_type = request.headers.get("Content-Type")
-    line_summary_client = get_client_with_workspace_info("LineSummary", {})
-    span_client = get_client_with_workspace_info("Span", {})
+    if _is_workspace_configured():
+        from promptflow.azure._storage.cosmosdb.client import get_client
+
+        subscription_id, resource_group_name, workspace_name = _get_workspace_info()
+        span_client = get_client("Span", subscription_id, resource_group_name, workspace_name)
+        line_summary_client = get_client("LineSummary", subscription_id, resource_group_name, workspace_name)
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
         traces_request = ExportTraceServiceRequest()
@@ -44,13 +62,21 @@ def trace_collector():
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource)
                     span._persist()
-                    if line_summary_client and span_client:
-                        result = SpanCosmosDB(span).persist(span_client)
-                        # None means the span already exists, then we don't need to persist the summary also.
-                        if result is not None:
-                            Summary(span).persist(line_summary_client)
+                    if _is_workspace_configured():
+                        _write_trace_to_cosmosdb(span, line_summary_client, span_client)
         return "Traces received", 200
 
     # JSON protobuf encoding
     elif "application/json" in content_type:
         raise NotImplementedError
+
+
+def _write_trace_to_cosmosdb(span: Span, line_summary_client, span_client):
+    from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
+    from promptflow.azure._storage.cosmosdb.summary import Summary
+
+    if line_summary_client and span_client:
+        result = SpanCosmosDB(span).persist(span_client)
+        # None means the span already exists, then we don't need to persist the summary also.
+        if result is not None:
+            Summary(span).persist(line_summary_client)

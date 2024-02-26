@@ -4,31 +4,14 @@
 
 import ast
 import datetime
-import os
 import threading
-
-from flask import current_app
 
 client_map = {}
 _thread_lock = threading.Lock()
 _token_timeout = 60 * 9  # Timeout is 10 minutes, set expire at 9 minutes for update
 
 
-def get_client_with_workspace_info(container_name: str, workspace_info: dict):
-
-    # Use workspace_info to get the client may not a good idea, just for test.
-    subscription_id = workspace_info.get("subscription_id", os.environ.get("pf_test_subscription_id"))
-    resource_group_name = workspace_info.get("resource_group_name", os.environ.get("pf_test_resource_group_name"))
-    workspace_name = workspace_info.get("workspace_name", os.environ.get("pf_test_workspace_name"))
-    if subscription_id is None or resource_group_name is None or workspace_name is None:
-        current_app.logger.info("No workspace info found. Skip getting client.")
-        return None
-    return get_client(container_name, subscription_id, resource_group_name, workspace_name)
-
-
-def get_client(
-    container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str
-):
+def get_client(container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str):
     # Must ensure that client exists
     client_key = _get_db_client_key(container_name, subscription_id, resource_group_name, workspace_name)
     container_client = _get_client_from_map(client_key)
@@ -81,10 +64,9 @@ def _get_resource_token(
     return ast.literal_eval(token_resp)
 
 
-def _init_container_client(
-    endpoint: str, database_name: str, container_name: str, resource_url: str, token: str
-):
+def _init_container_client(endpoint: str, database_name: str, container_name: str, resource_url: str, token: str):
     from azure.cosmos.cosmos_client import CosmosClient
+
     token_dict = {resource_url: token}
     token_client = CosmosClient(endpoint, token_dict)
     token_db = token_client.get_database_client(database_name)
