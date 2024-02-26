@@ -16,6 +16,7 @@ from ._connection import (
     WeaviateConnection,
     FormRecognizerConnection,
     CustomStrongTypeConnection,
+    ServerlessConnection,
 )
 from ._run import Run
 from ._validation import ValidationResult
@@ -33,6 +34,7 @@ __all__ = [
     "QdrantConnection",
     "WeaviateConnection",
     "FormRecognizerConnection",
+    "ServerlessConnection",
     # endregion
     # region Run
     "Run",

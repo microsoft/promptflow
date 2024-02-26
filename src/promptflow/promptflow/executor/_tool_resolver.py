@@ -343,31 +343,48 @@ class ToolResolver:
             if k in node_inputs:
                 del node_inputs[k]
 
-    def _get_node_connection(self, node: Node):
+    def _get_llm_node_connection(self, node: Node):
         connection = self._connection_manager.get(node.connection)
         if connection is None:
             raise ConnectionNotFound(
-                message=f"Connection {node.connection!r} not found, available connection keys "
-                f"{self._connection_manager._connections.keys()}.",
+                message_format="Connection of LLM node '{node_name}' is not found.",
+                node_name=node.name,
                 target=ErrorTarget.EXECUTOR,
             )
         return connection
 
-    def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        connection = self._get_node_connection(node)
-        if not node.provider:
-            if not connection_type_to_api_mapping:
-                raise EmptyLLMApiMapping()
-            # If provider is not specified, try to resolve it from connection type
-            connection_type = type(connection).__name__
-            if connection_type not in connection_type_to_api_mapping:
+    @staticmethod
+    def _resolve_llm_connection_with_provider(connection):
+        if not connection_type_to_api_mapping:
+            raise EmptyLLMApiMapping()
+        # If provider is not specified, try to resolve it from connection type
+        connection_type = type(connection).__name__
+        if connection_type not in connection_type_to_api_mapping:
+            from promptflow.connections import ServerlessConnection, OpenAIConnection
+            # This is a fallback for the case that ServerlessConnection related tool is not ready
+            # in legacy versions, then we can directly use OpenAIConnection.
+            if isinstance(connection, ServerlessConnection):
+                connection = OpenAIConnection(
+                    api_key=connection.api_key,
+                    base_url=connection.api_base,
+                    name=connection.name,
+                )
+                connection_type = "OpenAIConnection"
+            else:
                 raise InvalidConnectionType(
                     message_format="Connection type {conn_type} is not supported for LLM.",
                     conn_type=connection_type,
                 )
-            node.provider = connection_type_to_api_mapping[connection_type]
+        provider = connection_type_to_api_mapping[connection_type]
+        return connection, provider
+
+    def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
+        connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
+        # Always set the provider according to the connection type
+        # to make sure the invoking logic is consistent between the connection and the tool.
+        node.provider = provider
         tool: Tool = self._tool_loader.load_tool_for_llm_node(node)
-        key, connection = self._resolve_llm_connection_to_inputs(node, tool)
+        key, connection = self._resolve_llm_connection_to_inputs(node, tool, connection)
         updated_node = copy.deepcopy(node)
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
@@ -389,8 +406,10 @@ class ToolResolver:
         api_func = partial(api_func, **{prompt_tpl_param_name: prompt_tpl}) if prompt_tpl_param_name else api_func
         return ResolvedTool(updated_node, tool, api_func, init_args)
 
-    def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool) -> Node:
-        connection = self._get_node_connection(node)
+    def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool, connection=None) -> Node:
+        # No need to get connection if it is already provided
+        # TODO: Refine the code here since the connection would always be provided.
+        connection = connection or self._get_llm_node_connection(node)
         for key, input in tool.inputs.items():
             if ConnectionType.is_connection_class_name(input.type[0]):
                 if type(connection).__name__ not in input.type:
