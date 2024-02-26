@@ -368,7 +368,6 @@ class LineExecutionProcessPool:
 
         if not self._is_timeout:
             input_queue.put(TERMINATE_SIGNAL)
-            time.sleep(1)
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
