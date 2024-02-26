@@ -25,7 +25,8 @@ def to_openai_error_message(e: Exception) -> str:
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         return f"OpenAI API hits {ex_type}: {msg}"
     elif "The completion operation does not work with the specified model" in error_message or \
-            ("parameters are not available" in error_message and any(param in error_message for param in params_chat_model_cannot_accept)):
+            ("parameters are not available" in error_message
+             and any(param in error_message for param in params_chat_model_cannot_accept)):
         msg = "The completion operation does not work with the current model. " \
               "Completion API is a legacy api and is going to be deprecated soon. " \
               "Please change to use Chat API for current model. " \
@@ -41,7 +42,8 @@ def to_openai_error_message(e: Exception) -> str:
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/gpt-with-vision"
         return f"OpenAI API hits {ex_type}: {msg}"
     elif ("\'response_format\' of type" in error_message and "is not supported with this model." in error_message)\
-            or ("Additional properties are not allowed" in error_message and "unexpected) - \'response_format\'" in error_message):
+            or ("Additional properties are not allowed" in error_message
+                and "unexpected) - \'response_format\'" in error_message):
         msg = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}. " \
               "The value associated with the type key should be either 'text' or 'json_object' " \
               "If you are using openai connection, you can only set response_format to { \"type\": \"json_object\" } " \
