@@ -14,7 +14,7 @@ from promptflow import tool
 def my_python_tool(input1: str) -> str:
     switch_file = Path("sunday_failure_switch.txt")
     if "Sunday" in input1:
-        if switch_file.exists() and "Sunday" in input1:
+        if switch_file.exists():
             switch_file.unlink()
             raise Exception("Sunday failure")
         else:
