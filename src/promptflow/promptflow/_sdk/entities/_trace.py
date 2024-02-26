@@ -257,11 +257,16 @@ class LineRun:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
 
-        # main line run span is absent, ignore this line run
+        # main line run span is absent, might ignore this line run, with one exception
         # this may happen when the line is still executing, or terminated;
         # or the line run is killed before the traces exported
         if main_line_run_data is None:
             can_ignore = True
+            # if only query evaluations' traces, based on current logic
+            # the main line run will be empty, then the correct line run will be ignored
+            # so we add a brute check for this case, pass only if this is the run that is queried
+            # NOTE that: 1) this will not work if there will be flow against eval flow (len(evaluations) is not 1)
+            #            2) we can refine this once we persist the line run in database
             if runs is not None and len(evaluations) == 1:
                 evaluations = dict()
                 for span in spans:
