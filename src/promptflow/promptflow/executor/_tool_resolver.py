@@ -132,6 +132,9 @@ class ToolResolver:
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
     def _load_tool_as_function(self, tool: dict):
+        # Temporary implementation for resolving inner functions or tools within the assistant framework.
+        # Plans are underway to establish dedicated methods for inner function resolution.
+        # It will replace the current approach of creating node to reuse existing node resolution logic.
         node, predefined_inputs = self._create_node_for_assistant_tool(tool)
         resolved_tool = self.resolve_tool_by_node(node, convert_input_types=True)
         func_name = resolved_tool.definition.function
