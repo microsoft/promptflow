@@ -65,9 +65,7 @@ class Span(Base):
                 stmt = stmt.filter(Span.session_id == session_id)
             if trace_ids is not None:
                 stmt = stmt.filter(Span.trace_id.in_(trace_ids))
-            stmt = stmt.order_by(
-                text("json_extract(json(iif(span.content <> '', span.content, NULL)), '$.start_time') asc")
-            )
+            stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
 
