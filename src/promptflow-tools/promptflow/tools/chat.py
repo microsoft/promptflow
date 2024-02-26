@@ -102,7 +102,7 @@ def list_deployment_names(
 
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
-            if not deployment.model_name.startswith("gpt-"):
+            if (not deployment.model_name.startswith("gpt-")) or ("vision" in deployment.model_version):
                 continue
 
             cur_item = {
