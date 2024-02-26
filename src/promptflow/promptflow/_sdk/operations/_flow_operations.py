@@ -792,6 +792,7 @@ class FlowOperations(TelemetryMixin):
         *,
         timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
         dump: bool = False,
+        load_in_subprocess: bool = True,
     ) -> dict:
         """Generate flow meta for a specific flow or a specific node in the flow.
 
@@ -807,6 +808,9 @@ class FlowOperations(TelemetryMixin):
         :type timeout: int
         :param dump: whether to dump the flow meta to a file
         :type dump: bool
+        :param load_in_subprocess: whether to load flow in subprocess. will set to False for VSCode extension since
+            it's already executes in a separate process.
+        :type load_in_subprocess: bool
         :return: dict of flow meta
         :rtype: Tuple[dict, dict]
         """
@@ -822,4 +826,5 @@ class FlowOperations(TelemetryMixin):
                 entry=flow.entry,
                 dump=dump,
                 timeout=timeout,
+                load_in_subprocess=load_in_subprocess,
             )

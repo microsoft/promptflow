@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
@@ -29,11 +29,7 @@ class EagerFlow(FlowBase):
         # entry function name
         self.entry = entry
         # entry file name
-        try:
-            # TODO: remove this after gen meta removed entry file
-            self.entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
-        except Exception as e:
-            raise UserErrorException(f"Entry function {entry} is not valid: {e}")
+        self.entry_file = self._resolve_entry_file(entry=entry, working_dir=code)
         # TODO(2910062): support eager flow execution cache
         super().__init__(data=data, path=path, code=code, content_hash=None, **kwargs)
 
@@ -62,3 +58,17 @@ class EagerFlow(FlowBase):
         if entry is None:
             raise UserErrorException(f"Entry function is not specified for flow {path}")
         return cls(path=path, code=code, entry=entry, data=data, **kwargs)
+
+    @classmethod
+    def _resolve_entry_file(cls, entry: str, working_dir: Path) -> Optional[str]:
+        """Resolve entry file from entry."""
+        try:
+            # TODO: remove this after gen meta removed entry file
+            entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
+        except Exception as e:
+            raise UserErrorException(f"Entry function {entry} is not valid: {e}")
+        entry_file = working_dir / entry_file
+        if entry_file.exists():
+            return entry_file.resolve().absolute().as_posix()
+        # when entry file not found in working directory, return None since it can come from package
+        return None

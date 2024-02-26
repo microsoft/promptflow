@@ -1271,6 +1271,7 @@ def generate_flow_meta(
     entry: str,
     dump: bool = True,
     timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+    load_in_subprocess: bool = True,
 ) -> dict:
     """Generate flow.json for a flow directory."""
 
@@ -1279,8 +1280,7 @@ def generate_flow_meta(
         source_path=source_path,
         entry=entry,
         timeout=timeout,
-        # always generate meta in subprocess to avoid system path disturb
-        load_in_subprocess=True,
+        load_in_subprocess=load_in_subprocess,
     )
 
     if dump:
