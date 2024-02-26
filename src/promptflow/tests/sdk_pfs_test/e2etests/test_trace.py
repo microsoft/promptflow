@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import datetime
+import json
 import typing
 import uuid
 
@@ -82,6 +83,21 @@ class TestTrace:
         response = pfs_op.list_line_runs(session_id=mock_session_id)
         line_run = response.json[0]
         assert isinstance(line_run[LineRunFieldName.EVALUATIONS], dict)
+
+        output_string = json.dumps(
+            {
+                "NaN": float("nan"),
+                "Inf": float("inf"),
+                "-Inf": float("-inf"),
+            }
+        )
+        custom_attributes = {SpanAttributeFieldName.OUTPUT: output_string}
+        persist_a_span(session_id=mock_session_id, custom_attributes=custom_attributes)
+        line_run = pfs_op.list_line_runs(session_id=mock_session_id).json[0]
+        output = line_run[LineRunFieldName.OUTPUTS]
+        assert isinstance(output["NaN"], str) and output["NaN"] == "NaN"
+        assert isinstance(output["Inf"], str) and output["Inf"] == "Infinity"
+        assert isinstance(output["-Inf"], str) and output["-Inf"] == "-Infinity"
 
     def test_list_evaluation_line_runs(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
         mock_batch_run_id = str(uuid.uuid4())
