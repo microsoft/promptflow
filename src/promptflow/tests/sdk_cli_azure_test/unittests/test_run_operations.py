@@ -6,9 +6,6 @@ from pytest_mock import MockerFixture
 from promptflow.azure import PFClient
 from promptflow.exceptions import UserErrorException
 
-FLOWS_DIR = "./tests/test_configs/flows"
-DATAS_DIR = "./tests/test_configs/datas"
-
 
 @pytest.mark.unittest
 class TestRunOperations:
