@@ -12,7 +12,7 @@ pf config set enable_internal_features=true
 ## Traces
 Today, DAG prompt flow has a way to track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. While more developers are using different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications. To benefit these non-DAG-flow developers, prompt flow provides the trace feature to capture and visualize the internal execution details. 
 ### LLM Trace
-* `start_trace()` to enable trace for LLM calls
+* **`start_trace()` to enable trace for LLM calls**
 
 Let's start with the simplest example, add single line code to enalbe trace for LLM calls in your application.
 ```python
@@ -41,11 +41,37 @@ With the trace url, user will see a trace list that corresponding to each LLM ca
 Click on line record, the LLM detail will be displayed with chat window experience, together with other LLM call params:
 ![LLM-trace-detail](./img/LLM-trace-detail.png)
 
-* `@trace` to add your own trace for any function
-More common scenario is the applicaton has complicated code structure, and developer would like to add trace on critical path that they would like to 
+* **`@trace` to allow you trace for any function**
 
-There're more examples of using 
+More common scenario is the applicaton has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
 
+See the **[math_to_code](./math_to_code.py)** example. Execute `python math_to_code.py` will get an URL to display the trace records and trace details of each test.
+
+
+There're more examples of trace your application:
+* **[Add trace for Langchain](./langchain)**
+* **[Add trace for Autogen](./autogen-groupchat/)**
+
+![autogen-trace-detail](./img/autogen-trace-detail.png)
 
 ### Flow Traces
+If your application is created with DAG flow, all flow test and batch run will be automatically enable trace function. Take the **[chat_with_pdf](../../flows/chat/chat-with-pdf/)** as example. Run `pf flow test --flow .`, each flow test will generate single line in the trace UI:
+![flow-trace-record](./img/flow-trace-records.png)
+
+Click a record, the trace details will be visualized as tree view.
+
+![flow-trace-detail](./img/flow-trace-detail.png)
+
 ### Evaluate against batch data
+Keep using **[chat_with_pdf](../../flows/chat/chat-with-pdf/)** as example, to trigger a batch run, you can use below commands:
+
+```cmd
+pf run create -f batch_run.yaml
+```
+Or
+```cmd
+pf run create --flow . --data "./data/bert-paper-qna.jsonl" --column-mapping chat_history='${data.chat_history}' pdf_url='${data.pdf_url}' question='${data.question}'
+```
+Then you will get a run related trace URL, e.g. http://localhost:52008/v1.0/ui/traces?run=chat_with_pdf_variant_0_20240226_181222_219335
+
+![batch_run_record](./img/batch_run_record.png)
