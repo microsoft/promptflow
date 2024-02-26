@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import abc
+import asyncio
 import json
 from os import PathLike
 from pathlib import Path
@@ -336,6 +337,12 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
+        if kwargs.get("async_call", False):
+            loop = asyncio.get_event_loop()
+            task = loop.create_task(self.invoke_async(inputs=kwargs))
+            loop.run_until_complete(task)
+            return task.result().output
+
         result = self.invoke(inputs=kwargs)
         return result.output
 
@@ -352,6 +359,28 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
                 return result
         else:
             invoker = FlowContextResolver.resolve(flow=self)
+            result = invoker._invoke(
+                data=inputs,
+            )
+            return result
+
+    async def invoke_async(self, inputs: dict) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+        from promptflow._sdk._submitter import TestSubmitter
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+
+        await asyncio.sleep(0)  # workaround for async method, remove when below methods are async
+
+        if self.language == FlowLanguage.CSharp:
+            # with async TestSubmitter(flow=self, flow_context=self.context)
+            with TestSubmitter(flow=self, flow_context=self.context).init(
+                stream_output=self.context.streaming
+            ) as submitter:
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
+                return result
+        else:
+            invoker = FlowContextResolver.resolve(flow=self)
+            # async invoker._invoke
             result = invoker._invoke(
                 data=inputs,
             )
