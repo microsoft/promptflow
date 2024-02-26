@@ -164,6 +164,9 @@ class Span:
 
         events = Span._from_protobuf_events(obj.events)
 
+        # if `batch_run_id` exists, record the run
+        run = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
+
         return Span(
             name=obj.name,
             context=context,
@@ -177,6 +180,7 @@ class Span:
             session_id=session_id,
             parent_span_id=parent_span_id,
             events=events,
+            run=run,
             experiment=experiment,
         )
 
@@ -194,7 +198,7 @@ class _LineRunData:
     end_time: str
     status: str
     latency: float
-    name: str
+    display_name: str
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
 
@@ -227,7 +231,7 @@ class _LineRunData:
             end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
-            name=span.name,
+            display_name=span.name,
             kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.span_type),
             cumulative_token_count=cumulative_token_count,
         )
@@ -285,7 +289,7 @@ class LineRun:
             end_time=main_line_run_data.end_time,
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
-            name=main_line_run_data.name,
+            name=main_line_run_data.display_name,
             kind=main_line_run_data.kind,
             cumulative_token_count=main_line_run_data.cumulative_token_count,
             evaluations=evaluations,

@@ -41,7 +41,8 @@ class TestBatchEngine:
         with patch("promptflow.batch._batch_engine.BatchEngine._exec_in_task") as mock_func:
             mock_func.side_effect = side_effect
             with patch(
-                "promptflow.batch._batch_inputs_processor.BatchInputsProcessor.process_batch_inputs", new=Mock()
+                "promptflow.batch._batch_inputs_processor.BatchInputsProcessor.process_batch_inputs",
+                new=Mock(return_value=[]),
             ):
                 with pytest.raises(ex_type) as e:
                     batch_engine.run({}, {}, Path("."))
