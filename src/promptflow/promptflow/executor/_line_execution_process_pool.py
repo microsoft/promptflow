@@ -43,6 +43,8 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
+TERMINATE_SIGNAL = "terminate"
+
 
 def signal_handler(signum, frame):
     signame = signal.Signals(signum).name
@@ -364,16 +366,13 @@ class LineExecutionProcessPool:
         # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
         self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
 
-        # wait 10 seconds to ensure the spans are exported before the process is killed
-        # otherwise there will be some missing spans for lines
-        # TODO (Task 2950080): make line process wait for spans flush
-        from promptflow._trace._start_trace import _is_tracer_provider_configured
-
-        if _is_tracer_provider_configured():
-            time.sleep(10)
+        if not self._is_timeout:
+            input_queue.put(TERMINATE_SIGNAL)
+            time.sleep(1)
 
         # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
+
         # In fork mode, the main process and the sub spawn process communicate through _process_info.
         # We need to ensure the process has been killed before returning. Otherwise, it may cause
         # the main process have exited but the spawn process is still alive.
@@ -707,7 +706,11 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 
     while True:
         try:
-            inputs, line_number, run_id, line_timeout_sec = input_queue.get(timeout=1)
+            data = input_queue.get(timeout=1)
+            if data == TERMINATE_SIGNAL:
+                # If found the terminate signal, exit the process.
+                break
+            inputs, line_number, run_id, line_timeout_sec = data
             result = _exec_line(
                 executor=executor,
                 output_queue=output_queue,

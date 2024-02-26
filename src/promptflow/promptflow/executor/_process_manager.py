@@ -14,6 +14,8 @@ from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
+TERMINATE_SIGNAL = "terminate"
+
 
 @dataclass
 class ProcessInfo:
