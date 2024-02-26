@@ -39,7 +39,7 @@ promptflow.tools.chat.chat:
         allow_manual_entry: false
         is_multi_select: false
       ui_hints:
-        text_box_size: sm
+        text_box_size: xs
     deployment_name:
       type:
         - string
