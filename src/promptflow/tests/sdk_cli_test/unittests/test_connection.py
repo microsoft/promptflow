@@ -7,7 +7,8 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
-from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
+from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
+from promptflow._sdk._errors import SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
@@ -43,6 +44,22 @@ class TestConnection:
                     "api_version": "2023-07-01-preview",
                     "api_key": "<to-be-replaced>",
                     "api_base": "aoai-api-endpoint",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "azure_open_ai",
+                    "auth_mode": "key",
+                },
+            ),
+            (
+                "azure_openai_aad_connection.yaml",
+                AzureOpenAIConnection,
+                {
+                    "name": "my_azure_open_ai_connection",
+                    "api_type": "azure",
+                    "api_version": "2023-07-01-preview",
+                    "api_base": "aoai-api-endpoint",
+                    "auth_mode": "meid_token",
                 },
                 {
                     "module": "promptflow.connections",
@@ -192,6 +209,21 @@ class TestConnection:
         assert dict(conn._to_dict()) == expected
         assert class_name(**init_param)._to_dict() == expected
 
+    @pytest.mark.parametrize(
+        "file_name, error_cls, error_message",
+        [
+            (
+                "invalid/azure_openai_missing_key.yaml",
+                SDKError,
+                "'api_key' is required for key auth mode connection.",
+            )
+        ],
+    )
+    def test_connection_load_bad_case(self, file_name, error_cls, error_message):
+        with pytest.raises(error_cls) as e:
+            _Connection._load(data=load_yaml(CONNECTION_ROOT / file_name))
+        assert error_message in str(e.value)
+
     def test_connection_load_from_env(self):
         connection = _load_env_to_connection(source=CONNECTION_ROOT / ".env", params_override=[{"name": "env_conn"}])
         assert connection._to_dict() == {
@@ -251,6 +283,28 @@ secrets:
                 "api_key": "test_key",
                 "api_type": "azure",
                 "api_version": "2023-07-01-preview",
+                "auth_mode": ConnectionAuthMode.KEY,
+            },
+        }
+
+        # Assert strong type - AzureOpenAI
+        connection = AzureOpenAIConnection(
+            name="test_connection_1",
+            type="AzureOpenAI",
+            auth_mode=ConnectionAuthMode.MEID_TOKEN,
+            api_base="test_base",
+            api_type="azure",
+            api_version="2023-07-01-preview",
+        )
+        assert connection._to_execution_connection_dict() == {
+            "module": "promptflow.connections",
+            "secret_keys": ["api_key"],
+            "type": "AzureOpenAIConnection",
+            "value": {
+                "api_base": "test_base",
+                "api_type": "azure",
+                "api_version": "2023-07-01-preview",
+                "auth_mode": ConnectionAuthMode.MEID_TOKEN,
             },
         }
 
