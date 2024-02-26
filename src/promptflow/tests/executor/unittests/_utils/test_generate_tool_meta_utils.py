@@ -13,12 +13,12 @@ from promptflow._core.tool_meta_generator import (
     NoToolDefined,
     PythonLoadError,
     PythonParsingError,
-    generate_flow_meta_dict_by_file,
+    generate_flow_meta_dict,
     generate_prompt_meta,
     generate_python_meta,
     generate_tool_meta_dict_by_file,
 )
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.exception_utils import ExceptionPresenter
 
 from ...utils import EAGER_FLOW_ROOT, FLOW_ROOT, load_json
@@ -36,10 +36,10 @@ def cd_and_run(working_dir, source_path, tool_type):
         return f"({e.__class__.__name__}) {e}"
 
 
-def cd_and_run_generate_flow_meta(working_dir, source_path, entry, source=None):
-    with _change_working_dir(working_dir):
+def cd_and_run_generate_flow_meta(working_dir, entry, source=None, path=None):
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
         try:
-            return generate_flow_meta_dict_by_file(source_path, entry, source)
+            return generate_flow_meta_dict(entry, source, path)
         except Exception as e:
             return f"({e.__class__.__name__}) {e}"
 
@@ -98,16 +98,18 @@ class TestToolMetaUtils:
         assert meta_dict == expected_dict
 
     @pytest.mark.parametrize(
-        "flow_dir, entry_path, entry",
+        "flow_dir, entry, path",
         [
-            ("dummy_flow_with_trace", "flow_with_trace.py", "flow_with_trace:my_flow"),
+            ("dummy_flow_with_trace", "flow_with_trace:my_flow", "flow_with_trace.py"),
+            ("dummy_flow_with_trace", "flow_with_trace:my_flow", None),
         ]
     )
-    def test_generate_flow_meta(self, flow_dir, entry_path, entry):
+    def test_generate_flow_meta(self, flow_dir, entry, path):
         wd = str((EAGER_FLOW_ROOT / flow_dir).resolve())
-        meta_dict = cd_and_run_generate_flow_meta(wd, entry_path, entry, source=entry_path)
+        source = entry.split(":")[0] + ".py"
+        meta_dict = cd_and_run_generate_flow_meta(wd, entry, source=source, path=path)
         assert isinstance(meta_dict, dict), "Call cd_and_run_generate_flow_meta failed:\n" + meta_dict
-        target_file = (Path(wd) / entry_path).with_suffix(".meta.json")
+        target_file = wd / Path(entry.split(":")[0] + ".meta.json")
         expected_dict = load_json(target_file)
         assert meta_dict == expected_dict
 
