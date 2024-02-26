@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import queue
 import signal
 import sys
@@ -15,7 +16,7 @@ from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
-SpawnedForkProcessManagerLogPath = "spawned_fork_process_manager_stderr.log"
+SpawnedForkProcessManagerLogPath = ".promptflow/spawned_fork_process_manager_stderr.log"
 
 
 @dataclass
@@ -418,7 +419,10 @@ def create_spawned_fork_process_manager(
     process_info,
     process_target_func,
 ):
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(SpawnedForkProcessManagerLogPath), exist_ok=True)
     sys.stderr = open(SpawnedForkProcessManagerLogPath, "w")
+
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """

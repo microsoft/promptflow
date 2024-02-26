@@ -43,7 +43,8 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-LogPath = "process_stderr"
+LogName = "process_stderr"
+LogPath = ".promptflow"
 
 
 def signal_handler(signum, frame):
@@ -315,8 +316,8 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
-                    LogPath_i = "{}_{}.log".format(LogPath, index)
-                    with open(LogPath_i, "r") as f:
+                    LogName_i = "{}_{}.log".format(LogName, index)
+                    with open(os.path.join(LogPath, LogName_i, "r")) as f:
                         error_logs = "".join(f.readlines())
                         bulk_logger.error(error_logs)
                     ex = ProcessCrashError(line_number)
@@ -676,8 +677,9 @@ def _process_wrapper(
     operation_contexts_dict: dict,
     i,
 ):
-    LogPath_i = "{}_{}.log".format(LogPath, i)
-    sys.stderr = open(LogPath_i, "w")
+    LogName_i = "{}_{}.log".format(LogName, i)
+    os.makedirs(LogPath, exist_ok=True)
+    sys.stderr = open(os.path.join(LogPath, LogName_i, "w"))
 
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)
