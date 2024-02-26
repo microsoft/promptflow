@@ -52,5 +52,5 @@ class AssistantDefinition:
         }
 
     def __post_init__(self):
-        # Implicitly introduce the 'tool_invoker' attribute here
-        self.tool_invoker = None  # reserved attribute for tool invoker injection
+        # Implicitly introduce the '_tool_invoker' attribute here
+        self._tool_invoker = None  # reserved attribute for tool invoker injection

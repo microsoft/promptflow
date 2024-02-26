@@ -129,7 +129,7 @@ class ToolResolver:
                     tool_type=tool["type"],
                     target=ErrorTarget.EXECUTOR,
                 )
-        assistant_definition.tool_invoker = AssistantToolInvoker(resolved_tools)
+        assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
     def _load_tool_as_function(self, tool: dict):
         node, predefined_inputs = self._create_node_for_assistant_tool(tool)

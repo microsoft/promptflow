@@ -32,4 +32,4 @@ def test_assistant_definition():
     assert assistant_definition.instructions == "instructions"
     assert assistant_definition.tools == []
     assert assistant_definition.serialize() == data
-    assert assistant_definition.tool_invoker is None
+    assert assistant_definition._tool_invoker is None

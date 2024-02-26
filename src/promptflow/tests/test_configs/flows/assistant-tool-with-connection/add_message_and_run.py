@@ -27,7 +27,7 @@ async def add_message_and_run(
     download_images: bool,
 ):
     cli = await get_assistant_client(conn)
-    invoker = assistant_definition.tool_invoker
+    invoker = assistant_definition._tool_invoker
     # Check if assistant id is valid. If not, create a new assistant.
     # Note: tool registration at run creation, rather than at assistant creation.
     if not assistant_id:
