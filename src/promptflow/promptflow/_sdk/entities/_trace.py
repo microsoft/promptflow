@@ -236,7 +236,10 @@ class LineRun:
     evaluations: typing.Optional[typing.Dict[str, _LineRunData]] = None
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
+    def _from_spans(
+        spans: typing.List[Span],
+        runs: typing.Optional[typing.List[str]] = None,
+    ) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
         evaluations = dict()
         for span in spans:
@@ -253,11 +256,26 @@ class LineRun:
             else:
                 # eager flow/arbitrary script
                 main_line_run_data = _LineRunData._from_root_span(span)
+
         # main line run span is absent, ignore this line run
         # this may happen when the line is still executing, or terminated;
         # or the line run is killed before the traces exported
         if main_line_run_data is None:
-            return None
+            can_ignore = True
+            if runs is not None and len(evaluations) == 1:
+                evaluations = dict()
+                for span in spans:
+                    if span.parent_span_id:
+                        continue
+                    attributes: dict = span._content[SpanFieldName.ATTRIBUTES]
+                    batch_run_id = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
+                    print(batch_run_id)
+                    if batch_run_id in runs:
+                        main_line_run_data = _LineRunData._from_root_span(span)
+                        can_ignore = False
+                        break
+            if can_ignore:
+                return None
 
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
