@@ -10,7 +10,7 @@ from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitErr
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
@@ -393,6 +393,11 @@ def normalize_connection_config(connection):
             "api_key": connection.api_key,
             "organization": connection.organization,
             "base_url": connection.base_url
+        }
+    elif isinstance(connection, ServerlessConnection):
+        return {
+            "api_key": connection.api_key,
+            "base_url": connection.api_base
         }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
