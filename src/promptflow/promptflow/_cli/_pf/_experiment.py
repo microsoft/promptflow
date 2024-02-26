@@ -5,13 +5,14 @@ import argparse
 import json
 
 from promptflow._cli._params import (
+    AppendToDictAction,
     add_param_all_results,
     add_param_archived_only,
     add_param_include_archived,
     add_param_max_results,
     base_params,
 )
-from promptflow._cli._utils import activate_action
+from promptflow._cli._utils import activate_action, list_of_dict_to_dict
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._experiment import Experiment
@@ -34,6 +35,29 @@ def add_param_template(parser):
 
 def add_param_name(parser):
     parser.add_argument("--name", "-n", type=str, help="The experiment name.")
+
+
+def add_param_file(parser):
+    parser.add_argument("--file", "-f", type=str, help="File path of the experiment yaml.", required=True)
+
+
+def add_param_input(parser):
+    parser.add_argument(
+        "--inputs",
+        action=AppendToDictAction,
+        help="Input datas for the experiment. Example: --inputs data1=data1_val data2=data2_val",
+        nargs="+",
+    )
+
+
+def add_param_stream(parser):
+    parser.add_argument(
+        "-s",
+        "--stream",
+        action="store_true",
+        default=False,
+        help="Indicates whether to stream the experiment execution logs to the console.",
+    )
 
 
 def add_experiment_create(subparsers):
@@ -135,6 +159,24 @@ def add_experiment_stop(subparsers):
     )
 
 
+def add_experiment_run(subparsers):
+    epilog = """
+    Examples:
+
+    # Run an experiment by yaml file:
+    pf experiment run --file path/to/my_experiment.exp.yaml --inputs data1=data1_val data2=data2_val --stream
+    """
+    activate_action(
+        name="run",
+        description="Run an experiment.",
+        epilog=epilog,
+        add_params=[add_param_file, add_param_input, add_param_stream] + base_params,
+        subparsers=subparsers,
+        help_message="Run an experiment.",
+        action_param_name="sub_action",
+    )
+
+
 def add_experiment_parser(subparsers):
     experiment_parser = subparsers.add_parser(
         "experiment",
@@ -147,6 +189,7 @@ def add_experiment_parser(subparsers):
     add_experiment_show(subparsers)
     add_experiment_start(subparsers)
     add_experiment_stop(subparsers)
+    add_experiment_run(subparsers)
     experiment_parser.set_defaults(action="experiment")
 
 
@@ -171,6 +214,8 @@ def dispatch_experiment_commands(args: argparse.Namespace):
         pass
     elif args.sub_action == "clone":
         pass
+    elif args.sub_action == "run":
+        run_experiment(args)
 
 
 def create_experiment(args: argparse.Namespace):
@@ -197,6 +242,11 @@ def show_experiment(args: argparse.Namespace):
     print(json.dumps(result._to_dict(), indent=4))
 
 
+def test_experiment(args: argparse.Namespace):
+    result = _get_pf_client()._experiments._test(args.name)
+    print(json.dumps(result._to_dict(), indent=4))
+
+
 def start_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.start(args.name)
     print(json.dumps(result._to_dict(), indent=4))
@@ -204,4 +254,13 @@ def start_experiment(args: argparse.Namespace):
 
 def stop_experiment(args: argparse.Namespace):
     result = _get_pf_client()._experiments.stop(args.name)
+    print(json.dumps(result._to_dict(), indent=4))
+
+
+def run_experiment(args: argparse.Namespace):
+    from promptflow._sdk._load_functions import _load_experiment
+
+    experiment = _load_experiment(source=args.file)
+    inputs = list_of_dict_to_dict(args.inputs)
+    result = _get_pf_client()._experiments.run(experiment=experiment, inputs=inputs, stream=args.stream)
     print(json.dumps(result._to_dict(), indent=4))

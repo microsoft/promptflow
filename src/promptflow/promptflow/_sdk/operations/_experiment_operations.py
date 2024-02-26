@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import shutil
 from pathlib import Path
 from typing import List, Optional, Union
@@ -83,6 +84,8 @@ class ExperimentOperations(TelemetryMixin):
                 last_start_time=orm_experiment.last_start_time,
                 last_end_time=orm_experiment.last_end_time,
                 node_runs=orm_experiment.node_runs,
+                inputs=orm_experiment.inputs,
+                data=orm_experiment.data,
             )
             return self.get(experiment.name)
 
@@ -123,10 +126,23 @@ class ExperimentOperations(TelemetryMixin):
         return self.get(name)
 
     @monitor_operation(activity_name="pf.experiment.run", activity_type=ActivityType.PUBLICAPI)
-    def run(self, experiment: Experiment, stream=False, **kwargs) -> Experiment:
+    def run(self, experiment: Experiment, stream=False, inputs=None, **kwargs) -> Experiment:
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        self.create_or_update(experiment)
+        # Update anonymous experiment inputs
+        experiment = copy.deepcopy(experiment)
+        inputs = inputs or {}
+        for name, value in inputs.items():
+            exp_input = next(filter(lambda exp_input: exp_input.name == name, experiment.inputs), None)
+            if exp_input:
+                exp_input.default = value
+                continue
+            exp_data = next(filter(lambda exp_data: exp_data.name == name, experiment.data), None)
+            if exp_data:
+                exp_data.path = Path(value).absolute().as_posix()
+                continue
+            logger.warning(f"Input {name} doesn't exist in experiment.")
+        experiment = self.create_or_update(experiment)
 
         logger.debug("Start saving snapshot and update node.")
         snapshots = experiment._output_dir / "snapshots"
