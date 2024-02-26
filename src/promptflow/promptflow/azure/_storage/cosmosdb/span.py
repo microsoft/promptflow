@@ -44,7 +44,7 @@ class Span:
         if self.id is None or self.partition_key is None or self.resource is None:
             return
 
-        resource_attributes = self.resource.get("attributes", None)
+        resource_attributes = self.resource.get(SpanFieldName.ATTRIBUTES, None)
         if resource_attributes is None:
             return
 
