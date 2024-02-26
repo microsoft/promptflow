@@ -149,8 +149,6 @@ def test_list_deployment_names(monkeypatch):
         patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
         patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
     ):
-
-
         mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
         instance = mock.return_value
         instance.deployments.list.return_value = {
