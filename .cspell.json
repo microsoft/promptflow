@@ -85,8 +85,7 @@
     "Likert",
     "pfsvc",
     "geval",
-    "Summ",
-    "Bhavik"
+    "Summ"
   ],
   "ignoreWords": [
     "openmpi",

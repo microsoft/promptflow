@@ -80,13 +80,13 @@ The G-Eval research paper showed that G-Eval with GPT-4 has a bias to always sco
 
 ### Meta-evaluation
 
-The changes introduced in this flow's implemenation (compared to the original G-Eval implementation from the research paper) have been meta-evaluated against the SummEval benchmark and show similar performance to the original implemenation. As the prompts have been updated to be more generic we expect some change in performance to the original implementation which has tuned prompts to the SummEval benchmark (referring to news articles), but the updated implemenation still shows state-of-the-art results compared to other metrics (see G-Eval paper for those results).
+The changes introduced in this flow's implementation (compared to the original G-Eval implementation from the research paper) have been meta-evaluated against the SummEval benchmark and show similar performance to the original implementation. As the prompts have been updated to be more generic we expect some change in performance to the original implementation which has tuned prompts to the SummEval benchmark (referring to news articles), but the updated implementation still shows state-of-the-art results compared to other metrics (see G-Eval paper for those results).
 
-Meta-evluation Spearman correlations between different experiments and human judgements in the SummEval benchmark:
+Meta-evaluation Spearman correlations between different experiments and human judgements in the SummEval benchmark:
 
 | Dimension/Prompt       | Fluency | Consistency | Coherence | Relevance |
 | ---------------------- | ------- | ----------- | --------- | --------- |
-| GPT-4 0613 8k + original propmpts in paper | 0.455  | 0.507      | 0.582    | 0.547    |
+| GPT-4 0613 8k + original prompts in paper | 0.455  | 0.507      | 0.582    | 0.547    |
 | GPT-4 0613 8k + updated prompts + original parser | 0.5079  | 0.5102      | 0.4998    | 0.4606    |
 | GPT-4 0613 8k + updated prompts + updated parser | 0.5402  | 0.5215      | 0.5137    | 0.4897    |
 | GPT-4 0613 32k + updated prompts + updated parser | 0.4985  | 0.4914      | 0.5038    | 0.4921    |
