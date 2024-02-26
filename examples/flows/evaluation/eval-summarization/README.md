@@ -1,37 +1,20 @@
 # Summarization Evaluation
 
-This flow implements a reference-free automatic abstractive summarization evaluation across four dimensions: fluency, coherence, consistency, relevance. Each dimension uses a prompt to score a generated summary against the source document from which it was generated. Each dimension's prompt has been meta-evaluated against the [SummEval benchmark](https://arxiv.org/abs/2007.12626) and produces state-of-the-art scores in terms of correlation to expert human judgements.
+This flow implements a reference-free automatic abstractive summarization evaluation across four dimensions: fluency, coherence, consistency, relevance. Each dimension uses a prompt with GPT-4 to score a generated summary against the source document from which it was generated. The implementation is based on the [G-Eval research paper](https://arxiv.org/abs/2303.16634).
 
 ## Introduction
 
-Provide a detailed description of the flow, including its components, inputs, outputs, and any dependencies. Explain how the flow works and what problem it solves. This section should give users a clear understanding of the flow's functionality and how it can be used. -- TODO remove this when done
+### Background
 
-Abstractive summarization evaluation is hard problem for which many previous automatic methods have performed poorly in-terms of correlation with human judgements. Furthermore, human expert created ground truths for summarization are hard to obtain and also hard to compare automatically to generated summaries. Thus there is a need for effective automatic reference-free summarization evaluation in which a generated summary is evaluated with respect to the document it was generated for.
+Abstractive summarization evaluation is hard problem for which many previous automatic methods have performed poorly in-terms of correlation with human judgements. Expert human created ground truths for summarization are hard to obtain and also hard to compare automatically to generated summaries. Prior research defines four dimensions to abstractive summary quality (each scored on a 1-5 Likert scale):
+- Coherence - the collective quality of all sentences in the summary
+- Consistency - factual alignment between the summary and source document
+- Fluency - the quality of individual sentences of the summary
+- Relevance - selection of the most important content from the source document
 
-This flow implements G-Eval for summarization evaluation that has been adopted from the [research paper](https://arxiv.org/abs/2303.16634) and associated [Github repository](https://github.com/nlpyang/geval). This method introduces a prompt based evaluation with GPT-4 for each of the 4 standard dimensions of summarization evaluation and shows state-of-the-art results from meta-evaluation against the [SummEval benchmark](https://arxiv.org/abs/2007.12626).
+Thus it is possible to measure summary quality based on the inherent writing quality of the summary alone (in terms of coherence and fluency) and alignment between the summary and the source document (in terms of consistency and relevance). This affords the potential for a reference-free evaluation of abstractive summary generation.
 
-The 4 standard dimensions of summarization evaluation have been defined in prior research (see the SummEval paper for references) and a brief description of each is:
-
-- Coherence - the collective quality of all sentences in the summary, scored on 1-5 scale
-- Consistency - factual alignment between the summary and summarized source document, scored on a 1-5 scale
-- Fluency - the quality of individual sentences of the summary, scored on a 1-3 scale (note this is an implementation difference compared to the original definition which uses a 1-5 scale)
-- Relevance - selection of important content from the source document, scored on a 1-5 scale
-
-This flow scores each summary along these dimensions and also aggregates each dimension as an average when run in batch mode.
-
-The original G-Eval paper and repository has tuned prompts that refer to inputs as 'news-articles' (inline with the source data in the SummEval benchmark), we have modified the evaluation prompts provided in this flow to be more generic and agnostic to the domain of the source data being evaluated. These modified prompts have been meta-evaluated against the SummEval benchmark and show slightly lower performance to the original prompts (expected as they use more generic language) but still state-of-the-art performance compared to other automatic reference-free evaluation methods. Note that there is an assumption that meta-evaluation results against the SummEval benchmark will generalise to the domain of your data, if you have concerns about this please refer to the section on conducting your own meta-evaluation (TODO add link).
-
-It is recommended to use this flow and it's prompts with only a GPT-4 model version, as the meta-evaluation results against the SummEval benchmark have been verified for only GPT-4. We recommend using [GPT-4 turbo](https://learn.microsoft.com/en-au/azure/ai-services/openai/concepts/models) as it provides a longer input context length, similar meta-evaluation performance to other GPT-4 models and cheaper token costs compared to other GPT-4 model versions. If this is unavailable, any other GPT-4 model would suffice and shows good meta-evaluation performance but you will need to be mindful of input token limits for each model version and the length of your documents and summaries that are being evaluated. Our meta-evaluation results with modified prompts and different GPT-4 models are shown in the table below.
-
-<<TODO insert meta-eval table results>>
-
-An important note regarding the implementation and use of this flow is that for each dimension, the evaluation prompt is run with temperature=2 and n=20, from which the final score is averaged across each trial. This is done as an approximation for token probabilities which are currently unavailable for GPT-4. This is run for each dimension for each summary being evaluated (ie. 20 LLM calls per summary), which may have cost considerations for your usecase.
-
-<<TODO Bhavik add section on limitations in terms of gpt-4 bias favouring LLM summaries>>
-
-<<TODO Bhavik add recommendation on using the scores outputted>>
-
-<<TODO Bhavik add section on doing custom meta-evaluation and tuning prompts>>
+This flow implements G-Eval for summarization evaluation that has been adopted from the [research paper](https://arxiv.org/abs/2303.16634) and associated [Github repository](https://github.com/nlpyang/geval). This method introduces a reference-free prompt based evaluation with GPT-4 for each of the 4 standard dimensions of summarization evaluation and shows state-of-the-art results in terms of correlation to human judgements based on meta-evaluation against the [SummEval benchmark](https://arxiv.org/abs/2007.12626).
 
 ## Tools Used in this Flow
 
@@ -62,6 +45,8 @@ Note that this evaluation flow is only validated to work with certain GPT-4 mode
 
 ## Usage Examples
 
+This flow will evaluate a generated summary with respect to the source document it was generated from. Thus the flow requires two inputs, a document and a summary, as shown in the examples below. The output of the flow will be a score for each dimension of summarization evaluation (fluency, coherence, consistency, relevance) for each summary and if run in batch mode these dimensions will be averaged over each document and summary being evaluated.
+
 ### 1. Test flow with single line data
 
 ```bash
@@ -77,6 +62,39 @@ pf run create --flow . --data ./data.jsonl --column-mapping document='${data.doc
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
 Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+
+## Implementation & Usage Details
+
+The original G-Eval paper and repository has created prompts that refer to inputs as 'news-articles' (inline with the source data in the SummEval benchmark), we have modified the evaluation prompts provided in this flow to be more generic and agnostic to the domain of the source data being evaluated. Our implementation also includes an updated parser (extracting scores from 20 trial outputs) and other code improvements.
+
+This flow scores generated summaries along each summarization evaluation dimension and also aggregates each dimension as an average when run in batch mode.
+
+### Limitations
+
+#### Cost considerations
+An important note regarding the implementation and use of this flow is that for each dimension, the evaluation prompt is run with temperature=2 and n=20, from which the final score is averaged across each trial. This is done as an approximation for token probabilities which are currently unavailable for GPT-4. This is run for each dimension for each summary being evaluated (ie. 80 LLM calls per summary), **which may have cost considerations for your usecase**.
+
+#### Scoring bias
+
+The G-Eval research paper showed that G-Eval with GPT-4 has a bias to always scoring generated summaries (from GPT-35) higher than human written summaries, even when human reviewers would judge human written summaries to be better. In practice, we have observed this tendency of G-Eval with GPT-4 to produce a higher distribution of scores for each dimension. The mitigation we suggest for this is to sample a wider range at the bottom of the distribution (for each dimension) when conducting evaluation and error analysis.
+
+### Meta-evaluation
+
+The changes introduced in this flow's implemenation (compared to the original G-Eval implementation from the research paper) have been meta-evaluated against the SummEval benchmark and show similar performance to the original implemenation. As the prompts have been updated to be more generic we expect some change in performance to the original implementation which has tuned prompts to the SummEval benchmark (referring to news articles), but the updated implemenation still shows state-of-the-art results compared to other metrics (see G-Eval paper for those results).
+
+Meta-evluation Spearman correlations between different experiments and human judgements in the SummEval benchmark:
+
+| Dimension/Prompt       | Fluency | Consistency | Coherence | Relevance |
+| ---------------------- | ------- | ----------- | --------- | --------- |
+| GPT-4 0613 8k + original propmpts in paper | 0.455  | 0.507      | 0.582    | 0.547    |
+| GPT-4 0613 8k + updated prompts + original parser | 0.5079  | 0.5102      | 0.4998    | 0.4606    |
+| GPT-4 0613 8k + updated prompts + updated parser | 0.5402  | 0.5215      | 0.5137    | 0.4897    |
+| GPT-4 0613 32k + updated prompts + updated parser | 0.4985  | 0.4914      | 0.5038    | 0.4921    |
+
+Note that GPT-4 Turbo has shown poor results when meta-evaluated and is currently not recommended to be used with this flow. It is recommended to use this flow and it's prompts with only the GPT-4 model versions listed above, as the meta-evaluation results have been verified for these model versions. 
+
+There is an assumption that meta-evaluation results against the SummEval benchmark will generalise to the domain of your data, if you have concerns about this you should consider conducting your own meta-evaluation. This would include taking a significant sample of source documents and generated summaries and obtaining expert human judgements for each dimension of summarization evaluation (fluency, coherence, consistency, relevance). Then the prompts for each dimension should be tuned until sufficient correlation with human judgements are obtained.
+
 
 ## How to run Unit Tests
 
