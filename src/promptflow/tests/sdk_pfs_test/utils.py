@@ -50,6 +50,7 @@ class PFSOperations:
     RUN_URL_PREFIX = "/v1.0/Runs"
     TELEMETRY_PREFIX = "/v1.0/Telemetries"
     LINE_RUNS_PREFIX = "/v1.0/LineRuns"
+    Flow_URL_PREFIX = "/v1.0/Flows"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -231,4 +232,40 @@ class PFSOperations:
             query_string=query_string,
             headers=self.remote_user_header(),
         )
+        return response
+
+    def get_flow(self, flow_path: str, status_code=None):
+        response = self._client.get(f"{self.Flow_URL_PREFIX}/get",  json={'flow': flow_path})
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def test_flow(self, request_body, status_code=None):
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/test", json=request_body)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def get_flow_ux_inputs(self, status_code=None):
+        response = self._client.get(f"{self.Flow_URL_PREFIX}/ux_inputs")
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def save_flow_image(self, request_body, status_code=None):
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/image_save", json=request_body)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def get_image_url(self, request_body, status_code=None):
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/image", json=request_body)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def view_image(self, directory, filename, status_code=None):
+        response = self._client.get(f"{self.Flow_URL_PREFIX}/image/{directory}/{filename}")
+        if status_code:
+            assert status_code == response.status_code, response.text
         return response
