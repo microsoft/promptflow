@@ -149,6 +149,7 @@ class Span:
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
         status = {
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
+            SpanStatusFieldName.DESCRIPTION: obj.status.message,
         }
         # we have observed in some scenarios, there is not `attributes` field
         attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))

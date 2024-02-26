@@ -48,6 +48,7 @@ status_model = api.model(
     "Status",
     {
         SpanStatusFieldName.STATUS_CODE: fields.String(required=True),
+        SpanStatusFieldName.DESCRIPTION: fields.String,
     },
 )
 resource_model = api.model(
