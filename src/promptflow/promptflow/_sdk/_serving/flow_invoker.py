@@ -5,9 +5,9 @@
 from pathlib import Path
 from typing import Callable, Union
 
-from promptflow import PFClient
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.flow_result import FlowResult
 from promptflow._sdk._serving.utils import validate_request_data

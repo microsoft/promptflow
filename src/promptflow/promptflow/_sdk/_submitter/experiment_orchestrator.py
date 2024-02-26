@@ -1080,7 +1080,7 @@ def add_start_orchestrator_action(subparsers):
     start_orchestrator_parser.set_defaults(action="start")
 
 
-if __name__ == "__main__":
+def main(args):
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Orchestrator operations",
@@ -1088,7 +1088,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers()
     add_start_orchestrator_action(subparsers)
 
-    args = args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args(args)
 
     if args.action == "start":
         from promptflow._sdk._pf_client import PFClient
@@ -1098,3 +1098,7 @@ if __name__ == "__main__":
         ExperimentOrchestrator(client, experiment=experiment).start(
             nodes=args.nodes, from_nodes=args.from_nodes, session=args.session
         )
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
