@@ -43,7 +43,7 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-LogPath = "process_stderr.log"
+LogPath = "process_stderr"
 
 
 def signal_handler(signum, frame):
@@ -295,9 +295,6 @@ class LineExecutionProcessPool:
                 # Monitor process aliveness.
                 crashed = not self._is_process_alive(process_id)
                 if crashed:
-                    with open(LogPath, "r") as f:
-                        error_logs = "".join(f.readlines())
-                        bulk_logger.error(error_logs)
                     break
 
                 # Handle output queue message.
@@ -318,6 +315,10 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
+                    LogPath_i = "{}_{}.log".format(LogPath, index)
+                    with open(LogPath_i, "r") as f:
+                        error_logs = "".join(f.readlines())
+                        bulk_logger.error(error_logs)
                     ex = ProcessCrashError(line_number)
                 else:
                     # Handle line execution timeout.
@@ -672,8 +673,10 @@ def _process_wrapper(
     output_queue: Queue,
     log_context_initialization_func,
     operation_contexts_dict: dict,
+    i,
 ):
-    sys.stderr = open(LogPath, "w")
+    LogPath_i = "{}_{}.log".format(LogPath, i)
+    sys.stderr = open(LogPath_i, "w")
 
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)

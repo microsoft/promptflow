@@ -339,6 +339,7 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 self._output_queues[i],
                 self._log_context_initialization_func,
                 self._current_operation_context,
+                i,
             ),
             daemon=True,
         )
