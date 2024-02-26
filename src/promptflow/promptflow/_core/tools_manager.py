@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_origin, get_args
 
 from promptflow._core._errors import (
     InputTypeMismatch,
@@ -477,12 +477,25 @@ def _register(provider_cls, collection, type):
     for param in initialize_inputs.values():
         if not param.annotation:
             continue
-        annotation_type_name = param.annotation.__name__
-        if annotation_type_name in connections:
-            api_name = provider_cls.__name__
-            module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
-            connection_type_to_api_mapping[annotation_type_name] = api_name
-            break
+        origin = get_origin(param.annotation)
+        if origin != Union:
+            annotation_type_name = param.annotation.__name__
+            if annotation_type_name in connections:
+                api_name = provider_cls.__name__
+                module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
+                connection_type_to_api_mapping[annotation_type_name] = api_name
+                break
+        else:
+            should_break = False
+            for arg in get_args(param.annotation):
+                arg_name = arg.__name__
+                module_logger.debug(f"arg: {arg}, arg name: {arg_name}")
+                if arg_name in connections:
+                    module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
+                    connection_type_to_api_mapping[annotation_type_name] = api_name
+                    should_break = True
+            if should_break:
+                break
 
 
 def _register_method(provider_method, collection, type):
