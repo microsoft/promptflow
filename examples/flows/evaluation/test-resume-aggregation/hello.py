@@ -12,11 +12,11 @@ from promptflow import tool
 
 @tool
 def my_python_tool(input1: str) -> str:
-    switch_file = Path("sunday_failure_switch.txt")
-    if "Sunday" in input1:
+    switch_file = Path("wednesday_failure_switch.txt")
+    if "Wednesday" in input1:
         if switch_file.exists():
             switch_file.unlink()
-            raise Exception("Sunday failure")
+            raise Exception("Wednesday failure")
         else:
             switch_file.touch()
     return "Prompt: " + input1
