@@ -36,6 +36,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
     collect_lines,
+    extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -660,15 +661,6 @@ class FlowExecutor:
         self._completed_idx[line_number] = thread_name
         return results
 
-    def _extract_aggregation_inputs(self, nodes_outputs: dict):
-        return {
-            prop: self._extract_aggregation_input(nodes_outputs, prop) for prop in self._aggregation_inputs_references
-        }
-
-    def _extract_aggregation_input(self, nodes_outputs: dict, aggregation_input_property: str):
-        assign = InputAssignment.deserialize(aggregation_input_property)
-        return _input_assignment_parser.parse_value(assign, nodes_outputs, {})
-
     def exec_line(
         self,
         inputs: Mapping[str, Any],
@@ -833,7 +825,7 @@ class FlowExecutor:
         run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
         run_tracker.allow_generator_types = allow_generator_output
         run_tracker.end_run(run_info.run_id, result=output)
-        aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+        aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
         return output, aggregation_inputs
 
     def _exec(
