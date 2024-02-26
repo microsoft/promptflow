@@ -474,6 +474,7 @@ def _register(provider_cls, collection, type):
             module_logger.debug(f"Registered {name} as a builtin function")
     # Get the connection type - provider name mapping for execution use
     # Tools/Providers related connection must have been imported
+    api_name = provider_cls.__name__
     for param in initialize_inputs.values():
         if not param.annotation:
             continue
@@ -481,7 +482,6 @@ def _register(provider_cls, collection, type):
         if origin != Union:
             annotation_type_name = param.annotation.__name__
             if annotation_type_name in connections:
-                api_name = provider_cls.__name__
                 module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
                 connection_type_to_api_mapping[annotation_type_name] = api_name
                 break
