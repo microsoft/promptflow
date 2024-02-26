@@ -1034,6 +1034,7 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
         # delete the .promptflow/ folder
         shutil.rmtree(f"{EAGER_FLOWS_DIR}/simple_with_req/.promptflow", ignore_errors=True)
