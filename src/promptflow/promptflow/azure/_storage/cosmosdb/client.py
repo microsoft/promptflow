@@ -8,7 +8,7 @@ import threading
 
 client_map = {}
 _thread_lock = threading.Lock()
-_token_timeout = 60 * 9  # Timeout is 10 minutes, set expire at 9 minutes for update
+_token_timeout = 60 * 4  # Will try to refresh token if exceed 4 minutes
 
 
 def get_client(container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str):
@@ -39,7 +39,7 @@ def _get_client_from_map(client_key: str):
     if client is None:
         return None
 
-    if client["expire_at"] < datetime.datetime.now():
+    if client["expire_at"] > datetime.datetime.now():
         return client["client"]
 
     return None
