@@ -199,7 +199,8 @@ def setup_exporter_from_environ() -> None:
     tracer_provider = TracerProvider(resource=resource)
     # get OTLP endpoint from environment variable
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+    # Set timeout as 30 seconds since creating cosmosDB client is time consuming
+    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint, timeout=30)
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(tracer_provider)
 
