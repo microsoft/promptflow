@@ -74,6 +74,11 @@ class TraceEnvironmentVariableName:
     WORKSPACE_NAME = "PF_TRACE_WORKSPACE_NAME"
 
 
+class CosmosDBContainerName:
+    SPAN = "Span"
+    LINE_SUMMARY = "LineSummary"
+
+
 class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
