@@ -49,7 +49,7 @@ async def gen_tool_meta(request: ToolMetaRequest):
     return result
 
 
-async def gen_meta(request: ToolMetaRequest):
+def gen_meta(request: ToolMetaRequest):
     with _change_working_dir(request.working_dir), inject_sys_path(request.working_dir):
         tool_dict = {}
         error_dict = {}
