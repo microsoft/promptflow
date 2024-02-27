@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
+import signal
 from typing import Dict
 
 import psutil
@@ -31,11 +33,18 @@ class ProcessManager:
             try:
                 process = psutil.Process(process_id)
                 if process.is_running():
-                    process.terminate()
-                    process.wait()
+                    os.kill(process.pid, signal.SIGINT)
+                    service_logger.info(f"Kill process[{process.pid}] for run[{run_id}] with SIGINT.")
+                    # wait for 40s for executor process to gracefully shutdown
+                    process.wait(timeout=40)
                     service_logger.info(f"Successfully terminated process[{process.pid}] for run[{run_id}].")
                 else:
                     service_logger.info(f"Process[{process.pid}] for run[{run_id}] is already terminated.")
+            except psutil.TimeoutExpired:
+                if process.is_running():
+                    # force kill if still alive
+                    os.kill(process.pid, signal.SIGKILL)
+                    service_logger.info(f"Kill process[{process.pid}] for run[{run_id}] with SIGKILL.")
             except psutil.NoSuchProcess:
                 service_logger.warning(
                     f"Process[{process.pid}] for run[{run_id}] not found, it might have already terminated."
