@@ -2,17 +2,41 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from promptflow.executor._service.apis.batch import router as batch_router
 from promptflow.executor._service.apis.common import router as common_router
 from promptflow.executor._service.apis.execution import router as execution_router
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
+
+class Mode:
+    """The mode of the executor service
+
+    normal mode: The main scenarios are flow test, single node run, tools and other functional APIs
+    batch mode: Mainly prepared for the batch run
+    """
+
+    NORMAL = "normal"
+    BATCH = "batch"
+
+
 app = FastAPI()
 
 app.include_router(common_router)
-app.include_router(execution_router)
+
+# Read the MODE environment variable, defaulting to Mode.NORMAL if not set
+mode = os.getenv("MODE", Mode.NORMAL)
+# Decide which routers to include based on the MODE value
+if mode == Mode.NORMAL:
+    # Include the execution router in 'normal' mode
+    app.include_router(execution_router)
+elif mode == Mode.BATCH:
+    # Include the batch router in 'batch' mode
+    app.include_router(batch_router)
 
 
 @app.exception_handler(Exception)
