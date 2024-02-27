@@ -14,10 +14,17 @@ CONFIG_FILE = (Path(__file__).parents[1] / "config.yml").resolve()
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
-from common import clean_data, count_non_blank_lines, \
-    split_document, copy_flow_folder_and_set_node_inputs, \
-    print_progress, convert_to_abs_path, non_padding_path, local_path_exists  # noqa: E402
-from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
+from common import (  # noqa: E402
+    clean_data,
+    convert_to_abs_path,
+    copy_flow_folder_and_set_node_inputs,
+    count_non_blank_lines,
+    local_path_exists,
+    non_padding_path,
+    print_progress,
+    split_document,
+)
+from constants import DETAILS_FILE_NAME, TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
 
@@ -40,7 +47,7 @@ def batch_run_flow(
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     logger.info(
         f"Submit batch run successfully. process id {process.pid}. Please wait for the batch run to complete..."
-    ) 
+    )
     return run_name, process
 
 
@@ -71,14 +78,14 @@ def get_batch_run_output(output_path: Path):
 
 
 def run_local(
-        documents_folder,
-        document_chunk_size,
-        document_chunk_overlap,
-        document_nodes_file,
-        flow_folder,
-        flow_batch_run_size,
-        output_folder,
-        should_skip_split,
+    documents_folder,
+    document_chunk_size,
+    document_chunk_overlap,
+    document_nodes_file,
+    flow_folder,
+    flow_batch_run_size,
+    output_folder,
+    should_skip_split,
 ):
     text_chunks_path = document_nodes_file
     output_folder = Path(output_folder) / datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
@@ -88,11 +95,7 @@ def run_local(
     if not should_skip_split:
         text_chunks_path = split_document(document_chunk_size, document_chunk_overlap, documents_folder, output_folder)
 
-    run_name, process = batch_run_flow(
-        flow_folder,
-        text_chunks_path,
-        flow_batch_run_size
-    )
+    run_name, process = batch_run_flow(flow_folder, text_chunks_path, flow_batch_run_size)
 
     run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
     print_progress(run_folder_path / "logs.txt", process)
@@ -109,22 +112,22 @@ def run_local(
 
 
 def run_cloud(
-        documents_folder,
-        document_chunk_size,
-        document_chunk_overlap,
-        document_nodes_file,
-        flow_folder,
-        subscription_id,
-        resource_group,
-        workspace_name,
-        aml_cluster,
-        prs_instance_count,
-        prs_mini_batch_size,
-        prs_max_concurrency_per_instance,
-        prs_max_retry_count,
-        prs_run_invocation_time,
-        prs_allowed_failed_count,
-        should_skip_split,
+    documents_folder,
+    document_chunk_size,
+    document_chunk_overlap,
+    document_nodes_file,
+    flow_folder,
+    subscription_id,
+    resource_group,
+    workspace_name,
+    aml_cluster,
+    prs_instance_count,
+    prs_mini_batch_size,
+    prs_max_concurrency_per_instance,
+    prs_max_retry_count,
+    prs_run_invocation_time,
+    prs_allowed_failed_count,
+    should_skip_split,
 ):
     # lazy import azure dependencies
     try:
@@ -151,17 +154,17 @@ def run_cloud(
         ]
     )
     def gen_test_data_pipeline(
-            data_input: V2Input,
-            flow_yml_path: str,
-            should_skip_doc_split: bool,
-            chunk_size=1024,
-            chunk_overlap=200,
-            instance_count=1,
-            mini_batch_size=1,
-            max_concurrency_per_instance=2,
-            max_retry_count=3,
-            run_invocation_time=600,
-            allowed_failed_count=-1,
+        data_input: V2Input,
+        flow_yml_path: str,
+        should_skip_doc_split: bool,
+        chunk_size=1024,
+        chunk_overlap=200,
+        instance_count=1,
+        mini_batch_size=1,
+        max_concurrency_per_instance=2,
+        max_retry_count=3,
+        run_invocation_time=600,
+        allowed_failed_count=-1,
     ):
         from components import clean_data_component, split_document_component
 
@@ -173,8 +176,7 @@ def run_cloud(
             ).outputs.document_node_output
         )
         flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_flow"}])(
-            data=data,
-            text_chunk="${data.text_chunk}"
+            data=data, text_chunk="${data.text_chunk}"
         )
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
@@ -229,7 +231,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if Path(CONFIG_FILE).is_file():
-        with open(CONFIG_FILE, 'r') as stream:
+        with open(CONFIG_FILE, "r") as stream:
             config = load_yaml(stream)
     else:
         raise Exception(
@@ -251,7 +253,8 @@ if __name__ == "__main__":
         elif not documents_folder or not validate_path_func(documents_folder):
             raise Exception(
                 "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
-                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'")
+                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
+            )
 
         if args.cloud:
             logger.info("Start to generate test data at cloud...")
