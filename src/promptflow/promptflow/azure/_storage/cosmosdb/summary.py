@@ -1,5 +1,6 @@
 import datetime
 import json
+import time
 import typing
 from dataclasses import asdict, dataclass, field
 
@@ -81,6 +82,11 @@ class Summary:
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes
             and SpanAttributeFieldName.LINE_NUMBER in attributes
         ):
+            # Add sleep to wait for main run to be persisted.
+            # We receive requests to persist main flow first and then evaluation,
+            # but init cosmosDB client is time consuming, and the later request will reuse the same client, so it's
+            # possible that the main run is not persisted when we start to patch evaluation to it.
+            time.sleep(1)
             self._insert_evaluation(client)
 
     def _persist_line_run(self, client):
