@@ -135,10 +135,12 @@ def list_deployment_names(
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 403:
             msg = f"Failed to list deployments due to permission issue: {e}"
-            raise ListDeploymentsError(msg=msg) from e
+            print(msg)
+            # raise ListDeploymentsError(msg=msg) from e
         else:
             msg = f"Failed to list deployments with exception: {e}"
-            raise ListDeploymentsError(msg=msg) from e
+            print(msg)
+            # raise ListDeploymentsError(msg=msg) from e
 
     return res
 
