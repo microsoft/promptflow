@@ -9,7 +9,7 @@ from sqlalchemy import TEXT, Column, Index, or_, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, declarative_base
 
-from promptflow._sdk._constants import SPAN_TABLENAME
+from promptflow._sdk._constants import SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 
 from .retry import sqlite_retry
 from .session import trace_mgmt_db_session
@@ -65,6 +65,8 @@ class Span(Base):
                 stmt = stmt.filter(Span.session_id == session_id)
             if trace_ids is not None:
                 stmt = stmt.filter(Span.trace_id.in_(trace_ids))
+            if session_id is None and trace_ids is None:
+                stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
@@ -113,6 +115,8 @@ class LineRun:
                 stmt = stmt.filter(Span.session_id == session_id)
             if experiments is not None:
                 stmt = stmt.filter(Span.experiment.in_(experiments))
+            if session_id is None and experiments is None:
+                stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
