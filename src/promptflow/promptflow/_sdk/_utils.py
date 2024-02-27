@@ -1196,7 +1196,7 @@ def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLW
     match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
     if not match or len(match.groups()) != 5:
         raise ValueError(
-            "Malformed trace provider string, expected azureml:/subscriptions/<subscription_id>/"
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
             "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
             f"workspaces/<workspace_name>, got {trace_provider}"
         )
