@@ -15,37 +15,53 @@ from promptflow.tools.aoai_gpt4v import _get_credential, _parse_resource_id, Lis
 from typing import List, Dict
 
 
-def list_apis(
-    subscription_id,
-    resource_group_name,
-    workspace_name,
-    connection_name: str=""
-) -> List[Dict[str, str]]:
-    if not connection_name:
-        return []
+def get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name):
     try:
         credential = _get_credential()
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-        connection = ArmConnectionOperations._build_connection_dict(
+        return ArmConnectionOperations._build_connection_dict(
             name=connection_name,
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             credential=credential
         )
-        # suppprt completion for backword compatibility.
-        if connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}:
-            return [
-                {"value": "chat", "display_value": "chat"},
-                {"value": "completion", "display_value": "completion"},
-            ]
-        else:
-            return [
-                {"value": "chat", "display_value": "chat"},
-            ]
     except Exception as e:
+        return None
+
+
+def get_local_connection(connection_name):
+    try:
+        from promptflow import PFClient
+
+        pf = PFClient()
+        return pf.connections.get(connection_name)
+    except Exception as e:
+        return None
+
+
+def list_apis(subscription_id, resource_group_name, workspace_name, connection_name: str="") -> List[Dict[str, str]]:
+    if not connection_name:
         return []
+
+    connection = get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name)
+    if connection is None:
+        connection = get_local_connection(connection_name)
+
+    if connection is None:
+        return []
+
+    if (isinstance(connection, dict) and connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}) or \
+       isinstance(connection, (AzureOpenAIConnection, OpenAIConnection)):
+        return [
+            {"value": "chat", "display_value": "chat"},
+            {"value": "completion", "display_value": "completion"},
+        ]
+    else:
+        return [
+            {"value": "chat", "display_value": "chat"},
+        ]
 
 
 def list_deployment_names(
@@ -127,29 +143,19 @@ def list_deployment_names(
     return res
 
 
-def list_models(
-    subscription_id,
-    resource_group_name,
-    workspace_name,
-    connection_name: str="",
-    api_name: str="",
-):
+def list_models(subscription_id, resource_group_name, workspace_name, connection_name: str="", api_name: str="") -> List[Dict[str, str]]:
     if not connection_name:
         return []
-    try:
-        credential = _get_credential()
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-        connection = ArmConnectionOperations._build_connection_dict(
-            name=connection_name,
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            credential=credential
-        )
-        if connection["type"] != "OpenAIConnection":
-            return []
+    connection = get_cloud_connection(connection_name, subscription_id, resource_group_name, workspace_name)
+    if connection is None:
+        connection = get_local_connection(connection_name)
 
+    if connection is None:
+        return []
+
+    if (isinstance(connection, dict) and connection["type"] == "OpenAIConnection") or \
+       isinstance(connection, OpenAIConnection):
         if api_name == "chat":
             return [
                 {"value": "gpt-4", "display_value": "gpt-4"},
@@ -168,7 +174,7 @@ def list_models(
             ]
         else:
             return []
-    except Exception as e:
+    else:
         return []
 
 

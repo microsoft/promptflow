@@ -83,18 +83,18 @@ promptflow.tools.llm.llm:
       ui_hints:
         text_box_size: xs
       advanced: true
-    max_tokens:
-      default: ""
-      type:
-        - int
-      ui_hints:
-        text_box_size: xs
     stop:
       default: ""
       type:
         - list
       ui_hints:
         text_box_size: md
+    max_tokens:
+      default: ""
+      type:
+        - int
+      ui_hints:
+        text_box_size: xs
     presence_penalty:
       default: 0
       type:
