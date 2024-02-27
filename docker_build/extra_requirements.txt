@@ -1,0 +1,6 @@
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+promptflow-tools[azure]==1.2.0rc1
+
+promptflow-vectordb[azure]>=0.2.3,<1.0.0
+
+beautifulsoup4>=4.12.2,<5.0.0
