@@ -35,6 +35,7 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
+from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 
 
@@ -53,6 +54,7 @@ def add_run_parser(subparsers):
     add_run_archive(subparsers)
     add_run_restore(subparsers)
     add_run_delete(subparsers)
+    add_run_resume(subparsers)
     add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
@@ -128,7 +130,7 @@ pf run create -f <yaml-filename>
 pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-file>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
-# Create a run from an existing run record folder
+# Create a run from an existing run record folder:
 pf run create --source <path-to-run-folder>
 """
 
@@ -406,6 +408,41 @@ pf run restore --name <name>
     )
 
 
+def add_run_resume(subparsers):
+    epilog = """
+Example:
+
+# Resume a run from an existing run, only failed lines will be re-run:
+pf run resume --from <original-run>
+# Resume a run from an existing run, and specify the name of new run:
+pf run resume --from <original-run> --name <new-run-name>
+"""
+
+    add_param_name = lambda parser: parser.add_argument("-n", "--name", type=str, help="Name of the run.")  # noqa: E731
+    add_param_from = lambda parser: parser.add_argument(  # noqa: E731
+        "--from", type=str, required=True, dest="resume_from", help="The existing run name to resume from."
+    )  # noqa: E731
+    add_param_stream = lambda parser: parser.add_argument(  # noqa: E731
+        "-s",
+        "--stream",
+        action="store_true",
+        default=False,
+        help="Indicates whether to stream the run's logs to the console.",
+    )
+
+    add_params = [add_param_name, add_param_from, add_param_stream] + base_params
+
+    activate_action(
+        name="resume",
+        description=None,
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Resume an existing run, a new run record will be created.",
+        action_param_name="sub_action",
+    )
+
+
 def dispatch_run_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         create_run(create_func=_create_run, args=args)
@@ -437,6 +474,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         export_run(args)
     elif args.sub_action == "delete":
         delete_run(args.name, args.yes)
+    elif args.sub_action == "resume":
+        resume_run(args)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -578,37 +617,26 @@ def create_run(create_func: Callable, args):
     if column_mapping:
         column_mapping = list_of_dict_to_dict(column_mapping)
 
+    run_params = {
+        "name": name,
+        "flow": flow,
+        "variant": variant,
+        "data": data,
+        "column_mapping": column_mapping,
+        "run": run,
+        "environment_variables": environment_variables,
+        "connections": connections,
+    }
+    # remove empty fields
+    run_params = {k: v for k, v in run_params.items() if v is not None}
+
     if file:
-        for param_key, param in {
-            "name": name,
-            "flow": flow,
-            "variant": variant,
-            "data": data,
-            "column_mapping": column_mapping,
-            "run": run,
-            "environment_variables": environment_variables,
-            "connections": connections,
-        }.items():
-            if not param:
-                continue
+        for param_key, param in run_params.items():
             params_override.append({param_key: param})
 
         run = load_run(source=file, params_override=params_override)
     elif flow:
-        run_data = {
-            "name": name,
-            "flow": flow,
-            "data": data,
-            "column_mapping": column_mapping,
-            "run": run,
-            "variant": variant,
-            "environment_variables": environment_variables,
-            "connections": connections,
-        }
-        # remove empty fields
-        run_data = {k: v for k, v in run_data.items() if v is not None}
-
-        run = Run._load(data=run_data, params_override=params_override)
+        run = Run._load(data=run_params, params_override=params_override)
     elif run_source:
         display_name, description, tags = _parse_metadata_args(params_override)
         processed_params = {
@@ -622,6 +650,19 @@ def create_run(create_func: Callable, args):
     run = create_func(run=run, stream=stream)
     if stream:
         print("\n")  # change new line to show run info
+    print(json.dumps(run._to_dict(), indent=4))
+
+
+def resume_run(args):
+    resume_from = args.resume_from
+    pf_client = PFClient()
+    resume_from_run = pf_client.runs.get(name=resume_from)
+    if resume_from_run.status != Status.Completed.value:
+        error = ValueError(
+            f"Referenced run {resume_from_run.name} is not completed, got status {resume_from_run.status!r}."
+        )
+        raise UserErrorException(message=str(error), error=error)
+    run = pf_client.runs.resume(run=resume_from_run, name=args.name, stream=args.stream)
     print(json.dumps(run._to_dict(), indent=4))
 
 

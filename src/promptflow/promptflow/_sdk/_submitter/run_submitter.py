@@ -39,6 +39,14 @@ class RunSubmitter:
         self._run_bulk(run=run, stream=stream, **kwargs)
         return self.run_operations.get(name=run.name)
 
+    def resume(self, run: Run, name=None, **kwargs):
+        if not isinstance(run, Run):
+            error = TypeError(f"Resume from run must be a Run instance, got {type(run)}")
+            raise UserErrorException(message=str(error), error=error)
+        new_run = run._copy(name=name, resume_from=run.name, **kwargs)
+        self._run_bulk(run=new_run, **kwargs)
+        return self.run_operations.get(name=new_run.name)
+
     def _run_bulk(self, run: Run, stream=False, **kwargs):
         attributes = kwargs.get("attributes", {})
         # validate & resolve variant
@@ -47,23 +55,32 @@ class RunSubmitter:
         else:
             tuning_node, variant = None, None
 
+        def _ensure_required_run(required_run: Union[str, Run]):
+            if isinstance(required_run, str):
+                required_run = self.run_operations.get(name=required_run)
+            elif not isinstance(required_run, Run):
+                error = TypeError(f"Referenced run must be a Run instance, got {type(required_run)}")
+                raise UserErrorException(message=str(error), error=error)
+            else:
+                # get the run again to make sure it's status is latest
+                required_run = self.run_operations.get(name=required_run.name)
+            if required_run.status != Status.Completed.value:
+                error = ValueError(
+                    f"Referenced run {required_run.name} is not completed, got status {required_run.status}"
+                )
+                raise UserErrorException(message=str(error), error=error)
+            required_run.outputs = self.run_operations._get_outputs(required_run)
+            return required_run
+
         if run.run is not None:
             # Set for flow test against run and no experiment scenario
             if ContextAttributeKey.REFERENCED_BATCH_RUN_ID not in attributes:
                 referenced_batch_run_id = run.run.name if isinstance(run.run, Run) else run.run
                 attributes[ContextAttributeKey.REFERENCED_BATCH_RUN_ID] = referenced_batch_run_id
-            if isinstance(run.run, str):
-                run.run = self.run_operations.get(name=run.run)
-            elif not isinstance(run.run, Run):
-                error = TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
-                raise UserErrorException(message=str(error), error=error)
-            else:
-                # get the run again to make sure it's status is latest
-                run.run = self.run_operations.get(name=run.run.name)
-            if run.run.status != Status.Completed.value:
-                error = ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
-                raise UserErrorException(message=str(error), error=error)
-            run.run.outputs = self.run_operations._get_outputs(run.run)
+            run.run = _ensure_required_run(run.run)
+        if run._resume_from is not None:
+            logger.debug(f"Resuming from run {run._resume_from!r}...")
+            run._resume_from = _ensure_required_run(run._resume_from)
         # Start trace
         if Configuration(overrides=self._client._config).is_internal_features_enabled():
             from promptflow._trace._start_trace import start_trace
@@ -80,8 +97,8 @@ class RunSubmitter:
 
     @classmethod
     def _validate_inputs(cls, run: Run):
-        if not run.run and not run.data:
-            error = ValidationException("Either run or data must be specified for flow run.")
+        if not run.run and not run.data and not run._resume_from:
+            error = ValidationException("Either run or data or resume from run must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(
@@ -114,6 +131,10 @@ class RunSubmitter:
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
+
+        resume_from_run_storage = (
+            LocalStorageOperations(run._resume_from, run_mode=RunMode.Batch) if run._resume_from else None
+        )
         try:
             batch_engine = BatchEngine(
                 flow.path,
@@ -122,6 +143,8 @@ class RunSubmitter:
                 entry=flow.entry if isinstance(flow, EagerFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
+                resume_from_run_storage=resume_from_run_storage,
+                resume_from_run_output_dir=resume_from_run_storage.outputs_folder if resume_from_run_storage else None,
             )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
