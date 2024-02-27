@@ -72,7 +72,36 @@ This flow scores generated summaries along each summarization evaluation dimensi
 ### Limitations
 
 #### Cost considerations
-An important note regarding the implementation and use of this flow is that for each dimension, the evaluation prompt is run with temperature=2 and n=20, from which the final score is averaged across each trial. This is done as an approximation for token probabilities which are currently unavailable for GPT-4. This is run for each dimension for each summary being evaluated (ie. 80 LLM calls per summary), **which may have cost considerations for your usecase**.
+An important note regarding the implementation and use of this flow is that for each dimension, the evaluation prompt is run using GPT-4 with temperature=2 and n=20, from which the final score is averaged across each trial. This is done as an approximation for token probabilities which are currently unavailable for GPT-4. This is run for each dimension for each summary being evaluated.
+
+A rough estimate of the output tokens consumed by the flow per summary evaluation would be:
+```
+single_summary_eval_output_tokens = max_output_tokens*number_trials*number_dimensions = 5*20*4 = 400 output tokens
+```
+
+For input token estimation, if we assume a 500 word input doc and 50 word summary to evaluate, then the input tokens would be roughly (assuming 4 tokens per word):
+```
+(dimension input tokens = prompt tokens + source doc tokens + summary tokens)
+
+consistency input tokens = 210 + 125 + 13 = 348 input tokens
+fluency input tokens = 183 + 13 = 196 input tokens
+relevance input tokens = 200 + 125 + 13 = 338 input tokens
+coherence input tokens = 248 + 125 + 13 = 381 input tokens
+
+total input tokens per doc/summary = 1263 input tokens
+```
+For a batch run of 100 documents, the price of using this flow could be estimated as:
+```
+total cost of summary eval flow = ((numb_summaries * input_tokens_per_summary / 1000) * gpt_4_cost_per_1k_output_tokens) + ((numb_summaries * output_tokens_per_summary / 1000) * gpt_4_cost_per_1k_output_tokens)
+
+total cost of summary eval flow = ((100 * 1263 / 1000) * gpt_4_cost_per_1k_input_tokens) + ((100 * 400 / 1000) * gpt_4_cost_per_1k_output_tokens)
+total cost of summary eval flow = (126.3 * gpt_4_cost_per_1k_input_tokens) + (40 * gpt_4_cost_per_1k_output_tokens)
+
+Using GPT-4 8k model in East US region with USD pricing (as of 27/02/2024):
+total cost of summary eval flow = (126.3 * $0.03) + (40 * $0.06) = $6.19 per 100 documents
+```
+
+Please substitute your own values for various variables to estimate the cost of running the evaluation flow on your data.
 
 #### Scoring bias
 
