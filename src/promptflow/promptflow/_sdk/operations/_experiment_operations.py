@@ -90,11 +90,13 @@ class ExperimentOperations(TelemetryMixin):
             return self.get(experiment.name)
 
     @monitor_operation(activity_name="pf.experiment.start", activity_type=ActivityType.PUBLICAPI)
-    def start(self, name: str, **kwargs) -> Experiment:
+    def start(self, name: str, stream=False, **kwargs) -> Experiment:
         """Start an experiment.
 
         :param name: Experiment name.
         :type name: str
+        :param stream: Indicates whether to stream the experiment execution logs to the console.
+        :type stream: bool
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
@@ -107,7 +109,10 @@ class ExperimentOperations(TelemetryMixin):
             raise RunOperationError(
                 f"Experiment {experiment.name} is {experiment.status}, cannot be started repeatedly."
             )
-        return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
+        if stream:
+            return ExperimentOrchestrator(self._client, experiment).start(**kwargs)
+        else:
+            return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
 
     @monitor_operation(activity_name="pf.experiment.stop", activity_type=ActivityType.PUBLICAPI)
     def stop(self, name: str, **kwargs) -> Experiment:
@@ -127,6 +132,18 @@ class ExperimentOperations(TelemetryMixin):
 
     @monitor_operation(activity_name="pf.experiment.run", activity_type=ActivityType.PUBLICAPI)
     def run(self, experiment: Experiment, stream=False, inputs=None, **kwargs) -> Experiment:
+        """
+        Run an experiment.
+
+        :param experiment: Experiment object.
+        :type experiment: ~promptflow.entities.Experiment
+        :param stream: Indicates whether to stream the experiment execution logs to the console.
+        :type stream: bool
+        :param inputs: Input dict to override.
+        :type inputs: Dict[str, str]
+        :return: Experiment object started.
+        :rtype: ~promptflow.entities.Experiment
+        """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
         # Update anonymous experiment inputs
