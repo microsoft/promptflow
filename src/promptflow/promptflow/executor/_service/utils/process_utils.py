@@ -2,16 +2,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import asyncio
 import contextlib
 import json
 import multiprocessing
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Callable
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
+from promptflow._utils.async_utils import to_thread
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
 from promptflow.exceptions import ErrorTarget
@@ -45,9 +45,7 @@ async def invoke_sync_function_in_process(
             ProcessManager().start_process(run_id, p.pid)
 
         # Wait for the process to finish or timeout asynchronously
-        start_time = datetime.utcnow()
-        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and p.is_alive():
-            await asyncio.sleep(1)
+        await to_thread(p.join, timeout=wait_timeout)
 
         try:
             # Terminate the process if it is still alive after timeout

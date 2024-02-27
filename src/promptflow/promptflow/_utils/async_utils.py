@@ -4,6 +4,7 @@
 
 import asyncio
 import contextvars
+import functools
 from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._utils.utils import set_context
@@ -38,3 +39,12 @@ def async_run_allowing_running_loop(async_func, *args, **kwargs):
             return executor.submit(lambda: asyncio.run(async_func(*args, **kwargs))).result()
     else:
         return asyncio.run(async_func(*args, **kwargs))
+
+
+async def to_thread(func, /, *args, **kwargs):
+    # this is copied from asyncio.to_thread() in Python 3.9
+    # as it is not available in Python 3.8, which is the minimum supported version of promptflow
+    loop = asyncio.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)
