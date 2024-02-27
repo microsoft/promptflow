@@ -28,6 +28,7 @@ class TestConnection:
             "module": "promptflow.connections",
             "type": "azure_open_ai",
             "api_key": "******",
+            "auth_mode": "key",
             "api_base": "test",
             "api_type": "azure",
             "api_version": "2023-07-01-preview",

@@ -287,7 +287,7 @@ secrets:
             },
         }
 
-        # Assert strong type - AzureOpenAI
+        # Assert strong type - AzureOpenAI - aad
         connection = AzureOpenAIConnection(
             name="test_connection_1",
             type="AzureOpenAI",
@@ -298,7 +298,7 @@ secrets:
         )
         assert connection._to_execution_connection_dict() == {
             "module": "promptflow.connections",
-            "secret_keys": ["api_key"],
+            "secret_keys": [],
             "type": "AzureOpenAIConnection",
             "value": {
                 "api_base": "test_base",
