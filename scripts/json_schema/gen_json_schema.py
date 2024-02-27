@@ -184,7 +184,7 @@ if __name__ == "__main__":
     for item in args.output_file:
         item_cls = prepared_schemas.get(item, None)
         if item_cls is None:
-            raise ValueError(f"Schema not found for {item}")
+            print(f"Schema not found for {item}")
         else:
             target_schema = PatchedJSONSchema().dump(item_cls(context={"base_path": "./"}))
             with open((f"{item}.schema.json"), "w") as f:
