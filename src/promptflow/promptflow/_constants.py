@@ -127,9 +127,9 @@ class SpanResourceAttributesFieldName:
     SESSION_ID = "session.id"
     EXPERIMENT_NAME = "experiment.name"
     # local to cloud
-    SUBSCRIPTION_ID = "subscription_id"
-    RESOURCE_GROUP_NAME = "resource_group_name"
-    WORKSPACE_NAME = "workspace_name"
+    SUBSCRIPTION_ID = "subscription.id"
+    RESOURCE_GROUP_NAME = "resource_group.name"
+    WORKSPACE_NAME = "workspace.name"
     # batch run
     BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"
