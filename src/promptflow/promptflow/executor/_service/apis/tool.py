@@ -26,12 +26,8 @@ async def list_package_tools():
 async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
     from promptflow._core.tools_manager import retrieve_tool_func_result
 
-    return retrieve_tool_func_result(
-        func_call_scenario=request.func_call_scenario,
-        func_path=request.func_path,
-        func_input_params_dict=request.func_kwargs,
-        ws_triple_dict=request.ws_triple,
-    )
+    args = (request.func_call_scenario, request.func_path, request.func_kwargs, request.ws_triple)
+    return await invoke_sync_function_in_process(retrieve_tool_func_result, args=args, wait_timeout=SHORT_WAIT_TIMEOUT)
 
 
 @router.post("/meta")
