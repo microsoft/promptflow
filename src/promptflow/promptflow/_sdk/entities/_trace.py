@@ -274,7 +274,6 @@ class LineRun:
                         continue
                     attributes: dict = span._content[SpanFieldName.ATTRIBUTES]
                     batch_run_id = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
-                    print(batch_run_id)
                     if batch_run_id in runs:
                         main_line_run_data = _LineRunData._from_root_span(span)
                         can_ignore = False
