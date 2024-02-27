@@ -116,6 +116,25 @@ class TestStartTrace:
             session_id = _provision_session_id(specified_session_id=str(uuid.uuid4()))
             assert configured_session_id == session_id
 
+    @pytest.mark.usefixtures("reset_tracer_provider")
+    def test_local_to_cloud_resource(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                TraceEnvironmentVariableName.SESSION_ID: str(uuid.uuid4()),
+                TraceEnvironmentVariableName.SUBSCRIPTION_ID: "test_subscription_id",
+                TraceEnvironmentVariableName.RESOURCE_GROUP_NAME: "test_resource_group_name",
+                TraceEnvironmentVariableName.WORKSPACE_NAME: "test_workspace_name",
+            },
+            clear=True,
+        ):
+            setup_exporter_from_environ()
+            tracer_provider = trace.get_tracer_provider()
+            res_attrs = dict(tracer_provider.resource.attributes)
+            assert res_attrs[SpanResourceAttributesFieldName.SUBSCRIPTION_ID] == "test_subscription_id"
+            assert res_attrs[SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME] == "test_resource_group_name"
+            assert res_attrs[SpanResourceAttributesFieldName.WORKSPACE_NAME] == "test_workspace_name"
+
     def test_trace_without_attributes_collection(self, mock_resource: Dict) -> None:
         # generate a span without attributes
         # below magic numbers come from a real case from `azure-search-documents`
