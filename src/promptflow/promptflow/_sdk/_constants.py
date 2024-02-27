@@ -1,7 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import os
+from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
@@ -132,6 +134,7 @@ SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
 UX_INPUTS_JSON = (HOME_PROMPT_FLOW_DIR / "ux.inputs.json").resolve()
+AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
 class CustomStrongTypeConnectionConfigs:
