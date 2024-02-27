@@ -19,7 +19,7 @@ import opentelemetry.trace as otel_trace
 
 from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
-from opentelemetry.trace.span import NonRecordingSpan, Span
+from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.sdk.trace import ReadableSpan
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
