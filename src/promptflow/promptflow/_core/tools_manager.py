@@ -489,7 +489,6 @@ def _register(provider_cls, collection, type):
             should_break = False
             for arg in get_args(param.annotation):
                 arg_name = arg.__name__
-                module_logger.debug(f"arg: {arg}, arg name: {arg_name}")
                 if arg_name in connections:
                     module_logger.debug(f"Add connection type {arg_name} to api {api_name} mapping")
                     connection_type_to_api_mapping[arg_name] = api_name

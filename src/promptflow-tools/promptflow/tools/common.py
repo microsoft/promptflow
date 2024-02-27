@@ -395,7 +395,6 @@ def normalize_connection_config(connection):
             "base_url": connection.base_url
         }
     elif isinstance(connection, ServerlessConnection):
-        print("Received ServerlessConnection in openai.", file=sys.stdout)
         return {
             "api_key": connection.api_key,
             "base_url": connection.api_base
