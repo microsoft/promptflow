@@ -1,5 +1,4 @@
 import datetime
-import json
 import time
 import typing
 from dataclasses import asdict, dataclass, field
@@ -146,7 +145,7 @@ class Summary:
         item = LineEvaluation(
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
-            outputs=json.loads(attributes[SpanAttributeFieldName.OUTPUT]),
+            outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
             display_name=name,
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
