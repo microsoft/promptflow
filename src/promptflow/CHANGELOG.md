@@ -18,6 +18,10 @@
 ### Improvements
 - Bump `cryptography` lower bound to 42.0.4.
 
+### Bugs Fixed
+
+- [SDK/CLI][azure] Fixed automatic runtime session id cache when image updated.
+
 ## 1.5.0 (2024.02.06)
 
 
