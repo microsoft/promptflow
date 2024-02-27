@@ -101,6 +101,7 @@ class SpanContextFieldName:
 
 class SpanStatusFieldName:
     STATUS_CODE = "status_code"
+    DESCRIPTION = "description"
 
 
 class SpanAttributeFieldName:
@@ -144,3 +145,14 @@ class SpanResourceAttributesFieldName:
 class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"
+
+
+class SpanEventFieldName:
+    NAME = "name"
+    TIMESTAMP = "timestamp"
+    ATTRIBUTES = "attributes"
+
+
+class SpanLinkFieldName:
+    CONTEXT = "context"
+    ATTRIBUTES = "attributes"
