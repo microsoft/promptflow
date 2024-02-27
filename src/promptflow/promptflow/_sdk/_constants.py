@@ -337,6 +337,11 @@ class ConnectionType(str, Enum):
     CUSTOM = "Custom"
 
 
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
+
+
 ALL_CONNECTION_TYPES = set(
     map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
 )
