@@ -388,6 +388,7 @@ def enrich_span_with_embedding(span, inputs, output):
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
 
+
 def _is_single_input(embedding_inputs):
     # OpenAI Embedding API accepts a single string/tokenized string or a list of string/tokenized string as input.
     # For the single string/tokenized string case, we should return true, otherwise return false.
