@@ -90,19 +90,44 @@ class ExperimentOperations(TelemetryMixin):
             return self.get(experiment.name)
 
     @monitor_operation(activity_name="pf.experiment.start", activity_type=ActivityType.PUBLICAPI)
-    def start(self, experiment: Experiment, stream=False, **kwargs) -> Experiment:
-        """Start an experiment.
+    def start(self, experiment: Experiment, stream=False, inputs=None, **kwargs) -> Experiment:
+        """
+        Start an experiment.
 
-        :param name: Experiment object.
-        :type name: str
+        :param experiment: Experiment object.
+        :type experiment: ~promptflow.entities.Experiment
         :param stream: Indicates whether to stream the experiment execution logs to the console.
         :type stream: bool
+        :param inputs: Input dict to override.
+        :type inputs: Dict[str, str]
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        experiment = self.get(experiment.name)
+        if experiment._source_path:
+            # Update snapshot for anonymous experiment
+            logger.debug("Start saving snapshot and update node.")
+            snapshots = experiment._output_dir / "snapshots"
+            if snapshots.exists():
+                shutil.rmtree(snapshots)
+            experiment._save_snapshot_and_update_node()
+
+        # Update experiment inputs
+        experiment = copy.deepcopy(experiment)
+        inputs = inputs or {}
+        for name, value in inputs.items():
+            exp_input = next(filter(lambda exp_input: exp_input.name == name, experiment.inputs), None)
+            if exp_input:
+                exp_input.default = value
+                continue
+            exp_data = next(filter(lambda exp_data: exp_data.name == name, experiment.data), None)
+            if exp_data:
+                exp_data.path = Path(value).absolute().as_posix()
+                continue
+            logger.warning(f"Input {name} doesn't exist in experiment.")
+        experiment = self.create_or_update(experiment)
+
         if experiment.status in [ExperimentStatus.QUEUING, ExperimentStatus.IN_PROGRESS]:
             raise RunOperationError(
                 f"Experiment {experiment.name} is {experiment.status}, cannot be started repeatedly."
@@ -125,49 +150,6 @@ class ExperimentOperations(TelemetryMixin):
 
         ExperimentOrchestrator(self._client, experiment.name).stop()
         return self.get(experiment.name)
-
-    @monitor_operation(activity_name="pf.experiment.run", activity_type=ActivityType.PUBLICAPI)
-    def run(self, experiment: Experiment, stream=False, inputs=None, **kwargs) -> Experiment:
-        """
-        Run an experiment.
-
-        :param experiment: Experiment object.
-        :type experiment: ~promptflow.entities.Experiment
-        :param stream: Indicates whether to stream the experiment execution logs to the console.
-        :type stream: bool
-        :param inputs: Input dict to override.
-        :type inputs: Dict[str, str]
-        :return: Experiment object started.
-        :rtype: ~promptflow.entities.Experiment
-        """
-        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
-
-        # Update anonymous experiment inputs
-        experiment = copy.deepcopy(experiment)
-        inputs = inputs or {}
-        for name, value in inputs.items():
-            exp_input = next(filter(lambda exp_input: exp_input.name == name, experiment.inputs), None)
-            if exp_input:
-                exp_input.default = value
-                continue
-            exp_data = next(filter(lambda exp_data: exp_data.name == name, experiment.data), None)
-            if exp_data:
-                exp_data.path = Path(value).absolute().as_posix()
-                continue
-            logger.warning(f"Input {name} doesn't exist in experiment.")
-        experiment = self.create_or_update(experiment)
-
-        logger.debug("Start saving snapshot and update node.")
-        snapshots = experiment._output_dir / "snapshots"
-        if snapshots.exists():
-            shutil.rmtree(snapshots)
-        experiment._save_snapshot_and_update_node()
-
-        # execute experiment
-        if stream:
-            return ExperimentOrchestrator(self._client, experiment).start(**kwargs)
-        else:
-            return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
 
     def _test(
         self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs

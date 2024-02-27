@@ -299,7 +299,7 @@ class TestExperiment:
         experiment_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
         experiment = _load_experiment(experiment_path)
         client = PFClient()
-        exp = client._experiments.run(experiment, stream=True, inputs={"count": 3})
+        exp = client._experiments.start(experiment, stream=True, inputs={"count": 3})
         assert exp.status == ExperimentStatus.TERMINATED
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
