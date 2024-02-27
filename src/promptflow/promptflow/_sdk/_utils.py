@@ -507,6 +507,23 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
+def _construct_tool_dict(tools: List[Tuple[str, str]]) -> Dict[str, Dict[str, str]]:
+    """Construct tool dict from tool list.
+
+    :param tools: tool list, like [('test.py', 'python'), ('test.jinja2', 'llm')]
+    :return: tool dict, like
+    {
+        'test.py': {
+            'tool_type': 'python'
+        },
+        'test.jinja2': {
+            'tool_type': 'llm'
+        }
+    }
+    """
+    return {source: {"tool_type": tool_type} for source, tool_type in tools}
+
+
 def _generate_tool_meta(
     flow_directory: Path,
     tools: List[Tuple[str, str]],
@@ -527,6 +544,7 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
+    tools = _construct_tool_dict(tools)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
         tool_dict, exception_dict = generate_tool_meta_in_process(flow_directory, tools, logger, timeout=timeout)

@@ -145,9 +145,7 @@ class MetaFileReadError(GenerateMetaUserError):
 
 class GenerateMetaTimeout(GenerateMetaUserError):
     def __init__(self, source):
-        super().__init__(
-            message="Generate meta timeout for source '{source}'.", source=source, target=ErrorTarget.EXECUTOR
-        )
+        super().__init__(message_format="Generate meta timeout for source '{source}'.", source=source)
 
 
 class GenerateMetaSystemError(SystemErrorException):
