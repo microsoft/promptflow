@@ -65,7 +65,7 @@ class AzureMLExtension(AppExtension):
         # initialize MDC trace exporter by default for azureml-serving
         mdc_exporter = MdcExporter(self.logger)
         self.trace_exporters = [mdc_exporter]
-        customized_exporters = super(AzureMLExtension, self).get_trace_exporters(self.project_path)
+        customized_exporters = super().get_trace_exporters(self.project_path)
         if customized_exporters:
             self.trace_exporters.extend(customized_exporters)
 
