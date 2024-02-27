@@ -1,0 +1,15 @@
+2024-02-27 17:14:58 +0800   34400 execution.bulk     INFO     Skipped the execution of 0 existing results.
+2024-02-27 17:14:58 +0800   34400 execution.bulk     INFO     Current system's available memory is 16813.875MB, memory consumption of current process is 153.90625MB, estimated available worker count is 16813.875/153.90625 = 109
+2024-02-27 17:14:58 +0800   34400 execution.bulk     INFO     Set process count to 3 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 3, 'estimated_worker_count_based_on_memory_usage': 109}.
+2024-02-27 17:15:04 +0800   34400 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(7236)-Line number(0) start execution.
+2024-02-27 17:15:04 +0800   34400 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(22952)-Line number(1) start execution.
+2024-02-27 17:15:04 +0800   34400 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(14080)-Line number(2) start execution.
+2024-02-27 17:15:10 +0800   34400 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(22952)-Line number(1) completed.
+2024-02-27 17:15:11 +0800   34400 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(7236)-Line number(0) completed.
+2024-02-27 17:15:11 +0800   34400 execution.bulk     INFO     Finished 2 / 3 lines.
+2024-02-27 17:15:11 +0800   34400 execution.bulk     INFO     Average execution time for completed lines: 3.52 seconds. Estimated time for incomplete lines: 3.52 seconds.
+2024-02-27 17:15:12 +0800   34400 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(14080)-Line number(2) completed.
+2024-02-27 17:15:13 +0800   34400 execution.bulk     INFO     Finished 3 / 3 lines.
+2024-02-27 17:15:13 +0800   34400 execution.bulk     INFO     Average execution time for completed lines: 3.02 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2024-02-27 17:15:13 +0800   34400 execution.bulk     INFO     Executing aggregation nodes...
+2024-02-27 17:15:16 +0800   34400 execution.bulk     INFO     Finish executing aggregation nodes.
