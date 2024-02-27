@@ -174,7 +174,7 @@ def list_models(
 
 @tool
 @handle_openai_error()
-def chat(
+def llm(
     connection: Union[AzureOpenAIConnection, OpenAIConnection], 
     prompt: PromptTemplate,
     deployment_name: str = "", model: str = "",

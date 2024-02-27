@@ -1,9 +1,9 @@
-promptflow.tools.chat.chat:
-  name: Chat
+promptflow.tools.llm.llm:
+  name: LLM
   description: New LLM tool.
   type: custom_llm
-  module: promptflow.tools.chat
-  function: chat
+  module: promptflow.tools.llm
+  function: llm
   tool_state: preview
   icon:
     light: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVR4nJWSwQ2CQBBFX0jAcjgqXUgPJNiIsQQrIVCIFy8GC6ABDcGDX7Mus9n1Xz7zZ+fPsLPwH4bUg0dD2wMPcbR48Uxq4AKU4iSTDwZ1LhWXipN/B3V0J6hjBTvgLHZNonewBXrgDpzEvXSIjN0BE3AACmmF4kl5F6tNzcCoLpW0SvGovFvsb4oZ2AANcAOu4ka6axCcINN3rg654sww+CYsPD0OwjcozFNh/Qcd78tqVbCIW+n+Fky472Bh/Q6SYb1EEy8tDzd+9IsVPAAAAABJRU5ErkJggg==
@@ -15,12 +15,6 @@ promptflow.tools.chat.chat:
     # user:
     {{question}}
   inputs:
-    # auth_mode:
-    #   type:
-    #   - string
-    #   enum:
-    #   - connection
-    #   - environ_var
     connection:
       type:
       - AzureOpenAIConnection
@@ -30,7 +24,7 @@ promptflow.tools.chat.chat:
       type:
       - string
       dynamic_list:
-        func_path: promptflow.tools.chat.list_apis
+        func_path: promptflow.tools.llm.list_apis
         func_kwargs:
         - name: connection_name
           type: 
@@ -46,7 +40,7 @@ promptflow.tools.chat.chat:
       enabled_by: connection
       enabled_by_type: [AzureOpenAIConnection]
       dynamic_list:
-        func_path: promptflow.tools.chat.list_deployment_names
+        func_path: promptflow.tools.llm.list_deployment_names
         func_kwargs:
         - name: connection
           type: 
@@ -64,7 +58,7 @@ promptflow.tools.chat.chat:
       enabled_by: connection
       enabled_by_type: [OpenAIConnection]
       dynamic_list:
-        func_path: promptflow.tools.chat.list_models
+        func_path: promptflow.tools.llm.list_models
         func_kwargs:
         - name: connection_name
           type: 
