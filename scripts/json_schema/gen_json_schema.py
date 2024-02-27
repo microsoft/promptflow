@@ -150,10 +150,22 @@ from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
 
 
 if __name__ == "__main__":
+    example_text = """Example usage:
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output-file', nargs='+', help='Specify output file names')
+python scripts/json_schema/gen_json_schema.py -o Run Flow # Generate Run.schema.json and Flow.schema.json
+python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
+"""
+
+    parser = argparse.ArgumentParser(epilog=example_text, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-o', '--output-file', nargs='+', help='Specify output file names, Run, Flow, etc.')
+    parser.add_argument('-a', '--all', action='store_true', help='Generate all schema files')
     args = parser.parse_args()
+
+    if args.all:
+        args.output_file = ["Run", "Flow", "AzureOpenAIConnection", "OpenAIConnection", "QdrantConnection",
+                            "CognitiveSearchConnection", "SerpConnection", "AzureContentSafetyConnection",
+                            "FormRecognizerConnection", "CustomConnection", "WeaviateConnection", "ServerlessConnection",
+                            "CustomStrongTypeConnection"]
 
     # Special case for Flow and EagerFlow
     if "Flow" in args.output_file:
