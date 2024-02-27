@@ -9,8 +9,9 @@ from flask_restx import fields
 
 from promptflow._constants import (
     SpanContextFieldName,
-    SpanEventsFieldName,
+    SpanEventFieldName,
     SpanFieldName,
+    SpanLinkFieldName,
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
@@ -64,12 +65,19 @@ resource_model = api.model(
         SpanResourceFieldName.SCHEMA_URL: fields.String,
     },
 )
-events_model = api.model(
-    "Events",
+event_model = api.model(
+    "Event",
     {
-        SpanEventsFieldName.NAME: fields.String(required=True),
-        SpanEventsFieldName.TIMESTAMP: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
-        SpanEventsFieldName.ATTRIBUTES: fields.Raw,
+        SpanEventFieldName.NAME: fields.String(required=True),
+        SpanEventFieldName.TIMESTAMP: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
+        SpanEventFieldName.ATTRIBUTES: fields.Raw,
+    },
+)
+link_model = api.model(
+    "Link",
+    {
+        SpanLinkFieldName.CONTEXT: fields.Nested(context_model, skip_none=True),
+        SpanLinkFieldName.ATTRIBUTES: fields.Raw,
     },
 )
 span_model = api.model(
@@ -85,8 +93,8 @@ span_model = api.model(
         SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model, skip_none=True),
         SpanFieldName.ATTRIBUTES: fields.Raw(required=True),
-        SpanFieldName.EVENTS: fields.List(fields.Nested(events_model, skip_none=True)),
-        SpanFieldName.LINKS: fields.List(fields.String),
+        SpanFieldName.EVENTS: fields.List(fields.Nested(event_model, skip_none=True)),
+        SpanFieldName.LINKS: fields.List(fields.Nested(link_model, skip_none=True)),
         SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
     },
 )

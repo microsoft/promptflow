@@ -142,7 +142,12 @@ class SpanResourceFieldName:
     SCHEMA_URL = "schema_url"
 
 
-class SpanEventsFieldName:
+class SpanEventFieldName:
     NAME = "name"
     TIMESTAMP = "timestamp"
+    ATTRIBUTES = "attributes"
+
+
+class SpanLinkFieldName:
+    CONTEXT = "context"
     ATTRIBUTES = "attributes"

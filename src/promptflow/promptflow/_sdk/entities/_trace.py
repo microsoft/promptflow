@@ -15,7 +15,7 @@ from promptflow._constants import (
     DEFAULT_SPAN_TYPE,
     SpanAttributeFieldName,
     SpanContextFieldName,
-    SpanEventsFieldName,
+    SpanEventFieldName,
     SpanFieldName,
     SpanResourceAttributesFieldName,
     SpanResourceFieldName,
@@ -126,10 +126,10 @@ class Span:
         for pb_event in obj:
             event_dict: dict = json.loads(MessageToJson(pb_event))
             event = {
-                SpanEventsFieldName.NAME: pb_event.name,
-                SpanEventsFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano),
-                SpanEventsFieldName.ATTRIBUTES: flatten_pb_attributes(
-                    event_dict.get(SpanEventsFieldName.ATTRIBUTES, dict())
+                SpanEventFieldName.NAME: pb_event.name,
+                SpanEventFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano),
+                SpanEventFieldName.ATTRIBUTES: flatten_pb_attributes(
+                    event_dict.get(SpanEventFieldName.ATTRIBUTES, dict())
                 ),
             }
             events.append(event)
