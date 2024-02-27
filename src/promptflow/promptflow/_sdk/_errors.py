@@ -2,11 +2,25 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._constants import BULK_RUN_ERRORS
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 
 class SDKError(UserErrorException):
     """SDK base class, target default is CONTROL_PLANE_SDK."""
+
+    def __init__(
+        self,
+        message="",
+        message_format="",
+        target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
+        module=None,
+        **kwargs,
+    ):
+        super().__init__(message=message, message_format=message_format, target=target, module=module, **kwargs)
+
+
+class SDKInternalError(SystemErrorException):
+    """SDK internal error."""
 
     def __init__(
         self,
@@ -115,5 +129,71 @@ class RunOperationError(SDKError):
 
 class FlowOperationError(SDKError):
     """Exception raised when flow operation failed."""
+
+    pass
+
+
+class ExperimentExistsError(SDKError):
+    """Exception raised when experiment already exists."""
+
+    pass
+
+
+class ExperimentNotFoundError(SDKError):
+    """Exception raised if experiment cannot be found."""
+
+    pass
+
+
+class MultipleExperimentTemplateError(SDKError):
+    """Exception raised if multiple experiment template yaml found."""
+
+    pass
+
+
+class NoExperimentTemplateError(SDKError):
+    """Exception raised if no experiment template yaml found."""
+
+    pass
+
+
+class ExperimentValidationError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ExperimentValueError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ExperimentHasCycle(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class DownloadInternalError(SDKInternalError):
+    """Exception raised if download internal error."""
+
+    pass
+
+
+class ExperimentNodeRunFailedError(SDKError):
+    """Orchestrator raised if node run failed."""
+
+    pass
+
+
+class ExperimentNodeRunNotFoundError(SDKError):
+    """ExpNodeRun raised if node run cannot be found."""
+
+    pass
+
+
+class ExperimentCommandRunError(SDKError):
+    """Exception raised if experiment validation failed."""
 
     pass

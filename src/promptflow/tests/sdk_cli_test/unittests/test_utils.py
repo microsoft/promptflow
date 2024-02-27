@@ -3,19 +3,24 @@
 # ---------------------------------------------------------
 
 import argparse
+import datetime
+import hashlib
 import importlib
+import json
 import os
 import shutil
 import sys
 import tempfile
 import threading
+import time
+import uuid
 from pathlib import Path
 from unittest.mock import patch
-import datetime
 
 import mock
 import pandas as pd
 import pytest
+from requests import Response
 
 from promptflow._cli._params import AppendToDictAction
 from promptflow._cli._utils import (
@@ -23,7 +28,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._constants import PF_VERSION_CHECK
+from promptflow._constants import LAST_CHECK_TIME, PF_VERSION_CHECK
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_HOME_DIR_ENV_VAR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
@@ -36,9 +41,13 @@ from promptflow._sdk._utils import (
     refresh_connections_dir,
     resolve_connections_environment_variable_reference,
     snake_to_camel,
+    get_mac_address,
+    gen_uuid_by_compute_info,
+    get_system_info,
 )
 from promptflow._utils.load_data import load_data
-from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version
+from promptflow._utils.retry_utils import http_retry_wrapper, retry
+from promptflow._utils.version_hint_utils import check_latest_version
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -202,18 +211,32 @@ class TestUtils:
         for thread in threads:
             thread.join()
 
-    @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
-    def test_concurrent_hint_for_update(self, concurrent_count):
-        from concurrent.futures import ThreadPoolExecutor
-        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
-            mock_datetime.datetime.now.return_value = datetime.datetime.now()
-            mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
-            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            hint_for_update()
-            with ThreadPoolExecutor(max_workers=concurrent_count) as pool:
-                pool.submit(check_latest_version)
+    def test_concurrent_hint_for_update(self):
+        def mock_check_latest_version():
+            time.sleep(5)
+            check_latest_version()
 
+        with patch("promptflow._utils.version_hint_utils.datetime") as mock_datetime, patch(
+            "promptflow._utils.version_hint_utils.check_latest_version", side_effect=mock_check_latest_version
+        ):
+            from promptflow._sdk._telemetry import monitor_operation
+
+            class HintForUpdate:
+                @monitor_operation(activity_name="pf.flows.test")
+                def hint_func(self):
+                    return
+
+            current_time = datetime.datetime.now()
+            mock_datetime.datetime.now.return_value = current_time
+            mock_datetime.datetime.strptime.return_value = current_time - datetime.timedelta(days=8)
+            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
+            HintForUpdate().hint_func()
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
+            with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
+                cached_versions = json.load(f)
+            # since mock_check_latest_version is a demon thread, it will exit when main thread complete, so
+            # LAST_CHECK_TIME won't be updated since sleep 5s
+            assert LAST_CHECK_TIME not in cached_versions or cached_versions[LAST_CHECK_TIME] != str(current_time)
 
     @pytest.mark.parametrize(
         "data_path",
@@ -372,3 +395,94 @@ class TestCLIUtils:
         terminal_width = 120
         res = _calculate_column_widths(df, terminal_width)
         assert res == [4, 23, 13, 15, 15, 15]
+
+    def test_calculate_column_widths_edge_case(self) -> None:
+        nan = float("nan")
+        # test case comes from examples/flow/evaluation/eval-qna-non-rag
+        data = [
+            {
+                "inputs.groundtruth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
+                "inputs.answer": "There are various tents available in the market that offer different levels of waterproofing. However, one tent that is often highly regarded for its waterproofing capabilities is the MSR Hubba Hubba NX tent. It features a durable rainfly and a bathtub-style floor construction, both of which contribute to its excellent water resistance. It is always recommended to read product specifications and customer reviews to ensure you find a tent that meets your specific waterproofing requirements.",  # noqa: E501
+                "inputs.context": "{${data.context}}",
+                "inputs.question": "Which tent is the most waterproof?",
+                "inputs.metrics": "gpt_groundedness,f1_score",
+                "inputs.line_number": 0,
+                "inputs.ground_truth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
+                "outputs.line_number": 0,
+                "outputs.ada_similarity": nan,
+                "outputs.f1_score": 0.049999999999999996,
+                "outputs.gpt_coherence": nan,
+                "outputs.gpt_fluency": nan,
+                "outputs.gpt_groundedness": 3.0,
+                "outputs.gpt_relevance": nan,
+                "outputs.gpt_similarity": nan,
+            },
+            {
+                "inputs.groundtruth": "The Adventure Dining Table has a higher weight capacity than all of the other camping tables mentioned",  # noqa: E501
+                "inputs.answer": "There are various camping tables available that can hold different amounts of weight. Some heavy-duty camping tables can hold up to 300 pounds or more, while others may have lower weight capacities. It's important to check the specifications of each table before purchasing to ensure it can support the weight you require.",  # noqa: E501
+                "inputs.context": "{${data.context}}",
+                "inputs.question": "Which tent is the most waterproof?",
+                "inputs.metrics": "gpt_groundedness,f1_score",
+                "inputs.ground_truth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
+                "outputs.line_number": 1,
+                "outputs.ada_similarity": nan,
+                "outputs.f1_score": 0.0,
+                "outputs.gpt_coherence": nan,
+                "outputs.gpt_fluency": nan,
+                "outputs.gpt_groundedness": 3.0,
+                "outputs.gpt_relevance": nan,
+                "outputs.gpt_similarity": nan,
+            },
+        ]
+        df = pd.DataFrame(data)
+        terminal_width = 74  # GitHub Actions scenario
+        res = _calculate_column_widths(df, terminal_width)
+        # the column width should at least 1 to avoid tabulate error
+        assert res == [4, 1, 13, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+
+@pytest.mark.unittest
+class TestRetryUtils:
+    def test_retry(self):
+        counter = 0
+
+        class A:
+            def mock_f(self):
+                return 1
+
+        class B(A):
+            @retry(Exception, tries=2, delay=1, backoff=1)
+            def mock_f(self):
+                nonlocal counter
+                counter += 1
+                raise Exception("mock exception")
+
+        with pytest.raises(Exception):
+            B().mock_f()
+        assert counter == 2
+
+    def test_http_retry(self):
+        counter = 0
+
+        def mock_http_request():
+            nonlocal counter
+            counter += 1
+            resp = Response()
+            resp.status_code = 429
+            return resp
+
+        http_retry_wrapper(mock_http_request, tries=2, delay=1, backoff=1)()
+        assert counter == 2
+
+    def test_gen_uuid_by_compute_info(self):
+        uuid1 = gen_uuid_by_compute_info()
+        uuid2 = gen_uuid_by_compute_info()
+        assert uuid1 == uuid2
+
+        mac_address = get_mac_address()
+        assert mac_address
+
+        host_name, system, machine = get_system_info()
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        assert str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash)) == gen_uuid_by_compute_info()

@@ -10,9 +10,10 @@ Connections used in this flow:
 
 ## Prerequisites
 
-Install promptflow sdk and other dependencies:
+Install promptflow sdk and other dependencies, create connection for OpenAI GPT-4V tool to use:
 ```bash
 pip install -r requirements.txt
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> name=aoai_gpt4v_connection api_version=2023-07-01-preview
 ```
 
 ## Run flow

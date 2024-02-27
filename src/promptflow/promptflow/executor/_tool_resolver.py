@@ -5,17 +5,18 @@
 import copy
 import inspect
 import types
-import yaml
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
@@ -25,7 +26,6 @@ from promptflow.executor._errors import (
     EmptyLLMApiMapping,
     InvalidConnectionType,
     InvalidCustomLLMTool,
-    InvalidSource,
     NodeInputValidationError,
     ResolveToolError,
     ValueTypeUnresolved,
@@ -40,10 +40,12 @@ class ResolvedTool:
     init_args: dict
 
 
-class ToolResolver():
-
+class ToolResolver:
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
+        self,
+        working_dir: Path,
+        connections: Optional[dict] = None,
+        package_tool_keys: Optional[List[str]] = None,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -56,10 +58,7 @@ class ToolResolver():
 
     @classmethod
     def start_resolver(
-        cls,
-        working_dir: Path,
-        connections: Optional[dict] = None,
-        package_tool_keys: Optional[List[str]] = None
+        cls, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
     ):
         resolver = cls(working_dir, connections, package_tool_keys)
         resolver._activate_in_context(force=True)
@@ -107,7 +106,7 @@ class ToolResolver():
             )
         file = self._working_dir / assistant_definition_path
         with open(file, "r", encoding="utf-8") as file:
-            assistant_definition = yaml.safe_load(file)
+            assistant_definition = load_yaml(file)
         return AssistantDefinition.deserialize(assistant_definition)
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
@@ -138,8 +137,9 @@ class ToolResolver():
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif value_type == ValueType.ASSISTANT_DEFINITION:
                 try:
@@ -149,8 +149,9 @@ class ToolResolver():
                     raise NodeInputValidationError(
                         message_format="Failed to load assistant definition from input '{key}': "
                         "{error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif isinstance(value_type, ValueType):
                 try:
@@ -159,8 +160,11 @@ class ToolResolver():
                     raise NodeInputValidationError(
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
                         "type {value_type}.",
-                        key=k, node_name=node.name, value=v.value, value_type=value_type.value,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        node_name=node.name,
+                        value=v.value,
+                        value_type=value_type.value,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
@@ -168,8 +172,9 @@ class ToolResolver():
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.
@@ -260,25 +265,48 @@ class ToolResolver():
             if k in node_inputs:
                 del node_inputs[k]
 
-    def _get_node_connection(self, node: Node):
+    def _get_llm_node_connection(self, node: Node):
         connection = self._connection_manager.get(node.connection)
         if connection is None:
             raise ConnectionNotFound(
-                message=f"Connection {node.connection!r} not found, available connection keys "
-                f"{self._connection_manager._connections.keys()}.",
+                message_format="Connection of LLM node '{node_name}' is not found.",
+                node_name=node.name,
                 target=ErrorTarget.EXECUTOR,
             )
         return connection
 
+    @staticmethod
+    def _resolve_llm_connection_with_provider(connection):
+        if not connection_type_to_api_mapping:
+            raise EmptyLLMApiMapping()
+        # If provider is not specified, try to resolve it from connection type
+        connection_type = type(connection).__name__
+        if connection_type not in connection_type_to_api_mapping:
+            from promptflow.connections import ServerlessConnection, OpenAIConnection
+            # This is a fallback for the case that ServerlessConnection related tool is not ready
+            # in legacy versions, then we can directly use OpenAIConnection.
+            if isinstance(connection, ServerlessConnection):
+                connection = OpenAIConnection(
+                    api_key=connection.api_key,
+                    base_url=connection.api_base,
+                    name=connection.name,
+                )
+                connection_type = "OpenAIConnection"
+            else:
+                raise InvalidConnectionType(
+                    message_format="Connection type {conn_type} is not supported for LLM.",
+                    conn_type=connection_type,
+                )
+        provider = connection_type_to_api_mapping[connection_type]
+        return connection, provider
+
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        connection = self._get_node_connection(node)
-        if not node.provider:
-            if not connection_type_to_api_mapping:
-                raise EmptyLLMApiMapping()
-            # If provider is not specified, try to resolve it from connection type
-            node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
+        connection, provider = self._resolve_llm_connection_with_provider(self._get_llm_node_connection(node))
+        # Always set the provider according to the connection type
+        # to make sure the invoking logic is consistent between the connection and the tool.
+        node.provider = provider
         tool: Tool = self._tool_loader.load_tool_for_llm_node(node)
-        key, connection = self._resolve_llm_connection_to_inputs(node, tool)
+        key, connection = self._resolve_llm_connection_to_inputs(node, tool, connection)
         updated_node = copy.deepcopy(node)
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
         if convert_input_types:
@@ -300,8 +328,10 @@ class ToolResolver():
         api_func = partial(api_func, **{prompt_tpl_param_name: prompt_tpl}) if prompt_tpl_param_name else api_func
         return ResolvedTool(updated_node, tool, api_func, init_args)
 
-    def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool) -> Node:
-        connection = self._get_node_connection(node)
+    def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool, connection=None) -> Node:
+        # No need to get connection if it is already provided
+        # TODO: Refine the code here since the connection would always be provided.
+        connection = connection or self._get_llm_node_connection(node)
         for key, input in tool.inputs.items():
             if ConnectionType.is_connection_class_name(input.type[0]):
                 if type(connection).__name__ not in input.type:

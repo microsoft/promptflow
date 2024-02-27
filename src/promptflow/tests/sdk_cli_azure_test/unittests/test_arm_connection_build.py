@@ -30,6 +30,7 @@ def test_build_azure_openai_connection_from_rest_object():
                 "azureml.flow.module": "promptflow.connections",
                 "apiType": "azure",
                 "ApiVersion": "2023-07-01-preview",
+                "ResourceId": "mock_id",
             },
         },
     }
@@ -41,6 +42,7 @@ def test_build_azure_openai_connection_from_rest_object():
             "api_key": "***",
             "api_type": "azure",
             "api_version": "2023-07-01-preview",
+            "resource_id": "mock_id",
         },
     }
     build_from_data_and_assert(data, expected)
@@ -212,3 +214,28 @@ def test_build_connection_unknown_category():
     with pytest.raises(Exception) as e:
         build_from_data_and_assert(data, {})
     assert "Unknown connection mock category Unknown" in str(e.value)
+
+
+@pytest.mark.unittest
+def test_build_serverless_category_connection_from_rest_object():
+    data = {
+        "id": "mock_id",
+        "name": "test_serverless_connection",
+        "type": "Microsoft.MachineLearningServices/workspaces/connections",
+        "properties": {
+            "authType": "ApiKey",
+            "credentials": {"key": "***"},
+            "group": "AzureAI",
+            "category": "Serverless",
+            "expiryTime": None,
+            "target": "mock_base",
+            "sharedUserList": [],
+            "metadata": {},
+        },
+    }
+    expected = {
+        "type": "ServerlessConnection",
+        "module": "promptflow.connections",
+        "value": {"api_key": "***", "api_base": "mock_base"},
+    }
+    build_from_data_and_assert(data, expected)

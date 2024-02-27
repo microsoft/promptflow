@@ -233,6 +233,20 @@ class TestTelemetry:
                 # Perform some activity
                 pass
 
+        PFAzureClient(
+            ml_client=pf._ml_client,
+            subscription_id=pf._ml_client.subscription_id,
+            resource_group_name=pf._ml_client.resource_group_name,
+            workspace_name=pf._ml_client.workspace_name,
+            user_agent="a/1.0.0",
+        )
+        user_agent = ClientUserAgentUtil.get_user_agent()
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "a"}
+
+        context = OperationContext().get_instance()
+        context.user_agent = ""
+
     def test_inner_function_call(self, pf, runtime: str, randstr: Callable[[str], str]):
         request_ids = set()
         first_sdk_calls = []
@@ -328,13 +342,17 @@ class TestTelemetry:
 
         def assert_node_run(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.node_test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            assert record.msg.startswith("pf.flows.node_test"), f"'pf.flows.node_test' not found in {record.msg!r}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            ), f"'pf.flows.node_test' not found in {record.custom_dimensions['activity_name']}"
 
         def assert_flow_test(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.test"
+            assert record.msg.startswith("pf.flows.test"), f"'pf.flows.test' not found in {record.msg!r}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.test"
+            ), f"'pf.flows.test' not found in {record.custom_dimensions['activity_name']}"
 
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)

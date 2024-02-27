@@ -12,10 +12,9 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-import yaml
-
 from promptflow._core._errors import (
     InputTypeMismatch,
+    InvalidSource,
     MissingRequiredInputs,
     PackageToolNotFoundError,
     ToolLoadError,
@@ -40,7 +39,9 @@ from promptflow._utils.tool_utils import (
     load_function_from_function_path,
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
+    assign_tool_input_index_for_ux_order_if_needed,
 )
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -53,7 +54,11 @@ def collect_tools_from_directory(base_dir) -> dict:
     tools = {}
     for f in Path(base_dir).glob("**/*.yaml"):
         with open(f, "r") as f:
-            tools_in_file = yaml.safe_load(f)
+            # The feature that automatically assigns indexes to inputs based on their order in the tool YAML,
+            # relying on the feature of ruamel.yaml that maintains key order when load YAML file.
+            # For more information on ruamel.yaml's feature, please
+            # visit https://yaml.readthedocs.io/en/latest/overview/#overview.
+            tools_in_file = load_yaml(f)
             for identifier, tool in tools_in_file.items():
                 tools[identifier] = tool
     return tools
@@ -94,8 +99,9 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.metadata['Name']
+                tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
+                assign_tool_input_index_for_ux_order_if_needed(tool)
                 all_package_tools[identifier] = tool
         except Exception as e:
             msg = (
@@ -124,8 +130,9 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     continue
                 m = tool["module"]
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.metadata['Name']
+                tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
+                assign_tool_input_index_for_ux_order_if_needed(tool)
                 all_package_tools[identifier] = tool
 
                 # Get custom strong type connection definition
@@ -141,11 +148,11 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     for cls in custom_strong_type_connections_classes:
                         identifier = f"{cls.__module__}.{cls.__name__}"
                         connection_spec = generate_custom_strong_type_connection_spec(
-                            cls, entry_point.dist.metadata['Name'], entry_point.dist.version
+                            cls, entry_point.dist.metadata["Name"], entry_point.dist.version
                         )
                         all_package_connection_specs[identifier] = connection_spec
                         all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
-                            cls, connection_spec, entry_point.dist.metadata['Name'], entry_point.dist.version
+                            cls, connection_spec, entry_point.dist.metadata["Name"], entry_point.dist.version
                         )
         except Exception as e:
             msg = (
@@ -422,8 +429,19 @@ class ToolLoader:
 
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
         if node.source.path is None:
-            raise UserErrorException(f"Node {node.name} does not have source path defined.")
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load tool failed for node '{node_name}'. The source path is 'None'.",
+                node_name=node.name,
+            )
         path = node.source.path
+        if not (self._working_dir / path).is_file():
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load tool failed for node '{node_name}'. Tool file '{source_path}' can not be found.",
+                source_path=path,
+                node_name=node.name,
+            )
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")

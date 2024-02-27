@@ -25,19 +25,16 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
 from promptflow._sdk._constants import (
-    BASE_PATH_CONTEXT_KEY,
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
-    FLOW_TOOLS_JSON,
     MAX_LIST_CLI_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     WORKSPACE_LINKED_DATASTORE_NAME,
     FlowType,
     ListViewType,
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_from_dict
+from promptflow._sdk._utils import PromptflowIgnoreFile
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
@@ -55,8 +52,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """FlowOperations that can manage flows.
 
     You should not instantiate this class directly. Instead, you should
-    create a :class:`~promptflow.azure.PFClient` instance that instantiates it for you and
-    attaches it as an attribute.
+    create a :class:`~promptflow.azure.PFClient` instance and this operation is available as the instance's attribute.
     """
 
     _FLOW_RESOURCE_PATTERN = re.compile(r"azureml:.*?/workspaces/(?P<experiment_id>.*?)/flows/(?P<flow_id>.*?)$")
@@ -94,11 +90,24 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return endpoint + "index/v1.0" + self._service_caller._common_azure_url_pattern
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
-    def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
-        """Create a flow to remote from local source.
+    def create_or_update(
+        self, flow: Union[str, Path, Flow], display_name: str = None, type: str = None, **kwargs
+    ) -> Flow:
+        """Create a flow to remote from local source, or update the metadata of an existing flow.
 
-        :param flow: The source of the flow to create.
-        :type flow: Union[str, Path]
+        .. admonition::  Update a flow
+
+            To update an existing flow, you can only update the display name, description, and tags of the flow.
+            The flow name is a guid that can be found from 2 ways:
+
+            - After creating a flow to azure, it can be found in the printed message in "name" attribute.
+            - Open a flow in azure portal, the guid is in the url. e.g. ``https://ml.azure.com/prompts/flow/<workspace-id>/<flow-name>/xxx``
+
+
+        :param flow: The source of the flow to create or update. When creating a flow, fill with the local flow path.
+            When updating a flow, fill with the flow object with a valid flow name, see above docstring about how to
+            find a flow name on azure.
+        :type flow: Union[str, Path, ~promptflow.azure.entities.Flow]
         :param display_name: The display name of the flow to create. Default to be flow folder name + timestamp
             if not specified. e.g. "web-classification-10-27-2023-14-19-10"
         :type display_name: str
@@ -109,15 +118,26 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :type description: str
         :param tags: The tags of the flow to create. Default to be the tags in flow yaml file.
         :type tags: Dict[str, str]
-        """
+        """  # noqa: E501
+        # if the flow is a flow object with name specified, try to update the flow
+        if isinstance(flow, Flow):
+            if flow.name:
+                logger.info(f"Updating azure flow {flow.name!r}.")
+                return self._update_azure_flow(flow=flow, display_name=display_name, **kwargs)
+            else:
+                raise FlowOperationError(
+                    "Flow name is required to update a flow. please refer to 'pfazure flow update --help' "
+                    "to learn how to get the flow name on azure"
+                )
+
+        logger.info(f"Creating flow from local source {flow!r}.")
         # validate the parameters
+        flow = Path(flow).resolve()
         azure_flow, flow_display_name, flow_type, kwargs = FlowOperations._validate_flow_creation_parameters(
             flow, display_name, type, **kwargs
         )
         # upload to file share
-        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(
-            flow=azure_flow, flow_display_name=flow_display_name
-        )
+        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(flow=azure_flow)
         if not file_share_flow_path:
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
@@ -135,8 +155,55 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         return result_flow
 
+    def _update_azure_flow(self, flow: Flow, display_name, **kwargs):
+        """Update an existing flow in azure."""
+        logger.info("Validating flow update parameters.")
+
+        display_name = display_name or flow.display_name
+        if not isinstance(display_name, str) and display_name is not None:
+            logger.warn(f"Display name must be a string, got {display_name!r}.")
+            display_name = None
+
+        description = kwargs.get("description", flow.description)
+        if not isinstance(description, str) and description is not None:
+            logger.warn(f"Description must be a string, got {description!r}.")
+            description = None
+
+        tags = kwargs.get("tags", flow.tags)
+        if not isinstance(tags, dict) and tags is not None:
+            logger.warn(f"Tags must be a dictionary, got {tags!r}.")
+            tags = None
+
+        body = {
+            "flow_name": display_name,
+            "description": description,
+            "tags": tags,
+        }
+        body = {k: v for k, v in body.items() if v is not None}
+        logger.debug(f"Updating flow {flow.name!r} with data {body}.")
+
+        try:
+            self._service_caller.update_flow(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_id=flow.name,
+                body=body,
+            )
+        except Exception as e:
+            raise FlowOperationError(
+                f"Failed to update azure flow {flow.name!r} due to: {str(e)}. If the flow is not found in azure, "
+                f"please make sure the flow name is correct."
+            ) from e
+
+        updated_flow = self.get(flow.name)
+        flow_dict = updated_flow._to_dict()
+        logger.info(f"Flow updated successfully:\n{json.dumps(flow_dict, indent=4)}")
+
+        return updated_flow
+
     @staticmethod
-    def _validate_flow_creation_parameters(source, flow_display_name, flow_type, **kwargs):
+    def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
         # validate the source folder
         logger.info("Validating flow source.")
@@ -176,33 +243,21 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_schema(source, display_name=None, type=None, **kwargs):
         """Validate the flow schema."""
-        from marshmallow import ValidationError
-
         from promptflow._sdk.entities._flow import ProtectedFlow
-        from promptflow._sdk.schemas._flow import FlowSchema
 
         params_override = copy.deepcopy(kwargs)
-        if display_name:
+        if display_name is not None:
             params_override["display_name"] = display_name
-        if type:
+        if type is not None:
             params_override["type"] = type
 
         flow_entity = ProtectedFlow.load(source=source, params_override=params_override)
+        flow_entity._validate(raise_error=True)  # raise error if validation failed
         flow_dict = flow_entity._dump_for_validation()
-        try:
-            load_from_dict(
-                schema=FlowSchema,
-                data=flow_dict,
-                context={BASE_PATH_CONTEXT_KEY: Path(source)},
-            )
-        except ValidationError as e:
-            raise UserErrorException(f"Failed to validate flow schema due to: {str(e)}") from e
-
         return flow_dict
 
-    def _resolve_flow_code_and_upload_to_file_share(
-        self, flow: Flow, flow_display_name: str, ignore_tools_json=False
-    ) -> str:
+    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, ignore_tools_json=False) -> str:
+        remote_file_share_folder_name = f"{Path(flow.code).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 
@@ -240,9 +295,9 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
             # check if the file share directory exists
             logger.debug("Checking if the file share directory exists.")
-            if storage_client._check_file_share_directory_exist(flow_display_name):
+            if storage_client._check_file_share_directory_exist(remote_file_share_folder_name):
                 raise FlowOperationError(
-                    f"Remote flow folder {flow_display_name!r} already exists under "
+                    f"Remote flow folder {remote_file_share_folder_name!r} already exists under "
                     f"'{storage_client.file_share_prefix}'. Please change the flow folder name and try again."
                 )
 
@@ -250,7 +305,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 logger.info("Uploading flow directory to file share.")
                 storage_client.upload_dir(
                     source=code.path,
-                    dest=flow_display_name,
+                    dest=remote_file_share_folder_name,
                     msg="test",
                     ignore_file=code._ignore_file,
                     show_progress=False,
@@ -258,7 +313,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             except Exception as e:
                 raise FlowOperationError(f"Failed to upload flow to file share due to: {str(e)}.") from e
 
-            file_share_flow_path = f"{storage_client.file_share_prefix}/{flow_display_name}"
+            file_share_flow_path = f"{storage_client.file_share_prefix}/{remote_file_share_folder_name}"
             logger.info(f"Successfully uploaded flow to file share path {file_share_flow_path!r}.")
         return file_share_flow_path
 
@@ -329,8 +384,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :type list_view_type: ListViewType
         :param include_others: Whether to list flows owned by other users in the remote workspace, defaults to False
         :type include_others: bool
-        :return: The list of runs.
-        :rtype: List[~promptflow.azure. entities.Run]
+        :return: The list of flows.
+        :rtype: List[~promptflow.azure.entities.Flow]
         """
         if not isinstance(max_results, int) or max_results < 1:
             raise FlowOperationError(f"'max_results' must be a positive integer, got {max_results!r}")
@@ -425,11 +480,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-
-            # TODO(2567532): backend does not fully support generate flow.tools.json from blob storage yet
-            if not (Path(code.path) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON).exists():
-                generate_flow_tools_json(code.path)
-            # ignore flow.tools.json if needed (e.g. for flow run scenario)
+            # TODO(2917889): generate flow meta for eager flow
             if ignore_tools_json:
                 ignore_file = code._ignore_file
                 if isinstance(ignore_file, PromptflowIgnoreFile):

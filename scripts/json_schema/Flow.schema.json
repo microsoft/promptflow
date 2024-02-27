@@ -1,0 +1,154 @@
+{
+    "type": "object",
+    "oneOf": [
+        {
+            "properties": {
+                "additional_includes": {
+                    "title": "additional_includes",
+                    "type": "array",
+                    "items": {
+                        "title": "additional_includes",
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "display_name": {
+                    "title": "display_name",
+                    "type": "string"
+                },
+                "environment": {
+                    "title": "environment",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "inputs": {
+                    "title": "inputs",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlowInputSchema"
+                    }
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "node_variants": {
+                    "title": "node_variants",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "node_variants",
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "nodes": {
+                    "title": "nodes",
+                    "type": "array",
+                    "items": {
+                        "title": "nodes",
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "outputs": {
+                    "title": "outputs",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlowOutputSchema"
+                    }
+                },
+                "$schema": {
+                    "title": "$schema",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "tags": {
+                    "title": "tags",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "tags",
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "title": "type",
+                    "type": "string",
+                    "enum": [
+                        "standard",
+                        "evaluation",
+                        "chat"
+                    ],
+                    "enumNames": []
+                }
+            },
+            "type": "object",
+            "additionalProperties": false
+        },
+        {
+            "properties": {
+                "additional_includes": {
+                    "title": "additional_includes",
+                    "type": "array",
+                    "items": {
+                        "title": "additional_includes",
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "display_name": {
+                    "title": "display_name",
+                    "type": "string"
+                },
+                "entry": {
+                    "title": "entry",
+                    "type": "string"
+                },
+                "environment": {
+                    "title": "environment",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "$schema": {
+                    "title": "$schema",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "tags": {
+                    "title": "tags",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "tags",
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "title": "type",
+                    "type": "string",
+                    "enum": [
+                        "standard",
+                        "evaluation",
+                        "chat"
+                    ],
+                    "enumNames": []
+                }
+            },
+            "type": "object",
+            "required": [
+                "entry"
+            ],
+            "additionalProperties": false
+        }
+    ]
+}

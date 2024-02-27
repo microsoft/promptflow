@@ -17,13 +17,14 @@ from promptflow._cli._params import (
     add_param_output_format,
     add_param_run_name,
     add_param_set,
+    add_param_yes,
     add_parser_build,
     base_params,
 )
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     activate_action,
-    exception_handler,
+    confirm,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
@@ -32,6 +33,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_t
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
+from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
 from promptflow.exceptions import UserErrorException
 
@@ -50,6 +52,7 @@ def add_run_parser(subparsers):
     add_run_visualize(subparsers)
     add_run_archive(subparsers)
     add_run_restore(subparsers)
+    add_run_delete(subparsers)
     add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
@@ -72,7 +75,10 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         help="Indicates whether to stream the run's logs to the console.",
     )
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
-        "--flow", type=str, help="Local path to the flow directory."
+        "--flow",
+        type=str,
+        help="Local path to the flow directory."
+        "If --file is provided, this path should be relative path to the file.",
     )
     add_param_variant = lambda parser: parser.add_argument(  # noqa: E731
         "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
@@ -118,6 +124,8 @@ Examples:
 
 # Create a run with YAML file:
 pf run create -f <yaml-filename>
+# Create a run with YAML file and replace another data in the YAML file:
+pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-file>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
 # Create a run from an existing run record folder
@@ -126,7 +134,11 @@ pf run create --source <path-to-run-folder>
 
     # data for pf has different help doc than pfazure
     def add_param_data(parser):
-        parser.add_argument("--data", type=str, help="Local path to the data file.")
+        parser.add_argument(
+            "--data",
+            type=str,
+            help="Local path to the data file." "If --file is provided, this path should be relative path to the file.",
+        )
 
     def add_param_source(parser):
         parser.add_argument("--source", type=str, help="Local path to the existing run record folder.")
@@ -330,6 +342,30 @@ pf run visualize --names "<name1>, <name2>"
     )
 
 
+def add_run_delete(subparsers):
+    epilog = """
+Example:
+
+# Caution: pf run delete is irreversible.
+# This operation will delete the run permanently from your local disk.
+# Both run entity and output data will be deleted.
+
+# Delete a run:
+pf run delete -n "<name>"
+"""
+    add_params = [add_param_run_name, add_param_yes] + base_params
+
+    activate_action(
+        name="delete",
+        description=None,
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Delete a run irreversible.",
+        action_param_name="sub_action",
+    )
+
+
 def add_run_archive(subparsers):
     epilog = """
 Example:
@@ -399,6 +435,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         restore_run(name=args.name)
     elif args.sub_action == "export":
         export_run(args)
+    elif args.sub_action == "delete":
+        delete_run(args.name, args.yes)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -425,7 +463,6 @@ def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], O
     return display_name, description, tags
 
 
-@exception_handler("Update run")
 def update_run(name: str, params: List[Dict[str, str]]) -> None:
     # params_override can have multiple items when user specifies with
     # `--set key1=value1 key2=value`
@@ -441,14 +478,12 @@ def update_run(name: str, params: List[Dict[str, str]]) -> None:
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Stream run")
 def stream_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.stream(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("List runs")
 def list_runs(
     max_results: int,
     all_results: bool,
@@ -465,47 +500,46 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     # hide additional info and debug info in run list for better user experience
-    json_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
+    parser = lambda run: run._to_dict(exclude_additional_info=True, exclude_debug_info=True)  # noqa: E731
+    json_list = safe_parse_object_list(
+        obj_list=runs,
+        parser=parser,
+        message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
+    )
     _output_result_list_with_format(result_list=json_list, output_format=output)
     return runs
 
 
-@exception_handler("Show run")
 def show_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.get(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Show run details")
 def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
     details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
     pretty_print_dataframe_as_table(details)
 
 
-@exception_handler("Show run metrics")
 def show_run_metrics(name: str) -> None:
     pf_client = PFClient()
     metrics = pf_client.runs.get_metrics(name=name)
     print(json.dumps(metrics, indent=4))
 
 
-@exception_handler("Visualize run")
 def visualize_run(names: str, html_path: Optional[str] = None) -> None:
     run_names = [name.strip() for name in names.split(",")]
     pf_client = PFClient()
     pf_client.runs.visualize(run_names, html_path=html_path)
 
 
-@exception_handler("Archive run")
 def archive_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.archive(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Restore run")
 def restore_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.restore(name=name)
@@ -523,7 +557,6 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
     return result
 
 
-@exception_handler("Create run")
 def create_run(create_func: Callable, args):
     file = args.file
     flow = args.flow
@@ -590,6 +623,14 @@ def create_run(create_func: Callable, args):
     if stream:
         print("\n")  # change new line to show run info
     print(json.dumps(run._to_dict(), indent=4))
+
+
+def delete_run(name: str, skip_confirm: bool = False) -> None:
+    if confirm("Are you sure to delete run irreversibly?", skip_confirm):
+        pf_client = PFClient()
+        pf_client.runs.delete(name=name)
+    else:
+        print("The delete operation was canceled.")
 
 
 def export_run(args):

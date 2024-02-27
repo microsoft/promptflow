@@ -141,16 +141,22 @@ from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, Ope
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
 FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._sdk.schemas._flow import FlowSchema
+from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
 
 
 if __name__ == "__main__":
-    cls_list = [FlowSchema]
+    cls_list = [FlowSchema, EagerFlowSchema]
+    schema_list = []
     for cls in cls_list:
         target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
         # print(target_schema)
         file_name = cls.__name__
         file_name = file_name.replace("Schema", "")
+        schema_list.append(target_schema["definitions"][cls.__name__])
         print(target_schema)
-        with open((f"{file_name}.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
+    schema = {
+        "type": "object",
+        "oneOf": schema_list
+    }
+    with open((f"Flow.schema.json"), "w") as f:
+        f.write(json.dumps(schema, indent=4))

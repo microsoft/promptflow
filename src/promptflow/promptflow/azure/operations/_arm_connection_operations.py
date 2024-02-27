@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from enum import Enum
 from typing import Any, Dict, Union
 
 import requests
@@ -12,9 +11,12 @@ from azure.ai.ml._scope_dependent_operations import (
     OperationScope,
     _ScopeDependentOperations,
 )
+from azure.core.exceptions import ClientAuthenticationError
 
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+from promptflow.azure._utils.gerneral import get_arm_token
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 GET_CONNECTION_URL = (
@@ -28,11 +30,15 @@ LIST_CONNECTION_URL = (
 FLOW_META_PREFIX = "azureml.flow."
 
 
-class ConnectionCategory(str, Enum):
+class ConnectionCategory:
     AzureOpenAI = "AzureOpenAI"
     CognitiveSearch = "CognitiveSearch"
     CognitiveService = "CognitiveService"
     CustomKeys = "CustomKeys"
+    OpenAI = "OpenAI"
+    Serp = "Serp"
+    Serverless = "Serverless"
+    BingLLMSearch = "BingLLMSearch"
 
 
 def get_case_insensitive_key(d, key, default=None):
@@ -90,7 +96,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         :type model: Type[msrest.serialization.Model]
         """
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.request(method, f"https://{host}{url}", headers=headers)
+        response = http_retry_wrapper(requests.request)(method, f"https://{host}{url}", headers=headers)
         message_format = (
             f"Open url {{url}} failed with status code: {response.status_code}, action: {action}, reason: {{reason}}"
         )
@@ -117,10 +123,14 @@ class ArmConnectionOperations(_ScopeDependentOperations):
     def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
         if type_name:
             return type_name
-        if category == ConnectionCategory.AzureOpenAI:
-            return "AzureOpenAI"
-        if category == ConnectionCategory.CognitiveSearch:
-            return "CognitiveSearch"
+        # Below category has corresponding connection type in PromptFlow, so we can fall back directly.
+        # Note: CustomKeys may store different connection types for now, e.g. openai, serp.
+        if category in [
+            ConnectionCategory.AzureOpenAI,
+            ConnectionCategory.CognitiveSearch,
+            ConnectionCategory.Serverless,
+        ]:
+            return category
         if category == ConnectionCategory.CognitiveService:
             kind = get_case_insensitive_key(metadata, "Kind")
             if kind == "Content Safety":
@@ -178,11 +188,20 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
+            # Note: Resource id is required in some cloud scenario, which is not exposed on sdk/cli entity.
+            resource_id = get_case_insensitive_key(properties.metadata, "ResourceId")
+            if resource_id:
+                value["resource_id"] = resource_id
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
                 "api_key": properties.credentials.key,
                 "api_base": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
+            }
+        elif properties.category == ConnectionCategory.Serverless:
+            value = {
+                "api_key": properties.credentials.key,
+                "api_base": properties.target,
             }
         elif properties.category == ConnectionCategory.CognitiveService:
             value = {
@@ -248,7 +267,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         )
         try:
             rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
-                credential.get_token("https://management.azure.com/.default").token,
+                get_arm_token(credential=credential),
                 url=url,
                 action="listsecrets",
                 method="POST",
@@ -261,6 +280,11 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
+        except ClientAuthenticationError as e:
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+        except Exception as e:
+            raise SystemErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+
         try:
             return cls.build_connection_dict_from_rest_object(name, rest_obj)
         except Exception as e:

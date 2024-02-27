@@ -4,11 +4,14 @@
 import os.path
 
 from dotenv import dotenv_values
-from marshmallow import fields, post_load
+from marshmallow import RAISE, fields, post_load, pre_load
 
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField, UnionField
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+logger = get_cli_sdk_logger()
 
 
 def _resolve_dot_env_file(data, **kwargs):
@@ -27,7 +30,8 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
     """Schema for resources."""
 
     instance_type = fields.Str()
-    idle_time_before_shutdown_minutes = fields.Int()
+    # compute instance name for session usage
+    compute = fields.Str()
 
 
 class RemotePathStr(fields.Str):
@@ -68,6 +72,7 @@ class RemoteFlowStr(fields.Str):
 class RunSchema(YamlFileSchema):
     """Base schema for all run schemas."""
 
+    # TODO(2898455): support directly write path/flow + entry in run.yaml
     # region: common fields
     name = fields.Str()
     display_name = fields.Str(required=False)
@@ -83,7 +88,8 @@ class RunSchema(YamlFileSchema):
     column_mapping = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()
-    resources = NestedField(ResourcesSchema)
+    # raise unknown exception for unknown fields in resources
+    resources = NestedField(ResourcesSchema, unknown=RAISE)
     run = fields.Str()
 
     # region: context
@@ -98,6 +104,20 @@ class RunSchema(YamlFileSchema):
     connections = fields.Dict(keys=fields.Str(), values=fields.Dict(keys=fields.Str()))
     # endregion: context
 
+    # region: command node
+    command = fields.Str(dump_only=True)
+    outputs = fields.Dict(key=fields.Str(), dump_only=True)
+    # endregion: command node
+
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
         return _resolve_dot_env_file(data, **kwargs)
+
+    @pre_load
+    def warning_unknown_fields(self, data, **kwargs):
+        # log warnings for unknown schema fields
+        unknown_fields = set(data) - set(self.fields)
+        if unknown_fields:
+            logger.warning("Run schema validation warnings. Unknown fields found: %s", unknown_fields)
+
+        return data

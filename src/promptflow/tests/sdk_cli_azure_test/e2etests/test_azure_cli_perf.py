@@ -40,7 +40,7 @@ def run_cli_command(cmd, time_limit=3600):
     st = timeit.default_timer()
     with mock.patch.object(ClientUserAgentUtil, "get_user_agent") as get_user_agent_fun, mock.patch(
         "promptflow._sdk._telemetry.activity.log_activity", side_effect=mock_log_activity
-    ), mock.patch("promptflow._cli._pf_azure.entry.log_activity", side_effect=mock_log_activity):
+    ), mock.patch("promptflow._cli._utils.log_activity", side_effect=mock_log_activity):
         # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
         user_agent = ClientUserAgentUtil.get_user_agent()
@@ -73,7 +73,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     "vcr_recording",
 )
 class TestAzureCliPerf:
-    def test_pfazure_run_create(self, operation_scope_args, runtime: str, randstr: Callable[[str], str], time_limit=15):
+    def test_pfazure_run_create(self, operation_scope_args, randstr: Callable[[str], str], time_limit=15):
         name = randstr("name")
         run_cli_command(
             cmd=(
@@ -86,8 +86,6 @@ class TestAzureCliPerf:
                 f"{DATAS_DIR}/print_input_flow.jsonl",
                 "--name",
                 name,
-                "--runtime",
-                runtime,
                 *operation_scope_args,
             ),
             time_limit=time_limit,

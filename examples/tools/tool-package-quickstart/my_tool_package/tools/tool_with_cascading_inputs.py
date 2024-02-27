@@ -1,6 +1,5 @@
 from enum import Enum
 
-from promptflow.entities import InputSetting
 from promptflow import tool
 
 
@@ -9,16 +8,9 @@ class UserType(str, Enum):
     TEACHER = "teacher"
 
 
-@tool(
-    name="My Tool with Enabled By Value",
-    description="This is my tool with enabled by value",
-    input_settings={
-        "teacher_id": InputSetting(enabled_by="user_type", enabled_by_value=[UserType.TEACHER]),
-        "student_id": InputSetting(enabled_by="user_type", enabled_by_value=[UserType.STUDENT]),
-    }
-)
-def my_tool(user_type: UserType, student_id: str = "", teacher_id: str = "") -> str:
-    """This is a dummy function to support enabled by feature.
+@tool
+def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
+    """This is a dummy function to support cascading inputs.
 
     :param user_type: user type, student or teacher.
     :param student_id: student id.

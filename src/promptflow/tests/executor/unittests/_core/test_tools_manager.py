@@ -1,22 +1,34 @@
+import importlib
 import textwrap
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from mock import MagicMock
-from ruamel.yaml import YAML
 
 from promptflow import tool
-from promptflow._core._errors import InputTypeMismatch, PackageToolNotFoundError
+from promptflow._core._errors import InputTypeMismatch, InvalidSource, PackageToolNotFoundError
 from promptflow._core.tools_manager import (
     BuiltinsManager,
     ToolLoader,
     collect_package_tools,
     collect_package_tools_and_connections,
 )
+from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
+
+
+@pytest.fixture
+def mock_entry_point():
+    from ...package_tools.custom_llm_tool_multi_inputs_without_index.list import list_package_tools
+
+    entry_point = MagicMock()
+    entry_point.load.return_value = list_package_tools
+    entry_point.dist.metadata.return_value = "TestCustomLLMTool"
+    entry_point.dist.version.return_value = "0.0.1"
+    return entry_point
 
 
 @pytest.mark.unittest
@@ -124,6 +136,27 @@ class TestToolLoader:
         tool = tool_loader.load_tool_for_node(node)
         assert tool.name == "sample_tool"
 
+    @pytest.mark.parametrize(
+        "source_path, error_message",
+        [
+            (None, "Load tool failed for node 'test'. The source path is 'None'."),
+            ("invalid_file.py", "Load tool failed for node 'test'. Tool file 'invalid_file.py' can not be found."),
+        ],
+    )
+    def test_load_tool_for_script_node_exception(self, source_path, error_message):
+        working_dir = Path(__file__).parent
+        tool_loader = ToolLoader(working_dir=working_dir)
+        node: Node = Node(
+            name="test",
+            tool="sample_tool",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Code, path=source_path),
+        )
+        with pytest.raises(InvalidSource) as ex:
+            tool_loader.load_tool_for_script_node(node)
+        assert str(ex.value) == error_message
+
 
 # This tool is for testing tools_manager.ToolLoader.load_tool_for_script_node
 @tool
@@ -138,9 +171,49 @@ class TestToolsManager:
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
+    def test_collect_package_tools_set_defaut_input_index(self, mocker, mock_entry_point):
+        entry_point = mock_entry_point
+        entry_points = (entry_point,)
+        mocker.patch("promptflow._core.tools_manager._get_entry_points_by_group", return_value=entry_points)
+        mocker.patch.object(importlib, "import_module", return_value=MagicMock())
+        tool = "custom_llm_tool.TestCustomLLMTool.call"
+        package_tools = collect_package_tools([tool])
+        inputs_order = [
+            "connection",
+            "deployment_name",
+            "api",
+            "temperature",
+            "top_p",
+            "max_tokens",
+            "stop",
+            "presence_penalty",
+            "frequency_penalty",
+        ]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]["inputs"][input_name]["ui_hints"]["index"] == index
+
+    def test_collect_package_tools_and_connections_set_defaut_input_index(self, mocker, mock_entry_point):
+        entry_point = mock_entry_point
+        entry_points = (entry_point,)
+        mocker.patch("promptflow._core.tools_manager._get_entry_points_by_group", return_value=entry_points)
+        mocker.patch.object(importlib, "import_module", return_value=MagicMock())
+        tool = "custom_llm_tool.TestCustomLLMTool.call"
+        package_tools, _, _ = collect_package_tools_and_connections([tool])
+        inputs_order = [
+            "connection",
+            "deployment_name",
+            "api",
+            "temperature",
+            "top_p",
+            "max_tokens",
+            "stop",
+            "presence_penalty",
+            "frequency_penalty",
+        ]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]["inputs"][input_name]["ui_hints"]["index"] == index
+
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
-        yaml = YAML()
-        yaml.preserve_quotes = True
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(tools) == 1
@@ -171,7 +244,7 @@ class TestToolsManager:
             "configs": {"api_base": "This is my first connection."},
             "secrets": {"api_key": "to_replace_with_api_key"},
         }
-        loaded_yaml = yaml.load(templates["my_tool_package.connections.MyFirstConnection"])
+        loaded_yaml = load_yaml_string(templates["my_tool_package.connections.MyFirstConnection"])
         assert loaded_yaml == expected_template
 
         keys = ["my_tool_package.tools.my_tool_with_custom_strong_type_connection.my_tool"]

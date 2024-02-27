@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import logging
 import os.path
-import uuid
 from itertools import product
 from os import PathLike
 from pathlib import Path
@@ -12,13 +11,19 @@ from typing import Optional, Union
 import pydash
 
 from promptflow._sdk._constants import (
+    DEFAULT_ENCODING,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
     ConnectionProvider,
 )
-from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
+from promptflow._sdk._utils import (
+    call_from_extension,
+    read_write_by_user,
+    gen_uuid_by_compute_info,
+)
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = get_cli_sdk_logger()
@@ -37,7 +42,6 @@ class InvalidConfigValue(ValidationException):
 
 
 class Configuration(object):
-
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
     COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
@@ -45,6 +49,7 @@ class Configuration(object):
     CONNECTION_PROVIDER = "connection.provider"
     RUN_OUTPUT_PATH = "run.output_path"
     USER_AGENT = "user_agent"
+    ENABLE_INTERNAL_FEATURES = "enable_internal_features"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -52,8 +57,8 @@ class Configuration(object):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
             self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
-            with open(self.CONFIG_PATH, "w") as f:
-                f.write(dump_yaml({}))
+            with open(self.CONFIG_PATH, "w", encoding=DEFAULT_ENCODING) as f:
+                dump_yaml({}, f)
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
             self._config = {}
@@ -78,8 +83,8 @@ class Configuration(object):
         """Store config in file to avoid concurrent write."""
         self._validate(key, value)
         pydash.set_(self._config, key, value)
-        with open(self.CONFIG_PATH, "w") as f:
-            f.write(dump_yaml(self._config))
+        with open(self.CONFIG_PATH, "w", encoding=DEFAULT_ENCODING) as f:
+            dump_yaml(self._config, f)
 
     def get_config(self, key):
         try:
@@ -113,7 +118,6 @@ class Configuration(object):
         if path.is_file():
             found_path = path
         else:
-
             # Based on priority
             # Look in config dirs like .azureml or plain directory
             # with None
@@ -189,13 +193,13 @@ class Configuration(object):
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""
-        user_id = self.get_config(key=self.INSTALLATION_ID)
-        if user_id:
-            return user_id
-        else:
-            user_id = str(uuid.uuid4())
-            self.set_config(key=self.INSTALLATION_ID, value=user_id)
-            return user_id
+        installation_id = self.get_config(key=self.INSTALLATION_ID)
+        if installation_id:
+            return installation_id
+
+        installation_id = gen_uuid_by_compute_info()
+        self.set_config(key=self.INSTALLATION_ID, value=installation_id)
+        return installation_id
 
     def get_run_output_path(self) -> Optional[str]:
         """Get the run output path in local."""
@@ -221,3 +225,10 @@ class Configuration(object):
         if user_agent:
             return f"PFCustomer_{user_agent}"
         return user_agent
+
+    def is_internal_features_enabled(self) -> Optional[bool]:
+        """Get enable_preview_features"""
+        result = self.get_config(key=self.ENABLE_INTERNAL_FEATURES)
+        if isinstance(result, str):
+            return result.lower() == "true"
+        return result is True

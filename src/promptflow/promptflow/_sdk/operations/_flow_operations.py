@@ -7,14 +7,14 @@ import json
 import os
 import subprocess
 import sys
+import uuid
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
-import yaml
-
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
@@ -25,14 +25,16 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
-    dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
+    logger,
     parse_variant,
 )
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._eager_flow import EagerFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 
@@ -52,6 +54,7 @@ class FlowOperations(TelemetryMixin):
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        entry: str = None,
         **kwargs,
     ) -> dict:
         """Test flow or node.
@@ -73,8 +76,24 @@ class FlowOperations(TelemetryMixin):
         :return: The result of flow or node
         :rtype: dict
         """
+        experiment = kwargs.pop("experiment", None)
+        output_path = kwargs.get("output_path", None)
+        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            return self._client._experiments._test(
+                flow=flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                experiment=experiment,
+                **kwargs,
+            )
+
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
+            flow=flow,
+            inputs=inputs,
+            variant=variant,
+            node=node,
+            environment_variables=environment_variables,
+            **kwargs,
         )
 
         dump_test_result = kwargs.get("dump_test_result", False)
@@ -82,15 +101,21 @@ class FlowOperations(TelemetryMixin):
             # Dump flow/node test info
             flow = load_flow(flow)
             if node:
-                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node")
+                dump_flow_result(
+                    flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node", custom_path=output_path
+                )
             else:
                 if variant:
                     tuning_node, node_variant = parse_variant(variant)
                     prefix = f"flow-{tuning_node}-{node_variant}"
                 else:
                     prefix = "flow"
-                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
-
+                dump_flow_result(
+                    flow_folder=flow.code,
+                    flow_result=result,
+                    prefix=prefix,
+                    custom_path=output_path,
+                )
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
@@ -121,62 +146,51 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
-        flow = load_flow(flow)
-        flow.context.variant = variant
-        from promptflow._constants import FlowLanguage
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        output_path = kwargs.get("output_path", None)
+        session = kwargs.pop("session", None)
+        # Run id will be set in operation context and used for session
+        run_id = kwargs.get("run_id", str(uuid.uuid4()))
+        flow: FlowBase = load_flow(flow)
 
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+        if isinstance(flow, EagerFlow):
+            if variant or node:
+                logger.warning("variant and node are not supported for eager flow, will be ignored")
+                variant, node = None, None
+        flow.context.variant = variant
+
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
+            target_node=node,
+            environment_variables=environment_variables,
+            stream_log=stream_log,
+            output_path=output_path,
+            stream_output=stream_output,
+            session=session,
+        ) as submitter:
+            if isinstance(flow, EagerFlow):
+                # TODO(2897153): support chat eager flow
+                is_chat_flow, chat_history_input_name = False, None
+                flow_inputs, dependency_nodes_outputs = inputs, None
+            else:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
                     node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
                 )
 
-                if node:
-                    return submitter.node_test(
-                        node_name=node,
-                        flow_inputs=flow_inputs,
-                        dependency_nodes_outputs=dependency_nodes_outputs,
-                        environment_variables=environment_variables,
-                        stream=True,
-                    )
-                else:
-                    return submitter.flow_test(
-                        inputs=flow_inputs,
-                        environment_variables=environment_variables,
-                        stream_log=stream_log,
-                        stream_output=stream_output,
-                        allow_generator_output=allow_generator_output and is_chat_flow,
-                    )
-
-        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-            is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-            )
-
             if node:
                 return submitter.node_test(
-                    node_name=node,
                     flow_inputs=flow_inputs,
                     dependency_nodes_outputs=dependency_nodes_outputs,
-                    environment_variables=environment_variables,
-                    stream=True,
                 )
             else:
                 return submitter.flow_test(
                     inputs=flow_inputs,
-                    environment_variables=environment_variables,
-                    stream_log=stream_log,
-                    stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
+                    run_id=run_id,
                 )
 
     @staticmethod
@@ -230,9 +244,13 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow = load_flow(flow)
+        flow: FlowBase = load_flow(flow)
         flow.context.variant = variant
-        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
+            environment_variables=environment_variables,
+            stream_log=False,  # no need to stream log in chat mode
+        ) as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -243,15 +261,15 @@ class FlowOperations(TelemetryMixin):
             print("Press Enter to send your message.")
             print("You can quit with ctrl+C.")
             print("=" * len(info_msg))
+
             submitter._chat_flow(
                 inputs=inputs,
                 chat_history_name=chat_history_input_name,
-                environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
-    def _chat_with_ui(self, script):
+    def _chat_with_ui(self, script, skip_open_browser: bool = False):
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
@@ -268,10 +286,12 @@ class FlowOperations(TelemetryMixin):
             "--client.toolbarMode=viewer",
             "--browser.gatherUsageStats=false",
         ]
+        if skip_open_browser:
+            sys.argv += ["--server.headless=true"]
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
-        flow_info = yaml.safe_load(flow_dag_path.read_text())
+        flow_info = load_yaml(flow_dag_path)
         # standard env object:
         # environment:
         #   image: xxx
@@ -293,7 +313,7 @@ class FlowOperations(TelemetryMixin):
         if "conda_file" in env_obj:
             conda_file = flow_dag_path.parent / env_obj["conda_file"]
             if conda_file.is_file():
-                conda_obj = yaml.safe_load(conda_file.read_text())
+                conda_obj = load_yaml(conda_file)
                 if "name" in conda_obj:
                     env_obj["conda_env_name"] = conda_obj["name"]
 
@@ -336,7 +356,7 @@ class FlowOperations(TelemetryMixin):
         }
 
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
+            f.write(dump_yaml(sorted_connection_dict))
         return env_var_names
 
     def _migrate_connections(self, connection_names: List[str], output_dir: Path):
@@ -375,7 +395,7 @@ class FlowOperations(TelemetryMixin):
         that the flow involves no additional includes, symlink, or variant.
         :param output_dir: output directory to export connections
         """
-        flow: ProtectedFlow = load_flow(built_flow_dag_path)
+        flow: FlowBase = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -386,7 +406,7 @@ class FlowOperations(TelemetryMixin):
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
                         ),
-                        flow_dag=flow.dag,
+                        flow_dag=flow._data,
                     ),
                     output_dir=output_dir,
                 )
@@ -402,7 +422,7 @@ class FlowOperations(TelemetryMixin):
 
     def _build_flow(
         self,
-        flow_dag_path: Path,
+        flow: Flow,
         *,
         output: Union[str, PathLike],
         tuning_node: str = None,
@@ -418,7 +438,7 @@ class FlowOperations(TelemetryMixin):
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: shall we pop "node_variants" unless keep-variants is specified?
         with variant_overwrite_context(
-            flow_dag_path,
+            flow=flow,
             tuning_node=tuning_node,
             variant=node_variant,
             drop_node_variants=True,
@@ -427,7 +447,7 @@ class FlowOperations(TelemetryMixin):
             copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
         if update_flow_tools_json:
             generate_flow_tools_json(flow_copy_target)
-        return flow_copy_target / flow_dag_path.name
+        return flow_copy_target / flow.path.name
 
     def _export_to_docker(
         self,
@@ -560,8 +580,8 @@ class FlowOperations(TelemetryMixin):
         output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow: ProtectedFlow = load_flow(flow)
-        is_csharp_flow = flow.dag.get(LANGUAGE_KEY, "") == FlowLanguage.CSharp
+        flow: FlowBase = load_flow(flow)
+        is_csharp_flow = flow.language == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -578,7 +598,7 @@ class FlowOperations(TelemetryMixin):
             output_flow_dir = output_dir / "flow"
 
         new_flow_dag_path = self._build_flow(
-            flow_dag_path=flow.flow_dag_path,
+            flow=flow,
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
@@ -611,12 +631,18 @@ class FlowOperations(TelemetryMixin):
                 env_var_names=env_var_names,
             )
 
+    @classmethod
     @contextlib.contextmanager
     def _resolve_additional_includes(cls, flow_dag_path: Path) -> Iterable[Path]:
         # TODO: confirm if we need to import this
         from promptflow._sdk._submitter import remove_additional_includes
 
-        if _get_additional_includes(flow_dag_path):
+        # Eager flow may not contain a yaml file, skip resolving additional includes
+        def is_yaml_file(file_path):
+            _, file_extension = os.path.splitext(file_path)
+            return file_extension.lower() in (".yaml", ".yml")
+
+        if is_yaml_file(flow_dag_path) and _get_additional_includes(flow_dag_path):
             # Merge the flow folder and additional includes to temp folder.
             # TODO: support a flow_dag_path with a name different from flow.dag.yaml
             with _merge_local_code_and_additional_includes(code_path=flow_dag_path.parent) as temp_dir:
@@ -638,32 +664,34 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow)
+        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        source_path_mapping = {}
-        flow_tools, tools_errors = self._generate_tools_meta(
-            flow=flow_entity.flow_dag_path,
-            source_path_mapping=source_path_mapping,
-        )
+        if isinstance(flow_entity, ProtectedFlow):
+            # only DAG flow has tools meta
+            source_path_mapping = {}
+            flow_tools, tools_errors = self._generate_tools_meta(
+                flow=flow_entity.path,
+                source_path_mapping=source_path_mapping,
+            )
 
-        flow_entity.tools_meta_path.write_text(
-            data=json.dumps(flow_tools, indent=4),
-            encoding=DEFAULT_ENCODING,
-        )
+            flow_entity.tools_meta_path.write_text(
+                data=json.dumps(flow_tools, indent=4),
+                encoding=DEFAULT_ENCODING,
+            )
 
-        if tools_errors:
-            for source_name, message in tools_errors.items():
-                for yaml_path in source_path_mapping.get(source_name, []):
-                    validation_result.append_error(
-                        yaml_path=yaml_path,
-                        message=message,
-                    )
+            if tools_errors:
+                for source_name, message in tools_errors.items():
+                    for yaml_path in source_path_mapping.get(source_name, []):
+                        validation_result.append_error(
+                            yaml_path=yaml_path,
+                            message=message,
+                        )
 
         # flow in control plane is read-only, so resolve location makes sense even in SDK experience
-        validation_result.resolve_location_for_diagnostics(flow_entity.flow_dag_path.as_posix())
+        validation_result.resolve_location_for_diagnostics(flow_entity.path.as_posix())
 
         flow_entity._try_raise(
             validation_result,
@@ -701,7 +729,10 @@ class FlowOperations(TelemetryMixin):
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow: ProtectedFlow = load_flow(source=flow)
+        flow: FlowBase = load_flow(source=flow)
+        if not isinstance(flow, ProtectedFlow):
+            # No tools meta for eager flow
+            return {}, {}
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(

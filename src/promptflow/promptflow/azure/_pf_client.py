@@ -11,13 +11,15 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
-from promptflow._sdk._utils import setup_user_agent_to_operation_context
+from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.azure.operations._trace_operations import TraceOperations
+from promptflow.exceptions import UserErrorException
 
 
 class PFClient:
@@ -47,6 +49,9 @@ class PFClient:
         **kwargs,
     ):
         self._validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs)
+        # add user agent from kwargs if any
+        if isinstance(kwargs.get("user_agent", None), str):
+            ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         # append SDK ua to context
         user_agent = setup_user_agent_to_operation_context(USER_AGENT)
         kwargs.setdefault("user_agent", user_agent)
@@ -57,7 +62,10 @@ class PFClient:
             workspace_name=workspace_name,
             **kwargs,
         )
-        workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        try:
+            workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        except Exception as e:
+            raise UserErrorException(message=str(e), error=e)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
             workspace=workspace,
             credential=self._ml_client._credential,
@@ -96,6 +104,12 @@ class PFClient:
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
+            service_caller=self._service_caller,
+            **kwargs,
+        )
+        self._traces = TraceOperations(
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
             service_caller=self._service_caller,
             **kwargs,
         )
@@ -237,6 +251,7 @@ class PFClient:
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        # TODO(2887134): support cloud eager Run CRUD
         run = Run(
             name=name,
             display_name=display_name,

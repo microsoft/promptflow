@@ -1,4 +1,4 @@
-# Create and use your own custom strong type connection
+# Create and Use Your Own Custom Strong Type Connection
 Connections provide a secure method for managing credentials for external APIs and data sources in prompt flow. This guide explains how to create and use a custom strong type connection.
 
 ## What is a Custom Strong Type Connection?
@@ -12,9 +12,9 @@ For other connections types, please refer to [Connections](https://microsoft.git
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to at least version 1.2.1.
-- Please install promptflow package and ensure that its version is 1.0.0 or later.
+- Please install promptflow package and ensure that its version is 0.1.0b8 or later.
   ```
-  pip install promptflow>=1.0.0
+  pip install promptflow>=0.1.0b8
   ```
 
 ## Create a custom strong type connection
@@ -86,7 +86,7 @@ Once you create a custom strong type connection, here are two ways to use it in 
 ## Local to cloud
 When creating the necessary connections in Azure AI, you will need to create a `CustomConnection`. In the node interface of your flow, this connection will be displayed as the `CustomConnection` type.
 
-Please refer to [Run prompt flow in Azure AI](https://microsoft.github.io/promptflow/cloud/azureai/quick-start.html) for more details.
+Please refer to [Run prompt flow in Azure AI](../../cloud/azureai/quick-start/index.md) for more details.
 
 Here is an example command:
 ```

@@ -4,7 +4,7 @@ from promptflow._utils.exception_utils import (
     ADDITIONAL_INFO_USER_EXECUTION_ERROR,
     is_pf_core_frame,
     last_frame_info,
-    remove_suffix
+    remove_suffix,
 )
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -34,6 +34,16 @@ class MissingRequiredInputs(ValidationException):
 
 
 class InputTypeMismatch(ValidationException):
+    pass
+
+
+class ToolCanceledError(UserErrorException):
+    """Exception raised when tool execution is canceled."""
+
+    pass
+
+
+class InvalidSource(ValidationException):
     pass
 
 
@@ -143,5 +153,11 @@ class ProcessPoolError(SystemErrorException):
 
 class DuplicateToolMappingError(ValidationException):
     """Exception raised when multiple tools are linked to the same deprecated tool id."""
+
+    pass
+
+
+class ResumeCopyError(SystemErrorException):
+    """Exception raised when failed to copy the results when resuming the run."""
 
     pass

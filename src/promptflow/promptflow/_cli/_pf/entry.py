@@ -5,8 +5,9 @@
 import json
 import time
 
-from promptflow._cli._utils import _get_cli_activity_name
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry.activity import update_activity_name
 
 # Log the start time
@@ -23,6 +24,7 @@ from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  #
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
+from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
@@ -60,6 +62,10 @@ def run_command(args):
             dispatch_config_commands(args)
         elif args.action == "tool":
             dispatch_tool_commands(args)
+        elif args.action == "upgrade":
+            upgrade_version(args)
+        elif args.action == "experiment":
+            dispatch_experiment_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex
@@ -90,13 +96,16 @@ def get_parser_args(argv):
     parser.add_argument(
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
-
     subparsers = parser.add_subparsers()
+    add_upgrade_parser(subparsers)
     add_flow_parser(subparsers)
     add_connection_parser(subparsers)
     add_run_parser(subparsers)
     add_config_parser(subparsers)
     add_tool_parser(subparsers)
+
+    if Configuration.get_instance().is_internal_features_enabled():
+        add_experiment_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)
 
@@ -108,15 +117,9 @@ def entry(argv):
     prog, args = get_parser_args(argv)
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
-    logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(
-            logger,
-            activity_name,
-            activity_type=ActivityType.PUBLICAPI,
-    ):
-        run_command(args)
+    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
 
 
 def main():
@@ -124,7 +127,11 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
+        print(version_dict_string)
+        return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
         show_privacy_statement()
@@ -132,7 +139,7 @@ def main():
         command_args.append("-h")
     elif len(command_args) == 1:
         # pf only has "pf --version" with 1 layer
-        if command_args[0] not in ["--version", "-v"]:
+        if command_args[0] not in ["--version", "-v", "upgrade"]:
             command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)

@@ -5,18 +5,16 @@
 import asyncio
 import functools
 import importlib
-import inspect
 import logging
 import os
-from datetime import datetime
 from importlib.metadata import version
 
 import openai
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.contracts.trace import Trace, TraceType
+from promptflow.contracts.trace import TraceType
 
-from .tracer import Tracer
+from .tracer import _traced_async, _traced_sync
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
@@ -24,77 +22,17 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
-    args_to_ignore = args_to_ignore or []
-    args_to_ignore = set(args_to_ignore)
+    def decorator(func):
+        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    def wrapper(f):
-        sig = inspect.signature(f).parameters
-
-        @functools.wraps(f)
-        async def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return await f(*args, **kwargs)
-
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-            Tracer.push(trace)
-            try:
-                result = await f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
-
-        return wrapped_method
-
-    return wrapper
+    return decorator
 
 
 def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
-    args_to_ignore = args_to_ignore or []
-    args_to_ignore = set(args_to_ignore)
+    def decorator(func):
+        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
 
-    def wrapper(f):
-        sig = inspect.signature(f).parameters
-
-        @functools.wraps(f)
-        def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return f(*args, **kwargs)
-
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-            Tracer.push(trace)
-            try:
-                result = f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
-
-        return wrapped_method
-
-    return wrapper
+    return decorator
 
 
 def get_aoai_telemetry_headers() -> dict:
@@ -108,14 +46,20 @@ def get_aoai_telemetry_headers() -> dict:
     """
     # get promptflow info from operation context
     operation_context = OperationContext.get_instance()
-    context_info = operation_context.get_context_dict()
-    promptflow_info = {k.replace("_", "-"): v for k, v in context_info.items()}
+    tracking_info = operation_context._get_tracking_info()
+    tracking_info = {k.replace("_", "-"): v for k, v in tracking_info.items()}
+
+    def is_primitive(value):
+        return value is None or isinstance(value, (int, float, str, bool))
+
+    #  Ensure that the telemetry info is primitive
+    tracking_info = {k: v for k, v in tracking_info.items() if is_primitive(v)}
 
     # init headers
     headers = {USER_AGENT_HEADER: operation_context.get_user_agent()}
 
     # update header with promptflow info
-    headers.update({f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else "" for k, v in promptflow_info.items()})
+    headers.update({f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else "" for k, v in tracking_info.items()})
 
     return headers
 
@@ -146,14 +90,18 @@ def inject_operation_headers(f):
     return wrapper
 
 
-def inject_async(f):
-    wrapper_fun = inject_operation_headers((inject_function_async(["api_key", "headers", "extra_headers"])(f)))
+def inject_async(f, trace_type):
+    wrapper_fun = inject_operation_headers(
+        (inject_function_async(["api_key", "headers", "extra_headers"], trace_type)(f))
+    )
     wrapper_fun._original = f
     return wrapper_fun
 
 
-def inject_sync(f):
-    wrapper_fun = inject_operation_headers((inject_function_sync(["api_key", "headers", "extra_headers"])(f)))
+def inject_sync(f, trace_type):
+    wrapper_fun = inject_operation_headers(
+        (inject_function_sync(["api_key", "headers", "extra_headers"], trace_type)(f))
+    )
     wrapper_fun._original = f
     return wrapper_fun
 
@@ -161,27 +109,27 @@ def inject_sync(f):
 def _openai_api_list():
     if IS_LEGACY_OPENAI:
         sync_apis = (
-            ("openai", "Completion", "create"),
-            ("openai", "ChatCompletion", "create"),
-            ("openai", "Embedding", "create"),
+            ("openai", "Completion", "create", TraceType.LLM),
+            ("openai", "ChatCompletion", "create", TraceType.LLM),
+            ("openai", "Embedding", "create", TraceType.EMBEDDING),
         )
 
         async_apis = (
-            ("openai", "Completion", "acreate"),
-            ("openai", "ChatCompletion", "acreate"),
-            ("openai", "Embedding", "acreate"),
+            ("openai", "Completion", "acreate", TraceType.LLM),
+            ("openai", "ChatCompletion", "acreate", TraceType.LLM),
+            ("openai", "Embedding", "acreate", TraceType.EMBEDDING),
         )
     else:
         sync_apis = (
-            ("openai.resources.chat", "Completions", "create"),
-            ("openai.resources", "Completions", "create"),
-            ("openai.resources", "Embeddings", "create"),
+            ("openai.resources.chat", "Completions", "create", TraceType.LLM),
+            ("openai.resources", "Completions", "create", TraceType.LLM),
+            ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING),
         )
 
         async_apis = (
-            ("openai.resources.chat", "AsyncCompletions", "create"),
-            ("openai.resources", "AsyncCompletions", "create"),
-            ("openai.resources", "AsyncEmbeddings", "create"),
+            ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM),
+            ("openai.resources", "AsyncCompletions", "create", TraceType.LLM),
+            ("openai.resources", "AsyncEmbeddings", "create", TraceType.EMBEDDING),
         )
 
     yield sync_apis, inject_sync
@@ -190,12 +138,12 @@ def _openai_api_list():
 
 def _generate_api_and_injector(apis):
     for apis, injector in apis:
-        for module_name, class_name, method_name in apis:
+        for module_name, class_name, method_name, trace_type in apis:
             try:
                 module = importlib.import_module(module_name)
                 api = getattr(module, class_name)
                 if hasattr(api, method_name):
-                    yield api, method_name, injector
+                    yield api, method_name, trace_type, injector
             except AttributeError as e:
                 # Log the attribute exception with the missing class information
                 logging.warning(
@@ -228,10 +176,10 @@ def inject_openai_api():
     2. Updates the openai api configs from environment variables.
     """
 
-    for api, method, injector in available_openai_apis_and_injectors():
+    for api, method, trace_type, injector in available_openai_apis_and_injectors():
         # Check if the create method of the openai_api class has already been modified
         if not hasattr(getattr(api, method), "_original"):
-            setattr(api, method, injector(getattr(api, method)))
+            setattr(api, method, injector(getattr(api, method), trace_type))
 
     if IS_LEGACY_OPENAI:
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
@@ -250,6 +198,6 @@ def recover_openai_api():
     """This function restores the original create methods of the OpenAI API classes
     by assigning them back from the _original attributes of the modified methods.
     """
-    for api, method, _ in available_openai_apis_and_injectors():
+    for api, method, _, _ in available_openai_apis_and_injectors():
         if hasattr(getattr(api, method), "_original"):
             setattr(api, method, getattr(getattr(api, method), "_original"))

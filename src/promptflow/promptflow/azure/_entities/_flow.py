@@ -1,18 +1,23 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import os.path
 from contextlib import contextmanager
 from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import pydash
+
 from promptflow._sdk._constants import DAG_FILE_NAME, SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE, AzureFlowSource, FlowType
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
+from ..._constants import FlowLanguage
 from ..._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
+from ..._utils.flow_utils import dump_flow_dag, load_flow_dag
 from ..._utils.logger_utils import LoggerFactory
-from .._constants._flow import DEFAULT_STORAGE
+from .._constants._flow import ADDITIONAL_INCLUDES, DEFAULT_STORAGE, ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from .._restclient.flow.models import FlowDto
 
 # pylint: disable=redefined-builtin, unused-argument, f-string-without-interpolation
@@ -21,9 +26,11 @@ logger = LoggerFactory.get_logger(__name__)
 
 
 class Flow(AdditionalIncludesMixin):
+    DEFAULT_REQUIREMENTS_FILE_NAME = "requirements.txt"
+
     def __init__(
         self,
-        path: Union[str, PathLike],
+        path: Optional[Union[str, PathLike]] = None,
         name: Optional[str] = None,
         type: Optional[str] = None,
         description: Optional[str] = None,
@@ -41,6 +48,8 @@ class Flow(AdditionalIncludesMixin):
         self.is_archived = kwargs.get("is_archived", None)
         self.created_date = kwargs.get("created_date", None)
         self.flow_portal_url = kwargs.get("flow_portal_url", None)
+        # flow's environment, used to calculate session id, value will be set after flow is resolved to code.
+        self._environment = {}
 
         if self._flow_source == AzureFlowSource.LOCAL:
             absolute_path = self._validate_flow_from_source(path)
@@ -78,6 +87,52 @@ class Flow(AdditionalIncludesMixin):
         """
         return load_yaml(path)
 
+    @classmethod
+    def _resolve_requirements(cls, flow_path: Union[str, Path], flow_dag: dict):
+        """If requirements.txt exists, add it to the flow snapshot. Return True if flow_dag is updated."""
+
+        flow_dir = Path(flow_path)
+        if not (flow_dir / cls.DEFAULT_REQUIREMENTS_FILE_NAME).exists():
+            return False
+        if pydash.get(flow_dag, f"{ENVIRONMENT}.{PYTHON_REQUIREMENTS_TXT}"):
+            return False
+        logger.debug(
+            f"requirements.txt is found in the flow folder: {flow_path.resolve().as_posix()}, "
+            "adding it to flow.dag.yaml."
+        )
+        pydash.set_(flow_dag, f"{ENVIRONMENT}.{PYTHON_REQUIREMENTS_TXT}", cls.DEFAULT_REQUIREMENTS_FILE_NAME)
+        return True
+
+    @classmethod
+    def _resolve_environment(cls, flow_path: Union[str, Path], flow_dag: dict) -> dict:
+        """Resolve flow's environment to dict."""
+        environment = {}
+
+        try:
+            environment = flow_dag.get("environment", {})
+            environment = dict(environment)
+            # resolve requirements
+            if PYTHON_REQUIREMENTS_TXT in environment:
+                req_path = os.path.join(flow_path, environment[PYTHON_REQUIREMENTS_TXT])
+                with open(req_path, "r") as f:
+                    requirements = f.read().splitlines()
+                environment[PYTHON_REQUIREMENTS_TXT] = requirements
+        except Exception as e:
+            # warn and continue if failed to resolve environment, it should not block the flow upload process.
+            logger.warning(f"Failed to resolve environment due to {e}.")
+
+        return environment
+
+    @classmethod
+    def _remove_additional_includes(cls, flow_dag: dict):
+        """Remove additional includes from flow dag. Return True if removed."""
+        if ADDITIONAL_INCLUDES not in flow_dag:
+            return False
+
+        logger.debug("Additional includes are found in the flow dag, removing them from flow.dag.yaml after resolved.")
+        flow_dag.pop(ADDITIONAL_INCLUDES, None)
+        return True
+
     # region AdditionalIncludesMixin
     @contextmanager
     def _try_build_local_code(self) -> Optional[Code]:
@@ -86,17 +141,27 @@ class Flow(AdditionalIncludesMixin):
         If there is no local code to upload, yield None. Otherwise, yield a Code object pointing to the code.
         """
         with super()._try_build_local_code() as code:
+            dag_updated = False
             if isinstance(code, Code):
+                flow_dir = Path(code.path)
+                _, flow_dag = load_flow_dag(flow_path=flow_dir)
+                original_flow_dag = copy.deepcopy(flow_dag)
                 if self._get_all_additional_includes_configs():
-                    from promptflow._sdk._submitter import remove_additional_includes
-
                     # Remove additional include in the flow yaml.
-                    remove_additional_includes(code.path)
+                    dag_updated = self._remove_additional_includes(flow_dag)
                 # promptflow snapshot has specific ignore logic, like it should ignore `.run` by default
-                code._ignore_file = PromptflowIgnoreFile(code.path)
+                code._ignore_file = PromptflowIgnoreFile(flow_dir)
                 # promptflow snapshot will always be uploaded to default storage
                 code.datastore = DEFAULT_STORAGE
-            yield code
+                dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
+                self._environment = self._resolve_environment(flow_dir, flow_dag)
+                if dag_updated:
+                    dump_flow_dag(flow_dag, flow_dir)
+            try:
+                yield code
+            finally:
+                if dag_updated:
+                    dump_flow_dag(original_flow_dag, flow_dir)
 
     def _get_base_path_for_code(self) -> Path:
         """Get base path for additional includes."""
@@ -171,3 +236,7 @@ class Flow(AdditionalIncludesMixin):
             "flow_portal_url": self.flow_portal_url,
         }
         return remove_empty_element_from_dict(result)
+
+    @property
+    def language(self):
+        return self._flow_dict.get("language", FlowLanguage.Python)

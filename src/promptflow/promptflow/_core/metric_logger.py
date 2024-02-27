@@ -7,7 +7,6 @@ from typing import Callable
 
 
 class MetricLoggerManager:
-
     _instance = None
 
     def __init__(self):

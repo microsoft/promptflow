@@ -3,30 +3,24 @@
 # ---------------------------------------------------------
 import importlib.util
 import inspect
-import io
 import json
 import logging
 import pkgutil
-from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
 from types import ModuleType
 from typing import Union
 
-import jsonschema
-
 from promptflow._core.tool_meta_generator import (
     ToolValidationError,
     _parse_tool_from_function,
-    asdict_without_none,
+    _serialize_tool,
     is_tool,
 )
 from promptflow._core.tools_manager import PACKAGE_TOOLS_ENTRY, collect_package_tools
-from promptflow._sdk._constants import ICON, ICON_DARK, ICON_LIGHT, LOGGER_NAME, TOOL_SCHEMA
+from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._validation import ValidationResult, ValidationResultBuilder
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
-from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import UserErrorException
 
 TOTAL_COUNT = "total_count"
@@ -37,19 +31,34 @@ logger = logging.getLogger(LOGGER_NAME)
 class ToolOperations:
     """ToolOperations."""
 
-    def __init__(self):
-        self._tool_schema_dict = None
+    def _merge_validate_result(self, target, source):
+        target.merge_with(source)
+        target._set_extra_info(
+            TOTAL_COUNT,
+            target._get_extra_info(TOTAL_COUNT, 0) + source._get_extra_info(TOTAL_COUNT, 0),
+        )
+        target._set_extra_info(
+            INVALID_COUNT,
+            target._get_extra_info(INVALID_COUNT, 0) + source._get_extra_info(INVALID_COUNT, 0),
+        )
 
-    @property
-    def _tool_schema(self):
-        if not self._tool_schema_dict:
-            with open(TOOL_SCHEMA, "r") as f:
-                self._tool_schema_dict = json.load(f)
-        return self._tool_schema_dict
+    def _merge_validation_result_by_list(self, tool_func, validate_results):
+        tool_func_name = tool_func.__name__
+        tool_script_path = inspect.getsourcefile(getattr(tool_func, "__original_function", tool_func))
+        tool_validate_result = ValidationResultBuilder.success()
+        for error_msg in validate_results:
+            tool_validate_result.append_error(
+                yaml_path=None,
+                message=error_msg,
+                function_name=tool_func_name,
+                location=tool_script_path,
+                key="function_name",
+            )
+        return tool_validate_result
 
     def _list_tools_in_package(self, package_name: str, raise_error: bool = False):
         """
-        List the meta of all tools in the package.
+        List the meta of all tools in the package. Raise user error if raise_error=True and found incorrect tools.
 
         :param package_name: Package name
         :type package_name: str
@@ -58,29 +67,7 @@ class ToolOperations:
         :return: Dict of tools meta
         :rtype: Dict[str, Dict]
         """
-
-        def merge_validate_result(target, source):
-            target.merge_with(source)
-            target._set_extra_info(
-                TOTAL_COUNT,
-                target._get_extra_info(TOTAL_COUNT, 0) + source._get_extra_info(TOTAL_COUNT, 0),
-            )
-            target._set_extra_info(
-                INVALID_COUNT,
-                target._get_extra_info(INVALID_COUNT, 0) + source._get_extra_info(INVALID_COUNT, 0),
-            )
-
-        package_tools = {}
-        validate_result = ValidationResultBuilder.success()
-        try:
-            package = __import__(package_name)
-            module_list = pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
-            for module in module_list:
-                module_tools, module_validate_result = self._generate_tool_meta(importlib.import_module(module.name))
-                package_tools.update(module_tools)
-                merge_validate_result(validate_result, module_validate_result)
-        except ImportError:
-            raise UserErrorException(f"Cannot find the package {package_name}.")
+        package_tools, validate_result = self._list_tool_meta_in_package(package_name=package_name)
         if not validate_result.passed:
             if raise_error:
 
@@ -92,6 +79,28 @@ class ToolOperations:
                 logger.warning(f"Found invalid tool(s):\n {repr(validate_result)}")
 
         return package_tools
+
+    def _list_tool_meta_in_package(self, package_name: str):
+        """
+        List the meta of all tools in the package.
+
+        :param package_name: Package name
+        :type package_name: str
+        :return: Dict of tools meta, validation result
+        :rtype: Dict[str, Dict], ValidationResult
+        """
+        package_tools = {}
+        validate_result = ValidationResultBuilder.success()
+        try:
+            package = __import__(package_name)
+            module_list = pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
+            for module in module_list:
+                module_tools, module_validate_result = self._generate_tool_meta(importlib.import_module(module.name))
+                package_tools.update(module_tools)
+                self._merge_validate_result(validate_result, module_validate_result)
+        except ImportError as e:
+            raise UserErrorException(f"Cannot find the package {package_name}, {e}.")
+        return package_tools, validate_result
 
     def _generate_tool_meta(self, tool_module):
         """
@@ -109,21 +118,23 @@ class ToolOperations:
         tool_validate_result = ValidationResultBuilder.success()
         for f in tool_functions:
             tool, input_settings, extra_info = self._parse_tool_from_func(f)
-            construct_tool, validate_result = self._serialize_tool(tool, input_settings, extra_info, f)
-            if validate_result.passed:
+            construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info)
+            if not validate_result:
                 tool_name = self._get_tool_name(tool)
                 construct_tools[tool_name] = construct_tool
             else:
                 invalid_tool_count = invalid_tool_count + 1
+                validate_result = self._merge_validation_result_by_list(f, validate_result)
                 tool_validate_result.merge_with(validate_result)
-        for (f, initialize_inputs) in tool_methods:
+        for f, initialize_inputs in tool_methods:
             tool, input_settings, extra_info = self._parse_tool_from_func(f, initialize_inputs)
-            construct_tool, validate_result = self._serialize_tool(tool, input_settings, extra_info, f)
-            if validate_result.passed:
+            construct_tool, validate_result = _serialize_tool(tool, input_settings, extra_info)
+            if not validate_result:
                 tool_name = self._get_tool_name(tool)
                 construct_tools[tool_name] = construct_tool
             else:
                 invalid_tool_count = invalid_tool_count + 1
+                validate_result = self._merge_validation_result_by_list(f, validate_result)
                 tool_validate_result.merge_with(validate_result)
         # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
         tools = json.loads(json.dumps(construct_tools))
@@ -182,219 +193,17 @@ class ToolOperations:
         input_settings = getattr(tool_func, "__input_settings")
         return tool, input_settings, extra_info
 
-    def _validate_tool_function(self, tool, input_settings, extra_info, func_name=None, func_path=None):
-        """
-        Check whether the icon and input settings of the tool are legitimate.
-
-        :param tool: The tool object
-        :type tool: Tool
-        :param input_settings: Input settings of the tool
-        :type input_settings: Dict[str, InputSetting]
-        :param extra_info: Extra info about the tool
-        :type extra_info: Dict[str, obj]
-        :param func_name: Function name of the tool
-        :type func_name: str
-        :param func_path: Script path of the tool
-        :type func_path: str
-        :return: Validation result of the tool
-        :rtype: ValidationResult
-        """
-        validate_result = ValidationResultBuilder.success()
-
-        if extra_info:
-            if ICON in extra_info:
-                if ICON_LIGHT in extra_info or ICON_DARK in extra_info:
-                    validate_result.append_error(
-                        yaml_path=None,
-                        message=f"Cannot provide both `icon` and `{ICON_LIGHT}` or `{ICON_DARK}`.",
-                        function_name=func_name,
-                        location=func_path,
-                        key="function_name",
-                    )
-        if input_settings:
-            input_settings_validate_result = self._validate_input_settings(
-                tool.inputs, input_settings, func_name, func_path
-            )
-            validate_result.merge_with(input_settings_validate_result)
-        return validate_result
-
-    def _validate_tool_schema(self, tool_dict, func_name=None, func_path=None):
-        """
-        Check whether the generated schema of the tool are legitimate.
-
-        :param tool_dict: The generated tool dict
-        :type tool_dict: Dict[str, obj]
-        :param func_name: Function name of the tool
-        :type func_name: str
-        :param func_path: Script path of the tool
-        :type func_path: str
-        :return: Validation result of the tool
-        :rtype: ValidationResult
-        """
-        validate_result = ValidationResultBuilder.success()
-        try:
-            jsonschema.validate(instance=tool_dict, schema=self._tool_schema)
-        except jsonschema.exceptions.ValidationError as e:
-            validate_result.append_error(
-                message=str(e), yaml_path=None, function_name=func_name, location=func_path, key="function_name"
-            )
-        return validate_result
-
-    def _validate_input_settings(self, tool_inputs, input_settings, func_name=None, func_path=None):
-        """
-        Check whether input settings of the tool are legitimate.
-
-        :param tool_inputs: Tool inputs
-        :type tool_inputs: Dict[str, obj]
-        :param input_settings: Input settings of the tool
-        :type input_settings: Dict[str, InputSetting]
-        :param extra_info: Extra info about the tool
-        :type extra_info: Dict[str, obj]
-        :param func_name: Function name of the tool
-        :type func_name: str
-        :param func_path: Script path of the tool
-        :type func_path: str
-        :return: Validation result of the tool
-        :rtype: ValidationResult
-        """
-        validate_result = ValidationResultBuilder.success()
-        for input_name, settings in input_settings.items():
-            if input_name not in tool_inputs:
-                validate_result.append_error(
-                    yaml_path=None,
-                    message=f"Cannot find {input_name} in tool inputs.",
-                    function_name=func_name,
-                    location=func_path,
-                    key="function_name",
-                )
-            if settings.enabled_by and settings.enabled_by not in tool_inputs:
-                validate_result.append_error(
-                    yaml_path=None,
-                    message=f'Cannot find the input "{settings.enabled_by}" for the enabled_by of {input_name}.',
-                    function_name=func_name,
-                    location=func_path,
-                    key="function_name",
-                )
-            if settings.dynamic_list:
-                dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
-                has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
-                required_inputs = [
-                    k
-                    for k, v in dynamic_func_inputs.items()
-                    if v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD
-                ]
-                if settings.dynamic_list._input_mapping:
-                    # Validate input mapping in dynamic_list
-                    for func_input, reference_input in settings.dynamic_list._input_mapping.items():
-                        # Check invalid input name of dynamic list function
-                        if not has_kwargs and func_input not in dynamic_func_inputs:
-                            validate_result.append_error(
-                                yaml_path=None,
-                                message=f"Cannot find {func_input} in the inputs of "
-                                f"dynamic_list func {settings.dynamic_list.func_path}",
-                                function_name=func_name,
-                                location=func_path,
-                                key="function_name",
-                            )
-                        # Check invalid input name of tool
-                        if reference_input not in tool_inputs:
-                            validate_result.append_error(
-                                yaml_path=None,
-                                message=f"Cannot find {reference_input} in the tool inputs.",
-                                function_name=func_name,
-                                location=func_path,
-                                key="function_name",
-                            )
-                        if func_input in required_inputs:
-                            required_inputs.remove(func_input)
-                # Check required input of dynamic_list function
-                if len(required_inputs) != 0:
-                    validate_result.append_error(
-                        yaml_path=None,
-                        message=f"Missing required input(s) of dynamic_list function: {required_inputs}",
-                        function_name=func_name,
-                        location=func_path,
-                        key="function_name",
-                    )
-        return validate_result
-
-    def _serialize_tool(self, tool, input_settings, extra_info, tool_func):
-        """
-        Serialize tool obj to dict.
-
-        :param tool_func: Package tool function
-        :type tool_func: callable
-        :param initialize_inputs: Initialize inputs of package tool
-        :type initialize_inputs: Dict[str, obj]
-        :return: package tool name, serialized tool
-        :rtype: str, Dict[str, str]
-        """
-        tool_func_name = tool_func.__name__
-        tool_script_path = inspect.getsourcefile(getattr(tool_func, "__original_function", tool_func))
-        validate_result = self._validate_tool_function(
-            tool, input_settings, extra_info, tool_func_name, tool_script_path
-        )
-        if validate_result.passed:
-            construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
-            if extra_info:
-                if ICON in extra_info:
-                    extra_info[ICON] = self._serialize_icon_data(extra_info["icon"])
-                if ICON_LIGHT in extra_info:
-                    icon = extra_info.get("icon", {})
-                    icon["light"] = self._serialize_icon_data(extra_info[ICON_LIGHT])
-                    extra_info[ICON] = icon
-                if ICON_DARK in extra_info:
-                    icon = extra_info.get("icon", {})
-                    icon["dark"] = self._serialize_icon_data(extra_info[ICON_DARK])
-                    extra_info[ICON] = icon
-                construct_tool.update(extra_info)
-
-            # Update tool input settings
-            if input_settings:
-                tool_inputs = construct_tool.get("inputs", {})
-                generated_by_inputs = {}
-                for input_name, settings in input_settings.items():
-                    tool_inputs[input_name].update(asdict_without_none(settings))
-                    if settings.generated_by:
-                        generated_by_inputs.update(settings.generated_by._input_settings)
-                tool_inputs.update(generated_by_inputs)
-            schema_validate_result = self._validate_tool_schema(construct_tool, tool_func_name, tool_script_path)
-            validate_result.merge_with(schema_validate_result)
-            return construct_tool, validate_result
-        else:
-            return {}, validate_result
-
-    def _serialize_icon_data(self, icon):
-        if not Path(icon).exists():
-            raise UserErrorException(f"Cannot find the icon path {icon}.")
-        return self._serialize_image_data(icon)
-
-    @staticmethod
-    def _serialize_image_data(image_path):
-        """Serialize image to base64."""
-        from PIL import Image as PIL_Image
-
-        with open(image_path, "rb") as image_file:
-            # Create a BytesIO object from the image file
-            image_data = io.BytesIO(image_file.read())
-
-        # Open the image and resize it
-        img = PIL_Image.open(image_data)
-        if img.size != (16, 16):
-            img = img.resize((16, 16), PIL_Image.Resampling.LANCZOS)
-        buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
-        icon_image = Image(buffered.getvalue(), mime_type="image/png")
-        image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
-        return image_url
-
     @staticmethod
     def _is_package_tool(package) -> bool:
         import pkg_resources
 
-        distribution = pkg_resources.get_distribution(package.__name__)
-        entry_points = distribution.get_entry_map()
-        return PACKAGE_TOOLS_ENTRY in entry_points
+        try:
+            distribution = pkg_resources.get_distribution(package.__name__)
+            entry_points = distribution.get_entry_map()
+            return PACKAGE_TOOLS_ENTRY in entry_points
+        except Exception as e:
+            logger.debug(f"Failed to check {package.__name__} is a package tool, raise {e}")
+            return False
 
     @monitor_operation(activity_name="pf.tools.list", activity_type=ActivityType.PUBLICAPI)
     def list(
@@ -434,12 +243,29 @@ class ToolOperations:
         :return: a validation result object
         :rtype: ValidationResult
         """
-        if callable(source):
-            # Validate tool function
-            tool, input_settings, extra_info = self._parse_tool_from_func(source)
-            _, validate_result = self._serialize_tool(tool, input_settings, extra_info, source)
+
+        def validate_tool_function(tool_func, init_inputs=None):
+            tool, input_settings, extra_info = self._parse_tool_from_func(tool_func, init_inputs)
+            _, validate_result = _serialize_tool(tool, input_settings, extra_info)
+            validate_result = self._merge_validation_result_by_list(tool_func, validate_result)
             validate_result._set_extra_info(TOTAL_COUNT, 1)
             validate_result._set_extra_info(INVALID_COUNT, 0 if validate_result.passed else 1)
+            return validate_result
+
+        if callable(source):
+            from promptflow._core.tool import ToolProvider
+
+            if isinstance(source, type) and issubclass(source, ToolProvider):
+                # Validate tool class
+                validate_result = ValidationResultBuilder.success()
+                for _, method in inspect.getmembers(source):
+                    if is_tool(method):
+                        initialize_inputs = source.get_initialize_inputs()
+                        func_validate_result = validate_tool_function(method, initialize_inputs)
+                        self._merge_validate_result(validate_result, func_validate_result)
+            else:
+                # Validate tool function
+                validate_result = validate_tool_function(source)
         elif isinstance(source, (str, PathLike)):
             # Validate tool script
             if not Path(source).exists():
@@ -456,10 +282,7 @@ class ToolOperations:
             # Validate package tool
             if not self._is_package_tool(source):
                 raise UserErrorException("Invalid package tool.")
-            try:
-                self._list_tools_in_package(package_name=source.__name__, raise_error=True)
-            except ToolValidationError as exception:
-                validate_result = exception._kwargs.get("validate_result")
+            _, validate_result = self._list_tool_meta_in_package(package_name=source.__name__)
         else:
             raise UserErrorException(
                 "Provide invalid source, tool validation source supports script tool, "

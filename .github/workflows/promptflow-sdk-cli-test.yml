@@ -132,7 +132,7 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip uninstall -y promptflow promptflow-sdk promptflow-tools
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[pfs,azure]"}}
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Run PFS Test
@@ -154,13 +154,17 @@ jobs:
         path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
+          ${{ env.testWorkingDirectory }}/tests/sdk_cli_test/count.json
 
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-results-sdk-cli-test:
     needs: sdk_cli_tests
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     if: always()
 
     steps:
@@ -174,5 +178,4 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 40
-        token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli
