@@ -1,0 +1,5 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/ServerlessConnection.schema.json
+name: my_serverless_connection
+type: serverless
+api_key: "<to-be-replaced>"
+api_base: "https://mock.api.base"

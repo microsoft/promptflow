@@ -6,7 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
+from promptflow._sdk._constants import AzureFlowSource
 from promptflow._sdk._errors import FlowOperationError
+from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
 tests_root_dir = Path(__file__).parent.parent.parent
@@ -32,6 +34,10 @@ class TestFlowOperations:
 
         with pytest.raises(UserErrorException, match="Not a valid string"):
             pf.flows.create_or_update(flow=flow_source, tags={"key": False})
+
+    def test_update_flow_with_invalid_parameters(self, pf):
+        with pytest.raises(FlowOperationError, match="Flow name is required"):
+            pf.flows.create_or_update(flow=Flow(flow_source=AzureFlowSource.PF_SERVICE))
 
     @pytest.mark.usefixtures("enable_logger_propagate")
     def test_create_flow_with_warnings(self, pf, caplog):
