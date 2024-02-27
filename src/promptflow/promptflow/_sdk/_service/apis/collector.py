@@ -59,7 +59,7 @@ def _try_write_trace_to_cosmosdb(span: Span):
     resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
     workspace_name = resource_attributes.get(SpanResourceAttributesFieldName.WORKSPACE_NAME, None)
     if subscription_id is None or resource_group_name is None or workspace_name is None:
-        current_app.logger.info("Cannot find workspace info in span resource, skip writing to cosmosdb.")
+        current_app.logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
         return
     from promptflow.azure._storage.cosmosdb.client import get_client
     from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
