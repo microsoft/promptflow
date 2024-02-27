@@ -5,7 +5,6 @@ import collections
 import datetime
 import hashlib
 import json
-import multiprocessing
 import os
 import platform
 import re
@@ -33,7 +32,7 @@ from marshmallow import ValidationError
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
-from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._core.tool_meta_generator import generate_tool_meta, generate_tool_meta_in_process
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -63,7 +62,6 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
-from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import _match_reference
@@ -507,17 +505,6 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
-def _generate_meta_from_files(
-    tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
-) -> None:
-    with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
-        for source, tool_type in tools:
-            try:
-                tools_dict[source] = generate_tool_meta_dict_by_file(source, ToolType(tool_type))
-            except Exception as e:
-                exception_dict[source] = str(e)
-
-
 def _generate_tool_meta(
     flow_directory: Path,
     tools: List[Tuple[str, str]],
@@ -540,20 +527,9 @@ def _generate_tool_meta(
     """
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
-        manager = multiprocessing.Manager()
-        tools_dict = manager.dict()
-        exception_dict = manager.dict()
-        p = multiprocessing.Process(
-            target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-        )
-        p.start()
-        p.join(timeout=timeout)
-        if p.is_alive():
-            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
-            p.terminate()
-            p.join()
+        tool_dict, exception_dict = generate_tool_meta_in_process(flow_directory, tools, logger, timeout=timeout)
     else:
-        tools_dict, exception_dict = {}, {}
+        tool_dict, exception_dict = {}, {}
 
         #  There is no built-in method to forcefully stop a running thread/coroutine in Python
         #  because abruptly stopping a thread can cause issues like resource leaks,
@@ -563,8 +539,8 @@ def _generate_tool_meta(
             "Generate meta in current process and timeout won't take effect. "
             "Please handle timeout manually outside current process."
         )
-        _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
-    res = {source: tool for source, tool in tools_dict.items()}
+        generate_tool_meta(flow_directory, tools, tool_dict, exception_dict)
+    res = {source: tool for source, tool in tool_dict.items()}
 
     for source in res:
         # remove name in tool meta
@@ -581,12 +557,7 @@ def _generate_tool_meta(
                         tool_input_type[i] = tool_input_type[i].value
 
     # collect errors and print warnings
-    errors = {
-        source: exception for source, exception in exception_dict.items()
-    }  # for not processed tools, regard as timeout error
-    for source, _ in tools:
-        if source not in res and source not in errors:
-            errors[source] = f"Generate meta timeout for source {source!r}."
+    errors = {source: str(exception) for source, exception in exception_dict.items()}
     for source in errors:
         if include_errors_in_output:
             res[source] = errors[source]

@@ -143,6 +143,13 @@ class MetaFileReadError(GenerateMetaUserError):
     pass
 
 
+class GenerateMetaTimeout(GenerateMetaUserError):
+    def __init__(self, source):
+        super().__init__(
+            message="Generate meta timeout for source '{source}'.", source=source, target=ErrorTarget.EXECUTOR
+        )
+
+
 class GenerateMetaSystemError(SystemErrorException):
     """Base system exception raised when failed to validate tool."""
 
