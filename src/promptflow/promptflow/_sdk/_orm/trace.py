@@ -65,9 +65,9 @@ class Span(Base):
                 stmt = stmt.filter(Span.session_id == session_id)
             if trace_ids is not None:
                 stmt = stmt.filter(Span.trace_id.in_(trace_ids))
+            stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             if session_id is None and trace_ids is None:
                 stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
-            stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
     @staticmethod
@@ -115,12 +115,12 @@ class LineRun:
                 stmt = stmt.filter(Span.session_id == session_id)
             if experiments is not None:
                 stmt = stmt.filter(Span.experiment.in_(experiments))
-            if session_id is None and experiments is None:
-                stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
             )
+            if session_id is None and experiments is None:
+                stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
             line_runs = []
             current_spans: typing.List[Span] = []
             span: Span
