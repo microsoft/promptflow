@@ -137,4 +137,3 @@ def encode_dict(data: dict) -> str:
     b64_data = base64.b64encode(zipped_data)
     # bytes -> str
     return b64_data.decode()
-
