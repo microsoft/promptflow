@@ -5,7 +5,7 @@
 import copy
 import typing
 
-from sqlalchemy import TEXT, Column, Index, or_, text
+from sqlalchemy import TEXT, Column, Index, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, declarative_base
 
@@ -74,24 +74,15 @@ class Span(Base):
     def list_with_runs(runs: typing.List[str]) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
-            # for line runs, we only need root spans
-            stmt = stmt.filter(text("parent_span_id is null"))
             runs_string = ""
             for run in runs:
                 runs_string += f"'{run}',"
             runs_string = runs_string[:-1]  # remove the last comma
             stmt = stmt.filter(
-                or_(
-                    # batch run
-                    Span.run.in_(runs),
-                    # legacy batch run
-                    text(
-                        f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') in ({runs_string})"  # noqa: E501
-                    ),
-                    # evaluation(s) against batch run
-                    text(
-                        f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') in ({runs_string})"  # noqa: E501
-                    ),
+                text(
+                    "(parent_span_id is null OR parent_span_id = '') AND "
+                    f"(json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') in ({runs_string}) OR "  # noqa: E501
+                    f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') in ({runs_string}))"  # noqa: E501
                 )
             )
             stmt = stmt.order_by(
