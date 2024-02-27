@@ -18,3 +18,14 @@ class ExecutionTimeoutError(UserErrorException):
             timeout=timeout,
             target=ErrorTarget.EXECUTOR,
         )
+
+
+class ExecutionCanceledError(UserErrorException):
+    """Exception raised when execution is canceled"""
+
+    def __init__(self, run_id):
+        super().__init__(
+            message_format="The execution for run {run_id} is canceled.",
+            run_id=run_id,
+            target=ErrorTarget.EXECUTOR,
+        )

@@ -24,6 +24,9 @@ class ProcessManager:
     def start_process(self, run_id: str, process_id: int):
         self._processes_mapping[run_id] = process_id
 
+    def get_process(self, run_id: str):
+        return self._processes_mapping.get(run_id, None)
+
     def remove_process(self, run_id: str):
         self._processes_mapping.pop(run_id, None)
 

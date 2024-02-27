@@ -15,7 +15,7 @@ from promptflow._utils.async_utils import to_thread
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._service._errors import ExecutionTimeoutError
+from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
@@ -57,6 +57,10 @@ async def invoke_sync_function_in_process(
 
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
+                # If run id is not in the process mapping, it indicates
+                # that the process has been terminated by cancel request.
+                if run_id and not ProcessManager().get_process(run_id):
+                    raise ExecutionCanceledError(run_id)
                 exception = error_dict.get("error", None)
                 if exception is None:
                     raise UnexpectedError(
