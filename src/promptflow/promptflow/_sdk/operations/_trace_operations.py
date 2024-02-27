@@ -16,18 +16,26 @@ class TraceOperations:
     def list_spans(
         self,
         session_id: typing.Optional[str] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[Span]:
         orm_spans = ORMSpan.list(
             session_id=session_id,
+            trace_ids=trace_ids,
         )
         return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
 
     def list_line_runs(
         self,
         session_id: typing.Optional[str] = None,
+        runs: typing.Optional[typing.List[str]] = None,
+        experiments: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[LineRun]:
         line_runs = []
-        orm_spans_group_by_trace_id = ORMLineRun.list(session_id=session_id)
+        orm_spans_group_by_trace_id = ORMLineRun.list(
+            session_id=session_id,
+            runs=runs,
+            experiments=experiments,
+        )
         # merge spans with same `line_run_id` or `referenced.line_run_id` (if exists)
         grouped_orm_spans = {}
         for orm_spans in orm_spans_group_by_trace_id:

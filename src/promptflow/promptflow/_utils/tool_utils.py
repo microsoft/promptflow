@@ -6,22 +6,36 @@ import importlib
 import inspect
 import logging
 import re
+from dataclasses import asdict
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ToolType, ValueType
+from ..contracts.tool import (
+    ConnectionType,
+    InputDefinition,
+    OutputDefinition,
+    Tool,
+    ToolFuncCallScenario,
+    ToolType,
+    ValueType,
+)
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
 
 _DEPRECATED_TOOLS = "deprecated_tools"
 UI_HINTS = "ui_hints"
+
+
+def asdict_without_none(obj):
+    return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
 def value_to_str(val):
@@ -142,8 +156,15 @@ def function_to_interface(
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
-    outputs = {}
-    # Note: We don't have output definition now
+    # Resolve output to definition
+    typ = resolve_annotation(sign.return_annotation)
+    if typ is inspect.Signature.empty:
+        output_type = [ValueType.OBJECT]
+    else:
+        # If the output annotation is a union type, then it should be a list.
+        output_type = [ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
+    outputs = {"output": OutputDefinition(type=output_type)}
+
     return input_defs, outputs, connection_types, enable_kwargs
 
 
@@ -403,7 +424,10 @@ def _get_function_path(function):
         func_path = function
     elif isinstance(function, Callable):
         func = function
-        func_path = f"{function.__module__}.{function.__name__}"
+        if function.__module__ == PF_MAIN_MODULE_NAME:
+            func_path = function.__name__
+        else:
+            func_path = f"{function.__module__}.{function.__name__}"
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
