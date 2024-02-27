@@ -331,21 +331,9 @@ def enrich_span_with_embedding(span, inputs, output):
         if isinstance(output, CreateEmbeddingResponse):
             span.set_attribute("embedding.model", output.model)
             embeddings = []
-            if (
-                isinstance(inputs["input"], str)  # input is a string
-                or (
-                    isinstance(inputs["input"], list)
-                    and all(isinstance(i, int) for i in inputs["input"])
-                )  # input is a token array
-            ):
-                input_list = [inputs["input"]]
-            else:
-                input_list = inputs["input"]
+            input_list = [emb_input] if _is_single_input(emb_input := inputs["input"]) else emb_input
             for emb in output.data:
-                if isinstance(text := input_list[emb.index], str):
-                    emb_text = text
-                else:
-                    emb_text = f"<{len(text)} dimensional token>"
+                emb_text = i if isinstance(i := input_list[emb.index], str) else f"<{len(i)} dimensional token>"
                 embeddings.append(
                     {
                         "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
@@ -355,6 +343,17 @@ def enrich_span_with_embedding(span, inputs, output):
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
+
+def _is_single_input(embedding_inputs):
+    # OpenAI Embedding API accepts a single string/tokenized string or a list of string/tokenized string as input.
+    # For the single string/tokenized string case, we should return true, otherwise return false.
+    if (isinstance(embedding_inputs["input"], str)):
+        # input is a string
+        return True
+    elif (isinstance(embedding_inputs["input"], list) and all(isinstance(i, int) for i in embedding_inputs["input"])):
+        # input is a token array
+        return True
+    return False
 
 
 def enrich_span_with_llm_model(span, output):
