@@ -78,5 +78,5 @@ class TestFlowAPIs:
             match = re.match(".*/image/(.+)/(.+)", response)
             assert match
             directory, filename = match.groups()
-            response = pfs_op.view_image(directory, filename, status_code=200)
+            response = pfs_op.view_image(directory, filename)
             assert response.data
