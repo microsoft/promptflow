@@ -51,6 +51,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     # honor and set attributes if user has specified
     attributes: dict = kwargs.get("attributes", None)
     if attributes is not None:
+        _logger.debug("User specified attributes: %s", attributes)
         for attr_key, attr_value in attributes.items():
             operation_context._add_otel_attributes(attr_key, attr_value)
 
@@ -68,10 +69,14 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     # init the global tracer with endpoint
     _init_otel_trace_exporter(otlp_port=pfs_port, session_id=session_id, experiment=experiment)
-    # openai instrumentation
-    inject_openai_api()
     # print user the UI url
-    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
+    ui_url = _determine_trace_url(
+        pfs_port=pfs_port,
+        session_configured=session is not None,
+        experiment=experiment,
+        run=kwargs.get("run", None),
+        session_id=session_id,
+    )
     # print to be able to see it in notebook
     print(f"You can view the trace from UI url: {ui_url}")
 
@@ -136,6 +141,10 @@ def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -
 
 
 def setup_exporter_from_environ() -> None:
+    # openai instrumentation
+    # in eager mode, the code cannot reach executor logic to apply injection
+    # explicitly inject here, so that it can work in new process/thread
+    inject_openai_api()
     # if session id does not exist in environment variables, it should be in runtime environment
     # where we have not supported tracing yet, so we don't need to setup any exporter here
     # directly return
@@ -163,3 +172,20 @@ def _init_otel_trace_exporter(otlp_port: str, session_id: str, experiment: typin
     if experiment is not None:
         os.environ[TraceEnvironmentVariableName.EXPERIMENT] = experiment
     setup_exporter_from_environ()
+
+
+def _determine_trace_url(
+    pfs_port: str,
+    session_configured: bool,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> str:
+    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    if experiment is not None:
+        ui_url += f"?experiment={experiment}"
+    elif run is not None:
+        ui_url += f"?run={run}"
+    elif session_configured and session_id is not None:
+        ui_url += f"?session={session_id}"
+    return ui_url

@@ -17,7 +17,7 @@ from promptflow.exceptions import ErrorTarget
 from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
-from .._utils.utils import try_import, _sanitize_python_variable_name
+from .._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
@@ -833,6 +833,14 @@ class Flow:
             else:
                 logger.debug(f"Node {node.name} doesn't reference any connection.")
             connection_names.update(node_connection_names)
+
+        # Add connection names from environment variable reference
+        if self.environment_variables:
+            for k, v in self.environment_variables.items():
+                if not isinstance(v, str) or not v.startswith("${"):
+                    continue
+                connection_name, _ = _match_reference(v)
+                connection_names.add(connection_name)
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):
