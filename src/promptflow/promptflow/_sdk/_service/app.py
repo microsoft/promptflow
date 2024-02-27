@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import os
+import sys
 import time
 from logging.handlers import RotatingFileHandler
 
@@ -20,6 +22,13 @@ from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+
+# For the process started in detach mode, stdout/stderr will be none.
+# To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = sys.stdout
 
 
 def heartbeat():
