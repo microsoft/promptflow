@@ -13,6 +13,9 @@ from datetime import datetime
 from threading import Lock
 from typing import Callable, Dict, List, Optional
 
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.completion import Completion
+
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace.status import StatusCode
 
@@ -291,6 +294,7 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     enrich_span_with_output(span, output)
     if trace_type == TraceType.LLM:
         token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_llm_model(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
@@ -327,17 +331,38 @@ def enrich_span_with_embedding(span, inputs, output):
         if isinstance(output, CreateEmbeddingResponse):
             span.set_attribute("embedding.model", output.model)
             embeddings = []
-            input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
+            if (
+                isinstance(inputs["input"], str)  # input is a string
+                or (
+                    isinstance(inputs["input"], list)
+                    and all(isinstance(i, int) for i in inputs["input"])
+                )  # input is a token array
+            ):
+                input_list = [inputs["input"]]
+            else:
+                input_list = inputs["input"]
             for emb in output.data:
+                if isinstance(text := input_list[emb.index], str):
+                    emb_text = text
+                else:
+                    emb_text = f"<{len(text)} dimensional token>"
                 embeddings.append(
                     {
                         "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
-                        "embedding.text": input_list[emb.index],
+                        "embedding.text": emb_text,
                     }
                 )
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
+
+
+def enrich_span_with_llm_model(span, output):
+    try:
+        if isinstance(output, (ChatCompletion, Completion)):
+            span.set_attribute("llm.model", output.model)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with llm model: {e}")
 
 
 def serialize_attribute(value):
