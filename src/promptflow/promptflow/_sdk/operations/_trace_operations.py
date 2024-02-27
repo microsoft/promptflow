@@ -104,6 +104,9 @@ class TraceOperations:
         grouped_spans = {run: dict() for run in runs}
         for span in map(Span._from_orm_object, orm_spans):
             attributes = span._content[SpanFieldName.ATTRIBUTES]
+            # aggregation node will not have `batch_run_id`, ignore
+            if SpanAttributeFieldName.BATCH_RUN_ID not in attributes:
+                continue
             batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
             line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
             # check if it is an evaluation root span
