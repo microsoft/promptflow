@@ -78,13 +78,8 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: set test mode
+    - name: Set test mode
       run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
     - name: checkout
       uses: actions/checkout@v4
       with:
