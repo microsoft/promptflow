@@ -11,6 +11,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import List, Optional, Union
 
 import psutil
@@ -43,8 +44,10 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-LogName = "process_stderr"
-LogPath = ".promptflow"
+from ._process_manager import SPANEDFORKPROCESSMANAGERLOGNAME, ProcessControlSignal
+
+PROCESSLOGPATH = Path(".promptflow")
+PROCESSLOGNAME = "process_stderr"
 
 
 def signal_handler(signum, frame):
@@ -85,6 +88,16 @@ def log_process_status(process_name, pid, line_number: int, is_completed=False, 
         bulk_logger.info(f"{process_info} failed.")
     else:
         bulk_logger.info(f"{process_info} start execution.")
+
+
+def read_and_log_error(log_path):
+    try:
+        with open(log_path, "r") as f:
+            error_logs = "".join(f.readlines())
+            bulk_logger.error(error_logs)
+        return True
+    except FileNotFoundError:
+        return False
 
 
 class LineExecutionProcessPool:
@@ -316,10 +329,13 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
-                    LogName_i = "{}_{}.log".format(LogName, index)
-                    with open(os.path.join(LogPath, LogName_i), "r") as f:
-                        error_logs = "".join(f.readlines())
-                        bulk_logger.error(error_logs)
+                    logName_i = "{}_{}.log".format(PROCESSLOGNAME, index)
+                    log_path = PROCESSLOGPATH / logName_i
+                    # In fork mode, if the child process fails to start, its error information
+                    # will be written to the parent process log file.
+                    if not read_and_log_error(log_path) and self._use_fork:
+                        log_path = PROCESSLOGPATH / SPANEDFORKPROCESSMANAGERLOGNAME
+                        read_and_log_error(log_path)
                     ex = ProcessCrashError(line_number)
                 else:
                     # Handle line execution timeout.
@@ -550,8 +566,6 @@ class LineExecutionProcessPool:
                         async_result.wait(1)
 
                     if self._use_fork:
-                        from ._process_manager import ProcessControlSignal
-
                         # In fork mode, put the end signal to exit the spawned process manager
                         self._control_signal_queue.put((ProcessControlSignal.SPAWNED_MANAGER_END, self._use_fork))
 
@@ -677,9 +691,11 @@ def _process_wrapper(
     operation_contexts_dict: dict,
     i,
 ):
-    LogName_i = "{}_{}.log".format(LogName, i)
-    os.makedirs(LogPath, exist_ok=True)
-    sys.stderr = open(os.path.join(LogPath, LogName_i), "w")
+    logName_i = "{}_{}.log".format(PROCESSLOGNAME, i)
+    if not PROCESSLOGPATH.exists():
+        PROCESSLOGPATH.mkdir(parents=True, exist_ok=True)
+    log_path = PROCESSLOGPATH / logName_i
+    sys.stderr = open(log_path, "w")
 
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)

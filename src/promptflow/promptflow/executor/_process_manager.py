@@ -1,5 +1,4 @@
 import multiprocessing
-import os
 import queue
 import signal
 import sys
@@ -7,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Queue
+from pathlib import Path
 from typing import List
 
 import psutil
@@ -16,7 +16,8 @@ from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
-SpawnedForkProcessManagerLogPath = ".promptflow/spawned_fork_process_manager_stderr.log"
+SPANEDFORKPROCESSMANAGERLOGPATH = Path(".promptflow")
+SPANEDFORKPROCESSMANAGERLOGNAME = "spawned_fork_process_manager_stderr.log"
 
 
 @dataclass
@@ -286,12 +287,16 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            with open(SpawnedForkProcessManagerLogPath, "r") as f:
-                error_logs = "".join(f.readlines())
-                bulk_logger.error("The spawned fork process manager failed to start.")
-                bulk_logger.error(error_logs)
-                ex = SpawnedForkProcessManagerStartFailure()
-                raise ex
+            log_path = SPANEDFORKPROCESSMANAGERLOGPATH / SPANEDFORKPROCESSMANAGERLOGNAME
+            try:
+                with open(log_path, "r") as f:
+                    error_logs = "".join(f.readlines())
+                    bulk_logger.error(error_logs)
+            except FileNotFoundError:
+                pass
+            bulk_logger.error("The spawned fork process manager failed to start.")
+            ex = SpawnedForkProcessManagerStartFailure()
+            raise ex
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):
@@ -420,8 +425,11 @@ def create_spawned_fork_process_manager(
     process_target_func,
 ):
     # Ensure the directory exists
-    os.makedirs(os.path.dirname(SpawnedForkProcessManagerLogPath), exist_ok=True)
-    sys.stderr = open(SpawnedForkProcessManagerLogPath, "w")
+
+    if not SPANEDFORKPROCESSMANAGERLOGPATH.exists():
+        SPANEDFORKPROCESSMANAGERLOGPATH.mkdir(parents=True, exist_ok=True)
+    log_path = SPANEDFORKPROCESSMANAGERLOGPATH / SPANEDFORKPROCESSMANAGERLOGNAME
+    sys.stderr = open(log_path, "w")
 
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
