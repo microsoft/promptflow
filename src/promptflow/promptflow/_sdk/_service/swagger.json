@@ -87,31 +87,6 @@
                     "Connections"
                 ]
             },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "query",
-                        "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -154,6 +129,31 @@
                 },
                 "description": "Delete connection",
                 "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "query",
+                        "type": "string"
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -228,91 +228,6 @@
                 ]
             }
         },
-        "/Flows/image": {
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Get image url",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "description": "Get image url",
-                "operationId": "post_image_url",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ImageView"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Flows"
-                ]
-            }
-        },
-        "/Flows/image/{directory}/{filename}": {
-            "parameters": [
-                {
-                    "name": "directory",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                },
-                {
-                    "name": "filename",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                }
-            ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Visualize image",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "description": "Visualize image",
-                "operationId": "get_image_view",
-                "tags": [
-                    "Flows"
-                ]
-            }
-        },
-        "/Flows/image_save": {
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Save image",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "description": "Save image",
-                "operationId": "post_image_save",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ImageSave"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Flows"
-                ]
-            }
-        },
         "/Flows/test": {
             "post": {
                 "responses": {
@@ -341,21 +256,6 @@
             }
         },
         "/Flows/ux_inputs": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    }
-                },
-                "description": "Get the file content of file UX_INPUTS_JSON",
-                "operationId": "get_flow_ux_inputs",
-                "tags": [
-                    "Flows"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -367,6 +267,41 @@
                 },
                 "description": "Set the file content of file UX_INPUTS_JSON",
                 "operationId": "post_flow_ux_inputs",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/FlowUxInput"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Flows"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Get the file content of file UX_INPUTS_JSON",
+                "operationId": "get_flow_ux_inputs",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/FlowUxInput"
+                        }
+                    }
+                ],
                 "tags": [
                     "Flows"
                 ]
@@ -481,21 +416,6 @@
                     "Runs"
                 ]
             },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
             "delete": {
                 "responses": {
                     "204": {
@@ -507,6 +427,21 @@
                 },
                 "description": "Delete run",
                 "operationId": "delete_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -783,6 +718,91 @@
                 ],
                 "tags": [
                     "Telemetries"
+                ]
+            }
+        },
+        "/ui/image": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get image url",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": "Get image url",
+                "operationId": "get_image_url",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ImageView"
+                        }
+                    }
+                ],
+                "tags": [
+                    "ui"
+                ]
+            }
+        },
+        "/ui/image/{directory}/{filename}": {
+            "parameters": [
+                {
+                    "name": "directory",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "filename",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Visualize image",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": "Visualize image",
+                "operationId": "get_image_view",
+                "tags": [
+                    "ui"
+                ]
+            }
+        },
+        "/ui/media_save": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Save image",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": "Save image",
+                "operationId": "post_media_save",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/MediaSave"
+                        }
+                    }
+                ],
+                "tags": [
+                    "ui"
                 ]
             }
         },
@@ -1096,12 +1116,12 @@
         },
         "LineRun": {
             "required": [
-                "display_name",
                 "end_time",
                 "inputs",
                 "kind",
                 "latency",
                 "line_run_id",
+                "name",
                 "outputs",
                 "root_span_id",
                 "start_time",
@@ -1138,7 +1158,7 @@
                 "latency": {
                     "type": "string"
                 },
-                "display_name": {
+                "name": {
                     "type": "string"
                 },
                 "kind": {
@@ -1148,10 +1168,7 @@
                     "$ref": "#/definitions/CumulativeTokenCount"
                 },
                 "evaluations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/EvaluationLineRun"
-                    }
+                    "type": "object"
                 }
             },
             "type": "object"
@@ -1170,58 +1187,31 @@
             },
             "type": "object"
         },
-        "EvaluationLineRun": {
+        "MediaSave": {
             "required": [
-                "display_name",
-                "end_time",
-                "inputs",
-                "kind",
-                "latency",
-                "line_run_id",
-                "outputs",
-                "root_span_id",
-                "start_time",
-                "status",
-                "trace_id"
+                "base64_data",
+                "extension"
             ],
             "properties": {
-                "line_run_id": {
-                    "type": "string"
-                },
-                "trace_id": {
-                    "type": "string"
-                },
-                "root_span_id": {
-                    "type": "string"
-                },
-                "inputs": {
-                    "type": "object"
-                },
-                "outputs": {
-                    "type": "object"
-                },
-                "start_time": {
+                "base64_data": {
                     "type": "string",
-                    "format": "date-time"
+                    "description": "Image base64 encoded data."
                 },
-                "end_time": {
+                "extension": {
                     "type": "string",
-                    "format": "date-time"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "latency": {
-                    "type": "string"
-                },
-                "display_name": {
-                    "type": "string"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "cumulative_token_count": {
-                    "$ref": "#/definitions/CumulativeTokenCount"
+                    "description": "Image file extension."
+                }
+            },
+            "type": "object"
+        },
+        "ImageView": {
+            "required": [
+                "image_path"
+            ],
+            "properties": {
+                "image_path": {
+                    "type": "string",
+                    "description": "Path of image."
                 }
             },
             "type": "object"
@@ -1243,9 +1233,9 @@
                     "type": "string",
                     "description": "Node & variant name in format of ${node_name.variant_name}, will use default variant if not specified."
                 },
-                "detail": {
+                "output_path": {
                     "type": "string",
-                    "description": "Output path of flow detail"
+                    "description": "Output path of flow"
                 },
                 "experiment": {
                     "type": "string",
@@ -1264,36 +1254,14 @@
             "additionalProperties": true,
             "type": "object"
         },
-        "ImageSave": {
+        "FlowUxInput": {
             "required": [
-                "base64_data",
-                "extension",
                 "flow"
             ],
             "properties": {
                 "flow": {
                     "type": "string",
                     "description": "Path to flow directory."
-                },
-                "base64_data": {
-                    "type": "string",
-                    "description": "Image base64 encoded data."
-                },
-                "extension": {
-                    "type": "string",
-                    "description": "Image file extension."
-                }
-            },
-            "type": "object"
-        },
-        "ImageView": {
-            "required": [
-                "image_path"
-            ],
-            "properties": {
-                "image_path": {
-                    "type": "string",
-                    "description": "Path of image."
                 }
             },
             "type": "object"
