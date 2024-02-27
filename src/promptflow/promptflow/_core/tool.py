@@ -143,7 +143,6 @@ class ToolProvider(ABC):
 
 @dataclass
 class DynamicList:
-
     function: InitVar[Union[str, Callable]]
     """The dynamic list function."""
 
@@ -154,7 +153,7 @@ class DynamicList:
     func_kwargs: List = field(init=False)
 
     def __post_init__(self, function, input_mapping):
-        from promptflow._sdk._constants import SKIP_FUNC_PARAMS
+        from promptflow._constants import SKIP_FUNC_PARAMS
         from promptflow._utils.tool_utils import _get_function_path, function_to_interface
 
         self._func_obj, self.func_path = _get_function_path(function)
@@ -196,7 +195,7 @@ class GeneratedBy:
     reverse_func_path: str = field(init=False)
 
     def __post_init__(self, function, reverse_function, input_settings):
-        from promptflow._sdk._constants import SKIP_FUNC_PARAMS, UIONLY_HIDDEN
+        from promptflow._constants import SKIP_FUNC_PARAMS, UIONLY_HIDDEN
         from promptflow._utils.tool_utils import _get_function_path, function_to_interface
 
         self._func_obj, self.func_path = _get_function_path(function=function)

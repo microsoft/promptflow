@@ -23,6 +23,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.tracer import Tracer
 from promptflow._version import VERSION
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
@@ -313,17 +314,17 @@ def test_aoai_chat_tool_prompt():
             [
                 (
                     (
-                        ("openai", "Completion", "create"),
-                        ("openai", "ChatCompletion", "create"),
-                        ("openai", "Embedding", "create"),
+                        ("openai", "Completion", "create", TraceType.LLM),
+                        ("openai", "ChatCompletion", "create", TraceType.LLM),
+                        ("openai", "Embedding", "create", TraceType.EMBEDDING),
                     ),
                     inject_sync,
                 ),
                 (
                     (
-                        ("openai", "Completion", "acreate"),
-                        ("openai", "ChatCompletion", "acreate"),
-                        ("openai", "Embedding", "acreate"),
+                        ("openai", "Completion", "acreate", TraceType.LLM),
+                        ("openai", "ChatCompletion", "acreate", TraceType.LLM),
+                        ("openai", "Embedding", "acreate", TraceType.EMBEDDING),
                     ),
                     inject_async,
                 ),
@@ -334,17 +335,17 @@ def test_aoai_chat_tool_prompt():
             [
                 (
                     (
-                        ("openai.resources.chat", "Completions", "create"),
-                        ("openai.resources", "Completions", "create"),
-                        ("openai.resources", "Embeddings", "create"),
+                        ("openai.resources.chat", "Completions", "create", TraceType.LLM),
+                        ("openai.resources", "Completions", "create", TraceType.LLM),
+                        ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING),
                     ),
                     inject_sync,
                 ),
                 (
                     (
-                        ("openai.resources.chat", "AsyncCompletions", "create"),
-                        ("openai.resources", "AsyncCompletions", "create"),
-                        ("openai.resources", "AsyncEmbeddings", "create"),
+                        ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM),
+                        ("openai.resources", "AsyncCompletions", "create", TraceType.LLM),
+                        ("openai.resources", "AsyncEmbeddings", "create", TraceType.EMBEDDING),
                     ),
                     inject_async,
                 ),
@@ -363,8 +364,16 @@ def test_api_list(is_legacy, expected_apis_with_injectors):
 @pytest.mark.parametrize(
     "apis_with_injectors, expected_output, expected_logs",
     [
-        ([((("MockModule", "MockAPI", "create"),), inject_sync)], [(MockAPI, "create", inject_sync)], []),
-        ([((("MockModule", "MockAPI", "create"),), inject_async)], [(MockAPI, "create", inject_async)], []),
+        (
+            [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_sync)],
+            [(MockAPI, "create", TraceType.LLM, inject_sync)],
+            []
+        ),
+        (
+            [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_async)],
+            [(MockAPI, "create", TraceType.LLM, inject_async)],
+            []
+        ),
     ],
 )
 def test_generate_api_and_injector(apis_with_injectors, expected_output, expected_logs, caplog):
@@ -387,8 +396,8 @@ def test_generate_api_and_injector(apis_with_injectors, expected_output, expecte
 
 def test_generate_api_and_injector_attribute_error_logging(caplog):
     apis = [
-        ((("NonExistentModule", "NonExistentAPI", "create"),), MagicMock()),
-        ((("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method"),), MagicMock()),
+        ((("NonExistentModule", "NonExistentAPI", "create", TraceType.LLM),), MagicMock()),
+        ((("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method", "missing_trace_type"),), MagicMock()),
     ]
 
     # Set up the side effect for the mock
@@ -419,15 +428,12 @@ def test_generate_api_and_injector_attribute_error_logging(caplog):
 @pytest.mark.unittest
 def test_get_aoai_telemetry_headers():
     # create a mock operation context
-    mock_operation_context = OperationContext()
+    mock_operation_context = OperationContext.get_instance()
     mock_operation_context.user_agent = "test-user-agent"
     mock_operation_context.update(
         {
             "flow_id": "test-flow-id",
             "root_run_id": "test-root-run-id",
-            "index": 1,
-            "run_id": "test-run-id",
-            "variant_id": "test-variant-id",
         }
     )
 
@@ -446,9 +452,15 @@ def test_get_aoai_telemetry_headers():
         assert headers[USER_AGENT_HEADER] == f"test-user-agent promptflow/{VERSION}"
         assert headers[f"{PROMPTFLOW_PREFIX}flow-id"] == "test-flow-id"
         assert headers[f"{PROMPTFLOW_PREFIX}root-run-id"] == "test-root-run-id"
-        assert headers[f"{PROMPTFLOW_PREFIX}index"] == "1"
-        assert headers[f"{PROMPTFLOW_PREFIX}run-id"] == "test-run-id"
-        assert headers[f"{PROMPTFLOW_PREFIX}variant-id"] == "test-variant-id"
+
+        context = OperationContext.get_instance()
+        context.dummy_key = "dummy_value"
+        headers = get_aoai_telemetry_headers()
+        assert f"{PROMPTFLOW_PREFIX}dummy-key" not in headers  # not default telemetry
+
+        context._tracking_keys.add("dummy_key")
+        headers = get_aoai_telemetry_headers()
+        assert headers[f"{PROMPTFLOW_PREFIX}dummy-key"] == "dummy_value"  # telemetry key inserted
 
 
 @pytest.mark.unittest
@@ -467,7 +479,7 @@ def test_inject_and_recover_openai_api():
         pass
 
     # Real injector function that adds an _original attribute
-    def injector(f):
+    def injector(f, trace_type):
         def wrapper_fun(*args, **kwargs):
             return f(*args, **kwargs)
 
@@ -484,7 +496,10 @@ def test_inject_and_recover_openai_api():
     # Mock the generator function to yield our mocked api and method
     with patch(
         "promptflow._core.openai_injector.available_openai_apis_and_injectors",
-        return_value=[(FakeAPIWithoutOriginal, "create", injector), (FakeAPIWithOriginal, "create", injector)],
+        return_value=[
+            (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector),
+            (FakeAPIWithOriginal, "create", TraceType.LLM, injector)
+        ],
     ):
         # Call the function to inject the APIs
         inject_openai_api()

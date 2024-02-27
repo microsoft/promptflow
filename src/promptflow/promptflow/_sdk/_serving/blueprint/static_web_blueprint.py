@@ -10,7 +10,7 @@ from flask import Blueprint, request, url_for, current_app as app
 
 def construct_staticweb_blueprint(static_folder):
     """Construct static web blueprint."""
-    staticweb_blueprint = Blueprint('staticweb_blueprint', __name__, static_folder=static_folder)
+    staticweb_blueprint = Blueprint("staticweb_blueprint", __name__, static_folder=static_folder)
 
     @staticweb_blueprint.route("/", methods=["GET", "POST"])
     def home():

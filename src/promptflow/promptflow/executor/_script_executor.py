@@ -8,7 +8,7 @@ from typing import Any, Callable, Mapping, Optional
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
-from promptflow._core.tracer import _traced, Tracer
+from promptflow._core.tracer import Tracer, _traced
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
@@ -49,7 +49,12 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        self._update_operation_context(run_id)
+        with self._update_operation_context(run_id, index):
+            return self._exec_line(inputs, index, run_id)
+
+    def _exec_line(
+        self, inputs: Mapping[str, Any], index: Optional[int] = None, run_id: Optional[str] = None
+    ) -> LineResult:
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         run_tracker = RunTracker(self._storage)
         run_info = run_tracker.start_flow_run(

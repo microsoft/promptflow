@@ -178,7 +178,18 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
     return result if include_image else chat_str
 
 
-def handle_openai_error(tries: int = 10, delay: float = 8.0):
+def generate_retry_interval(retry_count: int) -> float:
+    min_backoff_in_sec = 3
+    max_backoff_in_sec = 60
+    retry_interval = min_backoff_in_sec + ((2 ** retry_count) - 1)
+
+    if retry_interval > max_backoff_in_sec:
+        retry_interval = max_backoff_in_sec
+    return retry_interval
+
+
+# TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
+def handle_openai_error(tries: int = 100):
     """
     A decorator function that used to handle OpenAI error.
     OpenAI Error falls into retriable vs non-retriable ones.
@@ -224,14 +235,14 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         retry_after_in_header = None
 
                     if not retry_after_in_header:
-                        retry_after_seconds = delay * (2 ** i)
+                        retry_after_seconds = generate_retry_interval(i)
                         msg = (
                             f"{type(e).__name__} #{i}, but no Retry-After header, "
                             + f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     else:
-                        retry_after_seconds = float(retry_after_in_header) * (2 ** i)
+                        retry_after_seconds = float(retry_after_in_header)
                         msg = (
                             f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
                             f"Back off {retry_after_seconds} seconds for retry."

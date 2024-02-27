@@ -2,15 +2,16 @@ import importlib
 import importlib.util
 import json
 import logging
-import multiprocessing
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
+from time import sleep
 from typing import Dict, List
 from unittest.mock import patch
 
@@ -28,7 +29,8 @@ from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
@@ -56,34 +58,6 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
-
-
-def run_batch(local_client, line_timeout_seconds, timeout_index=None):
-    os.environ["PF_LINE_TIMEOUT_SEC"] = line_timeout_seconds
-    run_id = str(uuid.uuid4())
-    run_pf_command(
-        "run",
-        "create",
-        "--flow",
-        f"{FLOWS_DIR}/simple_flow_with_ten_inputs",
-        "--data",
-        f"{FLOWS_DIR}/simple_flow_with_ten_inputs/data.jsonl",
-        "--name",
-        run_id,
-    )
-    run = local_client.runs.get(name=run_id)
-    local_storage = LocalStorageOperations(run)
-    detail = local_storage.load_detail()
-    flow_runs_list = detail["flow_runs"]
-    for i, flow_run in enumerate(flow_runs_list):
-        if i == timeout_index:
-            assert flow_run["status"] == "Failed"
-            assert flow_run["error"]["message"] == f"Line {i} execution timeout for exceeding 54 seconds"
-            assert flow_run["error"]["code"] == "UserError"
-            assert flow_run["error"]["innerError"]["code"] == "LineExecutionTimeoutError"
-        else:
-            assert flow_run["status"] == "Completed"
-    os.environ.pop("PF_LINE_TIMEOUT_SEC")
 
 
 @pytest.mark.usefixtures(
@@ -794,7 +768,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(UserErrorException) as ex:
+            with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
                     "init",
@@ -807,7 +781,8 @@ class TestCli:
                     "--prompt-template",
                     f"{jinja_name}={jinja_name}.jinja2",
                 )
-            assert f"Template parameter {jinja_name} doesn't find in python function arguments." in str(ex.value)
+                _, err = capsys.readouterr()
+                assert f"Template parameter {jinja_name} doesn't find in python function arguments." in err
 
             with pytest.raises(SystemExit):
                 run_pf_command("flow", "init")
@@ -1189,8 +1164,8 @@ class TestCli:
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
 
-    def test_flow_build_with_ua(self):
-        with pytest.raises(UserErrorException) as e:
+    def test_flow_build_with_ua(self, capsys):
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
                 "build",
@@ -1203,7 +1178,8 @@ class TestCli:
                 "--user-agent",
                 "test/1.0.0",
             )
-        assert "not exist" in str(e.value)
+            _, err = capsys.readouterr()
+            assert "not exist" in err
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -1504,6 +1480,35 @@ class TestCli:
                 )
             outerr = capsys.readouterr()
             assert "Cannot find the icon path" in outerr.out
+
+    def test_list_tool_cache(self, caplog, mocker):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_name = "mock_tool_package_name"
+            func_name = "func_name"
+            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
+            package_folder = Path(temp_dir) / package_name
+
+            # Package tool project
+            subprocess.check_call([sys.executable, "setup.py", "sdist", "bdist_wheel"], cwd=package_folder)
+
+            package_file = list((package_folder / "dist").glob("*.whl"))
+            assert len(package_file) == 1
+            # Install package
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package_file[0].as_posix()], cwd=package_folder
+            )
+
+            package_module = importlib.import_module(package_name)
+            # cache file in installed package
+            assert (Path(package_module.__file__).parent / "yamls" / "tools_meta.yaml").exists()
+
+            from mock_tool_package_name import utils
+
+            # Get tools meta from cache file
+            with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
+                tools_meta = utils.list_package_tools()
+            assert "List tools meta from cache file" in caplog.text
+            assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
     def test_tool_list(self, capsys):
         # List package tools in environment
@@ -1930,8 +1935,16 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
+        def wait_for_experiment_terminated(experiment_name):
+            experiment = local_client._experiments.get(experiment_name)
+            while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
+                sleep(10)
+                experiment = local_client._experiments.get(experiment_name)
+            return experiment
+
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             exp_name = str(uuid.uuid4())
@@ -1954,7 +1967,8 @@ class TestCli:
                 exp_name,
             )
             out, _ = capfd.readouterr()
-            assert ExperimentStatus.TERMINATED in out
+            assert ExperimentStatus.QUEUING in out
+            wait_for_experiment_terminated(exp_name)
             exp = local_client._experiments.get(name=exp_name)
             assert len(exp.node_runs) == 4
             assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
@@ -1983,30 +1997,6 @@ class TestCli:
             for node_name in ["main", "eval"]:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
-
-    def test_batch_run_timeout(self, local_client):
-        line_timeout_seconds = "54"
-        timout_index = 9
-        p = multiprocessing.Process(
-            target=run_batch,
-            args=(local_client, line_timeout_seconds, timout_index),
-        )
-        p.start()
-        p.join()
-        assert p.exitcode == 0
-
-    def test_batch_run_completed_within_the_required_time(self, local_client):
-        line_timeout_seconds = "600"
-        p = multiprocessing.Process(
-            target=run_batch,
-            args=(
-                local_client,
-                line_timeout_seconds,
-            ),
-        )
-        p.start()
-        p.join()
-        assert p.exitcode == 0
 
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run

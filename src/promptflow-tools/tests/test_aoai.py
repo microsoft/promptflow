@@ -36,6 +36,8 @@ class TestAOAI:
             chat_history=chat_history,
         )
         assert "additional details" in result.lower()
+        # verify if openai built-in retry mechanism is disabled
+        assert aoai_provider._client.max_retries == 0
 
     def test_aoai_chat_api(self, azure_open_ai_connection, example_prompt_template, chat_history):
         result = chat(
