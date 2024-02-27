@@ -237,7 +237,9 @@ def start_experiment(args: argparse.Namespace):
         inputs = list_of_dict_to_dict(args.inputs)
         if inputs:
             logger.warning("The inputs of named experiment cannot be modified.")
-        result = _get_pf_client()._experiments.start(args.name, stream=args.stream)
+        client = _get_pf_client()
+        experiment = client._experiments.get(args.name)
+        result = client._experiments.start(experiment=experiment, stream=args.stream)
     elif args.file:
         from promptflow._sdk._load_functions import _load_experiment
 
@@ -251,14 +253,14 @@ def start_experiment(args: argparse.Namespace):
 
 
 def stop_experiment(args: argparse.Namespace):
+    client = _get_pf_client()
     if args.name:
         logger.debug(f"Stop a named experiment {args.name}.")
-        experiment_name = args.name
+        experiment = client._experiments.get(args.name)
     elif args.file:
         from promptflow._sdk._load_functions import _load_experiment
 
         logger.debug(f"Stop an anonymous experiment {args.file}.")
         experiment = _load_experiment(source=args.file)
-        experiment_name = experiment.name
-    result = _get_pf_client()._experiments.stop(experiment_name)
+    result = client._experiments.stop(experiment)
     print(json.dumps(result._to_dict(), indent=4))

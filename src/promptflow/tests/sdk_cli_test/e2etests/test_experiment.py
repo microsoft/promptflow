@@ -91,10 +91,10 @@ class TestExperiment:
         session = str(uuid.uuid4())
         if is_live():
             # Async start
-            exp = client._experiments.start(exp.name, session=session)
+            exp = client._experiments.start(exp, session=session)
             # Test the experiment in progress cannot be started.
             with pytest.raises(RunOperationError) as e:
-                client._experiments.start(exp.name)
+                client._experiments.start(exp)
             assert f"Experiment {exp.name} is {exp.status}" in str(e.value)
             assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
             exp = self.wait_for_experiment_terminated(client, exp)
@@ -124,7 +124,7 @@ class TestExperiment:
             assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
 
         # Test experiment restart
-        exp = client._experiments.start(exp.name)
+        exp = client._experiments.start(exp)
         exp = self.wait_for_experiment_terminated(client, exp)
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
@@ -139,7 +139,7 @@ class TestExperiment:
         exp = client._experiments.create_or_update(experiment)
         if is_live():
             # Async start
-            exp = client._experiments.start(exp.name)
+            exp = client._experiments.start(exp)
             exp = self.wait_for_experiment_terminated(client, exp)
         else:
             exp = client._experiments.get(exp.name)
@@ -160,11 +160,11 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
+        exp = client._experiments.start(exp)
         exp = self.wait_for_experiment_terminated(client, exp)
 
         # Test start experiment from nodes
-        exp = client._experiments.start(exp.name, from_nodes=["main"])
+        exp = client._experiments.start(exp, from_nodes=["main"])
         exp = self.wait_for_experiment_terminated(client, exp)
 
         assert exp.status == ExperimentStatus.TERMINATED
@@ -176,7 +176,7 @@ class TestExperiment:
         assert len(exp.node_runs["echo"]) == 2
 
         # Test run nodes in experiment
-        exp = client._experiments.start(exp.name, nodes=["main"])
+        exp = client._experiments.start(exp, nodes=["main"])
         exp = self.wait_for_experiment_terminated(client, exp)
 
         assert exp.status == ExperimentStatus.TERMINATED
@@ -194,10 +194,10 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
+        exp = client._experiments.start(exp)
         assert exp.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]
         sleep(10)
-        client._experiments.stop(exp.name)
+        client._experiments.stop(exp)
         exp = client._experiments.get(exp.name)
         assert exp.status == ExperimentStatus.TERMINATED
 
