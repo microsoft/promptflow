@@ -9,8 +9,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.049'
+      - '0.022'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.089'
+      - '0.795'
     status:
       code: 200
       message: OK
@@ -105,8 +105,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.085'
+      - '0.557'
     status:
       code: 200
       message: OK
@@ -159,8 +159,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.112'
+      - '0.176'
     status:
       code: 200
       message: OK
@@ -198,9 +198,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:16 GMT
+      - Mon, 26 Feb 2024 03:28:19 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -248,9 +248,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:17 GMT
+      - Mon, 26 Feb 2024 03:28:22 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -282,8 +282,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -320,7 +320,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.087'
+      - '0.068'
     status:
       code: 200
       message: OK
@@ -336,8 +336,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -361,7 +361,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.148'
+      - '0.081'
     status:
       code: 200
       message: OK
@@ -375,9 +375,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:20 GMT
+      - Mon, 26 Feb 2024 03:28:25 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -425,9 +425,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:21 GMT
+      - Mon, 26 Feb 2024 03:28:29 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -459,8 +459,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -497,7 +497,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.091'
+      - '0.067'
     status:
       code: 200
       message: OK
@@ -513,8 +513,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -538,7 +538,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.110'
+      - '0.095'
     status:
       code: 200
       message: OK
@@ -552,9 +552,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:25 GMT
+      - Mon, 26 Feb 2024 03:28:37 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -602,9 +602,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:27 GMT
+      - Mon, 26 Feb 2024 03:28:40 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -636,8 +636,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
   response:
@@ -674,7 +674,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.105'
+      - '0.101'
     status:
       code: 200
       message: OK
@@ -690,8 +690,8 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.11.5 (Windows-10-10.0.22621-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
   response:
@@ -715,7 +715,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.090'
+      - '0.077'
     status:
       code: 200
       message: OK
@@ -729,9 +729,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:30 GMT
+      - Mon, 26 Feb 2024 03:28:43 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -779,9 +779,9 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-blob/12.19.0 Python/3.11.5 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Wed, 29 Nov 2023 09:04:31 GMT
+      - Mon, 26 Feb 2024 03:28:46 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
