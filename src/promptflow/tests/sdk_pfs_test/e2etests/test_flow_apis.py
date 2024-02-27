@@ -74,7 +74,6 @@ class TestFlowAPIs:
                 request_body={
                     "image_path": Path(IMAGE_PATH).absolute().as_posix(),
                 },
-                status_code=200,
             ).json
             match = re.match(".*/image/(.+)/(.+)", response)
             assert match
