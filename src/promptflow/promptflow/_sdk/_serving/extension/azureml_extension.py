@@ -62,7 +62,7 @@ class AzureMLExtension(AppExtension):
         self.flow_monitor = FlowMonitor(
             self.logger, self.get_flow_name(), data_collector, metrics_recorder=metrics_recorder
         )
-        # initialize customize trace exporters
+        # initialize MDC trace exporter by default for azureml-serving
         mdc_exporter = MdcExporter(self.logger)
         self.trace_exporters = [mdc_exporter]
         customized_exporters = super(AzureMLExtension, self).get_trace_exporters(self.project_path)
