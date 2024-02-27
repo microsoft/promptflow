@@ -2,13 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import Any, Mapping
+from pathlib import Path
+from typing import Any, Mapping, Optional
 
 from promptflow.executor._service.contracts.base_request import BaseRequest
 
 
 class InitializationRequest(BaseRequest):
     """Request model for teh batch run initialization."""
+
+    flow_file: Path
+    working_dir: Path
+    output_dir: Path
+    connections: Optional[Mapping[str, Any]] = None
 
 
 class LineExecutionRequest(BaseRequest):
