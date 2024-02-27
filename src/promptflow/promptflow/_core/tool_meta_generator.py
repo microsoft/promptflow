@@ -32,7 +32,12 @@ from promptflow._core.tool import ToolProvider
 from promptflow._core.tool_settings_parser import _parser_tool_icon, _parser_tool_input_settings
 from promptflow._core.tool_validation import _validate_tool_function, _validate_tool_schema
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
-from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
+from promptflow._utils.exception_utils import (
+    ADDITIONAL_INFO_USER_CODE_STACKTRACE,
+    ExceptionPresenter,
+    get_tb_next,
+    last_frame_info,
+)
 from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -384,7 +389,7 @@ def generate_tool_meta(
                 tool_type = ToolType(config.get("tool_type"))
                 tool_dict[source] = generate_tool_meta_dict_by_file(source, tool_type)
             except Exception as e:
-                exception_dict[source] = e
+                exception_dict[source] = ExceptionPresenter.create(e).to_dict()
 
 
 def generate_tool_meta_in_process(
@@ -416,7 +421,7 @@ def generate_tool_meta_in_process(
     # For not processed tools, treat as timeout error.
     for source in tools.keys():
         if source not in tool_dict and source not in exception_dict:
-            exception_dict[source] = GenerateMetaTimeout(source)
+            exception_dict[source] = ExceptionPresenter.create(GenerateMetaTimeout(source=source)).to_dict()
 
     return tool_dict, exception_dict
 

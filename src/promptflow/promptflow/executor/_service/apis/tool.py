@@ -31,6 +31,6 @@ async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
 def gen_tool_meta(request: ToolMetaRequest):
     tool_dict, exception_dict = generate_tool_meta_in_process(request.working_dir, request.tools, service_logger)
     exception_dict = {
-        source: generate_error_response(exception).to_dict() for source, exception in exception_dict.items()
+        source: generate_error_response(error_dict).to_dict() for source, error_dict in exception_dict.items()
     }
     return {"tools": tool_dict, "errors": exception_dict}

@@ -576,8 +576,8 @@ def _generate_tool_meta(
                     if isinstance(tool_input_type[i], Enum):
                         tool_input_type[i] = tool_input_type[i].value
 
-    # collect errors and print warnings
-    errors = {source: str(exception) for source, exception in exception_dict.items()}
+    # collect errors and print warnings, exception_dict is a dict of source and error dict
+    errors = {source: error_dict.get("message", "unknown exception") for source, error_dict in exception_dict.items()}
     for source in errors:
         if include_errors_in_output:
             res[source] = errors[source]
