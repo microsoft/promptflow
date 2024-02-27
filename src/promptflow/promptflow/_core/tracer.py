@@ -392,10 +392,10 @@ def enrich_span_with_embedding(span, inputs, output):
 def _is_single_input(embedding_inputs):
     # OpenAI Embedding API accepts a single string/tokenized string or a list of string/tokenized string as input.
     # For the single string/tokenized string case, we should return true, otherwise return false.
-    if (isinstance(embedding_inputs["input"], str)):
+    if (isinstance(embedding_inputs, str)):
         # input is a string
         return True
-    elif (isinstance(embedding_inputs["input"], list) and all(isinstance(i, int) for i in embedding_inputs["input"])):
+    elif (isinstance(embedding_inputs, list) and all(isinstance(i, int) for i in embedding_inputs)):
         # input is a token array
         return True
     return False
