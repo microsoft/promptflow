@@ -34,12 +34,12 @@ from promptflow._utils.tool_utils import (
     RetrieveToolFuncResultError,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
+    assign_tool_input_index_for_ux_order_if_needed,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
-    assign_tool_input_index_for_ux_order_if_needed,
 )
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
@@ -445,6 +445,28 @@ class ToolLoader:
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
+        f, init_inputs = collect_tool_function_in_module(m)
+        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
+
+    def load_tool_for_assistant_node(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
+        if tool["source"].path is None:
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load assistant tool failed for node '{node_name}'. The source path is 'None'.",
+                node_name=node_name,
+            )
+        path = tool["source"].path
+        if not (self._working_dir / path).is_file():
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load assistant tool failed for node '{node_name}'. "
+                "Tool file '{source_path}' can not be found.",
+                source_path=path,
+                node_name=node_name,
+            )
+        m = load_python_module_from_file(self._working_dir / path)
+        if m is None:
+            raise CustomToolSourceLoadError(f"Cannot load module for assistant tool from {path}.")
         f, init_inputs = collect_tool_function_in_module(m)
         return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 

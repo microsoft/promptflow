@@ -68,14 +68,14 @@ class ToolResolver:
         resolver._activate_in_context(force=True)
         return resolver
 
-    def _convert_to_connection_value(self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType]):
+    def _convert_to_connection_value(self, k: str, v: InputAssignment, node_name: str, conn_types: List[ValueType]):
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
-                f"Input '{k}' for node '{node.name}' of type {type(connection_value).__name__!r}"
+                f"Input '{k}' for node '{node_name}' of type {type(connection_value).__name__!r}"
                 f" is not supported, valid types {conn_types}."
             )
             raise NodeInputValidationError(message=msg)
@@ -112,16 +112,16 @@ class ToolResolver:
         with open(file, "r", encoding="utf-8") as file:
             assistant_definition = load_yaml(file)
         assistant_def = AssistantDefinition.deserialize(assistant_definition)
-        self._resolve_assistant_tool(assistant_def)
+        self._resolve_assistant_tool(node_name, assistant_def)
         return assistant_def
 
-    def _resolve_assistant_tool(self, assistant_definition: AssistantDefinition):
+    def _resolve_assistant_tool(self, node_name: str, assistant_definition: AssistantDefinition):
         resolved_tools = {}
         for tool in assistant_definition.tools:
             if tool["type"] in ("code_interpreter", "retrieval"):
                 resolved_tools[tool["type"]] = AssistantTool(name=tool["type"], openai_definition=tool, func=None)
             elif tool["type"] == "function":
-                function_tool = self._load_tool_as_function(tool)
+                function_tool = self._load_tool_as_function(node_name, tool)
                 resolved_tools[function_tool.name] = function_tool
             else:
                 raise UnsupportedAssistantToolType(
@@ -131,33 +131,34 @@ class ToolResolver:
                 )
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
-    def _load_tool_as_function(self, tool: dict):
-        # Temporary implementation for resolving inner functions or tools within the assistant framework.
-        # Plans are underway to establish dedicated methods for inner function resolution.
-        # It will replace the current approach of creating node to reuse existing node resolution logic.
-        node, predefined_inputs = self._create_node_for_assistant_tool(tool)
-        resolved_tool = self.resolve_tool_by_node(node, convert_input_types=True)
-        func_name = resolved_tool.definition.function
-        definition = self._generate_tool_definition(func_name, resolved_tool.definition.description, predefined_inputs)
-        if resolved_tool.node.inputs:
-            inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
-            func = partial(resolved_tool.callable, **inputs)
-        else:
-            func = resolved_tool.callable
-        return AssistantTool(name=func_name, openai_definition=definition, func=func)
+    def _load_tool_as_function(self, node_name: str, tool_def: dict) -> AssistantTool:
+        # load ToolSource as object from json string
+        tool_def["source"] = ToolSource.deserialize(tool_def["source"]) if "source" in tool_def else None
 
-    def _create_node_for_assistant_tool(self, tool: dict):
+        # load predefined_inputs dictionary
         predefined_inputs = {}
-        for input_name, value in tool.get("predefined_inputs", {}).items():
+        for input_name, value in tool_def.get("predefined_inputs", {}).items():
             predefined_inputs[input_name] = InputAssignment.deserialize(value)
-        node = Node(
-            name="assistant_node",
-            tool="assistant_tool",
-            inputs=predefined_inputs,
-            source=ToolSource.deserialize(tool["source"]) if "source" in tool else None,
-            type=ToolType.PYTHON if "tool_type" in tool and tool["tool_type"] == "python" else None,
+
+        # load the module and Tool object
+        m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, tool_def)
+
+        # construct the resolved inputs dictionary
+        updated_inputs = self._get_assistant_function_input_types(node_name, predefined_inputs, tool, m)
+        callable, init_args = BuiltinsManager._load_tool_from_module(
+            m, tool.name, tool.module, tool.class_name, tool.function, updated_inputs
         )
-        return node, list(predefined_inputs.keys())
+        self._remove_init_args(updated_inputs, init_args)
+
+        # construct the AssistantTool object from the updated inputs + Tool object
+        func_name = tool.function
+        definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
+        if updated_inputs:
+            inputs = {name: value.value for name, value in updated_inputs.items()}
+            func = partial(callable, **inputs)
+        else:
+            func = callable
+        return AssistantTool(name=func_name, openai_definition=definition, func=func)
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
         try:
@@ -207,7 +208,7 @@ class ToolResolver:
                         k, v, node, tool, tool_input.custom_type, module=module
                     )
                 else:
-                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node.name, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 try:
                     updated_inputs[k].value = create_image(v.value)
@@ -263,6 +264,60 @@ class ToolResolver:
         updated_node = copy.deepcopy(node)
         updated_node.inputs = updated_inputs
         return updated_node
+
+    def _get_assistant_function_input_types(
+        self, node_name: str, predefined_inputs: dict, tool: Tool, module: types.ModuleType = None
+    ):
+        updated_inputs = {
+            k: v
+            for k, v in predefined_inputs.items()
+            if (v.value is not None and v.value != "") or v.value_type != InputValueType.LITERAL
+        }
+        for k, v in updated_inputs.items():
+            if v.value_type != InputValueType.LITERAL:
+                continue
+            tool_input = tool.inputs.get(k)
+            if tool_input is None:  # For kwargs input, tool_input is None.
+                continue
+            value_type = tool_input.type[0]
+            updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
+            if ConnectionType.is_connection_class_name(value_type):
+                if tool_input.custom_type:
+                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
+                        k, v, None, tool, tool_input.custom_type, module=module
+                    )
+                else:
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
+            elif isinstance(value_type, ValueType):
+                try:
+                    updated_inputs[k].value = value_type.parse(v.value)
+                except Exception as e:
+                    raise NodeInputValidationError(
+                        message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
+                        "type {value_type}.",
+                        key=k,
+                        node_name=node_name,
+                        value=v.value,
+                        value_type=value_type.value,
+                        target=ErrorTarget.EXECUTOR,
+                    ) from e
+                try:
+                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                except Exception as e:
+                    error_type_and_message = f"({e.__class__.__name__}) {e}"
+                    raise NodeInputValidationError(
+                        message_format="Failed to load image for input '{key}': {error_type_and_message}",
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
+                    ) from e
+            else:
+                # The value type is in ValueType enum or is connection type. null connection has been handled before.
+                raise ValueTypeUnresolved(
+                    f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
+                    target=ErrorTarget.EXECUTOR,
+                )
+        return updated_inputs
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
         try:
@@ -360,7 +415,8 @@ class ToolResolver:
         # If provider is not specified, try to resolve it from connection type
         connection_type = type(connection).__name__
         if connection_type not in connection_type_to_api_mapping:
-            from promptflow.connections import ServerlessConnection, OpenAIConnection
+            from promptflow.connections import OpenAIConnection, ServerlessConnection
+
             # This is a fallback for the case that ServerlessConnection related tool is not ready
             # in legacy versions, then we can directly use OpenAIConnection.
             if isinstance(connection, ServerlessConnection):
