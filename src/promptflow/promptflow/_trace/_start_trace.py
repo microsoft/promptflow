@@ -73,7 +73,12 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     workspace_triad = _get_workspace_triad_from_config()
 
     # init the global tracer with endpoint
-    _init_otel_trace_exporter(otlp_port=pfs_port, session_id=session_id, experiment=experiment)
+    _init_otel_trace_exporter(
+        otlp_port=pfs_port,
+        session_id=session_id,
+        experiment=experiment,
+        workspace_triad=workspace_triad,
+    )
     # print user the UI url
     ui_url = _determine_trace_url(
         pfs_port=pfs_port,
