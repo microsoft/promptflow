@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from pathlib import Path
 
 CONNECTION_NAME_PROPERTY = "__connection_name"
 CONNECTION_SECRET_KEYS = "__secret_keys"
@@ -16,6 +17,15 @@ CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
+
+# Tool meta info
+ICON_DARK = "icon_dark"
+ICON_LIGHT = "icon_light"
+ICON = "icon"
+UIONLY_HIDDEN = "uionly_hidden"
+SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
+TOOL_SCHEMA = Path(__file__).parent / "_sdk" / "data" / "tool.schema.json"
+PF_MAIN_MODULE_NAME = "__pf_main__"
 
 DEFAULT_ENCODING = "utf-8"
 
@@ -59,6 +69,9 @@ DEFAULT_SPAN_TYPE = "default"
 class TraceEnvironmentVariableName:
     EXPERIMENT = "PF_TRACE_EXPERIMENT"
     SESSION_ID = "PF_TRACE_SESSION_ID"
+    SUBSCRIPTION_ID = "PF_TRACE_SUBSCRIPTION_ID"
+    RESOURCE_GROUP_NAME = "PF_TRACE_RESOURCE_GROUP_NAME"
+    WORKSPACE_NAME = "PF_TRACE_WORKSPACE_NAME"
 
 
 class CosmosDBContainerName:
@@ -118,6 +131,10 @@ class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"
     EXPERIMENT_NAME = "experiment.name"
+    # local to cloud
+    SUBSCRIPTION_ID = "subscription.id"
+    RESOURCE_GROUP_NAME = "resource_group.name"
+    WORKSPACE_NAME = "workspace.name"
     # batch run
     BATCH_RUN_ID = "batch_run_id"
     LINE_NUMBER = "line_number"

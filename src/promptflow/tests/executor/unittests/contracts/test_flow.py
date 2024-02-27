@@ -32,6 +32,7 @@ class TestFlowContract:
             ("web_classification", {"azure_open_ai_connection"}),
             ("basic-with-connection", {"azure_open_ai_connection"}),
             ("flow_with_dict_input_with_variant", {"mock_custom_connection"}),
+            ("flow_with_connection_ref_environment_variables", {"azure_open_ai_connection"}),
         ],
     )
     def test_flow_get_connection_names(self, flow_folder, expected_connection_names):

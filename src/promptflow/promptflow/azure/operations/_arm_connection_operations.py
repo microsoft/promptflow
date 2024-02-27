@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from enum import Enum
 from typing import Any, Dict, Union
 
 import requests
@@ -31,11 +30,15 @@ LIST_CONNECTION_URL = (
 FLOW_META_PREFIX = "azureml.flow."
 
 
-class ConnectionCategory(str, Enum):
+class ConnectionCategory:
     AzureOpenAI = "AzureOpenAI"
     CognitiveSearch = "CognitiveSearch"
     CognitiveService = "CognitiveService"
     CustomKeys = "CustomKeys"
+    OpenAI = "OpenAI"
+    Serp = "Serp"
+    Serverless = "Serverless"
+    BingLLMSearch = "BingLLMSearch"
 
 
 def get_case_insensitive_key(d, key, default=None):
@@ -120,10 +123,14 @@ class ArmConnectionOperations(_ScopeDependentOperations):
     def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
         if type_name:
             return type_name
-        if category == ConnectionCategory.AzureOpenAI:
-            return "AzureOpenAI"
-        if category == ConnectionCategory.CognitiveSearch:
-            return "CognitiveSearch"
+        # Below category has corresponding connection type in PromptFlow, so we can fall back directly.
+        # Note: CustomKeys may store different connection types for now, e.g. openai, serp.
+        if category in [
+            ConnectionCategory.AzureOpenAI,
+            ConnectionCategory.CognitiveSearch,
+            ConnectionCategory.Serverless,
+        ]:
+            return category
         if category == ConnectionCategory.CognitiveService:
             kind = get_case_insensitive_key(metadata, "Kind")
             if kind == "Content Safety":
@@ -190,6 +197,11 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "api_key": properties.credentials.key,
                 "api_base": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
+            }
+        elif properties.category == ConnectionCategory.Serverless:
+            value = {
+                "api_key": properties.credentials.key,
+                "api_base": properties.target,
             }
         elif properties.category == ConnectionCategory.CognitiveService:
             value = {

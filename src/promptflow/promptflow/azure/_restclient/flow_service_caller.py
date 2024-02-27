@@ -171,6 +171,31 @@ class FlowServiceCaller(RequestTelemetryMixin):
         )
 
     @_request_wrapper()
+    def update_flow(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        experiment_id=None,  # type: str
+        body=None,  # type: Optional["_models.UpdateFlowRequest"]
+        **kwargs,  # type: Any
+    ):
+        headers = self._get_headers()
+        return self.caller.flows.update_flow(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_id=flow_id,
+            # experiment id equals to the workspace id, this is a hard code logic whether to be done at sdk side
+            # or PFS side, and won't be changed in the foreseeable future. So we hard code it here.
+            experiment_id=self._workspace._workspace_id,
+            body=body,
+            headers=headers,
+            **kwargs,
+        )
+
+    @_request_wrapper()
     def create_component_from_flow(
         self,
         subscription_id,  # type: str
