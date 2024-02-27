@@ -17,6 +17,7 @@ from promptflow._constants import (
     SpanContextFieldName,
     SpanEventFieldName,
     SpanFieldName,
+    SpanLinkFieldName,
     SpanResourceAttributesFieldName,
     SpanResourceFieldName,
     SpanStatusFieldName,
@@ -136,6 +137,26 @@ class Span:
         return events
 
     @staticmethod
+    def _from_protobuf_links(obj: typing.List[PBSpan.Link]) -> typing.List[typing.Dict]:
+        links = []
+        if len(obj) == 0:
+            return links
+        for pb_link in obj:
+            link_dict: dict = json.loads(MessageToJson(pb_link))
+            link = {
+                SpanLinkFieldName.CONTEXT: {
+                    SpanContextFieldName.TRACE_ID: pb_link.trace_id.hex(),
+                    SpanContextFieldName.SPAN_ID: pb_link.span_id.hex(),
+                    SpanContextFieldName.TRACE_STATE: pb_link.trace_state,
+                },
+                SpanLinkFieldName.ATTRIBUTES: flatten_pb_attributes(
+                    link_dict.get(SpanLinkFieldName.ATTRIBUTES, dict())
+                ),
+            }
+            links.append(link)
+        return links
+
+    @staticmethod
     def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
         span_dict: dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
@@ -165,7 +186,7 @@ class Span:
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
         events = Span._from_protobuf_events(obj.events)
-        links = span_dict.get(SpanFieldName.LINKS, list())
+        links = Span._from_protobuf_links(obj.links)
 
         # if `batch_run_id` exists, record the run
         run = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
