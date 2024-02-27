@@ -19,6 +19,8 @@ import opentelemetry.trace as otel_trace
 
 from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
+from opentelemetry.trace.span import NonRecordingSpan, Span
+from opentelemetry.sdk.trace import ReadableSpan
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
@@ -305,21 +307,22 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     return enrich_span_with_output(span, output)
 
 
-def traced_generator(generator, parent_span):
-    context = parent_span.get_span_context()
+def traced_generator(generator, original_span: ReadableSpan):
+    context = original_span.get_span_context()
     link = Link(context)
+    # If start_trace is not called, the name of the original_span will be empty.
     with open_telemetry_tracer.start_as_current_span(
-        f"Iterated({parent_span.name})",
+        f"Iterated({original_span.name})",
         links=[link],
     ) as span:
-        span.set_attributes(parent_span.attributes)
+        span.set_attributes(original_span.attributes)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
         generator_output = generator_proxy.items
 
         # Enrich LLM span for openai steaming message
         # TODO: Enrich LLM token count for streaming scenario
-        if parent_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
+        if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
             from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
             chunks = []
             role = "assistant"
@@ -341,7 +344,8 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
-        if isinstance(output, Iterator):
+        # If the output is a generator, while the span is a valid span, we will trace the generator.
+        if isinstance(output, Iterator) and not isinstance(span, NonRecordingSpan):
             output = traced_generator(output, span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
