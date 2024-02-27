@@ -25,6 +25,7 @@
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/promptflow/azure/_restclient/swagger.json",
+    "src/promptflow/promptflow/azure/_models/**",
     "src/promptflow/tests/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
@@ -86,7 +87,9 @@
     "pfsvc",
     "geval",
     "Summ",
-    "Bhavik"
+    "Bhavik",
+    "meid",
+    "Entra"
   ],
   "ignoreWords": [
     "openmpi",
