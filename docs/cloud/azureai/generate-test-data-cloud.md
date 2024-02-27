@@ -4,10 +4,10 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 
 ## Prerequisites
 
-1. Go through [local test data generation guide](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/docs/how-to-guides/generate-test-data.md) and prepare your [test data generation flow](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/examples/gen_test_data/gen_test_data/generate_test_data_flow/).
-2. Go to the [example_gen_test_data](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/examples/gen_test_data) folder and run command `pip install -r requirements_cloud.txt` to prepare local environment.
+1. Go through [local test data generation guide](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/docs/how-to-guides/generate-test-data.md) and prepare your [test data generation flow](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/examples/gen_test_data/gen_test_data/generate_test_data_flow/).
+2. Go to the [example_gen_test_data](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/examples/gen_test_data) folder and run command `pip install -r requirements_cloud.txt` to prepare local environment.
 3. Prepare cloud environment.
-    - Navigate to file [conda.yml](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/examples/gen_test_data/conda.yml).
+    - Navigate to file [conda.yml](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/examples/gen_test_data/conda.yml).
     - For specific document file types, you may need to install extra packages:
       - .docx - `pip install docx2txt`
       - .pdf - `pip install pypdf`
@@ -20,8 +20,8 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 5. [Create cloud connection](https://microsoft.github.io/promptflow/cloud/azureai/quick-start/index.html#create-necessary-connections)
 
 6. Prepare config.ini
-    - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/examples/gen_test_data) folder.
-    - Run command to copy [`config.yml.example`](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/examples/gen_test_data/config.yml.example).
+    - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/examples/gen_test_data) folder.
+    - Run command to copy [`config.yml.example`](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/examples/gen_test_data/config.yml.example).
         ```
         cp config.yml.example config.yml
         ```
@@ -30,7 +30,7 @@ This guide will help you learn how to generate test data on Azure AI, so that yo
 
 ## Generate test data at cloud
 For handling larger test data, you can leverage the PRS component to run flow in cloud.
-- Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/blob/6f08f091041c32c6e1cbe3d386c734ba8000867e/examples/gen_test_data) folder.
+- Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/tree/feature/test_data_gen/examples/gen_test_data) folder.
 - After configuration, run the following command to generate the test data set:
   ```bash
   python -m gen_test_data.run --cloud
