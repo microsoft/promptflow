@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import getpass
 import socket
+import sys
 import time
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
@@ -39,15 +40,30 @@ def get_port_from_config(create_if_not_exists=False):
     (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
     with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
-        port = service_config.get("service", {}).get("port", None)
+        port = service_config.get(sys.executable, {}).get("port", None)
     if not port and create_if_not_exists:
         with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
             # Set random port to ~/.promptflow/pf.yaml
             port = get_random_port()
-            service_config["service"] = service_config.get("service", {})
-            service_config["service"]["port"] = port
+            service_config[sys.executable] = service_config.get(sys.executable, {})
+            service_config[sys.executable]["port"] = port
             dump_yaml(service_config, f)
     return port
+
+
+def kill_deprecated_service():
+    (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
+    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
+        service_config = load_yaml(f) or {}
+        port = service_config.get("service", {}).get("port", None)
+        if port:
+            if is_port_in_use(port):
+                logger.debug(f"Kill the deprecated port {port} got from service key in thr pfs.port file.")
+                kill_exist_service(port)
+            # remove service key field
+            with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
+                service_config.pop("service")
+                dump_yaml(service_config, f)
 
 
 def dump_port_to_config(port):
@@ -56,8 +72,8 @@ def dump_port_to_config(port):
     with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
     with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
-        service_config["service"] = service_config.get("service", {})
-        service_config["service"]["port"] = port
+        service_config[sys.executable] = service_config.get(sys.executable, {})
+        service_config[sys.executable]["port"] = port
         dump_yaml(service_config, f)
 
 
