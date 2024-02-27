@@ -324,7 +324,6 @@ class TestOTelTracer:
             ("openai_completion_api_flow", get_comletion_input(False), 3),
             ("llm_tool", {"topic": "Hello", "stream": False}, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
-            ("openai_embedding_api_flow", {"input": "Hello"}, 3),
         ],
     )
     def test_otel_trace(
@@ -361,8 +360,8 @@ class TestOTelTracer:
         # for llm and embedding traces, and aggregate them to the parent span. Use this function to validate
         # the openai tokens are correctly set.
         self.validate_openai_tokens(span_list)
-        # Validate the embedding attributes are correctly set in the embedding trace.
-        self.validate_embedding_span(span_list)
+        # Validate the llm attributes are correctly set in the llm trace.
+        self.validate_llm_span(span_list)
 
     def validate_span_attributes(self, span_list, root_span, line_run_id):
         for span in span_list:
@@ -425,14 +424,10 @@ class TestOTelTracer:
                 for token_name in expected_tokens[span_id]:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
 
-    def validate_embedding_span(self, span_list):
+    def validate_llm_span(self, span_list):
         for span in span_list:
-            if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                assert span.attributes.get("embedding.model", "") == "ada"
-                embeddings = span.attributes.get("embedding.embeddings", "")
-                assert "Hello" in embeddings
-                assert "embedding.vector" in embeddings
-                assert "embedding.text" in embeddings
+            if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+                assert span.attributes.get("llm.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
         "flow_file, inputs, prompt_tpl_file",
@@ -475,6 +470,51 @@ class TestOTelTracer:
                 for var in prompt_vars:
                     if var in inputs:
                         assert var in span.attributes["prompt.variables"]
+
+    @pytest.mark.parametrize(
+        "flow_file, inputs, expected_span_length",
+        [
+            ("openai_embedding_api_flow", {"input": "Hello"}, 3),
+            # [9906] is the tokenized version of "Hello"
+            ("openai_embedding_api_flow_with_token", {"input": [9906]}, 3),
+        ]
+    )
+    def test_otel_trace_with_embedding(
+        self,
+        dev_connections,
+        flow_file,
+        inputs,
+        expected_span_length,
+    ):
+        execute_function_in_subprocess(
+            self.assert_otel_traces_with_embedding, dev_connections, flow_file, inputs, expected_span_length
+        )
+
+    def assert_otel_traces_with_embedding(self, dev_connections, flow_file, inputs, expected_span_length):
+        memory_exporter = prepare_memory_exporter()
+
+        executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
+        line_run_id = str(uuid.uuid4())
+        resp = executor.exec_line(inputs, run_id=line_run_id)
+        assert isinstance(resp, LineResult)
+        assert isinstance(resp.output, dict)
+
+        span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) == expected_span_length, f"Got {len(span_list)} spans."
+        root_spans = [span for span in span_list if span.parent is None]
+        assert len(root_spans) == 1
+        root_span = root_spans[0]
+        self.validate_span_attributes(span_list, root_span, line_run_id)
+        for span in span_list:
+            if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
+                assert span.attributes.get("embedding.model", "") == "ada"
+                embeddings = span.attributes.get("embedding.embeddings", "")
+                assert "embedding.vector" in embeddings
+                assert "embedding.text" in embeddings
+                if isinstance(inputs["input"], list):
+                    assert "dimensional token" in embeddings
+                else:
+                    assert inputs["input"] in embeddings
 
     def test_flow_with_traced_function(self):
         execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
