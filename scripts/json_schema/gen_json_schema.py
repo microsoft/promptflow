@@ -8,8 +8,10 @@
 # and the json schema will be generated in the same folder.
 
 
-from inspect import isclass
+import argparse
+from inspect import isclass, getmembers
 import json
+import sys
 
 from azure.ai.ml._schema import ExperimentalField
 from promptflow._sdk.schemas._base import YamlFileSchema
@@ -141,10 +143,10 @@ class PatchedJSONSchema(JSONSchema):
 
 from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, OpenAIConnectionSchema, \
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
-FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema, ServerlessConnectionSchema
+FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema, ServerlessConnectionSchema, \
+CustomStrongTypeConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
-import argparse
 
 
 if __name__ == "__main__":
@@ -153,6 +155,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output-file', nargs='+', help='Specify output file names')
     args = parser.parse_args()
 
+    # Special case for Flow and EagerFlow
     if "Flow" in args.output_file:
         cls_list = [FlowSchema, EagerFlowSchema]
         schema_list = []
@@ -169,51 +172,20 @@ if __name__ == "__main__":
         }
         with open((f"Flow.schema.json"), "w") as f:
             f.write(json.dumps(schema, indent=4))
-    if "AzureContentSafetyConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(AzureContentSafetyConnectionSchema(context={"base_path": "./"}))
-        with open((f"AzureContentSafetyConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "AzureOpenAIConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(AzureOpenAIConnectionSchema(context={"base_path": "./"}))
-        with open((f"AzureOpenAIConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "CognitiveSearchConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(CognitiveSearchConnectionSchema(context={"base_path": "./"}))
-        with open((f"CognitiveSearchConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "CustomConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(CustomConnectionSchema(context={"base_path": "./"}))
-        with open((f"CustomConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "CustomStrongTypeConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(CustomConnectionSchema(context={"base_path": "./"}))
-        with open((f"CustomStrongTypeConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "FormRecognizerConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(FormRecognizerConnectionSchema(context={"base_path": "./"}))
-        with open((f"FormRecognizerConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "OpenAIConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(OpenAIConnectionSchema(context={"base_path": "./"}))
-        with open((f"OpenAIConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "QdrantConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(QdrantConnectionSchema(context={"base_path": "./"}))
-        with open((f"QdrantConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "SerpConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(SerpConnectionSchema(context={"base_path": "./"}))
-        with open((f"SerpConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "WeaviateConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(WeaviateConnectionSchema(context={"base_path": "./"}))
-        with open((f"WeaviateConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "ServerlessConnection" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(ServerlessConnectionSchema(context={"base_path": "./"}))
-        with open((f"ServerlessConnection.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
-    if "Run" in args.output_file:
-        target_schema = PatchedJSONSchema().dump(RunSchema(context={"base_path": "./"}))
-        with open((f"Run.schema.json"), "w") as f:
-            f.write(json.dumps(target_schema, indent=4))
+        args.output_file.remove("Flow")
+
+    prepared_schemas = {}
+
+    # get all imported schemas
+    for (name, cls) in getmembers(sys.modules[__name__]):
+        if name.endswith("Schema"):
+            prepared_schemas[name.split("Schema")[0]] = cls
+
+    for item in args.output_file:
+        item_cls = prepared_schemas.get(item, None)
+        if item_cls is None:
+            raise ValueError(f"Schema not found for {item}")
+        else:
+            target_schema = PatchedJSONSchema().dump(item_cls(context={"base_path": "./"}))
+            with open((f"{item}.schema.json"), "w") as f:
+                f.write(json.dumps(target_schema, indent=4))
