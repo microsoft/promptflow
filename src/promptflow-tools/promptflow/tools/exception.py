@@ -7,12 +7,15 @@ openai_error_code_ref_message = "Error reference: https://platform.openai.com/do
 
 def to_openai_error_message(e: Exception) -> str:
     ex_type = type(e).__name__
-    if str(e) == "<empty message>":
+    error_message = str(e)
+    # https://learn.microsoft.com/en-gb/azure/ai-services/openai/reference
+    params_chat_model_cannot_accept = ["best_of", "echo", "logprobs"]
+    if error_message == "<empty message>":
         msg = "The api key is invalid or revoked. " \
               "You can correct or regenerate the api key of your connection."
         return f"OpenAI API hits {ex_type}: {msg}"
     # for models that do not support the `functions` parameter.
-    elif "Unrecognized request argument supplied: functions" in str(e):
+    elif "Unrecognized request argument supplied: functions" in error_message:
         msg = "Current model does not support the `functions` parameter. If you are using openai connection, then " \
               "please use gpt-3.5-turbo, gpt-4, gpt-4-32k, gpt-3.5-turbo-0613 or gpt-4-0613. You can refer to " \
               "https://platform.openai.com/docs/guides/gpt/function-calling. If you are using azure openai " \
@@ -21,15 +24,16 @@ def to_openai_error_message(e: Exception) -> str:
               "'2023-07-01-preview'. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         return f"OpenAI API hits {ex_type}: {msg}"
-    elif "The completion operation does not work with the specified model" in str(e) or \
-            "logprobs, best_of and echo parameters are not available" in str(e):
+    elif "The completion operation does not work with the specified model" in error_message or \
+            ("parameters are not available" in error_message
+             and any(param in error_message for param in params_chat_model_cannot_accept)):
         msg = "The completion operation does not work with the current model. " \
               "Completion API is a legacy api and is going to be deprecated soon. " \
               "Please change to use Chat API for current model. " \
               "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt " \
               "or view the samples in our gallery that contain 'Chat' in the name."
         return f"OpenAI API hits {ex_type}: {msg}"
-    elif "Invalid content type. image_url is only supported by certain models" in str(e):
+    elif "Invalid content type. image_url is only supported by certain models" in error_message:
         msg = "Current model does not support the image input. If you are using openai connection, then please use " \
               "gpt-4-vision-preview. You can refer to https://platform.openai.com/docs/guides/vision." \
               "If you are using azure openai connection, then please first go to your Azure OpenAI resource, " \
@@ -37,8 +41,9 @@ def to_openai_error_message(e: Exception) -> str:
               "model version \"vision-preview\". You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/gpt-with-vision"
         return f"OpenAI API hits {ex_type}: {msg}"
-    elif ("\'response_format\' of type" in str(e) and "is not supported with this model." in str(e))\
-            or ("Additional properties are not allowed" in str(e) and "unexpected) - \'response_format\'" in str(e)):
+    elif ("\'response_format\' of type" in error_message and "is not supported with this model." in error_message)\
+            or ("Additional properties are not allowed" in error_message
+                and "unexpected) - \'response_format\'" in error_message):
         msg = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}. " \
               "The value associated with the type key should be either 'text' or 'json_object' " \
               "If you are using openai connection, you can only set response_format to { \"type\": \"json_object\" } " \
@@ -49,7 +54,7 @@ def to_openai_error_message(e: Exception) -> str:
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/json-mode?tabs=python."
         return f"OpenAI API hits {ex_type}: {msg}"
     else:
-        return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
+        return f"OpenAI API hits {ex_type}: {error_message} [{openai_error_code_ref_message}]"
 
 
 class WrappedOpenAIError(UserErrorException):

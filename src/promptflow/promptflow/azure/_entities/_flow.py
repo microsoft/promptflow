@@ -48,6 +48,8 @@ class Flow(AdditionalIncludesMixin):
         self.is_archived = kwargs.get("is_archived", None)
         self.created_date = kwargs.get("created_date", None)
         self.flow_portal_url = kwargs.get("flow_portal_url", None)
+        # flow's environment, used to calculate session id, value will be set after flow is resolved to code.
+        self._environment = {}
 
         if self._flow_source == AzureFlowSource.LOCAL:
             absolute_path = self._validate_flow_from_source(path)
@@ -102,6 +104,26 @@ class Flow(AdditionalIncludesMixin):
         return True
 
     @classmethod
+    def _resolve_environment(cls, flow_path: Union[str, Path], flow_dag: dict) -> dict:
+        """Resolve flow's environment to dict."""
+        environment = {}
+
+        try:
+            environment = flow_dag.get("environment", {})
+            environment = dict(environment)
+            # resolve requirements
+            if PYTHON_REQUIREMENTS_TXT in environment:
+                req_path = os.path.join(flow_path, environment[PYTHON_REQUIREMENTS_TXT])
+                with open(req_path, "r") as f:
+                    requirements = f.read().splitlines()
+                environment[PYTHON_REQUIREMENTS_TXT] = requirements
+        except Exception as e:
+            # warn and continue if failed to resolve environment, it should not block the flow upload process.
+            logger.warning(f"Failed to resolve environment due to {e}.")
+
+        return environment
+
+    @classmethod
     def _remove_additional_includes(cls, flow_dag: dict):
         """Remove additional includes from flow dag. Return True if removed."""
         if ADDITIONAL_INCLUDES not in flow_dag:
@@ -132,6 +154,7 @@ class Flow(AdditionalIncludesMixin):
                 # promptflow snapshot will always be uploaded to default storage
                 code.datastore = DEFAULT_STORAGE
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
+                self._environment = self._resolve_environment(flow_dir, flow_dag)
                 if dag_updated:
                     dump_flow_dag(flow_dag, flow_dir)
             try:

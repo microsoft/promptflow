@@ -5,7 +5,7 @@
 import copy
 import typing
 
-from sqlalchemy import TEXT, Column, Index, text
+from sqlalchemy import TEXT, Column, Index, or_, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, declarative_base
 
@@ -75,14 +75,36 @@ class LineRun:
     @staticmethod
     def list(
         session_id: typing.Optional[str] = None,
+        runs: typing.Optional[typing.List[str]] = None,
+        experiments: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[typing.List[Span]]:
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
-            else:
-                # TODO: fully support query
-                raise NotImplementedError
+            if experiments is not None:
+                stmt = stmt.filter(Span.experiment.in_(experiments))
+            if runs is not None:
+                # note that we expect to include the evaluation traces
+                # so we need to filter by both `batch_run_id` and `referenced.batch_run_id`
+                runs_string = ""
+                for run in runs:
+                    runs_string += f"'{run}',"
+                runs_string = runs_string[:-1]  # remove the last comma
+                stmt = stmt.filter(
+                    or_(
+                        # batch run
+                        Span.run.in_(runs),
+                        # legacy batch run
+                        text(
+                            f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') in ({runs_string})"  # noqa: E501
+                        ),
+                        # evaluation(s) against batch run
+                        text(
+                            f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') in ({runs_string})"  # noqa: E501
+                        ),
+                    )
+                )
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
