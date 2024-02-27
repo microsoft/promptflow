@@ -70,7 +70,7 @@ async def node_execution(request: NodeExecutionRequest):
 
 
 @router.post("/cancel")
-async def cancel_execution(request: CancelExecutionRequest):
+def cancel_execution(request: CancelExecutionRequest):
     ProcessManager().end_process(request.run_id)
     return PlainTextResponse("canceled")
 
