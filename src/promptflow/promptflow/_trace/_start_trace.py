@@ -87,7 +87,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     if workspace_triad is not None:
         # if user has configured trace.provider, which indicates enabled local to cloud feature
         # print the url for cloud trace view
-        _trace_url_for_cloud(session_id=session_id)
+        _trace_url_for_cloud(session_id=session_id, workspace_triad=workspace_triad)
 
 
 def _start_pfs(pfs_port) -> None:
@@ -241,7 +241,7 @@ def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]
     return extract_workspace_triad_from_trace_provider(trace_provider)
 
 
-def _trace_url_for_cloud(session_id: str) -> None:
+def _trace_url_for_cloud(session_id: str, workspace_triad: AzureMLWorkspaceTriad) -> None:
     url_for_cloud = (
         f"https://int.ml.azure.com/prompts/trace/session/{session_id}"
         f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
