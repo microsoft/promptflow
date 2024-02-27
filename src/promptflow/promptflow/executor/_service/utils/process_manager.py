@@ -43,6 +43,4 @@ class ProcessManager:
             finally:
                 self._processes_mapping.pop(run_id, None)
         else:
-            service_logger.info(
-                f"Process[{process_id}] for run[{run_id}] not found in mapping, it may have already been removed."
-            )
+            service_logger.info(f"Process for run[{run_id}] not found in mapping, it may have already been removed.")
