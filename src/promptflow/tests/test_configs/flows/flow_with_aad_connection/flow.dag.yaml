@@ -1,0 +1,13 @@
+inputs:
+outputs:
+  result:
+    type: string
+    reference: ${assert_aad_conn.output}
+nodes:
+- name: assert_aad_conn
+  type: python
+  source:
+    type: code
+    path: assert_aad_conn.py
+  inputs:
+    conn: azure_open_ai_aad

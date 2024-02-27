@@ -26,6 +26,7 @@ from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
     flatten_pb_attributes,
+    json_loads_parse_const_as_str,
     parse_otel_span_status_code,
 )
 
@@ -226,8 +227,8 @@ class _LineRunData:
             trace_id=span.trace_id,
             root_span_id=span.span_id,
             # for standard OpenTelemetry traces, there won't be `inputs` and `outputs` in attributes
-            inputs=json.loads(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
-            outputs=json.loads(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
+            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
             start_time=start_time.isoformat(),
             end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
