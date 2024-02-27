@@ -46,7 +46,7 @@ class TestFlowAPIs:
 
     def test_get_flow_ux_inputs(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            response = pfs_op.get_flow_ux_inputs().json
+            response = pfs_op.get_flow_ux_inputs(request_body={"flow": Path(FLOW_PATH).absolute().as_posix()}).json
         assert len(response) >= 0
 
     def test_image_save(self, pfs_op: PFSOperations) -> None:
@@ -61,7 +61,6 @@ class TestFlowAPIs:
         with check_activity_end_telemetry(expected_activities=[]):
             response = pfs_op.save_flow_image(
                 request_body={
-                    "flow": Path(FLOW_PATH).absolute().as_posix(),
                     "base64_data": image_base64,
                     "extension": extension,
                 },
