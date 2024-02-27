@@ -1982,7 +1982,7 @@ class TestCli:
 
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            experiment_file = (f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml",)
+            experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
             run_pf_command("experiment", "start", "--file", experiment_file, "--stream")
             experiment = _load_experiment(source=experiment_file)
             exp = local_client._experiments.get(name=experiment.name)

@@ -246,7 +246,7 @@ def start_experiment(args: argparse.Namespace):
         logger.debug(f"Starting an anonymous experiment {args.file}.")
         experiment = _load_experiment(source=args.file)
         inputs = list_of_dict_to_dict(args.inputs)
-        result = _get_pf_client()._experiments.run(experiment=experiment, inputs=inputs, stream=args.stream)
+        result = _get_pf_client()._experiments.start(experiment=experiment, inputs=inputs, stream=args.stream)
     else:
         raise UserErrorException("To start an experiment, one of [name, file] must be specified.")
     print(json.dumps(result._to_dict(), indent=4))
