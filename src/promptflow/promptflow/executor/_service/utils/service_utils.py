@@ -4,7 +4,7 @@
 
 import json
 import os
-from typing import Any, Mapping
+from typing import Any, Mapping, Union
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.operation_context import OperationContext
@@ -44,8 +44,10 @@ def get_executor_version():
         return "promptflow-executor/" + VERSION
 
 
-def generate_error_response(ex):
-    if isinstance(ex, JsonSerializedPromptflowException):
+def generate_error_response(ex: Union[dict, Exception]):
+    if isinstance(ex, dict):
+        error_dict = ex
+    elif isinstance(ex, JsonSerializedPromptflowException):
         error_dict = json.loads(ex.message)
     else:
         error_dict = ExceptionPresenter.create(ex).to_dict()
