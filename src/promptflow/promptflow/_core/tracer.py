@@ -10,10 +10,14 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
+from importlib.metadata import version
 from threading import Lock
 from typing import Callable, Dict, List, Optional
 
+
 import opentelemetry.trace as otel_trace
+
+from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
@@ -25,6 +29,10 @@ from promptflow.contracts.trace import Trace, TraceType
 
 from .._utils.utils import default_json_encoder
 from .thread_local_singleton import ThreadLocalSingleton
+
+
+IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
 
 open_telemetry_tracer = otel_trace.get_tracer("promptflow")
 
@@ -288,19 +296,53 @@ def enrich_span_with_input(span, input):
 
 
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
-    enrich_span_with_output(span, output)
     if trace_type == TraceType.LLM:
         token_collector.collect_openai_tokens(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
     enrich_span_with_openai_tokens(span, trace_type)
+    return enrich_span_with_output(span, output)
+
+
+def traced_generator(generator, parent_span):
+    context = parent_span.get_span_context()
+    link = Link(context)
+    with open_telemetry_tracer.start_as_current_span(
+        f"Iterated({parent_span.name})",
+        links=[link],
+    ) as span:
+        span.set_attributes(parent_span.attributes)
+        generator_proxy = GeneratorProxy(generator)
+        yield from generator_proxy
+        generator_output = generator_proxy.items
+
+        # Enrich LLM span for openai steaming message
+        # TODO: Enrich LLM token count for streaming scenario
+        if parent_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
+            from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+            chunks = []
+            role = "assistant"
+            for item in generator_output:
+                if not isinstance(item, ChatCompletionChunk):
+                    continue
+                if item.choices and item.choices[0].delta.content:
+                    chunks.append(item.choices[0].delta.content)
+                    role = item.choices[0].delta.role or role
+            if chunks:
+                text = "".join(chunks)
+                message = {"content": text, "role": role}
+                span.set_attribute("llm.generated_message", serialize_attribute(message))
+        serialized_output = serialize_attribute(generator_output)
+        span.set_attribute("output", serialized_output)
 
 
 def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
+        if isinstance(output, Iterator):
+            output = traced_generator(output, span)
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
@@ -407,7 +449,7 @@ def _traced_async(
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -456,7 +498,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
