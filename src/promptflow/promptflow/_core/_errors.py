@@ -155,3 +155,9 @@ class DuplicateToolMappingError(ValidationException):
     """Exception raised when multiple tools are linked to the same deprecated tool id."""
 
     pass
+
+
+class ResumeCopyError(SystemErrorException):
+    """Exception raised when failed to copy the results when resuming the run."""
+
+    pass

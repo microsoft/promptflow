@@ -4,8 +4,9 @@
 from typing import AbstractSet, Any, Dict, List, Mapping
 
 from promptflow._utils.logger_utils import logger
-from promptflow.contracts.flow import Flow, FlowInputDefinition, InputValueType
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType
 from promptflow.contracts.run_info import FlowRunInfo, Status
+from promptflow.executor import _input_assignment_parser
 
 
 def apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
@@ -56,3 +57,15 @@ def get_aggregation_inputs_properties(flow: Flow) -> AbstractSet[str]:
 def collect_lines(indexes: List[int], kvs: Mapping[str, List]) -> Mapping[str, List]:
     """Collect the values from the kvs according to the indexes."""
     return {k: [v[i] for i in indexes] for k, v in kvs.items()}
+
+
+def extract_aggregation_inputs(flow: Flow, nodes_outputs: dict) -> Dict[str, Any]:
+    """Extract the aggregation inputs of a flow from the nodes outputs."""
+    _aggregation_inputs_references = get_aggregation_inputs_properties(flow)
+    return {prop: _parse_aggregation_input(nodes_outputs, prop) for prop in _aggregation_inputs_references}
+
+
+def _parse_aggregation_input(nodes_outputs: dict, aggregation_input_property: str):
+    """Parse the value of the aggregation input from the nodes outputs."""
+    assign = InputAssignment.deserialize(aggregation_input_property)
+    return _input_assignment_parser.parse_value(assign, nodes_outputs, {})

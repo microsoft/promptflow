@@ -36,6 +36,7 @@ from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
@@ -53,6 +54,7 @@ from promptflow._sdk._constants import (
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
+    AzureMLWorkspaceTriad,
     CommonYamlFields,
     ConnectionProvider,
 )
@@ -66,6 +68,7 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -220,15 +223,6 @@ def parse_variant(variant: str) -> Tuple[str, str]:
             message=str(error),
             error=error,
         )
-
-
-def _match_reference(env_val: str):
-    env_val = env_val.strip()
-    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
-    if not m:
-        return None, None
-    name, key = m.groups()
-    return name, key
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -1134,7 +1128,7 @@ def get_mac_address() -> str:
                 if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
                     mac_address.append(net_interface.address)
 
-        return ':'.join(mac_address)
+        return ":".join(mac_address)
     except Exception as e:
         logger.debug(f"get mac id error: {str(e)}")
         return ""
@@ -1196,3 +1190,17 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
+
+
+def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
+    if not match or len(match.groups()) != 5:
+        raise ValueError(
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {trace_provider}"
+        )
+    subscription_id = match.group(1)
+    resource_group_name = match.group(3)
+    workspace_name = match.group(5)
+    return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
