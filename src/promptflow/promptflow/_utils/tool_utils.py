@@ -6,7 +6,7 @@ import importlib
 import inspect
 import logging
 import re
-from dataclasses import asdict
+from dataclasses import asdict, fields, is_dataclass
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
@@ -159,11 +159,18 @@ def function_to_interface(
     # Resolve output to definition
     typ = resolve_annotation(sign.return_annotation)
     if typ is inspect.Signature.empty:
-        output_type = [ValueType.OBJECT]
+        outputs = {"output": OutputDefinition(type=[ValueType.OBJECT])}
+    elif is_dataclass(typ):
+        outputs = {}
+        for field in fields(typ):
+            outputs[field.name] = OutputDefinition(type=[ValueType.from_type(field.type)])
     else:
         # If the output annotation is a union type, then it should be a list.
-        output_type = [ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
-    outputs = {"output": OutputDefinition(type=output_type)}
+        outputs = {
+            "output": OutputDefinition(
+                type=[ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
+            )
+        }
 
     return input_defs, outputs, connection_types, enable_kwargs
 
