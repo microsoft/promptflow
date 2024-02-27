@@ -148,7 +148,7 @@ class ExperimentOperations(TelemetryMixin):
         """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        ExperimentOrchestrator(self._client, experiment.name).stop()
+        ExperimentOrchestrator(self._client, experiment).stop()
         return self.get(experiment.name)
 
     def _test(
