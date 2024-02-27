@@ -129,9 +129,9 @@ def add_experiment_start(subparsers):
     Examples:
 
     # Start a named experiment:
-    pf experiment start -n my_experiment
+    pf experiment start -n my_experiment --inputs data1=data1_val data2=data2_val
     # Run an experiment by yaml file:
-    pf experiment run --file path/to/my_experiment.exp.yaml --inputs data1=data1_val data2=data2_val
+    pf experiment start --file path/to/my_experiment.exp.yaml --inputs data1=data1_val data2=data2_val
     """
     activate_action(
         name="start",
