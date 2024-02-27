@@ -19,39 +19,41 @@ def list_apis(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection_name: str
+    connection_name: str=""
 ) -> List[Dict[str, str]]:
     if not connection_name:
         return []
+    try:
+        credential = _get_credential()
+        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-    credential = _get_credential()
-    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
-    connection = ArmConnectionOperations._build_connection_dict(
-        name=connection_name,
-        subscription_id=subscription_id,
-        resource_group_name=resource_group_name,
-        workspace_name=workspace_name,
-        credential=credential
-    )
-    # suppprt completion for backword compatibility.
-    if connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}:
-        return [
-            {"value": "chat", "display_value": "chat"},
-            {"value": "completion", "display_value": "completion"},
-        ]
-    else:
-        return [
-            {"value": "chat", "display_value": "chat"},
-        ]
+        connection = ArmConnectionOperations._build_connection_dict(
+            name=connection_name,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            credential=credential
+        )
+        # suppprt completion for backword compatibility.
+        if connection["type"] in {"AzureOpenAIConnection", "OpenAIConnection"}:
+            return [
+                {"value": "chat", "display_value": "chat"},
+                {"value": "completion", "display_value": "completion"},
+            ]
+        else:
+            return [
+                {"value": "chat", "display_value": "chat"},
+            ]
+    except Exception as e:
+        return []
 
 
 def list_deployment_names(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection: str,
-    api_name: str,
+    connection: str="",
+    api_name: str="",
 ) -> List[Dict[str, str]]:
     res = []
     try:
@@ -129,42 +131,44 @@ def list_models(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection_name: str,
-    api_name: str,
+    connection_name: str="",
+    api_name: str="",
 ):
     if not connection_name:
         return []
+    try:
+        credential = _get_credential()
+        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
-    credential = _get_credential()
-    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+        connection = ArmConnectionOperations._build_connection_dict(
+            name=connection_name,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            credential=credential
+        )
+        if connection["type"] != "OpenAIConnection":
+            return []
 
-    connection = ArmConnectionOperations._build_connection_dict(
-        name=connection_name,
-        subscription_id=subscription_id,
-        resource_group_name=resource_group_name,
-        workspace_name=workspace_name,
-        credential=credential
-    )
-    if connection["type"] != "OpenAIConnection":
-        return []
-
-    if api_name == "chat":
-        return [
-            {"value": "gpt-4", "display_value": "gpt-4"},
-            {"value": "gpt-4-0314", "display_value": "gpt-4-0314"},
-            {"value": "gpt-4-32k", "display_value": "gpt-4-32k"},
-            {"value": "gpt-4-32k-0314", "display_value": "gpt-4-32k-0314"},
-            {"value": "gpt-3.5-turbo", "display_value": "gpt-3.5-turbo"},
-            {"value": "gpt-3.5-turbo-0301", "display_value": "gpt-3.5-turbo-0301"},
-            {"value": "gpt-3.5-turbo-16k", "display_value": "gpt-3.5-turbo-16k"},
-            {"value": "gpt-3.5-turbo-1106", "display_value": "gpt-3.5-turbo-1106"},
-            {"value": "gpt-4-1106-preview", "display_value": "gpt-4-1106-preview"},
-        ]
-    elif api_name == "completion":
-        return [
-            {"value": "gpt-3.5-turbo-instruct", "display_value": "gpt-3.5-turbo-instruct"},
-        ]
-    else:
+        if api_name == "chat":
+            return [
+                {"value": "gpt-4", "display_value": "gpt-4"},
+                {"value": "gpt-4-0314", "display_value": "gpt-4-0314"},
+                {"value": "gpt-4-32k", "display_value": "gpt-4-32k"},
+                {"value": "gpt-4-32k-0314", "display_value": "gpt-4-32k-0314"},
+                {"value": "gpt-3.5-turbo", "display_value": "gpt-3.5-turbo"},
+                {"value": "gpt-3.5-turbo-0301", "display_value": "gpt-3.5-turbo-0301"},
+                {"value": "gpt-3.5-turbo-16k", "display_value": "gpt-3.5-turbo-16k"},
+                {"value": "gpt-3.5-turbo-1106", "display_value": "gpt-3.5-turbo-1106"},
+                {"value": "gpt-4-1106-preview", "display_value": "gpt-4-1106-preview"},
+            ]
+        elif api_name == "completion":
+            return [
+                {"value": "gpt-3.5-turbo-instruct", "display_value": "gpt-3.5-turbo-instruct"},
+            ]
+        else:
+            return []
+    except Exception as e:
         return []
 
 

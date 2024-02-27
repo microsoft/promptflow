@@ -36,7 +36,7 @@ promptflow.tools.chat.chat:
           type: 
           - string
           reference: ${inputs.connection}
-        allow_manual_entry: false
+        allow_manual_entry: true
         is_multi_select: false
       ui_hints:
         text_box_size: xs
