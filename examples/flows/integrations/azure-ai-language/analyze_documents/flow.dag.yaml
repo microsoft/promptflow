@@ -123,7 +123,7 @@ nodes:
     path: parse_skill_to_text.py
   inputs:
     output: ${Abstractive_Summarization.output}
-    skill: ABSUM
+    skill: ABSTRACTIVE
 - name: Create_Summary_Doc
   type: python
   source:

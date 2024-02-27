@@ -17,7 +17,7 @@ def parse_skill_to_text(output: object, skill: str) -> str:
     if skill == "PII":
         # PII: return redacted text.
         result = output["redactedText"]
-    elif skill == "ABSUM":
+    elif skill == "ABSTRACTIVE":
         # Abstractive summarization: return summary.
         result = output["summaries"][0]["text"]
 
