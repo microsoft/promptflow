@@ -1,0 +1,19 @@
+2024-02-27 14:29:57 +0800   23388 execution          WARNING  Output 'accuracy' references a reduce node 'calculate_accuracy', will not take effect.
+2024-02-27 14:29:58 +0800   23388 execution.bulk     INFO     Skipped the execution of 0 existing results.
+2024-02-27 14:29:58 +0800   23388 execution.bulk     INFO     Current system's available memory is 16160.109375MB, memory consumption of current process is 153.54296875MB, estimated available worker count is 16160.109375/153.54296875 = 105
+2024-02-27 14:29:58 +0800   23388 execution.bulk     INFO     Set process count to 3 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 3, 'estimated_worker_count_based_on_memory_usage': 105}.
+2024-02-27 14:30:03 +0800   23388 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(10692)-Line number(0) start execution.
+2024-02-27 14:30:03 +0800   23388 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(35504)-Line number(1) start execution.
+2024-02-27 14:30:03 +0800   23388 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(10332)-Line number(2) start execution.
+2024-02-27 14:30:07 +0800   35504 execution          WARNING  Output 'accuracy' references a reduce node 'calculate_accuracy', will not take effect.
+2024-02-27 14:30:07 +0800   23388 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(35504)-Line number(1) completed.
+2024-02-27 14:30:07 +0800   23388 execution.bulk     INFO     Finished 1 / 3 lines.
+2024-02-27 14:30:07 +0800   23388 execution.bulk     INFO     Average execution time for completed lines: 4.03 seconds. Estimated time for incomplete lines: 8.06 seconds.
+2024-02-27 14:30:07 +0800   10692 execution          WARNING  Output 'accuracy' references a reduce node 'calculate_accuracy', will not take effect.
+2024-02-27 14:30:07 +0800   10332 execution          WARNING  Output 'accuracy' references a reduce node 'calculate_accuracy', will not take effect.
+2024-02-27 14:30:07 +0800   23388 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(10332)-Line number(2) completed.
+2024-02-27 14:30:07 +0800   23388 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(10692)-Line number(0) completed.
+2024-02-27 14:30:08 +0800   23388 execution.bulk     INFO     Finished 3 / 3 lines.
+2024-02-27 14:30:08 +0800   23388 execution.bulk     INFO     Average execution time for completed lines: 1.68 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2024-02-27 14:30:09 +0800   23388 execution.bulk     INFO     Executing aggregation nodes...
+2024-02-27 14:30:09 +0800   23388 execution.bulk     INFO     Finish executing aggregation nodes.

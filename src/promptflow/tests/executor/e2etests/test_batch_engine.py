@@ -465,3 +465,42 @@ class TestBatch:
         assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
         assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
         assert resume_run_batch_results.metrics == {"accuracy": 0.67}
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name",
+        [("classification_accuracy_evaluation", "classification_accuracy_evaluation_default_20240227_142948_646000")],
+    )
+    def test_batch_resume_aggregation_with_image(self, flow_folder, resume_from_run_name, dev_connections):
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=mem_run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {
+            "variant_id": "${data.variant_id}",
+            "groundtruth": "${data.groundtruth}",
+            "prediction": "${data.prediction}",
+        }
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+        assert resume_run_batch_results.metrics == {"accuracy": 0.33}

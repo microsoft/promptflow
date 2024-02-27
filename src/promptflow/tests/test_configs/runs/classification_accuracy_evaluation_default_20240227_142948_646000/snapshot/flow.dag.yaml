@@ -1,0 +1,48 @@
+inputs:
+  variant_id:
+    type: string
+    default: "0"
+  groundtruth:
+    type: image
+    description: Please specify the groundtruth column, which contains the true label
+      to the outputs that your flow produces.
+    default: logo.jpg
+  prediction:
+    type: image
+    description: Please specify the prediction column, which contains the predicted
+      outputs that your flow produces.
+    default: logo.jpg
+outputs:
+  grade:
+    type: image
+    reference: ${grade.output}
+  accuracy:
+    type: string
+    reference: ${calculate_accuracy.output}
+nodes:
+- name: grade
+  type: python
+  source:
+    type: code
+    path: grade.py
+  inputs:
+    groundtruth: ${inputs.groundtruth}
+    prediction: ${inputs.prediction}
+- name: calculate_accuracy
+  type: python
+  source:
+    type: code
+    path: calculate_accuracy.py
+  inputs:
+    grades: ${grade.output}
+    variant_ids: ${inputs.variant_id}
+  aggregation: true
+- name: aggregation_assert
+  type: python
+  source:
+    type: code
+    path: aggregation_assert.py
+  inputs:
+    input1: ${inputs.groundtruth}
+    input2: ${inputs.prediction}
+  aggregation: true
