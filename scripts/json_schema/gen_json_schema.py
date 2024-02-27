@@ -20,8 +20,6 @@ from marshmallow import Schema, fields, missing
 from marshmallow.class_registry import get_class
 from marshmallow_jsonschema import JSONSchema
 
-class Flow(YamlFileSchema):
-    pass
 
 class PatchedJSONSchema(JSONSchema):
     required = fields.Method("get_required")
