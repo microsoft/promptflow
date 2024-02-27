@@ -76,7 +76,7 @@ event_model = api.model(
 link_model = api.model(
     "Link",
     {
-        SpanLinkFieldName.CONTEXT: fields.Nested(context_model, skip_none=True),
+        SpanLinkFieldName.CONTEXT: fields.Nested(context_model),
         SpanLinkFieldName.ATTRIBUTES: fields.Raw,
     },
 )
@@ -93,8 +93,8 @@ span_model = api.model(
         SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model, skip_none=True),
         SpanFieldName.ATTRIBUTES: fields.Raw(required=True),
-        SpanFieldName.EVENTS: fields.List(fields.Nested(event_model, skip_none=True)),
-        SpanFieldName.LINKS: fields.List(fields.Nested(link_model, skip_none=True)),
+        SpanFieldName.EVENTS: fields.List(fields.Nested(event_model)),
+        SpanFieldName.LINKS: fields.List(fields.Nested(link_model)),
         SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
     },
 )
