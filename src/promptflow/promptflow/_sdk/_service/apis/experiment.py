@@ -7,7 +7,6 @@ from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
 
-
 api = Namespace("Experiments", description="Experiments Management")
 
 # Response model of experiment operation
@@ -26,6 +25,8 @@ class ExperimentList(Resource):
         include_archived = request.args.get("include_archived", default=False, type=bool)
         list_view_type = get_list_view_type(archived_only=archived_only, include_archived=include_archived)
 
-        experiments = get_client_from_request()._experiments.list(max_results=max_results, list_view_type=list_view_type)
+        experiments = get_client_from_request()._experiments.list(
+            max_results=max_results, list_view_type=list_view_type
+        )
         experiments_dict = [experiment._to_dict() for experiment in experiments]
         return jsonify(experiments_dict)
