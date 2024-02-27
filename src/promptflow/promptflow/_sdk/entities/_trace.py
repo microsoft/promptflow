@@ -165,6 +165,7 @@ class Span:
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
 
         events = Span._from_protobuf_events(obj.events)
+        links = span_dict.get(SpanFieldName.LINKS, list())
 
         # if `batch_run_id` exists, record the run
         run = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
@@ -182,6 +183,7 @@ class Span:
             session_id=session_id,
             parent_span_id=parent_span_id,
             events=events,
+            links=links,
             run=run,
             experiment=experiment,
         )
