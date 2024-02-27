@@ -68,6 +68,36 @@ class Span(Base):
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
             return [span for span in stmt.all()]
 
+    @staticmethod
+    def list_with_runs(runs: typing.List[str]) -> typing.List["Span"]:
+        with trace_mgmt_db_session() as session:
+            stmt: Query = session.query(Span)
+            # for line runs, we only need root spans
+            stmt = stmt.filter(text("parent_span_id is null"))
+            runs_string = ""
+            for run in runs:
+                runs_string += f"'{run}',"
+            runs_string = runs_string[:-1]  # remove the last comma
+            stmt = stmt.filter(
+                or_(
+                    # batch run
+                    Span.run.in_(runs),
+                    # legacy batch run
+                    text(
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') in ({runs_string})"  # noqa: E501
+                    ),
+                    # evaluation(s) against batch run
+                    text(
+                        f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') in ({runs_string})"  # noqa: E501
+                    ),
+                )
+            )
+            stmt = stmt.order_by(
+                Span.trace_id,
+                text("json_extract(span.content, '$.start_time') asc"),
+            )
+            return [span for span in stmt.all()]
+
 
 class LineRun:
     """Line run is an abstraction of spans, which is not persisted in the database."""
@@ -75,7 +105,6 @@ class LineRun:
     @staticmethod
     def list(
         session_id: typing.Optional[str] = None,
-        runs: typing.Optional[typing.List[str]] = None,
         experiments: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[typing.List[Span]]:
         with trace_mgmt_db_session() as session:
@@ -84,27 +113,6 @@ class LineRun:
                 stmt = stmt.filter(Span.session_id == session_id)
             if experiments is not None:
                 stmt = stmt.filter(Span.experiment.in_(experiments))
-            if runs is not None:
-                # note that we expect to include the evaluation traces
-                # so we need to filter by both `batch_run_id` and `referenced.batch_run_id`
-                runs_string = ""
-                for run in runs:
-                    runs_string += f"'{run}',"
-                runs_string = runs_string[:-1]  # remove the last comma
-                stmt = stmt.filter(
-                    or_(
-                        # batch run
-                        Span.run.in_(runs),
-                        # legacy batch run
-                        text(
-                            f"json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') in ({runs_string})"  # noqa: E501
-                        ),
-                        # evaluation(s) against batch run
-                        text(
-                            f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') in ({runs_string})"  # noqa: E501
-                        ),
-                    )
-                )
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
