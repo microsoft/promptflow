@@ -36,6 +36,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
     collect_lines,
+    extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -642,7 +643,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
-        result = self._exec_with_trace(inputs)
+        result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
         return result.output or {}
@@ -652,22 +653,13 @@ class FlowExecutor:
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
-        results = self._exec_with_trace(
+        results = self._exec(
             inputs, run_id=run_id, line_number=line_number, variant_id=variant_id, validate_inputs=validate_inputs
         )
         self._run_tracker._deactivate_in_context()
         self._processing_idx.pop(line_number)
         self._completed_idx[line_number] = thread_name
         return results
-
-    def _extract_aggregation_inputs(self, nodes_outputs: dict):
-        return {
-            prop: self._extract_aggregation_input(nodes_outputs, prop) for prop in self._aggregation_inputs_references
-        }
-
-    def _extract_aggregation_input(self, nodes_outputs: dict, aggregation_input_property: str):
-        assign = InputAssignment.deserialize(aggregation_input_property)
-        return _input_assignment_parser.parse_value(assign, nodes_outputs, {})
 
     def exec_line(
         self,
@@ -711,7 +703,7 @@ class FlowExecutor:
             # it is not set.
             run_id = run_id or str(uuid.uuid4())
             with self._update_operation_context(run_id, index):
-                line_result = self._exec_with_trace(
+                line_result = self._exec(
                     inputs,
                     run_id=run_id,
                     line_number=index,
@@ -774,35 +766,15 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
-    def _exec_with_trace(
+    def _exec_inner_with_trace(
         self,
         inputs: Mapping[str, Any],
-        run_id: Optional[str] = None,
-        line_number: Optional[int] = None,
-        variant_id: str = "",
-        validate_inputs: bool = False,
-        allow_generator_output: bool = False,
-    ) -> LineResult:
-        """execute line run with trace
-
-        This method is similar to `_exec`, but it also includes tracing functionality.
-        It starts a new span, enriches it with input and output data, and sets the span status.
-
-        Args:
-            inputs (Mapping): flow inputs
-            run_id: the id to identify the flow run
-            line_number: line number for batch inputs
-            variant_id: variant id for the line run
-            validate_inputs:
-                Flag to indicate if input validation needed. It is used along with "_raise_ex" to
-                define if exception shall be raised if inputs validation (type check, etc) failed
-                The flag is True for Flow Run, False for bulk run as default
-            allow_generator_output:
-                Flag to indicate if generator output is allowed.
-
-        Returns:
-            LineResult: Line run result
-        """
+        run_info: FlowRunInfo,
+        run_tracker: RunTracker,
+        context: FlowExecutionContext,
+        validate_inputs=False,
+        allow_generator_output=False,
+    ):
         with open_telemetry_tracer.start_as_current_span(self._flow.name) as span:
             # initialize span
             span.set_attributes(
@@ -815,21 +787,46 @@ class FlowExecutor:
             # enrich span with input
             enrich_span_with_input(span, inputs)
             # invoke
-            result = self._exec(
+            output, aggregation_inputs = self._exec_inner(
                 inputs,
-                run_id=run_id,
-                line_number=line_number,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
-                allow_generator_output=allow_generator_output,
+                run_info,
+                run_tracker,
+                context,
+                validate_inputs,
+                allow_generator_output,
             )
-            # extract output from result
-            output = result.output
             # enrich span with trace type
             enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
             # set status
             span.set_status(StatusCode.OK)
-            return result
+            return output, aggregation_inputs
+
+    def _exec_inner(
+        self,
+        inputs: Mapping[str, Any],
+        run_info: FlowRunInfo,
+        run_tracker: RunTracker,
+        context: FlowExecutionContext,
+        validate_inputs=False,
+        allow_generator_output=False,
+    ):
+        if validate_inputs:
+            inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=run_info.index)
+        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
+        # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
+        run_info.inputs = inputs
+        output, nodes_outputs = self._traverse_nodes(inputs, context)
+        output = self._stringify_generator_output(output) if not allow_generator_output else output
+        # Persist the node runs for the nodes that have a generator output
+        generator_output_nodes = [
+            nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+        ]
+        run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
+        run_tracker.allow_generator_types = allow_generator_output
+        run_tracker.end_run(run_info.run_id, result=output)
+        aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
+        return output, aggregation_inputs
 
     def _exec(
         self,
@@ -883,22 +880,14 @@ class FlowExecutor:
         output = {}
         aggregation_inputs = {}
         try:
-            if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-            inputs = load_multimedia_data(self._flow.inputs, inputs)
-            # Inputs are assigned after validation and multimedia data loading, instead of at the start of the flow run.
-            # This way, if validation or multimedia data loading fails, we avoid persisting invalid inputs.
-            run_info.inputs = inputs
-            output, nodes_outputs = self._traverse_nodes(inputs, context)
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
-            # Persist the node runs for the nodes that have a generator output
-            generator_output_nodes = [
-                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
-            ]
-            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
-            run_tracker.allow_generator_types = allow_generator_output
-            run_tracker.end_run(line_run_id, result=output)
-            aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+            output, aggregation_inputs = self._exec_inner_with_trace(
+                inputs,
+                run_info,
+                run_tracker,
+                context,
+                validate_inputs,
+                allow_generator_output,
+            )
         except KeyboardInterrupt as ex:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling

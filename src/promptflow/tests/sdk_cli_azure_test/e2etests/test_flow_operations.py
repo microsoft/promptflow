@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from promptflow.azure._entities._flow import Flow
+from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -23,6 +24,7 @@ data_dir = tests_root_dir / "test_configs/datas"
     "single_worker_thread_pool",
     "vcr_recording",
 )
+@pytest.mark.xdist_group(name="pfazure_flow")
 class TestFlow:
     def test_create_flow(self, created_flow: Flow):
         # most of the assertions are in the fixture itself
@@ -35,6 +37,25 @@ class TestFlow:
         attributes = vars(result)
         for attr in attributes:
             assert getattr(result, attr) == getattr(created_flow, attr), f"Assertion failed for attribute: {attr!r}"
+
+    def test_update_flow(self, pf, created_flow: Flow):
+
+        test_meta = {
+            "display_name": "SDK test flow",
+            "description": "SDK test flow description",
+            "tags": {"owner": "sdk-test", "key1": "value1"},
+        }
+        # update flow
+        updated_flow = pf.flows.create_or_update(flow=created_flow, **test_meta)
+
+        assert updated_flow.display_name == test_meta["display_name"]
+        assert updated_flow.description == test_meta["description"]
+        assert updated_flow.tags == test_meta["tags"]
+
+        # test update with wrong flow id
+        with pytest.raises(UserErrorException, match=r"Flow with id fake_flow_name not found"):
+            updated_flow.name = "fake_flow_name"
+            pf.flows.create_or_update(updated_flow, display_name="A new test flow")
 
     @pytest.mark.skipif(
         condition=not is_live(),
