@@ -115,6 +115,8 @@ def start_service(args):
         )
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
+        # Note: in this scenario, we will have two app, one is the parent process created to log, one is created in
+        # the detached child process.
         # Set host to localhost, only allow request from localhost.
         cmd = [
             sys.executable,
