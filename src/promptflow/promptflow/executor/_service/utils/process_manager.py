@@ -31,7 +31,7 @@ class ProcessManager:
         self._processes_mapping.pop(run_id, None)
 
     def end_process(self, run_id: str):
-        process_id = self._processes_mapping.get(run_id, None)
+        process_id = self._processes_mapping.pop(run_id, None)
         if process_id:
             try:
                 process = psutil.Process(process_id)
@@ -52,7 +52,5 @@ class ProcessManager:
                 service_logger.warning(
                     f"Process[{process.pid}] for run[{run_id}] not found, it might have already terminated."
                 )
-            finally:
-                self._processes_mapping.pop(run_id, None)
         else:
             service_logger.info(f"Process for run[{run_id}] not found in mapping, it may have already been removed.")
