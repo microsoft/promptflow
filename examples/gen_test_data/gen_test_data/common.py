@@ -6,7 +6,7 @@ import time
 import typing as t
 from pathlib import Path
 
-from constants import DOCUMENT_NODE, TEXT_CHUNK, SUPPORT_FILE_TYPE
+from constants import DOCUMENT_NODE, NODES_FILE_NAME, SUPPORT_FILE_TYPE, TEXT_CHUNK
 
 from promptflow._utils.logger_utils import get_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -38,17 +38,19 @@ def split_document(chunk_size, chunk_overlap, documents_folder, document_node_ou
     SimpleDirectoryReader.supported_suffix = []
     chunks = reader.load_data()
     # Convert documents into nodes
-    node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=chunk_overlap, include_metadata=True)
+    node_parser = SentenceSplitter.from_defaults(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap, include_metadata=True
+    )
     chunks = t.cast(t.List[LlamaindexDocument], chunks)
     document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=chunks)
     logger.info(f"Split the documents and created {len(document_nodes)} document nodes.")
-    document_nodes_output_path = document_node_output / Path("document_nodes.jsonl")
+    document_nodes_output_path = document_node_output / Path(NODES_FILE_NAME)
     with open(document_nodes_output_path, "wt") as text_file:
         for doc in document_nodes:
             print(json.dumps({TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}), file=text_file)
 
     logger.info(f"Saved document nodes to '{document_nodes_output_path}'.")
-    return str((Path(document_node_output) / "document_nodes.jsonl"))
+    return str(Path(document_node_output) / NODES_FILE_NAME)
 
 
 def clean_data(test_data_set: list, test_data_output_path: str):
@@ -98,7 +100,7 @@ def print_progress(log_file_path: str, process):
         if time.time() - start_time > 300:
             raise Exception(f"Log file '{log_file_path}' is not created within 5 minutes.")
 
-    pbar = None
+    progress_bar = None
     try:
         last_data_time = time.time()
         with open(log_file_path, "r") as f:
@@ -117,12 +119,12 @@ def print_progress(log_file_path: str, process):
                         continue
 
                     finished, total = map(int, match.groups())
-                    if pbar is None:
-                        pbar = tqdm(total=total, desc="Processing", file=sys.stdout)
-                    pbar.update(finished - pbar.n)
+                    if progress_bar is None:
+                        progress_bar = tqdm(total=total, desc="Processing", file=sys.stdout)
+                    progress_bar.update(finished - progress_bar.n)
 
                     if finished == total:
-                        pbar.close()
+                        progress_bar.close()
                         logger.info("Batch run is completed.")
 
                         break
@@ -135,12 +137,10 @@ def print_progress(log_file_path: str, process):
                 else:
                     time.sleep(1)  # wait for 1 second if no new line is available
     except Exception as e:
-        raise Exception(
-            f"Error occurred while printing batch run progress: {e}."
-        )
+        raise Exception(f"Error occurred while printing batch run progress: {e}.")
     finally:
-        if pbar:
-            pbar.close()
+        if progress_bar:
+            progress_bar.close()
 
 
 def copy_flow_folder_and_set_node_inputs(copied_folder, flow_folder, node_inputs_override):
@@ -193,3 +193,68 @@ def local_path_exists(path):
 
 def non_padding_path(path):
     return not (path.startswith("<") and path.endswith(">"))
+
+
+def _retrieve_file_names_from_document_nodes_file(document_nodes_file_path) -> t.List[str]:
+    text_info = {}
+    with open(document_nodes_file_path, "r") as file:
+        for line in file:
+            line_json = json.loads(line)
+            text_chunk = line_json[TEXT_CHUNK]
+            document_node = json.loads(line_json["document_node"])
+            file_path = document_node["metadata"]["file_path"]
+            text_info[text_chunk] = file_path
+    return text_info
+
+
+def _count_lines(file_path) -> int:
+    with open(file_path, "r") as f:
+        return sum(1 for _ in f)
+
+
+def summerize_batch_run_res(gen_details_file_path, document_nodes_file_path, output_file_path):
+    success_count = 0
+    validate_fail_count = 0
+    validate_fail_steps = {}
+    validate_fail_distribution = {}
+
+    details_file_lines_count = _count_lines(gen_details_file_path)
+    nodes_file_lines_count = _count_lines(document_nodes_file_path)
+
+    document_nodes_info = _retrieve_file_names_from_document_nodes_file(document_nodes_file_path)
+
+    with open(gen_details_file_path, "r") as details_f:
+        for details_line in details_f:
+            data = json.loads(details_line)
+            if data["debug_info"] == "(Failed)":
+                continue
+
+            if data["debug_info"]["validation_summary"]["success"]:
+                success_count += 1
+            else:
+                validate_fail_count += 1
+                failed_step = data["debug_info"]["validation_summary"]["failed_step"]
+
+                if failed_step in validate_fail_steps:
+                    validate_fail_steps[failed_step] += 1
+                else:
+                    validate_fail_steps[failed_step] = 1
+                    validate_fail_distribution[failed_step] = {}
+
+                document_name = document_nodes_info[data["debug_info"]["text_chunk"]]
+                if document_name in validate_fail_distribution[failed_step]:
+                    validate_fail_distribution[failed_step][document_name] += 1
+                else:
+                    validate_fail_distribution[failed_step][document_name] = 1
+
+    data = {
+        "total_count": nodes_file_lines_count,
+        "success_count": success_count,
+        "run_fail_count": nodes_file_lines_count - details_file_lines_count,
+        "validate_fail_count": validate_fail_count,
+        "validate_fail_steps": validate_fail_steps,
+        "validate_fail_distribution": validate_fail_distribution,
+    }
+
+    with open(output_file_path, "w") as file:
+        json.dump(data, file, indent=4)

@@ -14,10 +14,18 @@ CONFIG_FILE = (Path(__file__).parents[1] / "config.yml").resolve()
 # in order to import from absolute path, which is required by mldesigner
 os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 
-from common import clean_data, count_non_blank_lines, \
-    split_document, copy_flow_folder_and_set_node_inputs, \
-    print_progress, convert_to_abs_path, non_padding_path, local_path_exists  # noqa: E402
-from constants import TEXT_CHUNK, DETAILS_FILE_NAME  # noqa: E402
+from common import (  # noqa: E402
+    clean_data,
+    convert_to_abs_path,
+    copy_flow_folder_and_set_node_inputs,
+    count_non_blank_lines,
+    local_path_exists,
+    non_padding_path,
+    print_progress,
+    split_document,
+    summerize_batch_run_res,
+)
+from constants import DETAILS_FILE_NAME, SUMMARY_FILE_NAME, TEST_DATA_FILE_NAME, TEXT_CHUNK  # noqa: E402
 
 logger = get_logger("data.gen")
 
@@ -40,7 +48,7 @@ def batch_run_flow(
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     logger.info(
         f"Submit batch run successfully. process id {process.pid}. Please wait for the batch run to complete..."
-    ) 
+    )
     return run_name, process
 
 
@@ -71,14 +79,14 @@ def get_batch_run_output(output_path: Path):
 
 
 def run_local(
-        documents_folder,
-        document_chunk_size,
-        document_chunk_overlap,
-        document_nodes_file,
-        flow_folder,
-        flow_batch_run_size,
-        output_folder,
-        should_skip_split,
+    documents_folder: str,
+    document_chunk_size: int,
+    document_chunk_overlap: int,
+    document_nodes_file: str,
+    flow_folder: str,
+    flow_batch_run_size: int,
+    output_folder: str,
+    should_skip_split: bool,
 ):
     text_chunks_path = document_nodes_file
     output_folder = Path(output_folder) / datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
@@ -88,11 +96,7 @@ def run_local(
     if not should_skip_split:
         text_chunks_path = split_document(document_chunk_size, document_chunk_overlap, documents_folder, output_folder)
 
-    run_name, process = batch_run_flow(
-        flow_folder,
-        text_chunks_path,
-        flow_batch_run_size
-    )
+    run_name, process = batch_run_flow(flow_folder, text_chunks_path, flow_batch_run_size)
 
     run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
     print_progress(run_folder_path / "logs.txt", process)
@@ -103,28 +107,39 @@ def run_local(
     with open(batch_run_details_file, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
-    clean_data_output = Path(output_folder) / "test-data.jsonl"
+    clean_data_output = Path(output_folder) / TEST_DATA_FILE_NAME
     clean_data(test_data_set, clean_data_output)
     logger.info(f"More debug info of test data generation can be found in '{batch_run_details_file}'.")
 
+    try:
+        summary_output_file = Path(output_folder) / SUMMARY_FILE_NAME
+        summerize_batch_run_res(
+            gen_details_file_path=batch_run_details_file,
+            document_nodes_file_path=text_chunks_path,
+            output_file_path=summary_output_file,
+        )
+        logger.info(f"Check test data generation summary in '{summary_output_file}'.")
+    except Exception as e:
+        logger.warning(f"Error to analyze batch run results: {e}")
+
 
 def run_cloud(
-        documents_folder,
-        document_chunk_size,
-        document_chunk_overlap,
-        document_nodes_file,
-        flow_folder,
-        subscription_id,
-        resource_group,
-        workspace_name,
-        aml_cluster,
-        prs_instance_count,
-        prs_mini_batch_size,
-        prs_max_concurrency_per_instance,
-        prs_max_retry_count,
-        prs_run_invocation_time,
-        prs_allowed_failed_count,
-        should_skip_split,
+    documents_folder: str,
+    document_chunk_size: int,
+    document_chunk_overlap: int,
+    document_nodes_file: str,
+    flow_folder: str,
+    subscription_id: str,
+    resource_group: str,
+    workspace_name: str,
+    aml_cluster: str,
+    prs_instance_count: int,
+    prs_mini_batch_size: int,
+    prs_max_concurrency_per_instance: int,
+    prs_max_retry_count: int,
+    prs_run_invocation_time: int,
+    prs_allowed_failed_count: int,
+    should_skip_split: bool,
 ):
     # lazy import azure dependencies
     try:
@@ -151,19 +166,19 @@ def run_cloud(
         ]
     )
     def gen_test_data_pipeline(
-            data_input: V2Input,
-            flow_yml_path: str,
-            should_skip_doc_split: bool,
-            chunk_size=1024,
-            chunk_overlap=200,
-            instance_count=1,
-            mini_batch_size=1,
-            max_concurrency_per_instance=2,
-            max_retry_count=3,
-            run_invocation_time=600,
-            allowed_failed_count=-1,
+        data_input: V2Input,
+        flow_yml_path: str,
+        should_skip_doc_split: bool,
+        chunk_size=1024,
+        chunk_overlap=200,
+        instance_count=1,
+        mini_batch_size=1,
+        max_concurrency_per_instance=2,
+        max_retry_count=3,
+        run_invocation_time=600,
+        allowed_failed_count=-1,
     ):
-        from components import clean_data_component, split_document_component
+        from components import clean_data_component, split_document_component, summerize_generation_details_component
 
         data = (
             data_input
@@ -173,8 +188,7 @@ def run_cloud(
             ).outputs.document_node_output
         )
         flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_flow"}])(
-            data=data,
-            text_chunk="${data.text_chunk}"
+            data=data, text_chunk="${data.text_chunk}"
         )
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
@@ -184,6 +198,9 @@ def run_cloud(
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
         clean_data_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
+        summerize_generation_details_component(
+            document_node_output=data, test_data_set_folder=flow_node.outputs.flow_outputs
+        ).outputs.summary_output
 
     def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
         credential = DefaultAzureCredential(exclude_shared_token_cache_credential=True)
@@ -225,11 +242,11 @@ def run_cloud(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cloud", action="store_true", help="cloud flag")
+    parser.add_argument("--cloud", action="store_true", help="Run test data generation at cloud.")
     args = parser.parse_args()
 
     if Path(CONFIG_FILE).is_file():
-        with open(CONFIG_FILE, 'r') as stream:
+        with open(CONFIG_FILE, "r") as stream:
             config = load_yaml(stream)
     else:
         raise Exception(
@@ -251,7 +268,8 @@ if __name__ == "__main__":
         elif not documents_folder or not validate_path_func(documents_folder):
             raise Exception(
                 "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
-                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'")
+                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
+            )
 
         if args.cloud:
             logger.info("Start to generate test data at cloud...")
