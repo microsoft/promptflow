@@ -9,6 +9,16 @@
     },
     "module": "promptflow.connections"
   },
+  "azure_open_ai_aad": {
+    "type": "AzureOpenAIConnection",
+    "value": {
+      "api_base": "aoai-api-endpoint",
+      "api_type": "azure",
+      "auth_mode": "meid_token",
+      "api_version": "2023-07-01-preview"
+    },
+    "module": "promptflow.connections"
+  },
   "aoai_assistant_connection": {
     "type": "AzureOpenAIConnection",
     "value": {
