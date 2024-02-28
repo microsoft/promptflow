@@ -269,7 +269,7 @@ class FlowOperations(TelemetryMixin):
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
-    def _chat_with_ui(self, script):
+    def _chat_with_ui(self, script, skip_open_browser: bool = False):
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
@@ -286,6 +286,8 @@ class FlowOperations(TelemetryMixin):
             "--client.toolbarMode=viewer",
             "--browser.gatherUsageStats=false",
         ]
+        if skip_open_browser:
+            sys.argv += ["--server.headless=true"]
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
@@ -662,32 +664,34 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow)
+        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        source_path_mapping = {}
-        flow_tools, tools_errors = self._generate_tools_meta(
-            flow=flow_entity.flow_dag_path,
-            source_path_mapping=source_path_mapping,
-        )
+        if isinstance(flow_entity, ProtectedFlow):
+            # only DAG flow has tools meta
+            source_path_mapping = {}
+            flow_tools, tools_errors = self._generate_tools_meta(
+                flow=flow_entity.path,
+                source_path_mapping=source_path_mapping,
+            )
 
-        flow_entity.tools_meta_path.write_text(
-            data=json.dumps(flow_tools, indent=4),
-            encoding=DEFAULT_ENCODING,
-        )
+            flow_entity.tools_meta_path.write_text(
+                data=json.dumps(flow_tools, indent=4),
+                encoding=DEFAULT_ENCODING,
+            )
 
-        if tools_errors:
-            for source_name, message in tools_errors.items():
-                for yaml_path in source_path_mapping.get(source_name, []):
-                    validation_result.append_error(
-                        yaml_path=yaml_path,
-                        message=message,
-                    )
+            if tools_errors:
+                for source_name, message in tools_errors.items():
+                    for yaml_path in source_path_mapping.get(source_name, []):
+                        validation_result.append_error(
+                            yaml_path=yaml_path,
+                            message=message,
+                        )
 
         # flow in control plane is read-only, so resolve location makes sense even in SDK experience
-        validation_result.resolve_location_for_diagnostics(flow_entity.flow_dag_path.as_posix())
+        validation_result.resolve_location_for_diagnostics(flow_entity.path.as_posix())
 
         flow_entity._try_raise(
             validation_result,

@@ -11,9 +11,9 @@ import sys
 
 import waitress
 
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._constants import LOGGER_NAME, PF_SERVICE_DEBUG
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
@@ -23,18 +23,17 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     kill_exist_service,
 )
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow.exceptions import UserErrorException
 
-app = None
 
-
-def get_app():
-    global app
-    if app is None:
-        app, _ = create_app()
-    return app
+def get_app(environ, start_response):
+    app, _ = create_app()
+    if os.environ.get(PF_SERVICE_DEBUG) == "true":
+        app.logger.setLevel(logging.DEBUG)
+    else:
+        app.logger.setLevel(logging.INFO)
+    return app.wsgi_app(environ, start_response)
 
 
 def add_start_service_action(subparsers):
@@ -51,11 +50,22 @@ def add_start_service_action(subparsers):
         help="If the port is used, the existing service will be terminated and restart a new service.",
     )
     start_pfs_parser.add_argument(
-        "--synchronous",
+        "-d",
+        "--debug",
         action="store_true",
-        help=argparse.SUPPRESS,
+        help="The flag to turn on debug mode for pfs.",
     )
     start_pfs_parser.set_defaults(action="start")
+
+
+def add_stop_service_action(subparsers):
+    """Add action to stop pfs."""
+    stop_pfs_parser = subparsers.add_parser(
+        "stop",
+        description="Stop promptflow service.",
+        help="pfs stop",
+    )
+    stop_pfs_parser.set_defaults(action="stop")
 
 
 def add_show_status_action(subparsers):
@@ -73,6 +83,9 @@ def start_service(args):
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
     app, _ = create_app()
+    if args.debug:
+        os.environ[PF_SERVICE_DEBUG] = "true"
+        app.logger.setLevel(logging.DEBUG)
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
@@ -89,7 +102,7 @@ def start_service(args):
     else:
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
-    # Set host to localhost, only allow request from localhost.
+
     if sys.executable.endswith("pfcli.exe"):
         # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
         # after packaged by Pyinstaller.
@@ -98,24 +111,14 @@ def start_service(args):
         )
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
-        cmd = [
-            sys.executable,
-            "-m",
-            "waitress",
-            "--host",
-            "127.0.0.1",
-            f"--port={port}",
-            "--call",
-            "promptflow._sdk._service.entry:get_app",
-        ]
-        if args.synchronous:
-            subprocess.call(cmd)
+        # Set host to localhost, only allow request from localhost.
+        cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
+        # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
+        # variable to pass the debug mode, since it will inherit parent process environment variable.
+        if platform.system() == "Windows":
+            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else:
-            # Start a pfs process using detach mode
-            if platform.system() == "Windows":
-                os.spawnv(os.P_DETACH, sys.executable, cmd)
-            else:
-                os.system(" ".join(["nohup"] + cmd + ["&"]))
+            subprocess.Popen(cmd, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
             app.logger.info(
@@ -123,6 +126,14 @@ def start_service(args):
             )
         else:
             app.logger.warning(f"Pfs service start failed in {port}.")
+
+
+def stop_service():
+    app, _ = create_app()
+    port = get_port_from_config()
+    if port is not None:
+        kill_exist_service(port)
+        app.logger.info(f"Pfs service stop in {port}.")
 
 
 def main():
@@ -148,14 +159,12 @@ def entry(command_args):
     subparsers = parser.add_subparsers()
     add_start_service_action(subparsers)
     add_show_status_action(subparsers)
+    add_stop_service_action(subparsers)
 
     args = parser.parse_args(command_args)
 
     activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
-    logger = get_telemetry_logger()
-
-    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
-        run_command(args)
+    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
 
 
 def run_command(args):
@@ -174,6 +183,8 @@ def run_command(args):
             exit(1)
     elif args.action == "start":
         start_service(args)
+    elif args.action == "stop":
+        stop_service()
 
 
 if __name__ == "__main__":

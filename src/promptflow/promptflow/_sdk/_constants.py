@@ -1,7 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import os
+from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
@@ -72,6 +74,7 @@ SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
+PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
@@ -114,7 +117,6 @@ TIMESTAMP_MACRO = "${timestamp}"
 DEFAULT_VARIANT = "variant_0"
 # run visualize constants
 VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_JS_BUNDLE_FILENAME = "bulkTestDetails.min.js"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
@@ -125,19 +127,13 @@ REGISTRY_URI_PREFIX = "azureml://registries/"
 FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
-# Tool meta info
-UIONLY_HIDDEN = "uionly_hidden"
-SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
-ICON_DARK = "icon_dark"
-ICON_LIGHT = "icon_light"
-ICON = "icon"
-TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
-
 # trace
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
+
+AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -337,7 +333,13 @@ class ConnectionType(str, Enum):
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
     CUSTOM = "Custom"
+
+
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
 
 
 ALL_CONNECTION_TYPES = set(
@@ -441,3 +443,28 @@ class EnvironmentVariables:
     """The environment variables."""
 
     PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"
+
+
+class CumulativeTokenCountFieldName:
+    COMPLETION = "completion"
+    PROMPT = "prompt"
+    TOTAL = "total"
+
+
+class LineRunFieldName:
+    LINE_RUN_ID = "line_run_id"
+    TRACE_ID = "trace_id"
+    ROOT_SPAN_ID = "root_span_id"
+    INPUTS = "inputs"
+    OUTPUTS = "outputs"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+    LATENCY = "latency"
+    NAME = "name"
+    KIND = "kind"
+    CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
+    EVALUATIONS = "evaluations"
+
+
+TRACE_LIST_DEFAULT_LIMIT = 1000

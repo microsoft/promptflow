@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
@@ -48,7 +48,6 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
@@ -584,11 +583,14 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True, timeout: int = 600, **kwargs) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param timeout: If the run stays in the same status and produce no new logs in a period
+             longer than the timeout value, the stream operation will abort. Default timeout value is 600 seconds.
+        :type timeout: int
         :param raise_on_error: Raises an exception if a run fails or canceled.
         :type raise_on_error: bool
         :return: The run object
@@ -602,7 +604,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         try:
             printed = 0
             stream_count = 0
-            start = time.time()
+            prev_active_time = time.time()
+            prev_active_log = ""
+            prev_active_status = run.status
+
             while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
                 file_handler.flush()
                 stream_count += 1
@@ -611,18 +616,24 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     # print prompt every 3 times
                     file_handler.write(f"(Run status is {run.status!r}, continue streaming...)\n")
 
-                # if the run is not started for 5 minutes, print an error message and break the loop
-                if run.status == RunStatus.NOT_STARTED:
-                    current = time.time()
-                    if current - start > 300:
-                        file_handler.write(
-                            f"The run {run.name!r} is in status 'NotStarted' for 5 minutes, streaming is stopped."
-                            "Please make sure you are using the latest runtime.\n"
-                        )
-                        break
-
                 available_logs = self._get_log(flow_run_id=run.name)
                 printed = incremental_print(available_logs, printed, file_handler)
+
+                # if the run status is not changed, and the log is not changed, and it lasts for timeout seconds,
+                # we assume the run is stuck, and we should stop the streaming.
+                if available_logs != prev_active_log or run.status != prev_active_status:
+                    prev_active_log = available_logs
+                    prev_active_status = run.status
+                    prev_active_time = time.time()
+                elif time.time() - prev_active_time > timeout:
+                    file_handler.write(
+                        f"The run {run.name!r} is in status {run.status} and produce no new logs for {timeout} seconds,"
+                        "streaming is stopped. If the final status is 'NotStarted', "
+                        "Please make sure you are using the latest runtime.\n"
+                        "For automatic runtime case, please try extending the timeout value.\n"
+                    )
+                    break
+
                 time.sleep(10)
                 run = self.get(run=run.name)
             # ensure all logs are printed
@@ -697,25 +708,31 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         return test_data
 
-    def _resolve_flow(self, run: Run):
+    def _resolve_flow_and_session_id(self, run: Run) -> Tuple[str, Optional[str]]:
+        """Resolve flow to remote flow and session id."""
+        # for remote flow case, leave session id to None and let service side resolve
         if run._use_remote_flow:
-            return self._resolve_flow_definition_resource_id(run=run)
+            return self._resolve_flow_definition_resource_id(run=run), None
         flow = load_flow(run.flow)
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
             ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
-        return flow.path
+        # for local flow case, use flow path to calculate session id
+        session_id = self._get_session_id(flow=flow, flow_lineage_id=run._lineage_id)
+        return flow.path, session_id
 
-    def _get_session_id(self, flow):
+    def _get_session_id(self, flow, flow_lineage_id):
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        flow_id = get_flow_lineage_id(flow_dir=flow)
-        session_id = f"{user_alias}_{flow_id}"
+        # for different environment, use different session id to avoid image cache
+        env = flow._environment
+        env_hash = hashlib.sha256(json.dumps(env, sort_keys=True).encode()).hexdigest()
+        session_id = f"{user_alias}_{flow_lineage_id}_{env_hash}"
         # hash and truncate to avoid the session id getting too long
         # backend has a 64 bit limit for session id.
         # use hexdigest to avoid non-ascii characters in session id
@@ -789,7 +806,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         print(f"Web View: {portal_url}")
 
-    def _resolve_automatic_runtime(self):
+    @classmethod
+    def _resolve_automatic_runtime(cls):
         logger.warning(
             f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
             "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
@@ -797,31 +815,28 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         runtime_name = AUTOMATIC_RUNTIME_NAME
         return runtime_name
 
-    def _resolve_runtime(self, run, flow_path, runtime):
+    def _resolve_runtime(self, run, runtime):
         runtime = run._runtime or runtime
-        # for remote flow case, leave session id to None and let service side resolve
-        # for local flow case, use flow path to calculate session id
-        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-        return runtime, session_id
+        return runtime
 
     def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
-        flow_path = run.flow
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
-                pool.submit(self._resolve_flow, run=run),
+                pool.submit(self._resolve_flow_and_session_id, run=run),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
-        run.flow = task_results[1]
-        runtime, session_id = self._resolve_runtime(run=run, flow_path=flow_path, runtime=runtime)
+        run.flow, session_id = task_results[1]
+
+        runtime = self._resolve_runtime(run=run, runtime=runtime)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
