@@ -985,7 +985,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # default use user identity
         if identity_type == IdentityKeys.USER_IDENTITY:
             return
-        elif identity_type in [IdentityKeys.MANAGED_IDENTITY, IdentityKeys.MANAGED]:
+        elif identity_type == IdentityKeys.MANAGED:
             client_id = run._identity.get(IdentityKeys.CLIENT_ID)
             if not client_id:
                 # use default managed identity

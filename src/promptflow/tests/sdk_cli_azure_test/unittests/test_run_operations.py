@@ -64,7 +64,7 @@ class TestRunOperations:
             # no user_assigned_identities
             ({"type": "managed", "client_id": "xxx"}, "Failed to get identities with id"),
             # unsupported type
-            ({"type": "unsupported"}, "is not supported"),
+            ({"type": "managed_identity"}, "is not supported"),
         ],
     )
     def test_run_with_identity_illegal_cases(self, pf: PFClient, identity, error_msg):
