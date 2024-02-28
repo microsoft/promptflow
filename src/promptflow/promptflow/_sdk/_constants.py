@@ -465,3 +465,11 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class IdentityConfigurationType(str, Enum):
+    """Enum to determine identity framework."""
+
+    MANAGED = "Managed"
+    MANAGED_IDENTITY = "ManagedIdentity"
+    USER_IDENTITY = "UserIdentity"
