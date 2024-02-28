@@ -1,0 +1,11 @@
+model: gpt-4
+instructions: |
+  You are a robot to say thanks following my expected format.
+tools:
+  - type: function
+    source:
+      type: code
+      path: say_thanks.py
+    tool_type: python
+    predefined_inputs:
+      connection: aoai_assistant_connection

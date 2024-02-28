@@ -178,6 +178,7 @@ class Flow(FlowBase):
         cls,
         source: Union[str, PathLike],
         entry: str = None,
+        raise_error=True,
         **kwargs,
     ):
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -197,7 +198,7 @@ class Flow(FlowBase):
             is_eager_flow = cls._is_eager_flow(data)
             is_async_flow = cls._is_async_flow(kwargs)
             if is_eager_flow:
-                obj = EagerFlow._load(path=flow_path, data=data, **kwargs)
+                obj = EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
                 obj = ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)

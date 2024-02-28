@@ -9,7 +9,7 @@ from sqlalchemy import TEXT, Column, Index, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, declarative_base
 
-from promptflow._sdk._constants import SPAN_TABLENAME
+from promptflow._sdk._constants import SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 
 from .retry import sqlite_retry
 from .session import trace_mgmt_db_session
@@ -57,12 +57,38 @@ class Span(Base):
     @sqlite_retry
     def list(
         session_id: typing.Optional[str] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
     ) -> typing.List["Span"]:
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
+            if trace_ids is not None:
+                stmt = stmt.filter(Span.trace_id.in_(trace_ids))
             stmt = stmt.order_by(text("json_extract(span.content, '$.start_time') asc"))
+            if session_id is None and trace_ids is None:
+                stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
+            return [span for span in stmt.all()]
+
+    @staticmethod
+    def list_with_runs(runs: typing.List[str]) -> typing.List["Span"]:
+        with trace_mgmt_db_session() as session:
+            stmt: Query = session.query(Span)
+            runs_string = ""
+            for run in runs:
+                runs_string += f"'{run}',"
+            runs_string = runs_string[:-1]  # remove the last comma
+            stmt = stmt.filter(
+                text(
+                    "(parent_span_id is null OR parent_span_id = '') AND "
+                    f"(json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') in ({runs_string}) OR "  # noqa: E501
+                    f"json_extract(json_extract(span.content, '$.attributes'), '$.\"referenced.batch_run_id\"') in ({runs_string}))"  # noqa: E501
+                )
+            )
+            stmt = stmt.order_by(
+                Span.trace_id,
+                text("json_extract(span.content, '$.start_time') asc"),
+            )
             return [span for span in stmt.all()]
 
 
@@ -72,18 +98,20 @@ class LineRun:
     @staticmethod
     def list(
         session_id: typing.Optional[str] = None,
+        experiments: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[typing.List[Span]]:
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
             if session_id is not None:
                 stmt = stmt.filter(Span.session_id == session_id)
-            else:
-                # TODO: fully support query
-                raise NotImplementedError
+            if experiments is not None:
+                stmt = stmt.filter(Span.experiment.in_(experiments))
             stmt = stmt.order_by(
                 Span.trace_id,
                 text("json_extract(span.content, '$.start_time') asc"),
             )
+            if session_id is None and experiments is None:
+                stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
             line_runs = []
             current_spans: typing.List[Span] = []
             span: Span
