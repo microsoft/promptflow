@@ -14,9 +14,6 @@ from importlib.metadata import version
 from threading import Lock
 from typing import Callable, Dict, List, Optional
 
-from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.completion import Completion
-
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
@@ -403,8 +400,12 @@ def _is_single_input(embedding_inputs):
 
 def enrich_span_with_llm_model(span, output):
     try:
-        if isinstance(output, (ChatCompletion, Completion)):
-            span.set_attribute("llm.model", output.model)
+        if not IS_LEGACY_OPENAI:
+            from openai.types.chat.chat_completion import ChatCompletion
+            from openai.types.completion import Completion
+
+            if isinstance(output, (ChatCompletion, Completion)):
+                span.set_attribute("llm.model", output.model)
     except Exception as e:
         logging.warning(f"Failed to enrich span with llm model: {e}")
 
