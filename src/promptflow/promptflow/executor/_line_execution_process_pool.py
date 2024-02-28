@@ -44,7 +44,7 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-from ._process_manager import SPANEDFORKPROCESSMANAGERLOGNAME, ProcessControlSignal
+from ._process_manager import SPANEDFORKPROCESSMANAGERLOGNAME, SPANEDFORKPROCESSMANAGERLOGPATH, ProcessControlSignal
 
 PROCESSLOGPATH = Path(".promptflow")
 PROCESSLOGNAME = "process_stderr"
@@ -152,6 +152,12 @@ class LineExecutionProcessPool:
         self._worker_count = self._determine_worker_count(worker_count)
 
     def __enter__(self):
+        # Remove log files to prevent interference from the previous run on the current execution.
+        log_path = SPANEDFORKPROCESSMANAGERLOGPATH / SPANEDFORKPROCESSMANAGERLOGNAME
+        if log_path.exists():
+            log_path.unlink()
+        for file in PROCESSLOGPATH.glob(f"{PROCESSLOGNAME}*"):
+            file.unlink()
         manager = Manager()
         self._processing_idx = manager.dict()
         self._completed_idx = manager.dict()
