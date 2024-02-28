@@ -15,11 +15,22 @@ router = APIRouter()
 
 @router.post("/initialization")
 async def initialization(request: InitializationRequest):
+    # init flow executor and validate flow
+
+    # init line process pool
+
+    # return json response
     pass
 
 
 @router.post("/execution")
 async def execution(request: LineExecutionRequest):
+    # get pool
+
+    # submit a run
+
+    # return line result
+
     pass
 
 
