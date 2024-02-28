@@ -455,8 +455,11 @@ class TestOTelTracer:
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
                 if isinstance(inputs["input"], list):
+                    # If the input is a token array, which is list of int, the attribute should contains
+                    # the length of the token array '<len(token_array) dimensional token>'.
                     assert "dimensional token" in embeddings
                 else:
+                    # If the input is a string, the attribute should contains the original input string.
                     assert inputs["input"] in embeddings
 
     def test_flow_with_traced_function(self):
