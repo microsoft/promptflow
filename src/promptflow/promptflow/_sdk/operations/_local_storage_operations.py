@@ -40,7 +40,11 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
-from promptflow._utils.multimedia_utils import get_file_reference_encoder, resolve_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import (
+    get_file_reference_encoder,
+    load_multimedia_data_recursively,
+    resolve_multimedia_data_recursively,
+)
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -222,9 +226,6 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         self._dump_meta_file()
         self._eager_mode = self._calculate_eager_mode(run)
 
-        self._loaded_flow_run_info = {}  # {line_number: flow_run_info}
-        self._loaded_node_run_info = {}  # {line_number: [node_run_info]}
-
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
@@ -384,7 +385,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
-        filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+        filename = self._get_node_run_info_file_name(line_number)
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
     def _load_info_from_file(self, file_path, parse_const_as_str: bool = False):
@@ -396,6 +397,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         return run_infos
 
     def _load_all_node_run_info(self, parse_const_as_str: bool = False) -> List[Dict]:
+        if not self._node_infos_folder.is_dir():
+            return []
+
         node_run_infos = []
         for node_folder in sorted(self._node_infos_folder.iterdir()):
             for node_run_record_file in sorted(node_folder.iterdir()):
@@ -403,16 +407,25 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 node_run_infos.extend(new_runs)
                 for new_run in new_runs:
                     new_run = resolve_multimedia_data_recursively(node_run_record_file, new_run)
-                    run_info = NodeRunInfo.deserialize(new_run)
-                    line_number = run_info.index
-                    self._loaded_node_run_info[line_number] = self._loaded_node_run_info.get(line_number, [])
-                    self._loaded_node_run_info[line_number].append(run_info)
         return node_run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
-        if not self._loaded_node_run_info:
-            self._load_all_node_run_info()
-        return self._loaded_node_run_info.get(line_number)
+        if not self._node_infos_folder.is_dir():
+            return []
+
+        node_run_infos = []
+        for node_folder in self._node_infos_folder.iterdir():
+            filename = self._get_node_run_info_file_name(line_number)
+            node_run_record_file = node_folder / filename
+            if node_run_record_file.is_file():
+                runs = self._load_info_from_file(node_run_record_file)
+                if runs:
+                    run = runs[0]
+                run = resolve_multimedia_data_recursively(node_run_record_file, run)
+                run = load_multimedia_data_recursively(run)
+                run_info = NodeRunInfo.deserialize(run)
+                node_run_infos.append(run_info)
+        return node_run_infos
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
@@ -421,14 +434,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             return
         self._persist_run_multimedia(run_info, self._run_infos_folder)
         line_run_record = LineRunRecord.from_flow_run_info(run_info)
-        # calculate filename according to the batch size
-        # note that if batch_size > 1, need to well handle concurrent write scenario
-        lower_bound = line_run_record.line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
-        upper_bound = lower_bound + LOCAL_STORAGE_BATCH_SIZE - 1
-        filename = (
-            f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
-            f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
-        )
+        filename = self._get_flow_run_info_file_name(run_info.index)
         line_run_record.dump(self._run_infos_folder / filename)
 
     def _load_all_flow_run_info(self, parse_const_as_str: bool = False) -> List[Dict]:
@@ -438,15 +444,22 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             flow_run_infos.extend(new_runs)
             for new_run in new_runs:
                 new_run = resolve_multimedia_data_recursively(line_run_record_file, new_run)
-                run_info = FlowRunInfo.deserialize(new_run)
-                line_number = run_info.index
-                self._loaded_flow_run_info[line_number] = run_info
         return flow_run_infos
 
-    def load_flow_run_info(self, line_number: int = None) -> FlowRunInfo:
-        if not self._loaded_flow_run_info:
-            self._load_all_flow_run_info()
-        return self._loaded_flow_run_info.get(line_number)
+    def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
+        filename = self._get_flow_run_info_file_name(line_number)
+        file_path = self._run_infos_folder / filename
+        if not file_path.is_file():
+            return None
+        runs = self._load_info_from_file(file_path)
+        run = next((run for run in runs if run.get("index") == line_number), None)
+        if not run:
+            return None
+
+        run = resolve_multimedia_data_recursively(self._run_infos_folder, run)
+        run = load_multimedia_data_recursively(run)
+        run_info = FlowRunInfo.deserialize(run)
+        return run_info
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""
@@ -523,3 +536,20 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                         current_outputs[LINE_NUMBER] = line_number
                         outputs.append(copy.deepcopy(current_outputs))
         return pd.DataFrame(inputs), pd.DataFrame(outputs)
+
+    def _get_flow_run_info_file_name(self, line_number: int) -> str:
+        """Calculate flow_run_info filename according to the LOCAL_STORAGE_BATCH_SIZE.
+        Note that if LOCAL_STORAGE_BATCH_SIZE > 1, need to well handle concurrent write scenario.
+        So currently we just set LOCAL_STORAGE_BATCH_SIZE to 1.
+        """
+        lower_bound = line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
+        upper_bound = lower_bound + LOCAL_STORAGE_BATCH_SIZE - 1
+        filename = (
+            f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
+            f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+        )
+        return filename
+
+    def _get_node_run_info_file_name(self, line_number: int) -> str:
+        """Get node_run_info filename."""
+        return f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
