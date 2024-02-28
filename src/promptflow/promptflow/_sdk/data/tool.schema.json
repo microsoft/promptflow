@@ -217,7 +217,7 @@
         "FormRecognizerConnection",
         "FilePath",
         "Image",
-        "assistant_definition"
+        "AssistantDefinition"
       ],
       "enum": [
         "int",
