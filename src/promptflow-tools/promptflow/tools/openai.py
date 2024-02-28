@@ -1,14 +1,7 @@
 from enum import Enum
-
-try:
-    from openai import OpenAI as OpenAIClient
-except Exception:
-    raise Exception(
-        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
-
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, \
-    post_process_chat_api_response, normalize_connection_config
+    post_process_chat_api_response, init_openai_client
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -31,12 +24,7 @@ class Engine(str, Enum):
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self._connection_dict = normalize_connection_config(connection)
-        self._client = OpenAIClient(
-            # disable OpenAI's built-in retry mechanism by using our own retry
-            # for better debuggability and real-time status updates.
-            max_retries=0,
-            **self._connection_dict)
+        self._client = init_openai_client(connection)
 
     @tool
     @handle_openai_error()

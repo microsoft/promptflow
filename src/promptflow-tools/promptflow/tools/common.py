@@ -375,26 +375,54 @@ def find_referenced_image_set(kwargs: dict):
     return referenced_images
 
 
-def normalize_connection_config(connection):
-    """
-    Normalizes the configuration of a given connection object for compatibility.
+def init_openai_client(connection: OpenAIConnection):
+    try:
+        from openai import OpenAI as OpenAIClient
+    except Exception:
+        raise Exception(
+            "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
 
-    This function takes a connection object and normalizes its configuration,
-    ensuring it is compatible and standardized for use.
-    """
-    if isinstance(connection, AzureOpenAIConnection):
-        return {
-            "api_key": connection.api_key,
-            "api_version": connection.api_version,
-            "azure_endpoint": connection.api_base
-        }
-    elif isinstance(connection, OpenAIConnection):
-        return {
-            "api_key": connection.api_key,
-            "organization": connection.organization,
-            "base_url": connection.base_url
-        }
+    return OpenAIClient(
+            # disable OpenAI's built-in retry mechanism by using our own retry
+            # for better debuggability and real-time status updates.
+            max_retries=0,
+            api_key=connection.api_key,
+            organization=connection.organization,
+            base_url=connection.base_url
+        )
+
+
+def init_azure_openai_client(connection: AzureOpenAIConnection):
+    try:
+        from openai import AzureOpenAI as AzureOpenAIClient
+    except Exception:
+        raise Exception(
+            "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
+
+    use_key_auth = True
+    try:
+        from promptflow._sdk._constants import ConnectionAuthMode
+        if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
+            use_key_auth = False
+    except Exception:
+            print("Failed to import ConnectionAuthMode, use key auth by default.")
+            pass
+
+    if use_key_auth:
+        return AzureOpenAIClient(
+            # disable OpenAI's built-in retry mechanism by using our own retry
+            # for better debuggability and real-time status updates.
+            max_retries=0,
+            api_key=connection.api_key,
+            api_version=connection.api_version,
+            azure_endpoint=connection.api_base
+        )
     else:
-        error_message = f"Not Support connection type '{type(connection).__name__}'. " \
-                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
-        raise InvalidConnectionType(message=error_message)
+        return AzureOpenAIClient(
+            # disable OpenAI's built-in retry mechanism by using our own retry
+            # for better debuggability and real-time status updates.
+            max_retries=0,
+            api_version=connection.api_version,
+            azure_endpoint=connection.api_base,
+            azure_ad_token_provider=connection.get_token
+        )
