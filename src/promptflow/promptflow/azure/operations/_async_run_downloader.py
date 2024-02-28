@@ -1,4 +1,6 @@
 import asyncio
+import contextvars
+import functools
 import json
 from pathlib import Path
 from typing import Optional, Union
@@ -10,7 +12,6 @@ from azure.storage.blob.aio import BlobServiceClient
 from promptflow._sdk._constants import DEFAULT_ENCODING, DownloadedRun
 from promptflow._sdk._errors import DownloadInternalError, RunNotFoundError, RunOperationError
 from promptflow._sdk.entities import Run
-from promptflow._utils.async_utils import to_thread
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -293,3 +294,12 @@ class AsyncRunDownloader:
                 f"Cannot download run {run!r} because the workspace default datastore is not supported. Supported ones "
                 f"are ['AzureBlobDatastore'], got {type(datastore).__name__!r}."
             )
+
+
+async def to_thread(func, /, *args, **kwargs):
+    # this is copied from asyncio.to_thread() in Python 3.9
+    # as it is not available in Python 3.8, which is the minimum supported version of promptflow
+    loop = asyncio.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)
