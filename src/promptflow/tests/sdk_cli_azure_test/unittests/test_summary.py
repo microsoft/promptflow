@@ -55,7 +55,7 @@ class TestSummary:
             attributes.pop(SpanAttributeFieldName.LINE_RUN_ID, None)
             attributes.pop(SpanAttributeFieldName.BATCH_RUN_ID, None)
             self.summary.persist(mock_client)
-            mock_persist_line_run.assert_not_called()
+            mock_persist_line_run.assert_called_once()
             mock_insert_evaluation.assert_not_called()
 
     def test_non_evaluation_span_persists_as_main_run(self):
@@ -112,6 +112,7 @@ class TestSummary:
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
+            display_name=self.summary.span.name,
         )
         expected_patch_operations = [
             {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
@@ -158,6 +159,7 @@ class TestSummary:
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
+            display_name=self.summary.span.name,
         )
 
         expected_patch_operations = [

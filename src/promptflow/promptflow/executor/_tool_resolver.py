@@ -17,17 +17,21 @@ from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connecti
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.executor._assistant_tool_invoker import AssistantTool, AssistantToolInvoker
+from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
+    FailedToParseAssistantTool,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     NodeInputValidationError,
     ResolveToolError,
+    UnsupportedAssistantToolType,
     ValueTypeUnresolved,
 )
 
@@ -107,7 +111,81 @@ class ToolResolver:
         file = self._working_dir / assistant_definition_path
         with open(file, "r", encoding="utf-8") as file:
             assistant_definition = load_yaml(file)
-        return AssistantDefinition.deserialize(assistant_definition)
+        assistant_def = AssistantDefinition.deserialize(assistant_definition)
+        self._resolve_assistant_tool(assistant_def)
+        return assistant_def
+
+    def _resolve_assistant_tool(self, assistant_definition: AssistantDefinition):
+        resolved_tools = {}
+        for tool in assistant_definition.tools:
+            if tool["type"] in ("code_interpreter", "retrieval"):
+                resolved_tools[tool["type"]] = AssistantTool(name=tool["type"], openai_definition=tool, func=None)
+            elif tool["type"] == "function":
+                function_tool = self._load_tool_as_function(tool)
+                resolved_tools[function_tool.name] = function_tool
+            else:
+                raise UnsupportedAssistantToolType(
+                    message_format="Unsupported assistant tool type: {tool_type}",
+                    tool_type=tool["type"],
+                    target=ErrorTarget.EXECUTOR,
+                )
+        assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
+
+    def _load_tool_as_function(self, tool: dict):
+        # Temporary implementation for resolving inner functions or tools within the assistant framework.
+        # Plans are underway to establish dedicated methods for inner function resolution.
+        # It will replace the current approach of creating node to reuse existing node resolution logic.
+        node, predefined_inputs = self._create_node_for_assistant_tool(tool)
+        resolved_tool = self.resolve_tool_by_node(node, convert_input_types=True)
+        func_name = resolved_tool.definition.function
+        definition = self._generate_tool_definition(func_name, resolved_tool.definition.description, predefined_inputs)
+        if resolved_tool.node.inputs:
+            inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
+            func = partial(resolved_tool.callable, **inputs)
+        else:
+            func = resolved_tool.callable
+        return AssistantTool(name=func_name, openai_definition=definition, func=func)
+
+    def _create_node_for_assistant_tool(self, tool: dict):
+        predefined_inputs = {}
+        for input_name, value in tool.get("predefined_inputs", {}).items():
+            predefined_inputs[input_name] = InputAssignment.deserialize(value)
+        node = Node(
+            name="assistant_node",
+            tool="assistant_tool",
+            inputs=predefined_inputs,
+            source=ToolSource.deserialize(tool["source"]) if "source" in tool else None,
+            type=ToolType.PYTHON if "tool_type" in tool and tool["tool_type"] == "python" else None,
+        )
+        return node, list(predefined_inputs.keys())
+
+    def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
+        try:
+            to_openai_type = {
+                "str": "string",
+                "int": "number",
+                "float": "number",
+                "bool": "boolean",
+                "list": "array",
+                "dict": "object",
+            }
+            description, params = DocstringParser.parse(description)
+            for input in predefined_inputs:
+                if input in params:
+                    params.pop(input)
+            for _, param in params.items():
+                param["type"] = to_openai_type[param["type"]] if param["type"] in to_openai_type else param["type"]
+
+            return {
+                "type": "function",
+                "function": {
+                    "name": func_name,
+                    "description": description,
+                    "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+                },
+            }
+        except Exception as e:
+            raise FailedToParseAssistantTool(func_name=func_name) from e
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
