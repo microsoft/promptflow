@@ -1119,3 +1119,33 @@ class TestFlowRun:
             session_id_4 = run.properties[SESSION_ID_PROPERTY]
 
             assert session_id_4 != session_id_3
+
+    def test_run_with_environment_variables(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_environment_variables",
+            data=f"{FLOWS_DIR}/flow_with_environment_variables/inputs.jsonl",
+            name=randstr("name"),
+            column_mapping={"key": "${data.text}"},
+        )
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 6
+        assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "2"
+        assert details.loc[1, "inputs.key"] == "env2" and details.loc[1, "outputs.output"] == "spawn"
+
+    @pytest.mark.skip("Need server side to fix the bug: 2982972")
+    def test_run_with_environment_variables_run_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
+        run_obj = load_run(
+            source=f"{FLOWS_DIR}/flow_with_environment_variables/run.yaml",
+            params_override=[{"name": randstr("name")}],
+        )
+        run = pf.runs.create_or_update(run=run_obj)
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 2
+        assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "20"
+        assert details.loc[1, "inputs.key"] == "env5" and details.loc[1, "outputs.output"] == "test"
