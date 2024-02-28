@@ -808,7 +808,7 @@ class FlowOperations(TelemetryMixin):
         :type flow: Union[str, PathLike]
         :param timeout: timeout for generating flow meta
         :type timeout: int
-        :param dump: whether to dump the flow meta to a file
+        :param dump: whether to dump the flow meta to .promptflow/flow.json
         :type dump: bool
         :param load_in_subprocess: whether to load flow in subprocess. will set to False for VSCode extension since
             it's already executes in a separate process.
