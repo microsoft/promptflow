@@ -83,6 +83,7 @@ def add_show_status_action(subparsers):
 
 def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
+    global app
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
     if args.debug:
@@ -136,6 +137,7 @@ def start_service(args):
 
 
 def stop_service():
+    global app
     port = get_port_from_config()
     if port is not None:
         kill_exist_service(port)
