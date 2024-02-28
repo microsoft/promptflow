@@ -720,8 +720,9 @@ class Run(YAMLTranslatableMixin):
             "tags": self.tags,
             "environment_variables": self.environment_variables,
             "connections": self.connections,
-            "properties": self._properties,
+            # "properties": self._properties,  # Do not copy system metrics
             "source": self.source,
             **kwargs,
         }
+        logger.debug(f"Run init params: {init_params}")
         return Run(**init_params)

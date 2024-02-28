@@ -411,6 +411,7 @@ def dispatch_run_commands(args: argparse.Namespace):
             create_func=functools.partial(
                 pf.runs.create_or_update, runtime=args.runtime, reset_runtime=args.reset_runtime
             ),
+            resume_func=pf.runs._resume,
             args=args,
         )
     elif args.sub_action == "list":

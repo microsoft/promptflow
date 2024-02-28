@@ -32,11 +32,13 @@ from promptflow._cli._utils import (
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_type
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._run_functions import _create_run
+from promptflow._sdk._run_functions import _create_run, _resume_run
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
-from promptflow.contracts.run_info import Status
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def add_run_parser(subparsers):
@@ -54,7 +56,6 @@ def add_run_parser(subparsers):
     add_run_archive(subparsers)
     add_run_restore(subparsers)
     add_run_delete(subparsers)
-    add_run_resume(subparsers)
     add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
@@ -93,6 +94,10 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
     )
     add_param_name = lambda parser: parser.add_argument("-n", "--name", type=str, help="Name of the run.")  # noqa: E731
 
+    add_param_resume_from = lambda parser: parser.add_argument(  # noqa: E731
+        "--resume-from", type=str, dest="resume_from", help="The existing run name to resume from."
+    )  # noqa: E731
+
     add_params = [
         add_param_file,
         add_param_stream,
@@ -105,6 +110,7 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         add_param_environment_variables,
         add_param_connections,
         add_param_set,
+        add_param_resume_from,
     ] + base_params
 
     add_params.extend(add_param_list)
@@ -132,6 +138,10 @@ pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
 # Create a run from an existing run record folder:
 pf run create --source <path-to-run-folder>
+# Create a run resume from an existing run:
+pf run create --resume-from <run-name>
+# Create a run resume from an existing run, set the name, display_name, description and tags:
+pf run create --resume-from <run-name> --name <new-run-name> --set display_name='A new run' description='my run description' tags.Type=Test
 """
 
     # data for pf has different help doc than pfazure
@@ -408,44 +418,9 @@ pf run restore --name <name>
     )
 
 
-def add_run_resume(subparsers):
-    epilog = """
-Example:
-
-# Resume a run from an existing run, only failed lines will be re-run:
-pf run resume --from <original-run>
-# Resume a run from an existing run, and specify the name of new run:
-pf run resume --from <original-run> --name <new-run-name>
-"""
-
-    add_param_name = lambda parser: parser.add_argument("-n", "--name", type=str, help="Name of the run.")  # noqa: E731
-    add_param_from = lambda parser: parser.add_argument(  # noqa: E731
-        "--from", type=str, required=True, dest="resume_from", help="The existing run name to resume from."
-    )  # noqa: E731
-    add_param_stream = lambda parser: parser.add_argument(  # noqa: E731
-        "-s",
-        "--stream",
-        action="store_true",
-        default=False,
-        help="Indicates whether to stream the run's logs to the console.",
-    )
-
-    add_params = [add_param_name, add_param_from, add_param_stream] + base_params
-
-    activate_action(
-        name="resume",
-        description=None,
-        epilog=epilog,
-        add_params=add_params,
-        subparsers=subparsers,
-        help_message="Resume an existing run, a new run record will be created.",
-        action_param_name="sub_action",
-    )
-
-
 def dispatch_run_commands(args: argparse.Namespace):
     if args.sub_action == "create":
-        create_run(create_func=_create_run, args=args)
+        create_run(create_func=_create_run, resume_func=_resume_run, args=args)
     elif args.sub_action == "update":
         update_run(name=args.name, params=args.params_override)
     elif args.sub_action == "stream":
@@ -474,8 +449,6 @@ def dispatch_run_commands(args: argparse.Namespace):
         export_run(args)
     elif args.sub_action == "delete":
         delete_run(args.name, args.yes)
-    elif args.sub_action == "resume":
-        resume_run(args)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -596,9 +569,10 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
     return result
 
 
-def create_run(create_func: Callable, args):
+def create_run(create_func: Callable, resume_func: Callable, args):
     file = args.file
     flow = args.flow
+    has_source = hasattr(args, "source")
     run_source = getattr(args, "source", None)  # source is only available for pf args, not pfazure.
     data = args.data
     column_mapping = args.column_mapping
@@ -608,6 +582,7 @@ def create_run(create_func: Callable, args):
     stream = args.stream
     environment_variables = args.environment_variables
     connections = args.connections
+    resume_from = args.resume_from
     params_override = args.params_override or []
 
     if environment_variables:
@@ -626,43 +601,45 @@ def create_run(create_func: Callable, args):
         "run": run,
         "environment_variables": environment_variables,
         "connections": connections,
+        "resume_from": resume_from,
     }
     # remove empty fields
     run_params = {k: v for k, v in run_params.items() if v is not None}
 
-    if file:
-        for param_key, param in run_params.items():
-            params_override.append({param_key: param})
+    if sum([bool(resume_from), bool(file), bool(flow), bool(run_source)]) > 1:
+        raise UserErrorException(
+            "More than one is provided for exclusive options: [resume-from, file, flow"
+            f"{', source' if has_source else ''}]"
+        )
 
-        run = load_run(source=file, params_override=params_override)
-    elif flow:
-        run = Run._load(data=run_params, params_override=params_override)
-    elif run_source:
-        display_name, description, tags = _parse_metadata_args(params_override)
-        processed_params = {
-            "display_name": display_name,
-            "description": description,
-            "tags": tags,
-        }
-        run = Run._load_from_source(source=run_source, params_override=processed_params)
-    else:
+    def _build_run_obj():
+        if file:
+            for param_key, param in run_params.items():
+                params_override.append({param_key: param})
+
+            return load_run(source=file, params_override=params_override)
+        if flow:
+            return Run._load(data=run_params, params_override=params_override)
+        if run_source:
+            display_name, description, tags = _parse_metadata_args(params_override)
+            processed_params = {
+                "display_name": display_name,
+                "description": description,
+                "tags": tags,
+            }
+            return Run._load_from_source(source=run_source, params_override=processed_params)
         raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
-    run = create_func(run=run, stream=stream)
+
+    if resume_from:
+        if params_override:
+            logger.debug(f"Resume from specified, append params override {params_override} to run params.")
+            run_params.update(list_of_dict_to_nested_dict(params_override))
+        logger.debug(f"Run params: {run_params}")
+        run = resume_func(**run_params)
+    else:
+        run = create_func(run=_build_run_obj(), stream=stream)
     if stream:
         print("\n")  # change new line to show run info
-    print(json.dumps(run._to_dict(), indent=4))
-
-
-def resume_run(args):
-    resume_from = args.resume_from
-    pf_client = PFClient()
-    resume_from_run = pf_client.runs.get(name=resume_from)
-    if resume_from_run.status != Status.Completed.value:
-        error = ValueError(
-            f"Referenced run {resume_from_run.name} is not completed, got status {resume_from_run.status!r}."
-        )
-        raise UserErrorException(message=str(error), error=error)
-    run = pf_client.runs.resume(run=resume_from_run, name=args.name, stream=args.stream)
     print(json.dumps(run._to_dict(), indent=4))
 
 

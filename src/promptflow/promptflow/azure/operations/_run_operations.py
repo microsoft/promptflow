@@ -969,3 +969,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             flow_run_id=run,
         )
+
+    @monitor_operation(activity_name="pfazure.runs._resume", activity_type=ActivityType.PUBLICAPI)
+    def _resume(self, **kwargs):
+        raise NotImplementedError("Resume run is not supported in Azure.")

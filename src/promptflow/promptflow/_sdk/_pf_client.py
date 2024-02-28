@@ -53,7 +53,7 @@ class PFClient:
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -64,6 +64,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: str = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -112,9 +113,16 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        if resume_from:
+            unsupported = [flow, data, run, column_mapping, variant, connections, environment_variables]
+            if any(unsupported):
+                raise ValueError(f"'resume_from' is not supported with following parameters: {unsupported}. ")
+            return self.runs._resume(resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs)
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):
