@@ -74,6 +74,11 @@ class TraceEnvironmentVariableName:
     WORKSPACE_NAME = "PF_TRACE_WORKSPACE_NAME"
 
 
+class CosmosDBContainerName:
+    SPAN = "Span"
+    LINE_SUMMARY = "LineSummary"
+
+
 class SpanFieldName:
     NAME = "name"
     CONTEXT = "context"
@@ -96,6 +101,7 @@ class SpanContextFieldName:
 
 class SpanStatusFieldName:
     STATUS_CODE = "status_code"
+    DESCRIPTION = "description"
 
 
 class SpanAttributeFieldName:
@@ -139,3 +145,14 @@ class SpanResourceAttributesFieldName:
 class SpanResourceFieldName:
     ATTRIBUTES = "attributes"
     SCHEMA_URL = "schema_url"
+
+
+class SpanEventFieldName:
+    NAME = "name"
+    TIMESTAMP = "timestamp"
+    ATTRIBUTES = "attributes"
+
+
+class SpanLinkFieldName:
+    CONTEXT = "context"
+    ATTRIBUTES = "attributes"

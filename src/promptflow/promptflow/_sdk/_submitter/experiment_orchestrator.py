@@ -20,13 +20,6 @@ from typing import Union
 
 import psutil
 
-# For the process started in detach mode, stdout/std error will be none.
-# To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
-if sys.stdout is None:
-    sys.stdout = open(os.devnull, "w")
-if sys.stderr is None:
-    sys.stderr = sys.stdout
-
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
     PROMPT_FLOW_DIR_NAME,
@@ -57,6 +50,7 @@ from promptflow._sdk._submitter.utils import (
     _stop_orchestrator_process,
     _windows_stop_handler,
 )
+from promptflow._sdk._utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._sdk.entities._flow import ProtectedFlow
@@ -69,6 +63,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
+overwrite_null_std_logger()
 logger = get_cli_sdk_logger()
 
 
