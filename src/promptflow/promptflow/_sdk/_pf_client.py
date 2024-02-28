@@ -123,6 +123,8 @@ class PFClient:
             if any(unsupported):
                 raise ValueError(f"'resume_from' is not supported with following parameters: {unsupported}. ")
             return self.runs._resume(resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs)
+        if not flow:
+            raise ValueError("'flow' is required to create a run.")
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):
