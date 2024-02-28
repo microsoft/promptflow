@@ -59,11 +59,11 @@ Run examples are available in the [GitHub repository](https://github.com/microso
 identity:
   type: user_identity 
 
-# Use workspace primary UAI
+# use workspace primary UAI
 identity:
   type: managed
   
-# Use specified client_id's UAI
+# use specified client_id's UAI
 identity:
   type: managed
   client_id: xxx
