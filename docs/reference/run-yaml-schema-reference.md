@@ -26,6 +26,8 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `resources`             | object        | Dictionary of resources used for automatic runtime. Only supported for cloud run. See [Resources Schema](#resources-schema) for the set of configurable properties.                                                                                                     |
 | `variant`               | string        | The variant for the run.                                                                                                                                                                                                                                                |
 | `status`                | string        | The status of the run. Only available for when getting an existing run. Won't take affect if set when creating a run.                                                                                                                                                   |
+|`identity`| object | Dictionary of identity configuration for automatic runtim. Only supported for cloud run. See [Identity Schema](#identity-schema) for the set of configurable properties.
+
 
 ### Resources Schema  
 
@@ -33,6 +35,14 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 |-----------------|--------|-----------------------------------------------------|
 | `instance_type` | string | The instance type for automatic runtime of the run. |
 | `compute`       | string | The compute instance for automatic runtime session. |
+
+
+### Identity Schema
+
+| Key         | Type   | Description                                                          |
+|-------------|--------|----------------------------------------------------------------------|
+| `type`      | string | Identity type, currently only support `managed` and `user_identity`. |
+| `client_id` | string | Client id for managed identity, only avaible on managed identity.    |
 
 ## Examples
 
