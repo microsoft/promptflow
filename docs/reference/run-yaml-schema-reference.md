@@ -51,3 +51,20 @@ Run examples are available in the [GitHub repository](https://github.com/microso
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic/run.yml)
 - [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/run.yml)
 - [flow-with-additional-includes](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/flow-with-additional-includes/run.yml)
+
+### Run with identity examples
+
+```yaml
+# default value
+identity:
+  type: user_identity 
+
+# Use workspace primary UAI
+identity:
+  type: managed
+  
+# Use specified client_id's UAI
+identity:
+  type: managed
+  client_id: xxx
+```
