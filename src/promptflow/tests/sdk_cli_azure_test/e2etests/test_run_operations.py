@@ -16,6 +16,8 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pydash
 import pytest
+from azure.ai.ml import ManagedIdentityConfiguration
+from azure.ai.ml.entities import IdentityConfiguration
 
 from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
@@ -1140,10 +1142,10 @@ class TestFlowRun:
         assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "20"
         assert details.loc[1, "inputs.key"] == "env5" and details.loc[1, "outputs.output"] == "test"
 
-    def test_automatic_runtime_with_identity(self, pf, randstr: Callable[[str], str]):
+    def test_automatic_runtime_with_user_identity(self, pf, randstr: Callable[[str], str]):
         from promptflow.azure._restclient.flow.models import SessionSetupModeEnum
 
-        source = f"{RUNS_DIR}/sample_bulk_run_with_identity.yaml"
+        source = f"{RUNS_DIR}/sample_bulk_run_with_user_identity.yaml"
         run_id = randstr("run_id")
         run = load_run(
             source=source,
@@ -1155,3 +1157,37 @@ class TestFlowRun:
         assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
         run = pf.runs.create_or_update(run=run)
         assert isinstance(run, Run)
+
+    def test_automatic_runtime_with_managed_identity(self, pf, randstr: Callable[[str], str]):
+        # won't actually submit the run since test workspace don't have identity
+
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+        from promptflow.azure.operations import RunOperations
+
+        source = f"{RUNS_DIR}/sample_bulk_run_with_managed_identity.yaml"
+
+        mock_workspace = MagicMock(
+            identity=IdentityConfiguration(
+                type="managed",
+                user_assigned_identities=[
+                    ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
+                ],
+            )
+        )
+
+        def submit(*args, **kwargs):
+            body = kwargs.get("body", None)
+            assert body.runtime_name == "automatic"
+            assert body.identity == "fake_resource_id"
+            return body
+
+        with patch.object(pf.runs, "_workspace", mock_workspace):
+
+            with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+                mock_submit.side_effect = submit
+                run_id = randstr("run_id")
+                run = load_run(
+                    source=source,
+                    params_override=[{"name": run_id}],
+                )
+                pf.runs.create_or_update(run=run)
