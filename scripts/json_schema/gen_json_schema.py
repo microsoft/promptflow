@@ -4,12 +4,14 @@
 # flake8: noqa
 
 # This file is part of scripts\generate_json_schema.py in sdk-cli-v2, which is used to generate json schema
-# To use this script, run `python <this_file>` in promptflow env, 
+# To use this script, run `python <this_file>` in promptflow env,
 # and the json schema will be generated in the same folder.
 
 
-from inspect import isclass
+import argparse
+from inspect import isclass, getmembers
 import json
+import sys
 
 from azure.ai.ml._schema import ExperimentalField
 from promptflow._sdk.schemas._base import YamlFileSchema
@@ -139,24 +141,61 @@ class PatchedJSONSchema(JSONSchema):
 
 from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, OpenAIConnectionSchema, \
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
-FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema
+FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema, ServerlessConnectionSchema, \
+CustomStrongTypeConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._sdk.schemas._flow import FlowSchema, EagerFlowSchema
 
 
 if __name__ == "__main__":
-    cls_list = [FlowSchema, EagerFlowSchema]
-    schema_list = []
-    for cls in cls_list:
-        target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
-        # print(target_schema)
-        file_name = cls.__name__
-        file_name = file_name.replace("Schema", "")
-        schema_list.append(target_schema["definitions"][cls.__name__])
-        print(target_schema)
-    schema = {
-        "type": "object",
-        "oneOf": schema_list
-    }
-    with open((f"Flow.schema.json"), "w") as f:
-        f.write(json.dumps(schema, indent=4))
+    example_text = """Example usage:
+
+python scripts/json_schema/gen_json_schema.py -o Run Flow # Generate Run.schema.json and Flow.schema.json
+python scripts/json_schema/gen_json_schema.py -a # Generate all schema files
+"""
+
+    parser = argparse.ArgumentParser(epilog=example_text, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-o', '--output-file', nargs='+', help='Specify output file names, Run, Flow, etc.')
+    parser.add_argument('-a', '--all', action='store_true', help='Generate all schema files')
+    args = parser.parse_args()
+
+    if args.all:
+        args.output_file = ["Run", "Flow", "AzureOpenAIConnection", "OpenAIConnection", "QdrantConnection",
+                            "CognitiveSearchConnection", "SerpConnection", "AzureContentSafetyConnection",
+                            "FormRecognizerConnection", "CustomConnection", "WeaviateConnection", "ServerlessConnection",
+                            "CustomStrongTypeConnection"]
+
+    # Special case for Flow and EagerFlow
+    if "Flow" in args.output_file:
+        cls_list = [FlowSchema, EagerFlowSchema]
+        schema_list = []
+        for cls in cls_list:
+            target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
+            # print(target_schema)
+            file_name = cls.__name__
+            file_name = file_name.replace("Schema", "")
+            schema_list.append(target_schema["definitions"][cls.__name__])
+            print(target_schema)
+        schema = {
+            "type": "object",
+            "oneOf": schema_list
+        }
+        with open((f"Flow.schema.json"), "w") as f:
+            f.write(json.dumps(schema, indent=4))
+        args.output_file.remove("Flow")
+
+    prepared_schemas = {}
+
+    # get all imported schemas
+    for (name, cls) in getmembers(sys.modules[__name__]):
+        if name.endswith("Schema"):
+            prepared_schemas[name.split("Schema")[0]] = cls
+
+    for item in args.output_file:
+        item_cls = prepared_schemas.get(item, None)
+        if item_cls is None:
+            print(f"Schema not found for {item}")
+        else:
+            target_schema = PatchedJSONSchema().dump(item_cls(context={"base_path": "./"}))
+            with open((f"{item}.schema.json"), "w") as f:
+                f.write(json.dumps(target_schema, indent=4))
