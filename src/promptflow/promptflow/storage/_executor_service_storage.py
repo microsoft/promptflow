@@ -11,7 +11,7 @@ from promptflow.promptflow.contracts.run_info import FlowRunInfo, RunInfo
 from promptflow.storage import AbstractRunStorage
 
 
-class ServiceStorage(AbstractRunStorage):
+class ExecutorServiceStorage(AbstractRunStorage):
     def __init__(self, root_dir: Path):
         # prepare folder ...
         prepare_folder(root_dir / OutputsFolderName.FLOW_OUTPUTS)
