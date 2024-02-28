@@ -4,7 +4,7 @@
 
 from fastapi import APIRouter
 
-from promptflow._core.tool_meta_generator import generate_tool_meta_in_process
+from promptflow._core.tool_meta_generator import generate_tool_meta_in_subprocess
 from promptflow._core.tools_manager import collect_package_tools
 from promptflow._utils.logger_utils import service_logger
 from promptflow.executor._service.contracts.tool_request import RetrieveToolFuncResultRequest, ToolMetaRequest
@@ -29,7 +29,7 @@ async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
 
 @router.post("/meta")
 def gen_tool_meta(request: ToolMetaRequest):
-    tool_dict, exception_dict = generate_tool_meta_in_process(request.working_dir, request.tools, service_logger)
+    tool_dict, exception_dict = generate_tool_meta_in_subprocess(request.working_dir, request.tools, service_logger)
     exception_dict = {
         source: generate_error_response(error_dict).to_dict() for source, error_dict in exception_dict.items()
     }

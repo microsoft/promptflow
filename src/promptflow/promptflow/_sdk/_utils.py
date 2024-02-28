@@ -32,7 +32,7 @@ from marshmallow import ValidationError
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
-from promptflow._core.tool_meta_generator import generate_tool_meta, generate_tool_meta_in_process
+from promptflow._core.tool_meta_generator import generate_tool_meta, generate_tool_meta_in_subprocess
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
@@ -547,7 +547,7 @@ def _generate_tool_meta(
     tools = _construct_tool_dict(tools)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
-        tool_dict, exception_dict = generate_tool_meta_in_process(flow_directory, tools, logger, timeout=timeout)
+        tool_dict, exception_dict = generate_tool_meta_in_subprocess(flow_directory, tools, logger, timeout=timeout)
     else:
         tool_dict, exception_dict = {}, {}
 
