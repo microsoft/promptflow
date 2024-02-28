@@ -38,6 +38,8 @@ promptflow.tools.llm_vision.llm_vision:
       ui_hints:
         text_box_size: lg
     model:
+      enabled_by: connection
+      enabled_by_type: [OpenAIConnection]
       enum:
       - gpt-4-vision-preview
       allow_manual_entry: true
