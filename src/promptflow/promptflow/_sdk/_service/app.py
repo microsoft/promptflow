@@ -11,7 +11,7 @@ from flask import Blueprint, Flask, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
+from promptflow._sdk._constants import PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
@@ -20,8 +20,13 @@ from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
-from promptflow._sdk._service.utils.utils import FormattedException, get_port_from_config, kill_exist_service
-from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
+from promptflow._sdk._service.utils.utils import (
+    FormattedException,
+    get_current_env_pfs_file,
+    get_port_from_config,
+    kill_exist_service,
+)
+from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
@@ -60,8 +65,8 @@ def create_app():
 
         # Enable log
         app.logger.setLevel(logging.INFO)
-        log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
-        log_file.touch(mode=read_write_by_user(), exist_ok=True)
+        # each env will have its own log file
+        log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
         # Create a rotating file handler with a max size of 1 MB and keeping up to 1 backup files
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
