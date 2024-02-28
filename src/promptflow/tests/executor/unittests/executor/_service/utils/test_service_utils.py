@@ -106,5 +106,5 @@ class TestServiceUtils:
         execution_request.environment_variables = {
             "PF_TEST_ENV": "dummy_value",
         }
-        set_environment_variables(execution_request)
+        set_environment_variables(execution_request.environment_variables)
         assert os.environ.get("PF_TEST_ENV") == "dummy_value"

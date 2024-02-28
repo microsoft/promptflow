@@ -54,6 +54,6 @@ def generate_error_response(ex):
     return ErrorResponse.from_error_dict(error_dict)
 
 
-def set_environment_variables(request: BaseExecutionRequest):
-    if isinstance(request.environment_variables, dict) and request.environment_variables:
-        os.environ.update(request.environment_variables)
+def set_environment_variables(envs: Mapping[str, Any]):
+    if isinstance(envs, dict) and envs:
+        os.environ.update(envs)

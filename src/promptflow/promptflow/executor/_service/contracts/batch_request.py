@@ -17,6 +17,7 @@ class InitializationRequest(BaseRequest):
     output_dir: Path
     connections: Optional[Mapping[str, Any]] = None
     line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
+    environment_variables: Optional[Mapping[str, Any]] = None
 
 
 class LineExecutionRequest(BaseRequest):
