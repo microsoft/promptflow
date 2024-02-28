@@ -27,7 +27,7 @@ async def add_message_and_run(
     download_images: bool,
 ):
     cli = await get_assistant_client(conn)
-    invoker = await get_assisant_tool_invoker(assistant_definition)
+    invoker = assistant_definition._tool_invoker
     # Check if assistant id is valid. If not, create a new assistant.
     # Note: tool registration at run creation, rather than at assistant creation.
     if not assistant_id:
@@ -45,10 +45,6 @@ async def add_message_and_run(
     file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
-
-async def get_assisant_tool_invoker(assistant_definition: AssistantDefinition):
-    invoker = AssistantToolInvoker.init(assistant_definition)
-    return invoker
 
 
 @trace
@@ -141,7 +137,7 @@ async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: Assis
             await require_actions(cli, thread_id, run, invoker)
         elif run.status in {"in_progress", "cancelling", "queued"}:
             continue
-        elif run.statusin in {"failed", "cancelled", "expired"}:
+        elif run.status in {"failed", "cancelled", "expired"}:
             if run.last_error is not None:
                 error_message = f"The assistant tool runs in '{run.status}' status. " \
                     f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
