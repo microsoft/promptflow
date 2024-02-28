@@ -1,4 +1,3 @@
-"""
 from azure.identity import DefaultAzureCredential
 from azure.ai.ml import MLClient, load_component, Input
 from azure.ai.ml.dsl import pipeline
@@ -28,4 +27,3 @@ pipeline_with_flow = pipeline_func_with_flow(data=data_input)
 
 pipeline_job = ml_client.jobs.create_or_update(pipeline_with_flow)
 ml_client.jobs.stream(pipeline_job.name)
-"""

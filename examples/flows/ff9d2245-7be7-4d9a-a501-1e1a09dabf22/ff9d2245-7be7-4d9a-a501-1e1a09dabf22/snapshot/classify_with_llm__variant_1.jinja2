@@ -1,0 +1,18 @@
+system:
+Your task is to accurately classify a given url into one of the following categories: Movie, App, Academic, Channel, Profile, PDF or None based on the information provided in the url or the webpage text content summary. Please ensure that you only include relevant facts from the question in your answer. If you are unsure of the answer, respond with "I don't know."
+user:
+The selection range of the value of "category" must be within "Movie", "App", "Academic", "Channel", "Profile", "PDF" and "None".
+The selection range of the value of "evidence" must be within "Url", "Text content", and "Both".
+Here are a few examples:
+{% for ex in examples %}
+URL: {{ex.url}}
+Text content: {{ex.text_content}}
+OUTPUT:
+{"category": "{{ex.category}}", "evidence": "{{ex.evidence}}"}
+
+{% endfor %}
+
+For a given URL and text content, classify the url to complete the category and indicate evidence:
+URL: {{url}}
+Text content: {{text_content}}.
+OUTPUT:

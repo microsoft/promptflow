@@ -1,0 +1,10 @@
+{"line_number": 3, "status": "Completed", "inputs.url": "https://docs.nvidia.com/cuda/wsl-user-guide/index.html", "inputs.line_number": 3, "category": "Academic", "evidence": "Both"}
+{"line_number": 1, "status": "Completed", "inputs.url": "https://statsig.com/", "inputs.line_number": 1, "category": "None", "evidence": "Both"}
+{"line_number": 2, "status": "Completed", "inputs.url": "https://www.anthropic.com/index/the-capacity-for-moral-self-correction-in-large-language-models", "inputs.line_number": 2, "category": "Academic", "evidence": "Both"}
+{"line_number": 0, "status": "Completed", "inputs.url": "https://aws.amazon.com/blogs/machine-learning/announcing-new-tools-for-building-with-generative-ai-on-aws/", "inputs.line_number": 0, "category": "Academic", "evidence": "Text content"}
+{"line_number": 6, "status": "Completed", "inputs.url": "https://support.microsoft.com/en-us/office/organize-your-inbox-with-archive-sweep-and-other-tools-in-outlook-on-the-web-49b26f63-6399-4b4a-a580-14b9b1efe96d", "inputs.line_number": 6, "category": "Academic", "evidence": "Text content"}
+{"line_number": 4, "status": "Completed", "inputs.url": "https://azure.microsoft.com/en-us/products/machine-learning/", "inputs.line_number": 4, "category": "Academic", "evidence": "Text content"}
+{"line_number": 5, "status": "Completed", "inputs.url": "https://www.theverge.com/2023/4/11/23678438/microsoft-teams-snapchat-lenses-feature", "inputs.line_number": 5, "category": "App", "evidence": "Both"}
+{"line_number": 7, "status": "Completed", "inputs.url": "https://apnews.com/article/drought-sudden-agriculture-climate-change-heat-befc5fc8cf43a430b29f023bca40acc0", "inputs.line_number": 7, "category": "Academic", "evidence": "Text content"}
+{"line_number": 9, "status": "Completed", "inputs.url": "https://www.sciencenews.org/article/quantum-boomerang-effect-seen-first-time", "inputs.line_number": 9, "category": "Academic", "evidence": "Both"}
+{"line_number": 8, "status": "Completed", "inputs.url": "https://arxiv.org/pdf/2303.01469.pdf", "inputs.line_number": 8, "category": "PDF", "evidence": "Both"}

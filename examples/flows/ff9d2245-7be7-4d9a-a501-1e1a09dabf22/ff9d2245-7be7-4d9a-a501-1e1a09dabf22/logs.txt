@@ -1,0 +1,135 @@
+2024-02-07 07:07:39 +0000      57 promptflow-runtime INFO     [ff9d2245-7be7-4d9a-a501-1e1a09dabf22] Receiving v2 bulk run request 1237026c-c9d8-445e-9221-4d857d7db6dc: {"flow_id": "24765410-6229-45c9-9ef5-24b699b9ef5a", "flow_run_id": "ff9d2245-7be7-4d9a-a501-1e1a09dabf22", "flow_source": {"flow_source_type": 1, "flow_source_info": {"snapshot_id": "7eb554ab-9346-4e0b-9bc1-38c19b1bdcb8"}, "flow_dag_file": "flow.dag.yaml"}, "connections": "**data_scrubbed**", "log_path": "https://promptflowcana3818167080.blob.core.windows.net/azureml/ExperimentRun/dcid.ff9d2245-7be7-4d9a-a501-1e1a09dabf22/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=f183565f-7b36-4da7-a8b8-a0983c51d5de&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2024-02-07T06%3A57%3A34Z&ske=2024-02-08T15%3A07%3A34Z&sks=b&skv=2019-07-07&st=2024-02-07T06%3A57%3A38Z&se=2024-02-07T15%3A07%3A38Z&sp=rcw", "app_insights_instrumentation_key": "InstrumentationKey=**data_scrubbed**;IngestionEndpoint=https://eastus2-0.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/", "data_inputs": {"data": "azureml:/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-canary-dev/data/web_classification_test_data/versions/1"}, "inputs_mapping": {"url": "${data.url}"}, "azure_storage_setting": {"azure_storage_mode": 1, "storage_account_name": "promptflowcana3818167080", "blob_container_name": "azureml-blobstore-c3a40c81-f452-449b-b62e-ba25cf5b6029", "flow_artifacts_root_path": "promptflow/PromptFlowArtifacts/24765410-6229-45c9-9ef5-24b699b9ef5a/ff9d2245-7be7-4d9a-a501-1e1a09dabf22", "blob_container_sas_token": "?sv=2019-07-07&sr=c&sig=**data_scrubbed**&skoid=f183565f-7b36-4da7-a8b8-a0983c51d5de&sktid=72f988bf-86f1-41af-91ab-2d7cd011db47&skt=2024-02-07T07%3A07%3A38Z&ske=2024-02-14T07%3A07%3A38Z&sks=b&skv=2019-07-07&se=2024-02-14T07%3A07%3A38Z&sp=racwl", "output_datastore_name": "workspaceblobstore"}}
+2024-02-07 07:07:39 +0000      57 promptflow-runtime INFO     Runtime version: 20240205.v2. PromptFlow version: 1.5.0rc6
+2024-02-07 07:07:40 +0000      57 promptflow-runtime INFO     Updating ff9d2245-7be7-4d9a-a501-1e1a09dabf22 to Status.Preparing...
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Downloading snapshot to /mnt/host/service/app/36401/requests/ff9d2245-7be7-4d9a-a501-1e1a09dabf22
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Get snapshot sas url for 7eb554ab-9346-4e0b-9bc1-38c19b1bdcb8.
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Snapshot 7eb554ab-9346-4e0b-9bc1-38c19b1bdcb8 contains 15 files.
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Download snapshot 7eb554ab-9346-4e0b-9bc1-38c19b1bdcb8 completed.
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Successfully download snapshot to /mnt/host/service/app/36401/requests/ff9d2245-7be7-4d9a-a501-1e1a09dabf22
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     About to execute a python flow.
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Use spawn method to start child process.
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Starting to check process 121 status for run ff9d2245-7be7-4d9a-a501-1e1a09dabf22
+2024-02-07 07:07:41 +0000      57 promptflow-runtime INFO     Start checking run status for run ff9d2245-7be7-4d9a-a501-1e1a09dabf22
+2024-02-07 07:07:45 +0000     121 promptflow-runtime INFO     [57--121] Start processing flowV2......
+2024-02-07 07:07:45 +0000     121 promptflow-runtime INFO     Runtime version: 20240205.v2. PromptFlow version: 1.5.0rc6
+2024-02-07 07:07:45 +0000     121 promptflow-runtime INFO     Setting mlflow tracking uri...
+2024-02-07 07:07:45 +0000     121 promptflow-runtime INFO     Validating 'AzureML Data Scientist' user authentication...
+2024-02-07 07:07:46 +0000     121 promptflow-runtime INFO     Successfully validated 'AzureML Data Scientist' user authentication.
+2024-02-07 07:07:46 +0000     121 promptflow-runtime INFO     Using AzureMLRunStorageV2
+2024-02-07 07:07:46 +0000     121 promptflow-runtime INFO     Setting mlflow tracking uri to 'azureml://eastus2euap.api.azureml.ms/mlflow/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-canary-dev'
+2024-02-07 07:07:46 +0000     121 promptflow-runtime INFO     Initialized blob service client.
+2024-02-07 07:07:46 +0000     121 promptflow-runtime INFO     Blob service client has api version: 2023-11-03
+2024-02-07 07:07:46 +0000     121 promptflow-runtime INFO     Setting mlflow tracking uri to 'azureml://eastus2euap.api.azureml.ms/mlflow/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-canary-dev'
+2024-02-07 07:07:49 +0000     121 promptflow-runtime INFO     Resolve data from url finished in 2.51555206021294 seconds
+2024-02-07 07:07:49 +0000     121 promptflow-runtime INFO     Starting the aml run 'ff9d2245-7be7-4d9a-a501-1e1a09dabf22'...
+2024-02-07 07:07:49 +0000     121 execution.bulk     INFO     Set process count to 4 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 10}.
+2024-02-07 07:07:53 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:4)-Process id(228)-Line number(0) start execution.
+2024-02-07 07:07:53 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:3)-Process id(224)-Line number(3) start execution.
+2024-02-07 07:07:53 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:1)-Process id(211)-Line number(2) start execution.
+2024-02-07 07:07:53 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:2)-Process id(221)-Line number(1) start execution.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:3)-Process id(224)-Line number(3) completed.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:3)-Process id(224)-Line number(4) start execution.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:2)-Process id(221)-Line number(1) completed.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:2)-Process id(221)-Line number(5) start execution.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:1)-Process id(211)-Line number(2) completed.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:1)-Process id(211)-Line number(6) start execution.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Finished 3 / 10 lines.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Average execution time for completed lines: 2.33 seconds. Estimated time for incomplete lines: 16.31 seconds.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:4)-Process id(228)-Line number(0) completed.
+2024-02-07 07:07:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:4)-Process id(228)-Line number(7) start execution.
+2024-02-07 07:07:57 +0000     121 execution.bulk     INFO     Finished 4 / 10 lines.
+2024-02-07 07:07:57 +0000     121 execution.bulk     INFO     Average execution time for completed lines: 2.01 seconds. Estimated time for incomplete lines: 12.06 seconds.
+2024-02-07 07:07:58 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:1)-Process id(211)-Line number(6) completed.
+2024-02-07 07:07:58 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:3)-Process id(224)-Line number(4) completed.
+2024-02-07 07:07:58 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:1)-Process id(211)-Line number(8) start execution.
+2024-02-07 07:07:58 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:3)-Process id(224)-Line number(9) start execution.
+2024-02-07 07:07:58 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:2)-Process id(221)-Line number(5) completed.
+2024-02-07 07:07:59 +0000     121 execution.bulk     INFO     Finished 7 / 10 lines.
+2024-02-07 07:07:59 +0000     121 execution.bulk     INFO     Average execution time for completed lines: 1.43 seconds. Estimated time for incomplete lines: 4.29 seconds.
+2024-02-07 07:08:00 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:4)-Process id(228)-Line number(7) completed.
+2024-02-07 07:08:00 +0000     121 execution.bulk     INFO     Finished 8 / 10 lines.
+2024-02-07 07:08:00 +0000     121 execution.bulk     INFO     Average execution time for completed lines: 1.38 seconds. Estimated time for incomplete lines: 2.76 seconds.
+2024-02-07 07:08:02 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:3)-Process id(224)-Line number(9) completed.
+2024-02-07 07:08:02 +0000     121 execution.bulk     INFO     Finished 9 / 10 lines.
+2024-02-07 07:08:02 +0000     121 execution.bulk     INFO     Average execution time for completed lines: 1.45 seconds. Estimated time for incomplete lines: 1.45 seconds.
+2024-02-07 07:08:49 +0000     121 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2024-02-07 07:08:49 +0000     121 execution.bulk     INFO     [Lines] [Finished: 9] [Processing: 1] [Pending: 0]
+2024-02-07 07:08:49 +0000     121 execution.bulk     INFO     Processing Lines: line 8 (Process name(ForkProcess-2:2:1)-Process id(211)-Line number(8)).
+2024-02-07 07:08:59 +0000     211 execution          WARNING  fetch_text_content_from_url in line 8 has been running for 60 seconds, stacktrace of thread 139741257266944:
+  File "/mnt/host/service/app/36401/requests/ff9d2245-7be7-4d9a-a501-1e1a09dabf22/fetch_text_content_from_url.py", line 15, in fetch_text_content_from_url
+    soup = bs4.BeautifulSoup(response.text, 'html.parser')
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/requests/models.py", line 928, in text
+    encoding = self.apparent_encoding
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/requests/models.py", line 793, in apparent_encoding
+    return chardet.detect(self.content)["encoding"]
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/__init__.py", line 49, in detect
+    detector.feed(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/universaldetector.py", line 274, in feed
+    if prober.feed(byte_str) == ProbingState.FOUND_IT:
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/charsetgroupprober.py", line 70, in feed
+    state = prober.feed(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/sbcharsetprober.py", line 112, in feed
+    self._total_char += 1
+
+2024-02-07 07:09:49 +0000     121 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2024-02-07 07:09:49 +0000     121 execution.bulk     INFO     [Lines] [Finished: 9] [Processing: 1] [Pending: 0]
+2024-02-07 07:09:49 +0000     121 execution.bulk     INFO     Processing Lines: line 8 (Process name(ForkProcess-2:2:1)-Process id(211)-Line number(8)).
+2024-02-07 07:09:59 +0000     211 execution          WARNING  fetch_text_content_from_url in line 8 has been running for 120 seconds, stacktrace of thread 139741257266944:
+  File "/mnt/host/service/app/36401/requests/ff9d2245-7be7-4d9a-a501-1e1a09dabf22/fetch_text_content_from_url.py", line 15, in fetch_text_content_from_url
+    soup = bs4.BeautifulSoup(response.text, 'html.parser')
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/requests/models.py", line 928, in text
+    encoding = self.apparent_encoding
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/requests/models.py", line 793, in apparent_encoding
+    return chardet.detect(self.content)["encoding"]
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/__init__.py", line 49, in detect
+    detector.feed(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/universaldetector.py", line 274, in feed
+    if prober.feed(byte_str) == ProbingState.FOUND_IT:
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/charsetgroupprober.py", line 70, in feed
+    state = prober.feed(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/sbcharsetprober.py", line 113, in feed
+    if order < self.SAMPLE_SIZE:
+
+2024-02-07 07:10:49 +0000     121 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2024-02-07 07:10:49 +0000     121 execution.bulk     INFO     [Lines] [Finished: 9] [Processing: 1] [Pending: 0]
+2024-02-07 07:10:49 +0000     121 execution.bulk     INFO     Processing Lines: line 8 (Process name(ForkProcess-2:2:1)-Process id(211)-Line number(8)).
+2024-02-07 07:10:59 +0000     211 execution          WARNING  fetch_text_content_from_url in line 8 has been running for 180 seconds, stacktrace of thread 139741257266944:
+  File "/mnt/host/service/app/36401/requests/ff9d2245-7be7-4d9a-a501-1e1a09dabf22/fetch_text_content_from_url.py", line 15, in fetch_text_content_from_url
+    soup = bs4.BeautifulSoup(response.text, 'html.parser')
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/requests/models.py", line 928, in text
+    encoding = self.apparent_encoding
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/requests/models.py", line 793, in apparent_encoding
+    return chardet.detect(self.content)["encoding"]
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/__init__.py", line 49, in detect
+    detector.feed(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/universaldetector.py", line 274, in feed
+    if prober.feed(byte_str) == ProbingState.FOUND_IT:
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/charsetgroupprober.py", line 70, in feed
+    state = prober.feed(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/sbcharsetprober.py", line 99, in feed
+    byte_str = self.remove_xml_tags(byte_str)
+  File "/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/chardet/charsetprober.py", line 124, in remove_xml_tags
+    for curr, buf_char in enumerate(buf):
+
+2024-02-07 07:11:49 +0000     121 execution.bulk     INFO     [Process Pool] [Active processes: 4 / 4]
+2024-02-07 07:11:49 +0000     121 execution.bulk     INFO     [Lines] [Finished: 9] [Processing: 1] [Pending: 0]
+2024-02-07 07:11:50 +0000     121 execution.bulk     INFO     Processing Lines: line 8 (Process name(ForkProcess-2:2:1)-Process id(211)-Line number(8)).
+2024-02-07 07:11:56 +0000     121 execution.bulk     INFO     Process name(ForkProcess-2:2:1)-Process id(211)-Line number(8) completed.
+2024-02-07 07:11:57 +0000     121 execution.bulk     INFO     Finished 10 / 10 lines.
+2024-02-07 07:11:57 +0000     121 execution.bulk     INFO     Average execution time for completed lines: 24.73 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2024-02-07 07:11:58 +0000     121 promptflow-runtime INFO     Post processing batch result...
+2024-02-07 07:12:00 +0000     121 execution.bulk     INFO     Upload status summary metrics for run ff9d2245-7be7-4d9a-a501-1e1a09dabf22 finished in 2.223000278696418 seconds
+2024-02-07 07:12:00 +0000     121 promptflow-runtime INFO     Successfully write run properties {"azureml.promptflow.total_tokens": 13492, "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\", \"type\": \"table\"}]"} with run id 'ff9d2245-7be7-4d9a-a501-1e1a09dabf22'
+2024-02-07 07:12:00 +0000     121 execution.bulk     INFO     Upload RH properties for run ff9d2245-7be7-4d9a-a501-1e1a09dabf22 finished in 0.04133134288713336 seconds
+2024-02-07 07:12:00 +0000     121 promptflow-runtime INFO     Creating unregistered output Asset for Run ff9d2245-7be7-4d9a-a501-1e1a09dabf22...
+2024-02-07 07:12:01 +0000     121 promptflow-runtime INFO     Created debug_info Asset: azureml://locations/eastus2euap/workspaces/c3a40c81-f452-449b-b62e-ba25cf5b6029/data/azureml_ff9d2245-7be7-4d9a-a501-1e1a09dabf22_output_data_debug_info/versions/1
+2024-02-07 07:12:01 +0000     121 promptflow-runtime INFO     Creating unregistered output Asset for Run ff9d2245-7be7-4d9a-a501-1e1a09dabf22...
+2024-02-07 07:12:02 +0000     121 promptflow-runtime INFO     Created flow_outputs output Asset: azureml://locations/eastus2euap/workspaces/c3a40c81-f452-449b-b62e-ba25cf5b6029/data/azureml_ff9d2245-7be7-4d9a-a501-1e1a09dabf22_output_data_flow_outputs/versions/1
+2024-02-07 07:12:02 +0000     121 promptflow-runtime INFO     Creating Artifact for Run ff9d2245-7be7-4d9a-a501-1e1a09dabf22...
+2024-02-07 07:12:02 +0000     121 promptflow-runtime INFO     Created instance_results.jsonl Artifact.
+2024-02-07 07:12:02 +0000     121 promptflow-runtime INFO     Patching ff9d2245-7be7-4d9a-a501-1e1a09dabf22...
+2024-02-07 07:12:02 +0000     121 promptflow-runtime INFO     Ending the aml run 'ff9d2245-7be7-4d9a-a501-1e1a09dabf22' with status 'Completed'...
+2024-02-07 07:12:04 +0000      57 promptflow-runtime INFO     Process 121 finished
+2024-02-07 07:12:05 +0000      57 promptflow-runtime INFO     [57] Child process finished!
+2024-02-07 07:12:05 +0000      57 promptflow-runtime INFO     [ff9d2245-7be7-4d9a-a501-1e1a09dabf22] End processing bulk run
+2024-02-07 07:12:05 +0000      57 promptflow-runtime INFO     Cleanup working dir /mnt/host/service/app/36401/requests/ff9d2245-7be7-4d9a-a501-1e1a09dabf22 for bulk run
