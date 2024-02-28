@@ -470,19 +470,10 @@ class LineRunFieldName:
 TRACE_LIST_DEFAULT_LIMIT = 1000
 
 
-class IdentityConfigurationType(str, Enum):
-    """Enum for identity in YAML."""
-
-    MANAGED = "Managed"
-    MANAGED_IDENTITY = "ManagedIdentity"
-    USER_IDENTITY = "UserIdentity"
-
-
 class IdentityKeys(str, Enum):
     """Enum for identity keys."""
 
     MANAGED = "managed"
-    MANAGED_IDENTITY = "managed_identity"
     USER_IDENTITY = "user_identity"
     RESOURCE_ID = "resource_id"
     CLIENT_ID = "client_id"

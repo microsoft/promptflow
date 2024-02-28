@@ -6,12 +6,11 @@ import os.path
 from dotenv import dotenv_values
 from marshmallow import RAISE, fields, post_load, pre_load
 
-from promptflow._sdk._constants import IdentityConfigurationType
+from promptflow._sdk._constants import IdentityKeys
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField, StringTransformedEnum, UnionField
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow._utils.utils import camel_to_snake
 
 logger = get_cli_sdk_logger()
 
@@ -39,8 +38,7 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
 class ManagedIdentitySchema(metaclass=PatchedSchemaMeta):
     type = StringTransformedEnum(
         required=True,
-        allowed_values=[IdentityConfigurationType.MANAGED, IdentityConfigurationType.MANAGED_IDENTITY],
-        casing_transform=camel_to_snake,
+        allowed_values=IdentityKeys.MANAGED,
     )
     client_id = fields.Str()
 
@@ -48,8 +46,7 @@ class ManagedIdentitySchema(metaclass=PatchedSchemaMeta):
 class UserIdentitySchema(metaclass=PatchedSchemaMeta):
     type = StringTransformedEnum(
         required=True,
-        allowed_values=IdentityConfigurationType.USER_IDENTITY,
-        casing_transform=camel_to_snake,
+        allowed_values=IdentityKeys.USER_IDENTITY,
     )
 
 
