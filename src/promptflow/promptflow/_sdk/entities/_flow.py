@@ -375,7 +375,3 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
                 data=inputs,
             )
             return result
-
-    def __await__(self, *args, **kwargs):
-        self.invoke(args, kwargs)
-        yield from asyncio.sleep(0).__await__()
