@@ -43,8 +43,6 @@ promptflow.tools.llm_vision.llm_vision:
       allow_manual_entry: true
       type:
         - string
-      allow_manual_entry: true
-      is_multi_select: false
       ui_hints:
         text_box_size: lg
     temperature:
