@@ -2,8 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import sys
 import time
+from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
+from threading import Thread
 
 from flask import Blueprint, Flask, g, jsonify, request
 from flask_cors import CORS
@@ -18,7 +21,7 @@ from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
-from promptflow._sdk._service.utils.utils import FormattedException
+from promptflow._sdk._service.utils.utils import FormattedException, get_port_from_config, kill_exist_service
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 
 
@@ -80,6 +83,7 @@ def create_app():
 
         @app.before_request
         def log_before_request_info():
+            app.config["last_request_time"] = datetime.now()
             g.start = time.perf_counter()
             app.logger.debug("Headers: %s", request.headers)
             app.logger.debug("Body: %s", request.get_data())
@@ -92,4 +96,18 @@ def create_app():
             )
             return response
 
+        # Start a monitor process using detach mode. It will stop pfs service if no request to pfs service in 1h in
+        # python scenario. For C# scenario, pfs will live until the process is killed manually.
+        def monitor_request():
+            while True:
+                time.sleep(60)
+                if datetime.now() - app.config["last_request_time"] > timedelta(hours=1):
+                    port = get_port_from_config()
+                    if port:
+                        kill_exist_service(port)
+                    break
+
+        if not sys.executable.endswith("pfcli.exe"):
+            monitor_thread = Thread(target=monitor_request)
+            monitor_thread.start()
     return app, api
