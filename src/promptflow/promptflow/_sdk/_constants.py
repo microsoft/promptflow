@@ -465,3 +465,6 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+TRACE_LIST_DEFAULT_LIMIT = 1000
