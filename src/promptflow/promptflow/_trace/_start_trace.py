@@ -38,6 +38,10 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
+    # trace is currently a preview feature, users should explicitly enable to use it
+    if Configuration.get_instance().is_internal_features_enabled() is False:
+        return
+
     from promptflow._sdk._constants import ContextAttributeKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
