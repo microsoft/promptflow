@@ -1139,3 +1139,19 @@ class TestFlowRun:
         assert details.shape[0] == 2
         assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "20"
         assert details.loc[1, "inputs.key"] == "env5" and details.loc[1, "outputs.output"] == "test"
+
+    def test_automatic_runtime_with_identity(self, pf, randstr: Callable[[str], str]):
+        from promptflow.azure._restclient.flow.models import SessionSetupModeEnum
+
+        source = f"{RUNS_DIR}/sample_bulk_run_with_identity.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        # only pass identity when set to managed and specified client_id
+        assert rest_run.identity is None
+        assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)

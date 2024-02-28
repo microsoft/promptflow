@@ -38,6 +38,7 @@ from promptflow._sdk._constants import (
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
+    IdentityKeys,
     ListViewType,
     RunDataKeys,
     RunHistoryKeys,
@@ -97,6 +98,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._workspace = workspace
+        self._identity = workspace.identity
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
@@ -837,6 +839,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         run.flow, session_id = task_results[1]
 
         runtime = self._resolve_runtime(run=run, runtime=runtime)
+        self._resolve_identity(run=run)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
@@ -969,3 +972,42 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             flow_run_id=run,
         )
+
+    def _resolve_identity(self, run: Run):
+        """Resolve identity to resource id"""
+        if not run._identity:
+            return
+        if not isinstance(run._identity, dict):
+            raise UserErrorException(
+                f"Run's identity should be a dict, got {type(run._resources)} for {run._resources}"
+            )
+        identity_type = run._identity.get("type")
+        # default use user identity
+        if identity_type == IdentityKeys.USER_IDENTITY:
+            return
+        elif identity_type in [IdentityKeys.MANAGED_IDENTITY, IdentityKeys.MANAGED]:
+            client_id = run._identity.get(IdentityKeys.CLIENT_ID)
+            if not client_id:
+                # use default managed identity
+                if not self._workspace.primary_user_assigned_identity:
+                    raise UserErrorException(
+                        f"Primary user assigned identity not found in workspace {self._workspace.name!r}."
+                    )
+                resource_id = self._workspace.primary_user_assigned_identity
+            else:
+                # find client id from the identity
+                resource_id = None
+                try:
+                    for identity in self._workspace.identity.user_assigned_identities or []:
+                        if identity.client_id == client_id:
+                            resource_id = identity.resource_id
+                except Exception:
+                    pass
+                if not resource_id:
+                    raise UserErrorException(
+                        f"Failed to get identities with id {client_id} from workspace {self._workspace.name!r}."
+                        f"Existing identities: {self._workspace.identity.user_assigned_identities}."
+                    )
+            run._identity[IdentityKeys.RESOURCE_ID] = resource_id
+        else:
+            raise UserErrorException(f"Identity type {identity_type!r} is not supported.")
