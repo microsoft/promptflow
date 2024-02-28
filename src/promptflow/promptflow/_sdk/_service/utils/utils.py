@@ -51,7 +51,7 @@ def get_port_from_config(create_if_not_exists=False):
     return port
 
 
-def kill_deprecated_service():
+def kill_service_get_from_service_field():
     (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
     with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}

@@ -21,8 +21,8 @@ from promptflow._sdk._service.utils.utils import (
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
-    kill_deprecated_service,
     kill_exist_service,
+    kill_service_get_from_service_field,
 )
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow.exceptions import UserErrorException
@@ -90,7 +90,7 @@ def start_service(args):
         app.logger.setLevel(logging.DEBUG)
 
     # add this logic to stop pfs service which is start in the port of service key
-    kill_deprecated_service()
+    kill_service_get_from_service_field()
 
     def validate_port(port, force_start):
         if is_port_in_use(port):

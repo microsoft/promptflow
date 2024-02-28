@@ -108,6 +108,7 @@ def create_app():
                 if "last_request_time" in app.config and datetime.now() - app.config["last_request_time"] > timedelta(
                     hours=1
                 ):
+                    # Todo: check if we have any not complete work? like persist all traces.
                     port = get_port_from_config()
                     if port:
                         kill_exist_service(port)
