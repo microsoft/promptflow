@@ -48,7 +48,7 @@ async def invoke_sync_function_in_process(
 
         # Wait for the process to finish or timeout asynchronously
         start_time = datetime.utcnow()
-        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p.pid):
+        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p):
             await asyncio.sleep(1)
 
         try:
