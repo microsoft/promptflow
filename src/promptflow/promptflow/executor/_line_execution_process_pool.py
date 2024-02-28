@@ -44,10 +44,14 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-from ._process_manager import SPANEDFORKPROCESSMANAGERLOGNAME, SPANEDFORKPROCESSMANAGERLOGPATH, ProcessControlSignal
+from ._process_manager import (
+    SPANED_FORK_PROCESS_MANAGER_LOG_NAME,
+    SPANED_FORK_PROCESS_MANAGER_LOG_PATH,
+    ProcessControlSignal,
+)
 
-PROCESSLOGPATH = Path(".promptflow")
-PROCESSLOGNAME = "process_stderr"
+PROCESS_LOG_PATH = Path(".promptflow")
+PROCESS_LOG_NAME = "process_stderr"
 
 
 def signal_handler(signum, frame):
@@ -153,10 +157,10 @@ class LineExecutionProcessPool:
 
     def __enter__(self):
         # Remove log files to prevent interference from the previous run on the current execution.
-        log_path = SPANEDFORKPROCESSMANAGERLOGPATH / SPANEDFORKPROCESSMANAGERLOGNAME
+        log_path = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
         if log_path.exists():
             log_path.unlink()
-        for file in PROCESSLOGPATH.glob(f"{PROCESSLOGNAME}*"):
+        for file in PROCESS_LOG_PATH.glob(f"{PROCESS_LOG_NAME}*"):
             file.unlink()
         manager = Manager()
         self._processing_idx = manager.dict()
@@ -335,12 +339,12 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
-                    logName_i = "{}_{}.log".format(PROCESSLOGNAME, index)
-                    log_path = PROCESSLOGPATH / logName_i
+                    logName_i = "{}_{}.log".format(PROCESS_LOG_NAME, index)
+                    log_path = PROCESS_LOG_PATH / logName_i
                     # In fork mode, if the child process fails to start, its error information
                     # will be written to the parent process log file.
                     if not read_and_log_error(log_path) and self._use_fork:
-                        log_path = PROCESSLOGPATH / SPANEDFORKPROCESSMANAGERLOGNAME
+                        log_path = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
                         read_and_log_error(log_path)
                     ex = ProcessCrashError(line_number)
                 else:
@@ -697,10 +701,10 @@ def _process_wrapper(
     operation_contexts_dict: dict,
     i,
 ):
-    logName_i = "{}_{}.log".format(PROCESSLOGNAME, i)
-    if not PROCESSLOGPATH.exists():
-        PROCESSLOGPATH.mkdir(parents=True, exist_ok=True)
-    log_path = PROCESSLOGPATH / logName_i
+    logName_i = "{}_{}.log".format(PROCESS_LOG_NAME, i)
+    if not PROCESS_LOG_PATH.exists():
+        PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = PROCESS_LOG_PATH / logName_i
     sys.stderr = open(log_path, "w")
 
     if threading.current_thread() is threading.main_thread():
