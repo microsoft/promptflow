@@ -467,6 +467,9 @@ class LineRunFieldName:
     EVALUATIONS = "evaluations"
 
 
+TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
 class IdentityConfigurationType(str, Enum):
     """Enum for identity in YAML."""
 
