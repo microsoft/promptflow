@@ -29,6 +29,8 @@ PF_MAIN_MODULE_NAME = "__pf_main__"
 
 DEFAULT_ENCODING = "utf-8"
 
+OUTPUT_FILE_NAME = "output.jsonl"
+
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -156,3 +158,9 @@ class SpanEventFieldName:
 class SpanLinkFieldName:
     CONTEXT = "context"
     ATTRIBUTES = "attributes"
+
+
+class OutputsFolderName:
+    FLOW_OUTPUTS = "flow_outputs"
+    FLOW_ARTIFACTS = "flow_artifacts"
+    NODE_ARTIFACTS = "node_artifacts"
