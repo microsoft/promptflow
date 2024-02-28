@@ -9,11 +9,16 @@
 
 import json
 
-from flask import request
+from flask import current_app, request
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
-from promptflow._constants import SpanResourceFieldName
+from promptflow._constants import (
+    CosmosDBContainerName,
+    SpanFieldName,
+    SpanResourceAttributesFieldName,
+    SpanResourceFieldName,
+)
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
 
@@ -37,9 +42,36 @@ def trace_collector():
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
                     # TODO: persist with batch
-                    Span._from_protobuf_object(span, resource=resource)._persist()
+                    span = Span._from_protobuf_object(span, resource=resource)
+                    span._persist()
+                    _try_write_trace_to_cosmosdb(span)
         return "Traces received", 200
 
     # JSON protobuf encoding
     elif "application/json" in content_type:
         raise NotImplementedError
+
+
+def _try_write_trace_to_cosmosdb(span: Span):
+    span_resource = span._content.get(SpanFieldName.RESOURCE, {})
+    resource_attributes = span_resource.get(SpanResourceFieldName.ATTRIBUTES, {})
+    subscription_id = resource_attributes.get(SpanResourceAttributesFieldName.SUBSCRIPTION_ID, None)
+    resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
+    workspace_name = resource_attributes.get(SpanResourceAttributesFieldName.WORKSPACE_NAME, None)
+    if subscription_id is None or resource_group_name is None or workspace_name is None:
+        current_app.logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
+        return
+    from promptflow.azure._storage.cosmosdb.client import get_client
+    from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
+    from promptflow.azure._storage.cosmosdb.summary import Summary
+
+    span_client = get_client(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
+    line_summary_client = get_client(
+        CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
+    )
+
+    if line_summary_client and span_client:
+        result = SpanCosmosDB(span).persist(span_client)
+        # None means the span already exists, then we don't need to persist the summary also.
+        if result is not None:
+            Summary(span).persist(line_summary_client)

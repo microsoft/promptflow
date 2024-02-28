@@ -19,7 +19,9 @@ from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.utils.utils import FormattedException
-from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
+
+overwrite_null_std_logger()
 
 
 def heartbeat():
