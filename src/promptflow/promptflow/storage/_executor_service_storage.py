@@ -7,7 +7,8 @@ from pathlib import Path
 
 from promptflow._constants import OutputsFolderName
 from promptflow._utils.utils import prepare_folder
-from promptflow.promptflow.contracts.run_info import FlowRunInfo, RunInfo
+from promptflow.promptflow.contracts.run_info import FlowRunInfo
+from promptflow.promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.storage import AbstractRunStorage
 
 
@@ -21,5 +22,5 @@ class ExecutorServiceStorage(AbstractRunStorage):
     def persist_flow_run(self, run_info: FlowRunInfo):
         pass
 
-    def persist_node_run(self, run_info: RunInfo):
+    def persist_node_run(self, run_info: NodeRunInfo):
         pass
