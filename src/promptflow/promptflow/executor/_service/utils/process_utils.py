@@ -48,7 +48,7 @@ async def invoke_sync_function_in_process(
 
         # Wait for the process to finish or timeout asynchronously
         start_time = datetime.utcnow()
-        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p):
+        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p.pid):
             await asyncio.sleep(1)
 
         try:
@@ -82,13 +82,12 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def _is_process_alive(p: multiprocessing.Process):
+def _is_process_alive(pid: int):
     try:
-        process = psutil.Process(p.pid)
+        process = psutil.Process(pid)
         return process.is_running()
     except psutil.NoSuchProcess:
-        service_logger.warning(f"The process {p.pid} no longer exists.")
-        p.join()
+        service_logger.warning(f"The process {pid} no longer exists.")
         return False
 
 
