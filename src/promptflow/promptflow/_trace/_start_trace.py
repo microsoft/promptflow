@@ -88,20 +88,17 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
         experiment=experiment,
         workspace_triad=workspace_triad,
     )
-    # print user the UI url
-    ui_url = _determine_trace_url(
-        pfs_port=pfs_port,
-        session_configured=session is not None,
-        experiment=experiment,
-        run=kwargs.get("run", None),
-        session_id=session_id,
-    )
-    # print to be able to see it in notebook
-    print(f"You can view the trace from UI url: {ui_url}")
-    if workspace_triad is not None:
-        # if user has configured trace.provider, which indicates enabled local to cloud feature
-        # print the url for cloud trace view
-        _trace_url_for_cloud(session_id=session_id, workspace_triad=workspace_triad)
+
+    # print url(s) for user to view the trace
+    print_url_kwargs = {
+        "pfs_port": pfs_port,
+        "session_configured": session is not None,
+        "experiment": experiment,
+        "run": kwargs.get("run", None),
+        "session_id": session_id,
+    }
+    _print_trace_url_for_local(pfs_port=pfs_port, **print_url_kwargs)
+    _print_trace_url_for_local_to_cloud(workspace_triad=workspace_triad, **print_url_kwargs)
 
 
 def _start_pfs(pfs_port) -> None:
@@ -232,21 +229,58 @@ def _init_otel_trace_exporter(
     setup_exporter_from_environ()
 
 
-def _determine_trace_url(
-    pfs_port: str,
+def _determine_query_parameter(
+    url: str,
     session_configured: bool,
     experiment: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
     session_id: typing.Optional[str] = None,
 ) -> str:
-    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
-    if experiment is not None:
-        ui_url += f"?experiment={experiment}"
-    elif run is not None:
-        ui_url += f"?run={run}"
+    # priority: run > experiment > session
+    # for run(s) in experiment, we should print url with run(s) as it is more specific;
+    # and url with experiment should be printed at the beginning of experiment start.
+    # session id is the concept we expect to expose to users least, so it should have the lowest priority.
+    if run is not None:
+        url += f"?run={run}"
+    elif experiment is not None:
+        url += f"?experiment={experiment}"
     elif session_configured and session_id is not None:
-        ui_url += f"?session={session_id}"
-    return ui_url
+        url += f"?session={session_id}"
+    return url
+
+
+def _print_trace_url_for_local(
+    pfs_port: str,
+    session_configured: bool,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> None:
+    url_prefix = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    url = _determine_query_parameter(url_prefix, session_configured, experiment, run, session_id)
+    print(f"You can view the trace from local PFS: {url}")
+
+
+def _print_trace_url_for_local_to_cloud(
+    workspace_triad: typing.Optional[AzureMLWorkspaceTriad],
+    session_configured: bool,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> None:
+    # if user has configured trace.provider, we can extract workspace triad from it
+    # this indicates local to cloud feature is enabled, then print the url in portal
+    if workspace_triad is None:
+        return
+    url_prefix = (
+        f"https://int.ml.azure.com/prompts/trace/session/{session_id}"
+        f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
+        f"/resourceGroups/{workspace_triad.resource_group_name}"
+        "/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{workspace_triad.workspace_name}"
+    )
+    url = _determine_query_parameter(url_prefix, session_configured, experiment, run, session_id)
+    print(f"You can view the trace in cloud from Azure portal: {url}")
 
 
 def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]:
@@ -254,14 +288,3 @@ def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]
     if trace_provider is None:
         return None
     return extract_workspace_triad_from_trace_provider(trace_provider)
-
-
-def _trace_url_for_cloud(session_id: str, workspace_triad: AzureMLWorkspaceTriad) -> None:
-    url_for_cloud = (
-        f"https://int.ml.azure.com/prompts/trace/session/{session_id}"
-        f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
-        f"/resourceGroups/{workspace_triad.resource_group_name}"
-        "/providers/Microsoft.MachineLearningServices"
-        f"/workspaces/{workspace_triad.workspace_name}"
-    )
-    print(f"You can view the trace in cloud from this link: {url_for_cloud}")
