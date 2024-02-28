@@ -36,7 +36,13 @@ class TestFlowAsFunc:
     @pytest.mark.asyncio
     async def test_flow_as_a_func_async(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var", async_call=True)
-        result = await f(key="env1")
+        result = await f(key="PATH")
+        assert result["output"] is not None
+
+    @pytest.mark.asyncio
+    async def test_async_flow_as_a_func_async(self):
+        f = load_flow(f"{FLOWS_DIR}/print_env_var_async", async_call=True)
+        result = await f(key="PATH")
         assert result["output"] is not None
 
     def test_flow_as_a_func_with_connection_overwrite(self):

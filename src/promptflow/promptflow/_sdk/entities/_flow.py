@@ -103,8 +103,6 @@ class FlowBase(abc.ABC):
         self._path = Path(path).resolve()
         # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
-        # async call flag
-        self._async_call = kwargs.pop("async_call", False)
         super().__init__(**kwargs)
 
     @property
@@ -171,6 +169,11 @@ class Flow(FlowBase):
         return data.get("entry")
 
     @classmethod
+    def _is_async_flow(cls, kwargs):
+        """Check if the flow is an async flow. Use field 'entry' to determine."""
+        return kwargs.pop("async_call", False)
+
+    @classmethod
     def load(
         cls,
         source: Union[str, PathLike],
@@ -192,11 +195,24 @@ class Flow(FlowBase):
                 data = load_yaml_string(flow_content)
                 content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
+            is_async_flow = cls._is_async_flow(kwargs)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, data=data, **kwargs)
+                obj = EagerFlow._load(path=flow_path, data=data, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
-                return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                obj = ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+            if is_async_flow:
+
+                async def _load_async(*async_args, **async_kwargs):
+                    obj_loaded = obj(*async_args, **async_kwargs)
+                    if asyncio.iscoroutine(obj_loaded):
+                        return await obj_loaded
+                    else:
+                        return obj_loaded
+
+                return _load_async
+            else:
+                return obj
         # if non-YAML file is provided, raise user error exception
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
