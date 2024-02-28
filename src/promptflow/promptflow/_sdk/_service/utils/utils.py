@@ -78,7 +78,10 @@ def kill_service_get_from_service_field():
                 # remove service key field
                 with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
                     service_config.pop("service")
-                    dump_yaml(service_config, f)
+                    if len(service_config) > 0:
+                        dump_yaml(service_config, f)
+                    else:
+                        f.write("")
     finally:
         pfs_port_lock.release()
 

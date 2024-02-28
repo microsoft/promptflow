@@ -66,7 +66,8 @@ def create_app():
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
         handler.setFormatter(formatter)
-        app.logger.addHandler(handler)
+        # Set app logger ot the only one RotatingFileHandler to avoid duplicate logs
+        app.logger.handlers = [handler]
 
         # Basic error handler
         @api.errorhandler(Exception)
@@ -87,8 +88,12 @@ def create_app():
         def log_before_request_info():
             app.config["last_request_time"] = datetime.now()
             g.start = time.perf_counter()
-            app.logger.debug("Headers: %s", request.headers)
-            app.logger.debug("Body: %s", request.get_data())
+            app.logger.debug(
+                "Last request time: %s, Headers: %s, Body: %s",
+                app.config["last_request_time"],
+                request.headers,
+                request.get_data(),
+            )
 
         @app.after_request
         def log_after_request_info(response):
@@ -111,10 +116,11 @@ def create_app():
                     # Todo: check if we have any not complete work? like persist all traces.
                     port = get_port_from_config()
                     if port:
+                        app.logger.info(f"Try auto stop pfs service in port {port} since no request to api within 1h")
                         kill_exist_service(port)
                     break
 
         if not sys.executable.endswith("pfcli.exe"):
-            monitor_thread = ThreadWithContextVars(target=monitor_request)
+            monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
             monitor_thread.start()
     return app, api
