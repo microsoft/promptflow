@@ -15,7 +15,9 @@ from promptflow._constants import (
     DEFAULT_SPAN_TYPE,
     SpanAttributeFieldName,
     SpanContextFieldName,
+    SpanEventFieldName,
     SpanFieldName,
+    SpanLinkFieldName,
     SpanResourceAttributesFieldName,
     SpanResourceFieldName,
     SpanStatusFieldName,
@@ -118,6 +120,43 @@ class Span:
         )
 
     @staticmethod
+    def _from_protobuf_events(obj: typing.List[PBSpan.Event]) -> typing.List[typing.Dict]:
+        events = []
+        if len(obj) == 0:
+            return events
+        for pb_event in obj:
+            event_dict: dict = json.loads(MessageToJson(pb_event))
+            event = {
+                SpanEventFieldName.NAME: pb_event.name,
+                SpanEventFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano),
+                SpanEventFieldName.ATTRIBUTES: flatten_pb_attributes(
+                    event_dict.get(SpanEventFieldName.ATTRIBUTES, dict())
+                ),
+            }
+            events.append(event)
+        return events
+
+    @staticmethod
+    def _from_protobuf_links(obj: typing.List[PBSpan.Link]) -> typing.List[typing.Dict]:
+        links = []
+        if len(obj) == 0:
+            return links
+        for pb_link in obj:
+            link_dict: dict = json.loads(MessageToJson(pb_link))
+            link = {
+                SpanLinkFieldName.CONTEXT: {
+                    SpanContextFieldName.TRACE_ID: pb_link.trace_id.hex(),
+                    SpanContextFieldName.SPAN_ID: pb_link.span_id.hex(),
+                    SpanContextFieldName.TRACE_STATE: pb_link.trace_state,
+                },
+                SpanLinkFieldName.ATTRIBUTES: flatten_pb_attributes(
+                    link_dict.get(SpanLinkFieldName.ATTRIBUTES, dict())
+                ),
+            }
+            links.append(link)
+        return links
+
+    @staticmethod
     def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
         span_dict: dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
@@ -132,6 +171,7 @@ class Span:
         end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
         status = {
             SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
+            SpanStatusFieldName.DESCRIPTION: obj.status.message,
         }
         # we have observed in some scenarios, there is not `attributes` field
         attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
@@ -144,6 +184,9 @@ class Span:
         resource_attributes: dict = resource[SpanResourceFieldName.ATTRIBUTES]
         session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
+
+        events = Span._from_protobuf_events(obj.events)
+        links = Span._from_protobuf_links(obj.links)
 
         # if `batch_run_id` exists, record the run
         run = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
@@ -160,6 +203,8 @@ class Span:
             span_type=span_type,
             session_id=session_id,
             parent_span_id=parent_span_id,
+            events=events,
+            links=links,
             run=run,
             experiment=experiment,
         )
@@ -259,6 +304,33 @@ class LineRun:
         if main_line_run_data is None:
             return None
 
+        return LineRun(
+            line_run_id=main_line_run_data.line_run_id,
+            trace_id=main_line_run_data.trace_id,
+            root_span_id=main_line_run_data.root_span_id,
+            inputs=main_line_run_data.inputs,
+            outputs=main_line_run_data.outputs,
+            start_time=main_line_run_data.start_time,
+            end_time=main_line_run_data.end_time,
+            status=main_line_run_data.status,
+            latency=main_line_run_data.latency,
+            name=main_line_run_data.display_name,
+            kind=main_line_run_data.kind,
+            cumulative_token_count=main_line_run_data.cumulative_token_count,
+            evaluations=evaluations,
+        )
+
+    @staticmethod
+    def _from_run_and_spans(run: str, spans: typing.List[Span]) -> typing.Optional["LineRun"]:
+        main_line_run_data: _LineRunData = None
+        evaluations = dict()
+        for span in spans:
+            attributes = span._content[SpanFieldName.ATTRIBUTES]
+            batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            if batch_run_id == run:
+                main_line_run_data = _LineRunData._from_root_span(span)
+            else:
+                evaluations[span.name] = _LineRunData._from_root_span(span)
         return LineRun(
             line_run_id=main_line_run_data.line_run_id,
             trace_id=main_line_run_data.trace_id,
