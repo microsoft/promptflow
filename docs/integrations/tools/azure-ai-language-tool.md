@@ -25,7 +25,7 @@ PyPI package: [`promptflow-azure-ai-language`](https://pypi.org/project/promptfl
     ```
     You may also want to install the [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 ## Prerequisites
-The tool calls APIs from Azure AI Language. To use it, you must create a connection to an [Azure AI Language resource](https://learn.microsoft.com/en-us/azure/ai-services/language-service/). [Create a Language Resource](https://ms.portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics) first, if necessary.
+The tool calls APIs from Azure AI Language. To use it, you must create a connection to an [Azure AI Language resource](https://learn.microsoft.com/en-us/azure/ai-services/language-service/). [Create a Language Resource](https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics) first, if necessary.
 - In Prompt flow, add a new `CustomConnection`.
     - Under the `secrets` field, specify the resource's API key: `api_key: <Azure AI Language Resource api key>`
     - Under the `configs` field, specify the resource's endpoint: `endpoint: <Azure AI Language Resource endpoint>`
