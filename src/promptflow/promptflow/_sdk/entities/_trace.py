@@ -319,3 +319,30 @@ class LineRun:
             cumulative_token_count=main_line_run_data.cumulative_token_count,
             evaluations=evaluations,
         )
+
+    @staticmethod
+    def _from_run_and_spans(run: str, spans: typing.List[Span]) -> typing.Optional["LineRun"]:
+        main_line_run_data: _LineRunData = None
+        evaluations = dict()
+        for span in spans:
+            attributes = span._content[SpanFieldName.ATTRIBUTES]
+            batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            if batch_run_id == run:
+                main_line_run_data = _LineRunData._from_root_span(span)
+            else:
+                evaluations[span.name] = _LineRunData._from_root_span(span)
+        return LineRun(
+            line_run_id=main_line_run_data.line_run_id,
+            trace_id=main_line_run_data.trace_id,
+            root_span_id=main_line_run_data.root_span_id,
+            inputs=main_line_run_data.inputs,
+            outputs=main_line_run_data.outputs,
+            start_time=main_line_run_data.start_time,
+            end_time=main_line_run_data.end_time,
+            status=main_line_run_data.status,
+            latency=main_line_run_data.latency,
+            name=main_line_run_data.display_name,
+            kind=main_line_run_data.kind,
+            cumulative_token_count=main_line_run_data.cumulative_token_count,
+            evaluations=evaluations,
+        )
