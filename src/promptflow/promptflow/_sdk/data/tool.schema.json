@@ -216,7 +216,8 @@
         "FunctionStr",
         "FormRecognizerConnection",
         "FilePath",
-        "Image"
+        "Image",
+        "AssistantDefinition"
       ],
       "enum": [
         "int",
@@ -243,7 +244,8 @@
         "function_str",
         "FormRecognizerConnection",
         "file_path",
-        "image"
+        "image",
+        "assistant_definition"
       ]
     },
     "AzureOpenAIModelCapabilities": {
