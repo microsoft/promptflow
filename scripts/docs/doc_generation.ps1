@@ -2,7 +2,7 @@
 .DESCRIPTION
 Script to build doc site
 
-.EXAMPLE 
+.EXAMPLE
 PS> ./doc_generation.ps1 -SkipInstall # skip pip install
 PS> ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true -SkipInstall
 
@@ -14,6 +14,8 @@ param(
     [switch]$BuildLinkCheck = $false,
     [switch]$WithReferenceDoc = $false
 )
+
+Set-PSDebug -Trace 2
 
 [string] $ScriptPath = $PSCommandPath | Split-Path -Parent
 [string] $RepoRootPath = $ScriptPath | Split-Path -Parent | Split-Path -Parent
@@ -70,7 +72,7 @@ if($WithReferenceDoc){
     }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
-    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
+    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc
     $apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
 
     Write-Host "=============== Overwrite promptflow.connections.rst ==============="
@@ -97,16 +99,16 @@ $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningE
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
 
-if ($apidocWarningsAndErrors) {  
-    Write-Host "=============== API doc warnings and errors ==============="  
-    foreach ($line in $apidocWarningsAndErrors) {  
-        Write-Host $line -ForegroundColor Red  
-    }  
-}  
-  
-if ($buildWarningsAndErrors) {  
-    Write-Host "=============== Build warnings and errors ==============="  
-    foreach ($line in $buildWarningsAndErrors) {  
-        Write-Host $line -ForegroundColor Red  
-    }  
-} 
+if ($apidocWarningsAndErrors) {
+    Write-Host "=============== API doc warnings and errors ==============="
+    foreach ($line in $apidocWarningsAndErrors) {
+        Write-Host $line -ForegroundColor Red
+    }
+}
+
+if ($buildWarningsAndErrors) {
+    Write-Host "=============== Build warnings and errors ==============="
+    foreach ($line in $buildWarningsAndErrors) {
+        Write-Host $line -ForegroundColor Red
+    }
+}
