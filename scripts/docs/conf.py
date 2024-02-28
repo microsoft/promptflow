@@ -54,8 +54,6 @@ linkcheck_ignore = [
     r"^(?!https?)",
     "deploy-using-docker.html",
     "deploy-using-kubernetes.html",
-    "https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic",
-    "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",
 ]
 
 linkcheck_exclude_documents = ["contributing"]
