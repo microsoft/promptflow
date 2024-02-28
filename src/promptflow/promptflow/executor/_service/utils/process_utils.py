@@ -2,16 +2,18 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import contextlib
 import json
 import multiprocessing
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Callable
+
+import psutil
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
-from promptflow._utils.async_utils import to_thread
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
 from promptflow.exceptions import ErrorTarget
@@ -36,7 +38,7 @@ async def invoke_sync_function_in_process(
         error_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=execute_target_function,
+            target=_execute_target_function,
             args=(target_function, args, kwargs, return_dict, error_dict, context_dict),
         )
         p.start()
@@ -45,9 +47,15 @@ async def invoke_sync_function_in_process(
             ProcessManager().start_process(run_id, p.pid)
 
         # Wait for the process to finish or timeout asynchronously
-        await to_thread(p.join, timeout=wait_timeout)
+        start_time = datetime.utcnow()
+        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p.pid):
+            await asyncio.sleep(1)
 
         try:
+            # If process_id is None, it indicates that the process has been terminated by cancel request.
+            if run_id and not ProcessManager().get_process(run_id):
+                raise ExecutionCanceledError(run_id)
+
             # Terminate the process if it is still alive after timeout
             if p.is_alive():
                 service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
@@ -57,10 +65,6 @@ async def invoke_sync_function_in_process(
 
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
-                # If run id is not in the process mapping, it indicates
-                # that the process has been terminated by cancel request.
-                if run_id and not ProcessManager().get_process(run_id):
-                    raise ExecutionCanceledError(run_id)
                 exception = error_dict.get("error", None)
                 if exception is None:
                     raise UnexpectedError(
@@ -78,7 +82,16 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def execute_target_function(
+def _is_process_alive(pid: int):
+    try:
+        process = psutil.Process(pid)
+        return process.is_running()
+    except psutil.NoSuchProcess:
+        service_logger.warning(f"The process {pid} no longer exists.")
+        return False
+
+
+def _execute_target_function(
     target_function: Callable,
     args: tuple,
     kwargs: dict,
