@@ -6,7 +6,6 @@ import sys
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from threading import Thread
 
 from flask import Blueprint, Flask, g, jsonify, request
 from flask_cors import CORS
@@ -23,6 +22,7 @@ from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.utils.utils import FormattedException, get_port_from_config, kill_exist_service
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
+from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
 def heartbeat():
@@ -108,6 +108,6 @@ def create_app():
                     break
 
         if not sys.executable.endswith("pfcli.exe"):
-            monitor_thread = Thread(target=monitor_request)
+            monitor_thread = ThreadWithContextVars(target=monitor_request)
             monitor_thread.start()
     return app, api
