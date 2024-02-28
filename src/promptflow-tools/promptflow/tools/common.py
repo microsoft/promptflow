@@ -9,7 +9,7 @@ from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
+    ChatAPIFunctionRoleInvalidFormat
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -380,7 +380,8 @@ def init_openai_client(connection: OpenAIConnection):
         from openai import OpenAI as OpenAIClient
     except Exception:
         raise Exception(
-            "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
+            "Please upgrade your OpenAI package to version 1.0.0 or later" +
+            "using the command: pip install --upgrade openai.")
 
     return OpenAIClient(
             # disable OpenAI's built-in retry mechanism by using our own retry
@@ -397,7 +398,8 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
         from openai import AzureOpenAI as AzureOpenAIClient
     except Exception:
         raise Exception(
-            "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
+            "Please upgrade your OpenAI package to version 1.0.0 or later" +
+            "using the command: pip install --upgrade openai.")
 
     use_key_auth = True
     try:
@@ -405,8 +407,8 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
         if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
             use_key_auth = False
     except Exception:
-            print("Failed to import ConnectionAuthMode, use key auth by default.")
-            pass
+        print("Failed to import ConnectionAuthMode, use key auth by default.")
+        pass
 
     if use_key_auth:
         return AzureOpenAIClient(
