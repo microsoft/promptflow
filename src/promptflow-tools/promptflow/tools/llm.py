@@ -260,5 +260,5 @@ def llm(
     if api == "completion":
         return client.completions.create(**params).choices[0].text
     else:
-        completion = client.completions.create(**params)
+        completion = client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, None)
