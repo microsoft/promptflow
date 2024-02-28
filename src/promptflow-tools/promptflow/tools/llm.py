@@ -185,6 +185,7 @@ def list_models(subscription_id, resource_group_name, workspace_name, connection
 def llm(
     connection: Union[AzureOpenAIConnection, OpenAIConnection], 
     prompt: PromptTemplate,
+    api: str = "chat",
     deployment_name: str = "", model: str = "",
     temperature: float = 1.0,
     top_p: float = 1.0,
@@ -211,19 +212,8 @@ def llm(
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
 
-    # 2. deal with prompt
-    # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
-    prompt = preprocess_template_string(prompt)
-    referenced_images = find_referenced_image_set(kwargs)
-
-    # convert list type into ChatInputList type
-    converted_kwargs = convert_to_chat_list(kwargs)
-    chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs)
-    messages = parse_chat(chat_str, list(referenced_images))
-
     # 3. prepare params
     params = {
-        "messages": messages,
         "temperature": temperature,
         "top_p": top_p,
         "n": 1,
@@ -231,6 +221,19 @@ def llm(
         "presence_penalty": presence_penalty,
         "frequency_penalty": frequency_penalty,
     }
+
+    # deal with prompt
+    # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
+    prompt = preprocess_template_string(prompt)
+    referenced_images = find_referenced_image_set(kwargs)
+
+    # convert list type into ChatInputList type
+    converted_kwargs = convert_to_chat_list(kwargs)
+    rendered_prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs)
+    if api == "completion":
+        params["prompt"] = rendered_prompt
+    else:
+        params["messages"] = parse_chat(rendered_prompt, list(referenced_images))
 
     # to avoid gptv model validation error for empty param values.
     if stop:
@@ -253,6 +256,9 @@ def llm(
     elif isinstance(connection, OpenAIConnection):
         params["model"] = model
 
-    # 4. call chat api
-    completion = client.chat.completions.create(**params)
-    return post_process_chat_api_response(completion, stream, None)
+    # 4. call api
+    if api == "completion":
+        return client.completions.create(**params).choices[0].text
+    else:
+        completion = client.completions.create(**params)
+        return post_process_chat_api_response(completion, stream, None)
