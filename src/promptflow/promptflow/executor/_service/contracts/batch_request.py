@@ -5,6 +5,7 @@
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow.executor._service.contracts.base_request import BaseRequest
 
 
@@ -15,6 +16,7 @@ class InitializationRequest(BaseRequest):
     working_dir: Path
     output_dir: Path
     connections: Optional[Mapping[str, Any]] = None
+    line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
 
 
 class LineExecutionRequest(BaseRequest):
