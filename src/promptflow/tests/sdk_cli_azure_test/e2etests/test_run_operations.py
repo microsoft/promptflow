@@ -488,6 +488,7 @@ class TestFlowRun:
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
         mock_run._use_remote_flow = False
+        mock_run._identity = None
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
