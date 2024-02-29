@@ -94,8 +94,13 @@ def list_deployment_names(
     try:
         credential = _get_credential()
         try:
+            if isinstance(connection, AzureOpenAIConnection):
+                name = connection.name
+            else:
+                name = connection
+
             conn = ArmConnectionOperations._build_connection_dict(
-                name=connection,
+                name=name,
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
