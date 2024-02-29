@@ -56,16 +56,16 @@ async def invoke_sync_function_in_process(
                 await asyncio.sleep(1)
 
             service_logger.info(f"[{p.pid}] Process finish... {p.exitcode}")
+            # If process_id is None, it indicates that the process has been terminated by cancel request.
+            if run_id and not ProcessManager().get_process(run_id):
+                raise ExecutionCanceledError(run_id)
+
             # Terminate the process if it is still alive after timeout
             if p.is_alive():
                 service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
                 p.terminate()
                 p.join()
                 raise ExecutionTimeoutError(wait_timeout)
-
-            # If process_id is None, it indicates that the process has been terminated by cancel request.
-            if run_id and not ProcessManager().get_process(run_id):
-                raise ExecutionCanceledError(run_id)
 
             service_logger.info(f"[{p.pid}] Process Get Error... {p.exitcode}")
             # Raise exception if the process exit code is not 0
@@ -88,10 +88,9 @@ async def invoke_sync_function_in_process(
 
 
 def _is_process_alive(p: multiprocessing.Process):
-    if not psutil.pid_exists(p.pid):
-        return False
-    if psutil.Process(p.pid).status() != "zombie":
-        return True
+    if psutil.pid_exists(p.pid):
+        if psutil.Process(p.pid).status() != psutil.STATUS_ZOMBIE:
+            return True
     # If do not call join(), the child process may become a zombie process,
     # and psutil.pid_exists(pid) is always true, which will cause proces never exit.
     p.join()
@@ -105,7 +104,7 @@ def _execute_target_function(
     return_dict: dict,
     error_dict: dict,
     context_dict: dict,
-):  
+):
     service_logger.info(f"2. Test Log........{multiprocessing.get_start_method()}")
     # TODO: Add comments
     # https://github.com/tiangolo/fastapi/issues/1487
