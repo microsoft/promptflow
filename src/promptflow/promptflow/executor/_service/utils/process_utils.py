@@ -7,6 +7,7 @@ import contextlib
 import json
 import multiprocessing
 import os
+import signal
 from datetime import datetime, timedelta
 from typing import Callable
 
@@ -46,16 +47,18 @@ async def invoke_sync_function_in_process(
         if run_id:
             ProcessManager().start_process(run_id, p.pid)
 
-        # Wait for the process to finish or timeout asynchronously
-        start_time = datetime.utcnow()
-        while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p.pid):
-            await asyncio.sleep(1)
-
         try:
+            # Wait for the process to finish or timeout asynchronously
+            start_time = datetime.utcnow()
+            while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p):
+                service_logger.info(f"[{p.pid}] Waiting for process to finish... {p.exitcode}")
+                await asyncio.sleep(1)
+
             # If process_id is None, it indicates that the process has been terminated by cancel request.
             if run_id and not ProcessManager().get_process(run_id):
                 raise ExecutionCanceledError(run_id)
 
+            service_logger.info(f"[{p.pid}] Process finish... {p.exitcode}")
             # Terminate the process if it is still alive after timeout
             if p.is_alive():
                 service_logger.error(f"[{p.pid}] Stop process for exceeding {wait_timeout} seconds.")
@@ -63,6 +66,7 @@ async def invoke_sync_function_in_process(
                 p.join()
                 raise ExecutionTimeoutError(wait_timeout)
 
+            service_logger.info(f"[{p.pid}] Process Get Error... {p.exitcode}")
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
                 exception = error_dict.get("error", None)
@@ -82,8 +86,15 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def _is_process_alive(pid: int):
-    return psutil.pid_exists(pid) and psutil.Process(pid).is_running()
+def _is_process_alive(p: multiprocessing.Process):
+    if not psutil.pid_exists(p.pid):
+        return False
+    if psutil.Process(p.pid).status() != "zombie":
+        return True
+    # If do not call join(), the child process may become a zombie process,
+    # and psutil.pid_exists(pid) is always true, which will cause proces never exit.
+    p.join()
+    return False
 
 
 def _execute_target_function(
@@ -94,6 +105,11 @@ def _execute_target_function(
     error_dict: dict,
     context_dict: dict,
 ):
+    # TODO: Add comments
+    # https://github.com/tiangolo/fastapi/issues/1487
+    # https://docs.python.org/3/library/signal.html#signal.set_wakeup_fd
+    signal.set_wakeup_fd(-1)
+
     with exception_wrapper(error_dict):
         if context_dict:
             OperationContext.get_instance().update(context_dict)

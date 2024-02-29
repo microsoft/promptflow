@@ -12,12 +12,12 @@ router = APIRouter()
 
 
 @router.get("/health")
-async def health_check():
+def health_check():
     return PlainTextResponse("healthy")
 
 
 @router.get("/version")
-async def version():
+def version():
     return {
         "status": "healthy",
         "version": get_executor_version(),
@@ -26,7 +26,7 @@ async def version():
 
 
 @router.get("/process")
-async def process():
+def process():
     from promptflow.executor._service.utils.process_manager import ProcessManager
 
     return ProcessManager()._processes_mapping
