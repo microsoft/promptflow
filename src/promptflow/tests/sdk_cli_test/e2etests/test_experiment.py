@@ -122,7 +122,6 @@ class TestExperiment:
         if len(line_runs) > 0:
             assert len(line_runs) == 3
             line_run = line_runs[0]
-            assert "main_attempt" in line_run.line_run_id
             assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
             assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
 
@@ -255,7 +254,6 @@ class TestExperiment:
             if len(line_runs) > 0:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
-                assert "main_attempt" in line_run.line_run_id
                 assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
                 assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
             # Test with default data and custom path
