@@ -54,10 +54,6 @@ async def invoke_sync_function_in_process(
                 service_logger.info(f"[{p.pid}] Waiting for process to finish... {p.exitcode}")
                 await asyncio.sleep(1)
 
-            # If process_id is None, it indicates that the process has been terminated by cancel request.
-            if run_id and not ProcessManager().get_process(run_id):
-                raise ExecutionCanceledError(run_id)
-
             service_logger.info(f"[{p.pid}] Process finish... {p.exitcode}")
             # Terminate the process if it is still alive after timeout
             if p.is_alive():
@@ -65,6 +61,10 @@ async def invoke_sync_function_in_process(
                 p.terminate()
                 p.join()
                 raise ExecutionTimeoutError(wait_timeout)
+
+            # If process_id is None, it indicates that the process has been terminated by cancel request.
+            if run_id and not ProcessManager().get_process(run_id):
+                raise ExecutionCanceledError(run_id)
 
             service_logger.info(f"[{p.pid}] Process Get Error... {p.exitcode}")
             # Raise exception if the process exit code is not 0
