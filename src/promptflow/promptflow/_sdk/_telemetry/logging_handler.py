@@ -103,6 +103,10 @@ class PromptFlowSDKLogHandler(LoggingHandler):
         super().__init__(logger_provider=logger_provider)
 
     def emit(self, record: logging.LogRecord):
+        # skip logging if telemetry is disabled
+        if not self._is_telemetry_enabled:
+            return
+
         try:
             super().emit(record)
             # log the record immediately if it is an error
@@ -127,7 +131,6 @@ class PromptFlowSDKLogHandler(LoggingHandler):
         exporter_logger.setLevel(logging.CRITICAL)
 
 
-# cspell:ignore overriden
 @cache_result_with_expire(result_type=PromptFlowSDKLogHandler)
 def get_appinsights_log_handler():
     """
