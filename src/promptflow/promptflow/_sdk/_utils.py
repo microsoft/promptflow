@@ -5,6 +5,7 @@ import collections
 import datetime
 import hashlib
 import json
+import math
 import multiprocessing
 import os
 import platform
@@ -13,11 +14,12 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
-from functools import partial
+from functools import partial, wraps
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -1134,7 +1136,7 @@ def get_mac_address() -> str:
                 if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
                     mac_address.append(net_interface.address)
 
-        return ':'.join(mac_address)
+        return ":".join(mac_address)
     except Exception as e:
         logger.debug(f"get mac id error: {str(e)}")
         return ""
@@ -1196,3 +1198,27 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
+
+
+def cache_result_with_expire(result_type=None, expire_time=math.inf):
+    """Cache the result of a function with an expire time(seconds)."""
+
+    def decorator(func):
+        cache = {}
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            current_time = time.time()
+            key = str(args + tuple(kwargs.items()))
+            if (
+                key not in cache
+                or current_time - cache[key]["time"] > expire_time
+                or (result_type is not None and not isinstance(cache[key]["result_type"], result_type))
+            ):
+                result = func(*args, **kwargs)
+                cache[key] = {"result": result, "time": current_time}
+            return cache[key]["result"]
+
+        return wrapper
+
+    return decorator

@@ -43,7 +43,7 @@ REQUIRES = [
     "tiktoken>=0.4.0",
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
-    "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
+    "azure-monitor-opentelemetry-exporter==1.0.0b22"
     "ruamel.yaml>=0.17.10,<1.0.0",  # used to generate connection templates with preserved comments
     "pyarrow>=14.0.1,<15.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
