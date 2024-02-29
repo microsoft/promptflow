@@ -4,7 +4,7 @@
 
 import json
 import os
-from typing import Any, Mapping
+from typing import Any, Mapping, Union
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.operation_context import OperationContext
@@ -14,15 +14,13 @@ from promptflow._version import VERSION
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 
 
-def get_log_context(request: BaseExecutionRequest):
+def get_log_context(request: BaseExecutionRequest, enable_service_logger: bool = False) -> LogContext:
     run_mode = request.get_run_mode()
     credential_list = ConnectionManager(request.connections).get_secret_list()
-    return LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
-
-
-def get_service_log_context(request: BaseExecutionRequest):
-    run_mode = request.get_run_mode()
-    return LogContext(file_path=request.log_path, run_mode=run_mode, input_logger=service_logger)
+    log_context = LogContext(file_path=request.log_path, run_mode=run_mode, credential_list=credential_list)
+    if enable_service_logger:
+        log_context.input_logger = service_logger
+    return log_context
 
 
 def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> OperationContext:
@@ -46,8 +44,10 @@ def get_executor_version():
         return "promptflow-executor/" + VERSION
 
 
-def generate_error_response(ex):
-    if isinstance(ex, JsonSerializedPromptflowException):
+def generate_error_response(ex: Union[dict, Exception]):
+    if isinstance(ex, dict):
+        error_dict = ex
+    elif isinstance(ex, JsonSerializedPromptflowException):
         error_dict = json.loads(ex.message)
     else:
         error_dict = ExceptionPresenter.create(ex).to_dict()

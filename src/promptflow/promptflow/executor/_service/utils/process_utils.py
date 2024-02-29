@@ -34,7 +34,7 @@ async def invoke_sync_function_in_process(
         error_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=execute_target_function,
+            target=_execute_target_function,
             args=(target_function, args, kwargs, return_dict, error_dict, context_dict),
         )
         p.start()
@@ -68,7 +68,7 @@ async def invoke_sync_function_in_process(
         return return_dict.get("result", {})
 
 
-def execute_target_function(
+def _execute_target_function(
     target_function: Callable,
     args: tuple,
     kwargs: dict,
