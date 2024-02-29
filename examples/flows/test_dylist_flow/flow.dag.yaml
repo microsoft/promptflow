@@ -1,0 +1,11 @@
+inputs: {}
+outputs: {}
+nodes:
+- name: test_tool
+  type: python
+  source:
+    type: code
+    path: test_tool.py
+  inputs:
+    connection: azure_open_ai_connection
+    deployment_name:
