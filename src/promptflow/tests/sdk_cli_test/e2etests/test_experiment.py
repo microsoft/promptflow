@@ -101,6 +101,9 @@ class TestExperiment:
         else:
             exp = client._experiments.get(exp.name)
             exp = ExperimentOrchestrator(client, exp).start(session=session)
+        # Assert record log in experiment folder
+        assert (Path(exp._output_dir) / "logs" / "exp.attempt_0.log").exists()
+
         # Assert main run
         assert len(exp.node_runs["main"]) > 0
         main_run = client.runs.get(name=exp.node_runs["main"][0]["name"])
@@ -119,7 +122,6 @@ class TestExperiment:
         if len(line_runs) > 0:
             assert len(line_runs) == 3
             line_run = line_runs[0]
-            assert "main_attempt" in line_run.line_run_id
             assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
             assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
 
@@ -128,6 +130,7 @@ class TestExperiment:
         exp = self.wait_for_experiment_terminated(client, exp)
         for name, runs in exp.node_runs.items():
             assert all([run["status"] == RunStatus.COMPLETED] for run in runs)
+        assert (Path(exp._output_dir) / "logs" / "exp.attempt_1.log").exists()
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_script_start(self):
@@ -251,7 +254,6 @@ class TestExperiment:
             if len(line_runs) > 0:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]
-                assert "main_attempt" in line_run.line_run_id
                 assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
                 assert "eval_classification_accuracy" == line_run.evaluations[0].display_name
             # Test with default data and custom path

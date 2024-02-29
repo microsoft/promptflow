@@ -181,7 +181,6 @@ class TestValidation:
             ("tool_type_missing", ResolveToolError, NotImplementedError),
             ("wrong_module", FailedToImportModule, None),
             ("wrong_api", ResolveToolError, APINotFound),
-            ("wrong_provider", ResolveToolError, APINotFound),
         ],
     )
     def test_invalid_flow_dag(self, flow_folder, error_class, inner_class, dev_connections):

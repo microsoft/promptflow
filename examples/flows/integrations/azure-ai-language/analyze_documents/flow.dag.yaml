@@ -21,6 +21,9 @@ outputs:
   recognized_entities:
     type: string
     reference: ${Entity_Recognition.output}
+  pii:
+    type: string
+    reference: ${PII_Entity_Recognition.output}
 nodes:
 - name: Read_File
   type: python
@@ -37,17 +40,26 @@ nodes:
   inputs:
     connection: azure_ai_translator_connection
     text: ${Read_File.output}
-    to:
+    translate_to:
     - en
     parse_response: true
 - name: Parse_Translation
   type: python
   source:
     type: code
-    path: parse_translation.py
+    path: parse_skill_to_text.py
   inputs:
-    translation_results: ${Translator.output}
-    language: en
+    output: ${Translator.output}
+    skill: TRANSLATION
+- name: Create_PII_Doc
+  type: python
+  source:
+    type: code
+    path: create_document.py
+  inputs:
+    id: 1
+    text: ${Parse_Translation.output}
+    language: ${inputs.language}
 - name: PII_Entity_Recognition
   type: python
   source:
@@ -55,39 +67,25 @@ nodes:
     tool: language_tools.tools.pii_entity_recognition.get_pii_entity_recognition
   inputs:
     connection: azure_ai_language_connection
-    language: ${inputs.language}
-    text: ${Parse_Translation.output}
     parse_response: true
-    categories:
-    - Address
-    - Age
-    - Date
-    - Email
-    - IPAddress
-    - PhoneNumber
-    - URL
-- name: Abstractive_Summarization
+    document: ${Create_PII_Doc.output}
+- name: Parse_PII
   type: python
   source:
-    type: package
-    tool: language_tools.tools.abstractive_summarization.get_abstractive_summarization
+    type: code
+    path: parse_skill_to_text.py
   inputs:
-    connection: azure_ai_language_connection
-    language: ${inputs.language}
-    text: ${PII_Entity_Recognition.output}
-    parse_response: true
-    query: quarterly results
-    summary_length: medium
-- name: Sentiment_Analysis
+    output: ${PII_Entity_Recognition.output}
+    skill: PII
+- name: Create_Redacted_Doc
   type: python
   source:
-    type: package
-    tool: language_tools.tools.sentiment_analysis.get_sentiment_analysis
+    type: code
+    path: create_document.py
   inputs:
-    connection: azure_ai_language_connection
+    id: 2
+    text: ${Parse_PII.output}
     language: ${inputs.language}
-    text: ${Abstractive_Summarization.output}
-    parse_response: true
 - name: Entity_Recognition
   type: python
   source:
@@ -95,9 +93,8 @@ nodes:
     tool: language_tools.tools.entity_recognition.get_entity_recognition
   inputs:
     connection: azure_ai_language_connection
-    language: ${inputs.language}
-    text: ${PII_Entity_Recognition.output}
     parse_response: true
+    document: ${Create_Redacted_Doc.output}
 - name: Extractive_Summarization
   type: python
   source:
@@ -105,7 +102,43 @@ nodes:
     tool: language_tools.tools.extractive_summarization.get_extractive_summarization
   inputs:
     connection: azure_ai_language_connection
-    language: ${inputs.language}
-    text: ${PII_Entity_Recognition.output}
     query: Cloud AI
     parse_response: true
+    document: ${Create_Redacted_Doc.output}
+- name: Abstractive_Summarization
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.abstractive_summarization.get_abstractive_summarization
+  inputs:
+    connection: azure_ai_language_connection
+    parse_response: true
+    query: quarterly results
+    summary_length: medium
+    document: ${Create_Redacted_Doc.output}
+- name: Parse_Summary
+  type: python
+  source:
+    type: code
+    path: parse_skill_to_text.py
+  inputs:
+    output: ${Abstractive_Summarization.output}
+    skill: ABSTRACTIVE
+- name: Create_Summary_Doc
+  type: python
+  source:
+    type: code
+    path: create_document.py
+  inputs:
+    id: 3
+    text: ${Parse_Summary.output}
+    language: ${inputs.language}
+- name: Sentiment_Analysis
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.sentiment_analysis.get_sentiment_analysis
+  inputs:
+    connection: azure_ai_language_connection
+    parse_response: true
+    document: ${Create_Summary_Doc.output}

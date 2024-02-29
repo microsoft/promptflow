@@ -4,6 +4,7 @@
 import json
 import os
 import typing
+import urllib.parse
 import uuid
 
 from opentelemetry import trace
@@ -21,8 +22,10 @@ from promptflow._constants import (
 )
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._constants import PF_TRACE_CONTEXT
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import PF_TRACE_CONTEXT, AzureMLWorkspaceTriad
 from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
+from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 _logger = get_cli_sdk_logger()
@@ -36,6 +39,15 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
+    # trace is currently a preview feature, users should explicitly enable to use it
+    if Configuration.get_instance().is_internal_features_enabled() is False:
+        warning_message = (
+            "`start_trace` is currently a preview feature, "
+            'please enable it with `pf config set enable_internal_features="true"`'
+        )
+        _logger.warning(warning_message)
+        return
+
     from promptflow._sdk._constants import ContextAttributeKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
@@ -43,6 +55,9 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _start_pfs(pfs_port)
     _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
+    # set strict limitation for session id currently
+    if session is not None:
+        _validate_session_id(session)
     session_id = _provision_session_id(specified_session_id=session)
     _logger.debug("current session id is %s", session_id)
 
@@ -51,6 +66,7 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     # honor and set attributes if user has specified
     attributes: dict = kwargs.get("attributes", None)
     if attributes is not None:
+        _logger.debug("User specified attributes: %s", attributes)
         for attr_key, attr_value in attributes.items():
             operation_context._add_otel_attributes(attr_key, attr_value)
 
@@ -66,14 +82,26 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     else:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
+    # trace provider from pf config, for local to cloud scenario
+    workspace_triad = _get_workspace_triad_from_config()
+
     # init the global tracer with endpoint
-    _init_otel_trace_exporter(otlp_port=pfs_port, session_id=session_id, experiment=experiment)
-    # openai instrumentation
-    inject_openai_api()
-    # print user the UI url
-    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces?session={session_id}"
-    # print to be able to see it in notebook
-    print(f"You can view the trace from UI url: {ui_url}")
+    _init_otel_trace_exporter(
+        otlp_port=pfs_port,
+        session_id=session_id,
+        experiment=experiment,
+        workspace_triad=workspace_triad,
+    )
+
+    # print url(s) for user to view the trace
+    print_url_kwargs = {
+        "session_configured": session is not None,
+        "experiment": experiment,
+        "run": kwargs.get("run", None),
+        "session_id": session_id,
+    }
+    _print_trace_url_for_local(pfs_port=pfs_port, **print_url_kwargs)
+    _print_trace_url_for_local_to_cloud(workspace_triad=workspace_triad, **print_url_kwargs)
 
 
 def _start_pfs(pfs_port) -> None:
@@ -125,17 +153,29 @@ def _provision_session_id(specified_session_id: typing.Optional[str]) -> str:
     return session_id
 
 
-def _create_resource(session_id: str, experiment: typing.Optional[str] = None) -> Resource:
+def _create_resource(
+    session_id: str,
+    experiment: typing.Optional[str] = None,
+    workspace_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
+) -> Resource:
     resource_attributes = {
         SpanResourceAttributesFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
         SpanResourceAttributesFieldName.SESSION_ID: session_id,
     }
     if experiment is not None:
         resource_attributes[SpanResourceAttributesFieldName.EXPERIMENT_NAME] = experiment
+    if workspace_triad is not None:
+        resource_attributes[SpanResourceAttributesFieldName.SUBSCRIPTION_ID] = workspace_triad.subscription_id
+        resource_attributes[SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME] = workspace_triad.resource_group_name
+        resource_attributes[SpanResourceAttributesFieldName.WORKSPACE_NAME] = workspace_triad.workspace_name
     return Resource(attributes=resource_attributes)
 
 
 def setup_exporter_from_environ() -> None:
+    # openai instrumentation
+    # in eager mode, the code cannot reach executor logic to apply injection
+    # explicitly inject here, so that it can work in new process/thread
+    inject_openai_api()
     # if session id does not exist in environment variables, it should be in runtime environment
     # where we have not supported tracing yet, so we don't need to setup any exporter here
     # directly return
@@ -144,22 +184,116 @@ def setup_exporter_from_environ() -> None:
     if _is_tracer_provider_configured():
         _logger.debug("tracer provider is already configured, skip setting up again.")
         return
-    # get resource values from environment variables and create resource
+
+    # get resource values from environment variables
     session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID)
     experiment = os.getenv(TraceEnvironmentVariableName.EXPERIMENT, None)
-    resource = _create_resource(session_id=session_id, experiment=experiment)
+    # local to cloud: trace provider
+    workspace_triad = None
+    subscription_id = os.getenv(TraceEnvironmentVariableName.SUBSCRIPTION_ID, None)
+    resource_group_name = os.getenv(TraceEnvironmentVariableName.RESOURCE_GROUP_NAME, None)
+    workspace_name = os.getenv(TraceEnvironmentVariableName.WORKSPACE_NAME, None)
+    if all([subscription_id, resource_group_name, workspace_name]):
+        workspace_triad = AzureMLWorkspaceTriad(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+        )
+    # create resource
+    resource = _create_resource(
+        session_id=session_id,
+        experiment=experiment,
+        workspace_triad=workspace_triad,
+    )
     tracer_provider = TracerProvider(resource=resource)
     # get OTLP endpoint from environment variable
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+    # Set timeout as 30 seconds since creating cosmosDB client is time consuming
+    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint, timeout=30)
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(tracer_provider)
 
 
-def _init_otel_trace_exporter(otlp_port: str, session_id: str, experiment: typing.Optional[str] = None) -> None:
+def _init_otel_trace_exporter(
+    otlp_port: str,
+    session_id: str,
+    experiment: typing.Optional[str] = None,
+    workspace_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
+) -> None:
     endpoint = f"http://localhost:{otlp_port}/v1/traces"
     os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = endpoint
     os.environ[TraceEnvironmentVariableName.SESSION_ID] = session_id
     if experiment is not None:
         os.environ[TraceEnvironmentVariableName.EXPERIMENT] = experiment
+    if workspace_triad is not None:
+        os.environ[TraceEnvironmentVariableName.SUBSCRIPTION_ID] = workspace_triad.subscription_id
+        os.environ[TraceEnvironmentVariableName.RESOURCE_GROUP_NAME] = workspace_triad.resource_group_name
+        os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = workspace_triad.workspace_name
     setup_exporter_from_environ()
+
+
+# priority: run > experiment > session
+# for run(s) in experiment, we should print url with run(s) as it is more specific;
+# and url with experiment should be printed at the beginning of experiment start.
+# session id is the concept we expect to expose to users least, so it should have the lowest priority.
+def _print_trace_url_for_local(
+    pfs_port: str,
+    session_configured: bool,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> None:
+    url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    if run is not None:
+        url += f"?run={run}"
+    elif experiment is not None:
+        url += f"?experiment={experiment}"
+    elif session_configured and session_id is not None:
+        url += f"?session={session_id}"
+    print(f"You can view the trace from local PFS: {url}")
+
+
+def _print_trace_url_for_local_to_cloud(
+    workspace_triad: typing.Optional[AzureMLWorkspaceTriad],
+    session_configured: bool,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> None:
+    # if user has configured trace.provider, we can extract workspace triad from it
+    # this indicates local to cloud feature is enabled, then print the url in portal
+    if workspace_triad is None:
+        return
+    # &searchText={"sessionId":"8baa9e34-3d23-497a-8ec8-39b84cdb7a40","batchRunId":"test_main_variant_0_20240229_111938_229535"}
+    url = (
+        "https://int.ml.azure.com/prompts/trace/list"
+        f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
+        f"/resourceGroups/{workspace_triad.resource_group_name}"
+        "/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{workspace_triad.workspace_name}"
+    )
+    query = None
+    if run is not None:
+        query = '{"batchRunId":"' + run + '"}'
+    elif experiment is not None:
+        # not consider experiment for now
+        pass
+    elif session_configured and session_id is not None:
+        query = '{"sessionId":"' + session_id + '"}'
+    # urllib.parse.quote to encode the query parameter
+    if query is not None:
+        url += f"&searchText={urllib.parse.quote(query)}"
+    print(f"You can view the trace in cloud from Azure portal: {url}")
+
+
+def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]:
+    trace_provider = Configuration.get_instance().get_trace_provider()
+    if trace_provider is None:
+        return None
+    return extract_workspace_triad_from_trace_provider(trace_provider)
+
+
+def _validate_session_id(value: str) -> None:
+    # session id should only contain `[A-Z, a-z, 0-9, _, -]`` for now
+    if not value.replace("-", "").replace("_", "").isalnum():
+        raise ValueError("session id should only contain `[A-Z, a-z, 0-9, _, -]` for now.")

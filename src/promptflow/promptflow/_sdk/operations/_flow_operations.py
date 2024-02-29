@@ -525,24 +525,37 @@ class FlowOperations(TelemetryMixin):
             for flow_input, value in executable.inputs.items()
             if not value.is_chat_history
         }
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
-        flow_inputs_params = ",".join(flow_inputs_params)
 
         is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        chat_output_name = next(
+            filter(
+                lambda key: executable.outputs[key].is_chat_output,
+                executable.outputs.keys(),
+            ),
+            None,
+        )
         label = "Chat" if is_chat_flow else "Run"
+        is_streaming = True if is_chat_flow else False
+        config_content = {
+            "flow_name": flow_name,
+            "flow_inputs": flow_inputs,
+            "flow_path": flow_dag_path.as_posix(),
+            "is_chat_flow": is_chat_flow,
+            "chat_history_input_name": chat_history_input_name,
+            "label": label,
+            "chat_output_name": chat_output_name,
+            "is_streaming": is_streaming,
+        }
+
+        with open(output_dir / "config.json", "w") as file:
+            json.dump(config_content, file, indent=4)
+
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
-                "flow_name": flow_name,
                 "runtime_interpreter_path": runtime_interpreter_path,
-                "flow_inputs": flow_inputs,
-                "flow_inputs_params": flow_inputs_params,
-                "flow_path": None,
-                "is_chat_flow": is_chat_flow,
-                "chat_history_input_name": chat_history_input_name,
-                "label": label,
             },
         )
         self._run_pyinstaller(output_dir)
@@ -664,32 +677,34 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow)
+        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        source_path_mapping = {}
-        flow_tools, tools_errors = self._generate_tools_meta(
-            flow=flow_entity.flow_dag_path,
-            source_path_mapping=source_path_mapping,
-        )
+        if isinstance(flow_entity, ProtectedFlow):
+            # only DAG flow has tools meta
+            source_path_mapping = {}
+            flow_tools, tools_errors = self._generate_tools_meta(
+                flow=flow_entity.path,
+                source_path_mapping=source_path_mapping,
+            )
 
-        flow_entity.tools_meta_path.write_text(
-            data=json.dumps(flow_tools, indent=4),
-            encoding=DEFAULT_ENCODING,
-        )
+            flow_entity.tools_meta_path.write_text(
+                data=json.dumps(flow_tools, indent=4),
+                encoding=DEFAULT_ENCODING,
+            )
 
-        if tools_errors:
-            for source_name, message in tools_errors.items():
-                for yaml_path in source_path_mapping.get(source_name, []):
-                    validation_result.append_error(
-                        yaml_path=yaml_path,
-                        message=message,
-                    )
+            if tools_errors:
+                for source_name, message in tools_errors.items():
+                    for yaml_path in source_path_mapping.get(source_name, []):
+                        validation_result.append_error(
+                            yaml_path=yaml_path,
+                            message=message,
+                        )
 
         # flow in control plane is read-only, so resolve location makes sense even in SDK experience
-        validation_result.resolve_location_for_diagnostics(flow_entity.flow_dag_path.as_posix())
+        validation_result.resolve_location_for_diagnostics(flow_entity.path.as_posix())
 
         flow_entity._try_raise(
             validation_result,

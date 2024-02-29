@@ -7,7 +7,14 @@ from dataclasses import dataclass
 
 from flask_restx import fields
 
-from promptflow._constants import SpanContextFieldName, SpanFieldName, SpanResourceFieldName, SpanStatusFieldName
+from promptflow._constants import (
+    SpanContextFieldName,
+    SpanEventFieldName,
+    SpanFieldName,
+    SpanLinkFieldName,
+    SpanResourceFieldName,
+    SpanStatusFieldName,
+)
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
@@ -17,18 +24,21 @@ api = Namespace("Spans", description="Spans Management")
 # parsers for query parameters
 list_span_parser = api.parser()
 list_span_parser.add_argument("session", type=str, required=False)
+list_span_parser.add_argument("trace_ids", type=str, required=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListSpanParser:
     session_id: typing.Optional[str] = None
+    trace_ids: typing.Optional[typing.List[str]] = None
 
     @staticmethod
     def from_request() -> "ListSpanParser":
         args = list_span_parser.parse_args()
         return ListSpanParser(
             session_id=args.session,
+            trace_ids=args.trace_ids.split(",") if args.trace_ids is not None else args.trace_ids,
         )
 
 
@@ -45,6 +55,7 @@ status_model = api.model(
     "Status",
     {
         SpanStatusFieldName.STATUS_CODE: fields.String(required=True),
+        SpanStatusFieldName.DESCRIPTION: fields.String,
     },
 )
 resource_model = api.model(
@@ -52,6 +63,21 @@ resource_model = api.model(
     {
         SpanResourceFieldName.ATTRIBUTES: fields.Raw(required=True),
         SpanResourceFieldName.SCHEMA_URL: fields.String,
+    },
+)
+event_model = api.model(
+    "Event",
+    {
+        SpanEventFieldName.NAME: fields.String(required=True),
+        SpanEventFieldName.TIMESTAMP: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
+        SpanEventFieldName.ATTRIBUTES: fields.Raw,
+    },
+)
+link_model = api.model(
+    "Link",
+    {
+        SpanLinkFieldName.CONTEXT: fields.Nested(context_model),
+        SpanLinkFieldName.ATTRIBUTES: fields.Raw,
     },
 )
 span_model = api.model(
@@ -67,8 +93,8 @@ span_model = api.model(
         SpanFieldName.END_TIME: fields.DateTime(dt_format=PFS_MODEL_DATETIME_FORMAT),
         SpanFieldName.STATUS: fields.Nested(status_model, skip_none=True),
         SpanFieldName.ATTRIBUTES: fields.Raw(required=True),
-        SpanFieldName.EVENTS: fields.List(fields.String),
-        SpanFieldName.LINKS: fields.List(fields.String),
+        SpanFieldName.EVENTS: fields.List(fields.Nested(event_model)),
+        SpanFieldName.LINKS: fields.List(fields.Nested(link_model)),
         SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
     },
 )
@@ -86,5 +112,6 @@ class Spans(Resource):
         args = ListSpanParser.from_request()
         spans = client._traces.list_spans(
             session_id=args.session_id,
+            trace_ids=args.trace_ids,
         )
         return [span._content for span in spans]

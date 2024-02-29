@@ -5,6 +5,7 @@
 import copy
 import json
 import shutil
+import tempfile
 from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -15,16 +16,24 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pydash
 import pytest
+from azure.ai.ml import ManagedIdentityConfiguration
+from azure.ai.ml.entities import IdentityConfiguration
 
 from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.azure import PFClient
-from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._constants._flow import (
+    ENVIRONMENT,
+    PYTHON_REQUIREMENTS_TXT,
+    RUNTIME_PROPERTY,
+    SESSION_ID_PROPERTY,
+)
 from promptflow.azure._entities._flow import Flow
+from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -479,8 +488,11 @@ class TestFlowRun:
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
         mock_run._use_remote_flow = False
+        mock_run._identity = None
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+        ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -494,7 +506,9 @@ class TestFlowRun:
                 # retry policy
                 assert mock_request.call_count == 1
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+        ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -511,7 +525,9 @@ class TestFlowRun:
                     remote_client.runs.create_or_update(run=mock_run)
                 assert mock_request.call_count == 1
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
+        ):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
@@ -696,12 +712,13 @@ class TestFlowRun:
 
         flow_path = f"{FLOWS_DIR}/print_env_var"
         flow_lineage_id = get_flow_lineage_id(flow_path)
-        flow_session_id = pf._runs._get_session_id(flow_path)
+        flow = load_flow(flow_path)
+        flow_session_id = pf._runs._get_session_id(flow, flow_lineage_id)
 
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
-            assert flow_session_id == body.session_id
             assert flow_lineage_id == body.flow_lineage_id
+            assert flow_session_id == body.session_id
             return body
 
         # flow session id is same with or without session creation
@@ -998,10 +1015,6 @@ class TestFlowRun:
             for file in expected_files:
                 assert Path(tmp_dir, run.name, file).exists()
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="Enable this after fixed sanitizer.",
-    )
     def test_run_with_compute_instance_session(
         self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
     ):
@@ -1022,10 +1035,6 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="Enable this after fixed sanitizer.",
-    )
     def test_run_with_compute_instance_session_yml(
         self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
     ):
@@ -1045,3 +1054,133 @@ class TestFlowRun:
 
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
+
+    def test_session_id_with_different_env(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_environment",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name1"),
+        )
+        assert run.properties[RUNTIME_PROPERTY] == "automatic"
+        session_id_1 = run.properties[SESSION_ID_PROPERTY]
+
+        # same flow will get same session id
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_environment",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name2"),
+        )
+        session_id_2 = run.properties[SESSION_ID_PROPERTY]
+        assert session_id_2 == session_id_1
+
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_environment", temp / "flow_with_environment")
+            # update image
+            flow_dict = load_yaml(temp / "flow_with_environment" / "flow.dag.yaml")
+            flow_dict["environment"]["image"] = "python:3.9-slim"
+
+            with open(temp / "flow_with_environment" / "flow.dag.yaml", "w", encoding="utf-8") as f:
+                dump_yaml(flow_dict, f)
+
+            run = pf.run(
+                flow=temp / "flow_with_environment",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name3"),
+            )
+            session_id_3 = run.properties[SESSION_ID_PROPERTY]
+
+            assert session_id_3 != session_id_2
+
+            # update requirements
+            with open(temp / "flow_with_environment" / "requirements", "w", encoding="utf-8") as f:
+                f.write("pandas==1.3.3")
+
+            run = pf.run(
+                flow=temp / "flow_with_environment",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name4"),
+            )
+            session_id_4 = run.properties[SESSION_ID_PROPERTY]
+
+            assert session_id_4 != session_id_3
+
+    def test_run_with_environment_variables(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_environment_variables",
+            data=f"{FLOWS_DIR}/flow_with_environment_variables/inputs.jsonl",
+            name=randstr("name"),
+            column_mapping={"key": "${data.text}"},
+        )
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 6
+        assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "2"
+        assert details.loc[1, "inputs.key"] == "env2" and details.loc[1, "outputs.output"] == "spawn"
+
+    @pytest.mark.skip("Need server side to fix the bug: 2982972")
+    def test_run_with_environment_variables_run_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
+        run_obj = load_run(
+            source=f"{FLOWS_DIR}/flow_with_environment_variables/run.yaml",
+            params_override=[{"name": randstr("name")}],
+        )
+        run = pf.runs.create_or_update(run=run_obj)
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 2
+        assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "20"
+        assert details.loc[1, "inputs.key"] == "env5" and details.loc[1, "outputs.output"] == "test"
+
+    def test_automatic_runtime_with_user_identity(self, pf, randstr: Callable[[str], str]):
+        from promptflow.azure._restclient.flow.models import SessionSetupModeEnum
+
+        source = f"{RUNS_DIR}/sample_bulk_run_with_user_identity.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        # only pass identity when set to managed and specified client_id
+        assert rest_run.identity is None
+        assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+    def test_automatic_runtime_with_managed_identity(self, pf, randstr: Callable[[str], str]):
+        # won't actually submit the run since test workspace don't have identity
+
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+        from promptflow.azure.operations import RunOperations
+
+        source = f"{RUNS_DIR}/sample_bulk_run_with_managed_identity.yaml"
+
+        mock_workspace = MagicMock(
+            identity=IdentityConfiguration(
+                type="managed",
+                user_assigned_identities=[
+                    ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
+                ],
+            )
+        )
+
+        def submit(*args, **kwargs):
+            body = kwargs.get("body", None)
+            assert body.runtime_name == "automatic"
+            assert body.identity == "fake_resource_id"
+            return body
+
+        with patch.object(pf.runs, "_workspace", mock_workspace):
+
+            with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+                mock_submit.side_effect = submit
+                run_id = randstr("run_id")
+                run = load_run(
+                    source=source,
+                    params_override=[{"name": run_id}],
+                )
+                pf.runs.create_or_update(run=run)
