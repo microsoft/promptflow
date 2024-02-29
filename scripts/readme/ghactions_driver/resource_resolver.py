@@ -17,7 +17,7 @@ def _parse_resources_string_from_notebook(path: Path) -> str:
     with open(path, "r", encoding="utf-8") as f:
         nb = nbformat.read(f, as_version=4)
     if RESOURCES_KEY_NAME not in nb.metadata:
-        raise Exception(RESOURCES_KEY_ERROR_MESSAGE)
+        raise Exception(RESOURCES_KEY_ERROR_MESSAGE + f" . Error in {path}")
     return nb.metadata[RESOURCES_KEY_NAME]
 
 
@@ -26,7 +26,7 @@ def _parse_resources_string_from_markdown(path: Path) -> str:
     md = markdown.Markdown(extensions=["meta"])
     md.convert(markdown_content)
     if RESOURCES_KEY_NAME not in md.Meta:
-        raise Exception(RESOURCES_KEY_ERROR_MESSAGE)
+        raise Exception(RESOURCES_KEY_ERROR_MESSAGE + f" . Error in {path}")
     return md.Meta[RESOURCES_KEY_NAME][0]
 
 
