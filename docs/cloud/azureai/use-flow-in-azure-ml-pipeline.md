@@ -3,22 +3,62 @@
 After you have developed and tested the flow in [init and test a flow](../../how-to-guides/init-and-test-a-flow.md), this guide will help you learn how to use a flow as a parallel component in a pipeline job on AzureML, so that you can integrate the created flow with existing pipelines and process a large amount of data.
 
 :::{admonition} Pre-requirements
-- Customer need to install the extension `ml>=2.21.0` to enable this feature in CLI and package `azure-ai-ml>=1.11.0` to enable this feature in SDK;
-- Customer need to put `$schema` in the target `flow.dag.yaml` to enable this feature;
-  - `flow.dag.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json`
-  - `run.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json`
-- Customer need to generate `flow.tools.json` for the target flow before below usage. The generation can be done by `pf flow validate`.
+To enable this feature, customer need to:
+1. install related CLI or package:
+    1. For CLI, please [install Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) first and then install the extension `ml>=2.22.0` via `az extension add -n ml`;
+    2. For SDK, please install package `azure-ai-ml>=1.12.0` via `pip install azure-ai-ml>=1.12.0` or `pip install promptflow[azure]`;
+2. ensure that there is a `$schema` in the target source:
+    1. `flow.dag.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json`
+    2. `run.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json`
+3. ensure that metadata has been generated and is up-to-date:
+    1. `<your-flow-directory>/.promptflow/flow.tools.json` should exist;
+    2. customer may update the file via `pf flow validate --file <your-flow-directory>`.
+
 :::
 
 For more information about AzureML and component:
-- [Install and set up the CLI(v2)](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-configure-cli?view=azureml-api-2&tabs=public)
-- [Install and set up the SDK(v2)](https://learn.microsoft.com/en-us/python/api/overview/azure/ai-ml-readme?view=azure-python)
-- [What is a pipeline](https://learn.microsoft.com/en-us/azure/machine-learning/concept-ml-pipelines?view=azureml-api-2)
-- [What is a component](https://learn.microsoft.com/en-us/azure/machine-learning/concept-component?view=azureml-api-2)
+- [What is Azure CLI](https://learn.microsoft.com/en-us/cli/azure/what-is-azure-cli)
+- [Install and set up the CLI(v2)](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-configure-cli)
+- [Install and set up the SDK(v2)](https://learn.microsoft.com/en-us/python/api/overview/azure/ai-ml-readme)
+- [What is a pipeline](https://learn.microsoft.com/en-us/azure/machine-learning/concept-ml-pipelines)
+- [What is a component](https://learn.microsoft.com/en-us/azure/machine-learning/concept-component)
+- [How to use parallel job in pipeline (V2)](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-use-parallel-job-in-pipeline)
 
 ## Register a flow as a component
 
-Customer can register a flow as a component with either CLI or SDK. 
+Suppose there has been [a flow](../../../examples/flows/standard/basic/) and its `flow.dag.yaml` is as below:
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  text:
+    type: string
+    default: Hello World!
+outputs:
+  output:
+    type: string
+    reference: ${llm.output}
+nodes:
+- name: hello_prompt
+  type: prompt
+  source:
+    type: code
+    path: hello.jinja2
+  inputs:
+    text: ${inputs.text}
+- name: llm
+  type: python
+  source:
+    type: code
+    path: hello.py
+  inputs:
+    prompt: ${hello_prompt.output}
+    deployment_name: text-davinci-003
+    max_tokens: "120"
+```
+
+Customer can register a flow as a component with either CLI or SDK:
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -26,11 +66,11 @@ Customer can register a flow as a component with either CLI or SDK.
 
 ```bash
 # Register flow as a component
-# Default component name will be the name of flow folder, which is not a valid component name, so we override it here; default version will be "1"
-az ml component create --file standard/web-classification/flow.dag.yaml --set name=web_classification
+az ml component create --file \<your-flow-directory\>/flow.dag.yaml
 
-# Register flow as a component with parameters override
-az ml component create --file standard/web-classification/flow.dag.yaml --version 2 --set name=web_classification_updated
+# Register flow as a component and specify its name and version
+# Default component name will be the name of flow folder, which can be invalid as a component name; default version will be "1"
+az ml component create --file \<your-flow-directory\>/flow.dag.yaml --version 3 --set name=basic_updated
 ```
 
 :::
@@ -44,24 +84,47 @@ from azure.ai.ml import MLClient, load_component
 ml_client = MLClient()
 
 # Register flow as a component
-flow_component = load_component("standard/web-classification/flow.dag.yaml")
-# Default component name will be the name of flow folder, which is not a valid component name, so we override it here; default version will be "1"
-flow_component.name = "web_classification"
+flow_component = load_component("<your-flow-directory>/flow.dag.yaml")
 ml_client.components.create_or_update(flow_component)
 
-# Register flow as a component with parameters override
-ml_client.components.create_or_update(
-    "standard/web-classification/flow.dag.yaml",
-    version="2",
-    params_override=[
-        {"name": "web_classification_updated"}
-    ]
-)
+# Register flow as a component and specify its name and version
+# Default component name will be the name of flow folder, which can be invalid as a component name; default version will be "1"
+flow_component.name = "basic_updated"
+ml_client.components.create_or_update(flow_component, version="3")
 ```
 
 :::
 
 ::::
+
+The generated component will be a parallel component, whose definition will be as below:
+
+```yaml
+name: basic
+version: 1
+display_name: basic
+is_deterministic: True
+type: parallel
+inputs:
+  data:
+    type: uri_folder
+    optional: False
+  run_outputs:
+    type: uri_folder
+    optional: True
+  text:
+    type: string
+    optional: False
+    default: Hello World!
+outputs:
+  flow_outputs:
+    type: uri_folder
+  debug_info:
+    type: uri_folder
+... 
+```
+
+Besides the basic input/output ports, there will also be dynamic parameters generated based on the flow to override connections and environment variables. Full description of ports can be seen in section [Component ports and run settings](#component-ports-and-run-settings). 
 
 After registered a flow as a component, they can be referred in a pipeline job like [regular registered components](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/basics/1b_e2e_registered_components).
 
@@ -133,8 +196,50 @@ Above is part of the pipeline job python code, see here for [full example](https
 
 ::::
 
+Like regular parallel components, customer may specify run settings for them in a pipeline job. Some regularly used run settings have been listed in section [Component ports and run settings](#component-ports-and-run-settings); customer may also refer to [the official document of parallel component](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-use-parallel-job-in-pipeline?view=azureml-api-2&tabs=cliv2) for more details.
+
+## Environment of the component
+
+By default, the environment of the created component will be based on the latest promptflow runtime image. If customer has [specified python requirement file](../../reference/flow-yaml-schema-reference.md) in `flow.dag.yaml`, they will be applied to the environment automatically:
+
+``` yaml
+...
+environment:
+  python_requirements_txt: requirements.txt
+```
+
+If customer want to use an existing Azure ML environment or define the environment in Azure ML style, they can define it in `run.yaml` like below:
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: <your-flow-directory>
+azureml:
+  environment: azureml:my-environment:1
+```
+
+For more details about the supported format of Azure ML environment, please refer to [this doc](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-environments-v2?view=azureml-api-2&tabs=cli).
+
 ## Difference across flow in prompt flow and pipeline job
 
 In prompt flow, flow runs on [runtime](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/concept-runtime), which is designed for prompt flow and easy to customize; while in pipeline job, flow runs on different types of compute, and usually compute cluster.
 
 Given above, if your flow has logic relying on identity or environment variable, please be aware of this difference as you might run into some unexpected error(s) when the flow runs in pipeline job, and you might need some extra configurations to make it work.
+
+## Component ports and run settings
+
+|                  | port name                                           | source                                           | type                    | description                                                  |
+| ---------------- | --------------------------------------------------- | ------------------------------------------------ | ----------------------- | ------------------------------------------------------------ |
+| input ports      | data                                                | fixed                                            | uri_folder              | required; to pass in input data. Supported format includes [`mltable`](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-mltable?view=azureml-api-2&tabs=cli#authoring-mltable-files) and list of jsonl files. |
+|                  | run_outputs                                         | fixed                                            | uri_folder              | optional; to pass in output of a standard flow for [an evaluation flow](../../how-to-guides/develop-a-flow/develop-evaluation-flow.md). Should be linked to a `flow_outputs` of a previous flow node in the pipeline. |
+|                  | \<flow-input-name\>                                 | from flow inputs                                 | string                  | default value will be inherited from flow inputs; used to override [column mapping](../../how-to-guides/run-and-evaluate-a-flow/use-column-mapping.md) for flow inputs. |
+| input parameters | connections.\<node-name\>.connection                | from nodes of built-in or custom LLM tools       | string                  | default value will be the current value defined in `flow.dag.yaml` or `run.yaml`; to override used connections of corresponding nodes. Connection should exist in current workspace. |
+|                  | connections.\<node-name\>.deployment_name           | from nodes of built-in or custom LLM tools       | string                  | default value will be the current value defined in `flow.dag.yaml` or `run.yaml`; to override target deployment names of corresponding nodes. Deployment should be available with provided connection. |
+|                  | environment_variables.\<environment-variable-name\> | from environment variables defined in `run.yaml` | string                  | default value will be the current value defined in `run.yaml`; to override environment variables during flow run, e.g. OPEN_AI_API_KEY. Note that you can refer to workspace connections with expressions like `{my_connection.api_key}`. |
+| output ports     | flow_outputs                                        | fixed                                            | uri_folder              | an uri_folder with 1 or more jsonl files containing outputs of the flow runs |
+|                  | debug_info                                          | fixed                                            | uri_folder              | an uri_folder containing debug information of the flow run, e.g., run logs |
+| run settings     | instance_count                                      | fixed (all run setting ports are fixed)          | integer                 | The number of nodes to use for the job. Default value is 1.  |
+|                  | max_concurrency_per_instance                        | the same as above                                | integer                 | The number of processors on each node.                       |
+|                  | mini_batch_error_threshold                          | the same as above                                | integer                 | Define the number of failed mini batches that could be ignored in this parallel job. If the count of failed mini-batch is higher than this threshold, the parallel job will be marked as failed.<br/><br/>Mini-batch is marked as failed if:<br/>- the count of return from run() is less than mini-batch input count.<br/>- catch exceptions in custom run() code.<br/><br/>"-1" is the default number, which means to ignore all failed mini-batch during parallel job. |
+|                  | retry_settings.max_retries                          | the same as above                                | integer                 | Define the number of retries when mini-batch is failed or timeout. If all retries are failed, the mini-batch will be marked as failed to be counted by `mini_batch_error_threshold` calculation. |
+|                  | retry_settings.timeout                              | the same as above                                | integer                 | Define the timeout in seconds for executing custom run() function. If the execution time is higher than this threshold, the mini-batch will be aborted, and marked as a failed mini-batch to trigger retry. |
+|                  | logging_level                                       | the same as above                                | INFO, WARNING, or DEBUG | Define which level of logs will be dumped to user log files. |
