@@ -91,7 +91,6 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     # print url(s) for user to view the trace
     print_url_kwargs = {
-        "pfs_port": pfs_port,
         "session_configured": session is not None,
         "experiment": experiment,
         "run": kwargs.get("run", None),
