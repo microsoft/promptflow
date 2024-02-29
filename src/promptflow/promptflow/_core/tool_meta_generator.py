@@ -392,7 +392,7 @@ def generate_tool_meta(
                 exception_dict[source] = ExceptionPresenter.create(e).to_dict()
 
 
-def generate_tool_meta_in_process(
+def generate_tool_meta_in_subprocess(
     working_dir: Path,
     tools: Mapping[str, Mapping[str, str]],
     input_logger: logging.Logger,
