@@ -229,26 +229,10 @@ def _init_otel_trace_exporter(
     setup_exporter_from_environ()
 
 
-def _determine_query_parameter(
-    url: str,
-    session_configured: bool,
-    experiment: typing.Optional[str] = None,
-    run: typing.Optional[str] = None,
-    session_id: typing.Optional[str] = None,
-) -> str:
-    # priority: run > experiment > session
-    # for run(s) in experiment, we should print url with run(s) as it is more specific;
-    # and url with experiment should be printed at the beginning of experiment start.
-    # session id is the concept we expect to expose to users least, so it should have the lowest priority.
-    if run is not None:
-        url += f"?run={run}"
-    elif experiment is not None:
-        url += f"?experiment={experiment}"
-    elif session_configured and session_id is not None:
-        url += f"?session={session_id}"
-    return url
-
-
+# priority: run > experiment > session
+# for run(s) in experiment, we should print url with run(s) as it is more specific;
+# and url with experiment should be printed at the beginning of experiment start.
+# session id is the concept we expect to expose to users least, so it should have the lowest priority.
 def _print_trace_url_for_local(
     pfs_port: str,
     session_configured: bool,
@@ -256,8 +240,13 @@ def _print_trace_url_for_local(
     run: typing.Optional[str] = None,
     session_id: typing.Optional[str] = None,
 ) -> None:
-    url_prefix = f"http://localhost:{pfs_port}/v1.0/ui/traces"
-    url = _determine_query_parameter(url_prefix, session_configured, experiment, run, session_id)
+    url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    if run is not None:
+        url += f"?run={run}"
+    elif experiment is not None:
+        url += f"?experiment={experiment}"
+    elif session_configured and session_id is not None:
+        url += f"?session={session_id}"
     print(f"You can view the trace from local PFS: {url}")
 
 
@@ -272,14 +261,22 @@ def _print_trace_url_for_local_to_cloud(
     # this indicates local to cloud feature is enabled, then print the url in portal
     if workspace_triad is None:
         return
-    url_prefix = (
-        f"https://int.ml.azure.com/prompts/trace/session/{session_id}"
+    # &searchText={"sessionId":"8baa9e34-3d23-497a-8ec8-39b84cdb7a40","batchRunId":"test_main_variant_0_20240229_111938_229535"}
+    url = (
+        "https://int.ml.azure.com/prompts/trace/list"
         f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
         f"/resourceGroups/{workspace_triad.resource_group_name}"
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{workspace_triad.workspace_name}"
     )
-    url = _determine_query_parameter(url_prefix, session_configured, experiment, run, session_id)
+    if run is not None:
+        url += '&searchText={"batchRunId":"' + run + '"}'
+    elif experiment is not None:
+        # not consider experiment for now
+        # url += f"?experiment={experiment}"
+        pass
+    elif session_configured and session_id is not None:
+        url += '&searchText={"sessionId":"' + session_id + '"}'
     print(f"You can view the trace in cloud from Azure portal: {url}")
 
 
