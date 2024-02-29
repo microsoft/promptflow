@@ -4,6 +4,7 @@
 import json
 import os
 import typing
+import urllib.parse
 import uuid
 
 from opentelemetry import trace
@@ -268,14 +269,17 @@ def _print_trace_url_for_local_to_cloud(
         "/providers/Microsoft.MachineLearningServices"
         f"/workspaces/{workspace_triad.workspace_name}"
     )
+    query = None
     if run is not None:
-        url += '&searchText={"batchRunId":"' + run + '"}'
+        query = '{"batchRunId":"' + run + '"}'
     elif experiment is not None:
         # not consider experiment for now
-        # url += f"?experiment={experiment}"
         pass
     elif session_configured and session_id is not None:
-        url += '&searchText={"sessionId":"' + session_id + '"}'
+        query = '{"sessionId":"' + session_id + '"}'
+    # urllib.parse.quote to encode the query parameter
+    if query is not None:
+        url += f"&searchText={urllib.parse.quote(query)}"
     print(f"You can view the trace in cloud from Azure portal: {url}")
 
 
