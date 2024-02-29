@@ -1015,10 +1015,6 @@ class TestFlowRun:
             for file in expected_files:
                 assert Path(tmp_dir, run.name, file).exists()
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="Enable this after fixed sanitizer.",
-    )
     def test_run_with_compute_instance_session(
         self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
     ):
@@ -1039,10 +1035,6 @@ class TestFlowRun:
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="Enable this after fixed sanitizer.",
-    )
     def test_run_with_compute_instance_session_yml(
         self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
     ):
