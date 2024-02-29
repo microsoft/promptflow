@@ -79,7 +79,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, connection_provider)
         if not match or len(match.groups()) != 5:
             raise ValueError(
-                "Malformed connection provider string, expected azureml:/subscriptions/<subscription_id>/"
+                "Malformed connection provider string, expected azureml://subscriptions/<subscription_id>/"
                 "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
                 f"workspaces/<workspace_name>, got {connection_provider}"
             )
