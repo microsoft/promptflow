@@ -26,5 +26,5 @@ if [ "$RUN_MODE" = "serving" ]; then
 else
     PORT=${PORT:-"8000"}
     uvicorn_app="promptflow.executor._service.app:app"
-    uvicorn --workers ${WORKER_NUM} --host "0.0.0.0" --port ${PORT} ${uvicorn_app}
+    uvicorn ${uvicorn_app} --host "0.0.0.0" --port ${PORT}
 fi
