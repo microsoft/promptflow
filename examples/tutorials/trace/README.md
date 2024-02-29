@@ -50,7 +50,7 @@ More case of adding trace for autogen and langchain:
 ![langchain-trace-detail](./img/langchain-trace-detail.png)
 
 #### **`@trace` to allow you trace for any function**
-More common scenario is the applicaton has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
+More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
 
 See the **[math_to_code](./math_to_code.py)** example. Execute `python math_to_code.py` will get an URL to display the trace records and trace details of each test.
 

@@ -3,6 +3,7 @@ from promptflow import trace, start_trace
 import ast
 import os
 
+
 @trace
 def infinite_loop_check(code_snippet):
     tree = ast.parse(code_snippet)
@@ -12,6 +13,7 @@ def infinite_loop_check(code_snippet):
                 return True
     return False
 
+
 @trace
 def syntax_error_check(code_snippet):
     try:
@@ -19,6 +21,7 @@ def syntax_error_check(code_snippet):
     except SyntaxError:
         return True
     return False
+
 
 @trace
 def error_fix(code_snippet):
@@ -28,6 +31,7 @@ def error_fix(code_snippet):
             if not node.orelse:
                 node.orelse = [ast.Pass()]
     return ast.unparse(tree)
+
 
 @trace
 def code_refine(original_code: str) -> str:
@@ -50,9 +54,12 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
     completion = client.chat.completions.create(
         model="my-dep",
         messages=[
-            {"role": "system", "content": "I want you to act as a Math expert specializing in Algebra, Geometry, and Calculus. Given the question, develop python code to model the user's question. Make sure only reply the executable code, no other words."},
-            {"role": "user", "content": question}
-        ]
+            {
+                "role": "system",
+                "content": "I want you to act as a Math expert specializing in Algebra, Geometry, and Calculus. Given the question, develop python code to model the user's question. Make sure only reply the executable code, no other words.",
+            },
+            {"role": "user", "content": question},
+        ],
     )
     raw_code = completion.choices[0].message.content
     return code_refine(raw_code)
