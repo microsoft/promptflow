@@ -3,9 +3,7 @@ import pytest
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
-from ..utils import (
-    get_yaml_file,
-)
+from ..utils import get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
@@ -30,6 +28,13 @@ Exception: In tool raise_an_exception: dummy_input
         "\n"
     ),
     "async_tools_failures": """Traceback (most recent call last):
+flow_executor.py", line 987, in _traverse_nodes
+    loop = asyncio.get_running_loop()
+RuntimeError: no running event loop
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
 async_fail.py", line 11, in raise_an_exception_async
     await raise_exception_async(s)
 async_fail.py", line 5, in raise_exception_async
