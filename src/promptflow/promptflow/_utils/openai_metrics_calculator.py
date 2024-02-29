@@ -39,6 +39,7 @@ class OpenAIMetricsCalculator:
         return True
 
     def _get_openai_metrics_for_signal_api(self, api_call: dict):
+        inputs = api_call.get("inputs")
         output = api_call.get("output")
         if isinstance(output, dict):
             usage = output.get("usage")
@@ -60,12 +61,12 @@ class OpenAIMetricsCalculator:
             name == "openai.api_resources.chat_completion.ChatCompletion.create"
             or name == "openai.resources.chat.completions.Completions.create"  # openai v1
         ):
-            return self._get_openai_metrics_for_chat_api(api_call)
+            return self.get_openai_metrics_for_chat_api(inputs, output)
         elif (
             name == "openai.api_resources.completion.Completion.create"
             or name == "openai.resources.completions.Completions.create"  # openai v1
         ):
-            return self._get_openai_metrics_for_completion_api(api_call)
+            return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
             raise CalculatingMetricsError(f"Calculating metrics for api {name} is not supported.")
 
@@ -82,7 +83,11 @@ class OpenAIMetricsCalculator:
             if isinstance(output, dict):
                 model = output.get("model")
             else:
-                model = output[0].model if len(output) > 0 and hasattr(output[0], "model") else None
+                model = None
+                for chunk in output:
+                    if hasattr(chunk, "model"):
+                        model = chunk.model
+                        break
             if not model:
                 model = inputs.get("model")
         if not model:
@@ -92,9 +97,7 @@ class OpenAIMetricsCalculator:
             )
         return model
 
-    def _get_openai_metrics_for_chat_api(self, api_call):
-        inputs = api_call.get("inputs")
-        output = api_call.get("output")
+    def get_openai_metrics_for_chat_api(self, inputs, output):
         metrics = {}
         enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
@@ -151,10 +154,8 @@ class OpenAIMetricsCalculator:
                             completion_tokens += len(enc.encode(content))
         return completion_tokens
 
-    def _get_openai_metrics_for_completion_api(self, api_call: dict):
+    def get_openai_metrics_for_completion_api(self, inputs, output):
         metrics = {}
-        inputs = api_call.get("inputs")
-        output = api_call.get("output")
         enc = self._get_encoding_for_completion_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = 0
         prompt = inputs.get("prompt")
