@@ -132,16 +132,21 @@ class ToolResolver:
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
     def _load_tool_as_function(self, node_name: str, tool_def: dict) -> AssistantTool:
+        # We clone the raw tool definition to avoid modifying the original AssistantDefinition object,
+        # ensuring it is picklable as flow inputs
+        updated_tool_def = copy.deepcopy(tool_def)
         # load ToolSource as object from json string
-        tool_def["source"] = ToolSource.deserialize(tool_def["source"]) if "source" in tool_def else None
+        updated_tool_def["source"] = (
+            ToolSource.deserialize(updated_tool_def["source"]) if "source" in updated_tool_def else None
+        )
 
         # load predefined_inputs dictionary
         predefined_inputs = {}
-        for input_name, value in tool_def.get("predefined_inputs", {}).items():
+        for input_name, value in updated_tool_def.get("predefined_inputs", {}).items():
             predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, tool_def)
+        m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, updated_tool_def)
 
         # construct the resolved inputs dictionary
         updated_inputs = self._get_assistant_function_input_types(node_name, predefined_inputs, tool, m)
