@@ -26,10 +26,8 @@ from promptflow._sdk._service.utils.utils import (
     get_port_from_config,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger
+from promptflow._sdk._utils import get_promptflow_sdk_version
 from promptflow._utils.thread_utils import ThreadWithContextVars
-
-overwrite_null_std_logger()
 
 
 def heartbeat():
