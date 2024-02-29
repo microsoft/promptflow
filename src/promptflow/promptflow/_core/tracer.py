@@ -308,6 +308,7 @@ def enrich_span_with_input(span, input):
 
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
     if trace_type == TraceType.LLM:
+        # Handle the non-streaming output of LLM, the streaming output will be handled in traced_generator.
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_llm(span, output)
     elif trace_type == TraceType.EMBEDDING:
