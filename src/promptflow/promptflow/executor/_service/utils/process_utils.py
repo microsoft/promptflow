@@ -34,6 +34,7 @@ async def invoke_sync_function_in_process(
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
 ):
+    service_logger.info(f"1. Test Log........{multiprocessing.get_start_method()}")
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         error_dict = manager.dict()
@@ -104,7 +105,8 @@ def _execute_target_function(
     return_dict: dict,
     error_dict: dict,
     context_dict: dict,
-):
+):  
+    service_logger.info(f"2. Test Log........{multiprocessing.get_start_method()}")
     # TODO: Add comments
     # https://github.com/tiangolo/fastapi/issues/1487
     # https://docs.python.org/3/library/signal.html#signal.set_wakeup_fd
