@@ -714,7 +714,13 @@ class Run(YAMLTranslatableMixin):
         )
 
     def _copy(self, **kwargs):
-        """Copy a new run object."""
+        """Copy a new run object.
+
+        This is used for resume run scenario, a new run will be created with the same properties as the original run.
+        Allowed to override some properties with kwargs. Supported properties are:
+        Meta: name, display_name, description, tags.
+        Run setting: runtime, resources, identity.
+        """
         init_params = {
             "flow": self.flow,
             "data": self.data,
@@ -728,6 +734,7 @@ class Run(YAMLTranslatableMixin):
             "connections": self.connections,
             # "properties": self._properties,  # Do not copy system metrics
             "source": self.source,
+            "identity": self._identity,
             **kwargs,
         }
         logger.debug(f"Run init params: {init_params}")

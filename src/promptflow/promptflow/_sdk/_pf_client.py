@@ -64,7 +64,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
-        resume_from: str = None,
+        resume_from: Union[str, Run] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -121,7 +121,10 @@ class PFClient:
         if resume_from:
             unsupported = [flow, data, run, column_mapping, variant, connections, environment_variables]
             if any(unsupported):
-                raise ValueError(f"'resume_from' is not supported with following parameters: {unsupported}. ")
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
             return self.runs._resume(resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs)
         if not flow:
             raise ValueError("'flow' is required to create a run.")

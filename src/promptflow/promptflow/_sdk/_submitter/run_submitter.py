@@ -46,6 +46,7 @@ class RunSubmitter:
         return self.run_operations.get(name=run.name)
 
     def _ensure_required_run(self, required_run: Union[str, Run]):
+        """Ensure the required run is completed and return the run object."""
         if isinstance(required_run, str):
             required_run = self.run_operations.get(name=required_run)
         elif not isinstance(required_run, Run):

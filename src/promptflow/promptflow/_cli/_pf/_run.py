@@ -632,7 +632,7 @@ def create_run(create_func: Callable, resume_func: Callable, args):
 
     if resume_from:
         if params_override:
-            logger.debug(f"Resume from specified, append params override {params_override} to run params.")
+            logger.debug(f"resume_from specified, append params override {params_override} to run params.")
             run_params.update(list_of_dict_to_nested_dict(params_override))
         logger.debug(f"Run params: {run_params}")
         run = resume_func(**run_params)
