@@ -116,7 +116,7 @@ def start_service(args):
             app.logger.setLevel(logging.DEBUG)
         else:
             app.logger.setLevel(logging.INFO)
-        logger.info(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
+        print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
         # Set host to localhost, only allow request from localhost.
@@ -129,9 +129,7 @@ def start_service(args):
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
-            logger.info(
-                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-            )
+            print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
         else:
             logger.warning(f"Pfs service start failed in {port}.")
 
@@ -140,7 +138,7 @@ def stop_service():
     port = get_port_from_config()
     if port is not None:
         kill_exist_service(port)
-        logger.info(f"Pfs service stop in {port}.")
+        print(f"Pfs service stop in {port}.")
 
 
 def main():
