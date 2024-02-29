@@ -38,6 +38,15 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
+    # trace is currently a preview feature, users should explicitly enable to use it
+    if Configuration.get_instance().is_internal_features_enabled() is False:
+        warning_message = (
+            "`start_trace` is currently a preview feature, "
+            'please enable it with `pf config set enable_internal_features="true"`'
+        )
+        _logger.warning(warning_message)
+        return
+
     from promptflow._sdk._constants import ContextAttributeKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
@@ -199,7 +208,8 @@ def setup_exporter_from_environ() -> None:
     tracer_provider = TracerProvider(resource=resource)
     # get OTLP endpoint from environment variable
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+    # Set timeout as 30 seconds since creating cosmosDB client is time consuming
+    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint, timeout=30)
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     trace.set_tracer_provider(tracer_provider)
 

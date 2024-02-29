@@ -9,7 +9,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
-from promptflow._core.token_provider import AzureTokenProvider, TokenProviderABC
+from marshmallow import INCLUDE
+
+from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
@@ -19,6 +21,7 @@ from promptflow._sdk._constants import (
     SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
+    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
@@ -251,6 +254,7 @@ class _Connection(YAMLTranslatableMixin):
         connection = connection_type._load_from_dict(
             data=data,
             context=context,
+            unknown=INCLUDE,
             additional_message=f"If you are trying to configure a job that is not of type {type_str}, please specify "
             f"the correct connection type in the 'type' property.",
             **kwargs,
@@ -329,9 +333,14 @@ class _StrongTypeConnection(_Connection):
         return obj
 
     @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return True
+
+    @property
     def api_key(self):
         """Return the api key."""
-        return self.secrets.get("api_key", SCRUBBED_VALUE)
+        return self.secrets.get("api_key", SCRUBBED_VALUE) if self._has_api_key else None
 
     @api_key.setter
     def api_key(self, value):
@@ -350,8 +359,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
     :type api_version: str
-    :param token_provider: The token provider.
-    :type token_provider: promptflow._core.token_provider.TokenProviderABC
+    :param auth_type: The auth type, supported value ["key", "meid_token"].
+    :type api_version: str
     :param name: Connection name.
     :type name: str
     """
@@ -360,16 +369,16 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     def __init__(
         self,
-        api_key: str,
         api_base: str,
+        api_key: str = None,
         api_type: str = "azure",
         api_version: str = "2023-07-01-preview",
-        token_provider: TokenProviderABC = None,
+        auth_mode: str = ConnectionAuthMode.KEY,
         **kwargs,
     ):
-        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
-        secrets = {"api_key": api_key}
-        self._token_provider = token_provider
+        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version, "auth_mode": auth_mode}
+        secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
+        self._token_provider = kwargs.get("token_provider")
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
     @classmethod
@@ -405,6 +414,21 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     def api_version(self, value):
         """Set the connection api version."""
         self.configs["api_version"] = value
+
+    @property
+    def auth_mode(self):
+        """Return the connection auth mode."""
+        return self.configs.get("auth_mode", ConnectionAuthMode.KEY)
+
+    @auth_mode.setter
+    def auth_mode(self, value):
+        """Set the connection auth mode."""
+        self.configs["auth_mode"] = value
+
+    @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return self.auth_mode == ConnectionAuthMode.KEY
 
     def get_token(self):
         """Return the connection token."""

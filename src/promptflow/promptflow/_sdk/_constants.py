@@ -338,6 +338,11 @@ class ConnectionType(str, Enum):
     CUSTOM = "Custom"
 
 
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
+
+
 ALL_CONNECTION_TYPES = set(
     map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
 )
@@ -461,3 +466,15 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
+class IdentityKeys(str, Enum):
+    """Enum for identity keys."""
+
+    MANAGED = "managed"
+    USER_IDENTITY = "user_identity"
+    RESOURCE_ID = "resource_id"
+    CLIENT_ID = "client_id"

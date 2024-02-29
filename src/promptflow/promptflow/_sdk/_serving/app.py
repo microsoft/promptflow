@@ -57,6 +57,26 @@ class PromptflowServingApp(Flask):
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)
 
+            # load trace exporters
+            trace_exporters = self.extension.get_trace_exporters(self.project_path)
+            if trace_exporters:
+                logger.info(f"Enable {len(trace_exporters)} trace exporters.")
+                from opentelemetry import trace
+                from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+                from opentelemetry.sdk.trace import TracerProvider
+                from opentelemetry.sdk.trace.export import (
+                    BatchSpanProcessor,
+                )
+                resource = Resource(
+                    attributes={
+                        SERVICE_NAME: "promptflow",
+                    }
+                )
+                trace.set_tracer_provider(TracerProvider(resource=resource))
+                provider = trace.get_tracer_provider()
+                for exporter in trace_exporters:
+                    provider.add_span_processor(BatchSpanProcessor(exporter))
+
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
             conn_data_override, conn_name_override = self.extension.get_override_connections(self.flow)
