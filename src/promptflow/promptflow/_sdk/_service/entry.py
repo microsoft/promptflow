@@ -124,6 +124,9 @@ def start_service(args):
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
+            # For windows, use creationflags=subprocess.CREATE_NEW_PROCESS_GROUP to create a new process group. But
+            # if you close the terminal which start the cmd, the child process will stop since it will send a close
+            # signal to process group started in the terminal.
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else:
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
