@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from common import clean_data, split_document, summerize_batch_run_res
+from common import clean_data, split_document, summarize_batch_run_res
 from constants import NODES_FILE_NAME, PARALLEL_RUN_STEP_FILE_NAME, SUMMARY_FILE_NAME, TEST_DATA_FILE_NAME
 from mldesigner import Input, Output, command_component
 
@@ -62,15 +62,15 @@ def clean_data_component(
 
 
 @command_component(
-    name="summerize_generation_details_component",
-    display_name="summerize generation details",
-    description="Summerize generation details.",
+    name="summarize_generation_details_component",
+    display_name="summarize generation details",
+    description="Summarize generation details.",
     environment=dict(
         conda_file=conda_file,
         image=env_image,
     ),
 )
-def summerize_generation_details_component(
+def summarize_generation_details_component(
     document_node_output: Input(type="uri_folder"),
     test_data_set_folder: Input(type="uri_folder"),
     summary_output: Output(type="uri_folder"),
@@ -81,7 +81,7 @@ def summerize_generation_details_component(
     summary_output_path = summary_output / Path(SUMMARY_FILE_NAME)
     if document_node_output_path.is_dir():
         document_node_output_path = document_node_output_path / NODES_FILE_NAME
-    summerize_batch_run_res(
+    summarize_batch_run_res(
         gen_details_file_path=test_data_set_path,
         document_nodes_file_path=document_node_output_path,
         output_file_path=summary_output_path,

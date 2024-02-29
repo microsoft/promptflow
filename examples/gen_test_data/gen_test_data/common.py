@@ -212,15 +212,13 @@ def _count_lines(file_path) -> int:
         return sum(1 for _ in f)
 
 
-def summerize_batch_run_res(gen_details_file_path, document_nodes_file_path, output_file_path):
+def summarize_batch_run_res(gen_details_file_path, document_nodes_file_path, output_file_path):
     success_count = 0
-    validate_fail_count = 0
-    validate_fail_steps = {}
-    validate_fail_distribution = {}
+    validate_failed_count = 0
+    validate_failed_steps = {}
+    validate_failed_distribution = {}
 
-    details_file_lines_count = _count_lines(gen_details_file_path)
     nodes_file_lines_count = _count_lines(document_nodes_file_path)
-
     document_nodes_info = _retrieve_file_names_from_document_nodes_file(document_nodes_file_path)
 
     with open(gen_details_file_path, "r") as details_f:
@@ -232,28 +230,28 @@ def summerize_batch_run_res(gen_details_file_path, document_nodes_file_path, out
             if data["debug_info"]["validation_summary"]["success"]:
                 success_count += 1
             else:
-                validate_fail_count += 1
+                validate_failed_count += 1
                 failed_step = data["debug_info"]["validation_summary"]["failed_step"]
 
-                if failed_step in validate_fail_steps:
-                    validate_fail_steps[failed_step] += 1
+                if failed_step in validate_failed_steps:
+                    validate_failed_steps[failed_step] += 1
                 else:
-                    validate_fail_steps[failed_step] = 1
-                    validate_fail_distribution[failed_step] = {}
+                    validate_failed_steps[failed_step] = 1
+                    validate_failed_distribution[failed_step] = {}
 
                 document_name = document_nodes_info[data["debug_info"]["text_chunk"]]
-                if document_name in validate_fail_distribution[failed_step]:
-                    validate_fail_distribution[failed_step][document_name] += 1
+                if document_name in validate_failed_distribution[failed_step]:
+                    validate_failed_distribution[failed_step][document_name] += 1
                 else:
-                    validate_fail_distribution[failed_step][document_name] = 1
+                    validate_failed_distribution[failed_step][document_name] = 1
 
     data = {
         "total_count": nodes_file_lines_count,
         "success_count": success_count,
-        "run_fail_count": nodes_file_lines_count - details_file_lines_count,
-        "validate_fail_count": validate_fail_count,
-        "validate_fail_steps": validate_fail_steps,
-        "validate_fail_distribution": validate_fail_distribution,
+        "run_failed_count": nodes_file_lines_count - success_count - validate_failed_count,
+        "validate_failed_count": validate_failed_count,
+        "validate_failed_steps": validate_failed_steps,
+        "validate_failed_distribution": validate_failed_distribution,
     }
 
     with open(output_file_path, "w") as file:

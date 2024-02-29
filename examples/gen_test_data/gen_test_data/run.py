@@ -23,7 +23,7 @@ from common import (  # noqa: E402
     non_padding_path,
     print_progress,
     split_document,
-    summerize_batch_run_res,
+    summarize_batch_run_res,
 )
 from constants import DETAILS_FILE_NAME, SUMMARY_FILE_NAME, TEST_DATA_FILE_NAME, TEXT_CHUNK  # noqa: E402
 
@@ -113,7 +113,7 @@ def run_local(
 
     try:
         summary_output_file = Path(output_folder) / SUMMARY_FILE_NAME
-        summerize_batch_run_res(
+        summarize_batch_run_res(
             gen_details_file_path=batch_run_details_file,
             document_nodes_file_path=text_chunks_path,
             output_file_path=summary_output_file,
@@ -178,7 +178,7 @@ def run_cloud(
         run_invocation_time=600,
         allowed_failed_count=-1,
     ):
-        from components import clean_data_component, split_document_component, summerize_generation_details_component
+        from components import clean_data_component, split_document_component, summarize_generation_details_component
 
         data = (
             data_input
@@ -198,7 +198,7 @@ def run_cloud(
         # Should use `mount` mode to ensure PRS complete merge output lines.
         flow_node.outputs.flow_outputs.mode = "mount"
         clean_data_component(test_data_set_folder=flow_node.outputs.flow_outputs).outputs.test_data_output
-        summerize_generation_details_component(
+        summarize_generation_details_component(
             document_node_output=data, test_data_set_folder=flow_node.outputs.flow_outputs
         ).outputs.summary_output
 
