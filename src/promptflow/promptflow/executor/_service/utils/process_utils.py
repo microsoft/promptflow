@@ -87,8 +87,7 @@ def _is_process_alive(p: multiprocessing.Process):
     if psutil.pid_exists(p.pid):
         if psutil.Process(p.pid).status() != psutil.STATUS_ZOMBIE:
             return True
-    # If do not call join(), the child process may become a zombie process,
-    # and psutil.pid_exists(pid) is always true, which will cause proces never exit.
+    # Call p.join() to clear the zombie process correctly.
     p.join()
     return False
 
