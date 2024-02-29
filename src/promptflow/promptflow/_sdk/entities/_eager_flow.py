@@ -80,9 +80,13 @@ class EagerFlow(FlowBase, SchemaValidatableMixin):
 
     @classmethod
     def _resolve_entry_file(cls, entry: str, working_dir: Path) -> Optional[str]:
-        """Resolve entry file from entry."""
+        """Resolve entry file from entry.
+        If entry is a local file, e.g. my.local.file:entry_function, return the local file: my/local/file.py
+            and executor will import it from local file.
+        Else, assume the entry is from a package e.g. external.module:entry, return None
+            and executor will try import it from package.
+        """
         try:
-            # TODO: remove this after gen meta removed entry file
             entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
         except Exception as e:
             raise UserErrorException(f"Entry function {entry} is not valid: {e}")

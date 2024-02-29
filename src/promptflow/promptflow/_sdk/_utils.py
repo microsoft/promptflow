@@ -5,6 +5,7 @@ import collections
 import datetime
 import hashlib
 import json
+import multiprocessing
 import os
 import platform
 import re
@@ -71,6 +72,7 @@ from promptflow._sdk._errors import (
     UnsecureConnectionError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import _match_reference
