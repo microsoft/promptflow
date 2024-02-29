@@ -142,7 +142,7 @@ def make_response_no_content():
 
 
 def is_pfs_service_healthy(pfs_port) -> bool:
-    """Check if pfs service is running."""
+    """Check if pfs service is running and pfs version matches pf version."""
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:

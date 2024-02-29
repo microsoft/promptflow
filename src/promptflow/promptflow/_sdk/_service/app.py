@@ -115,6 +115,7 @@ def create_app():
                 time.sleep(60)
                 # For python scenario, since we start waitress in cli, there will be two app. The one used to log in
                 # the parent process will have no "last_request_time" in app.config since the app doesn't run.
+                app.logger.info("Monitor detects no requests to app within 1 minute.")
                 if "last_request_time" in app.config and datetime.now() - app.config["last_request_time"] > timedelta(
                     hours=1
                 ):
