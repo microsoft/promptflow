@@ -20,14 +20,22 @@ RUN pip install "./promptflow-0.0.1-py3-none-any.whl[executor-service]" \
     && rm promptflow-0.0.1-py3-none-any.whl
 
 # Install extra requirements
-COPY ./extra_requirements.txt ./
-RUN pip install -r extra_requirements.txt
+COPY ./requirements.txt ./
+RUN pip install -r requirements.txt
 
+# Reset runsvdir
+RUN rm -rf /var/runit
+COPY ./runit /var/runit
+# Grant permission
+RUN chmod -R +x /var/runit
+
+# Copy scripts
+COPY ./scripts /service/scripts
+RUN chmod -R +x /service/scripts
+
+# ???
+USER root:root
 ENV PORT 8000
-
-# Control the mode of the service
-# 1. "normal" mode: The main scenarios are flow test, single node run, tools and other functional APIs
-# 2. "batch" mode: Mainly prepared for the batch run
-ENV MODE "normal"
+EXPOSE $PORT
 
 CMD ["sh", "-c", "exec uvicorn promptflow.executor._service.app:app --host 0.0.0.0 --port $PORT"]
