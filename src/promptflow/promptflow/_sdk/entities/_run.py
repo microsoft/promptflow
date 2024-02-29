@@ -29,6 +29,7 @@ from promptflow._sdk._constants import (
     AzureRunTypes,
     DownloadedRun,
     FlowRunProperties,
+    IdentityKeys,
     RestRunTypes,
     RunDataKeys,
     RunInfoSources,
@@ -182,6 +183,7 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
+        self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
 
@@ -557,6 +559,9 @@ class Run(YAMLTranslatableMixin):
             vm_size = None
             compute_name = None
 
+        # parse identity resource id
+        identity_resource_id = self._identity.get(IdentityKeys.RESOURCE_ID, None)
+
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
             SubmitBulkRunRequest,
@@ -579,6 +584,7 @@ class Run(YAMLTranslatableMixin):
             vm_size=vm_size,
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
             compute_name=compute_name,
+            identity=identity_resource_id,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
