@@ -321,19 +321,39 @@ Given above, if your flow has logic relying on identity or environment variable,
 
 ## Component ports and run settings
 
-|                  | port name                                           | source                                           | type                    | description                                                  |
-| ---------------- | --------------------------------------------------- | ------------------------------------------------ | ----------------------- | ------------------------------------------------------------ |
-| input ports      | data                                                | fixed                                            | uri_folder or uri_file  | required; to pass in input data. Supported format includes [`mltable`](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-mltable?view=azureml-api-2&tabs=cli#authoring-mltable-files) and list of jsonl files. |
-|                  | run_outputs                                         | fixed                                            | uri_folder              | optional; to pass in output of a standard flow for [an evaluation flow](../../how-to-guides/develop-a-flow/develop-evaluation-flow.md). Should be linked to a `flow_outputs` of a previous flow node in the pipeline. |
-|                  | \<flow-input-name\>                                 | from flow inputs                                 | string                  | default value will be inherited from flow inputs; used to override [column mapping](../../how-to-guides/run-and-evaluate-a-flow/use-column-mapping.md) for flow inputs. |
-| input parameters | connections.\<node-name\>.connection                | from nodes of built-in or custom LLM tools       | string                  | default value will be the current value defined in `flow.dag.yaml` or `run.yaml`; to override used connections of corresponding nodes. Connection should exist in current workspace. |
-|                  | connections.\<node-name\>.deployment_name           | from nodes of built-in or custom LLM tools       | string                  | default value will be the current value defined in `flow.dag.yaml` or `run.yaml`; to override target deployment names of corresponding nodes. Deployment should be available with provided connection. |
-|                  | environment_variables.\<environment-variable-name\> | from environment variables defined in `run.yaml` | string                  | default value will be the current value defined in `run.yaml`; to override environment variables during flow run, e.g. AZURE_OPENAI_API_KEY. Note that you can refer to workspace connections with expressions like `{my_connection.api_key}`. |
-| output ports     | flow_outputs                                        | fixed                                            | uri_folder              | an uri_folder with 1 or more jsonl files containing outputs of the flow runs |
-|                  | debug_info                                          | fixed                                            | uri_folder              | an uri_folder containing debug information of the flow run, e.g., run logs |
-| run settings     | instance_count                                      | fixed (all run setting ports are fixed)          | integer                 | The number of nodes to use for the job. Default value is 1.  |
-|                  | max_concurrency_per_instance                        | the same as above                                | integer                 | The number of processors on each node.                       |
-|                  | mini_batch_error_threshold                          | the same as above                                | integer                 | Define the number of failed mini batches that could be ignored in this parallel job. If the count of failed mini-batch is higher than this threshold, the parallel job will be marked as failed.<br/><br/>Mini-batch is marked as failed if:<br/>- the count of return from run() is less than mini-batch input count.<br/>- catch exceptions in custom run() code.<br/><br/>"-1" is the default number, which means to ignore all failed mini-batch during parallel job. |
-|                  | retry_settings.max_retries                          | the same as above                                | integer                 | Define the number of retries when mini-batch is failed or timeout. If all retries are failed, the mini-batch will be marked as failed to be counted by `mini_batch_error_threshold` calculation. |
-|                  | retry_settings.timeout                              | the same as above                                | integer                 | Define the timeout in seconds for executing custom run() function. If the execution time is higher than this threshold, the mini-batch will be aborted, and marked as a failed mini-batch to trigger retry. |
-|                  | logging_level                                       | the same as above                                | INFO, WARNING, or DEBUG | Define which level of logs will be dumped to user log files. |
+### Input ports
+
+| key         | source | type                   | description                                                  |
+| ----------- | ------ | ---------------------- | ------------------------------------------------------------ |
+| data        | fixed  | uri_folder or uri_file | required; to pass in input data. Supported format includes [`mltable`](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-mltable?view=azureml-api-2&tabs=cli#authoring-mltable-files) and list of jsonl files. |
+| run_outputs | fixed  | uri_folder             | optional; to pass in output of a standard flow for [an evaluation flow](../../how-to-guides/develop-a-flow/develop-evaluation-flow.md). Should be linked to a `flow_outputs` of a previous flow node in the pipeline. |
+
+### Output ports
+
+| key          | source | type       | description                                                  |
+| ------------ | ------ | ---------- | ------------------------------------------------------------ |
+| flow_outputs | fixed  | uri_folder | an uri_folder with 1 or more jsonl files containing outputs of the flow runs |
+| debug_info   | fixed  | uri_folder | an uri_folder containing debug information of the flow run, e.g., run logs |
+
+### Parameters
+
+| key                                                 | source                                           | type   | description                                                  |
+| --------------------------------------------------- | ------------------------------------------------ | ------ | ------------------------------------------------------------ |
+| \<flow-input-name\>                                 | from flow inputs                                 | string | default value will be inherited from flow inputs; used to override [column mapping](../../how-to-guides/run-and-evaluate-a-flow/use-column-mapping.md) for flow inputs. |
+| connections.\<node-name\>.connection                | from nodes of built-in LLM tools                 | string | default value will be current value defined in `flow.dag.yaml` or `run.yaml`; to override used connections of corresponding nodes. Connection should exist in current workspace. |
+| connections.\<node-name\>.deployment_name           | from nodes of built-in LLM tools                 | string | default value will be current value defined in `flow.dag.yaml` or `run.yaml`; to override target deployment names of corresponding nodes. Deployment should be available with provided connection. |
+| connections.\<node-name\>.\<node-input-key\>        | from nodes with `Connection` inputs              | string | default value will be current value defined in `flow.dag.yaml` or `run.yaml`; to override used connections of corresponding nodes. Connection should exist in current workspace. |
+| environment_variables.\<environment-variable-name\> | from environment variables defined in `run.yaml` | string | default value will be the current value defined in `run.yaml`; to override environment variables during flow run, e.g. AZURE_OPENAI_API_KEY. Note that you can refer to workspace connections with expressions like `{my_connection.api_key}`. |
+
+### Run settings
+
+| key                          | type                    | Description                                                  |
+| ---------------------------- | ----------------------- | ------------------------------------------------------------ |
+| instance_count               | integer                 | The number of nodes to use for the job. Default value is 1.  |
+| max_concurrency_per_instance | integer                 | The number of processors on each node.                       |
+| mini_batch_error_threshold   | integer                 | Define the number of failed mini batches that could be ignored in this parallel job. If the count of failed mini-batch is higher than this threshold, the parallel job will be marked as failed.<br/><br/>Mini-batch is marked as failed if:<br/>- the count of return from run() is less than mini-batch input count.<br/>- catch exceptions in custom run() code.<br/><br/>"-1" is the default number, which means to ignore all failed mini-batch during parallel job. |
+| retry_settings.max_retries   | integer                 | Define the number of retries when mini-batch is failed or timeout. If all retries are failed, the mini-batch will be marked as failed to be counted by `mini_batch_error_threshold` calculation. |
+| retry_settings.timeout       | integer                 | Define the timeout in seconds for executing custom run() function. If the execution time is higher than this threshold, the mini-batch will be aborted, and marked as a failed mini-batch to trigger retry. |
+| logging_level                | INFO, WARNING, or DEBUG | Define which level of logs will be dumped to user log files. |
+
+Check [the official document of parallel component](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-use-parallel-job-in-pipeline?view=azureml-api-2&tabs=cliv2) for more run settings.
