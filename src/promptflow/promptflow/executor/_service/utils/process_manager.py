@@ -38,8 +38,8 @@ class ProcessManager:
                 if process.is_running():
                     os.kill(process.pid, signal.SIGINT)
                     service_logger.info(f"Kill process[{process.pid}] for run[{run_id}] with SIGINT.")
-                    # wait for 40s for executor process to gracefully shutdown
-                    process.wait(timeout=40)
+                    # wait for 30s for executor process to gracefully shutdown
+                    process.wait(timeout=30)
                     service_logger.info(f"Successfully terminated process[{process.pid}] for run[{run_id}].")
                 else:
                     service_logger.info(f"Process[{process.pid}] for run[{run_id}] is already terminated.")
