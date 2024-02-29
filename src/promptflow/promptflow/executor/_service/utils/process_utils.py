@@ -34,7 +34,6 @@ async def invoke_sync_function_in_process(
     context_dict: dict = None,
     wait_timeout: int = LONG_WAIT_TIMEOUT,
 ):
-    service_logger.info(f"1. Test Log........{multiprocessing.get_start_method()}")
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
         error_dict = manager.dict()
@@ -52,10 +51,8 @@ async def invoke_sync_function_in_process(
             # Wait for the process to finish or timeout asynchronously
             start_time = datetime.utcnow()
             while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p):
-                service_logger.info(f"[{p.pid}] Waiting for process to finish... {p.exitcode}")
                 await asyncio.sleep(1)
 
-            service_logger.info(f"[{p.pid}] Process finish... {p.exitcode}")
             # If process_id is None, it indicates that the process has been terminated by cancel request.
             if run_id and not ProcessManager().get_process(run_id):
                 raise ExecutionCanceledError(run_id)
@@ -67,7 +64,6 @@ async def invoke_sync_function_in_process(
                 p.join()
                 raise ExecutionTimeoutError(wait_timeout)
 
-            service_logger.info(f"[{p.pid}] Process Get Error... {p.exitcode}")
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
                 exception = error_dict.get("error", None)
@@ -80,7 +76,7 @@ async def invoke_sync_function_in_process(
                 # no need to change to PromptflowException since it will be handled in app.exception_handler
                 raise exception
 
-            service_logger.info(f"[{p.pid}] Process finished.")
+            service_logger.info(f"[{p.pid}--{os.getpid()}] Process finished.")
             return return_dict.get("result", {})
         finally:
             if run_id:
@@ -105,7 +101,6 @@ def _execute_target_function(
     error_dict: dict,
     context_dict: dict,
 ):
-    service_logger.info(f"2. Test Log........{multiprocessing.get_start_method()}")
     # TODO: Add comments
     # https://github.com/tiangolo/fastapi/issues/1487
     # https://docs.python.org/3/library/signal.html#signal.set_wakeup_fd
