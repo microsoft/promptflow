@@ -38,4 +38,4 @@ USER root:root
 ENV PORT 8000
 EXPOSE $PORT
 
-CMD ["sh", "-c", "exec uvicorn promptflow.executor._service.app:app --host 0.0.0.0 --port $PORT"]
+CMD ["/service/scripts/start.sh"]
