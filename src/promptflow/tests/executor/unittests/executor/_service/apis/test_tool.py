@@ -9,6 +9,8 @@ from .....utils import get_flow_folder
 def construct_tool_meta_request_json(flow_folder: str, tools: List[Tuple[str, str]]):
     working_dir = get_flow_folder(flow_folder)
     tools = {source: {"tool_type": tool_type} for source, tool_type in tools}
+    # mock a invalid contract tool
+    tools["no_type_file.py"] = {}
     return {
         "working_dir": working_dir.as_posix(),
         "tools": tools,
@@ -38,8 +40,36 @@ class TestToolApis:
         # assert response
         assert response.status_code == 200
         tool_meta = response.json()
-        assert len(tool_meta["tools"]) == len(tools)
+        assert len(tool_meta["tools"]) == 4
         assert len(tool_meta["errors"]) == 0
 
-    def test_gen_tool_meta_partial_failed(self):
-        pass
+    def test_gen_tool_meta_partial_failed(self, executor_client: TestClient):
+        flow_folder = "flow_with_different_tools"
+        tools = [
+            ("folder/invalid_tool_empty.py", "python"),
+            ("valid_tool.py", "python"),
+            ("valid_tool_with_dependency.py", "python"),
+            ("not_exist_file.py", "llm"),
+        ]
+        request = construct_tool_meta_request_json(flow_folder, tools)
+        response = executor_client.post(url="/tool/meta", json=request)
+        # assert response
+        assert response.status_code == 200
+        tool_meta = response.json()
+        assert len(tool_meta["tools"]) == 2
+        assert len(tool_meta["errors"]) == 2
+
+    def test_gen_tool_meta_all_failed(self, executor_client: TestClient):
+        flow_folder = "flow_with_different_tools"
+        tools = [
+            ("folder/invalid_tool_empty.py", "python"),
+            ("not_exist_file.py", "llm"),
+            ("no_type_file.py", "python"),
+        ]
+        request = construct_tool_meta_request_json(flow_folder, tools)
+        response = executor_client.post(url="/tool/meta", json=request)
+        # assert response
+        assert response.status_code == 200
+        tool_meta = response.json()
+        assert len(tool_meta["tools"]) == 0
+        assert len(tool_meta["errors"]) == 3
