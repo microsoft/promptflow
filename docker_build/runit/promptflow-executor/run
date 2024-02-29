@@ -21,10 +21,11 @@ if [ "$RUN_MODE" = "serving" ]; then
     # If you try to use the sync worker type and set the threads setting to more than 1, the gthread worker type will be used instead.
     WORKER_THREADS=${PROMPTFLOW_WORKER_THREADS:-"1"}
     gunicorn_app="promptflow._sdk._serving.app:create_app(extension_type='azureml')"
-    echo "start promptflow serving with worker_num: ${WORKER_NUM}, worker_threads: ${WORKER_THREADS}, app: ${gunicorn_app}}"
+    echo "start promptflow serving with worker_num: ${WORKER_NUM}, worker_threads: ${WORKER_THREADS}, app: ${gunicorn_app}"
     gunicorn -w ${WORKER_NUM} --threads ${WORKER_THREADS} -b "0.0.0.0:8080" --timeout 300 ${gunicorn_app}
 else
     PORT=${PORT:-"8000"}
     uvicorn_app="promptflow.executor._service.app:app"
+    echo "start promptflow executor with app: ${uvicorn_app}"
     uvicorn ${uvicorn_app} --host "0.0.0.0" --port ${PORT}
 fi
