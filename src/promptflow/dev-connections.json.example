@@ -19,6 +19,16 @@
     },
     "module": "promptflow.connections"
   },
+  "aoai_assistant_connection": {
+    "type": "AzureOpenAIConnection",
+    "value": {
+      "api_key": "aoai-api-key-eastus2",
+      "api_base": "aoai-api-endpoint-eastus2",
+      "api_type": "azure",
+      "api_version": "2024-02-15-preview"
+    },
+    "module": "promptflow.connections"
+  },
   "bing_config": {
     "type": "BingConnection",
     "value": {

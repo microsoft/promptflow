@@ -14,9 +14,7 @@ from importlib.metadata import version
 from threading import Lock
 from typing import Callable, Dict, List, Optional
 
-
 import opentelemetry.trace as otel_trace
-
 from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
 from opentelemetry.trace.span import NonRecordingSpan
@@ -300,6 +298,7 @@ def enrich_span_with_input(span, input):
 def enrich_span_with_trace_type(span, inputs, output, trace_type):
     if trace_type == TraceType.LLM:
         token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_llm_model(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
@@ -373,17 +372,42 @@ def enrich_span_with_embedding(span, inputs, output):
         if isinstance(output, CreateEmbeddingResponse):
             span.set_attribute("embedding.model", output.model)
             embeddings = []
-            input_list = [inputs["input"]] if isinstance(inputs["input"], str) else inputs["input"]
+            input_list = [emb_input] if _is_single_input(emb_input := inputs["input"]) else emb_input
             for emb in output.data:
+                emb_text = i if isinstance(i := input_list[emb.index], str) else f"<{len(i)} dimensional token>"
                 embeddings.append(
                     {
                         "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
-                        "embedding.text": input_list[emb.index],
+                        "embedding.text": emb_text,
                     }
                 )
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
+
+
+def _is_single_input(embedding_inputs):
+    # OpenAI Embedding API accepts a single string/tokenized string or a list of string/tokenized string as input.
+    # For the single string/tokenized string case, we should return true, otherwise return false.
+    if (isinstance(embedding_inputs, str)):
+        # input is a string
+        return True
+    elif (isinstance(embedding_inputs, list) and all(isinstance(i, int) for i in embedding_inputs)):
+        # input is a token array
+        return True
+    return False
+
+
+def enrich_span_with_llm_model(span, output):
+    try:
+        if not IS_LEGACY_OPENAI:
+            from openai.types.chat.chat_completion import ChatCompletion
+            from openai.types.completion import Completion
+
+            if isinstance(output, (ChatCompletion, Completion)):
+                span.set_attribute("llm.model", output.model)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with llm model: {e}")
 
 
 def serialize_attribute(value):

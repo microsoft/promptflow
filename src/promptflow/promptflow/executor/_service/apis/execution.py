@@ -16,7 +16,6 @@ from promptflow.executor._service.utils.process_manager import ProcessManager
 from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
 from promptflow.executor._service.utils.service_utils import (
     get_log_context,
-    get_service_log_context,
     set_environment_variables,
     update_and_get_operation_context,
 )
@@ -28,7 +27,7 @@ router = APIRouter(prefix="/execution")
 
 @router.post("/flow")
 async def flow_execution(request: FlowExecutionRequest):
-    with get_service_log_context(request):
+    with get_log_context(request, enable_service_logger=True):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received flow execution request, flow run id: {request.run_id}, "
@@ -50,7 +49,7 @@ async def flow_execution(request: FlowExecutionRequest):
 
 @router.post("/node")
 async def node_execution(request: NodeExecutionRequest):
-    with get_service_log_context(request):
+    with get_log_context(request, enable_service_logger=True):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received node execution request, node name: {request.node_name}, "
