@@ -83,12 +83,7 @@ async def invoke_sync_function_in_process(
 
 
 def _is_process_alive(pid: int):
-    try:
-        process = psutil.Process(pid)
-        return process.is_running()
-    except psutil.NoSuchProcess:
-        service_logger.warning(f"The process {pid} no longer exists.")
-        return False
+    return psutil.pid_exists(pid) and psutil.Process(pid).is_running()
 
 
 def _execute_target_function(
