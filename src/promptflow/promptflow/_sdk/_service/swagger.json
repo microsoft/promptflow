@@ -87,6 +87,24 @@
                     "Connections"
                 ]
             },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "post": {
                 "responses": {
                     "200": {
@@ -111,24 +129,6 @@
                         }
                     }
                 ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete connection",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -1055,13 +1055,13 @@
                 "events": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/Event"
                     }
                 },
                 "links": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/Link"
                     }
                 },
                 "resource": {
@@ -1096,6 +1096,38 @@
             "properties": {
                 "status_code": {
                     "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Event": {
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "attributes": {
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "Link": {
+            "properties": {
+                "context": {
+                    "$ref": "#/definitions/Context"
+                },
+                "attributes": {
+                    "type": "object"
                 }
             },
             "type": "object"
