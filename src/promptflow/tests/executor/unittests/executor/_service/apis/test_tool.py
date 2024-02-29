@@ -10,7 +10,8 @@ def construct_tool_meta_request_json(flow_folder: str, tools: List[Tuple[str, st
     working_dir = get_flow_folder(flow_folder)
     tools = {source: {"tool_type": tool_type} for source, tool_type in tools}
     # mock a invalid contract tool
-    tools["no_type_file.py"] = {}
+    if "no_type_file.py" in tools:
+        tools["no_type_file.py"] = {}
     return {
         "working_dir": working_dir.as_posix(),
         "tools": tools,
