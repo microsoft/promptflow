@@ -468,3 +468,12 @@ class LineRunFieldName:
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
+class IdentityKeys(str, Enum):
+    """Enum for identity keys."""
+
+    MANAGED = "managed"
+    USER_IDENTITY = "user_identity"
+    RESOURCE_ID = "resource_id"
+    CLIENT_ID = "client_id"
