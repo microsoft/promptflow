@@ -112,6 +112,10 @@ def start_service(args):
         # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
         # after packaged by Pyinstaller.
         app, _ = create_app()
+        if os.environ.get(PF_SERVICE_DEBUG) == "true":
+            app.logger.setLevel(logging.DEBUG)
+        else:
+            app.logger.setLevel(logging.INFO)
         logger.info(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
