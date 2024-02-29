@@ -1204,3 +1204,12 @@ def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLW
     resource_group_name = match.group(3)
     workspace_name = match.group(5)
     return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
+
+
+def overwrite_null_std_logger():
+    # For the process started in detach mode, stdout/stderr will be none.
+    # To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout

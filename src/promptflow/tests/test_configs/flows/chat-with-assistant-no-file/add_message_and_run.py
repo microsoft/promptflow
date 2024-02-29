@@ -46,9 +46,8 @@ async def add_message_and_run(
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
 
-@trace
 async def get_assisant_tool_invoker(assistant_definition: AssistantDefinition):
-    invoker = AssistantToolInvoker.init(assistant_definition.tools)
+    invoker = AssistantToolInvoker.init(assistant_definition)
     return invoker
 
 
@@ -135,15 +134,20 @@ async def require_actions(cli: AsyncOpenAI, thread_id: str, run, invoker: Assist
 
 @trace
 async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: AssistantToolInvoker, run):
-    while run.status != "completed":
+    while not is_run_terminated(run):
         await wait_for_status_check()
         run = await get_run_status(cli, thread_id, run.id)
         if run.status == "requires_action":
             await require_actions(cli, thread_id, run, invoker)
-        elif run.status == "in_progress" or run.status == "completed":
+        elif run.status in {"in_progress", "cancelling", "queued"}:
             continue
-        else:
-            raise Exception(f"The assistant tool runs in '{run.status}' status. Message: {run.last_error.message}")
+        elif run.status in {"failed", "cancelled", "expired"}:
+            if run.last_error is not None:
+                error_message = f"The assistant tool runs in '{run.status}' status. " \
+                    f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
+            else:
+                error_message = f"The assistant tool runs in '{run.status}' status without a specific error message."
+            raise Exception(error_message)
 
 
 @trace
@@ -246,3 +250,7 @@ async def download_openai_image(file_id: str, conn: Union[AzureOpenAIConnection,
     cli = await get_assistant_client(conn)
     image_data = await cli.files.content(file_id)
     return Image(image_data.read())
+
+
+def is_run_terminated(run) -> bool:
+    return run.status in ["completed", "expired", "failed", "cancelled"]
