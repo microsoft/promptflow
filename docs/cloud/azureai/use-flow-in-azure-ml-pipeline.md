@@ -11,8 +11,8 @@ To enable this feature, customer need to:
     1. `flow.dag.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json`
     2. `run.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json`
 3. ensure that metadata has been generated and is up-to-date:
-    1. `<your-flow-directory>/.promptflow/flow.tools.json` should exist;
-    2. customer may update the file via `pf flow validate --file <your-flow-directory>`.
+    1. `<my-flow-directory>/.promptflow/flow.tools.json` should exist;
+    2. customer may update the file via `pf flow validate --file <my-flow-directory>`.
 
 :::
 
@@ -26,7 +26,7 @@ For more information about AzureML and component:
 
 ## Register a flow as a component
 
-Suppose there has been [a flow](../../../examples/flows/standard/basic/) and its `flow.dag.yaml` is as below:
+Suppose there has been a flow and its `flow.dag.yaml` is as below:
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
@@ -66,11 +66,11 @@ Customer can register a flow as a component with either CLI or SDK:
 
 ```bash
 # Register flow as a component
-az ml component create --file \<your-flow-directory\>/flow.dag.yaml
+az ml component create --file \<my-flow-directory\>/flow.dag.yaml
 
 # Register flow as a component and specify its name and version
 # Default component name will be the name of flow folder, which can be invalid as a component name; default version will be "1"
-az ml component create --file \<your-flow-directory\>/flow.dag.yaml --version 3 --set name=basic_updated
+az ml component create --file \<my-flow-directory\>/flow.dag.yaml --version 3 --set name=basic_updated
 ```
 
 :::
@@ -84,7 +84,7 @@ from azure.ai.ml import MLClient, load_component
 ml_client = MLClient()
 
 # Register flow as a component
-flow_component = load_component("<your-flow-directory>/flow.dag.yaml")
+flow_component = load_component("<my-flow-directory>/flow.dag.yaml")
 ml_client.components.create_or_update(flow_component)
 
 # Register flow as a component and specify its name and version
@@ -124,15 +124,11 @@ outputs:
 ... 
 ```
 
-Besides the basic input/output ports, there will also be dynamic parameters generated based on the flow to override connections and environment variables. Full description of ports can be seen in section [Component ports and run settings](#component-ports-and-run-settings). 
+Besides the fixed input/output ports, all connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission. Full description of ports can be seen in section [Component ports and run settings](#component-ports-and-run-settings). 
 
-After registered a flow as a component, they can be referred in a pipeline job like [regular registered components](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/basics/1b_e2e_registered_components).
+## Use a flow in a pipeline job
 
-## Directly use a flow in a pipeline job
-
-Besides explicitly registering a flow as a component, customer can also directly use flow in a pipeline job:
-
-All connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission:
+After registered a flow as a component, they can be referred in a pipeline job like [regular registered components](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/basics/1b_e2e_registered_components). Customer may also directly use a flow in a pipeline job, then anonymous components will be created on job submission.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -140,18 +136,36 @@ All connections and flow inputs will be exposed as input parameters of the compo
 
 ```yaml
 ...
+inputs:
+  basic_input:
+    type: uri_file
+    path: <path-to-data>
+compute: azureml:cpu-cluster
 jobs:
-  flow_node:
+  flow_from_registered:
     type: parallel
-    component: standard/web-classification/flow.dag.yaml
+    component: azureml:my_flow_component:1
     inputs:
-      data: ${{parent.inputs.web_classification_input}}
-      url: "${data.url}"
-      connections.summarize_text_content.connection: azure_open_ai_connection
-      connections.summarize_text_content.deployment_name: text-davinci-003
+      data: ${{parent.inputs.basic_input}}
+      text: "${data.text}"
+  flow_from_dag:
+    type: parallel
+    component: <path-to-flow-dag-yaml>
+    inputs:
+      data: ${{parent.inputs.basic_input}}
+      text: "${data.text}"
+  flow_from_run:
+    type: parallel
+    component: <path-to-run-yaml>
+    inputs:
+      data: ${{parent.inputs.basic_input}}
+      text: "${data.text}"
 ...
 ```
-Above is part of the pipeline job yaml, see here for [full example](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/pipeline_job_with_flow_as_component).
+
+Pipeline job can be submitted via `az ml job create --file pipeline.yml`.
+
+Full example can be found [here](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/pipeline_job_with_flow_as_component).
 
 :::
 
@@ -165,10 +179,86 @@ from azure.ai.ml.dsl import pipeline
  
 credential = DefaultAzureCredential()
 ml_client = MLClient.from_config(credential=credential)
-data_input = Input(path="standard/web-classification/data.jsonl", type='uri_file')
+data_input = Input(path="<path-to-data>", type='uri_file')
+
+flow_component_from_registered = ml_client.components.get("my_flow_component", "1")
+flow_component_from_dag = load_component("<path-to-flow-dag-yaml>")
+flow_component_from_run = load_component("<path-to-run-yaml>")
+
+@pipeline
+def pipeline_func_with_flow(basic_input):
+    flow_from_registered = flow_component_from_registered(
+        data=data,
+        text="${data.text}",
+    )
+    flow_from_dag = flow_component_from_dag(
+        data=data,
+        text="${data.text}",
+    )
+    flow_from_run = flow_component_from_run(
+        data=data,
+        text="${data.text}",
+    )
+
+pipeline_with_flow = pipeline_func_with_flow(basic_input=data_input)
+pipeline_with_flow.compute = "cpu-cluster"
+
+pipeline_job = ml_client.jobs.create_or_update(pipeline_with_flow)
+ml_client.jobs.stream(pipeline_job.name)
+```
+
+Full example can be found [here](https://github.com/Azure/azureml-examples/tree/main/sdk/python/jobs/pipelines/1l_flow_in_pipeline).
+
+:::
+
+::::
+
+Like regular parallel components, customer may specify run settings for them in a pipeline job. Some regularly used run settings have been listed in section [Component ports and run settings](#component-ports-and-run-settings); customer may also refer to [the official document of parallel component](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-use-parallel-job-in-pipeline?view=azureml-api-2&tabs=cliv2) for more details:
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+```yaml
+...
+jobs:
+  flow_node:
+    type: parallel
+    component: <path-to-complicated-run-yaml>
+    compute: azureml:cpu-cluster
+    instance_count: 2
+    max_concurrency_per_instance: 2
+    mini_batch_error_threshold: 5
+    retry_settings:
+      max_retries: 3
+      timeout: 30
+    inputs:
+      data: ${{parent.inputs.data}}
+      url: "${data.url}"
+      connections.summarize_text_content.connection: azure_open_ai_connection
+      connections.summarize_text_content.deployment_name: text-davinci-003
+      environment_variables.AZURE_OPENAI_API_KEY: ${my_connection.api_key}
+      environment_variables.AZURE_OPENAI_API_BASE: ${my_connection.api_base}
+...
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.ai.ml import MLClient, load_component, Input
+from azure.ai.ml.dsl import pipeline
+from azure.ai.ml.entities import RetrySettings
+ 
+credential = DefaultAzureCredential()
+ml_client = MLClient.from_config(credential=credential)
+data_input = Input(path="<path-to-data>", type='uri_file')
 
 # Load flow as a component
-flow_component = load_component("standard/web-classification/flow.dag.yaml")
+flow_component = load_component("<path-to-complicated-run-yaml>")
 
 @pipeline
 def pipeline_func_with_flow(data):
@@ -181,8 +271,16 @@ def pipeline_func_with_flow(data):
                 "deployment_name": "text-davinci-003",
             },
         },
+        environment_variables={
+            "AZURE_OPENAI_API_KEY": "${my_connection.api_key}",
+            "AZURE_OPENAI_API_BASE": "${my_connection.api_base}",
+        }
     )
     flow_node.compute = "cpu-cluster"
+    flow_node.instance_count = 2
+    flow_node.max_concurrency_per_instance = 2
+    flow_node.mini_batch_error_threshold = 5
+    flow_node.retry_settings = RetrySettings(timeout=30, max_retries=5)
 
 pipeline_with_flow = pipeline_func_with_flow(data=data_input)
 
@@ -190,13 +288,9 @@ pipeline_job = ml_client.jobs.create_or_update(pipeline_with_flow)
 ml_client.jobs.stream(pipeline_job.name)
 ```
 
-Above is part of the pipeline job python code, see here for [full example](https://github.com/Azure/azureml-examples/tree/main/sdk/python/jobs/pipelines/1l_flow_in_pipeline).
-
 :::
 
 ::::
-
-Like regular parallel components, customer may specify run settings for them in a pipeline job. Some regularly used run settings have been listed in section [Component ports and run settings](#component-ports-and-run-settings); customer may also refer to [the official document of parallel component](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-use-parallel-job-in-pipeline?view=azureml-api-2&tabs=cliv2) for more details.
 
 ## Environment of the component
 
@@ -212,7 +306,7 @@ If customer want to use an existing Azure ML environment or define the environme
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
-flow: <your-flow-directory>
+flow: <my-flow-directory>
 azureml:
   environment: azureml:my-environment:1
 ```
@@ -229,12 +323,12 @@ Given above, if your flow has logic relying on identity or environment variable,
 
 |                  | port name                                           | source                                           | type                    | description                                                  |
 | ---------------- | --------------------------------------------------- | ------------------------------------------------ | ----------------------- | ------------------------------------------------------------ |
-| input ports      | data                                                | fixed                                            | uri_folder              | required; to pass in input data. Supported format includes [`mltable`](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-mltable?view=azureml-api-2&tabs=cli#authoring-mltable-files) and list of jsonl files. |
+| input ports      | data                                                | fixed                                            | uri_folder or uri_file  | required; to pass in input data. Supported format includes [`mltable`](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-mltable?view=azureml-api-2&tabs=cli#authoring-mltable-files) and list of jsonl files. |
 |                  | run_outputs                                         | fixed                                            | uri_folder              | optional; to pass in output of a standard flow for [an evaluation flow](../../how-to-guides/develop-a-flow/develop-evaluation-flow.md). Should be linked to a `flow_outputs` of a previous flow node in the pipeline. |
 |                  | \<flow-input-name\>                                 | from flow inputs                                 | string                  | default value will be inherited from flow inputs; used to override [column mapping](../../how-to-guides/run-and-evaluate-a-flow/use-column-mapping.md) for flow inputs. |
 | input parameters | connections.\<node-name\>.connection                | from nodes of built-in or custom LLM tools       | string                  | default value will be the current value defined in `flow.dag.yaml` or `run.yaml`; to override used connections of corresponding nodes. Connection should exist in current workspace. |
 |                  | connections.\<node-name\>.deployment_name           | from nodes of built-in or custom LLM tools       | string                  | default value will be the current value defined in `flow.dag.yaml` or `run.yaml`; to override target deployment names of corresponding nodes. Deployment should be available with provided connection. |
-|                  | environment_variables.\<environment-variable-name\> | from environment variables defined in `run.yaml` | string                  | default value will be the current value defined in `run.yaml`; to override environment variables during flow run, e.g. OPEN_AI_API_KEY. Note that you can refer to workspace connections with expressions like `{my_connection.api_key}`. |
+|                  | environment_variables.\<environment-variable-name\> | from environment variables defined in `run.yaml` | string                  | default value will be the current value defined in `run.yaml`; to override environment variables during flow run, e.g. AZURE_OPENAI_API_KEY. Note that you can refer to workspace connections with expressions like `{my_connection.api_key}`. |
 | output ports     | flow_outputs                                        | fixed                                            | uri_folder              | an uri_folder with 1 or more jsonl files containing outputs of the flow runs |
 |                  | debug_info                                          | fixed                                            | uri_folder              | an uri_folder containing debug information of the flow run, e.g., run logs |
 | run settings     | instance_count                                      | fixed (all run setting ports are fixed)          | integer                 | The number of nodes to use for the job. Default value is 1.  |
