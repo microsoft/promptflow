@@ -174,7 +174,9 @@
     "OTLP",
     "spawnv",
     "spawnve",
-    "addrs"
+    "addrs",
+    "byoc",
+    "gthread"
   ],
   "flagWords": [
     "Prompt Flow"
