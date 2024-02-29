@@ -71,7 +71,7 @@ def create_app():
         handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
         handler.setFormatter(formatter)
-        # Set app logger ot the only one RotatingFileHandler to avoid duplicate logs
+        # Set app logger to the only one RotatingFileHandler to avoid duplicate logs
         app.logger.handlers = [handler]
 
         # Basic error handler
@@ -121,7 +121,7 @@ def create_app():
                     # Todo: check if we have any not complete work? like persist all traces.
                     port = get_port_from_config()
                     if port:
-                        app.logger.info(f"Try auto stop pfs service in port {port} since no request to api within 1h")
+                        app.logger.info(f"Try auto stop pfs service in port {port} since no request to app within 1h")
                         kill_exist_service(port)
                     break
 
