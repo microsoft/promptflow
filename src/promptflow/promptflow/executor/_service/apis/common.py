@@ -23,3 +23,10 @@ async def version():
         "version": get_executor_version(),
         "feature_list": get_feature_list(),
     }
+
+
+@router.get("/process")
+async def process():
+    from promptflow.executor._service.utils.process_manager import ProcessManager
+
+    return ProcessManager()._processes_mapping
