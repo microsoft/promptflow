@@ -56,6 +56,8 @@ linkcheck_ignore = [
     "deploy-using-kubernetes.html",
     "https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",
+    # TODO: remove this after doc is updated
+    "https://microsoft.github.io/promptflow/reference/run-yaml-schema-reference.html#identity-schema",
 ]
 
 linkcheck_exclude_documents = ["contributing"]
