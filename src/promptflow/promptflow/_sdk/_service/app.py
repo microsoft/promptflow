@@ -11,7 +11,7 @@ from flask import Blueprint, Flask, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
-from promptflow._sdk._constants import PF_SERVICE_LOG_FILE
+from promptflow._sdk._constants import PF_SERVICE_HOUR_TIMEOUT, PF_SERVICE_LOG_FILE, PF_SERVICE_MONITOR_SECOND
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
@@ -93,11 +93,16 @@ def create_app():
         def log_before_request_info():
             app.config["last_request_time"] = datetime.now()
             g.start = time.perf_counter()
+            if "/v1.0/Connections" in request.url:
+                request_body = "Request body not recorded for Connections API"
+            else:
+                request_body = request.get_data()
+
             app.logger.debug(
                 "Last request time: %s, Headers: %s, Body: %s",
                 app.config["last_request_time"],
                 request.headers,
-                request.get_data(),
+                request_body,
             )
 
         @app.after_request
@@ -112,12 +117,12 @@ def create_app():
         # python scenario. For C# scenario, pfs will live until the process is killed manually.
         def monitor_request():
             while True:
-                time.sleep(60)
+                time.sleep(PF_SERVICE_MONITOR_SECOND)
                 # For python scenario, since we start waitress in cli, there will be two app. The one used to log in
                 # the parent process will have no "last_request_time" in app.config since the app doesn't run.
-                app.logger.info("Monitor detects no requests to app within 1 minute.")
+                app.logger.info(f"Promptflow service is running, version: {get_promptflow_sdk_version()}")
                 if "last_request_time" in app.config and datetime.now() - app.config["last_request_time"] > timedelta(
-                    hours=1
+                    hours=PF_SERVICE_HOUR_TIMEOUT
                 ):
                     # Todo: check if we have any not complete work? like persist all traces.
                     port = get_port_from_config()
