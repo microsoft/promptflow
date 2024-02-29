@@ -525,24 +525,37 @@ class FlowOperations(TelemetryMixin):
             for flow_input, value in executable.inputs.items()
             if not value.is_chat_history
         }
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
-        flow_inputs_params = ",".join(flow_inputs_params)
 
         is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        chat_output_name = next(
+            filter(
+                lambda key: executable.outputs[key].is_chat_output,
+                executable.outputs.keys(),
+            ),
+            None,
+        )
         label = "Chat" if is_chat_flow else "Run"
+        is_streaming = True if is_chat_flow else False
+        config_content = {
+            "flow_name": flow_name,
+            "flow_inputs": flow_inputs,
+            "flow_path": flow_dag_path.as_posix(),
+            "is_chat_flow": is_chat_flow,
+            "chat_history_input_name": chat_history_input_name,
+            "label": label,
+            "chat_output_name": chat_output_name,
+            "is_streaming": is_streaming,
+        }
+
+        with open(output_dir / "config.json", "w") as file:
+            json.dump(config_content, file, indent=4)
+
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
-                "flow_name": flow_name,
                 "runtime_interpreter_path": runtime_interpreter_path,
-                "flow_inputs": flow_inputs,
-                "flow_inputs_params": flow_inputs_params,
-                "flow_path": None,
-                "is_chat_flow": is_chat_flow,
-                "chat_history_input_name": chat_history_input_name,
-                "label": label,
             },
         )
         self._run_pyinstaller(output_dir)

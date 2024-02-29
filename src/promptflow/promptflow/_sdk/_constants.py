@@ -71,8 +71,11 @@ FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
 PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
+PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_HOUR_TIMEOUT = 1
+PF_SERVICE_MONITOR_SECOND = 60
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
 PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
@@ -468,3 +471,12 @@ class LineRunFieldName:
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
+class IdentityKeys(str, Enum):
+    """Enum for identity keys."""
+
+    MANAGED = "managed"
+    USER_IDENTITY = "user_identity"
+    RESOURCE_ID = "resource_id"
+    CLIENT_ID = "client_id"
