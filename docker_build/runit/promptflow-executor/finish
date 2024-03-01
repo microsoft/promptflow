@@ -1,0 +1,41 @@
+#!/bin/bash
+
+exit_code="$1" # The exit code from nginx
+signal="$2"    # The signal which caused nginx to exit (or 0)
+
+echo "$(date -uIns) - promptflow-executor/finish $@"
+
+echo "$(date -uIns) - Stopping promptflow-executor"
+killall -9 promptflow-executor
+# kill process with SIGKILL is not guaranteed to done immediately, it's asynchronously.
+# so wait for completion.
+process_name="promptflow-executor"
+# The process name used for matching is limited to the 15 characters
+process_name=${process_name:0:15}
+while pgrep $process_name >/dev/null; do
+  echo "$(date -uIns) - promptflow-executor is still running, waiting for 1s"
+  sleep 1
+done
+echo "$(date -uIns) - Stopped promptflow-executor"
+
+# stop all gunicorn processes
+echo "$(date -uIns) - Stopping all gunicorn processes"
+pkill gunicorn
+while pgrep gunicorn >/dev/null; do
+  echo "$(date -uIns) - Gunicorn process is still running, waiting for 1s"
+  sleep 1
+done
+
+echo "$(date -uIns) - Stopped all gunicorn processes"
+
+# stop all uvicorn processes
+echo "$(date -uIns) - Stopping all uvicorn processes"
+pkill uvicorn
+while pgrep uvicorn >/dev/null; do
+  echo "$(date -uIns) - Uvicorn process is still running, waiting for 1s"
+  sleep 1
+done
+
+echo "$(date -uIns) - Stopped all uvicorn processes"
+
+killall runsvdir
