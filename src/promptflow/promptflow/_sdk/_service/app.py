@@ -88,12 +88,17 @@ def create_app():
                 import jwt
                 from azure.identity import DefaultAzureCredential
 
-                default_credential = DefaultAzureCredential().get_token("https://management.azure.com/.default")
-                decoded_info = jwt.decode(default_credential.token, options={"verify_signature": False})
+                from promptflow.azure._utils.general import get_arm_token
+
+                default_credential = DefaultAzureCredential()
+
+                token = get_arm_token(credential=default_credential)
+                decoded_token = jwt.decode(token, options={"verify_signature": False})
+                user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
                 CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE.update(
                     {
-                        "object_id": decoded_info.get("oid", ""),
-                        "tenant_id": decoded_info.get("tid", ""),
+                        "object_id": user_object_id,
+                        "tenant_id": user_tenant_id,
                     }
                 )
             except Exception as e:
