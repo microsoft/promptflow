@@ -1,11 +1,13 @@
 import pytest
 
+from ..utils import construct_flow_execution_request_json
+
 
 @pytest.mark.usefixtures("dev_connections", "executor_client")
 @pytest.mark.e2etest
 class TestExecutorServer:
     def test_flow_execution_completed(self, executor_client):
-        pass
+        construct_flow_execution_request_json()
 
     def test_flow_execution_failed(self, executor_client):
         pass

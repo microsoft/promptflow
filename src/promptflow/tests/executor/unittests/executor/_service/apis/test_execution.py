@@ -1,31 +1,10 @@
-import uuid
 from pathlib import Path
-from tempfile import mkdtemp
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from .....utils import get_flow_folder, load_content
-
-
-def construct_flow_execution_request_json(flow_folder, inputs=None, connections=None):
-    working_dir = get_flow_folder(flow_folder)
-    tmp_dir = Path(mkdtemp())
-    log_path = tmp_dir / "log.txt"
-    return {
-        "run_id": str(uuid.uuid4()),
-        "working_dir": working_dir.as_posix(),
-        "flow_file": "flow.dag.yaml",
-        "output_dir": tmp_dir.as_posix(),
-        "connections": connections,
-        "log_path": log_path.as_posix(),
-        "inputs": inputs,
-        "operation_context": {
-            "request_id": "test-request-id",
-            "user_agent": "test-user-agent",
-        },
-    }
+from .....utils import construct_flow_execution_request_json, load_content
 
 
 @pytest.mark.unittest
