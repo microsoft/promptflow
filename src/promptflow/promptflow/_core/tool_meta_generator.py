@@ -12,6 +12,7 @@ import logging
 import multiprocessing
 import os
 import re
+import signal
 import types
 from pathlib import Path
 from traceback import TracebackException
@@ -377,7 +378,22 @@ def generate_tool_meta(
     tools: Mapping[str, Mapping[str, str]],
     tool_dict: dict,
     exception_dict: dict,
+    prevent_terminate_signal_propagation: bool = False,
 ):
+    # In executor app, the main process listens for requests and handles graceful shutdowns through
+    # signal listeners set up at initialization. These listeners use a file descriptor for event notifications.
+
+    # However, when a child process is forked within the application, it inherits this file descriptor,
+    # leading to an issue where signals sent to terminate the child process are also intercepted by the main process,
+    # causing an unintended shutdown of the entire application.
+
+    # To avoid this, we should call signal.set_wakeup_fd(-1) in the child process to prevent the child process
+    # from using the parent's file descriptor and avoiding unintended shutdowns of the master process.
+
+    # References: https://github.com/tiangolo/fastapi/discussions/7442
+    if prevent_terminate_signal_propagation:
+        signal.set_wakeup_fd(-1)
+
     with _change_working_dir(working_dir), inject_sys_path(working_dir):
         for source, config in tools.items():
             try:
@@ -397,13 +413,14 @@ def generate_tool_meta_in_subprocess(
     tools: Mapping[str, Mapping[str, str]],
     input_logger: logging.Logger,
     timeout: int = 10,
+    prevent_terminate_signal_propagation: bool = False,
 ):
     manager = multiprocessing.Manager()
     process_tool_dict = manager.dict()
     process_exception_dict = manager.dict()
     p = multiprocessing.Process(
         target=generate_tool_meta,
-        args=(working_dir, tools, process_tool_dict, process_exception_dict),
+        args=(working_dir, tools, process_tool_dict, process_exception_dict, prevent_terminate_signal_propagation),
     )
     p.start()
     input_logger.info(f"[{os.getpid()}--{p.pid}] Start process to generate tool meta.")
