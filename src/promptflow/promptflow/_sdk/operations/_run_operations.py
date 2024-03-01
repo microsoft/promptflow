@@ -107,11 +107,11 @@ class RunOperations(TelemetryMixin):
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
 
-    @monitor_operation(activity_name="pf.runs._resume", activity_type=ActivityType.PUBLICAPI)
-    def _resume(self, resume_from: str, **kwargs) -> Run:
-        """Resume a run, a new run will be created to rerun failed lines.
+    @monitor_operation(activity_name="pf.runs._create_by_resume_from", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs) -> Run:
+        """Create a run by the resume_from run, a new run will be created to rerun failed lines.
 
-        :param resume_from: Run object to resume from.
+        :param resume_from: Run name to resume from.
         :type resume_from: str
         :return: Run object created based on an existing run.
         :rtype: ~promptflow.entities.Run

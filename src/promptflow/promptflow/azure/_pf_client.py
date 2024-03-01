@@ -261,7 +261,9 @@ class PFClient:
                     f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
                 )
             resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
-            return self.runs._resume(resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs)
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
         # TODO(2887134): support cloud eager Run CRUD
         run = Run(
             name=name,
