@@ -170,7 +170,7 @@ class Flow(FlowBase):
 
     @classmethod
     def _is_async_flow(cls, kwargs):
-        """Check if the flow is an async flow. Use field 'entry' to determine."""
+        """Check if the flow is an async flow."""
         return kwargs.pop("async_call", False)
 
     @classmethod
@@ -198,22 +198,14 @@ class Flow(FlowBase):
             is_eager_flow = cls._is_eager_flow(data)
             is_async_flow = cls._is_async_flow(kwargs)
             if is_eager_flow:
-                obj = EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
+                return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
+
             else:
                 # TODO: schema validation and warning on unknown fields
-                obj = ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
-            if is_async_flow:
-
-                async def _load_async(*async_args, **async_kwargs):
-                    obj_loaded = obj(*async_args, **async_kwargs)
-                    if asyncio.iscoroutine(obj_loaded):
-                        return await obj_loaded
-                    else:
-                        return obj_loaded
-
-                return _load_async
-            else:
-                return obj
+                if is_async_flow:
+                    return AsyncProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                else:
+                    return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
         # if non-YAML file is provided, raise user error exception
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
@@ -376,3 +368,14 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
                 data=inputs,
             )
             return result
+
+
+class AsyncProtectedFlow(ProtectedFlow):
+    """This class is used to represent an async flow."""
+
+    async def __call__(self, *async_args, **async_kwargs):
+        obj_loaded = super().__call__(*async_args, **async_kwargs)
+        if asyncio.iscoroutine(obj_loaded):
+            return await obj_loaded
+        else:
+            return obj_loaded

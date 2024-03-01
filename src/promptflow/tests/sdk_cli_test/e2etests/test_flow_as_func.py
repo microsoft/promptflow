@@ -34,20 +34,16 @@ class TestFlowAsFunc:
         assert "line_number" not in result
 
     @pytest.mark.asyncio
-    async def test_flow_as_a_func_asynckw(self):
-        f = load_flow(f"{FLOWS_DIR}/print_env_var", async_call=True)
+    @pytest.mark.parametrize(
+        "async_call_folder",
+        [
+            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/print_env_var_async",
+        ],
+    )
+    async def test_flow_as_a_func_asynckw(self, async_call_folder):
+        f = load_flow(async_call_folder, async_call=True)
         result = await f(key="PATH")
-        assert result["output"] is not None
-
-    @pytest.mark.asyncio
-    async def test_async_flow_as_a_func_asynckw(self):
-        f = load_flow(f"{FLOWS_DIR}/print_env_var_async", async_call=True)
-        result = await f(key="PATH")
-        assert result["output"] is not None
-
-    def test_async_flow_as_a_func_wo_asynckw(self):
-        f = load_flow(f"{FLOWS_DIR}/print_env_var_async")
-        result = f(key="PATH")  # should not use async call
         assert result["output"] is not None
 
     def test_flow_as_a_func_with_connection_overwrite(self):
