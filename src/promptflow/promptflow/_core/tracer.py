@@ -239,6 +239,31 @@ def _create_trace_from_function_call(
     )
 
 
+def _parse_function_call(
+    f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+):
+    args = args or []
+    kwargs = kwargs or {}
+    args_to_ignore = set(args_to_ignore or [])
+    sig = inspect.signature(f).parameters
+
+    all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+    all_kwargs = {
+        k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
+        for k, v in all_kwargs.items()
+    }
+    # TODO: put parameters in self to inputs for builtin tools
+    all_kwargs.pop("self", None)
+    for key in args_to_ignore:
+        all_kwargs.pop(key, None)
+
+    name = f.__qualname__
+    if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
+        name = f"{f.__module__}.{name}"
+
+    return name, all_kwargs
+
+
 def get_node_name_from_context():
     tracer = Tracer.active_instance()
     if tracer is not None:
@@ -254,16 +279,15 @@ def enrich_span_with_context(span):
         logging.warning(f"Failed to enrich span with context: {e}")
 
 
-def enrich_span_with_trace(span, trace):
+def enrich_span_with_trace(span, trace_type, func_name, node_name=None):
     try:
         span.set_attributes(
             {
                 "framework": "promptflow",
-                "span_type": trace.type.value,
-                "function": trace.name,
+                "span_type": trace_type.value,
+                "function": func_name,
             }
         )
-        node_name = get_node_name_from_context()
         if node_name:
             span.set_attribute("node_name", node_name)
         enrich_span_with_context(span)
@@ -463,11 +487,12 @@ def _traced_async(
 
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
+        func_name, inputs = _parse_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
+        node_name = kwargs.pop('node_name', None)
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
-        with open_telemetry_tracer.start_as_current_span(span_name) as span:
-            enrich_span_with_trace(span, trace)
+        # Fall back to function name if we can't get node name for better view.
+        with open_telemetry_tracer.start_as_current_span(node_name or func_name) as span:
+            enrich_span_with_trace(span, trace_type, func_name, node_name)
             enrich_span_with_prompt_info(span, func, kwargs)
 
             # Should not extract these codes to a separate function here.
@@ -475,9 +500,9 @@ def _traced_async(
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
-                enrich_span_with_input(span, trace.inputs)
+                enrich_span_with_input(span, inputs)
                 output = await func(*args, **kwargs)
-                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                output = enrich_span_with_trace_type(span, inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -512,11 +537,12 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        func_name, inputs = _parse_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
+        node_name = kwargs.pop('node_name', None)
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
-        with open_telemetry_tracer.start_as_current_span(span_name) as span:
-            enrich_span_with_trace(span, trace)
+        # Fall back to function name if we can't get node name for better view.
+        with open_telemetry_tracer.start_as_current_span(node_name or func_name) as span:
+            enrich_span_with_trace(span, trace_type, func_name, node_name)
             enrich_span_with_prompt_info(span, func, kwargs)
 
             # Should not extract these codes to a separate function here.
@@ -524,9 +550,9 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
-                enrich_span_with_input(span, trace.inputs)
+                enrich_span_with_input(span, inputs)
                 output = func(*args, **kwargs)
-                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                output = enrich_span_with_trace_type(span, inputs, output, trace_type)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:

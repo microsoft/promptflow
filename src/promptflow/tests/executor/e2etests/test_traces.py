@@ -496,6 +496,22 @@ class TestOTelTracer:
             sub_level_span.parent.span_id == top_level_span.context.span_id
         )  # sub_level_span is a child of top_level_span
 
+    def test_flow_with_nested_tool(self):
+        memory_exporter = prepare_memory_exporter()
+
+        line_result, line_run_id = self.submit_flow_run("flow_with_nested_tool", {"input": "Hello"}, {})
+        assert line_result.output == {"output": "Hello"}
+
+        span_list = memory_exporter.get_finished_spans()
+        self.validate_span_list(span_list, line_run_id, 3)
+        for span in span_list:
+            if span.attributes.get("span_type", "") != "Flow":
+                inputs = span.attributes.get("inputs", None)
+                if "\"recursive_call\": false" in inputs:
+                    assert span.name == "echo"
+                else:
+                    assert span.name == "nested_tool"
+
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
         line_run_id = str(uuid.uuid4())
@@ -513,17 +529,17 @@ class TestOTelTracer:
             assert span.attributes["line_run_id"] == line_run_id
             assert span.attributes["framework"] == "promptflow"
             if span.parent is None:
-                expected_span_type = TraceType.FLOW
+                expected_span_types = [TraceType.FLOW]
             elif span.parent.span_id == root_span.context.span_id:
-                expected_span_type = TraceType.TOOL
+                expected_span_types = [TraceType.TOOL]
             elif span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                expected_span_type = TraceType.LLM
+                expected_span_types = [TraceType.LLM]
             elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                expected_span_type = TraceType.EMBEDDING
+                expected_span_types = [TraceType.EMBEDDING]
             else:
-                expected_span_type = TraceType.FUNCTION
-            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
-            assert span.attributes["span_type"] == expected_span_type, msg
+                expected_span_types = [TraceType.TOOL, TraceType.FUNCTION]
+            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_types}"
+            assert span.attributes["span_type"] in expected_span_types, msg
             if span != root_span:  # Non-root spans should have a parent
                 assert span.attributes["function"]
             inputs = json.loads(span.attributes["inputs"])
