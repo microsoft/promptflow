@@ -94,6 +94,8 @@ def list_deployment_names(
     try:
         credential = _get_credential()
         try:
+            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
+            # Maybe SDK will update here to pass AzureOpenAIConnection later.
             if isinstance(connection, AzureOpenAIConnection):
                 name = connection.name
             else:

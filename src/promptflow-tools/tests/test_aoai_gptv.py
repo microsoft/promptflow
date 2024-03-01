@@ -43,7 +43,10 @@ def azure_openai_provider(azure_open_ai_connection) -> AzureOpenAI:
 def mock_build_connection_dict_func1(**kwargs):
     from promptflow.azure.operations._arm_connection_operations import OpenURLFailedUserError
 
-    raise OpenURLFailedUserError
+    if isinstance(kwargs['name'], str):
+        raise OpenURLFailedUserError
+    else:
+        return {"value" : {"resource_id": "abc"}}
 
 
 def mock_build_connection_dict_func2(**kwargs):
@@ -95,6 +98,24 @@ def test_list_deployment_names_with_conn_error(monkeypatch):
         DEFAULT_RESOURCE_GROUP_NAME,
         DEFAULT_WORKSPACE_NAME,
         DEFAULT_CONNECTION
+    )
+    assert res == []
+
+
+def test_list_deployment_names_with_azure_openai_conn(monkeypatch):
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    from promptflow.connections import AzureOpenAIConnection
+    
+    monkeypatch.setattr(
+        ArmConnectionOperations,
+        "_build_connection_dict",
+        mock_build_connection_dict_func1
+    )
+    res = list_deployment_names(
+        DEFAULT_SUBSCRIPTION_ID,
+        DEFAULT_RESOURCE_GROUP_NAME,
+        DEFAULT_WORKSPACE_NAME,
+        AzureOpenAIConnection("", "")
     )
     assert res == []
 
