@@ -176,7 +176,10 @@
     "OTLP",
     "spawnv",
     "spawnve",
-    "addrs"
+    "addrs",
+    "pywin",
+    "STARTF",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"
