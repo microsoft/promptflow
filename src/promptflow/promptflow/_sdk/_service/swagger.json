@@ -59,52 +59,6 @@
                     "type": "string"
                 }
             ],
-            "put": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Update connection",
-                "operationId": "put_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete connection",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -152,6 +106,52 @@
                         "name": "working_directory",
                         "in": "query",
                         "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
                     }
                 ],
                 "tags": [
@@ -256,31 +256,6 @@
             }
         },
         "/Flows/ux_inputs": {
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Set the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    }
-                },
-                "description": "Set the file content of file UX_INPUTS_JSON",
-                "operationId": "post_flow_ux_inputs",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/FlowUxInput"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Flows"
-                ]
-            },
             "get": {
                 "responses": {
                     "200": {
@@ -292,6 +267,21 @@
                 },
                 "description": "Get the file content of file UX_INPUTS_JSON",
                 "operationId": "get_flow_ux_inputs",
+                "tags": [
+                    "Flows"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Set the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Set the file content of file UX_INPUTS_JSON",
+                "operationId": "post_flow_ux_inputs",
                 "parameters": [
                     {
                         "name": "payload",
@@ -380,6 +370,36 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -412,36 +432,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete run",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Delete run",
-                "operationId": "delete_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -733,16 +723,6 @@
                 },
                 "description": "Get image url",
                 "operationId": "get_image_url",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ImageView"
-                        }
-                    }
-                ],
                 "tags": [
                     "ui"
                 ]
@@ -1236,18 +1216,6 @@
             },
             "type": "object"
         },
-        "ImageView": {
-            "required": [
-                "image_path"
-            ],
-            "properties": {
-                "image_path": {
-                    "type": "string",
-                    "description": "Path of image."
-                }
-            },
-            "type": "object"
-        },
         "FlowTest": {
             "required": [
                 "flow"
@@ -1288,12 +1256,21 @@
         },
         "FlowUxInput": {
             "required": [
-                "flow"
+                "flow",
+                "ux_inputs"
             ],
             "properties": {
                 "flow": {
                     "type": "string",
                     "description": "Path to flow directory."
+                },
+                "ux_inputs": {
+                    "description": "Flow ux inputs",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    ]
                 }
             },
             "type": "object"
