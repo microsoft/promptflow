@@ -5,7 +5,6 @@ import collections
 import datetime
 import hashlib
 import json
-import math
 import multiprocessing
 import os
 import platform
@@ -14,7 +13,6 @@ import shutil
 import stat
 import sys
 import tempfile
-import time
 import uuid
 import zipfile
 from contextlib import contextmanager
@@ -1192,24 +1190,23 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Error"
 
 
-def cache_result_with_expire(result_type=None, expire_time=math.inf):
-    """Cache the result of a function with an expire time(seconds)."""
+def cache_result_with_expire(result_type=None, maxsize=100):
+    """Cache the result of a function."""
 
     def decorator(func):
-        cache = {}
+        cache = collections.OrderedDict()
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            current_time = time.time()
-            key = str(args + tuple(kwargs.items()))
-            if (
-                key not in cache
-                or current_time - cache[key]["time"] > expire_time
-                or (result_type is not None and not isinstance(cache[key]["result"], result_type))
-            ):
-                result = func(*args, **kwargs)
-                cache[key] = {"result": result, "time": current_time}
-            return cache[key]["result"]
+            key = hash(args + tuple(kwargs.items()))
+            if key in cache and (result_type is None or isinstance(cache[key], result_type)):
+                cache.move_to_end(key)
+                return cache[key]
+            result = func(*args, **kwargs)
+            if len(cache) >= maxsize:
+                cache.popitem(last=False)
+            cache[key] = result
+            return cache[key]
 
         def clear_cache():
             """Clear the cache."""
