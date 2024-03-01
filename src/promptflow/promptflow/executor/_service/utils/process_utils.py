@@ -89,7 +89,6 @@ def _is_process_alive(p: multiprocessing.Process):
             return True
     # Call p.join() to clear the zombie process correctly.
     p.join()
-    asyncio.get_event_loop().add_signal_handler()
     return False
 
 
