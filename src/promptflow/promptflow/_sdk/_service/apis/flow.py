@@ -10,7 +10,7 @@ from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._sdk._constants import UX_INPUTS_JSON, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import json_load, read_write_by_user, json_dump
+from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._utils.flow_utils import resolve_flow_path
 from pathlib import Path
