@@ -14,6 +14,15 @@ You can check the runtime image version from the flow execution log:
 
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
+### 20240222.v3
+
+#### New features
+- Support c# batch run in eager mode.
+- Support user specify worker number for batch run.
+
+#### Bugs fixed
+NA
+
 ### 20240205.v2
 
 #### New features
