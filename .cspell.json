@@ -177,6 +177,8 @@
     "spawnv",
     "spawnve",
     "addrs",
+    "pywin",
+    "STARTF",
     "mltable"
   ],
   "flagWords": [
