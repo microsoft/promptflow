@@ -24,6 +24,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -176,6 +177,9 @@ class FlowInvoker:
         result = self._invoke(data, run_id=run_id, disable_input_output_logging=disable_input_output_logging)
         # Get base64 for multi modal object
         # TODO(2991935): support primitive type & dataclass
+        if not isinstance(result.output, dict):
+            # validation error
+            raise UserErrorException(f"Not supported flow output type {type(result.output)}. Only dict is supported.")
         resolved_outputs = self._convert_multimedia_data_to_base64(result)
         self._dump_invoke_result(result)
         log_outputs = "<REDACTED>" if disable_input_output_logging else result.output

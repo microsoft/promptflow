@@ -215,6 +215,11 @@ def simple_eager_flow(mocker: MockerFixture):
     return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
 
 
+@pytest.fixture
+def simple_eager_flow_primitive_output(mocker: MockerFixture):
+    return create_client_by_model("simple_with_yaml", mocker, model_root=EAGER_FLOW_ROOT)
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
