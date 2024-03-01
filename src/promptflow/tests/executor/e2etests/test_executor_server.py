@@ -21,20 +21,20 @@ class TestExecutorServer:
         assert len(line_result.node_run_infos) == 5
         assert all(node_run_info.status == Status.Completed for node_run_info in line_result.node_run_infos.values())
 
-    def test_flow_execution_failed(self, executor_client):
+    def test_flow_execution_failed(self, executor_client: TestClient):
         pass
 
-    def test_flow_execution_error(self, executor_client):
+    def test_flow_execution_error(self, executor_client: TestClient):
         pass
 
-    def test_node_execution_completed(self, executor_client):
+    def test_node_execution_completed(self, executor_client: TestClient):
         pass
 
-    def test_node_execution_failed(self, executor_client):
+    def test_node_execution_failed(self, executor_client: TestClient):
         pass
 
-    def test_node_execution_error(self, executor_client):
+    def test_node_execution_error(self, executor_client: TestClient):
         pass
 
-    def test_cancel_execution(self, executor_client):
+    def test_cancel_execution(self, executor_client: TestClient):
         pass
