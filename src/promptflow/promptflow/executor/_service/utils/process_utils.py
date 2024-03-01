@@ -7,7 +7,6 @@ import contextlib
 import json
 import multiprocessing
 import os
-import signal
 from datetime import datetime, timedelta
 from typing import Callable
 
@@ -17,6 +16,7 @@ from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
+from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
@@ -100,19 +100,7 @@ def _execute_target_function(
     error_dict: dict,
     context_dict: dict,
 ):
-    # In our executor app, the main process listens for requests and handles graceful shutdowns through
-    # signal listeners set up at initialization. These listeners use a file descriptor for event notifications.
-
-    # However, when a child process is forked within the application, it inherits this file descriptor,
-    # leading to an issue where signals sent to terminate the child process are also intercepted by the main process,
-    # causing an unintended shutdown of the entire application.
-
-    # To avoid this, we should call signal.set_wakeup_fd(-1) in the child process to prevent the child process
-    # from using the parent's file descriptor and avoiding unintended shutdowns of the master process.
-
-    # References: https://github.com/tiangolo/fastapi/discussions/7442
-    signal.set_wakeup_fd(-1)
-
+    block_terminate_signal_to_parent()
     with exception_wrapper(error_dict):
         if context_dict:
             OperationContext.get_instance().update(context_dict)
