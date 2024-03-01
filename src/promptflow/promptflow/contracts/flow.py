@@ -641,11 +641,11 @@ class Flow(FlowBase):
         outputs = data.get("outputs") or {}
         return Flow(
             # TODO: Remove this fallback.
-            data.get("id", "default_flow_id"),
-            data.get("name", "default_flow"),
-            nodes,
-            {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
-            {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            nodes=nodes,
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
