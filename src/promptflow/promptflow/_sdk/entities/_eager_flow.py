@@ -75,3 +75,7 @@ class EagerFlow(FlowBase, SchemaValidatableMixin):
         return self._data
 
     # endregion
+
+    def _init_executable(self, tuning_node=None, variant=None):
+        # TODO: init from meta
+        pass
