@@ -3,9 +3,10 @@
 # ---------------------------------------------------------
 import json
 import os
-from flask import make_response, request
+from flask import make_response
 from flask_restx import reqparse
 from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._sdk._constants import UX_INPUTS_JSON, PROMPT_FLOW_DIR_NAME
@@ -125,5 +126,6 @@ class FlowUxInputs(Resource):
         flow_path = api.payload["flow"]
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
-        json_dump(content, flow_ux_inputs_path)
+        with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(content, f, indent=2)
         return make_response("UX_INPUTS_JSON content updated successfully", 200)

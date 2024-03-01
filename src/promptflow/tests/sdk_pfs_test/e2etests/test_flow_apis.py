@@ -69,7 +69,7 @@ class TestFlowAPIs:
 
     def test_image_view(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            response = pfs_op.get_image_url(image_path= Path(IMAGE_PATH).absolute().as_posix()).json
+            response = pfs_op.get_image_url(image_path = Path(IMAGE_PATH).absolute().as_posix()).json
             match = re.match(".*/image/(.+)/(.+)", response)
             assert match
             directory, filename = match.groups()
