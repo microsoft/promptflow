@@ -1,24 +1,19 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from promptflow.executor._service.app import app
-
 
 @pytest.mark.unittest
 class TestCommonApis:
-    def setup_method(self):
-        self.client = TestClient(app)
-
-    def test_health(self):
-        response = self.client.get("/health")
+    def test_health(self, executor_client: TestClient):
+        response = executor_client.get("/health")
         assert response.status_code == 200
         assert response.text == "healthy"
 
-    def test_version(self, monkeypatch):
+    def test_version(self, monkeypatch, executor_client: TestClient):
         # mock the BUILD_INFO env variable
         monkeypatch.setenv("BUILD_INFO", '{"build_number": "20240131.v1"}')
 
-        response = self.client.get("/version")
+        response = executor_client.get("/version")
         assert response.status_code == 200
 
         response = response.json()

@@ -1,6 +1,6 @@
 # Release History
 
-## 1.6.0 (TBD)
+## 1.6.0 (2024.03.01)
 
 ### Features Added
 
@@ -10,6 +10,7 @@
   ```
 - [SDK/CLI] Support setting timeout for `pfazure run stream`.
 - [SDK/CLI] Support `pfazure flow update` to update flow's metadata like `display_name`, `description` or `tags`.
+- [SDK/CLI][azure] Support [identity support](https://microsoft.github.io/promptflow/reference/run-yaml-schema-reference.html#identity-schema) for run for automatic runtime.
 
 ### Bugs Fixed
 
