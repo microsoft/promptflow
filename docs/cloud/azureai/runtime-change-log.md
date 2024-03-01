@@ -18,7 +18,8 @@ Default runtime image is continuously updated, and here we record the new featur
 
 #### New features
 - Support c# batch run in eager mode.
-- Support user specify worker number for batch run.
+- Support specify worker number for batch run.
+- Support specify batch run timeout.
 
 #### Bugs fixed
 NA
