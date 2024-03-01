@@ -119,16 +119,44 @@ def start_service(args):
         print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
-        # Set host to localhost, only allow request from localhost.
-        cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
-            # For windows, use creationflags=subprocess.CREATE_NEW_PROCESS_GROUP to create a new process group. But
-            # if you close the terminal which start the cmd, the child process will stop since it will send a close
-            # signal to process group started in the terminal.
-            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            try:
+                import win32api
+                import win32con
+                import win32process
+            except ImportError as ex:
+                raise UserErrorException(
+                    f"Please try to run 'pip install pywin32' to start prompt flow service with pywin32. {ex}"
+                )
+            command = f"waitress-serve --listen=127.0.0.1:{port} promptflow._sdk._service.entry:get_app"
+            startupinfo = win32process.STARTUPINFO()
+            startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = win32con.SW_HIDE
+            process_attributes = None
+            thread_attributes = None
+            inherit_handles = False
+            creation_flags = win32con.CREATE_NEW_PROCESS_GROUP | win32con.DETACHED_PROCESS
+            environment = None
+            current_directory = None
+            process_handle, thread_handle, process_id, thread_id = win32process.CreateProcess(
+                None,
+                command,
+                process_attributes,
+                thread_attributes,
+                inherit_handles,
+                creation_flags,
+                environment,
+                current_directory,
+                startupinfo,
+            )
+
+            win32api.CloseHandle(process_handle)
+            win32api.CloseHandle(thread_handle)
         else:
+            # Set host to localhost, only allow request from localhost.
+            cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
