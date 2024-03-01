@@ -57,3 +57,9 @@ class TestExecutionApis:
         keywords_not_in_log = [f"Failed to execute flow, flow run id: {run_id}. Error:"]
         assert all(word in logs for word in keywords_in_log)
         assert all(word not in logs for word in keywords_not_in_log)
+
+    def test_cancel_execution(self, executor_client: TestClient):
+        request = {"run_id": "test-run-id"}
+        response = executor_client.post(url="/execution/cancel", json=request)
+        assert response.status_code == 200
+        assert response.json() == {"status": "canceled"}
