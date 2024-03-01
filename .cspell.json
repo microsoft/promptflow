@@ -179,6 +179,9 @@
     "spawnve",
     "addrs",
     "mltable",
+    "pywin",
+    "STARTF",
+    "mltable",
     "byoc",
     "gthread",
     "psmisc"
