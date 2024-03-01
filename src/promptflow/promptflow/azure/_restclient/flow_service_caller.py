@@ -684,7 +684,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         body=None,  # type: Optional["_models.ResumeBulkRunRequest"]
         **kwargs,  # type: Any
     ):
-        """Cancel a flow run."""
+        """Create a flow run by a resume_from run."""
         headers = self._get_headers()
         return self.caller.bulk_runs.resume_bulk_run(
             subscription_id=subscription_id,

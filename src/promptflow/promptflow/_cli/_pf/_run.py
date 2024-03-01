@@ -608,8 +608,8 @@ def create_run(create_func: Callable, resume_func: Callable, args):
 
     if sum([bool(resume_from), bool(file), bool(flow), bool(run_source)]) > 1:
         raise UserErrorException(
-            "More than one is provided for exclusive options: [resume-from, file, flow"
-            f"{', source' if has_source else ''}]"
+            "More than one is provided for exclusive options: [file, flow"
+            f"{', source' if has_source else ''}, resume-from]"
         )
 
     def _build_run_obj():

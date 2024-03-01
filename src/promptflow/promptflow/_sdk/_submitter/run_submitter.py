@@ -40,12 +40,12 @@ class RunSubmitter:
         return self.run_operations.get(name=run.name)
 
     def resume(self, resume_from: str, **kwargs):
-        resume_from_run = self._ensure_required_run(resume_from)
+        resume_from_run = self._ensure_run_completed(resume_from)
         run = resume_from_run._copy(resume_from=resume_from_run.name, **kwargs)
         self._run_bulk(run=run, **kwargs)
         return self.run_operations.get(name=run.name)
 
-    def _ensure_required_run(self, required_run: Union[str, Run]):
+    def _ensure_run_completed(self, required_run: Union[str, Run]):
         """Ensure the required run is completed and return the run object."""
         if isinstance(required_run, str):
             required_run = self.run_operations.get(name=required_run)
@@ -74,10 +74,10 @@ class RunSubmitter:
             if ContextAttributeKey.REFERENCED_BATCH_RUN_ID not in attributes:
                 referenced_batch_run_id = run.run.name if isinstance(run.run, Run) else run.run
                 attributes[ContextAttributeKey.REFERENCED_BATCH_RUN_ID] = referenced_batch_run_id
-            run.run = self._ensure_required_run(run.run)
+            run.run = self._ensure_run_completed(run.run)
         if run._resume_from is not None:
             logger.debug(f"Resume from run {run._resume_from!r}...")
-            run._resume_from = self._ensure_required_run(run._resume_from)
+            run._resume_from = self._ensure_run_completed(run._resume_from)
         # Start trace
         if Configuration(overrides=self._client._config).is_internal_features_enabled():
             from promptflow._trace._start_trace import start_trace

@@ -1003,7 +1003,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         return rest_obj
 
-    @monitor_operation(activity_name="pfazure.runs._create_by_resume_from", activity_type=ActivityType.PUBLICAPI)
+    @monitor_operation(activity_name="pfazure.runs.resume", activity_type=ActivityType.PUBLICAPI)
     def _create_by_resume_from(self, resume_from: str, **kwargs):
         """Create a run by specify resume_from to an existing run."""
         stream = kwargs.get("stream", False)

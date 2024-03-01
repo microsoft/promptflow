@@ -119,7 +119,15 @@ class PFClient:
         :rtype: ~promptflow.entities.Run
         """
         if resume_from:
-            unsupported = [flow, data, run, column_mapping, variant, connections, environment_variables]
+            unsupported = {
+                "flow": flow,
+                "data": data,
+                "run": run,
+                "column_mapping": column_mapping,
+                "variant": variant,
+                "connections": connections,
+                "environment_variables": environment_variables,
+            }
             if any(unsupported):
                 raise ValueError(
                     f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
