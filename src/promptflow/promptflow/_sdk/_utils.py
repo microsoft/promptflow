@@ -1190,7 +1190,7 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Error"
 
 
-def cache_result_with_expire(result_type=None, maxsize=100):
+def cache_result_with_specify_result_type(result_type=None, maxsize=100):
     """Cache the result of a function."""
 
     def decorator(func):
@@ -1203,6 +1203,7 @@ def cache_result_with_expire(result_type=None, maxsize=100):
                 cache.move_to_end(key)
                 return cache[key]
             result = func(*args, **kwargs)
+            cache.pop(key, None)
             if len(cache) >= maxsize:
                 cache.popitem(last=False)
             cache[key] = result

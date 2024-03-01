@@ -14,7 +14,7 @@ from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.util.types import Attributes
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._utils import cache_result_with_expire
+from promptflow._sdk._utils import cache_result_with_specify_result_type
 
 # promptflow-sdk in east us
 INSTRUMENTATION_KEY = "8b52b368-4c91-4226-b7f7-be52822f0509"
@@ -155,7 +155,7 @@ class PromptFlowSDKLogHandler(LoggingHandler):
         exporter_logger.setLevel(logging.CRITICAL)
 
 
-@cache_result_with_expire(result_type=PromptFlowSDKLogHandler)
+@cache_result_with_specify_result_type(result_type=PromptFlowSDKLogHandler)
 def get_appinsights_log_handler():
     """
     Enable the opentelemetry logging handler for specified logger and instrumentation key to send info to AppInsights.
