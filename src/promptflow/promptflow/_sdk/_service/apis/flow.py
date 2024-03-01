@@ -39,6 +39,7 @@ flow_ux_input_model = api.model(
     "FlowUxInput",
     {
         "flow": fields.String(required=True, description="Path to flow directory."),
+        "uxInputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
     }
 )
 
@@ -120,9 +121,9 @@ class FlowUxInputs(Resource):
     @api.doc(description="Set the file content of file UX_INPUTS_JSON")
     @api.expect(flow_ux_input_model)
     def post(self):
-        content = request.get_json()
+        content = api.payload["uxInputs"]
         flow_path = api.payload["flow"]
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
-        json_dump(content, UX_INPUTS_JSON)
+        json_dump(content, flow_ux_inputs_path)
         return make_response("UX_INPUTS_JSON content updated successfully", 200)
