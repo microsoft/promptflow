@@ -105,7 +105,7 @@ def test_list_deployment_names_with_conn_error(monkeypatch):
 def test_list_deployment_names_with_azure_openai_conn(monkeypatch):
     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     from promptflow.connections import AzureOpenAIConnection
-    
+
     monkeypatch.setattr(
         ArmConnectionOperations,
         "_build_connection_dict",
