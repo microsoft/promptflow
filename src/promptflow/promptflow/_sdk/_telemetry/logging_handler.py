@@ -94,11 +94,11 @@ class PromptFlowSDKLogHandler(LoggingHandler):
     def __init__(self, custom_dimensions, enable_telemetry):
         self._is_telemetry_enabled = enable_telemetry
         self.disable_telemetry_logger()
-        logger_provider = LoggerProvider()
         exporter = PromptFlowSDKExporter(
             connection_string=f"InstrumentationKey={INSTRUMENTATION_KEY}",
             custom_dimensions=custom_dimensions,
         )
+        logger_provider = LoggerProvider()
         logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
         super().__init__(logger_provider=logger_provider)
 
@@ -134,7 +134,7 @@ class PromptFlowSDKLogHandler(LoggingHandler):
 @cache_result_with_expire(result_type=PromptFlowSDKLogHandler)
 def get_appinsights_log_handler():
     """
-    Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
+    Enable the opentelemetry logging handler for specified logger and instrumentation key to send info to AppInsights.
     """
     from promptflow._sdk._telemetry.telemetry import is_telemetry_enabled
 
