@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y runit && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install psmisc
-RUN apt-get update && apt-get install -y psmisc \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y psmisc && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install promptflow package
 COPY ./promptflow-0.0.1-py3-none-any.whl ./
