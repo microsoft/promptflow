@@ -517,7 +517,27 @@ class NodeVariants:
 
 
 @dataclass
-class Flow:
+class FlowBase:
+    """This is base class of flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    """
+
+    id: str
+    name: str
+    inputs: Dict[str, FlowInputDefinition]
+    outputs: Dict[str, FlowOutputDefinition]
+
+
+@dataclass
+class Flow(FlowBase):
     """This class represents a flow.
 
     :param id: The id of the flow.
@@ -540,11 +560,7 @@ class Flow:
     :type environment_variables: Dict[str, object]
     """
 
-    id: str
-    name: str
     nodes: List[Node]
-    inputs: Dict[str, FlowInputDefinition]
-    outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
@@ -862,3 +878,46 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
+
+
+@dataclass
+class EagerFlow(FlowBase):
+    """This class represents an eager flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
+    """
+
+    program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
+
+    @staticmethod
+    def deserialize(data: dict) -> "EagerFlow":
+        """Deserialize the flow from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.EagerFlow
+        """
+
+        inputs = data.get("inputs") or {}
+        outputs = data.get("outputs") or {}
+        return EagerFlow(
+            data.get("id", "default_flow_id"),
+            data.get("name", "default_flow"),
+            {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            environment_variables=data.get("environment_variables") or {},
+        )
