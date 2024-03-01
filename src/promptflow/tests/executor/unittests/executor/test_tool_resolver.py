@@ -565,7 +565,7 @@ class TestToolResolver:
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
-        tool_resolver._resolve_assistant_tool(assistant_definitions)
+        tool_resolver._resolve_assistant_tool("node_name", assistant_definitions)
         invoker = assistant_definitions._tool_invoker
         assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
         for tool_name, assistant_tool in invoker._assistant_tools.items():
