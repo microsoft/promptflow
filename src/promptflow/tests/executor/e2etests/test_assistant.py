@@ -8,7 +8,7 @@ from promptflow.executor import FlowExecutor
 from ..utils import get_flow_folder, get_yaml_file
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestAssistant:
     @pytest.mark.parametrize(
