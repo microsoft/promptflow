@@ -178,6 +178,7 @@
     "spawnv",
     "spawnve",
     "addrs",
+    "mltable",
     "byoc",
     "gthread"
   ],
