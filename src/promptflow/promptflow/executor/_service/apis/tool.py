@@ -29,7 +29,9 @@ async def retrieve_tool_func_result(request: RetrieveToolFuncResultRequest):
 
 @router.post("/meta")
 def gen_tool_meta(request: ToolMetaRequest):
-    tool_dict, exception_dict = generate_tool_meta_in_subprocess(request.working_dir, request.tools, service_logger)
+    tool_dict, exception_dict = generate_tool_meta_in_subprocess(
+        request.working_dir, request.tools, service_logger, is_running_on_server=True
+    )
     exception_dict = {
         source: generate_error_response(error_dict).to_dict() for source, error_dict in exception_dict.items()
     }
