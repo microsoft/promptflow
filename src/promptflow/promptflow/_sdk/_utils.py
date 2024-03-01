@@ -1211,7 +1211,7 @@ def cache_result_with_expire(result_type=None, maxsize=100):
         def clear_cache():
             """Clear the cache."""
             nonlocal cache
-            cache = {}
+            cache = collections.OrderedDict()
 
         wrapper.clear_cache = clear_cache
 
