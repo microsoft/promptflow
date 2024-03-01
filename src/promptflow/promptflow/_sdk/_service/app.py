@@ -118,9 +118,6 @@ def create_app():
         def monitor_request():
             while True:
                 time.sleep(PF_SERVICE_MONITOR_SECOND)
-                # For python scenario, since we start waitress in cli, there will be two app. The one used to log in
-                # the parent process will have no "last_request_time" in app.config since the app doesn't run.
-                app.logger.info(f"Promptflow service is running, version: {get_promptflow_sdk_version()}")
                 if "last_request_time" in app.config and datetime.now() - app.config["last_request_time"] > timedelta(
                     hours=PF_SERVICE_HOUR_TIMEOUT
                 ):
