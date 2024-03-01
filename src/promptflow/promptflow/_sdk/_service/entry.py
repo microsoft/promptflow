@@ -128,7 +128,8 @@ def start_service(args):
                 import win32process
             except ImportError as ex:
                 raise UserErrorException(
-                    f"Please try to run 'pip install pywin32' to start prompt flow service with pywin32. {ex}"
+                    f"Please install pywin32 by 'pip install pywin32' and retry. prompt flow "
+                    f"service start depends on pywin32.. {ex}"
                 )
             command = f"waitress-serve --listen=127.0.0.1:{port} promptflow._sdk._service.entry:get_app"
             startupinfo = win32process.STARTUPINFO()
