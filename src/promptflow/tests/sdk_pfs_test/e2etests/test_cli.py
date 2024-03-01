@@ -30,10 +30,11 @@ class TestPromptflowServiceCLI:
             command = f"{command} --force"
         start_pfs = subprocess.Popen(command, shell=True)
         # Wait for service to be started
-        sleep(5)
+        start_pfs.wait()
         assert self._is_service_healthy()
-        start_pfs.terminate()
-        start_pfs.wait(10)
+        stop_command = "pfs stop"
+        stop_pfs = subprocess.Popen(stop_command, shell=True)
+        stop_pfs.wait()
 
     def _is_service_healthy(self, port=None):
         port = port or get_port_from_config()
@@ -48,10 +49,11 @@ class TestPromptflowServiceCLI:
             random_port = get_random_port()
             self._test_start_service(port=random_port, force=True)
 
-            # Force start pfs
+            # start pfs
             start_pfs = subprocess.Popen("pfs start", shell=True)
             # Wait for service to be started
-            sleep(5)
+            start_pfs.wait()
+            assert self._is_service_healthy()
             self._test_start_service(force=True)
             # previous pfs is killed
             assert start_pfs.poll() is not None

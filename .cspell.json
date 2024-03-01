@@ -176,7 +176,8 @@
     "OTLP",
     "spawnv",
     "spawnve",
-    "addrs"
+    "addrs",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"
