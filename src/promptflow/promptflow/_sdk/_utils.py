@@ -1196,7 +1196,7 @@ def cache_result_with_expire(result_type=None, expire_time=math.inf):
             if (
                 key not in cache
                 or current_time - cache[key]["time"] > expire_time
-                or (result_type is not None and not isinstance(cache[key]["result_type"], result_type))
+                or (result_type is not None and not isinstance(cache[key]["result"], result_type))
             ):
                 result = func(*args, **kwargs)
                 cache[key] = {"result": result, "time": current_time}
