@@ -18,6 +18,10 @@ RUN conda env create -p $CONDA_ENVIRONMENT_PATH -f conda_dependencies.yaml -q &&
 RUN apt-get update && apt-get install -y runit && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install psmisc
+RUN apt-get update && apt-get install -y psmisc \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install promptflow package
 COPY ./promptflow-0.0.1-py3-none-any.whl ./
 RUN pip install "./promptflow-0.0.1-py3-none-any.whl[executor-service]" \

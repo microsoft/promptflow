@@ -180,7 +180,8 @@
     "addrs",
     "mltable",
     "byoc",
-    "gthread"
+    "gthread",
+    "psmisc"
   ],
   "flagWords": [
     "Prompt Flow"
