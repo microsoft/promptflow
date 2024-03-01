@@ -27,8 +27,15 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self):
-        f = load_flow(f"{FLOWS_DIR}/print_env_var")
+    @pytest.mark.parametrize(
+        "test_folder",
+        [
+            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/print_env_var_async",
+        ],
+    )
+    def test_flow_as_a_func(self, test_folder):
+        f = load_flow(test_folder)
         result = f(key="unknown")
         assert result["output"] is None
         assert "line_number" not in result

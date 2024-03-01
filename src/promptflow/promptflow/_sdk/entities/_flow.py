@@ -199,7 +199,6 @@ class Flow(FlowBase):
             is_async_flow = cls._is_async_flow(kwargs)
             if is_eager_flow:
                 return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
-
             else:
                 # TODO: schema validation and warning on unknown fields
                 if is_async_flow:
