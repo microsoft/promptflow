@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 
-from flask import Blueprint, Flask, g, jsonify, request
+from flask import Blueprint, Flask, current_app, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
@@ -35,6 +35,9 @@ overwrite_null_std_logger()
 def heartbeat():
     response = {"promptflow": get_promptflow_sdk_version()}
     return jsonify(response)
+
+
+CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE = {}
 
 
 def create_app():
@@ -73,6 +76,33 @@ def create_app():
         handler.setFormatter(formatter)
         # Set app logger to the only one RotatingFileHandler to avoid duplicate logs
         app.logger.handlers = [handler]
+
+        def initialize_created_by_info():
+            from promptflow._sdk._configuration import Configuration
+            from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
+
+            trace_provider = Configuration.get_instance().get_trace_provider()
+            if trace_provider is None or extract_workspace_triad_from_trace_provider(trace_provider) is None:
+                return
+            try:
+                import jwt
+                from azure.identity import DefaultAzureCredential
+
+                from promptflow.azure._utils.general import get_arm_token
+
+                default_credential = DefaultAzureCredential()
+
+                token = get_arm_token(credential=default_credential)
+                decoded_token = jwt.decode(token, options={"verify_signature": False})
+                user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
+                CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE.update(
+                    {
+                        "object_id": user_object_id,
+                        "tenant_id": user_tenant_id,
+                    }
+                )
+            except Exception as e:
+                current_app.logger.error(f"Failed to get created_by info, ignore it: {e}")
 
         # Basic error handler
         @api.errorhandler(Exception)
@@ -128,6 +158,7 @@ def create_app():
                         kill_exist_service(port)
                     break
 
+        initialize_created_by_info()
         if not sys.executable.endswith("pfcli.exe"):
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
             monitor_thread.start()

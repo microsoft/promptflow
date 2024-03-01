@@ -1,5 +1,16 @@
 # Release History
 
+## 1.7.0 (Upcoming)
+
+### Features Added
+
+- [SDK/CLI] Create a run with `resume_from`:
+  - CLI: Support `pf run create --resume-from <original-run-name>` to create a run resume from another run.
+  - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+- [SDK/CLI][azure]
+  - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
+  - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+
 ## 1.6.0 (2024.03.01)
 
 ### Features Added

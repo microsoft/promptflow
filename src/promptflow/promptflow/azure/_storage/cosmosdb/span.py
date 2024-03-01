@@ -23,8 +23,9 @@ class Span:
     resource: dict = None
     id: str = None
     partition_key: str = None
+    created_by: dict = None
 
-    def __init__(self, span: SpanEntity) -> None:
+    def __init__(self, span: SpanEntity, created_by: dict) -> None:
         self.name = span.name
         self.context = span._content[SpanFieldName.CONTEXT]
         self.kind = span._content[SpanFieldName.KIND]
@@ -38,6 +39,7 @@ class Span:
         self.resource = span._content[SpanFieldName.RESOURCE]
         self.partition_key = span.session_id
         self.id = span.span_id
+        self.created_by = created_by
 
     def persist(self, client):
         if self.id is None or self.partition_key is None or self.resource is None:

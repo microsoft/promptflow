@@ -255,6 +255,7 @@ class FlowRunProperties:
     # Experiment command node fields only
     COMMAND = "command"
     OUTPUTS = "outputs"
+    RESUME_FROM = "resume_from"
 
 
 class CommonYamlFields:
