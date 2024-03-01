@@ -973,6 +973,51 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             flow_run_id=run,
         )
 
+    def _build_resume_request_rest_object(
+        self,
+        name: str = None,
+        display_name: str = None,
+        description: str = None,
+        tags: Dict[str, str] = None,
+        resume_from: str = None,
+        resources: Dict[str, Any] = None,
+        identity: str = None,
+        **kwargs,
+    ):
+        """Build the resume request rest object."""
+        if kwargs:
+            logger.warning(f"Unrecognized parameters {kwargs!r} are ignored.")
+        resources = resources or {}
+        from promptflow.azure._restclient.flow.models import ResumeBulkRunRequest
+
+        rest_obj = ResumeBulkRunRequest(
+            run_id=name,
+            run_display_name=display_name,
+            description=description,
+            tags=tags,
+            resume_from_run_id=resume_from,
+            runtime_name=resources.get("runtime"),
+            vm_size=resources.get("instance_type"),
+            identity=identity,
+            compute_name=resources.get("compute"),
+        )
+        return rest_obj
+
+    @monitor_operation(activity_name="pfazure.runs.resume", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs):
+        """Create a run by specify resume_from to an existing run."""
+        stream = kwargs.get("stream", False)
+        run_name = self._service_caller.resume_bulk_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            body=self._build_resume_request_rest_object(resume_from=resume_from, **kwargs),
+        )
+
+        if stream:
+            self.stream(run=run_name)
+        return self.get(run=run_name)
+
     def _resolve_identity(self, run: Run):
         """Resolve identity to resource id"""
         if not run._identity:
