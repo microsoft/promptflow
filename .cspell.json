@@ -177,9 +177,9 @@
     "spawnv",
     "spawnve",
     "addrs",
-    "mltable",
     "pywin",
-    "STARTF"
+    "STARTF",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"
