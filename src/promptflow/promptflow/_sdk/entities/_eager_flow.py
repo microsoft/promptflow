@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
@@ -29,6 +29,8 @@ class EagerFlow(FlowBase, SchemaValidatableMixin):
         code = Path(code)
         # entry function name
         self.entry = entry
+        # entry file name
+        self.entry_file = self._resolve_entry_file(entry=entry, working_dir=code)
         # TODO(2910062): support eager flow execution cache
         super().__init__(data=data, path=path, code=code, content_hash=None, **kwargs)
 
@@ -75,3 +77,21 @@ class EagerFlow(FlowBase, SchemaValidatableMixin):
         return self._data
 
     # endregion
+
+    @classmethod
+    def _resolve_entry_file(cls, entry: str, working_dir: Path) -> Optional[str]:
+        """Resolve entry file from entry.
+        If entry is a local file, e.g. my.local.file:entry_function, return the local file: my/local/file.py
+            and executor will import it from local file.
+        Else, assume the entry is from a package e.g. external.module:entry, return None
+            and executor will try import it from package.
+        """
+        try:
+            entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
+        except Exception as e:
+            raise UserErrorException(f"Entry function {entry} is not valid: {e}")
+        entry_file = working_dir / entry_file
+        if entry_file.exists():
+            return entry_file.resolve().absolute().as_posix()
+        # when entry file not found in working directory, return None since it can come from package
+        return None
