@@ -46,7 +46,7 @@ class TestFlowAPIs:
 
     def test_get_flow_ux_inputs(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            response = pfs_op.get_flow_ux_inputs(request_body={"flow": Path(FLOW_PATH).absolute().as_posix()}).json
+            response = pfs_op.get_flow_ux_inputs(flow_path=Path(FLOW_PATH).absolute().as_posix()).json
         assert len(response) >= 0
 
     def test_image_save(self, pfs_op: PFSOperations) -> None:
@@ -69,11 +69,7 @@ class TestFlowAPIs:
 
     def test_image_view(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            response = pfs_op.get_image_url(
-                request_body={
-                    "image_path": Path(IMAGE_PATH).absolute().as_posix(),
-                },
-            ).json
+            response = pfs_op.get_image_url(image_path= Path(IMAGE_PATH).absolute().as_posix()).json
             match = re.match(".*/image/(.+)/(.+)", response)
             assert match
             directory, filename = match.groups()

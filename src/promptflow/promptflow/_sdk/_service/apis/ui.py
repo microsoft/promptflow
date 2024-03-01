@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from flask import Response, render_template, url_for
+from flask_restx import reqparse
 import base64
 import os
 import uuid
@@ -22,13 +23,8 @@ media_save_model = api.model(
     },
 )
 
-
-image_view_model = api.model(
-    "ImageView",
-    {
-        "image_path": fields.String(required=True, description="Path of image."),
-    },
-)
+image_path_parser = reqparse.RequestParser()
+image_path_parser.add_argument('image_path', type=str, required=True, help='Path of image.')
 
 
 @api.route("/traces")
@@ -65,9 +61,9 @@ class MediaSave(Resource):
 class ImageUrl(Resource):
     @api.response(code=200, description="Get image url", model=fields.String)
     @api.doc(description="Get image url")
-    @api.expect(image_view_model)
     def get(self):
-        image_path = api.payload["image_path"]
+        args = image_path_parser.parse_args()
+        image_path = args.image_path
         if not os.path.exists(image_path):
             return make_response("The image doesn't exist", 404)
         directory, filename = os.path.split(image_path)

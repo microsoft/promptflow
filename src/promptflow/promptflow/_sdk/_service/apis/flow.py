@@ -2,8 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import os
 from flask import make_response, request
-
+from flask_restx import reqparse
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import get_client_from_request
@@ -40,6 +41,9 @@ flow_ux_input_model = api.model(
         "flow": fields.String(required=True, description="Path to flow directory."),
     }
 )
+
+flow_path_parser = reqparse.RequestParser()
+flow_path_parser.add_argument('flow', type=str, required=True, help='Path to flow directory.')
 
 
 @api.route("/test")
@@ -85,7 +89,10 @@ class FlowGet(Resource):
     @api.response(code=200, description="Return flow yaml as json", model=dict_field)
     @api.doc(description="Return flow yaml as json")
     def get(self):
-        flow_path = api.payload["flow"]
+        args = flow_path_parser.parse_args()
+        flow_path = args.flow
+        if not os.path.exists(flow_path):
+            return make_response("The flow doesn't exist", 404)
         flow_path = resolve_flow_path(Path(flow_path))
         flow_info = load_yaml(flow_path)
         return flow_info
@@ -95,9 +102,11 @@ class FlowGet(Resource):
 class FlowUxInputs(Resource):
     @api.response(code=200, description="Get the file content of file UX_INPUTS_JSON", model=dict_field)
     @api.doc(description="Get the file content of file UX_INPUTS_JSON")
-    @api.expect(flow_ux_input_model)
     def get(self):
-        flow_path = api.payload["flow"]
+        args = flow_path_parser.parse_args()
+        flow_path = args.flow
+        if not os.path.exists(flow_path):
+            return make_response("The flow doesn't exist", 404)
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         if not flow_ux_inputs_path.exists():
             flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
