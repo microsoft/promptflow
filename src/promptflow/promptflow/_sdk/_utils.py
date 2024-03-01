@@ -1211,6 +1211,13 @@ def cache_result_with_expire(result_type=None, expire_time=math.inf):
                 cache[key] = {"result": result, "time": current_time}
             return cache[key]["result"]
 
+        def clear_cache():
+            """Clear the cache."""
+            nonlocal cache
+            cache = {}
+
+        wrapper.clear_cache = clear_cache
+
         return wrapper
 
     return decorator

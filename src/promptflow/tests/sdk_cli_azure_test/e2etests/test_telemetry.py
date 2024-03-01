@@ -80,6 +80,11 @@ class TestTelemetry:
         with cli_consent_config_overwrite(False):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
+            assert handler._is_telemetry_enabled is True
+
+            get_appinsights_log_handler.clear_cache()
+            handler = get_appinsights_log_handler()
+            assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is False
 
     def test_call_from_extension(self):
