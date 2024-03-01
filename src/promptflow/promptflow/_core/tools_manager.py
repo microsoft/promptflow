@@ -449,6 +449,7 @@ class ToolLoader:
         return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
     def load_tool_for_assistant_node(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
+        # Generate Tool from the assistant tool definition
         if tool["source"].path is None:
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,

@@ -140,7 +140,7 @@ class ToolResolver:
             ToolSource.deserialize(updated_tool_def["source"]) if "source" in updated_tool_def else None
         )
 
-        # load predefined_inputs dictionary
+        # load predefined_inputs as dictionary
         predefined_inputs = {}
         for input_name, value in updated_tool_def.get("predefined_inputs", {}).items():
             predefined_inputs[input_name] = InputAssignment.deserialize(value)
