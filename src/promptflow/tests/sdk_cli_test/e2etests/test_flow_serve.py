@@ -353,3 +353,13 @@ def test_flow_with_environment_variables(serving_client_with_environment_variabl
         response = json.loads(response.data.decode())
         assert {"output"} == response.keys()
         assert response["output"] == value
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve(simple_eager_flow):
+    response = simple_eager_flow.post("/score", data=json.dumps({"input_val": "hi"}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == {"output": "Hello world! hi"}
