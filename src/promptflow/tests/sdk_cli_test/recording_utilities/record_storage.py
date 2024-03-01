@@ -37,7 +37,7 @@ def check_pydantic_v2():
         from importlib.metadata import version
 
         if version("pydantic") < "2.0.0":
-            raise ImportError("pydantic version is less than 2. Recording cannot work properly after commit.")
+            raise ImportError("pydantic version is less than 2.0.0. Recording cannot work properly.")
     except ImportError:
         raise ImportError("pydantic is not installed, this is required component for openai recording.")
 
