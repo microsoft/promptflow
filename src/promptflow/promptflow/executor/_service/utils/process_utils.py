@@ -100,9 +100,17 @@ def _execute_target_function(
     error_dict: dict,
     context_dict: dict,
 ):
-    # TODO: Add comments
-    # https://github.com/tiangolo/fastapi/issues/1487
-    # https://docs.python.org/3/library/signal.html#signal.set_wakeup_fd
+    # In our executor app, the main process listens for requests and handles graceful shutdowns through
+    # signal listeners set up at initialization. These listeners use a file descriptor for event notifications.
+
+    # However, when a child process is forked within the application, it inherits this file descriptor,
+    # leading to an issue where signals sent to terminate the child process are also intercepted by the main process,
+    # causing an unintended shutdown of the entire application.
+
+    # To avoid this, we should call signal.set_wakeup_fd(-1) in the child process to prevent the child process
+    # from using the parent's file descriptor and avoiding unintended shutdowns of the master process.
+
+    # References: https://github.com/tiangolo/fastapi/discussions/7442
     signal.set_wakeup_fd(-1)
 
     with exception_wrapper(error_dict):
