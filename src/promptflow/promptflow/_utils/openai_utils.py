@@ -1,7 +1,7 @@
 import tiktoken
 from importlib.metadata import version
 
-from promptflow.exceptions import UserErrorException
+from promptflow._utils._errors import CalculatingMetricsError
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -202,7 +202,49 @@ class OpenAIMetricsCalculator:
             self._logger.warning(msg)
 
 
-class CalculatingMetricsError(UserErrorException):
-    """The exception that is raised when calculating metrics failed."""
+class OpenAIResponseParser:
+    def __init__(self, response):
+        self._response = response
 
-    pass
+    @property
+    def model(self):
+        for item in self._response:
+            if hasattr(item, "model"):
+                return item.model
+        return None
+
+    @property
+    def is_chat(self):
+        from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
+        return self._response and isinstance(self._response[0], ChatCompletionChunk)
+
+    @property
+    def is_completion(self):
+        from openai.types.completion import Completion
+
+        return self._response and isinstance(self._response[0], Completion)
+
+    def get_generated_message(self):
+        if self.is_chat:
+            return self._get_generated_message_for_chat_api()
+        elif self.is_completion:
+            return self._get_generated_message_for_completion_api()
+        else:
+            return None
+
+    def _get_generated_message_for_chat_api(self):
+        chunks = []
+        role = "assistant"
+        for item in self._response:
+            if item.choices and item.choices[0].delta.content:
+                chunks.append(item.choices[0].delta.content)
+                role = item.choices[0].delta.role or role
+        return {"content": "".join(chunks), "role": role} if chunks else None
+
+    def _get_generated_message_for_completion_api(self):
+        chunks = []
+        for item in self._response:
+            if item.choices and item.choices[0].text:
+                chunks.append(item.choices[0].text)
+        return "".join(chunks) if chunks else None

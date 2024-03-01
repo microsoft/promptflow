@@ -15,7 +15,7 @@ from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
-from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
+from promptflow._utils.openai_utils import OpenAIMetricsCalculator
 from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
 from promptflow._utils.utils import default_json_encoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status

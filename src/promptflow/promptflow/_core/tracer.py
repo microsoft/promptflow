@@ -23,7 +23,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
+from promptflow._utils.openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
@@ -310,7 +310,7 @@ def enrich_span_with_trace_type(span, inputs, output, trace_type):
     if trace_type == TraceType.LLM:
         # Handle the non-streaming output of LLM, the streaming output will be handled in traced_generator.
         token_collector.collect_openai_tokens(span, output)
-        enrich_span_with_llm(span, output)
+        enrich_span_with_llm_output(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
@@ -330,41 +330,39 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
         f"Iterated({original_span.name})",
         links=[link],
     ) as span:
-        span.set_attributes(original_span.attributes)
+        enrich_span_with_original_attributes(span, original_span.attributes)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
         generator_output = generator_proxy.items
 
-        # Enrich LLM span for OpenAI steaming message and token count
+        # Enrich LLM span for OpenAI steaming output
         if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
             from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
             from openai.types.completion import Completion
 
-            chunks = []
-            role = "assistant"
-            is_chat = False
-            model = None
-            for item in generator_output:
-                if not model and hasattr(item, "model"):
-                    model = item.model
-                if isinstance(item, ChatCompletionChunk):
-                    is_chat = True
-                    if item.choices and item.choices[0].delta.content:
-                        chunks.append(item.choices[0].delta.content)
-                        role = item.choices[0].delta.role or role
-                elif isinstance(item, Completion):
-                    if item.choices and item.choices[0].text:
-                        chunks.append(item.choices[0].text)
-            if chunks:
-                text = "".join(chunks)
-                message = {"content": text, "role": role} if is_chat else text
-                span.set_attribute("llm.generated_message", serialize_attribute(message))
-            span.set_attribute("llm.model", model)
-            token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, is_chat)
+            if generator_output and isinstance(generator_output[0], (ChatCompletionChunk, Completion)):
+                parser = OpenAIResponseParser(generator_output)
+                enrich_span_with_llm(span, parser.model, parser.get_generated_message())
+                token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
         enrich_span_with_openai_tokens(span, TraceType(original_span.attributes["span_type"]))
-        span.set_attribute("output", serialize_attribute(generator_output))
+        enrich_span_with_output(span, serialize_attribute(generator_output))
         span.set_status(StatusCode.OK)
     token_collector.collect_openai_tokens_for_parent_span(span)
+
+
+def enrich_span_with_original_attributes(span, attributes):
+    try:
+        span.set_attributes(attributes)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with original attributes: {e}")
+
+
+def enrich_span_with_llm(span, model, generated_message):
+    try:
+        span.set_attribute("llm.model", model)
+        span.set_attribute("llm.generated_message", generated_message)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with llm: {e}")
 
 
 def enrich_span_with_output(span, output):
@@ -421,23 +419,21 @@ def _is_single_input(embedding_inputs):
     return False
 
 
-def enrich_span_with_llm(span, output):
-    try:
-        if not IS_LEGACY_OPENAI:
-            from openai.types.chat.chat_completion import ChatCompletion
-            from openai.types.completion import Completion
+def enrich_span_with_llm_output(span, output):
+    if not IS_LEGACY_OPENAI:
+        from openai.types.chat.chat_completion import ChatCompletion
+        from openai.types.completion import Completion
 
-            # Enrich LLM span for OpenAI model
-            if isinstance(output, (ChatCompletion, Completion)):
-                span.set_attribute("llm.model", output.model)
+        model = output.model if isinstance(output, (ChatCompletion, Completion)) else None
 
-            # Enrich LLM span for OpenAI generated message
-            if isinstance(output, ChatCompletion):
-                span.set_attribute("llm.generated_message", output.choices[0].message)
-            elif isinstance(output, Completion):
-                span.set_attribute("llm.generated_message", output.choices[0].text)
-    except Exception as e:
-        logging.warning(f"Failed to enrich span with llm model: {e}")
+        if isinstance(output, ChatCompletion):
+            generated_message = output.choices[0].message
+        elif isinstance(output, Completion):
+            generated_message = output.choices[0].text
+        else:
+            generated_message = None
+
+        enrich_span_with_llm(span, model, generated_message)
 
 
 def serialize_attribute(value):
