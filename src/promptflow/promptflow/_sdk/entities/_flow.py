@@ -103,7 +103,7 @@ class FlowBase(abc.ABC):
         self._path = Path(path).resolve()
         # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
-        super().__init__(**kwargs)
+        super().__init__()
 
     @property
     def context(self) -> FlowContext:
