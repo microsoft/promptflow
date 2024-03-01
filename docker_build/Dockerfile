@@ -28,8 +28,8 @@ RUN pip install "./promptflow-0.0.1-py3-none-any.whl[executor-service]" \
     && rm promptflow-0.0.1-py3-none-any.whl
 
 # Install extra requirements
-COPY ./requirements.txt ./
-RUN pip install -r requirements.txt
+COPY ./extra_requirements.txt ./
+RUN pip install -r extra_requirements.txt
 
 # Reset runsvdir
 RUN rm -rf /var/runit
