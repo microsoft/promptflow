@@ -131,23 +131,13 @@ class FlowInvoker:
             storage = DefaultRunStorage(base_dir=self._dump_to, sub_dir=Path(".promptflow/intermediate"))
         else:
             storage = self.storage
-        if isinstance(self.flow_entity, EagerFlow):
-            self.executor = FlowExecutor.create(
-                flow_file=self.flow_entity.path,
-                working_dir=self.flow_entity.code,
-                connections=self.connections,
-                raise_ex=self.raise_ex,
-                storage=storage,
-            )
-        else:
-            # for DAG flow, use executable flow to init executor to improve perf
-            self.executor = FlowExecutor._create_from_flow(
-                flow=self._executable_flow,
-                working_dir=self.flow_entity.code,
-                connections=self.connections,
-                raise_ex=self.raise_ex,
-                storage=storage,
-            )
+        self.executor = FlowExecutor.create(
+            flow_file=self.flow_entity.path,
+            working_dir=self.flow_entity.code,
+            connections=self.connections,
+            raise_ex=self.raise_ex,
+            storage=storage,
+        )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
 
