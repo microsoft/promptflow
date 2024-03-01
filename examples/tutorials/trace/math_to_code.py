@@ -51,12 +51,17 @@ def code_refine(original_code: str) -> str:
 
 @trace
 def code_gen(client: AzureOpenAI, question: str) -> str:
+    sys_prompt = (
+        "I want you to act as a Math expert specializing in Algebra, Geometry, and Calculus. "
+        "Given the question, develop python code to model the user's question. "
+        "Make sure only reply the executable code, no other words."
+    )
     completion = client.chat.completions.create(
         model="my-dep",
         messages=[
             {
                 "role": "system",
-                "content": "I want you to act as a Math expert specializing in Algebra, Geometry, and Calculus. Given the question, develop python code to model the user's question. Make sure only reply the executable code, no other words.",
+                "content": sys_prompt,
             },
             {"role": "user", "content": question},
         ],
