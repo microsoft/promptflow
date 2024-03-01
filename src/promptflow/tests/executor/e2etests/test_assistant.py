@@ -24,8 +24,8 @@ class TestAssistant:
         assert flow_result.run_info.status == Status.Completed
         assert len(flow_result.output["answer"]["content"]) == 1
         assert flow_result.output["answer"]["content"][0]["type"] == "text"
-        assert line_input["name"] in flow_result.output["answer"]["content"][0]["text"]["value"]
-        assert "Thanks for your help" in flow_result.output["answer"]["content"][0]["text"]["value"]
+        name = line_input["name"]
+        assert f"Thanks for your help, {name}!" == flow_result.output["answer"]["content"][0]["text"]["value"]
         assert flow_result.output["thread_id"]
 
     @pytest.mark.parametrize(
