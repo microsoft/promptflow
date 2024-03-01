@@ -55,8 +55,6 @@ linkcheck_ignore = [
     "deploy-using-docker.html",
     "deploy-using-kubernetes.html",
     "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
-    # TODO: remove this after doc is updated
-    "https://microsoft.github.io/promptflow/reference/run-yaml-schema-reference.html#identity-schema",
 ]
 
 linkcheck_exclude_documents = ["contributing"]

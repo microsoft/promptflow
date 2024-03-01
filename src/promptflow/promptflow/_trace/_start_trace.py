@@ -55,6 +55,9 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _start_pfs(pfs_port)
     _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
+    # set strict limitation for session id currently
+    if session is not None:
+        _validate_session_id(session)
     session_id = _provision_session_id(specified_session_id=session)
     _logger.debug("current session id is %s", session_id)
 
@@ -288,3 +291,9 @@ def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]
     if trace_provider is None:
         return None
     return extract_workspace_triad_from_trace_provider(trace_provider)
+
+
+def _validate_session_id(value: str) -> None:
+    # session id should only contain `[A-Z, a-z, 0-9, _, -]`` for now
+    if not value.replace("-", "").replace("_", "").isalnum():
+        raise ValueError("session id should only contain `[A-Z, a-z, 0-9, _, -]` for now.")
