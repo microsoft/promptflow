@@ -19,7 +19,6 @@ from promptflow._sdk._utils import (
     update_environment_variables_with_connections,
 )
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import LoggerFactory
@@ -61,7 +60,7 @@ class FlowInvoker:
     ):
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
-        self._executable_flow = self.flow_entity._init_executable()
+        self.flow = self.flow_entity._init_executable()
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
         self.raise_ex = raise_ex
@@ -75,14 +74,10 @@ class FlowInvoker:
 
         self._init_connections(connection_provider)
         self._init_executor()
-        if isinstance(self.flow_entity, EagerFlow):
-            self.flow = self._executable_flow
-        else:
-            self.flow = self.executor._flow
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
-        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self._executable_flow)
+        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self.flow)
         connection_provider = "local" if connection_provider is None else connection_provider
         if isinstance(connection_provider, str):
             self.logger.info(f"Getting connections from pf client with provider {connection_provider}...")
@@ -90,7 +85,7 @@ class FlowInvoker:
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = get_local_connections_from_executable(
-                executable=self._executable_flow,
+                executable=self.flow,
                 client=PFClient(config={"connection.provider": connection_provider}, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
