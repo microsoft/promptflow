@@ -11,6 +11,7 @@ from azure.monitor.opentelemetry.exporter._constants import _APPLICATION_INSIGHT
 from azure.monitor.opentelemetry.exporter._generated.models import TelemetryItem
 from opentelemetry.sdk._logs import LogData, LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.util.types import Attributes
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import cache_result_with_expire
@@ -58,23 +59,7 @@ class PromptFlowSDKExporter(AzureMonitorLogExporter):
         self._custom_dimensions = custom_dimensions
 
     def _log_to_envelope(self, log_data: LogData) -> TelemetryItem:
-        from promptflow._utils.utils import is_in_ci_pipeline
-
-        custom_dimensions = {
-            "level": log_data.log_record.severity_text,
-            # add to distinguish if the log is from ci pipeline
-            "from_ci": is_in_ci_pipeline(),
-        }
-        custom_dimensions.update(self._custom_dimensions)
-
-        _attributes = log_data.log_record.attributes
-        if hasattr(_attributes, "custom_dimensions") and isinstance(_attributes.custom_dimensions, dict):
-            custom_dimensions.update(_attributes.custom_dimensions)
-
-        log_data.log_record.attributes = {
-            _APPLICATION_INSIGHTS_EVENT_MARKER_ATTRIBUTE: True,
-            **custom_dimensions,
-        }
+        log_data.log_record.attributes.update(self._custom_dimensions)
         envelope = super()._log_to_envelope(log_data=log_data)
         # scrub data before sending to appinsights
         role = get_scrubbed_cloud_role()
@@ -85,6 +70,23 @@ class PromptFlowSDKExporter(AzureMonitorLogExporter):
 
     def _should_collect_stats(self):
         return False
+
+    def disable_statsbeat(self):
+        """Disable statsbeat for the exporter.
+
+        Setting environment variables is the most complete disable stats, for example,
+        the following function will use environment variables:
+
+        azure.monitor.opentelemetry.exporter.export.logs._exporter._set_statsbeat_custom_events_feature
+
+        But it will also affect the use of metrics in other parts of the program,
+        so we will not call this function to set environment variables temporarily.
+        If we encounter problems in the future, we will solve them when needed.
+        """
+
+        # from azure.monitor.opentelemetry.exporter._constants import _APPLICATIONINSIGHTS_STATSBEAT_DISABLED_ALL
+        # os.environ[_APPLICATIONINSIGHTS_STATSBEAT_DISABLED_ALL] = "false"
+        pass
 
 
 # cspell:ignore AzureMLSDKLogHandler
@@ -115,6 +117,28 @@ class PromptFlowSDKLogHandler(LoggingHandler):
         except Exception:  # pylint: disable=broad-except
             # ignore any exceptions, telemetry collection errors shouldn't block an operation
             return
+
+    @staticmethod
+    def _get_attributes(record: logging.LogRecord) -> Attributes:
+        """Get the attributes from the log record.
+        Since the value in Attributes cannot be dict,
+        otherwise the dict value will be filtered out, so it is necessary to parse dic in this step.
+        """
+        from promptflow._utils.utils import is_in_ci_pipeline
+
+        custom_dimensions = {
+            "level": record.levelname,
+            # add to distinguish if the log is from ci pipeline
+            "from_ci": is_in_ci_pipeline(),
+        }
+
+        attributes = LoggingHandler._get_attributes(record)
+        return {
+            # Mark the data as CustomEvents and record the data to CustomEvents.
+            _APPLICATION_INSIGHTS_EVENT_MARKER_ATTRIBUTE: True,
+            **custom_dimensions,
+            **attributes.get("custom_dimensions", {}),
+        }
 
     @classmethod
     def disable_telemetry_logger(cls):
