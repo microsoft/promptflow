@@ -8,8 +8,19 @@ pip install "promptflow==0.0.119699512" --extra-index-url https://azuremlsdktest
 pf config set enable_internal_features=true
 ```
 
+* Enable local to cloud trace in your conda env(optional)
+```cmd
+pf config set trace.provider=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>
+```
+It's recommended to test by [promptflow-canary-dev](https://ml.azure.com/prompts/list?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourcegroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-canary-dev&tid=72f988bf-86f1-41af-91ab-2d7cd011db47)
+
+If you really need another workspace for test, initialize cosmosDB in advance by
+```
+https://int.ml.azure.com/prompts/trace/bind?wsid=/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>
+```
+
 ## Traces
-Today, DAG prompt flow has a way to track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. While more developers are using different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications. To benefit these non-DAG-flow developers, prompt flow provides the trace feature to capture and visualize the internal execution details. 
+Today, DAG prompt flow has a way to track and visualize node level inputs/outputs of flow execution, it provides critical insights for developer to understand the internal details of execution. While more developers are using different frameworks (langchain, semantic kernel, OpenAI, kinds of agents) to create LLM based applications. To benefit these non-DAG-flow developers, prompt flow provides the trace feature to capture and visualize the internal execution details.
 ### LLM Trace
 #### **`start_trace()` to enable trace for LLM calls**
 Let's start with the simplest example, add single line code to enable trace for LLM calls in your application.
@@ -17,7 +28,7 @@ Let's start with the simplest example, add single line code to enable trace for 
 from openai import OpenAI
 import promptflow as pf
 
-# start_trace() will print a url for trace detail visualization 
+# start_trace() will print a url for trace detail visualization
 pf.start_trace()
 
 client = OpenAI()
@@ -50,7 +61,7 @@ More case of adding trace for autogen and langchain:
 ![langchain-trace-detail](./img/langchain-trace-detail.png)
 
 #### **`@trace` to allow you trace for any function**
-More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor. 
+More common scenario is the application has complicated code structure, and developer would like to add trace on critical path that they would like to debug and monitor.
 
 See the **[math_to_code](./math_to_code.py)** example. Execute `python math_to_code.py` will get an URL to display the trace records and trace details of each test.
 
