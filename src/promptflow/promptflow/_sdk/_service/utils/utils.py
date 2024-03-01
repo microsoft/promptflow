@@ -11,6 +11,7 @@ import time
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 
 import psutil
 import requests
@@ -45,7 +46,7 @@ def local_user_only(func):
 
 
 def get_current_env_pfs_file(file_name):
-    executable_path = sys.executable.lower()
+    executable_path = Path(sys.executable.lower()).as_posix()
     dir_name = os.path.basename(os.path.dirname(executable_path))
     # Hash the executable path
     hash_object = hashlib.sha1(executable_path.encode())
