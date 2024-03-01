@@ -99,3 +99,15 @@ class TestTrace:
         assert isinstance(output["NaN"], str) and output["NaN"] == "NaN"
         assert isinstance(output["Inf"], str) and output["Inf"] == "Infinity"
         assert isinstance(output["-Inf"], str) and output["-Inf"] == "-Infinity"
+
+    def test_list_evaluation_line_runs(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+        mock_batch_run_id = str(uuid.uuid4())
+        mock_referenced_batch_run_id = str(uuid.uuid4())
+        batch_run_attributes = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
+            SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: mock_referenced_batch_run_id,
+            SpanAttributeFieldName.LINE_NUMBER: "0",
+        }
+        persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attributes)
+        line_runs = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json
+        assert len(line_runs) == 1

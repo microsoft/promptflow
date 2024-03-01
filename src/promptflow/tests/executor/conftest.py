@@ -10,6 +10,7 @@ from executor.process_utils import (
     current_process_wrapper_var,
     override_process_class,
 )
+from fastapi.testclient import TestClient
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
     delete_count_lock_file,
@@ -27,6 +28,7 @@ from sdk_cli_test.recording_utilities.record_storage import is_recording_enabled
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
+from promptflow.executor._service.app import app
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
@@ -129,8 +131,14 @@ def recording_injection(recording_setup, process_override):
 @pytest.fixture(autouse=True, scope="session")
 def inject_api_executor():
     """Inject OpenAI API during test session when recording not enabled
-
     AOAI call in promptflow should involve trace logging and header injection. Inject
     function to API call in test scenario."""
     if not is_recording_enabled():
         inject_openai_api()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def executor_client():
+    """Executor client for testing."""
+
+    yield TestClient(app)

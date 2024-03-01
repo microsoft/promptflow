@@ -23,7 +23,7 @@ param(
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
-[string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:"
+[string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:| broken "
 $apidocWarningsAndErrors = $null
 $buildWarningsAndErrors = $null
 

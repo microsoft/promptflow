@@ -20,6 +20,7 @@ from promptflow._trace._start_trace import (
     _create_resource,
     _is_tracer_provider_configured,
     _provision_session_id,
+    _validate_session_id,
     setup_exporter_from_environ,
 )
 
@@ -48,6 +49,13 @@ def mock_resource() -> Dict:
 @pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestStartTrace:
+    def test_session_id_validation(self) -> None:
+        # [A-Za-z0-9_-]
+        _validate_session_id(str(uuid.uuid4()))
+        # space
+        with pytest.raises(ValueError):
+            _validate_session_id("test session")
+
     def test_create_resource(self) -> None:
         session_id = str(uuid.uuid4())
         resource1 = _create_resource(session_id=session_id)

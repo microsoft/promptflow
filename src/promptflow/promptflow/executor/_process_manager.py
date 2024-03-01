@@ -174,19 +174,29 @@ class SpawnProcessManager(AbstractProcessManager):
         :param i: Index of the process to terminate.
         :type i: int
         """
+        warning_msg = (
+            "Unexpected error occurred while end process for index {i} and process id {pid}. "
+            "Exception: {e}"
+        )
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
-            process.terminate()
-            process.wait()
-            self._process_info.pop(i)
+            # The subprocess will get terminate signal from input queue, so we need to wait for the process to exit.
+            # If the process is still running after 10 seconds, it will raise psutil.TimeoutExpired exception.
+            process.wait(timeout=10)
         except psutil.NoSuchProcess:
-            bulk_logger.warning(f"Process {pid} had been terminated")
+            bulk_logger.warning(f"Process {pid} had been terminated.")
+        except psutil.TimeoutExpired:
+            try:
+                # If the process is still running after waiting 10 seconds, terminate it.
+                process.terminate()
+                process.wait()
+            except Exception as e:
+                bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
         except Exception as e:
-            bulk_logger.warning(
-                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
-                f"Exception: {e}"
-            )
+            bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
+        finally:
+            self._process_info.pop(i)
 
     def ensure_healthy(self):
         """
@@ -356,19 +366,29 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         :param i: Index of the process to terminate.
         :type i: int
         """
+        warning_msg = (
+            "Unexpected error occurred while end process for index {i} and process id {pid}. "
+            "Exception: {e}"
+        )
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
-            process.terminate()
-            process.wait()
-            self._process_info.pop(i)
+            # The subprocess will get terminate signal from input queue, so we need to wait for the process to exit.
+            # If the process is still running after 10 seconds, it will raise psutil.TimeoutExpired exception.
+            process.wait(timeout=10)
         except psutil.NoSuchProcess:
-            bulk_logger.warning(f"Process {pid} had been terminated")
+            bulk_logger.warning(f"Process {pid} had been terminated.")
+        except psutil.TimeoutExpired:
+            try:
+                # If the process is still running after waiting 10 seconds, terminate it.
+                process.terminate()
+                process.wait()
+            except Exception as e:
+                bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
         except Exception as e:
-            bulk_logger.warning(
-                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
-                f"Exception: {e}"
-            )
+            bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
+        finally:
+            self._process_info.pop(i)
 
     def restart_process(self, i):
         """
