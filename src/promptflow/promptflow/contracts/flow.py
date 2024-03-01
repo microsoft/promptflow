@@ -635,7 +635,7 @@ class Flow:
     @classmethod
     def _resolve_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
         working_dir = cls._parse_working_dir(flow_file, working_dir)
-        cls._update_working_dir(working_dir)
+        # cls._update_working_dir(working_dir)
         return working_dir
 
     @classmethod
@@ -661,7 +661,7 @@ class Flow:
     @classmethod
     def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
         """Load flow from dict."""
-        cls._update_working_dir(working_dir)
+        # cls._update_working_dir(working_dir)
         flow = Flow.deserialize(flow_dag)
         flow._set_tool_loader(working_dir)
         return flow

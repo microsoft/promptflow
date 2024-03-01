@@ -11,8 +11,10 @@ import time
 import uuid
 from contextvars import ContextVar
 from logging import WARNING
+from pathlib import Path
 from typing import Callable
 
+from promptflow._cli._utils import inject_sys_path
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -65,7 +67,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
     def cancel_node_runs(self, msg):
         self._run_tracker.cancel_node_runs(msg, self._run_id)
 
-    def invoke_tool(self, node: Node, f: Callable, kwargs):
+    def invoke_tool(self, working_dir: Path, node: Node, f: Callable, kwargs):
         run_info = self._prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id
 
@@ -85,7 +87,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
-                result = self._invoke_tool_with_timer(node, f, kwargs)
+                result = self._invoke_tool_with_timer(working_dir, node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
@@ -120,7 +122,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._run_tracker.set_inputs(node_run_id, {key: value for key, value in kwargs.items() if key != "self"})
         return run_info
 
-    async def invoke_tool_async(self, node: Node, f: Callable, kwargs):
+    async def invoke_tool_async(self, working_dir: Path, node: Node, f: Callable, kwargs):
         if not inspect.iscoroutinefunction(f):
             raise UnexpectedError(
                 message_format="Tool '{function}' in node '{node}' is not a coroutine function.",
@@ -133,7 +135,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         traces = []
         try:
             Tracer.start_tracing(node_run_id, node.name)
-            result = await self._invoke_tool_async_inner(node, f, kwargs)
+            result = await self._invoke_tool_async_inner(working_dir, node, f, kwargs)
             traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
@@ -154,10 +156,11 @@ class FlowExecutionContext(ThreadLocalSingleton):
         finally:
             self._run_tracker.persist_node_run(run_info)
 
-    async def _invoke_tool_async_inner(self, node: Node, f: Callable, kwargs):
+    async def _invoke_tool_async_inner(self, working_dir: Path, node: Node, f: Callable, kwargs):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         try:
-            return await f(**kwargs)
+            with inject_sys_path(working_dir):
+                return await f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
@@ -170,7 +173,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node.name, module=module) from e
 
-    def _invoke_tool_with_timer(self, node: Node, f: Callable, kwargs):
+    def _invoke_tool_with_timer(self, working_dir: Path, node: Node, f: Callable, kwargs):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         node_name = node.name
         try:
@@ -187,7 +190,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 log_message_function=generate_elapsed_time_messages,
                 args=(logging_name, start_time, interval_seconds, thread_id),
             ):
-                return f(**kwargs)
+                with inject_sys_path(working_dir):
+                    return f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.

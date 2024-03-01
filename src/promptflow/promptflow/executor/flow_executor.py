@@ -972,7 +972,7 @@ class FlowExecutor:
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
         if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
-            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+            scheduler = AsyncNodesScheduler(self._working_dir, self._tools_manager, self._node_concurrency)
             nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
@@ -1002,7 +1002,7 @@ class FlowExecutor:
             nodes,
             self._node_concurrency,
             context,
-        ).execute(self._line_timeout_sec)
+        ).execute(self._working_dir, self._line_timeout_sec)
 
     @staticmethod
     def apply_inputs_mapping(

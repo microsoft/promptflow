@@ -8,6 +8,7 @@ import inspect
 import threading
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -49,13 +50,14 @@ class FlowNodesScheduler:
 
     def execute(
         self,
+        working_dir: Path,
         line_timeout_sec: Optional[int] = None,
     ) -> Tuple[dict, dict]:
         parent_context = contextvars.copy_context()
         with ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
         ) as executor:
-            self._execute_nodes(executor)
+            self._execute_nodes(executor, working_dir)
             timeout_task = None
             event = threading.Event()
             if line_timeout_sec is not None:
@@ -74,7 +76,7 @@ class FlowNodesScheduler:
                         del self._future_to_node[each_future]
                     if timeout_task and timeout_task.done():
                         raise LineExecutionTimeoutError(self._context._line_number, line_timeout_sec)
-                    self._execute_nodes(executor)
+                    self._execute_nodes(executor, working_dir)
             except Exception as e:
                 err_msg = "Flow execution has failed."
                 if isinstance(e, LineExecutionTimeoutError):
@@ -94,7 +96,7 @@ class FlowNodesScheduler:
             self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
 
-    def _execute_nodes(self, executor: ThreadPoolExecutor):
+    def _execute_nodes(self, executor: ThreadPoolExecutor, working_dir: Path):
         # Skip nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = self._dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
@@ -105,7 +107,7 @@ class FlowNodesScheduler:
         # Submit nodes that are ready to run
         nodes_to_exec = self._dag_manager.pop_ready_nodes()
         if nodes_to_exec:
-            self._submit_nodes(executor, nodes_to_exec)
+            self._submit_nodes(executor, working_dir, nodes_to_exec)
 
     def _collect_outputs(self, completed_futures: List[Future]):
         completed_nodes_outputs = {}
@@ -115,13 +117,13 @@ class FlowNodesScheduler:
             completed_nodes_outputs[each_node.name] = each_node_result
         return completed_nodes_outputs
 
-    def _submit_nodes(self, executor: ThreadPoolExecutor, nodes):
+    def _submit_nodes(self, executor: ThreadPoolExecutor, working_dir: Path, nodes):
         for each_node in nodes:
-            future = executor.submit(self._exec_single_node_in_thread, (each_node, self._dag_manager))
+            future = executor.submit(self._exec_single_node_in_thread, (working_dir, each_node, self._dag_manager))
             self._future_to_node[future] = each_node
 
-    def _exec_single_node_in_thread(self, args: Tuple[Node, DAGManager]):
-        node, dag_manager = args
+    def _exec_single_node_in_thread(self, args: Tuple[Path, Node, DAGManager]):
+        working_dir, node, dag_manager = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
         context = self._context
@@ -129,7 +131,7 @@ class FlowNodesScheduler:
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
             # TODO: Run async functions in flow level event loop
-            result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+            result = asyncio.run(context.invoke_tool_async(working_dir, node, f, kwargs=kwargs))
         else:
-            result = context.invoke_tool(node, f, kwargs=kwargs)
+            result = context.invoke_tool(working_dir, node, f, kwargs=kwargs)
         return result

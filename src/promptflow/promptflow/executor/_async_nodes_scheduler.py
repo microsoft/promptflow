@@ -12,6 +12,7 @@ import time
 import traceback
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -31,9 +32,11 @@ ASYNC_DAG_MANAGER_COMPLETED = False
 class AsyncNodesScheduler:
     def __init__(
         self,
+        working_dir: Path,
         tools_manager: ToolsManager,
         node_concurrency: int,
     ) -> None:
+        self._working_dir = working_dir
         self._tools_manager = tools_manager
         self._node_concurrency = node_concurrency
         self._task_start_time = {}
@@ -146,11 +149,11 @@ class AsyncNodesScheduler:
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
             # For async task, it will not be executed before calling create_task.
-            task = context.invoke_tool_async(node, f, kwargs)
+            task = context.invoke_tool_async(self._working_dir, node, f, kwargs)
         else:
             # For sync task, convert it to async task and run it in executor thread.
             # Even though the task is put to the thread pool, thread.start will only be triggered after create_task.
-            task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
+            task = self._sync_function_to_async_task(executor, context, self._working_dir, node, f, kwargs)
         # Set the name of the task to the node name for debugging purpose
         # It does not need to be unique by design.
         # Wrap the coroutine in a task with asyncio.create_task to schedule it for event loop execution
@@ -161,12 +164,15 @@ class AsyncNodesScheduler:
     async def _sync_function_to_async_task(
         executor: ThreadPoolExecutor,
         context: FlowExecutionContext,
+        working_dir: Path,
         node,
         f,
         kwargs,
     ):
         # The task will not be executed before calling create_task.
-        return await asyncio.get_running_loop().run_in_executor(executor, context.invoke_tool, node, f, kwargs)
+        return await asyncio.get_running_loop().run_in_executor(
+            executor, context.invoke_tool, working_dir, node, f, kwargs
+        )
 
 
 def signal_handler(sig, frame):
