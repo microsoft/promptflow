@@ -256,13 +256,17 @@ class PFClient:
         """
         if resume_from:
             unsupported = {
-                "flow": flow,
-                "data": data,
-                "run": run,
-                "column_mapping": column_mapping,
-                "variant": variant,
-                "connections": connections,
-                "environment_variables": environment_variables,
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
             }
             if any(unsupported):
                 raise ValueError(
