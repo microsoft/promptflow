@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from promptflow.contracts.run_info import Status
+from promptflow.executor._result import LineResult
+
 from ..utils import construct_flow_execution_request_json
 
 
@@ -8,9 +11,15 @@ from ..utils import construct_flow_execution_request_json
 @pytest.mark.e2etest
 class TestExecutorServer:
     def test_flow_execution_completed(self, executor_client: TestClient, dev_connections):
-        request = construct_flow_execution_request_json("web_classification", connections=dev_connections)
+        flow_folder = "web_classification"
+        request = construct_flow_execution_request_json(flow_folder, connections=dev_connections)
         response = executor_client.post(url="/execution/flow", json=request)
         assert response.status_code == 200
+        line_result = LineResult.deserialize(response.json())
+        assert line_result.run_info.status == Status.Completed
+        assert line_result.output is not None
+        assert len(line_result.node_run_infos) == 5
+        assert all(node_run_info.status == Status.Completed for node_run_info in line_result.node_run_infos.values())
 
     def test_flow_execution_failed(self, executor_client):
         pass
