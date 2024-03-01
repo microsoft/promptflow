@@ -45,7 +45,7 @@ def local_user_only(func):
 
 
 def get_current_env_pfs_file(file_name):
-    executable_path = sys.executable
+    executable_path = sys.executable.lower()
     dir_name = os.path.basename(os.path.dirname(executable_path))
     # Hash the executable path
     hash_object = hashlib.sha1(executable_path.encode())
