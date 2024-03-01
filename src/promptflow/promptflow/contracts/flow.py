@@ -535,6 +535,30 @@ class FlowBase:
     inputs: Dict[str, FlowInputDefinition]
     outputs: Dict[str, FlowOutputDefinition]
 
+    def get_environment_variables_with_overrides(
+        self, environment_variables_overrides: Dict[str, str] = None
+    ) -> Dict[str, str]:
+        environment_variables = {
+            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in self.environment_variables.items()
+        }
+        if environment_variables_overrides is not None:
+            for k, v in environment_variables_overrides.items():
+                environment_variables[k] = v
+        return environment_variables
+
+    def get_connection_names(self):
+        """Return connection names."""
+        connection_names = set({})
+
+        # Add connection names from environment variable reference
+        if self.environment_variables:
+            for k, v in self.environment_variables.items():
+                if not isinstance(v, str) or not v.startswith("${"):
+                    continue
+                connection_name, _ = _match_reference(v)
+                connection_names.add(connection_name)
+        return connection_names
+
 
 @dataclass
 class Flow(FlowBase):
@@ -702,17 +726,6 @@ class Flow(FlowBase):
             environment_variables_overrides=environment_variables_overrides
         )
 
-    def get_environment_variables_with_overrides(
-        self, environment_variables_overrides: Dict[str, str] = None
-    ) -> Dict[str, str]:
-        environment_variables = {
-            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in self.environment_variables.items()
-        }
-        if environment_variables_overrides is not None:
-            for k, v in environment_variables_overrides.items():
-                environment_variables[k] = v
-        return environment_variables
-
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
         from promptflow._core.tools_manager import ToolLoader
@@ -827,7 +840,7 @@ class Flow(FlowBase):
 
     def get_connection_names(self):
         """Return connection names."""
-        connection_names = set({})
+        connection_names = super().get_connection_names()
         nodes = [
             self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
             for node in self.nodes
@@ -850,13 +863,6 @@ class Flow(FlowBase):
                 logger.debug(f"Node {node.name} doesn't reference any connection.")
             connection_names.update(node_connection_names)
 
-        # Add connection names from environment variable reference
-        if self.environment_variables:
-            for k, v in self.environment_variables.items():
-                if not isinstance(v, str) or not v.startswith("${"):
-                    continue
-                connection_name, _ = _match_reference(v)
-                connection_names.add(connection_name)
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):
@@ -914,10 +920,10 @@ class EagerFlow(FlowBase):
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
         return EagerFlow(
-            data.get("id", "default_flow_id"),
-            data.get("name", "default_flow"),
-            {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
-            {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )

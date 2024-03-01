@@ -19,11 +19,11 @@ from promptflow._sdk._utils import (
     update_environment_variables_with_connections,
 )
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
-from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -60,9 +60,7 @@ class FlowInvoker:
     ):
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
-        self._executable_flow = ExecutableFlow._from_dict(
-            flow_dag=self.flow_entity._data, working_dir=self.flow_entity.code
-        )
+        self._executable_flow = self.flow_entity._init_executable()
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
         self.raise_ex = raise_ex
@@ -76,7 +74,10 @@ class FlowInvoker:
 
         self._init_connections(connection_provider)
         self._init_executor()
-        self.flow = self.executor._flow
+        if isinstance(self.flow_entity, EagerFlow):
+            self.flow = self._executable_flow
+        else:
+            self.flow = self.executor._flow
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
@@ -130,13 +131,23 @@ class FlowInvoker:
             storage = DefaultRunStorage(base_dir=self._dump_to, sub_dir=Path(".promptflow/intermediate"))
         else:
             storage = self.storage
-        self.executor = FlowExecutor._create_from_flow(
-            flow=self._executable_flow,
-            working_dir=self.flow_entity.code,
-            connections=self.connections,
-            raise_ex=self.raise_ex,
-            storage=storage,
-        )
+        if isinstance(self.flow_entity, EagerFlow):
+            self.executor = FlowExecutor.create(
+                flow_file=self.flow_entity.path,
+                working_dir=self.flow_entity.code,
+                connections=self.connections,
+                raise_ex=self.raise_ex,
+                storage=storage,
+            )
+        else:
+            # for DAG flow, use executable flow to init executor to improve perf
+            self.executor = FlowExecutor._create_from_flow(
+                flow=self._executable_flow,
+                working_dir=self.flow_entity.code,
+                connections=self.connections,
+                raise_ex=self.raise_ex,
+                storage=storage,
+            )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
 
@@ -174,6 +185,7 @@ class FlowInvoker:
         """
         result = self._invoke(data, run_id=run_id, disable_input_output_logging=disable_input_output_logging)
         # Get base64 for multi modal object
+        # TODO(2991935): support primitive type & dataclass
         resolved_outputs = self._convert_multimedia_data_to_base64(result)
         self._dump_invoke_result(result)
         log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
