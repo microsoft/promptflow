@@ -67,15 +67,18 @@ class Summary:
             return
         attributes = self.span._content[SpanFieldName.ATTRIBUTES]
 
+        # Persist span as a line run, since even evaluation is a line run, could be referenced by other evaluations.
+        self._persist_line_run(client)
+
         if (
             SpanAttributeFieldName.LINE_RUN_ID not in attributes
             and SpanAttributeFieldName.BATCH_RUN_ID not in attributes
         ):
-            current_app.logger.info("No line run id or batch run id found. Could be aggregate node. Just ignore.")
+            current_app.logger.info(
+                "No line run id or batch run id found. Could be aggregate node, eager flow or arbitrary script. "
+                "Ignore for patching evaluations."
+            )
             return
-
-        # Persist span as a line run, since even evaluation is a line run, could be referenced by other evaluations.
-        self._persist_line_run(client)
 
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes or (
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes
@@ -119,8 +122,8 @@ class Summary:
             session_id=session_id,
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
-            inputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.INPUTS]),
-            outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
+            inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "null")),
+            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "null")),
             start_time=start_time,
             end_time=end_time,
             status=self.span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
