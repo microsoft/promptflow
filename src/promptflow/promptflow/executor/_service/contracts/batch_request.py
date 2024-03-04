@@ -2,25 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow.executor._service.contracts.base_request import BaseRequest
+from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
 
 
-class InitializationRequest(BaseRequest):
+class InitializationRequest(BaseExecutionRequest):
     """Request model for teh batch run initialization."""
 
-    flow_file: Path
-    working_dir: Path
-    output_dir: Path
-    log_path: Path
     line_count: int
     worker_count: int
-    connections: Optional[Mapping[str, Any]] = None
     line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
-    environment_variables: Optional[Mapping[str, Any]] = None
 
 
 class LineExecutionRequest(BaseRequest):
