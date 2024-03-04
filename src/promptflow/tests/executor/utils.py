@@ -1,5 +1,7 @@
 import json
+import uuid
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Dict, Union
 
 import opentelemetry
@@ -113,6 +115,25 @@ def is_image_file(file_path: Path):
     image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"]
     file_extension = file_path.suffix.lower()
     return file_extension in image_extensions
+
+
+def construct_flow_execution_request_json(flow_folder, root=FLOW_ROOT, inputs=None, connections=None):
+    working_dir = get_flow_folder(flow_folder, root=root)
+    tmp_dir = Path(mkdtemp())
+    log_path = tmp_dir / "log.txt"
+    return {
+        "run_id": str(uuid.uuid4()),
+        "working_dir": working_dir.as_posix(),
+        "flow_file": "flow.dag.yaml",
+        "output_dir": tmp_dir.as_posix(),
+        "connections": connections,
+        "log_path": log_path.as_posix(),
+        "inputs": inputs,
+        "operation_context": {
+            "request_id": "test-request-id",
+            "user_agent": "test-user-agent",
+        },
+    }
 
 
 class MemoryRunStorage(AbstractRunStorage):
