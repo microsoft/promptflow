@@ -59,7 +59,7 @@ class TraceOperations:
             # as spans with same trace id also have same key attributes to group
             # select the first span on behalf of the list
             obo_span = trace_id_spans[0]
-            obo_attrs = obo_span[SpanFieldName.ATTRIBUTES]
+            obo_attrs = obo_span._content[SpanFieldName.ATTRIBUTES]
 
             if (
                 SpanAttributeFieldName.LINE_RUN_ID not in obo_attrs
@@ -96,8 +96,8 @@ class TraceOperations:
                     "`LINE_RUN_ID` and `BATCH_RUN_ID` should not appear at the same time."
                 )
                 _logger.warning(warning_message)
-            # convert dict to list
-            return list(aggregated_spans.values())
+        # convert dict to list
+        return list(aggregated_spans.values())
 
     def _list_line_runs_with_runs(self, runs: typing.List[str]) -> typing.List[LineRun]:
         orm_spans_group_by_trace_id = ORMLineRun.list_with_runs(runs)
