@@ -17,7 +17,7 @@ import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
-from functools import partial, wraps
+from functools import partial
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -1188,36 +1188,6 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
-
-
-def cache_result_with_specify_result_type(result_type=None, maxsize=100):
-    """Cache the result of a function."""
-
-    def decorator(func):
-        cache = collections.OrderedDict()
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            key = hash(args + tuple(kwargs.items()))
-            if key in cache and (result_type is None or isinstance(cache[key], result_type)):
-                cache.move_to_end(key)
-                return cache[key]
-            result = func(*args, **kwargs)
-            cache.pop(key, None)
-            if len(cache) >= maxsize:
-                cache.popitem(last=False)
-            cache[key] = result
-            return cache[key]
-
-        def clear_cache():
-            """Clear the cache."""
-            cache.clear()
-
-        wrapper.clear_cache = clear_cache
-
-        return wrapper
-
-    return decorator
 
 
 def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):

@@ -28,6 +28,7 @@ from promptflow._sdk._telemetry import (
     is_telemetry_enabled,
     log_activity,
 )
+from promptflow._sdk._telemetry.logging_handler import get_promptflow_sdk_log_handler
 from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
@@ -82,7 +83,7 @@ class TestTelemetry:
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is True
 
-            get_appinsights_log_handler.clear_cache()
+            get_promptflow_sdk_log_handler.cache_clear()
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is False

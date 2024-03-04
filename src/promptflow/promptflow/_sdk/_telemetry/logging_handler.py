@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import functools
 import logging
 import os
 import platform
@@ -14,7 +15,6 @@ from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.util.types import Attributes
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._utils import cache_result_with_specify_result_type
 
 # promptflow-sdk in east us
 INSTRUMENTATION_KEY = "8b52b368-4c91-4226-b7f7-be52822f0509"
@@ -138,25 +138,30 @@ class PromptFlowSDKLogHandler(LoggingHandler):
         exporter_logger.setLevel(logging.CRITICAL)
 
 
-@cache_result_with_specify_result_type(result_type=PromptFlowSDKLogHandler)
+@functools.lru_cache()
+def get_promptflow_sdk_log_handler():
+    from promptflow._sdk._telemetry.telemetry import is_telemetry_enabled
+
+    config = Configuration.get_instance()
+    custom_dimensions = {
+        "python_version": platform.python_version(),
+        "installation_id": config.get_or_set_installation_id(),
+    }
+
+    handler = PromptFlowSDKLogHandler(
+        custom_dimensions=custom_dimensions,
+        enable_telemetry=is_telemetry_enabled(),
+    )
+    return handler
+
+
 def get_appinsights_log_handler():
     """
     Enable the opentelemetry logging handler for specified logger and instrumentation key to send info to AppInsights.
     """
-    from promptflow._sdk._telemetry.telemetry import is_telemetry_enabled
 
     try:
-        config = Configuration.get_instance()
-        custom_dimensions = {
-            "python_version": platform.python_version(),
-            "installation_id": config.get_or_set_installation_id(),
-        }
-
-        handler = PromptFlowSDKLogHandler(
-            custom_dimensions=custom_dimensions,
-            enable_telemetry=is_telemetry_enabled(),
-        )
-        return handler
+        return get_promptflow_sdk_log_handler()
     except Exception:  # pylint: disable=broad-except
         # ignore any exceptions, telemetry collection errors shouldn't block an operation
         return logging.NullHandler()
