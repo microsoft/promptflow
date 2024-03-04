@@ -1014,17 +1014,21 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+            # TODO: Consider async implementation for load_multimedia_data
             inputs = load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
+            # TODO: Consider async implementation for _stringify_generator_output
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
             generator_output_nodes = [
                 nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
             ]
+            # TODO: Consider async implementation for persist_selected_node_runs
             run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
+            # TODO: Consider async implementation for end_run
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
         except KeyboardInterrupt as ex:
@@ -1125,14 +1129,10 @@ class FlowExecutor:
     async def _traverse_nodes_async(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
-        #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        if self._should_use_async():
-            flow_logger.info("Start executing nodes in async mode.")
-            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context)
-        else:
-            flow_logger.info("Start executing nodes in thread pool mode.")
-            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        #  Always use async scheduler when calling from async function.
+        flow_logger.info("Start executing nodes in async mode.")
+        scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+        nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
