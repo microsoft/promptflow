@@ -64,7 +64,7 @@ def get_chat_input(stream):
     }
 
 
-def get_comletion_input(stream):
+def get_completion_input(stream):
     return {"prompt": "What is the capital of the United States of America?", "stream": stream}
 
 
@@ -120,8 +120,8 @@ class TestExecutorTraces:
         [
             ("openai_chat_api_flow", get_chat_input(False)),
             ("openai_chat_api_flow", get_chat_input(True)),
-            ("openai_completion_api_flow", get_comletion_input(False)),
-            ("openai_completion_api_flow", get_comletion_input(True)),
+            ("openai_completion_api_flow", get_completion_input(False)),
+            ("openai_completion_api_flow", get_completion_input(True)),
             ("llm_tool", {"topic": "Hello", "stream": False}),
             ("llm_tool", {"topic": "Hello", "stream": True}),
         ],
@@ -388,8 +388,8 @@ class TestOTelTracer:
         [
             ("openai_chat_api_flow", get_chat_input(False), False, 3),
             ("openai_chat_api_flow", get_chat_input(True), True, 4),
-            ("openai_completion_api_flow", get_comletion_input(False), False, 3),
-            ("openai_completion_api_flow", get_comletion_input(True), True, 4),
+            ("openai_completion_api_flow", get_completion_input(False), False, 3),
+            ("openai_completion_api_flow", get_completion_input(True), True, 4),
             ("llm_tool", {"topic": "Hello", "stream": False}, False, 4),
             ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), False, 6),
         ],
@@ -571,6 +571,9 @@ class TestOTelTracer:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
 
     def _is_llm_function_name(self, func_name, is_stream):
+        # For streaming mode, there are two spans for openai api call, one is the original span, and the other
+        # is the iterated span, which name is "Iterated(<original_trace_name>)", we should check the iterated span
+        # in streaming mode.
         if is_stream:
             return func_name in [f"Iterated({name})" for name in LLM_FUNCTION_NAMES]
         else:
