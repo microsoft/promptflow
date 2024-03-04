@@ -1,4 +1,5 @@
 import contextvars
+import multiprocessing
 import os
 import queue
 import signal
@@ -21,7 +22,6 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
-from promptflow._utils.process_utils import use_fork_for_process
 from promptflow._utils.utils import set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
@@ -90,12 +90,23 @@ class LineExecutionProcessPool:
         line_timeout_sec: Optional[int] = None,
     ):
         # Determine whether to use fork to create process
-        self._use_fork = use_fork_for_process()
+        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
+        sys_start_methods = multiprocessing.get_all_start_methods()
+        if multiprocessing_start_method not in sys_start_methods:
+            bulk_logger.warning(
+                f"Failed to set start method to '{multiprocessing_start_method}', "
+                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+            )
+            bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            multiprocessing_start_method = multiprocessing.get_start_method()
+        self._use_fork = multiprocessing_start_method in ["fork", "forkserver"]
 
+        # Init some fields from inputs
         self._output_dir = output_dir
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
 
+        # Init some fields from flow_executor
         self._flow_id = flow_executor._flow_id
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
