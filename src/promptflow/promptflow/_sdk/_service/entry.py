@@ -132,8 +132,8 @@ def start_service(args):
                     f"service start depends on pywin32.. {ex}"
                 )
             command = (
-                f"waitress-serve --listen=127.0.0.1:{port} promptflow._sdk._service.entry:get_app"
-                f" --threads={PF_SERVICE_WAITRESS_THREADS}"
+                f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WAITRESS_THREADS} "
+                "promptflow._sdk._service.entry:get_app"
             )
             startupinfo = win32process.STARTUPINFO()
             startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
