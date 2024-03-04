@@ -1,0 +1,17 @@
+inputs:
+  words:
+    type: string
+  chat_history:
+    type: list
+outputs:
+  result:
+    type: string
+    reference: ${criticizer.output}
+nodes:
+- name: criticizer
+  type: python
+  source:
+    type: code
+    path: criticizer.py
+  inputs:
+    words: ${inputs.words}

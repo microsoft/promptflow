@@ -197,3 +197,21 @@ class ExperimentCommandRunError(SDKError):
     """Exception raised if experiment validation failed."""
 
     pass
+
+
+class ChatGroupError(SDKError):
+    """Exception raised if chat group operation failed."""
+
+    pass
+
+
+class ChatAgentError(SDKError):
+    """Exception raised if chat agent operation failed."""
+
+    pass
+
+
+class UnexpectedAttributeError(SDKError):
+    """Exception raised if unexpected attribute is found."""
+
+    pass

@@ -456,3 +456,9 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class ChatGroupSpeakOrder(str, Enum):
+    SEQUENTIAL = "sequential"
+    AUTO = "auto"
+    LLM = "llm"
