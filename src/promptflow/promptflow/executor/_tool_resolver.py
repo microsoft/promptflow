@@ -18,7 +18,7 @@ from promptflow._utils.multimedia_utils import create_image, load_multimedia_dat
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType, to_json_type_mapping_
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._assistant_tool_invoker import AssistantTool, AssistantToolInvoker
@@ -149,49 +149,70 @@ class ToolResolver:
         m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, updated_tool_def)
 
         # construct the resolved inputs dictionary
-        updated_inputs = self._get_assistant_function_input_types(node_name, predefined_inputs, tool, m)
+        updated_predefined_inputs = self._get_assistant_function_input_types(node_name, predefined_inputs, tool, m)
         callable, init_args = BuiltinsManager._load_tool_from_module(
-            m, tool.name, tool.module, tool.class_name, tool.function, updated_inputs
+            m, tool.name, tool.module, tool.class_name, tool.function, updated_predefined_inputs
         )
-        self._remove_init_args(updated_inputs, init_args)
+        self._remove_init_args(updated_predefined_inputs, init_args)
 
         # construct the AssistantTool object from the updated inputs + Tool object
         func_name = tool.function
-        definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
-        if updated_inputs:
-            inputs = {name: value.value for name, value in updated_inputs.items()}
+        definition = self._generate_tool_definition(tool, callable, predefined_inputs)
+        if updated_predefined_inputs:
+            inputs = {name: value.value for name, value in updated_predefined_inputs.items()}
             func = partial(callable, **inputs)
         else:
             func = callable
         return AssistantTool(name=func_name, openai_definition=definition, func=func)
 
-    def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
+    def _generate_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
         try:
-            to_openai_type = {
-                "str": "string",
-                "int": "number",
-                "float": "number",
-                "bool": "boolean",
-                "list": "array",
-                "dict": "object",
+            sig = inspect.signature(func)
+            parameters = sig.parameters
+            # Attempt to extract the description, handling exceptions
+            try:
+                description, params = DocstringParser.parse(func.__doc__)
+            except Exception as e:
+                # Log the exception if necessary
+                print(f"Failed to parse docstring for function {func.__name__}: {e}")
+                # Set description to None or an empty string
+                description = None  # or description = ""
+                params = {}
+
+            func_definition = {
+                "name": func.__name__,
+                "description": description,
+                "parameters": {"type": "object", "properties": {}, "required": []},
             }
-            description, params = DocstringParser.parse(description)
-            for input in predefined_inputs:
-                if input in params:
-                    params.pop(input)
-            for _, param in params.items():
-                param["type"] = to_openai_type[param["type"]] if param["type"] in to_openai_type else param["type"]
+
+            for name, param in parameters.items():
+                if name in predefined_inputs:
+                    continue
+                # Determine if parameter is required (has no default value)
+                is_required = param.default is param.empty
+                if is_required:
+                    func_definition["parameters"]["required"].append(name)
+
+                # Get parameter type and convert to JSON type
+                param_type = tool.inputs.get(name).type[0]
+                json_type = to_json_type_mapping_.get(param_type, "object")
+
+                # Construct parameter definition
+                func_definition["parameters"]["properties"][name] = {
+                    "type": json_type,
+                    "description": params[name].get("description", ""),
+                }
+
+                # Handle enums separately to include possible values
+                if isinstance(json_type, dict) and "enum" in json_type:
+                    func_definition["parameters"]["properties"][name]["enum"] = json_type["enum"]
 
             return {
                 "type": "function",
-                "function": {
-                    "name": func_name,
-                    "description": description,
-                    "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
-                },
+                "function": func_definition,
             }
         except Exception as e:
-            raise FailedToParseAssistantTool(func_name=func_name) from e
+            raise FailedToParseAssistantTool(func_name=func.__name__) from e
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
@@ -273,29 +294,31 @@ class ToolResolver:
     def _get_assistant_function_input_types(
         self, node_name: str, predefined_inputs: dict, tool: Tool, module: types.ModuleType = None
     ):
-        updated_inputs = {
+        updated_predefined_inputs = {
             k: v
             for k, v in predefined_inputs.items()
             if (v.value is not None and v.value != "") or v.value_type != InputValueType.LITERAL
         }
-        for k, v in updated_inputs.items():
+        for k, v in updated_predefined_inputs.items():
             if v.value_type != InputValueType.LITERAL:
                 continue
             tool_input = tool.inputs.get(k)
             if tool_input is None:  # For kwargs input, tool_input is None.
                 continue
             value_type = tool_input.type[0]
-            updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
+            updated_predefined_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
                 if tool_input.custom_type:
-                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
+                    updated_predefined_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
                         k, v, None, tool, tool_input.custom_type, module=module
                     )
                 else:
-                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
+                    updated_predefined_inputs[k].value = self._convert_to_connection_value(
+                        k, v, node_name, tool_input.type
+                    )
             elif isinstance(value_type, ValueType):
                 try:
-                    updated_inputs[k].value = value_type.parse(v.value)
+                    updated_predefined_inputs[k].value = value_type.parse(v.value)
                 except Exception as e:
                     raise NodeInputValidationError(
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
@@ -307,7 +330,9 @@ class ToolResolver:
                         target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                    updated_predefined_inputs[k].value = load_multimedia_data_recursively(
+                        updated_predefined_inputs[k].value
+                    )
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -322,7 +347,7 @@ class ToolResolver:
                     f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
                     target=ErrorTarget.EXECUTOR,
                 )
-        return updated_inputs
+        return updated_predefined_inputs
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
         try:

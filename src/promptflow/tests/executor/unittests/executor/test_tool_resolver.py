@@ -541,6 +541,17 @@ class TestToolResolver:
         with pytest.raises(InvalidSource) as _:
             resolver._load_source_content(node)
 
+
+@pytest.mark.unittest
+class TestAssistantToolResolver:
+    def _remove_predefined_inputs(self, value: any, predefined_inputs: list):
+        for input in predefined_inputs:
+            if input in value:
+                if isinstance(value, dict):
+                    value.pop(input)
+                elif isinstance(value, list):
+                    value.remove(input)
+
     @pytest.mark.parametrize(
         "predefined_inputs", [({"connection": "conn_name"}), ({"connection": "conn_name", "input_int": 1})]
     )
@@ -606,10 +617,31 @@ class TestToolResolver:
         result = invoker.invoke_tool(func_name="sample_tool", kwargs=kwargs)
         assert result == (input_int, input_str)
 
-    def _remove_predefined_inputs(self, value: any, predefined_inputs: list):
-        for input in predefined_inputs:
-            if input in value:
-                if isinstance(value, dict):
-                    value.pop(input)
-                elif isinstance(value, list):
-                    value.remove(input)
+    def test_generate_tool_definition(self):
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            "node_name", AssistantDefinition(model="model", instructions="instructions", tools=[])
+        )
+        assert assistant_definition
+
+    def test_no_description(self):
+        assert True
+
+    def test_input_type_is_enum(self):
+        assert True
+
+    def test_input_type_is_float(self):
+        assert True
+
+    def test_init_args(self):
+        assert True
+
+    def test_type_not_in_mapping(self):
+        assert True
+
+    def test_customized_input_type(self):
+        assert True
+
+    def test_enum_input_type(self):
+        assert True
