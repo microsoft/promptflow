@@ -282,7 +282,8 @@ class LineRun:
     cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None
     evaluations: typing.Optional[typing.Dict[str, _LineRunData]] = None
 
-    def _generate_line_run_placeholder(self, spans: typing.List[Span]) -> "LineRun":
+    @staticmethod
+    def _generate_line_run_placeholder(spans: typing.List[Span]) -> "LineRun":
         # placeholder for traces whose root spans are absent
         # this placeholder will have trace id collected from other children spans
         # so that we can know more querying spans with trace id
