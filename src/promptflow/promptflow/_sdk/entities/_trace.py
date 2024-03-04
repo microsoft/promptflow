@@ -288,23 +288,21 @@ class LineRun:
         # this placeholder will have trace id collected from other children spans
         # so that we can know more querying spans with trace id
         trace_id = spans[0].trace_id
-        # leverage heap sort to get the earliest start time and the latest end time
+        # leverage heap sort to get the earliest start time
         start_times = [datetime.datetime.fromisoformat(span._content[SpanFieldName.START_TIME]) for span in spans]
         earliest_start_time = heapq.nsmallest(1, start_times)[0]
-        end_times = [datetime.datetime.fromisoformat(span._content[SpanFieldName.END_TIME]) for span in spans]
-        latest_end_time = heapq.nlargest(1, end_times)[0]
         return LineRun(
             line_run_id=trace_id,
             trace_id=trace_id,
-            root_span_id="",
-            inputs=dict(),
-            outputs=dict(),
+            root_span_id=None,
+            inputs=None,
+            outputs=None,
             start_time=earliest_start_time.isoformat(),
-            end_time=latest_end_time.isoformat(),
+            end_time=None,
             status=RUNNING_LINE_RUN_STATUS,
-            latency=0.0,
-            name="",
-            kind="",
+            latency=None,
+            name=None,
+            kind=None,
             cumulative_token_count=None,
             evaluations=None,
         )
