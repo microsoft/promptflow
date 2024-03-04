@@ -25,7 +25,6 @@ from promptflow._cli._utils import (
     _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
     activate_action,
-    exception_handler,
     pretty_print_dataframe_as_table,
 )
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, ListViewType
@@ -130,9 +129,25 @@ Example:
 
 # Stream run logs:
 pfazure run stream --name <name>
+
+# Stream run logs with timeout:
+pfazure run stream --name <name> --timeout 600
 """
+
+    def add_param_timeout(parser):
+        parser.add_argument(
+            "--timeout",
+            type=int,
+            default=600,
+            help=(
+                "Timeout in seconds. If the run stays in the same status and produce no new logs in a period "
+                "longer than the timeout value, the stream operation will abort. Default value is 600 seconds.",
+            ),
+        )
+
     add_params = [
         add_param_run_name,
+        add_param_timeout,
         _set_workspace_argument_for_subparsers,
     ] + base_params
 
@@ -396,6 +411,7 @@ def dispatch_run_commands(args: argparse.Namespace):
             create_func=functools.partial(
                 pf.runs.create_or_update, runtime=args.runtime, reset_runtime=args.reset_runtime
             ),
+            resume_func=pf.runs._create_by_resume_from,
             args=args,
         )
     elif args.sub_action == "list":
@@ -423,7 +439,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "show-metrics":
         show_metrics(args.subscription, args.resource_group, args.workspace_name, args.name)
     elif args.sub_action == "stream":
-        stream_run(args.subscription, args.resource_group, args.workspace_name, args.name, args.debug)
+        stream_run(args)
     elif args.sub_action == "visualize":
         visualize(
             args.subscription,
@@ -445,7 +461,6 @@ def dispatch_run_commands(args: argparse.Namespace):
         cancel_run(args)
 
 
-@exception_handler("List runs")
 def list_runs(
     subscription_id,
     resource_group,
@@ -478,7 +493,6 @@ def list_runs(
     return runs
 
 
-@exception_handler("Show run")
 def show_run(subscription_id, resource_group, workspace_name, run_name):
     """Show a run from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
@@ -486,7 +500,6 @@ def show_run(subscription_id, resource_group, workspace_name, run_name):
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Show run details")
 def show_run_details(subscription_id, resource_group, workspace_name, run_name, max_results, all_results, debug=False):
     """Show a run details from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
@@ -495,7 +508,6 @@ def show_run_details(subscription_id, resource_group, workspace_name, run_name, 
     pretty_print_dataframe_as_table(details)
 
 
-@exception_handler("Show run metrics")
 def show_metrics(subscription_id, resource_group, workspace_name, run_name):
     """Show run metrics from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
@@ -503,16 +515,14 @@ def show_metrics(subscription_id, resource_group, workspace_name, run_name):
     print(json.dumps(metrics, indent=4))
 
 
-@exception_handler("Stream run")
-def stream_run(subscription_id, resource_group, workspace_name, run_name, debug=False):
+def stream_run(args: argparse.Namespace):
     """Stream run logs from cloud."""
-    pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
-    run = pf.runs.stream(run_name)
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    run = pf.runs.stream(args.name, timeout=args.timeout)
     print("\n")
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Visualize run")
 def visualize(
     subscription_id: str,
     resource_group: str,
@@ -533,7 +543,6 @@ def visualize(
         print_red_error(error_message)
 
 
-@exception_handler("Archive run")
 def archive_run(
     subscription_id: str,
     resource_group: str,
@@ -545,7 +554,6 @@ def archive_run(
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Restore run")
 def restore_run(
     subscription_id: str,
     resource_group: str,
@@ -557,7 +565,6 @@ def restore_run(
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Update run")
 def update_run(
     subscription_id: str,
     resource_group: str,
@@ -574,13 +581,11 @@ def update_run(
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Download run")
 def download_run(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     pf.runs.download(run=args.name, output=args.output, overwrite=args.overwrite)
 
 
-@exception_handler("Cancel run")
 def cancel_run(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     pf.runs.cancel(run=args.name)

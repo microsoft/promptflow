@@ -8,7 +8,7 @@ from promptflow.integrations.langchain import LangChainEventType, PromptFlowCall
 @pytest.mark.unittest
 class TestLangchain:
     def get_handler(self):
-        class MockTracer():
+        class MockTracer:
             def __init__(self):
                 self._trace_stack = []
 
@@ -32,7 +32,7 @@ class TestLangchain:
             LangChainEventType.AGENT,
             LangChainEventType.TOOL,
             LangChainEventType.CHAIN,
-            LangChainEventType.LLM
+            LangChainEventType.LLM,
         ]
         assert len(handler._tracer._trace_stack) == 4
         assert handler._tracer._trace_stack[0].name == "test_agent_name"

@@ -4,6 +4,7 @@
 
 import argparse
 import datetime
+import hashlib
 import importlib
 import json
 import os
@@ -12,12 +13,14 @@ import sys
 import tempfile
 import threading
 import time
+import uuid
 from pathlib import Path
 from unittest.mock import patch
 
 import mock
 import pandas as pd
 import pytest
+from requests import Response
 
 from promptflow._cli._params import AppendToDictAction
 from promptflow._cli._utils import (
@@ -38,8 +41,12 @@ from promptflow._sdk._utils import (
     refresh_connections_dir,
     resolve_connections_environment_variable_reference,
     snake_to_camel,
+    get_mac_address,
+    gen_uuid_by_compute_info,
+    get_system_info,
 )
 from promptflow._utils.load_data import load_data
+from promptflow._utils.retry_utils import http_retry_wrapper, retry
 from promptflow._utils.version_hint_utils import check_latest_version
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -432,3 +439,50 @@ class TestCLIUtils:
         res = _calculate_column_widths(df, terminal_width)
         # the column width should at least 1 to avoid tabulate error
         assert res == [4, 1, 13, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+
+@pytest.mark.unittest
+class TestRetryUtils:
+    def test_retry(self):
+        counter = 0
+
+        class A:
+            def mock_f(self):
+                return 1
+
+        class B(A):
+            @retry(Exception, tries=2, delay=1, backoff=1)
+            def mock_f(self):
+                nonlocal counter
+                counter += 1
+                raise Exception("mock exception")
+
+        with pytest.raises(Exception):
+            B().mock_f()
+        assert counter == 2
+
+    def test_http_retry(self):
+        counter = 0
+
+        def mock_http_request():
+            nonlocal counter
+            counter += 1
+            resp = Response()
+            resp.status_code = 429
+            return resp
+
+        http_retry_wrapper(mock_http_request, tries=2, delay=1, backoff=1)()
+        assert counter == 2
+
+    def test_gen_uuid_by_compute_info(self):
+        uuid1 = gen_uuid_by_compute_info()
+        uuid2 = gen_uuid_by_compute_info()
+        assert uuid1 == uuid2
+
+        mac_address = get_mac_address()
+        assert mac_address
+
+        host_name, system, machine = get_system_info()
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        assert str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash)) == gen_uuid_by_compute_info()

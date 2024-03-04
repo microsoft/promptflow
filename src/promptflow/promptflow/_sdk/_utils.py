@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import collections
+import datetime
 import hashlib
 import json
 import multiprocessing
@@ -12,9 +13,11 @@ import shutil
 import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from functools import partial
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -30,11 +33,18 @@ from marshmallow import ValidationError
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
-from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._core.tool_meta_generator import (
+    generate_flow_meta_dict_by_file,
+    generate_tool_meta,
+    generate_tool_meta_in_subprocess,
+)
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
+    FLOW_META_JSON,
+    FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     HOME_PROMPT_FLOW_DIR,
@@ -50,11 +60,13 @@ from promptflow._sdk._constants import (
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
+    AzureMLWorkspaceTriad,
     CommonYamlFields,
     ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
+    GenerateFlowMetaJsonError,
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
     UnsecureConnectionError,
@@ -63,9 +75,10 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -209,16 +222,14 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
-
-
-def _match_reference(env_val: str):
-    env_val = env_val.strip()
-    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
-    if not m:
-        return None, None
-    name, key = m.groups()
-    return name, key
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -293,7 +304,7 @@ def resolve_connections_environment_variable_reference(connections: Dict[str, di
                 continue
             env_name = _match_env_reference(val)
             if env_name not in os.environ:
-                raise Exception(f"Environment variable {env_name} is not found.")
+                raise UserErrorException(f"Environment variable {env_name} is not found.")
             values[key] = os.environ[env_name]
     return connections
 
@@ -360,17 +371,10 @@ def safe_parse_object_list(obj_list, parser, message_generator):
     return results
 
 
-def _normalize_identifier_name(name):
-    normalized_name = name.lower()
-    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
-    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
-    if re.match(r"\d", normalized_name):
-        normalized_name = "n" + normalized_name  # No leading digits
-    return normalized_name
-
-
 def _sanitize_python_variable_name(name: str):
-    return _normalize_identifier_name(name).replace(" ", "_")
+    from promptflow._utils.utils import _sanitize_python_variable_name
+
+    return _sanitize_python_variable_name(name)
 
 
 def _get_additional_includes(yaml_path):
@@ -451,7 +455,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
+                error = ValueError(f"Unable to find additional include {item}")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message=str(error),
+                    error=error,
+                )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
@@ -483,7 +492,6 @@ def print_pf_version():
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs", "__pycache__"]
 
@@ -508,15 +516,21 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
-def _generate_meta_from_files(
-    tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
-) -> None:
-    with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
-        for source, tool_type in tools:
-            try:
-                tools_dict[source] = generate_tool_meta_dict_by_file(source, ToolType(tool_type))
-            except Exception as e:
-                exception_dict[source] = str(e)
+def _construct_tool_dict(tools: List[Tuple[str, str]]) -> Dict[str, Dict[str, str]]:
+    """Construct tool dict from tool list.
+
+    :param tools: tool list, like [('test.py', 'python'), ('test.jinja2', 'llm')]
+    :return: tool dict, like
+    {
+        'test.py': {
+            'tool_type': 'python'
+        },
+        'test.jinja2': {
+            'tool_type': 'llm'
+        }
+    }
+    """
+    return {source: {"tool_type": tool_type} for source, tool_type in tools}
 
 
 def _generate_tool_meta(
@@ -539,22 +553,12 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
+    tools = _construct_tool_dict(tools)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
-        manager = multiprocessing.Manager()
-        tools_dict = manager.dict()
-        exception_dict = manager.dict()
-        p = multiprocessing.Process(
-            target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-        )
-        p.start()
-        p.join(timeout=timeout)
-        if p.is_alive():
-            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
-            p.terminate()
-            p.join()
+        tool_dict, exception_dict = generate_tool_meta_in_subprocess(flow_directory, tools, logger, timeout=timeout)
     else:
-        tools_dict, exception_dict = {}, {}
+        tool_dict, exception_dict = {}, {}
 
         #  There is no built-in method to forcefully stop a running thread/coroutine in Python
         #  because abruptly stopping a thread can cause issues like resource leaks,
@@ -564,8 +568,8 @@ def _generate_tool_meta(
             "Generate meta in current process and timeout won't take effect. "
             "Please handle timeout manually outside current process."
         )
-        _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
-    res = {source: tool for source, tool in tools_dict.items()}
+        generate_tool_meta(flow_directory, tools, tool_dict, exception_dict)
+    res = {source: tool for source, tool in tool_dict.items()}
 
     for source in res:
         # remove name in tool meta
@@ -581,13 +585,8 @@ def _generate_tool_meta(
                     if isinstance(tool_input_type[i], Enum):
                         tool_input_type[i] = tool_input_type[i].value
 
-    # collect errors and print warnings
-    errors = {
-        source: exception for source, exception in exception_dict.items()
-    }  # for not processed tools, regard as timeout error
-    for source, _ in tools:
-        if source not in res and source not in errors:
-            errors[source] = f"Generate meta timeout for source {source!r}."
+    # collect errors and print warnings, exception_dict is a dict of source and error dict
+    errors = {source: error_dict.get("message", "unknown exception") for source, error_dict in exception_dict.items()}
     for source in errors:
         if include_errors_in_output:
             res[source] = errors[source]
@@ -931,13 +930,14 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     dump_yaml(yaml_data, f)
 
 
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
     """Dump flow result for extension.
 
     :param flow_folder: The flow folder.
     :param prefix: The file prefix.
     :param flow_result: The flow result returned by exec_line.
     :param node_result: The node result when test node returned by load_and_exec_node.
+    :param custom_path: The custom path to dump flow result.
     """
     if flow_result:
         flow_serialize_result = {
@@ -949,7 +949,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             "flow_runs": [],
             "node_runs": [serialize(node_result)],
         }
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
     dump_folder.mkdir(parents=True, exist_ok=True)
 
     with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
@@ -1046,7 +1047,18 @@ def parse_remote_flow_pattern(flow: object) -> str:
     return flow_name
 
 
-def get_connection_operation(connection_provider: str):
+def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
+    """
+    Get connection operation based on connection provider.
+    This function will be called by PFClient, so please do not refer to PFClient in this function.
+
+    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+    :type connection_provider: str
+    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+    :type credential: object
+    :param user_agent: User Agent
+    :type user_agent: str
+    """
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
@@ -1055,8 +1067,239 @@ def get_connection_operation(connection_provider: str):
     elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
         from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
-        logger.debug("PFClient using local azure connection operations.")
-        connection_operation = LocalAzureConnectionOperations(connection_provider)
+        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
+        if user_agent is None:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
+        else:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
-        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+        error = ValueError(f"Unsupported connection provider: {connection_provider}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
     return connection_operation
+
+
+# extract open read/write as partial to centralize the encoding
+read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+# nan, inf and -inf are not JSON serializable according to https://docs.python.org/3/library/json.html#json.loads
+# `parse_constant` will be called to handle these values
+# similar idea for below `json_load` and its parameter `parse_const_as_str`
+json_loads_parse_const_as_str = partial(json.loads, parse_constant=lambda x: str(x))
+
+
+# extract some file operations inside this file
+def json_load(file, parse_const_as_str: bool = False) -> str:
+    with read_open(file) as f:
+        if parse_const_as_str is True:
+            return json.load(f, parse_constant=lambda x: str(x))
+        else:
+            return json.load(f)
+
+
+def json_dump(obj, file) -> None:
+    with write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
+def pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)
+
+
+def get_mac_address() -> str:
+    """Obtain all MAC addresses, then sort and concatenate them."""
+    try:
+        import psutil
+
+        mac_address = []
+        net_addresses = psutil.net_if_addrs()
+        # Obtain all MAC addresses, then sort and concatenate them
+        net_address_list = sorted(net_addresses.items())  # sort by name
+        for name, net_address in net_address_list:
+            for net_interface in net_address:
+                if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
+                    mac_address.append(net_interface.address)
+
+        return ":".join(mac_address)
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return ""
+
+
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
+    mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
+    if mac_address:
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
+    return str(uuid.uuid4())
+
+
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+    nanoseconds = int(time_unix_nano)
+    seconds = nanoseconds / 1_000_000_000
+    timestamp = datetime.datetime.utcfromtimestamp(seconds)
+    return timestamp.isoformat()
+
+
+def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
+    attr_key = attribute["key"]
+    # suppose all values are flattened here
+    # so simply regard the first value as the attribute value
+    attr_value = list(attribute["value"].values())[0]
+    return attr_key, attr_value
+
+
+def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
+
+
+def parse_otel_span_status_code(value: int) -> str:
+    # map int value to string
+    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
+    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
+    if value == 0:
+        return "Unset"
+    elif value == 1:
+        return "Ok"
+    else:
+        return "Error"
+
+
+def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
+        try:
+            result = generate_flow_meta_dict_by_file(
+                path=source_path,
+                entry=entry,
+            )
+            meta_dict.update(result)
+        except Exception as e:
+            exception_list.append(str(e))
+
+
+def _generate_flow_meta(
+    flow_directory: Path,
+    source_path: str,
+    entry: str,
+    timeout: int,
+    *,
+    load_in_subprocess: bool = True,
+) -> Dict[str, dict]:
+    """Generate tool meta from files.
+
+    :param flow_directory: flow directory
+    :param tools: tool list
+    :param raise_error: whether raise error when generate meta failed
+    :param timeout: timeout for generate meta
+    :param include_errors_in_output: whether include errors in output
+    :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
+        If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
+    :return: tool meta dict
+    """
+    if load_in_subprocess:
+        # use multiprocess generate to avoid system path disturb
+        manager = multiprocessing.Manager()
+        meta_dict = manager.dict()
+        exception_list = manager.list()
+        p = multiprocessing.Process(
+            target=_generate_meta_from_file, args=(flow_directory, source_path, entry, meta_dict, exception_list)
+        )
+        p.start()
+        p.join(timeout=timeout)
+        if p.is_alive():
+            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
+            p.terminate()
+            p.join()
+    else:
+        meta_dict, exception_list = {}, []
+
+        #  There is no built-in method to forcefully stop a running thread/coroutine in Python
+        #  because abruptly stopping a thread can cause issues like resource leaks,
+        #  deadlocks, or inconsistent states.
+        #  Caller needs to handle the timeout outside current process.
+        logger.warning(
+            "Generate meta in current process and timeout won't take effect. "
+            "Please handle timeout manually outside current process."
+        )
+        _generate_meta_from_file(flow_directory, source_path, entry, meta_dict, exception_list)
+    # directly raise error if failed to generate meta
+    if len(exception_list) > 0:
+        error_message = "Generate meta failed, detail error:\n" + str(exception_list)
+        raise GenerateFlowMetaJsonError(error_message)
+    return dict(meta_dict)
+
+
+def generate_flow_meta(
+    flow_directory: Union[str, Path],
+    source_path: str,
+    entry: str,
+    dump: bool = True,
+    timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+    load_in_subprocess: bool = True,
+) -> dict:
+    """Generate flow.json for a flow directory."""
+
+    flow_meta = _generate_flow_meta(
+        flow_directory=flow_directory,
+        source_path=source_path,
+        entry=entry,
+        timeout=timeout,
+        load_in_subprocess=load_in_subprocess,
+    )
+
+    if dump:
+        # dump as flow.tools.json
+        promptflow_folder = flow_directory / PROMPT_FLOW_DIR_NAME
+        promptflow_folder.mkdir(exist_ok=True)
+        with open(promptflow_folder / FLOW_META_JSON, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(flow_meta, f, indent=4)
+
+    return flow_meta
+
+
+def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
+    if not match or len(match.groups()) != 5:
+        raise ValueError(
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {trace_provider}"
+        )
+    subscription_id = match.group(1)
+    resource_group_name = match.group(3)
+    workspace_name = match.group(5)
+    return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
+
+
+def overwrite_null_std_logger():
+    # For the process started in detach mode, stdout/stderr will be none.
+    # To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout

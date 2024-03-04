@@ -11,13 +11,13 @@ from pathlib import Path
 from promptflow._cli._params import add_param_set_tool_extra_info, base_params
 from promptflow._cli._pf._init_entry_generators import (
     InitGenerator,
-    ManifestGenerator,
     SetupGenerator,
     ToolPackageGenerator,
     ToolPackageUtilsGenerator,
     ToolReadmeGenerator,
 )
-from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
+from promptflow._cli._utils import activate_action, list_of_dict_to_dict
+from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
@@ -136,7 +136,6 @@ def dispatch_tool_commands(args: argparse.Namespace):
         validate_tool(args)
 
 
-@exception_handler("Tool init")
 def init_tool(args):
     # Validate package/tool name
     pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*$"
@@ -154,22 +153,34 @@ def init_tool(args):
         package_name = package_path.stem
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
+
+        # Generate manifest file
+        manifest_file = package_path / "MANIFEST.in"
+        manifest_file.touch(exist_ok=True)
+        with open(manifest_file, "r") as f:
+            manifest_contents = [line.strip() for line in f.readlines()]
+
         if icon_path:
             package_icon_path = package_path / "icons"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
             icon_path = f'Path(__file__).parent.parent / "icons" / "{Path(dst).name}"'
+
+            icon_manifest = f"include {package_name}/icons"
+            if icon_manifest not in manifest_contents:
+                manifest_contents.append(icon_manifest)
+
+        with open(manifest_file, "w", encoding=DEFAULT_ENCODING) as f:
+            f.writelines("\n".join(set(manifest_contents)))
         # Generate package setup.py
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
-        # Generate manifest file
-        ManifestGenerator(package_name=package_name).generate_to_file(package_path / "MANIFEST.in")
         # Generate utils.py to list meta data of tools.
         ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(script_code_path / "utils.py")
         ToolReadmeGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "README.md")
     else:
         script_code_path = Path(".")
         if icon_path:
-            icon_path = f'r"{icon_path}"'
+            icon_path = f'"{Path(icon_path).as_posix()}"'
     # Generate tool script
     ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(
         script_code_path / f"{args.tool}.py"
@@ -178,14 +189,12 @@ def init_tool(args):
     print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
 
 
-@exception_handler("Tool list")
 def list_tool(args):
     pf_client = PFClient()
     package_tools = pf_client._tools.list(args.flow)
     print(json.dumps(package_tools, indent=4))
 
 
-@exception_handler("Tool validate")
 def validate_tool(args):
     import importlib
 

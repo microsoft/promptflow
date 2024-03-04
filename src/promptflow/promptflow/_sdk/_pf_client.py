@@ -6,10 +6,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .. import load_flow
 from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
@@ -19,6 +19,7 @@ from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
 from .operations._tool_operations import ToolOperations
+from .operations._trace_operations import TraceOperations
 
 logger = get_cli_sdk_logger()
 
@@ -33,9 +34,12 @@ class PFClient:
 
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
-        self._runs = RunOperations()
-        self._connection_provider = None
+        self._runs = RunOperations(self)
+        self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
+        # The credential is used as an option to override
+        # DefaultAzureCredential when using workspace connection provider
+        self._credential = kwargs.get("credential", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations(client=self)
@@ -44,11 +48,12 @@ class PFClient:
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._experiments = ExperimentOperations(self)
+        self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -59,6 +64,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -107,16 +113,41 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+        if not flow:
+            raise ValueError("'flow' is required to create a run.")
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-        # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow)
         # validate param conflicts
@@ -212,7 +243,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            self._connections = get_connection_operation(self._connection_provider)
+            self._connections = get_connection_operation(self._connection_provider, self._credential)
         return self._connections
 
     @property

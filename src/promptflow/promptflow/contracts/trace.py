@@ -14,6 +14,8 @@ class TraceType(str, Enum):
     TOOL = "Tool"
     FUNCTION = "Function"
     LANGCHAIN = "LangChain"
+    FLOW = "Flow"
+    EMBEDDING = "Embedding"
 
 
 @dataclass
@@ -39,6 +41,7 @@ class Trace:
     :param node_name: The node name of the trace, used for flow level trace, or None if not applicable.
     :type node_name: Optional[str]
     """
+
     name: str
     type: TraceType
     inputs: Dict[str, Any]

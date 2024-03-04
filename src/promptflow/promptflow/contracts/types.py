@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from dataclasses import dataclass
+from typing import List
 
 
 class Secret(str):
@@ -35,14 +36,12 @@ class AssistantDefinition:
 
     model: str
     instructions: str
-    tools: list
+    tools: List  # The raw tool definition in json string
 
     @staticmethod
     def deserialize(data: dict) -> "AssistantDefinition":
         return AssistantDefinition(
-            model=data.get("model", ""),
-            instructions=data.get("instructions", ""),
-            tools=data.get("tools", [])
+            model=data.get("model", ""), instructions=data.get("instructions", ""), tools=data.get("tools", [])
         )
 
     def serialize(self):
@@ -52,7 +51,6 @@ class AssistantDefinition:
             "tools": self.tools,
         }
 
-    def init_tool_invoker(self):
-        from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
-
-        return AssistantToolInvoker.init(self.tools)
+    def __post_init__(self):
+        # Implicitly introduce the '_tool_invoker' attribute here
+        self._tool_invoker = None  # reserved attribute for tool invoker injection

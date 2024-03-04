@@ -76,10 +76,6 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
-class InvalidSource(ValidationException):
-    pass
-
-
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
@@ -171,8 +167,54 @@ class LineExecutionTimeoutError(UserErrorException):
 
     def __init__(self, line_number, timeout):
         super().__init__(
-            message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
+            message_format="Line {line_number} execution timeout for exceeding {timeout} seconds",
+            line_number=line_number,
+            timeout=timeout,
+            target=ErrorTarget.EXECUTOR,
         )
+
+
+class BatchExecutionTimeoutError(UserErrorException):
+    """Exception raised when batch timeout is exceeded"""
+
+    def __init__(self, line_number, timeout):
+        super().__init__(
+            message_format=(
+                "Line {line_number} execution terminated due to the "
+                "total batch run exceeding the batch timeout ({timeout}s)."
+            ),
+            line_number=line_number,
+            timeout=timeout,
+            target=ErrorTarget.BATCH,
+        )
+
+
+class ProcessCrashError(UserErrorException):
+    """Exception raised when process crashed."""
+
+    def __init__(self, line_number):
+        super().__init__(message=f"Process crashed while executing line {line_number},", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessTerminatedTimeout(SystemErrorException):
+    """Exception raised when process not terminated within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Process has not terminated after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessInfoObtainedTimeout(SystemErrorException):
+    """Exception raised when process info not obtained within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Failed to get process info after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
+class SpawnedForkProcessManagerStartFailure(SystemErrorException):
+    """Exception raised when failed to start spawned fork process manager."""
+
+    def __init__(self):
+        super().__init__(message="Failed to start spawned fork process manager", target=ErrorTarget.EXECUTOR)
 
 
 class EmptyLLMApiMapping(UserErrorException):
@@ -241,3 +283,13 @@ class ResolveToolError(PromptflowException):
 
 class UnsupportedAssistantToolType(ValidationException):
     pass
+
+
+class FailedToParseAssistantTool(UserErrorException):
+    """Exception raised when failed to parse assistant tool from docstring."""
+
+    def __init__(self, func_name):
+        super().__init__(
+            message_format="Failed to get assistant tool by parsing the docstring of function '{func_name}'.",
+            func_name=func_name,
+        )

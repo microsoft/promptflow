@@ -33,7 +33,7 @@ REQUIRES = [
     "keyring>=24.2.0,<25.0.0",  # control plane sdk requirements, to access system keyring service
     "pydash>=6.0.0,<8.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
     # vulnerability: https://github.com/advisories/GHSA-5cpq-8wj7-hf2v
-    "cryptography>=41.0.3,<42.0.0",  # control plane sdk requirements to support connection encryption
+    "cryptography>=42.0.4",  # control plane sdk requirements to support connection encryption
     "colorama>=0.4.6,<0.5.0",  # producing colored terminal text for testing chat flow
     "tabulate>=0.9.0,<1.0.0",  # control plane sdk requirements, to print table in console
     "filelock>=3.4.0,<4.0.0",  # control plane sdk requirements, to lock for multiprocessing
@@ -50,6 +50,9 @@ REQUIRES = [
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
+    "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
+    "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
+    "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
 ]
 
 setup(
@@ -82,28 +85,23 @@ setup(
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
+            "azure-cosmos>=4.5.1,<5.0.0",  # used to upload trace to cloud
         ],
         "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0", "bs4"],
-        "pfs": [
-            "flask-restx>=1.2.0,<2.0.0",
-        ],
         "azureml-serving": [
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
-            # OTel dependencies for monitoring
-            "opentelemetry-api>=1.21.0,<2.0.0",
-            "opentelemetry-sdk>=1.21.0,<2.0.0",
-            "azure-monitor-opentelemetry>=1.1.1,<2.0.0",
+            "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
+        "executor-service": [
+            "fastapi>=0.109.0,<1.0.0",  # used to build web executor server
+        ],
     },
     packages=find_packages(),
-    scripts=[
-        'pf',
-        'pf.bat'
-    ],
+    scripts=["pf", "pf.bat"],
     entry_points={
         "console_scripts": [
             "pfazure = promptflow._cli._pf_azure.entry:main",

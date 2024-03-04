@@ -22,9 +22,13 @@ CLOUD_RUNS_PAGE_SIZE = 25  # align with UX
 
 SESSION_CREATION_TIMEOUT_SECONDS = 10 * 60  # 10 minutes
 SESSION_CREATION_TIMEOUT_ENV_VAR = "PROMPTFLOW_SESSION_CREATION_TIMEOUT_SECONDS"
+ENVIRONMENT = "environment"
 PYTHON_REQUIREMENTS_TXT = "python_requirements_txt"
+ADDITIONAL_INCLUDES = "additional_includes"
 BASE_IMAGE = "image"
 
 
 AUTOMATIC_RUNTIME_NAME = "automatic"
 AUTOMATIC_RUNTIME = "automatic runtime"
+SESSION_ID_PROPERTY = "azureml.promptflow.session_id"
+RUNTIME_PROPERTY = "azureml.promptflow.runtime_name"

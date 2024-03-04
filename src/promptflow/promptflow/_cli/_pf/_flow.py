@@ -36,13 +36,14 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolPyGenerator,
     copy_extra_files,
 )
-from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -224,6 +225,15 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     )
     add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
+        "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
+    )
+    add_param_experiment = lambda parser: parser.add_argument(  # noqa: E731
+        "--experiment", type=str, help="the experiment template path of flow."
+    )
+    add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
+        "--skip-open-browser", action="store_true", help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_flow,
@@ -236,7 +246,12 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_multi_modal,
         add_param_ui,
         add_param_config,
+        add_param_detail,
+        add_param_skip_browser,
     ] + base_params
+
+    if Configuration.get_instance().is_internal_features_enabled():
+        add_params.append(add_param_experiment)
     activate_action(
         name="test",
         description="Test the flow.",
@@ -287,7 +302,8 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     python_tool_inputs = [arg.name for arg in python_tool.tool_arg_list]
     for tool_input in tools.prompt_params.keys():
         if tool_input not in python_tool_inputs:
-            raise ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            error = ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(error), error=error)
 
     python_tool.generate_to_file(tool_py)
     # Create .promptflow and flow.tools.json
@@ -350,10 +366,8 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         if not flow_path.is_dir():
             logger.error(f"{flow_path.resolve()} is not a folder.")
             return
-        answer = (
-            overwrite
-            if overwrite
-            else confirm("The flow folder already exists, do you want to create the flow in this existing folder?")
+        answer = confirm(
+            "The flow folder already exists, do you want to create the flow in this existing folder?", overwrite
         )
         if not answer:
             print("The 'pf init' command has been cancelled.")
@@ -365,10 +379,7 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         _init_standard_or_evaluation_flow(flow_name=flow_name, flow_path=flow_path, flow_type=flow_type)
 
 
-@exception_handler("Flow test")
 def test_flow(args):
-    from promptflow._sdk._load_functions import load_flow
-
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
 
@@ -376,57 +387,109 @@ def test_flow(args):
         environment_variables = list_of_dict_to_dict(args.environment_variables)
     else:
         environment_variables = {}
+    inputs = _build_inputs_for_flow_test(args)
+    # Select different test mode
+    if Configuration.get_instance().is_internal_features_enabled() and args.experiment:
+        _test_flow_experiment(args, pf_client, inputs, environment_variables)
+        return
+    if args.multi_modal or args.ui:
+        _test_flow_multi_modal(args, pf_client)
+        return
+    if args.interactive:
+        _test_flow_interactive(args, pf_client, inputs, environment_variables)
+        return
+    _test_flow_standard(args, pf_client, inputs, environment_variables)
+
+
+def _build_inputs_for_flow_test(args):
+    """Build inputs from --input and --inputs for flow test."""
     inputs = {}
     if args.input:
         from promptflow._utils.load_data import load_data
 
         if args.input and not args.input.endswith(".jsonl"):
-            raise ValueError("Only support jsonl file as input.")
+            error = ValueError("Only support jsonl file as input.")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
         inputs = load_data(local_path=args.input)[0]
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
+    return inputs
 
-    if args.multi_modal or args.ui:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            flow = load_flow(args.flow)
 
-            script_path = [
-                os.path.join(temp_dir, "main.py"),
-                os.path.join(temp_dir, "utils.py"),
-                os.path.join(temp_dir, "logo.png"),
-            ]
-            for script in script_path:
-                StreamlitFileReplicator(
-                    flow_name=flow.display_name if flow.display_name else flow.name,
-                    flow_dag_path=flow.flow_dag_path,
-                ).generate_to_file(script)
-            main_script_path = os.path.join(temp_dir, "main.py")
-            pf_client.flows._chat_with_ui(script=main_script_path)
+def _test_flow_multi_modal(args, pf_client):
+    """Test flow with multi modality mode."""
+    from promptflow._sdk._load_functions import load_flow
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        flow = load_flow(args.flow)
+
+        script_path = [
+            os.path.join(temp_dir, "main.py"),
+            os.path.join(temp_dir, "utils.py"),
+            os.path.join(temp_dir, "logo.png"),
+        ]
+        for script in script_path:
+            StreamlitFileReplicator(
+                flow_name=flow.display_name if flow.display_name else flow.name,
+                flow_dag_path=flow.flow_dag_path,
+            ).generate_to_file(script)
+        main_script_path = os.path.join(temp_dir, "main.py")
+        logger.info("Start streamlit with main script generated at: %s", main_script_path)
+        pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
+
+
+def _test_flow_interactive(args, pf_client, inputs, environment_variables):
+    """Test flow with interactive mode."""
+    pf_client.flows._chat(
+        flow=args.flow,
+        inputs=inputs,
+        environment_variables=environment_variables,
+        variant=args.variant,
+        show_step_output=args.verbose,
+    )
+
+
+def _test_flow_standard(args, pf_client, inputs, environment_variables):
+    """Test flow with standard mode."""
+    result = pf_client.flows.test(
+        flow=args.flow,
+        inputs=inputs,
+        environment_variables=environment_variables,
+        variant=args.variant,
+        node=args.node,
+        allow_generator_output=False,
+        stream_output=False,
+        dump_test_result=True,
+        output_path=args.detail,
+    )
+    # Print flow/node test result
+    if isinstance(result, dict):
+        print(json.dumps(result, indent=4, ensure_ascii=False))
     else:
-        if args.interactive:
-            pf_client.flows._chat(
-                flow=args.flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=args.variant,
-                show_step_output=args.verbose,
-            )
-        else:
-            result = pf_client.flows.test(
-                flow=args.flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=args.variant,
-                node=args.node,
-                allow_generator_output=False,
-                stream_output=False,
-                dump_test_result=True,
-            )
-            # Print flow/node test result
-            if isinstance(result, dict):
-                print(json.dumps(result, indent=4, ensure_ascii=False))
-            else:
-                print(result)
+        print(result)
+
+
+def _test_flow_experiment(args, pf_client, inputs, environment_variables):
+    """Test flow with experiment specified."""
+    if args.variant or args.node:
+        error = ValueError("--variant or --node is not supported experiment is specified.")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
+    node_results = pf_client.flows.test(
+        flow=args.flow,
+        inputs=inputs,
+        environment_variables=environment_variables,
+        experiment=args.experiment,
+        output_path=args.detail,
+    )
+    print(json.dumps(node_results, indent=4, ensure_ascii=False))
 
 
 def serve_flow(args):
@@ -441,7 +504,7 @@ def serve_flow(args):
     )
     os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     flow = load_flow(args.source)
-    if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+    if flow.language == FlowLanguage.CSharp:
         serve_flow_csharp(args, source)
     else:
         serve_flow_python(args, source)

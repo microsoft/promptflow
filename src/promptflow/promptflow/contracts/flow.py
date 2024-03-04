@@ -17,7 +17,7 @@ from promptflow.exceptions import ErrorTarget
 from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
-from .._utils.utils import try_import
+from .._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
@@ -221,7 +221,13 @@ class ActivateCondition:
         :return: The activate condition constructed from the dict.
         :rtype: ~promptflow.contracts.flow.ActivateCondition
         """
+        node_name = node_name if node_name else ""
         if "when" in data and "is" in data:
+            if data["when"] is None and data["is"] is None:
+                logger.warning(
+                    f"The activate config for node {node_name} has empty 'when' and 'is'. "
+                    "Please check your flow yaml to ensure it aligns with your expectations."
+                )
             return ActivateCondition(
                 condition=InputAssignment.deserialize(data["when"]),
                 condition_value=data["is"],
@@ -229,10 +235,10 @@ class ActivateCondition:
         else:
             raise FlowDefinitionError(
                 message_format=(
-                    "The definition of activate config for node {node_name}"
-                    " is incorrect. Please check your flow yaml and resubmit."
+                    "The definition of activate config for node {node_name} "
+                    "is incorrect. Please check your flow yaml and resubmit."
                 ),
-                node_name=node_name if node_name else "",
+                node_name=node_name,
             )
 
 
@@ -595,7 +601,7 @@ class Flow:
         outputs = data.get("outputs") or {}
         return Flow(
             # TODO: Remove this fallback.
-            data.get("id", data.get("name", "default_flow_id")),
+            data.get("id", "default_flow_id"),
             data.get("name", "default_flow"),
             nodes,
             {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
@@ -649,6 +655,7 @@ class Flow:
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
+        flow_dag["name"] = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     @classmethod
@@ -668,13 +675,22 @@ class Flow:
         If environment_variables_overrides exists, override yaml level configuration.
         Returns the merged environment variables dict.
         """
+        if Path(flow_file).suffix.lower() != ".yaml":
+            # The flow_file type of eager flow is .py
+            return environment_variables_overrides or {}
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
         flow = Flow.deserialize(flow_dag)
+        return flow.get_environment_variables_with_overrides(
+            environment_variables_overrides=environment_variables_overrides
+        )
 
+    def get_environment_variables_with_overrides(
+        self, environment_variables_overrides: Dict[str, str] = None
+    ) -> Dict[str, str]:
         environment_variables = {
-            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in flow.environment_variables.items()
+            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in self.environment_variables.items()
         }
         if environment_variables_overrides is not None:
             for k, v in environment_variables_overrides.items():
@@ -817,6 +833,14 @@ class Flow:
             else:
                 logger.debug(f"Node {node.name} doesn't reference any connection.")
             connection_names.update(node_connection_names)
+
+        # Add connection names from environment variable reference
+        if self.environment_variables:
+            for k, v in self.environment_variables.items():
+                if not isinstance(v, str) or not v.startswith("${"):
+                    continue
+                connection_name, _ = _match_reference(v)
+                connection_names.add(connection_name)
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):

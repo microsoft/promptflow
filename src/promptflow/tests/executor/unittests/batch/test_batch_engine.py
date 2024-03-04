@@ -5,13 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from promptflow._core._errors import UnexpectedError
-from promptflow.batch import (
-    AbstractExecutorProxy,
-    APIBasedExecutorProxy,
-    BatchEngine,
-    CSharpExecutorProxy,
-    PythonExecutorProxy,
-)
+from promptflow.batch import APIBasedExecutorProxy, BatchEngine, CSharpExecutorProxy, PythonExecutorProxy
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound
@@ -47,7 +41,8 @@ class TestBatchEngine:
         with patch("promptflow.batch._batch_engine.BatchEngine._exec_in_task") as mock_func:
             mock_func.side_effect = side_effect
             with patch(
-                "promptflow.batch._batch_inputs_processor.BatchInputsProcessor.process_batch_inputs", new=Mock()
+                "promptflow.batch._batch_inputs_processor.BatchInputsProcessor.process_batch_inputs",
+                new=Mock(return_value=[]),
             ):
                 with pytest.raises(ex_type) as e:
                     batch_engine.run({}, {}, Path("."))
@@ -60,16 +55,11 @@ class TestBatchEngine:
         assert BatchEngine.executor_proxy_classes["python"] == PythonExecutorProxy
         assert BatchEngine.executor_proxy_classes["csharp"] == CSharpExecutorProxy
 
-        class MockPythonExecutorProxy(AbstractExecutorProxy):
-            pass
-
         class MockJSExecutorProxy(APIBasedExecutorProxy):
             pass
 
         # register new proxy
-        BatchEngine.register_executor("python", MockPythonExecutorProxy)
         BatchEngine.register_executor("js", MockJSExecutorProxy)
-        assert BatchEngine.executor_proxy_classes["python"] == MockPythonExecutorProxy
         assert BatchEngine.executor_proxy_classes["js"] == MockJSExecutorProxy
         assert len(BatchEngine.executor_proxy_classes) == 3
 

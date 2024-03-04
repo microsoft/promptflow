@@ -16,6 +16,7 @@ class ActionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     SUBMIT_BULK_RUN = "SubmitBulkRun"
     LOG_RUN_RESULT = "LogRunResult"
     LOG_RUN_TERMINATED_EVENT = "LogRunTerminatedEvent"
+    SUBMIT_FLOW_RUN = "SubmitFlowRun"
 
 class AetherArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -520,6 +521,11 @@ class ConfigValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STRING = "String"
     SECRET = "Secret"
 
+class ConnectionAuthMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    KEY = "Key"
+    MEID_TOKEN = "MeidToken"
+
 class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     PYTHON_FEED = "PythonFeed"
@@ -619,6 +625,10 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     XERO = "Xero"
     ZOHO = "Zoho"
     GENERIC_CONTAINER_REGISTRY = "GenericContainerRegistry"
+    OPEN_AI = "OpenAI"
+    SERP = "Serp"
+    BING_LLM_SEARCH = "BingLLMSearch"
+    SERVERLESS = "Serverless"
 
 class ConnectionScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -645,6 +655,7 @@ class ConnectionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     QDRANT = "Qdrant"
     WEAVIATE = "Weaviate"
     FORM_RECOGNIZER = "FormRecognizer"
+    SERVERLESS = "Serverless"
 
 class ConsumeMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -861,6 +872,8 @@ class FlowLanguage(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     PYTHON = "Python"
     C_SHARP = "CSharp"
+    TYPE_SCRIPT = "TypeScript"
+    JAVA_SCRIPT = "JavaScript"
 
 class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -876,11 +889,27 @@ class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BULK_TEST = "BulkTest"
     EVAL = "Eval"
     PAIRWISE_EVAL = "PairwiseEval"
+    EXPERIMENT_TEST = "ExperimentTest"
+    EXPERIMENT_EVAL = "ExperimentEval"
 
-class FlowRuntimeSubmissionApiVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+class FlowRunStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
-    VERSION1 = "Version1"
-    VERSION2 = "Version2"
+    STARTED = "Started"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
+    CANCELLED = "Cancelled"
+    NOT_STARTED = "NotStarted"
+    RUNNING = "Running"
+    QUEUED = "Queued"
+    PAUSED = "Paused"
+    UNAPPROVED = "Unapproved"
+    STARTING = "Starting"
+    PREPARING = "Preparing"
+    CANCEL_REQUESTED = "CancelRequested"
+    PAUSING = "Pausing"
+    FINALIZING = "Finalizing"
+    CANCELED = "Canceled"
+    BYPASSED = "Bypassed"
 
 class FlowRunTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1103,6 +1132,7 @@ class JobType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO_ML = "AutoML"
     SPARK = "Spark"
     BASE = "Base"
+    FINE_TUNING = "FineTuning"
 
 class KeyType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1359,6 +1389,11 @@ class PrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MEAN_AVERAGE_PRECISION = "MeanAveragePrecision"
     IOU = "Iou"
 
+class PromptflowEngineType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    FAST_ENGINE = "FastEngine"
+    SCALABLE_ENGINE = "ScalableEngine"
+
 class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNKNOWN = "Unknown"
@@ -1522,10 +1557,11 @@ class SeasonalityMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     AUTO = "Auto"
     CUSTOM = "Custom"
 
-class Section(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+class SessionConfigModeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
-    GALLERY = "Gallery"
-    TEMPLATE = "Template"
+    DEFAULT = "Default"
+    FORCE_INSTALL_PACKAGE = "ForceInstallPackage"
+    FORCE_RESET = "ForceReset"
 
 class SessionSetupModeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1672,6 +1708,7 @@ class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PROMPT = "prompt"
     CUSTOM_LLM = "custom_llm"
     CSHARP = "csharp"
+    TYPESCRIPT = "typescript"
 
 class TrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1778,6 +1815,8 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FORM_RECOGNIZER_CONNECTION = "FormRecognizerConnection"
     FILE_PATH = "file_path"
     IMAGE = "image"
+    ASSISTANT_DEFINITION = "assistant_definition"
+    SERVERLESS_CONNECTION = "ServerlessConnection"
 
 class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

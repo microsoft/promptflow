@@ -15,7 +15,7 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._tools_operations import build_get_dynamic_list_request, build_get_package_tools_request, build_get_samples_request, build_get_tool_meta_request, build_get_tool_meta_v2_request, build_get_tool_setting_request, build_retrieve_tool_func_result_request
+from ...operations._tools_operations import build_get_dynamic_list_request, build_get_package_tools_request, build_get_tool_meta_request, build_get_tool_meta_v2_request, build_get_tool_setting_request, build_retrieve_tool_func_result_request
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
 
@@ -94,61 +94,6 @@ class ToolsOperations:
         return deserialized
 
     get_tool_setting.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/setting'}  # type: ignore
-
-
-    @distributed_trace_async
-    async def get_samples(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        **kwargs: Any
-    ) -> Dict[str, "_models.Tool"]:
-        """get_samples.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: dict mapping str to Tool, or the result of cls(response)
-        :rtype: dict[str, ~flow.models.Tool]
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType[Dict[str, "_models.Tool"]]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        
-        request = build_get_samples_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            template_url=self.get_samples.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('{Tool}', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    get_samples.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/samples'}  # type: ignore
 
 
     @distributed_trace_async

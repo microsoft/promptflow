@@ -1,11 +1,15 @@
 import inspect
 
 import pytest
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced, trace
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
+
+from ...utils import prepare_memory_exporter
+from ...process_utils import execute_function_in_subprocess
 
 
 def generator():
@@ -32,13 +36,8 @@ class TestTracer:
         # Assert that there is no active tracer instance after ending tracing
         assert Tracer.active_instance() is None
 
-        # Test the raise_ex argument of the end_tracing method
-        with pytest.raises(Exception):
-            # Try to end tracing again with raise_ex=True
-            Tracer.end_tracing(raise_ex=True)
-
         # Try to end tracing again with raise_ex=False
-        traces = Tracer.end_tracing(raise_ex=False)
+        traces = Tracer.end_tracing()
 
         # Assert that the traces are empty
         assert not traces
@@ -105,8 +104,6 @@ class TestTracer:
 
         # test the push method with no active tracer
         Tracer.push(trace1)
-        # assert that the warning message is logged
-        assert "Try to push trace but no active tracer in current context." in caplog.text
 
     def test_unserializable_obj_to_serializable(self):
         # assert that the function returns a str object for unserializable objects
@@ -252,7 +249,6 @@ class TestTraced:
     def test_original_function_and_wrapped_function_attributes_are_set(self, func):
         traced_func = _traced(func)
         assert getattr(traced_func, "__original_function") == func
-        assert getattr(func, "__wrapped_function") == traced_func
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("func", [sync_func, async_func])
@@ -381,3 +377,24 @@ class TestTrace:
         assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
+
+
+@pytest.mark.unittest
+class TestOTelTracer:
+    def test_trace_func(self):
+        execute_function_in_subprocess(self.assert_test_func)
+
+    def assert_test_func(self):
+        memory_exporter = prepare_memory_exporter()
+        traced_func = trace(sync_func)
+        result = traced_func(1)
+        assert result == 1
+        span_list = memory_exporter.get_finished_spans()
+        assert len(span_list) == 1
+        span = span_list[0]
+        assert span.name == sync_func.__name__
+        assert span.attributes["framework"] == "promptflow"
+        assert span.attributes["span_type"] == TraceType.FUNCTION
+        assert span.attributes["function"] == sync_func.__name__
+        assert span.attributes["inputs"] == '{\n  "a": 1\n}'
+        assert span.status.status_code == StatusCode.OK

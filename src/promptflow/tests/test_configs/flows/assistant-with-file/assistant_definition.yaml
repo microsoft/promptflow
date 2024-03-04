@@ -1,0 +1,9 @@
+model: gpt-4
+instructions: You are a helpful assistant.
+tools:
+  - type: code_interpreter
+  - type: function
+    source:
+      type: code
+      path: get_stock_eod_price.py
+    tool_type: python

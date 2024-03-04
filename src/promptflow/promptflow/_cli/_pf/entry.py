@@ -6,9 +6,8 @@ import json
 import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
 
 # Log the start time
@@ -118,15 +117,9 @@ def entry(argv):
     prog, args = get_parser_args(argv)
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
-    logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(
-        logger,
-        activity_name,
-        activity_type=ActivityType.PUBLICAPI,
-    ):
-        run_command(args)
+    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
 
 
 def main():
@@ -134,8 +127,9 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        version_dict_string = json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True,
-                                         separators=(",", ": ")) + "\n"
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
         print(version_dict_string)
         return
     if len(command_args) == 0:

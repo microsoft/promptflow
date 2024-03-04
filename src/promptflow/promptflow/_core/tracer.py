@@ -10,15 +10,31 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Callable, Optional, Dict
+from importlib.metadata import version
+from threading import Lock
+from typing import Callable, Dict, List, Optional
+
+import opentelemetry.trace as otel_trace
+from opentelemetry.trace import Link
+from opentelemetry.trace.status import StatusCode
+from opentelemetry.trace.span import NonRecordingSpan
+from opentelemetry.sdk.trace import ReadableSpan
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
+from promptflow._core.operation_context import OperationContext
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.multimedia_utils import default_json_encoder
+from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
+from .._utils.utils import default_json_encoder
 from .thread_local_singleton import ThreadLocalSingleton
+
+
+IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
+
+open_telemetry_tracer = otel_trace.get_tracer("promptflow")
 
 
 class Tracer(ThreadLocalSingleton):
@@ -50,17 +66,11 @@ class Tracer(ThreadLocalSingleton):
         return tracer._run_id
 
     @classmethod
-    def end_tracing(cls, run_id: Optional[str] = None, raise_ex=False):
+    def end_tracing(cls, run_id: Optional[str] = None):
         tracer = cls.active_instance()
         if not tracer:
-            msg = "Try end tracing but no active tracer in current context."
-            if raise_ex:
-                raise Exception(msg)
-            logging.warning(msg)
             return []
         if run_id is not None and tracer._run_id != run_id:
-            msg = f"Try to end tracing for run {run_id} but {tracer._run_id} is active."
-            logging.warning(msg)
             return []
         tracer._deactivate_in_context()
         return tracer.to_json()
@@ -69,7 +79,6 @@ class Tracer(ThreadLocalSingleton):
     def push(cls, trace: Trace):
         obj = cls.active_instance()
         if not obj:
-            logging.warning("Try to push trace but no active tracer in current context.")
             return
         obj._push(trace)
 
@@ -115,7 +124,7 @@ class Tracer(ThreadLocalSingleton):
     @classmethod
     def pop(cls, output=None, error: Optional[Exception] = None):
         obj = cls.active_instance()
-        return obj._pop(output, error)
+        return obj._pop(output, error) if obj else output
 
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._get_current_trace()
@@ -147,8 +156,64 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
-    """Initialize a trace object from a function call."""
+class TokenCollector:
+    _lock = Lock()
+
+    def __init__(self):
+        self._span_id_to_tokens = {}
+
+    def collect_openai_tokens(self, span, output):
+        span_id = span.get_span_context().span_id
+        if not inspect.isgenerator(output) and hasattr(output, "usage") and output.usage is not None:
+            tokens = output.usage.dict()
+            if tokens:
+                with self._lock:
+                    self._span_id_to_tokens[span_id] = tokens
+
+    def collect_openai_tokens_for_parent_span(self, span):
+        tokens = self.try_get_openai_tokens(span.get_span_context().span_id)
+        if tokens:
+            if not hasattr(span, "parent") or span.parent is None:
+                return
+            parent_span_id = span.parent.span_id
+            with self._lock:
+                if parent_span_id in self._span_id_to_tokens:
+                    merged_tokens = {
+                        key: self._span_id_to_tokens[parent_span_id].get(key, 0) + tokens.get(key, 0)
+                        for key in set(self._span_id_to_tokens[parent_span_id]) | set(tokens)
+                    }
+                    self._span_id_to_tokens[parent_span_id] = merged_tokens
+                else:
+                    self._span_id_to_tokens[parent_span_id] = tokens
+
+    def try_get_openai_tokens(self, span_id):
+        with self._lock:
+            return self._span_id_to_tokens.get(span_id, None)
+
+
+token_collector = TokenCollector()
+
+
+def _create_trace_from_function_call(
+    f, *, args=None, kwargs=None, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+):
+    """
+    Creates a trace object from a function call.
+
+    Args:
+        f (Callable): The function to be traced.
+        args (list, optional): The positional arguments to the function. Defaults to None.
+        kwargs (dict, optional): The keyword arguments to the function. Defaults to None.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Trace: The created trace object.
+    """
+    args = args or []
+    kwargs = kwargs or {}
+    args_to_ignore = set(args_to_ignore or [])
     sig = inspect.signature(f).parameters
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -158,9 +223,15 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     }
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
+    for key in args_to_ignore:
+        all_kwargs.pop(key, None)
+
+    name = f.__qualname__
+    if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
+        name = f"{f.__module__}.{name}"
 
     return Trace(
-        name=f.__qualname__,
+        name=name,
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
@@ -168,63 +239,303 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     )
 
 
-def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
-    """A wrapper to add trace to a function.
+def get_node_name_from_context():
+    tracer = Tracer.active_instance()
+    if tracer is not None:
+        return tracer._node_name
+    return None
 
-    When a function is wrapped by this wrapper, the function name,
-    inputs, outputs, start time, end time, and error (if any) will be recorded.
 
-    It can be used for both sync and async functions.
-    For sync functions, it will return a sync function.
-    For async functions, it will return an async function.
+def enrich_span_with_context(span):
+    try:
+        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+        span.set_attributes(attrs_from_context)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with context: {e}")
 
-    :param func: The function to be traced.
-    :type func: Callable
-    :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
-    :type trace_type: TraceType, optional
-    :return: The wrapped function with trace enabled.
-    :rtype: Callable
+
+def enrich_span_with_trace(span, trace):
+    try:
+        span.set_attributes(
+            {
+                "framework": "promptflow",
+                "span_type": trace.type.value,
+                "function": trace.name,
+            }
+        )
+        node_name = get_node_name_from_context()
+        if node_name:
+            span.set_attribute("node_name", node_name)
+        enrich_span_with_context(span)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with trace: {e}")
+
+
+def enrich_span_with_prompt_info(span, func, kwargs):
+    try:
+        # Assume there is only one prompt template parameter in the function,
+        # we use the first one by default if there are multiple.
+        prompt_tpl_param_name = get_prompt_param_name_from_func(func)
+        if prompt_tpl_param_name is not None:
+            prompt_tpl = kwargs.get(prompt_tpl_param_name)
+            prompt_vars = {key: kwargs.get(key) for key in get_inputs_for_prompt_template(prompt_tpl) if key in kwargs}
+            prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
+            span.set_attributes(prompt_info)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with prompt info: {e}")
+
+
+def enrich_span_with_input(span, input):
+    try:
+        serialized_input = serialize_attribute(input)
+        span.set_attribute("inputs", serialized_input)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with input: {e}")
+
+    return input
+
+
+def enrich_span_with_trace_type(span, inputs, output, trace_type):
+    if trace_type == TraceType.LLM:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_llm_model(span, output)
+    elif trace_type == TraceType.EMBEDDING:
+        token_collector.collect_openai_tokens(span, output)
+        enrich_span_with_embedding(span, inputs, output)
+    enrich_span_with_openai_tokens(span, trace_type)
+    return enrich_span_with_output(span, output)
+
+
+def traced_generator(generator, original_span: ReadableSpan):
+    context = original_span.get_span_context()
+    link = Link(context)
+    # If start_trace is not called, the name of the original_span will be empty.
+    with open_telemetry_tracer.start_as_current_span(
+        f"Iterated({original_span.name})",
+        links=[link],
+    ) as span:
+        span.set_attributes(original_span.attributes)
+        generator_proxy = GeneratorProxy(generator)
+        yield from generator_proxy
+        generator_output = generator_proxy.items
+
+        # Enrich LLM span for openai steaming message
+        # TODO: Enrich LLM token count for streaming scenario
+        if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
+            from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+            chunks = []
+            role = "assistant"
+            for item in generator_output:
+                if not isinstance(item, ChatCompletionChunk):
+                    continue
+                if item.choices and item.choices[0].delta.content:
+                    chunks.append(item.choices[0].delta.content)
+                    role = item.choices[0].delta.role or role
+            if chunks:
+                text = "".join(chunks)
+                message = {"content": text, "role": role}
+                span.set_attribute("llm.generated_message", serialize_attribute(message))
+        serialized_output = serialize_attribute(generator_output)
+        span.set_attribute("output", serialized_output)
+
+
+def enrich_span_with_output(span, output):
+    try:
+        serialized_output = serialize_attribute(output)
+        span.set_attribute("output", serialized_output)
+        # If the output is a generator, while the span is a valid span, we will trace the generator.
+        if isinstance(output, Iterator) and not isinstance(span, NonRecordingSpan):
+            output = traced_generator(output, span)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with output: {e}")
+
+    return output
+
+
+def enrich_span_with_openai_tokens(span, trace_type):
+    try:
+        tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
+        if tokens:
+            span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+            if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
+                llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+                span_tokens.update(llm_tokens)
+            span.set_attributes(span_tokens)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with openai tokens: {e}")
+
+
+def enrich_span_with_embedding(span, inputs, output):
+    from openai.types.create_embedding_response import CreateEmbeddingResponse
+
+    try:
+        if isinstance(output, CreateEmbeddingResponse):
+            span.set_attribute("embedding.model", output.model)
+            embeddings = []
+            input_list = [emb_input] if _is_single_input(emb_input := inputs["input"]) else emb_input
+            for emb in output.data:
+                emb_text = i if isinstance(i := input_list[emb.index], str) else f"<{len(i)} dimensional token>"
+                embeddings.append(
+                    {
+                        "embedding.vector": f"<{len(emb.embedding)} dimensional vector>",
+                        "embedding.text": emb_text,
+                    }
+                )
+            span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with embedding: {e}")
+
+
+def _is_single_input(embedding_inputs):
+    # OpenAI Embedding API accepts a single string/tokenized string or a list of string/tokenized string as input.
+    # For the single string/tokenized string case, we should return true, otherwise return false.
+    if (isinstance(embedding_inputs, str)):
+        # input is a string
+        return True
+    elif (isinstance(embedding_inputs, list) and all(isinstance(i, int) for i in embedding_inputs)):
+        # input is a token array
+        return True
+    return False
+
+
+def enrich_span_with_llm_model(span, output):
+    try:
+        if not IS_LEGACY_OPENAI:
+            from openai.types.chat.chat_completion import ChatCompletion
+            from openai.types.completion import Completion
+
+            if isinstance(output, (ChatCompletion, Completion)):
+                span.set_attribute("llm.model", output.model)
+    except Exception as e:
+        logging.warning(f"Failed to enrich span with llm model: {e}")
+
+
+def serialize_attribute(value):
+    """Serialize values that can be used as attributes in span."""
+    try:
+        serializable = Tracer.to_serializable(value)
+        serialized_value = serialize(serializable)
+        return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+    except Exception as e:
+        logging.warning(f"Failed to serialize attribute: {e}")
+        return None
+
+
+def _traced(
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+) -> Callable:
+    """
+    Decorator that adds tracing to a function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
+    """
+    wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
+    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+
+
+def _traced_async(
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+) -> Callable:
+    """
+    Decorator that adds tracing to an asynchronous function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
     """
 
     def create_trace(func, args, kwargs):
-        return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
+        return _create_trace_from_function_call(
+            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+        )
 
-    if inspect.iscoroutinefunction(func):
+    @functools.wraps(func)
+    async def wrapped(*args, **kwargs):
+        trace = create_trace(func, args, kwargs)
+        # Fall back to trace.name if we can't get node name for better view.
+        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
+        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            enrich_span_with_trace(span, trace)
+            enrich_span_with_prompt_info(span, func, kwargs)
 
-        @functools.wraps(func)
-        async def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
             # Should not extract these codes to a separate function here.
             # We directly call func instead of calling Tracer.invoke,
             # because we want to avoid long stack trace when hitting an exception.
             try:
-                Tracer.push(create_trace(func, args, kwargs))
+                Tracer.push(trace)
+                enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
-                return Tracer.pop(output)
+                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                span.set_status(StatusCode.OK)
+                output = Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
                 raise
-
-    else:
-
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                Tracer.push(create_trace(func, args, kwargs))
-                output = func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
+        token_collector.collect_openai_tokens_for_parent_span(span)
+        return output
 
     wrapped.__original_function = func
-    func.__wrapped_function = wrapped
+
+    return wrapped
+
+
+def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION) -> Callable:
+    """
+    Decorator that adds tracing to a synchronous function.
+
+    Args:
+        func (Callable): The function to be traced.
+        args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
+                                                        Defaults to None.
+        trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+
+    Returns:
+        Callable: The traced function.
+    """
+
+    def create_trace(func, args, kwargs):
+        return _create_trace_from_function_call(
+            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+        )
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        trace = create_trace(func, args, kwargs)
+        # Fall back to trace.name if we can't get node name for better view.
+        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
+        with open_telemetry_tracer.start_as_current_span(span_name) as span:
+            enrich_span_with_trace(span, trace)
+            enrich_span_with_prompt_info(span, func, kwargs)
+
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push(trace)
+                enrich_span_with_input(span, trace.inputs)
+                output = func(*args, **kwargs)
+                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                span.set_status(StatusCode.OK)
+                output = Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
+        token_collector.collect_openai_tokens_for_parent_span(span)
+        return output
+
+    wrapped.__original_function = func
 
     return wrapped
 

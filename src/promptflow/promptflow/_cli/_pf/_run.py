@@ -17,6 +17,7 @@ from promptflow._cli._params import (
     add_param_output_format,
     add_param_run_name,
     add_param_set,
+    add_param_yes,
     add_parser_build,
     base_params,
 )
@@ -24,7 +25,6 @@ from promptflow._cli._utils import (
     _output_result_list_with_format,
     activate_action,
     confirm,
-    exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
@@ -32,9 +32,13 @@ from promptflow._cli._utils import (
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_type
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._run_functions import _create_run
+from promptflow._sdk._run_functions import _create_run, _resume_run
+from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def add_run_parser(subparsers):
@@ -90,6 +94,10 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
     )
     add_param_name = lambda parser: parser.add_argument("-n", "--name", type=str, help="Name of the run.")  # noqa: E731
 
+    add_param_resume_from = lambda parser: parser.add_argument(  # noqa: E731
+        "--resume-from", type=str, dest="resume_from", help="The existing run name to resume from."
+    )  # noqa: E731
+
     add_params = [
         add_param_file,
         add_param_stream,
@@ -102,6 +110,7 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         add_param_environment_variables,
         add_param_connections,
         add_param_set,
+        add_param_resume_from,
     ] + base_params
 
     add_params.extend(add_param_list)
@@ -127,8 +136,12 @@ pf run create -f <yaml-filename>
 pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-file>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
-# Create a run from an existing run record folder
+# Create a run from an existing run record folder:
 pf run create --source <path-to-run-folder>
+# Create a run resume from an existing run:
+pf run create --resume-from <run-name>
+# Create a run resume from an existing run, set the name, display_name, description and tags:
+pf run create --resume-from <run-name> --name <new-run-name> --set display_name='A new run' description='my run description' tags.Type=Test
 """
 
     # data for pf has different help doc than pfazure
@@ -352,7 +365,7 @@ Example:
 # Delete a run:
 pf run delete -n "<name>"
 """
-    add_params = [add_param_run_name] + base_params
+    add_params = [add_param_run_name, add_param_yes] + base_params
 
     activate_action(
         name="delete",
@@ -407,7 +420,7 @@ pf run restore --name <name>
 
 def dispatch_run_commands(args: argparse.Namespace):
     if args.sub_action == "create":
-        create_run(create_func=_create_run, args=args)
+        create_run(create_func=_create_run, resume_func=_resume_run, args=args)
     elif args.sub_action == "update":
         update_run(name=args.name, params=args.params_override)
     elif args.sub_action == "stream":
@@ -435,7 +448,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "export":
         export_run(args)
     elif args.sub_action == "delete":
-        delete_run(name=args.name)
+        delete_run(args.name, args.yes)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -462,7 +475,6 @@ def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], O
     return display_name, description, tags
 
 
-@exception_handler("Update run")
 def update_run(name: str, params: List[Dict[str, str]]) -> None:
     # params_override can have multiple items when user specifies with
     # `--set key1=value1 key2=value`
@@ -478,14 +490,12 @@ def update_run(name: str, params: List[Dict[str, str]]) -> None:
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Stream run")
 def stream_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.stream(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("List runs")
 def list_runs(
     max_results: int,
     all_results: bool,
@@ -502,47 +512,46 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     # hide additional info and debug info in run list for better user experience
-    json_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
+    parser = lambda run: run._to_dict(exclude_additional_info=True, exclude_debug_info=True)  # noqa: E731
+    json_list = safe_parse_object_list(
+        obj_list=runs,
+        parser=parser,
+        message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
+    )
     _output_result_list_with_format(result_list=json_list, output_format=output)
     return runs
 
 
-@exception_handler("Show run")
 def show_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.get(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Show run details")
 def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
     details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
     pretty_print_dataframe_as_table(details)
 
 
-@exception_handler("Show run metrics")
 def show_run_metrics(name: str) -> None:
     pf_client = PFClient()
     metrics = pf_client.runs.get_metrics(name=name)
     print(json.dumps(metrics, indent=4))
 
 
-@exception_handler("Visualize run")
 def visualize_run(names: str, html_path: Optional[str] = None) -> None:
     run_names = [name.strip() for name in names.split(",")]
     pf_client = PFClient()
     pf_client.runs.visualize(run_names, html_path=html_path)
 
 
-@exception_handler("Archive run")
 def archive_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.archive(name=name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Restore run")
 def restore_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.restore(name=name)
@@ -560,10 +569,10 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
     return result
 
 
-@exception_handler("Create run")
-def create_run(create_func: Callable, args):
+def create_run(create_func: Callable, resume_func: Callable, args):
     file = args.file
     flow = args.flow
+    has_source = hasattr(args, "source")
     run_source = getattr(args, "source", None)  # source is only available for pf args, not pfazure.
     data = args.data
     column_mapping = args.column_mapping
@@ -573,6 +582,7 @@ def create_run(create_func: Callable, args):
     stream = args.stream
     environment_variables = args.environment_variables
     connections = args.connections
+    resume_from = args.resume_from
     params_override = args.params_override or []
 
     if environment_variables:
@@ -582,56 +592,59 @@ def create_run(create_func: Callable, args):
     if column_mapping:
         column_mapping = list_of_dict_to_dict(column_mapping)
 
-    if file:
-        for param_key, param in {
-            "name": name,
-            "flow": flow,
-            "variant": variant,
-            "data": data,
-            "column_mapping": column_mapping,
-            "run": run,
-            "environment_variables": environment_variables,
-            "connections": connections,
-        }.items():
-            if not param:
-                continue
-            params_override.append({param_key: param})
+    run_params = {
+        "name": name,
+        "flow": flow,
+        "variant": variant,
+        "data": data,
+        "column_mapping": column_mapping,
+        "run": run,
+        "environment_variables": environment_variables,
+        "connections": connections,
+        "resume_from": resume_from,
+    }
+    # remove empty fields
+    run_params = {k: v for k, v in run_params.items() if v is not None}
 
-        run = load_run(source=file, params_override=params_override)
-    elif flow:
-        run_data = {
-            "name": name,
-            "flow": flow,
-            "data": data,
-            "column_mapping": column_mapping,
-            "run": run,
-            "variant": variant,
-            "environment_variables": environment_variables,
-            "connections": connections,
-        }
-        # remove empty fields
-        run_data = {k: v for k, v in run_data.items() if v is not None}
+    if sum([bool(resume_from), bool(file), bool(flow), bool(run_source)]) > 1:
+        raise UserErrorException(
+            "More than one is provided for exclusive options: [file, flow"
+            f"{', source' if has_source else ''}, resume-from]"
+        )
 
-        run = Run._load(data=run_data, params_override=params_override)
-    elif run_source:
-        display_name, description, tags = _parse_metadata_args(params_override)
-        processed_params = {
-            "display_name": display_name,
-            "description": description,
-            "tags": tags,
-        }
-        run = Run._load_from_source(source=run_source, params_override=processed_params)
-    else:
+    def _build_run_obj():
+        if file:
+            for param_key, param in run_params.items():
+                params_override.append({param_key: param})
+
+            return load_run(source=file, params_override=params_override)
+        if flow:
+            return Run._load(data=run_params, params_override=params_override)
+        if run_source:
+            display_name, description, tags = _parse_metadata_args(params_override)
+            processed_params = {
+                "display_name": display_name,
+                "description": description,
+                "tags": tags,
+            }
+            return Run._load_from_source(source=run_source, params_override=processed_params)
         raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
-    run = create_func(run=run, stream=stream)
+
+    if resume_from:
+        if params_override:
+            logger.debug(f"resume_from specified, append params override {params_override} to run params.")
+            run_params.update(list_of_dict_to_nested_dict(params_override))
+        logger.debug(f"Run params: {run_params}")
+        run = resume_func(**run_params)
+    else:
+        run = create_func(run=_build_run_obj(), stream=stream)
     if stream:
         print("\n")  # change new line to show run info
     print(json.dumps(run._to_dict(), indent=4))
 
 
-@exception_handler("Delete run")
-def delete_run(name: str) -> None:
-    if confirm("Are you sure to delete run irreversibly?"):
+def delete_run(name: str, skip_confirm: bool = False) -> None:
+    if confirm("Are you sure to delete run irreversibly?", skip_confirm):
         pf_client = PFClient()
         pf_client.runs.delete(name=name)
     else:
