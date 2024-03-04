@@ -77,7 +77,7 @@ def list_deployment_names(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection: AzureOpenAIConnection = None
+    connection=""
 ) -> List[Dict[str, str]]:
     res = []
     try:
@@ -94,6 +94,7 @@ def list_deployment_names(
     try:
         credential = _get_credential()
         try:
+            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
             conn = ArmConnectionOperations._build_connection_dict(
                 name=connection,
                 subscription_id=subscription_id,
