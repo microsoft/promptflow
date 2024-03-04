@@ -1026,7 +1026,7 @@ class FlowExecutor:
             run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
-            aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+            aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
         except KeyboardInterrupt as ex:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
