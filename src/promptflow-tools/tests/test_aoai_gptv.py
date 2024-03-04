@@ -102,24 +102,6 @@ def test_list_deployment_names_with_conn_error(monkeypatch):
     assert res == []
 
 
-def test_list_deployment_names_with_azure_openai_conn(monkeypatch):
-    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    from promptflow.connections import AzureOpenAIConnection
-
-    monkeypatch.setattr(
-        ArmConnectionOperations,
-        "_build_connection_dict",
-        mock_build_connection_dict_func1
-    )
-    res = list_deployment_names(
-        DEFAULT_SUBSCRIPTION_ID,
-        DEFAULT_RESOURCE_GROUP_NAME,
-        DEFAULT_WORKSPACE_NAME,
-        AzureOpenAIConnection("", "")
-    )
-    assert res == []
-
-
 def test_list_deployment_names_with_wrong_connection_id(monkeypatch):
     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
