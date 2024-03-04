@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import hashlib
 from os import PathLike
 from pathlib import Path
 from typing import IO, AnyStr, Optional, Union
@@ -10,9 +11,10 @@ from dotenv import dotenv_values
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
 from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
+from ._utils import _sanitize_python_variable_name
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._experiment import ExperimentTemplate
+from .entities._experiment import Experiment, ExperimentTemplate
 from .entities._flow import Flow
 
 logger = get_cli_sdk_logger()
@@ -179,3 +181,28 @@ def _load_experiment_template(
             f"Experiment template file {source_path.resolve().absolute().as_posix()} not found."
         )
     return load_common(ExperimentTemplate, source=source_path)
+
+
+def _load_experiment(
+    source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
+):
+    """
+    Load experiment from YAML file.
+
+    :param source: The local yaml source of an experiment. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: An Experiment object
+    :rtype: Experiment
+    """
+    source = Path(source)
+    absolute_path = source.resolve().absolute().as_posix()
+    if not source.exists():
+        raise NoExperimentTemplateError(f"Experiment file {absolute_path} not found.")
+    anonymous_exp_name = _sanitize_python_variable_name(
+        f"{source.stem}_{hashlib.sha1(absolute_path.encode('utf-8')).hexdigest()}"
+    )
+    experiment = load_common(Experiment, source, params_override=[{"name": anonymous_exp_name}], **kwargs)
+    return experiment
