@@ -1,6 +1,8 @@
 inputs:
   words:
     type: string
+  third_party_comments:
+    type: string
   chat_history:
     type: list
 outputs:

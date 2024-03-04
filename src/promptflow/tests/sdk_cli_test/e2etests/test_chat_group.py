@@ -27,7 +27,8 @@ class TestChatGroup:
             inputs={
                 "request": {
                     "type": str,
-                    "default": "Tell me a joke",
+                    "default": "Please tell me a joke",
+                    "initialize_for": joke_master.inputs.text,
                 },
                 "comments": {
                     "type": str,
@@ -42,5 +43,10 @@ class TestChatGroup:
             },
         )
         assert chat_group
-        # joke_master.set_inputs(text=criticizer.outputs.output ? chat_group.inputs.request)
-        # criticizer.set_inputs(words=joke_master.outputs.output, chat_history=chat_group.chat_history)
+        joke_master.set_inputs(text=criticizer.outputs.result)
+        criticizer.set_inputs(
+            words=joke_master.outputs.output,
+            third_party_comments=chat_group.inputs.comments,
+            chat_history=chat_group.chat_history,
+        )
+        chat_group.invoke()

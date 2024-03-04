@@ -27,4 +27,3 @@ nodes:
     path: joke.jinja2
   connection: azure_open_ai_connection
   api: chat
-node_variants: {}
