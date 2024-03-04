@@ -157,10 +157,11 @@ class TestCommon:
 
     @pytest.mark.parametrize(
         "input_data, expected_output",
-        [(OpenAIConnection(api_key="fake_key", organization="fake_org", base_url="https://openai"),
-          {"max_retries": 0, "api_key": "fake_key", "organization": "fake_org", "base_url": "https://openai"}),
-         (AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"),
-          {"max_retries": 0, "api_key": "fake_key", "api_version": "v1", "azure_endpoint": "https://aoai"}),
+        [
+            (OpenAIConnection(api_key="fake_key", organization="fake_org", base_url="https://openai"),
+             {"max_retries": 0, "api_key": "fake_key", "organization": "fake_org", "base_url": "https://openai"}),
+            (AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"),
+             {"max_retries": 0, "api_key": "fake_key", "api_version": "v1", "azure_endpoint": "https://aoai"}),
         ]
     )
     def test_normalize_connection_config(self, input_data, expected_output):
