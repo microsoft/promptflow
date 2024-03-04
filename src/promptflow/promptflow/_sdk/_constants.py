@@ -68,6 +68,7 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
+FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
 PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
@@ -255,6 +256,7 @@ class FlowRunProperties:
     # Experiment command node fields only
     COMMAND = "command"
     OUTPUTS = "outputs"
+    RESUME_FROM = "resume_from"
 
 
 class CommonYamlFields:

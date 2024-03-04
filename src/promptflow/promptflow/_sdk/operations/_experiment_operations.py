@@ -1,11 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
+import shutil
 from pathlib import Path
 from typing import List, Optional, Union
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, ListViewType
-from promptflow._sdk._errors import ExperimentExistsError, ExperimentValueError, RunOperationError
+from promptflow._sdk._errors import ExperimentExistsError, RunOperationError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
@@ -82,44 +84,72 @@ class ExperimentOperations(TelemetryMixin):
                 last_start_time=orm_experiment.last_start_time,
                 last_end_time=orm_experiment.last_end_time,
                 node_runs=orm_experiment.node_runs,
+                inputs=orm_experiment.inputs,
+                data=orm_experiment.data,
             )
             return self.get(experiment.name)
 
     @monitor_operation(activity_name="pf.experiment.start", activity_type=ActivityType.PUBLICAPI)
-    def start(self, name: str, **kwargs) -> Experiment:
-        """Start an experiment.
+    def start(self, experiment: Experiment, stream=False, inputs=None, **kwargs) -> Experiment:
+        """
+        Start an experiment.
 
-        :param name: Experiment name.
-        :type name: str
+        :param experiment: Experiment object.
+        :type experiment: ~promptflow.entities.Experiment
+        :param stream: Indicates whether to stream the experiment execution logs to the console.
+        :type stream: bool
+        :param inputs: Input dict to override.
+        :type inputs: Dict[str, str]
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        if not isinstance(name, str):
-            raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        experiment = self.get(name)
+        if experiment._source_path:
+            # Update snapshot for anonymous experiment
+            logger.debug("Start saving snapshot and update node.")
+            snapshots = experiment._output_dir / "snapshots"
+            if snapshots.exists():
+                shutil.rmtree(snapshots)
+            experiment._save_snapshot_and_update_node()
+
+        # Update experiment inputs
+        experiment = copy.deepcopy(experiment)
+        inputs = inputs or {}
+        for name, value in inputs.items():
+            exp_input = next(filter(lambda exp_input: exp_input.name == name, experiment.inputs), None)
+            if exp_input:
+                exp_input.default = value
+                continue
+            exp_data = next(filter(lambda exp_data: exp_data.name == name, experiment.data), None)
+            if exp_data:
+                exp_data.path = Path(value).absolute().as_posix()
+                continue
+            logger.warning(f"Input {name} doesn't exist in experiment.")
+        experiment = self.create_or_update(experiment)
+
         if experiment.status in [ExperimentStatus.QUEUING, ExperimentStatus.IN_PROGRESS]:
             raise RunOperationError(
                 f"Experiment {experiment.name} is {experiment.status}, cannot be started repeatedly."
             )
-        return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
+        if stream:
+            return ExperimentOrchestrator(self._client, experiment).start(**kwargs)
+        else:
+            return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
 
     @monitor_operation(activity_name="pf.experiment.stop", activity_type=ActivityType.PUBLICAPI)
-    def stop(self, name: str, **kwargs) -> Experiment:
+    def stop(self, experiment: Experiment, **kwargs) -> Experiment:
         """Stop an experiment.
 
-        :param name: Experiment name.
-        :type name: str
+        :param experiment: Experiment name.
+        :type experiment: ~promptflow.entities.Experiment
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        if not isinstance(name, str):
-            raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        ExperimentOrchestrator(self._client, self.get(name)).stop()
-        return self.get(name)
+        ExperimentOrchestrator(self._client, experiment).stop()
+        return self.get(experiment.name)
 
     def _test(
         self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs

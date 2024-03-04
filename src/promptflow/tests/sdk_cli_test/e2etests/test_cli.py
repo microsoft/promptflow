@@ -1982,6 +1982,22 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
+        from promptflow._sdk._load_functions import _load_experiment
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
+            run_pf_command("experiment", "start", "--file", experiment_file, "--stream")
+            experiment = _load_experiment(source=experiment_file)
+            exp = local_client._experiments.get(name=experiment.name)
+            assert len(exp.node_runs) == 4
+            assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
+            metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+            assert "accuracy" in metrics
+
     @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
     def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
@@ -2061,3 +2077,56 @@ class TestCli:
         ]:
             path = Path(tmpdir) / filename
             assert path.is_file()
+
+    def test_flow_run_resume_from(self, capfd, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        new_run_id = str(uuid.uuid4())
+        display_name = "test"
+        description = "new description"
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            run_id,
+            "--name",
+            new_run_id,
+            "--set",
+            f"display_name={display_name}",
+            f"description={description}",
+            "tags.A=A",
+            "tags.B=B",
+        )
+        run = local_client.runs.get(name=new_run_id)
+        assert run.name == new_run_id
+        assert run.display_name == display_name
+        assert run.description == description
+        assert run.tags == {"A": "A", "B": "B"}
+        assert run._resume_from == run_id
+
+    def test_flow_run_exclusive_param(self, capfd) -> None:
+        # fetch std out
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--resume-from",
+                "mock",
+            )
+        out, _ = capfd.readouterr()
+        assert "More than one is provided for exclusive options" in out

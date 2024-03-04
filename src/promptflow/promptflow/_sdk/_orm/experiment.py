@@ -13,9 +13,9 @@ from sqlalchemy.orm import declarative_base
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, ListViewType
 from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError
 
+from ...exceptions import ErrorTarget, UserErrorException
 from .retry import sqlite_retry
 from .session import mgmt_db_session
-from ...exceptions import UserErrorException, ErrorTarget
 
 Base = declarative_base()
 
@@ -86,6 +86,8 @@ class Experiment(Base):
         last_start_time: Optional[Union[str, datetime.datetime]] = None,
         last_end_time: Optional[Union[str, datetime.datetime]] = None,
         node_runs: Optional[str] = None,
+        inputs: Optional[str] = None,
+        data: Optional[str] = None,
     ) -> None:
         update_dict = {}
         if status is not None:
@@ -103,6 +105,12 @@ class Experiment(Base):
         if node_runs is not None:
             self.node_runs = node_runs
             update_dict["node_runs"] = self.node_runs
+        if inputs is not None:
+            self.inputs = inputs
+            update_dict["inputs"] = self.inputs
+        if data is not None:
+            self.data = data
+            update_dict["data"] = self.data
         with mgmt_db_session() as session:
             session.query(Experiment).filter(Experiment.name == self.name).update(update_dict)
             session.commit()

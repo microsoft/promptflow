@@ -8,6 +8,7 @@
 # to provide OTLP/HTTP endpoint as OTEL collector
 
 import json
+import traceback
 
 from flask import current_app, request
 from google.protobuf.json_format import MessageToJson
@@ -69,6 +70,7 @@ def _try_write_trace_to_cosmosdb(all_spans):
             if subscription_id is None or resource_group_name is None or workspace_name is None:
                 current_app.logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
                 return
+            from promptflow._sdk._service.app import CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE
             from promptflow.azure._storage.cosmosdb.client import get_client
             from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
             from promptflow.azure._storage.cosmosdb.summary import Summary
@@ -79,10 +81,11 @@ def _try_write_trace_to_cosmosdb(all_spans):
             )
 
             if line_summary_client and span_client:
-                result = SpanCosmosDB(span).persist(span_client)
+                result = SpanCosmosDB(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(span_client)
                 # None means the span already exists, then we don't need to persist the summary also.
                 if result is not None:
-                    Summary(span).persist(line_summary_client)
+                    Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(line_summary_client)
     except Exception as e:
-        current_app.logger.error(f"Failed to write trace to cosmosdb: {e}")
+        stack_trace = traceback.format_exc()
+        current_app.logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")
         return
