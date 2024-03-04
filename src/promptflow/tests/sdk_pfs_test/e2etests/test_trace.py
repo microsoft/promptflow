@@ -9,7 +9,12 @@ import uuid
 
 import pytest
 
-from promptflow._constants import SpanAttributeFieldName, SpanContextFieldName, SpanStatusFieldName
+from promptflow._constants import (
+    RUNNING_LINE_RUN_STATUS,
+    SpanAttributeFieldName,
+    SpanContextFieldName,
+    SpanStatusFieldName,
+)
 from promptflow._sdk._constants import CumulativeTokenCountFieldName, LineRunFieldName
 from promptflow._sdk.entities._trace import Span
 
@@ -22,7 +27,11 @@ def mock_session_id() -> str:
     return str(uuid.uuid4())
 
 
-def persist_a_span(session_id: str, custom_attributes: typing.Optional[typing.Dict] = None) -> None:
+def persist_a_span(
+    session_id: str,
+    custom_attributes: typing.Optional[typing.Dict] = None,
+    parent_span_id: typing.Optional[str] = None,
+) -> None:
     if custom_attributes is None:
         custom_attributes = {}
     span = Span(
@@ -53,6 +62,8 @@ def persist_a_span(session_id: str, custom_attributes: typing.Optional[typing.Di
         span_type="Flow",
         session_id=session_id,
     )
+    if parent_span_id is not None:
+        span.parent_span_id = parent_span_id
     span._persist()
     return
 
@@ -111,3 +122,52 @@ class TestTrace:
         persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attributes)
         line_runs = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json
         assert len(line_runs) == 1
+
+    def test_list_running_line_run(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+        mock_batch_run_id = str(uuid.uuid4())
+        mock_parent_span_id = str(uuid.uuid4())
+        batch_run_attributes = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
+            SpanAttributeFieldName.LINE_NUMBER: "0",
+        }
+        persist_a_span(
+            session_id=mock_session_id,
+            custom_attributes=batch_run_attributes,
+            parent_span_id=mock_parent_span_id,
+        )
+        line_runs = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json
+        assert len(line_runs) == 1
+        running_line_run = line_runs[0]
+        assert running_line_run[LineRunFieldName.STATUS] == RUNNING_LINE_RUN_STATUS
+
+    def test_list_line_runs_with_both_status(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+        mock_batch_run_id = str(uuid.uuid4())
+        # running line run
+        mock_parent_span_id = str(uuid.uuid4())
+        batch_run_attributes = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
+            SpanAttributeFieldName.LINE_NUMBER: "0",
+        }
+        persist_a_span(
+            session_id=mock_session_id,
+            custom_attributes=batch_run_attributes,
+            parent_span_id=mock_parent_span_id,
+        )
+        # completed line run
+        batch_run_attributes = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
+            SpanAttributeFieldName.LINE_NUMBER: "1",
+        }
+        persist_a_span(
+            session_id=mock_session_id,
+            custom_attributes=batch_run_attributes,
+        )
+        # we have slightly different code path for query w/o runs and w/ runs
+        for line_runs in [
+            pfs_op.list_line_runs(session_id=mock_session_id).json,
+            pfs_op.list_line_runs(runs=[mock_batch_run_id]).json,
+        ]:
+            assert len(line_runs) == 2
+            # according to order by logic, the first line run is line 1, the completed
+            assert line_runs[0][LineRunFieldName.STATUS] == "Ok"
+            assert line_runs[1][LineRunFieldName.STATUS] == RUNNING_LINE_RUN_STATUS
