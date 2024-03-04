@@ -172,6 +172,7 @@ class Flow(FlowBase):
         cls,
         source: Union[str, PathLike],
         entry: str = None,
+        raise_error=True,
         **kwargs,
     ):
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -190,7 +191,7 @@ class Flow(FlowBase):
                 content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, data=data, **kwargs)
+                return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
                 return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)

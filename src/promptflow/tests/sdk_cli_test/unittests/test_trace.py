@@ -20,6 +20,7 @@ from promptflow._trace._start_trace import (
     _create_resource,
     _is_tracer_provider_configured,
     _provision_session_id,
+    _validate_session_id,
     setup_exporter_from_environ,
 )
 
@@ -48,6 +49,13 @@ def mock_resource() -> Dict:
 @pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestStartTrace:
+    def test_session_id_validation(self) -> None:
+        # [A-Za-z0-9_-]
+        _validate_session_id(str(uuid.uuid4()))
+        # space
+        with pytest.raises(ValueError):
+            _validate_session_id("test session")
+
     def test_create_resource(self) -> None:
         session_id = str(uuid.uuid4())
         resource1 = _create_resource(session_id=session_id)
@@ -115,6 +123,25 @@ class TestStartTrace:
             # specified, but still honor the configured one
             session_id = _provision_session_id(specified_session_id=str(uuid.uuid4()))
             assert configured_session_id == session_id
+
+    @pytest.mark.usefixtures("reset_tracer_provider")
+    def test_local_to_cloud_resource(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                TraceEnvironmentVariableName.SESSION_ID: str(uuid.uuid4()),
+                TraceEnvironmentVariableName.SUBSCRIPTION_ID: "test_subscription_id",
+                TraceEnvironmentVariableName.RESOURCE_GROUP_NAME: "test_resource_group_name",
+                TraceEnvironmentVariableName.WORKSPACE_NAME: "test_workspace_name",
+            },
+            clear=True,
+        ):
+            setup_exporter_from_environ()
+            tracer_provider = trace.get_tracer_provider()
+            res_attrs = dict(tracer_provider.resource.attributes)
+            assert res_attrs[SpanResourceAttributesFieldName.SUBSCRIPTION_ID] == "test_subscription_id"
+            assert res_attrs[SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME] == "test_resource_group_name"
+            assert res_attrs[SpanResourceAttributesFieldName.WORKSPACE_NAME] == "test_workspace_name"
 
     def test_trace_without_attributes_collection(self, mock_resource: Dict) -> None:
         # generate a span without attributes

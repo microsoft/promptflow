@@ -11,6 +11,7 @@ import pytest
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, NODE_VARIANTS, PROMPT_FLOW_DIR_NAME, USE_VARIANTS
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -18,6 +19,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
@@ -480,3 +482,16 @@ class TestFlowLocalOperations:
                 "type": "python",
             }
         }
+
+    def test_eager_flow_validate(self, pf):
+        source = f"{EAGER_FLOWS_DIR}/incorrect_entry"
+
+        validation_result = pf.flows.validate(flow=source)
+
+        assert validation_result.error_messages == {"entry": "Entry function my_func is not valid."}
+        assert "#line 1" in repr(validation_result)
+
+        with pytest.raises(UserErrorException) as e:
+            pf.flows.validate(flow=source, raise_error=True)
+
+        assert "Entry function my_func is not valid." in str(e.value)

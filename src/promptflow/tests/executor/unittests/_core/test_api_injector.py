@@ -1,3 +1,4 @@
+import json
 import logging
 from collections import namedtuple
 from importlib.metadata import version
@@ -8,7 +9,7 @@ import openai
 import pytest
 
 from promptflow._core.openai_injector import (
-    PROMPTFLOW_PREFIX,
+    PROMPTFLOW_HEADER,
     USER_AGENT_HEADER,
     _generate_api_and_injector,
     _openai_api_list,
@@ -367,12 +368,12 @@ def test_api_list(is_legacy, expected_apis_with_injectors):
         (
             [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_sync)],
             [(MockAPI, "create", TraceType.LLM, inject_sync)],
-            []
+            [],
         ),
         (
             [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_async)],
             [(MockAPI, "create", TraceType.LLM, inject_async)],
-            []
+            [],
         ),
     ],
 )
@@ -444,23 +445,28 @@ def test_get_aoai_telemetry_headers():
         # call the function under test and get the headers
         headers = get_aoai_telemetry_headers()
 
+        assert USER_AGENT_HEADER in headers
+        assert PROMPTFLOW_HEADER in headers
+
         for key in headers.keys():
-            assert key.startswith(PROMPTFLOW_PREFIX) or key == USER_AGENT_HEADER
             assert "_" not in key
 
         # assert that the headers are correct
         assert headers[USER_AGENT_HEADER] == f"test-user-agent promptflow/{VERSION}"
-        assert headers[f"{PROMPTFLOW_PREFIX}flow-id"] == "test-flow-id"
-        assert headers[f"{PROMPTFLOW_PREFIX}root-run-id"] == "test-root-run-id"
+        promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
+        assert promptflow_headers["flow_id"] == "test-flow-id"
+        assert promptflow_headers["root_run_id"] == "test-root-run-id"
 
         context = OperationContext.get_instance()
         context.dummy_key = "dummy_value"
         headers = get_aoai_telemetry_headers()
-        assert f"{PROMPTFLOW_PREFIX}dummy-key" not in headers  # not default telemetry
+        promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
+        assert "dummy_key" not in promptflow_headers  # not default telemetry
 
         context._tracking_keys.add("dummy_key")
         headers = get_aoai_telemetry_headers()
-        assert headers[f"{PROMPTFLOW_PREFIX}dummy-key"] == "dummy_value"  # telemetry key inserted
+        promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
+        assert promptflow_headers["dummy_key"] == "dummy_value"  # telemetry key inserted
 
 
 @pytest.mark.unittest
@@ -498,7 +504,7 @@ def test_inject_and_recover_openai_api():
         "promptflow._core.openai_injector.available_openai_apis_and_injectors",
         return_value=[
             (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector),
-            (FakeAPIWithOriginal, "create", TraceType.LLM, injector)
+            (FakeAPIWithOriginal, "create", TraceType.LLM, injector),
         ],
     ):
         # Call the function to inject the APIs

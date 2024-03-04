@@ -1,7 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import os
+from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
@@ -66,11 +68,15 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
+FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
 PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
+PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_HOUR_TIMEOUT = 1
+PF_SERVICE_MONITOR_SECOND = 60
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
 PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
@@ -130,6 +136,8 @@ TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
+
+AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -247,6 +255,7 @@ class FlowRunProperties:
     # Experiment command node fields only
     COMMAND = "command"
     OUTPUTS = "outputs"
+    RESUME_FROM = "resume_from"
 
 
 class CommonYamlFields:
@@ -331,6 +340,11 @@ class ConnectionType(str, Enum):
     WEAVIATE = "Weaviate"
     SERVERLESS = "Serverless"
     CUSTOM = "Custom"
+
+
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
 
 
 ALL_CONNECTION_TYPES = set(
@@ -456,3 +470,15 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
+class IdentityKeys(str, Enum):
+    """Enum for identity keys."""
+
+    MANAGED = "managed"
+    USER_IDENTITY = "user_identity"
+    RESOURCE_ID = "resource_id"
+    CLIENT_ID = "client_id"

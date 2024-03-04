@@ -15,7 +15,13 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import (
+    CHAT_HISTORY,
+    DEFAULT_ENCODING,
+    FLOW_META_JSON_GEN_TIMEOUT,
+    FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    LOCAL_MGMT_DB_PATH,
+)
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
@@ -25,6 +31,7 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
+    generate_flow_meta,
     generate_flow_tools_json,
     generate_random_string,
     logger,
@@ -525,24 +532,37 @@ class FlowOperations(TelemetryMixin):
             for flow_input, value in executable.inputs.items()
             if not value.is_chat_history
         }
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
-        flow_inputs_params = ",".join(flow_inputs_params)
 
         is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        chat_output_name = next(
+            filter(
+                lambda key: executable.outputs[key].is_chat_output,
+                executable.outputs.keys(),
+            ),
+            None,
+        )
         label = "Chat" if is_chat_flow else "Run"
+        is_streaming = True if is_chat_flow else False
+        config_content = {
+            "flow_name": flow_name,
+            "flow_inputs": flow_inputs,
+            "flow_path": flow_dag_path.as_posix(),
+            "is_chat_flow": is_chat_flow,
+            "chat_history_input_name": chat_history_input_name,
+            "label": label,
+            "chat_output_name": chat_output_name,
+            "is_streaming": is_streaming,
+        }
+
+        with open(output_dir / "config.json", "w") as file:
+            json.dump(config_content, file, indent=4)
+
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
-                "flow_name": flow_name,
                 "runtime_interpreter_path": runtime_interpreter_path,
-                "flow_inputs": flow_inputs,
-                "flow_inputs_params": flow_inputs_params,
-                "flow_path": None,
-                "is_chat_flow": is_chat_flow,
-                "chat_history_input_name": chat_history_input_name,
-                "label": label,
             },
         )
         self._run_pyinstaller(output_dir)
@@ -664,32 +684,34 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow)
+        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        source_path_mapping = {}
-        flow_tools, tools_errors = self._generate_tools_meta(
-            flow=flow_entity.flow_dag_path,
-            source_path_mapping=source_path_mapping,
-        )
+        if isinstance(flow_entity, ProtectedFlow):
+            # only DAG flow has tools meta
+            source_path_mapping = {}
+            flow_tools, tools_errors = self._generate_tools_meta(
+                flow=flow_entity.path,
+                source_path_mapping=source_path_mapping,
+            )
 
-        flow_entity.tools_meta_path.write_text(
-            data=json.dumps(flow_tools, indent=4),
-            encoding=DEFAULT_ENCODING,
-        )
+            flow_entity.tools_meta_path.write_text(
+                data=json.dumps(flow_tools, indent=4),
+                encoding=DEFAULT_ENCODING,
+            )
 
-        if tools_errors:
-            for source_name, message in tools_errors.items():
-                for yaml_path in source_path_mapping.get(source_name, []):
-                    validation_result.append_error(
-                        yaml_path=yaml_path,
-                        message=message,
-                    )
+            if tools_errors:
+                for source_name, message in tools_errors.items():
+                    for yaml_path in source_path_mapping.get(source_name, []):
+                        validation_result.append_error(
+                            yaml_path=yaml_path,
+                            message=message,
+                        )
 
         # flow in control plane is read-only, so resolve location makes sense even in SDK experience
-        validation_result.resolve_location_for_diagnostics(flow_entity.flow_dag_path.as_posix())
+        validation_result.resolve_location_for_diagnostics(flow_entity.path.as_posix())
 
         flow_entity._try_raise(
             validation_result,
@@ -777,3 +799,47 @@ class FlowOperations(TelemetryMixin):
         flow_tools["code"] = flow_tools_meta
 
         return flow_tools, tools_errors
+
+    @monitor_operation(activity_name="pf.flows._generate_flow_meta", activity_type=ActivityType.INTERNALCALL)
+    def _generate_flow_meta(
+        self,
+        flow: Union[str, PathLike],
+        *,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        dump: bool = False,
+        load_in_subprocess: bool = True,
+    ) -> dict:
+        """Generate flow meta for a specific flow or a specific node in the flow.
+
+        This is a private interface for vscode extension, so do not change the interface unless necessary.
+
+        Usage:
+        from promptflow import PFClient
+        PFClient().flows._generate_flow_meta(flow="flow.dag.yaml")
+
+        :param flow: path to the flow directory or flow dag to export
+        :type flow: Union[str, PathLike]
+        :param timeout: timeout for generating flow meta
+        :type timeout: int
+        :param dump: whether to dump the flow meta to .promptflow/flow.json
+        :type dump: bool
+        :param load_in_subprocess: whether to load flow in subprocess. will set to False for VSCode extension since
+            it's already executes in a separate process.
+        :type load_in_subprocess: bool
+        :return: dict of flow meta
+        :rtype: Tuple[dict, dict]
+        """
+        flow: Union[ProtectedFlow, EagerFlow] = load_flow(source=flow)
+        if not isinstance(flow, EagerFlow):
+            # No flow meta for DAG flow
+            return {}
+
+        with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
+            return generate_flow_meta(
+                flow_directory=new_flow_dag_path.parent,
+                source_path=flow.entry_file,
+                entry=flow.entry,
+                dump=dump,
+                timeout=timeout,
+                load_in_subprocess=load_in_subprocess,
+            )
