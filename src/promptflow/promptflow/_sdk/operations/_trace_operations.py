@@ -49,6 +49,7 @@ class TraceOperations:
         line_runs = [LineRun._from_spans(line_run_spans) for line_run_spans in aggregated_spans]
         return line_runs
 
+    @staticmethod
     def _aggregate_spans(spans: typing.List[typing.List[Span]]) -> typing.List[typing.List[Span]]:
         # the input of this function is a list of span lists, each shares the same trace id
         # this function targets to aggregate those with lineage relationship
