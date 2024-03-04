@@ -10,7 +10,7 @@ from functools import partial
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional, Union
 
 import psutil
 
@@ -212,12 +212,12 @@ class LineExecutionProcessPool:
     def _is_process_alive(self, process_id):
         return psutil.pid_exists(process_id)
 
-    def _handle_output_queue_messages(self, output_queue: Queue, result_list: List[LineResult]):
+    def _handle_output_queue_messages(self, output_queue: Queue, result_dict: Dict[int, LineResult], line_number: int):
         try:
             message = output_queue.get(timeout=1)
             if isinstance(message, LineResult):
                 message = self._process_multimedia(message)
-                result_list.append(message)
+                result_dict[line_number] = message
                 return message
             elif isinstance(message, FlowRunInfo):
                 self._storage.persist_flow_run(message)
@@ -232,11 +232,10 @@ class LineExecutionProcessPool:
     def _monitor_workers_and_process_tasks_in_thread(
         self,
         task_queue: Queue,
-        result_list: List[LineResult],
+        result_dict: Dict[int, LineResult],
         index: int,
         input_queue: Queue,
         output_queue: Queue,
-        batch_start_time: datetime,
     ):
         # TODO: zombie?????
         index, process_id, process_name = self._get_process_info(index)
@@ -289,7 +288,7 @@ class LineExecutionProcessPool:
                     break
 
                 # Handle output queue message.
-                message = self._handle_output_queue_messages(output_queue, result_list)
+                message = self._handle_output_queue_messages(output_queue, result_dict, line_number)
                 if isinstance(message, LineResult):
                     completed = True
                     break
@@ -326,21 +325,18 @@ class LineExecutionProcessPool:
                     ex,
                     returned_node_run_infos,
                 )
-                result_list.append(result)
+                result_dict[line_number] = result
 
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
-                # If there are still tasks in the task_queue and the batch run does not exceed the batch timeout,
-                # restart a new process to execute the task.
-                run_finished = task_queue.empty() or self._batch_timeout_expired(batch_start_time)
-                if not run_finished:
-                    self._processes_manager.restart_process(index)
-                    # We need to ensure the process has been killed before continuing to execute.
-                    # Otherwise the process will receive new task, and during the execution, the process
-                    # is killed, which will result in the 'ProcessCrashError'.
-                    self._ensure_process_terminated_within_timeout(process_id)
-                    index, process_id, process_name = self._get_process_info(index)
+                # TODO: if has exception restart anyway?????????????
+                self._processes_manager.restart_process(index)
+                # We need to ensure the process has been killed before continuing to execute.
+                # Otherwise the process will receive new task, and during the execution, the process
+                # is killed, which will result in the 'ProcessCrashError'.
+                self._ensure_process_terminated_within_timeout(process_id)
+                index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
 
