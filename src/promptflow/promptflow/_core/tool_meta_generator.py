@@ -380,6 +380,9 @@ def generate_tool_meta(
     exception_dict: dict,
     prevent_terminate_signal_propagation: bool = False,
 ):
+    # This method might run in a child process, and when executed within a uvicorn app,
+    # the termination signal of the child process could be propagated to the parent process.
+    # So, we add this parameter to prevent this behavior.
     if prevent_terminate_signal_propagation:
         block_terminate_signal_to_parent()
 
