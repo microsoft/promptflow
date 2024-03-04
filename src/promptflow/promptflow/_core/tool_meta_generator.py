@@ -38,6 +38,7 @@ from promptflow._utils.exception_utils import (
     get_tb_next,
     last_frame_info,
 )
+from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -377,7 +378,14 @@ def generate_tool_meta(
     tools: Mapping[str, Mapping[str, str]],
     tool_dict: dict,
     exception_dict: dict,
+    prevent_terminate_signal_propagation: bool = False,
 ):
+    # This method might run in a child process, and when executed within a uvicorn app,
+    # the termination signal of the child process could be propagated to the parent process.
+    # So, we add this parameter to prevent this behavior.
+    if prevent_terminate_signal_propagation:
+        block_terminate_signal_to_parent()
+
     with _change_working_dir(working_dir), inject_sys_path(working_dir):
         for source, config in tools.items():
             try:
@@ -397,12 +405,14 @@ def generate_tool_meta_in_subprocess(
     tools: Mapping[str, Mapping[str, str]],
     input_logger: logging.Logger,
     timeout: int = 10,
+    prevent_terminate_signal_propagation: bool = False,
 ):
     manager = multiprocessing.Manager()
     process_tool_dict = manager.dict()
     process_exception_dict = manager.dict()
     p = multiprocessing.Process(
-        target=generate_tool_meta, args=(working_dir, tools, process_tool_dict, process_exception_dict)
+        target=generate_tool_meta,
+        args=(working_dir, tools, process_tool_dict, process_exception_dict, prevent_terminate_signal_propagation),
     )
     p.start()
     input_logger.info(f"[{os.getpid()}--{p.pid}] Start process to generate tool meta.")

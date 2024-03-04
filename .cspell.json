@@ -89,7 +89,8 @@
     "Summ",
     "Bhavik",
     "meid",
-    "Entra"
+    "Entra",
+    "uvicorn"
   ],
   "ignoreWords": [
     "openmpi",
