@@ -50,8 +50,11 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
     ```yaml
     my_tool_package.tools.tool_with_custom_llm_type.my_tool:
     name: My Custom LLM Tool
+    description: This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate.
     # The type is custom_llm.
     type: custom_llm
+    module: my_tool_package.tools.tool_with_custom_llm_type
+    function: my_tool
     inputs:
       connection:
         type:
@@ -65,9 +68,6 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
       temperature:
         type:
           - double
-    description: This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate.
-    module: my_tool_package.tools.tool_with_custom_llm_type
-    function: my_tool
     ```
 
 ## Use the tool in VS Code

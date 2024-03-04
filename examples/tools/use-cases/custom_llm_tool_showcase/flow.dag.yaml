@@ -5,7 +5,7 @@ inputs:
     default: Microsoft
   user_name:
     type: string
-    default: World
+    default: ""
 outputs:
   output:
     type: string
