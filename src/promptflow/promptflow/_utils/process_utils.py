@@ -2,7 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import logging
+import multiprocessing
+import os
 import signal
+
+from promptflow._utils.logger_utils import bulk_logger
 
 
 def block_terminate_signal_to_parent():
@@ -22,3 +27,18 @@ def block_terminate_signal_to_parent():
 
     signal.signal(signal.SIGTERM, signal.SIG_DFL)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+
+def use_fork_for_process(logger: logging.Logger = bulk_logger):
+    """Determines whether to use the fork method for starting a new process."""
+
+    multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
+    sys_start_methods = multiprocessing.get_all_start_methods()
+    if multiprocessing_start_method not in sys_start_methods:
+        logger.warning(
+            f"Failed to set start method to '{multiprocessing_start_method}', "
+            f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+        )
+        logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+        multiprocessing_start_method = multiprocessing.get_start_method()
+    return multiprocessing_start_method in ["fork", "forkserver"]

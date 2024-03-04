@@ -2,14 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-
-import multiprocessing
-import os
 from pathlib import Path
 from typing import Optional
 
 from promptflow._constants import LINE_TIMEOUT_SEC
-from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.process_utils import use_fork_for_process
 from promptflow.executor import FlowExecutor
 from promptflow.executor._script_executor import ScriptExecutor
 
@@ -44,17 +41,7 @@ class ServiceProcessPool:
         self._line_count = line_count
 
         # Determine how to start the processes
-        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
-        sys_start_methods = multiprocessing.get_all_start_methods()
-        if multiprocessing_start_method not in sys_start_methods:
-            bulk_logger.warning(
-                f"Failed to set start method to '{multiprocessing_start_method}', "
-                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
-            )
-            bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
-            multiprocessing_start_method = multiprocessing.get_start_method()
-        use_fork = multiprocessing_start_method in ["fork", "forkserver"]
-        self._use_fork = use_fork
+        self._use_fork = use_fork_for_process()
 
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
