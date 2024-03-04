@@ -2,7 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import getpass
+import hashlib
+import os
+import re
 import socket
+import sys
 import time
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
@@ -12,9 +16,14 @@ import psutil
 import requests
 from flask import abort, make_response, request
 
-from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
+from promptflow._sdk._constants import (
+    DEFAULT_ENCODING,
+    HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_PORT_DIT_NAME,
+    PF_SERVICE_PORT_FILE,
+)
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utils import read_write_by_user
+from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow._version import VERSION
@@ -35,13 +44,27 @@ def local_user_only(func):
     return wrapper
 
 
+def get_current_env_pfs_file(file_name):
+    executable_path = sys.executable.lower()
+    dir_name = os.path.basename(os.path.dirname(executable_path))
+    # Hash the executable path
+    hash_object = hashlib.sha1(executable_path.encode())
+    hex_dig = hash_object.hexdigest()
+    port_file_name = f"{dir_name}_{hex_dig}_{file_name}"
+    port_file_dir = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_DIT_NAME
+    port_file_dir.mkdir(parents=True, exist_ok=True)
+    port_file_path = port_file_dir / port_file_name
+    port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
+    return port_file_path
+
+
 def get_port_from_config(create_if_not_exists=False):
-    (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
-    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
+    port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
+    with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
     if not port and create_if_not_exists:
-        with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
             # Set random port to ~/.promptflow/pf.yaml
             port = get_random_port()
             service_config["service"] = service_config.get("service", {})
@@ -50,12 +73,25 @@ def get_port_from_config(create_if_not_exists=False):
     return port
 
 
+def kill_service_get_from_original_port_file():
+    if (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).exists():
+        with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
+            service_config = load_yaml(f) or {}
+            port = service_config.get("service", {}).get("port", None)
+            if port:
+                if is_port_in_use(port):
+                    logger.debug(f"Kill the deprecated port {port} got from service key in thr pfs.port file.")
+                    kill_exist_service(port)
+        # delete original .promptflow/pfs.port
+        (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).unlink()
+
+
 def dump_port_to_config(port):
-    # Set port to ~/.promptflow/pf.port, if already have a port in file , will overwrite it.
-    (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
-    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
+    # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will overwrite it.
+    port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
+    with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
-    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
+    with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
         service_config["service"] = service_config.get("service", {})
         service_config["service"]["port"] = port
         dump_yaml(service_config, f)
@@ -106,12 +142,24 @@ def make_response_no_content():
 
 
 def is_pfs_service_healthy(pfs_port) -> bool:
-    """Check if pfs service is running."""
+    """Check if pfs service is running and pfs version matches pf version."""
     try:
         response = requests.get("http://localhost:{}/heartbeat".format(pfs_port))
         if response.status_code == 200:
             logger.debug(f"Promptflow service is already running on port {pfs_port}, {response.text}")
-            return True
+            match = re.search(r'"promptflow":"(.*?)"', response.text)
+            if match:
+                version = match.group(1)
+                is_healthy = version == get_promptflow_sdk_version()
+                if not is_healthy:
+                    logger.warning(
+                        f"Promptflow service is running on port {pfs_port}, but the version is not the same as "
+                        f"promptflow sdk version {get_promptflow_sdk_version()}. The service version is {version}."
+                    )
+            else:
+                is_healthy = False
+                logger.warning("/heartbeat response doesn't contain current pfs version.")
+            return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
     logger.warning(

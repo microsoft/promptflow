@@ -10,16 +10,16 @@ my_tool_package.tools.tool_with_custom_llm_type.my_tool:
         - CustomConnection
       ui_hints:
         text_box_size: lg
-    endpoint_name:
-      type:
-      - string
-      ui_hints:
-        text_box_size: md
     api:
       type:
       - string
       ui_hints:
         text_box_size: sm
+    deployment_name:
+      type:
+      - string
+      ui_hints:
+        text_box_size: md
     temperature:
       type:
       - double

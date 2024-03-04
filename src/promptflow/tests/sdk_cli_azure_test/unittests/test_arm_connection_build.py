@@ -2,10 +2,11 @@ import copy
 
 import pytest
 
+from promptflow._sdk._constants import ConnectionAuthMode
+
 
 def build_from_data_and_assert(data, expected):
-    from azure.ai.ml._restclient.v2023_06_01_preview.models import WorkspaceConnectionPropertiesV2BasicResource
-
+    from promptflow.azure._models._models import WorkspaceConnectionPropertiesV2BasicResource
     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
     data = copy.deepcopy(data)
@@ -43,6 +44,7 @@ def test_build_azure_openai_connection_from_rest_object():
             "api_type": "azure",
             "api_version": "2023-07-01-preview",
             "resource_id": "mock_id",
+            "auth_mode": "key",
         },
     }
     build_from_data_and_assert(data, expected)
@@ -73,9 +75,42 @@ def test_build_default_azure_openai_connection_missing_metadata():
         "value": {
             "api_base": "<api-base>",
             "api_key": "***",
+            "auth_mode": "key",
             # Assert below keys are filtered out
             # "api_type": None,
             # "api_version": None,
+        },
+    }
+    build_from_data_and_assert(data, expected)
+
+
+@pytest.mark.unittest
+def test_build_aad_azure_openai_from_rest_obj():
+    # Test on AAD type with AzureOpenAI category
+    data = {
+        "id": "mock_id",
+        "name": "test_aad_aoai",
+        "type": "Microsoft.MachineLearningServices/workspaces/connections",
+        "properties": {
+            "authType": "AAD",
+            "group": "AzureAI",
+            "category": "AzureOpenAI",
+            "target": "<api-base>",
+            "metadata": {
+                "ApiType": "azure",
+                "ApiVersion": "2023-07-01-preview",
+                "DeploymentApiVersion": "2023-10-01-preview",
+            },
+        },
+    }
+    expected = {
+        "type": "AzureOpenAIConnection",
+        "module": "promptflow.connections",
+        "value": {
+            "api_base": "<api-base>",
+            "api_type": "azure",
+            "api_version": "2023-07-01-preview",
+            "auth_mode": ConnectionAuthMode.MEID_TOKEN,
         },
     }
     build_from_data_and_assert(data, expected)
@@ -134,7 +169,7 @@ def test_build_cognitive_search_connection_from_rest_object():
     expected = {
         "type": "CognitiveSearchConnection",
         "module": "promptflow.connections",
-        "value": {"api_key": "***", "api_base": "mock_target", "api_version": "2023-07-01-Preview"},
+        "value": {"api_key": "***", "api_base": "mock_target", "api_version": "2023-07-01-Preview", "auth_mode": "key"},
     }
     build_from_data_and_assert(data, expected)
 
@@ -162,7 +197,7 @@ def test_build_cognitive_service_category_connection_from_rest_object():
     expected = {
         "type": "AzureContentSafetyConnection",
         "module": "promptflow.connections",
-        "value": {"api_key": "***", "endpoint": "mock_target", "api_version": "2023-04-30-preview"},
+        "value": {"api_key": "***", "endpoint": "mock_target", "api_version": "2023-04-30-preview", "auth_mode": "key"},
     }
     build_from_data_and_assert(data, expected)
 
@@ -236,6 +271,6 @@ def test_build_serverless_category_connection_from_rest_object():
     expected = {
         "type": "ServerlessConnection",
         "module": "promptflow.connections",
-        "value": {"api_key": "***", "api_base": "mock_base"},
+        "value": {"api_key": "***", "api_base": "mock_base", "auth_mode": "key"},
     }
     build_from_data_and_assert(data, expected)

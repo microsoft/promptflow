@@ -21,8 +21,8 @@ class TestToolWithCustomLLMType:
     def test_tool_with_custom_llm_type(self, my_custom_connection):
         result = my_tool(
             my_custom_connection,
-            "my-endpoint-name",
             "my-api",
+            "my-deployment-name",
             0,
             "Hello {{text}}",
             text="Microsoft")

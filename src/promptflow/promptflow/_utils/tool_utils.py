@@ -6,11 +6,13 @@ import importlib
 import inspect
 import logging
 import re
+from dataclasses import asdict
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -22,7 +24,7 @@ from ..contracts.tool import (
     Tool,
     ToolFuncCallScenario,
     ToolType,
-    ValueType
+    ValueType,
 )
 from ..contracts.types import PromptTemplate
 
@@ -30,6 +32,10 @@ module_logger = logging.getLogger(__name__)
 
 _DEPRECATED_TOOLS = "deprecated_tools"
 UI_HINTS = "ui_hints"
+
+
+def asdict_without_none(obj):
+    return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
 def value_to_str(val):
@@ -418,7 +424,10 @@ def _get_function_path(function):
         func_path = function
     elif isinstance(function, Callable):
         func = function
-        func_path = f"{function.__module__}.{function.__name__}"
+        if function.__module__ == PF_MAIN_MODULE_NAME:
+            func_path = function.__name__
+        else:
+            func_path = f"{function.__module__}.{function.__name__}"
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path

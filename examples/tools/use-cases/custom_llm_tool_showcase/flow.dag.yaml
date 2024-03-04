@@ -5,7 +5,7 @@ inputs:
     default: Microsoft
   user_name:
     type: string
-    default: ""
+    default: World
 outputs:
   output:
     type: string
@@ -18,6 +18,9 @@ nodes:
     tool: my_tool_package.tools.tool_with_custom_llm_type.my_tool
     path: prompt_template.jinja2
   inputs:
-    connection: basic_custom_connection
+    connection: ''
+    api: ''
     website_name: ${inputs.website_name}
     user_name: ${inputs.user_name}
+    deployment_name: ''
+    temperature: 1

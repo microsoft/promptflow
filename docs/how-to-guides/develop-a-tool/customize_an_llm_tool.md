@@ -21,8 +21,8 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
     @tool
     def my_tool(
         connection: CustomConnection,
-        endpoint_name: str,
         api: str,
+        deployment_name: str,
         temperature: float,
         prompt: PromptTemplate,
         **kwargs
@@ -56,10 +56,10 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
       connection:
         type:
           - CustomConnection
-      endpoint_name:
+      api:
         type:
           - string
-      api:
+      deployment_name:
         type:
           - string
       temperature:
@@ -79,7 +79,15 @@ Here we use an existing flow to demonstrate the experience, open [this flow](htt
 
 ## FAQs
 ### Can I customize text box size for my tool inputs?
-Yes, you can add `ui_hints.text_box_size` field in your tool YAML file as below. There are 4 sizes available, arranged from smallest to largest as `xs`, `sm`, `md`, `lg`.
+Yes, you can add `ui_hints.text_box_size` field for your tool inputs. There are 4 sizes available which range from extra small to large as `xs`, `sm`, `md`, `lg`. The table below provides detailed information about these sizes:
+| Value | Description | UI display size |
+|-------|-------------|------|
+| xs | extra small | 40px |
+| sm | small | 80px |
+| md | medium | 130px |
+| lg | large | 180px |
+
+You can choose to use different values for your tool inputs based on their expected value length. Take the following yaml as example:
 ```yaml
 my_tool_package.tools.tool_with_custom_llm_type.my_tool:
   name: My Custom LLM Tool
@@ -93,16 +101,16 @@ my_tool_package.tools.tool_with_custom_llm_type.my_tool:
         - CustomConnection
       ui_hints:
         text_box_size: lg
-    endpoint_name:
-      type:
-      - string
-      ui_hints:
-        text_box_size: md
     api:
       type:
       - string
       ui_hints:
         text_box_size: sm
+    deployment_name:
+      type:
+      - string
+      ui_hints:
+        text_box_size: md
     temperature:
       type:
       - double

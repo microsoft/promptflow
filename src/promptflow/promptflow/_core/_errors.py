@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from traceback import TracebackException
 
 from promptflow._utils.exception_utils import (
@@ -125,7 +129,7 @@ class ToolExecutionError(UserErrorException):
 
 
 class GenerateMetaUserError(UserErrorException):
-    """Base exception raised when failed to validate tool."""
+    """Base user exception raised when failed to validate tool."""
 
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
@@ -136,6 +140,22 @@ class MetaFileNotFound(GenerateMetaUserError):
 
 
 class MetaFileReadError(GenerateMetaUserError):
+    pass
+
+
+class GenerateMetaTimeout(GenerateMetaUserError):
+    def __init__(self, source):
+        super().__init__(message_format="Generate meta timeout for source '{source}'.", source=source)
+
+
+class GenerateMetaSystemError(SystemErrorException):
+    """Base system exception raised when failed to validate tool."""
+
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
+
+
+class NoToolTypeDefined(GenerateMetaSystemError):
     pass
 
 
@@ -153,5 +173,11 @@ class ProcessPoolError(SystemErrorException):
 
 class DuplicateToolMappingError(ValidationException):
     """Exception raised when multiple tools are linked to the same deprecated tool id."""
+
+    pass
+
+
+class ResumeCopyError(SystemErrorException):
+    """Exception raised when failed to copy the results when resuming the run."""
 
     pass

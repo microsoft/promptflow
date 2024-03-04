@@ -13,7 +13,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
@@ -38,6 +38,7 @@ from promptflow._sdk._constants import (
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
+    IdentityKeys,
     ListViewType,
     RunDataKeys,
     RunHistoryKeys,
@@ -48,7 +49,6 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
@@ -98,6 +98,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._workspace = workspace
+        self._identity = workspace.identity
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
@@ -709,25 +710,31 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         return test_data
 
-    def _resolve_flow(self, run: Run):
+    def _resolve_flow_and_session_id(self, run: Run) -> Tuple[str, Optional[str]]:
+        """Resolve flow to remote flow and session id."""
+        # for remote flow case, leave session id to None and let service side resolve
         if run._use_remote_flow:
-            return self._resolve_flow_definition_resource_id(run=run)
+            return self._resolve_flow_definition_resource_id(run=run), None
         flow = load_flow(run.flow)
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
             ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
-        return flow.path
+        # for local flow case, use flow path to calculate session id
+        session_id = self._get_session_id(flow=flow, flow_lineage_id=run._lineage_id)
+        return flow.path, session_id
 
-    def _get_session_id(self, flow):
+    def _get_session_id(self, flow, flow_lineage_id):
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        flow_id = get_flow_lineage_id(flow_dir=flow)
-        session_id = f"{user_alias}_{flow_id}"
+        # for different environment, use different session id to avoid image cache
+        env = flow._environment
+        env_hash = hashlib.sha256(json.dumps(env, sort_keys=True).encode()).hexdigest()
+        session_id = f"{user_alias}_{flow_lineage_id}_{env_hash}"
         # hash and truncate to avoid the session id getting too long
         # backend has a 64 bit limit for session id.
         # use hexdigest to avoid non-ascii characters in session id
@@ -801,7 +808,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         print(f"Web View: {portal_url}")
 
-    def _resolve_automatic_runtime(self):
+    @classmethod
+    def _resolve_automatic_runtime(cls):
         logger.warning(
             f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
             "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
@@ -809,31 +817,29 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         runtime_name = AUTOMATIC_RUNTIME_NAME
         return runtime_name
 
-    def _resolve_runtime(self, run, flow_path, runtime):
+    def _resolve_runtime(self, run, runtime):
         runtime = run._runtime or runtime
-        # for remote flow case, leave session id to None and let service side resolve
-        # for local flow case, use flow path to calculate session id
-        session_id = None if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-        return runtime, session_id
+        return runtime
 
     def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
-        flow_path = run.flow
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
-                pool.submit(self._resolve_flow, run=run),
+                pool.submit(self._resolve_flow_and_session_id, run=run),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
-        run.flow = task_results[1]
-        runtime, session_id = self._resolve_runtime(run=run, flow_path=flow_path, runtime=runtime)
+        run.flow, session_id = task_results[1]
+
+        runtime = self._resolve_runtime(run=run, runtime=runtime)
+        self._resolve_identity(run=run)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
@@ -966,3 +972,42 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             flow_run_id=run,
         )
+
+    def _resolve_identity(self, run: Run):
+        """Resolve identity to resource id"""
+        if not run._identity:
+            return
+        if not isinstance(run._identity, dict):
+            raise UserErrorException(
+                f"Run's identity should be a dict, got {type(run._resources)} for {run._resources}"
+            )
+        identity_type = run._identity.get("type")
+        # default use user identity
+        if identity_type == IdentityKeys.USER_IDENTITY:
+            return
+        elif identity_type == IdentityKeys.MANAGED:
+            client_id = run._identity.get(IdentityKeys.CLIENT_ID)
+            if not client_id:
+                # use default managed identity
+                if not self._workspace.primary_user_assigned_identity:
+                    raise UserErrorException(
+                        f"Primary user assigned identity not found in workspace {self._workspace.name!r}."
+                    )
+                resource_id = self._workspace.primary_user_assigned_identity
+            else:
+                # find client id from the identity
+                resource_id = None
+                try:
+                    for identity in self._workspace.identity.user_assigned_identities or []:
+                        if identity.client_id == client_id:
+                            resource_id = identity.resource_id
+                except Exception:
+                    pass
+                if not resource_id:
+                    raise UserErrorException(
+                        f"Failed to get identities with id {client_id} from workspace {self._workspace.name!r}."
+                        f"Existing identities: {self._workspace.identity.user_assigned_identities}."
+                    )
+            run._identity[IdentityKeys.RESOURCE_ID] = resource_id
+        else:
+            raise UserErrorException(f"Identity type {identity_type!r} is not supported.")

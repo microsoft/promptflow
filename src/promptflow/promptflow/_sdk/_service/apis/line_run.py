@@ -10,24 +10,37 @@ from flask_restx import fields
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, CumulativeTokenCountFieldName, LineRunFieldName
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow._sdk.entities._trace import LineRun
 
 api = Namespace("LineRuns", description="Line runs management")
 
 # parsers for query parameters
 list_line_run_parser = api.parser()
 list_line_run_parser.add_argument("session", type=str, required=False)
+list_line_run_parser.add_argument("run", type=str, required=False)
+list_line_run_parser.add_argument("experiment", type=str, required=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListLineRunParser:
     session_id: typing.Optional[str] = None
+    runs: typing.Optional[typing.List[str]] = None
+    experiments: typing.Optional[typing.List[str]] = None
+
+    @staticmethod
+    def _parse_string_list(value: typing.Optional[str]) -> typing.Optional[typing.List[str]]:
+        if value is None:
+            return None
+        return value.split(",")
 
     @staticmethod
     def from_request() -> "ListLineRunParser":
         args = list_line_run_parser.parse_args()
         return ListLineRunParser(
             session_id=args.session,
+            runs=ListLineRunParser._parse_string_list(args.run),
+            experiments=ListLineRunParser._parse_string_list(args.experiment),
         )
 
 
@@ -70,7 +83,11 @@ class LineRuns(Resource):
 
         client: PFClient = get_client_from_request()
         args = ListLineRunParser.from_request()
-        line_runs = client._traces.list_line_runs(
+        line_runs: typing.List[LineRun] = client._traces.list_line_runs(
             session_id=args.session_id,
+            runs=args.runs,
+            experiments=args.experiments,
         )
+        # order by start_time desc
+        line_runs.sort(key=lambda x: x.start_time, reverse=True)
         return [asdict(line_run) for line_run in line_runs]

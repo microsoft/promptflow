@@ -7,8 +7,8 @@ from promptflow.contracts.types import PromptTemplate
 @tool
 def my_tool(
     connection: CustomConnection,
-    endpoint_name: str,
     api: str,
+    deployment_name: str,
     temperature: float,
     prompt: PromptTemplate,
     **kwargs
