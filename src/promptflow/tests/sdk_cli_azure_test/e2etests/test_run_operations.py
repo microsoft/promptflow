@@ -1153,7 +1153,6 @@ class TestFlowRun:
         assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "2"
         assert details.loc[1, "inputs.key"] == "env2" and details.loc[1, "outputs.output"] == "spawn"
 
-    @pytest.mark.skip("Need server side to fix the bug: 2982972")
     def test_run_with_environment_variables_run_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run_obj = load_run(
             source=f"{FLOWS_DIR}/flow_with_environment_variables/run.yaml",
