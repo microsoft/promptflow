@@ -4,7 +4,6 @@ import queue
 import signal
 import sys
 import threading
-import time
 from datetime import datetime
 from functools import partial
 from multiprocessing import Manager, Queue
@@ -28,12 +27,7 @@ from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import (
-    LineExecutionTimeoutError,
-    ProcessCrashError,
-    ProcessInfoObtainedTimeout,
-    ProcessTerminatedTimeout,
-)
+from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
 from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -145,14 +139,14 @@ class LineExecutionProcessPool:
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
         self._output_queues = [manager.Queue() for _ in range(self._n_process)]
         self._control_signal_queue = manager.Queue()
-        self._process_info: Dict[int, ProcessInfo] = manager.dict()
+        process_info: Dict[int, ProcessInfo] = manager.dict()
 
         # when using fork, we first create a process with spawn method to establish a clean environment
         # Then fork the subprocess in this environment to avoid some deadlock problems
         common_kwargs = {
             "input_queues": self._input_queues,
             "output_queues": self._output_queues,
-            "process_info": self._process_info,
+            "process_info": process_info,
             "process_target_func": _process_wrapper,
         }
         if self._use_fork:
@@ -183,32 +177,6 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
-    def _get_process_info(self, index):
-        start_time = time.time()
-        while True:
-            self._processes_manager.ensure_healthy()
-            try:
-                if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
-                    raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
-                # Try to get process id and name from the process_info
-                process_id = self._process_info[index].process_id
-                process_name = self._process_info[index].process_name
-                return (index, process_id, process_name)
-            except KeyError:
-                # If the process_info does not exist for the given index, it means the process have not ready yet,
-                # try again.
-                time.sleep(1)
-                continue
-            except Exception as e:
-                raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
-
-    def _ensure_process_terminated_within_timeout(self, process_id):
-        start_time = time.time()
-        while psutil.pid_exists(process_id):
-            if time.time() - start_time > self._PROCESS_TERMINATED_TIMEOUT:
-                raise ProcessTerminatedTimeout(self._PROCESS_TERMINATED_TIMEOUT)
-            time.sleep(1)
-
     def _is_process_alive(self, process_id):
         return psutil.pid_exists(process_id)
 
@@ -238,7 +206,7 @@ class LineExecutionProcessPool:
         output_queue: Queue,
     ):
         # TODO: zombie?????
-        index, process_id, process_name = self._get_process_info(index)
+        index, process_id, process_name = self._processes_manager.get_process_info(index)
 
         self._processes_manager.ensure_healthy()
         # TODO: Only get the process can break the while loop????
@@ -258,7 +226,7 @@ class LineExecutionProcessPool:
                         # We need to ensure the process has been killed before returning. Otherwise, it may cause
                         # the main process have exited but the spawn process is still alive.
                         # At this time, a connection error will be reported.
-                        self._ensure_process_terminated_within_timeout(process_id)
+                        self._processes_manager.ensure_process_terminated_within_timeout(process_id)
                         exit_loop = True
                         break
                     # TODO: Calculate the line timeout for the current line.???????
@@ -335,8 +303,8 @@ class LineExecutionProcessPool:
                 # We need to ensure the process has been killed before continuing to execute.
                 # Otherwise the process will receive new task, and during the execution, the process
                 # is killed, which will result in the 'ProcessCrashError'.
-                self._ensure_process_terminated_within_timeout(process_id)
-                index, process_id, process_name = self._get_process_info(index)
+                self._processes_manager.ensure_process_terminated_within_timeout(process_id)
+                index, process_id, process_name = self._processes_manager.get_process_info(index)
 
             self._processing_idx.pop(line_number)
 

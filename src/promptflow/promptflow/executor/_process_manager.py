@@ -1,18 +1,23 @@
 import multiprocessing
 import queue
 import signal
+import time
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Queue
-from typing import List
+from typing import Dict, List
 
 import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
-from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
+from promptflow.executor._errors import (
+    ProcessInfoObtainedTimeout,
+    ProcessTerminatedTimeout,
+    SpawnedForkProcessManagerStartFailure,
+)
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
@@ -50,6 +55,9 @@ class AbstractProcessManager:
     :type raise_ex: bool
     """
 
+    _PROCESS_TERMINATED_TIMEOUT = 60
+    _PROCESS_INFO_OBTAINED_TIMEOUT = 60
+
     def __init__(
         self,
         input_queues: List[Queue],
@@ -61,7 +69,7 @@ class AbstractProcessManager:
     ) -> None:
         self._input_queues = input_queues
         self._output_queues = output_queues
-        self._process_info = process_info
+        self._process_info: Dict[int, ProcessInfo] = process_info
         self._process_target_func = process_target_func
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
@@ -101,6 +109,32 @@ class AbstractProcessManager:
         This method should be implemented in subclasses to provide specific health check mechanisms.
         """
         raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+
+    def get_process_info(self, index):
+        start_time = time.time()
+        while True:
+            self.ensure_healthy()
+            try:
+                if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
+                    raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
+                # Try to get process id and name from the process_info
+                process_id = self._process_info[index].process_id
+                process_name = self._process_info[index].process_name
+                return (index, process_id, process_name)
+            except KeyError:
+                # If the process_info does not exist for the given index, it means the process have not ready yet,
+                # try again.
+                time.sleep(1)
+                continue
+            except Exception as e:
+                raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
+
+    def ensure_process_terminated_within_timeout(self, process_id):
+        start_time = time.time()
+        while psutil.pid_exists(process_id):
+            if time.time() - start_time > self._PROCESS_TERMINATED_TIMEOUT:
+                raise ProcessTerminatedTimeout(self._PROCESS_TERMINATED_TIMEOUT)
+            time.sleep(1)
 
 
 class SpawnProcessManager(AbstractProcessManager):
