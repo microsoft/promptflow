@@ -85,6 +85,9 @@
     "astext",
     "Likert",
     "pfsvc",
+    "geval",
+    "Summ",
+    "Bhavik",
     "meid",
     "Entra"
   ],
@@ -173,7 +176,10 @@
     "OTLP",
     "spawnv",
     "spawnve",
-    "addrs"
+    "addrs",
+    "pywin",
+    "STARTF",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"

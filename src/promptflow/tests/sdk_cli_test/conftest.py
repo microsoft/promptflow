@@ -23,6 +23,7 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 
 from .recording_utilities import (
     RecordStorage,
+    check_pydantic_v2,
     delete_count_lock_file,
     inject_async_with_recording,
     inject_sync_with_recording,
@@ -255,6 +256,7 @@ def setup_recording_injection_if_enabled():
             patcher.start()
 
     if is_replay() or is_record():
+        check_pydantic_v2()
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
 

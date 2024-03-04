@@ -2,14 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import os
-
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from promptflow.executor._service.apis.batch import router as batch_router
 from promptflow.executor._service.apis.common import router as common_router
 from promptflow.executor._service.apis.execution import router as execution_router
+from promptflow.executor._service.apis.tool import router as tool_router
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
 
@@ -27,16 +26,9 @@ class Mode:
 app = FastAPI()
 
 app.include_router(common_router)
-
-# Read the MODE environment variable, defaulting to Mode.NORMAL if not set
-mode = os.getenv("MODE", Mode.NORMAL)
-# Decide which routers to include based on the MODE value
-if mode == Mode.NORMAL:
-    # Include the execution router in 'normal' mode
-    app.include_router(execution_router)
-elif mode == Mode.BATCH:
-    # Include the batch router in 'batch' mode
-    app.include_router(batch_router)
+app.include_router(execution_router)
+app.include_router(tool_router)
+app.include_router(batch_router)
 
 
 @app.exception_handler(Exception)

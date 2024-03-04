@@ -38,6 +38,7 @@ from promptflow._sdk._constants import (
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
+    IdentityKeys,
     ListViewType,
     RunDataKeys,
     RunHistoryKeys,
@@ -52,7 +53,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_authorization, get_user_alias_from_credential
+from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -97,6 +98,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._workspace = workspace
+        self._identity = workspace.identity
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
@@ -837,6 +839,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         run.flow, session_id = task_results[1]
 
         runtime = self._resolve_runtime(run=run, runtime=runtime)
+        self._resolve_identity(run=run)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
@@ -969,3 +972,87 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             flow_run_id=run,
         )
+
+    def _build_resume_request_rest_object(
+        self,
+        name: str = None,
+        display_name: str = None,
+        description: str = None,
+        tags: Dict[str, str] = None,
+        resume_from: str = None,
+        resources: Dict[str, Any] = None,
+        identity: str = None,
+        **kwargs,
+    ):
+        """Build the resume request rest object."""
+        if kwargs:
+            logger.warning(f"Unrecognized parameters {kwargs!r} are ignored.")
+        resources = resources or {}
+        from promptflow.azure._restclient.flow.models import ResumeBulkRunRequest
+
+        rest_obj = ResumeBulkRunRequest(
+            run_id=name,
+            run_display_name=display_name,
+            description=description,
+            tags=tags,
+            resume_from_run_id=resume_from,
+            runtime_name=resources.get("runtime"),
+            vm_size=resources.get("instance_type"),
+            identity=identity,
+            compute_name=resources.get("compute"),
+        )
+        return rest_obj
+
+    @monitor_operation(activity_name="pfazure.runs.resume", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs):
+        """Create a run by specify resume_from to an existing run."""
+        stream = kwargs.get("stream", False)
+        run_name = self._service_caller.resume_bulk_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            body=self._build_resume_request_rest_object(resume_from=resume_from, **kwargs),
+        )
+
+        if stream:
+            self.stream(run=run_name)
+        return self.get(run=run_name)
+
+    def _resolve_identity(self, run: Run):
+        """Resolve identity to resource id"""
+        if not run._identity:
+            return
+        if not isinstance(run._identity, dict):
+            raise UserErrorException(
+                f"Run's identity should be a dict, got {type(run._resources)} for {run._resources}"
+            )
+        identity_type = run._identity.get("type")
+        # default use user identity
+        if identity_type == IdentityKeys.USER_IDENTITY:
+            return
+        elif identity_type == IdentityKeys.MANAGED:
+            client_id = run._identity.get(IdentityKeys.CLIENT_ID)
+            if not client_id:
+                # use default managed identity
+                if not self._workspace.primary_user_assigned_identity:
+                    raise UserErrorException(
+                        f"Primary user assigned identity not found in workspace {self._workspace.name!r}."
+                    )
+                resource_id = self._workspace.primary_user_assigned_identity
+            else:
+                # find client id from the identity
+                resource_id = None
+                try:
+                    for identity in self._workspace.identity.user_assigned_identities or []:
+                        if identity.client_id == client_id:
+                            resource_id = identity.resource_id
+                except Exception:
+                    pass
+                if not resource_id:
+                    raise UserErrorException(
+                        f"Failed to get identities with id {client_id} from workspace {self._workspace.name!r}."
+                        f"Existing identities: {self._workspace.identity.user_assigned_identities}."
+                    )
+            run._identity[IdentityKeys.RESOURCE_ID] = resource_id
+        else:
+            raise UserErrorException(f"Identity type {identity_type!r} is not supported.")

@@ -4,6 +4,7 @@
 import json
 import os
 import typing
+import urllib.parse
 import uuid
 
 from opentelemetry import trace
@@ -38,6 +39,15 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
+    # trace is currently a preview feature, users should explicitly enable to use it
+    if Configuration.get_instance().is_internal_features_enabled() is False:
+        warning_message = (
+            "`start_trace` is currently a preview feature, "
+            'please enable it with `pf config set enable_internal_features="true"`'
+        )
+        _logger.warning(warning_message)
+        return
+
     from promptflow._sdk._constants import ContextAttributeKey
     from promptflow._sdk._service.utils.utils import get_port_from_config
 
@@ -45,6 +55,9 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     _start_pfs(pfs_port)
     _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
+    # set strict limitation for session id currently
+    if session is not None:
+        _validate_session_id(session)
     session_id = _provision_session_id(specified_session_id=session)
     _logger.debug("current session id is %s", session_id)
 
@@ -79,20 +92,16 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
         experiment=experiment,
         workspace_triad=workspace_triad,
     )
-    # print user the UI url
-    ui_url = _determine_trace_url(
-        pfs_port=pfs_port,
-        session_configured=session is not None,
-        experiment=experiment,
-        run=kwargs.get("run", None),
-        session_id=session_id,
-    )
-    # print to be able to see it in notebook
-    print(f"You can view the trace from UI url: {ui_url}")
-    if workspace_triad is not None:
-        # if user has configured trace.provider, which indicates enabled local to cloud feature
-        # print the url for cloud trace view
-        _trace_url_for_cloud(session_id=session_id, workspace_triad=workspace_triad)
+
+    # print url(s) for user to view the trace
+    print_url_kwargs = {
+        "session_configured": session is not None,
+        "experiment": experiment,
+        "run": kwargs.get("run", None),
+        "session_id": session_id,
+    }
+    _print_trace_url_for_local(pfs_port=pfs_port, **print_url_kwargs)
+    _print_trace_url_for_local_to_cloud(workspace_triad=workspace_triad, **print_url_kwargs)
 
 
 def _start_pfs(pfs_port) -> None:
@@ -223,21 +232,58 @@ def _init_otel_trace_exporter(
     setup_exporter_from_environ()
 
 
-def _determine_trace_url(
+# priority: run > experiment > session
+# for run(s) in experiment, we should print url with run(s) as it is more specific;
+# and url with experiment should be printed at the beginning of experiment start.
+# session id is the concept we expect to expose to users least, so it should have the lowest priority.
+def _print_trace_url_for_local(
     pfs_port: str,
     session_configured: bool,
     experiment: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
     session_id: typing.Optional[str] = None,
-) -> str:
-    ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
-    if experiment is not None:
-        ui_url += f"?experiment={experiment}"
-    elif run is not None:
-        ui_url += f"?run={run}"
+) -> None:
+    url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    if run is not None:
+        url += f"?run={run}"
+    elif experiment is not None:
+        url += f"?experiment={experiment}"
     elif session_configured and session_id is not None:
-        ui_url += f"?session={session_id}"
-    return ui_url
+        url += f"?session={session_id}"
+    print(f"You can view the trace from local PFS: {url}")
+
+
+def _print_trace_url_for_local_to_cloud(
+    workspace_triad: typing.Optional[AzureMLWorkspaceTriad],
+    session_configured: bool,
+    experiment: typing.Optional[str] = None,
+    run: typing.Optional[str] = None,
+    session_id: typing.Optional[str] = None,
+) -> None:
+    # if user has configured trace.provider, we can extract workspace triad from it
+    # this indicates local to cloud feature is enabled, then print the url in portal
+    if workspace_triad is None:
+        return
+    # &searchText={"sessionId":"8baa9e34-3d23-497a-8ec8-39b84cdb7a40","batchRunId":"test_main_variant_0_20240229_111938_229535"}
+    url = (
+        "https://int.ml.azure.com/prompts/trace/list"
+        f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
+        f"/resourceGroups/{workspace_triad.resource_group_name}"
+        "/providers/Microsoft.MachineLearningServices"
+        f"/workspaces/{workspace_triad.workspace_name}"
+    )
+    query = None
+    if run is not None:
+        query = '{"batchRunId":"' + run + '"}'
+    elif experiment is not None:
+        # not consider experiment for now
+        pass
+    elif session_configured and session_id is not None:
+        query = '{"sessionId":"' + session_id + '"}'
+    # urllib.parse.quote to encode the query parameter
+    if query is not None:
+        url += f"&searchText={urllib.parse.quote(query)}"
+    print(f"You can view the trace in cloud from Azure portal: {url}")
 
 
 def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]:
@@ -247,12 +293,7 @@ def _get_workspace_triad_from_config() -> typing.Optional[AzureMLWorkspaceTriad]
     return extract_workspace_triad_from_trace_provider(trace_provider)
 
 
-def _trace_url_for_cloud(session_id: str, workspace_triad: AzureMLWorkspaceTriad) -> None:
-    url_for_cloud = (
-        f"https://int.ml.azure.com/prompts/trace/session/{session_id}"
-        f"?wsid=/subscriptions/{workspace_triad.subscription_id}"
-        f"/resourceGroups/{workspace_triad.resource_group_name}"
-        "/providers/Microsoft.MachineLearningServices"
-        f"/workspaces/{workspace_triad.workspace_name}"
-    )
-    print(f"You can view the trace in cloud from this link: {url_for_cloud}")
+def _validate_session_id(value: str) -> None:
+    # session id should only contain `[A-Z, a-z, 0-9, _, -]`` for now
+    if not value.replace("-", "").replace("_", "").isalnum():
+        raise ValueError("session id should only contain `[A-Z, a-z, 0-9, _, -]` for now.")
