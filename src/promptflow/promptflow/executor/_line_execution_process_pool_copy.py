@@ -29,7 +29,6 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import (
-    BatchExecutionTimeoutError,
     LineExecutionTimeoutError,
     ProcessCrashError,
     ProcessInfoObtainedTimeout,
@@ -244,112 +243,106 @@ class LineExecutionProcessPool:
 
         self._processes_manager.ensure_healthy()
         # TODO: Only get the process can break the while loop????
+        exit_loop = False
         while True:
-            try:
-                # Get task from task_queue
-                inputs, line_number, run_id = task_queue.get(timeout=1)
+            while True:
+                try:
+                    # Get task from task_queue
+                    data = task_queue.get(timeout=1)
+                    if data == TERMINATE_SIGNAL:
+                        input_queue.put(data)
+                        # If found the terminate signal, exit the process.
+                        # End the process if found the terminate signal
+                        self._processes_manager.end_process(index)
+
+                        # In fork mode, the main process and the sub spawn process communicate through _process_info.
+                        # We need to ensure the process has been killed before returning. Otherwise, it may cause
+                        # the main process have exited but the spawn process is still alive.
+                        # At this time, a connection error will be reported.
+                        self._ensure_process_terminated_within_timeout(process_id)
+                        exit_loop = True
+                        break
+                    # TODO: Calculate the line timeout for the current line.???????
+                    inputs, line_number, run_id = data
+                    args = (inputs, line_number, run_id, self._line_timeout_sec)
+                    input_queue.put(args)
+                    break
+                except queue.Empty:
+                    pass
+
+            if exit_loop:
                 break
-            except queue.Empty:
-                pass
 
-        # TODO: Calculate the line timeout for the current line.???????
-        args = (inputs, line_number, run_id, self._line_timeout_sec)
-        input_queue.put(args)
+            self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
+            log_process_status(process_name, process_id, line_number)
 
-        self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
-        log_process_status(process_name, process_id, line_number)
+            start_time = datetime.utcnow()
+            completed = False
+            crashed = False
+            returned_node_run_infos = {}
 
-        start_time = datetime.utcnow()
-        completed = False
-        crashed = False
-        returned_node_run_infos = {}
+            # Responsible for checking the output queue messages and processing them within a specified timeout period.
+            while not self._line_timeout_expired(start_time):
+                # Monitor process aliveness.
+                crashed = not self._is_process_alive(process_id)
+                if crashed:
+                    break
 
-        # Responsible for checking the output queue messages and processing them within a specified timeout period.
-        while not self._batch_timeout_expired(batch_start_time) and not self._line_timeout_expired(start_time):
-            # Monitor process aliveness.
-            crashed = not self._is_process_alive(process_id)
-            if crashed:
-                break
+                # Handle output queue message.
+                message = self._handle_output_queue_messages(output_queue, result_list)
+                if isinstance(message, LineResult):
+                    completed = True
+                    break
+                if isinstance(message, NodeRunInfo):
+                    returned_node_run_infos[message.node] = message
 
-            # Handle output queue message.
-            message = self._handle_output_queue_messages(output_queue, result_list)
-            if isinstance(message, LineResult):
-                completed = True
-                break
-            if isinstance(message, NodeRunInfo):
-                returned_node_run_infos[message.node] = message
-
-        # Handle line execution completed.
-        if completed:
-            self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
-            log_process_status(process_name, process_id, line_number, is_completed=True)
-        # Handle line execution is not completed.
-        else:
-            ex = None
-            # Handle process crashed.
-            if crashed:
-                bulk_logger.warning(f"Process crashed while executing line {line_number}.")
-                ex = ProcessCrashError(line_number)
+            # Handle line execution completed.
+            if completed:
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
+                log_process_status(process_name, process_id, line_number, is_completed=True)
+            # Handle line execution is not completed.
             else:
-                # Handle line execution timeout.
-                if self._line_timeout_expired(start_time):
+                ex = None
+                # Handle process crashed.
+                if crashed:
+                    bulk_logger.warning(f"Process crashed while executing line {line_number}.")
+                    ex = ProcessCrashError(line_number)
+                elif self._line_timeout_expired(start_time):
+                    # Handle line execution timeout.
                     bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
                     ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
-                # Handle batch execution timeout.
-                if self._batch_timeout_expired(batch_start_time):
-                    bulk_logger.warning(
-                        f"Line {line_number} execution terminated due to the total "
-                        f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
-                    )
-                    ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
-                    # Set is_timeout to True if the batch run exceeds the batch timeout.
-                    self._is_timeout = True
-            # This branch should not be reached, add this warning for the case.
-            if ex is None:
-                msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
-                bulk_logger.warning(msg)
-                ex = UnexpectedError(msg)
+                else:
+                    # This branch should not be reached, add this warning for the case.
+                    msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
+                    bulk_logger.warning(msg)
+                    ex = UnexpectedError(msg)
 
-            result = self._generate_line_result_for_exception(
-                inputs,
-                run_id,
-                line_number,
-                self._flow_id,
-                start_time,
-                ex,
-                returned_node_run_infos,
-            )
-            result_list.append(result)
+                result = self._generate_line_result_for_exception(
+                    inputs,
+                    run_id,
+                    line_number,
+                    self._flow_id,
+                    start_time,
+                    ex,
+                    returned_node_run_infos,
+                )
+                result_list.append(result)
 
-            self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
-            log_process_status(process_name, process_id, line_number, is_failed=True)
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
+                log_process_status(process_name, process_id, line_number, is_failed=True)
 
-            # If there are still tasks in the task_queue and the batch run does not exceed the batch timeout,
-            # restart a new process to execute the task.
-            run_finished = task_queue.empty() or self._batch_timeout_expired(batch_start_time)
-            if not run_finished:
-                self._processes_manager.restart_process(index)
-                # We need to ensure the process has been killed before continuing to execute.
-                # Otherwise the process will receive new task, and during the execution, the process
-                # is killed, which will result in the 'ProcessCrashError'.
-                self._ensure_process_terminated_within_timeout(process_id)
-                index, process_id, process_name = self._get_process_info(index)
+                # If there are still tasks in the task_queue and the batch run does not exceed the batch timeout,
+                # restart a new process to execute the task.
+                run_finished = task_queue.empty() or self._batch_timeout_expired(batch_start_time)
+                if not run_finished:
+                    self._processes_manager.restart_process(index)
+                    # We need to ensure the process has been killed before continuing to execute.
+                    # Otherwise the process will receive new task, and during the execution, the process
+                    # is killed, which will result in the 'ProcessCrashError'.
+                    self._ensure_process_terminated_within_timeout(process_id)
+                    index, process_id, process_name = self._get_process_info(index)
 
-        self._processing_idx.pop(line_number)
-
-        # End the process when the batch timeout is exceeded or when all lines have been executed.
-        self._processes_manager.end_process(index)
-
-        # In fork mode, the main process and the sub spawn process communicate through _process_info.
-        # We need to ensure the process has been killed before returning. Otherwise, it may cause
-        # the main process have exited but the spawn process is still alive.
-        # At this time, a connection error will be reported.
-        self._ensure_process_terminated_within_timeout(process_id)
-
-    def _batch_timeout_expired(self, start_time: datetime) -> bool:
-        if self._batch_timeout_sec is None:
-            return False
-        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
+            self._processing_idx.pop(line_number)
 
     def _line_timeout_expired(self, start_time: datetime) -> bool:
         # Here we add more seconds because of the following reasons:
