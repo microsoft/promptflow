@@ -263,15 +263,9 @@ class PFSOperations:
             assert status_code == response.status_code, response.text
         return response
 
-    def get_image_url(self, image_path: str, status_code=None):
+    def show_image(self, image_path: str, status_code=None):
         query_string = {"image_path": image_path}
         response = self._client.get(f"{self.UI_URL_PREFIX}/image", query_string=query_string)
-        if status_code:
-            assert status_code == response.status_code, response.text
-        return response
-
-    def view_image(self, directory, filename, status_code=None):
-        response = self._client.get(f"{self.UI_URL_PREFIX}/image/{directory}/{filename}")
         if status_code:
             assert status_code == response.status_code, response.text
         return response

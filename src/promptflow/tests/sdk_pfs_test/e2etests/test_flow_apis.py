@@ -65,13 +65,10 @@ class TestFlowAPIs:
                     "extension": extension,
                 },
             ).json
+
         os.remove(response)
 
     def test_image_view(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            response = pfs_op.get_image_url(image_path=Path(IMAGE_PATH).absolute().as_posix()).json
-            match = re.match(".*/image/(.+)/(.+)", response)
-            assert match
-            directory, filename = match.groups()
-            response = pfs_op.view_image(directory, filename)
-            assert response.data
+            response = pfs_op.show_image(image_path=Path(IMAGE_PATH).absolute().as_posix())
+            assert response.status_code == 403

@@ -59,7 +59,7 @@ class MediaSave(Resource):
 
 
 @api.route('/image')
-class ImageUrl(Resource):
+class ImageView(Resource):
     @api.response(code=200, description="Get image url", model=fields.String)
     @api.doc(description="Get image url")
     def get(self):
@@ -72,24 +72,6 @@ class ImageUrl(Resource):
 
         if not os.path.exists(image_path):
             return make_response("The image doesn't exist", 404)
+
         directory, filename = os.path.split(image_path)
-        directory = Path(directory).as_posix()
-        return f"{request.base_url}/{str(directory)}/{filename}"
-
-
-@api.route('/image/<path:filepath>')
-class ImageView(Resource):
-    @api.doc(description="Visualize image")
-    @api.response(code=200, description="Visualize image", model=fields.String)
-    def get(self, filepath):
-        directory, filename = os.path.split(filepath)
-        directory = Path(directory).as_posix()
-        home_prompt_flow_dir = HOME_PROMPT_FLOW_DIR.as_posix()
-        if directory != home_prompt_flow_dir:
-            return make_response(f"Can only access images in the restricted directory: {home_prompt_flow_dir}", 403)
-
-        image_path = safe_join(directory, filename)
-        if image_path is None:
-            return make_response("Invalid path", 400)
-
         return send_from_directory(directory, filename)
