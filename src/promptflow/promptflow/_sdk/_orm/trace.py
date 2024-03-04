@@ -74,6 +74,7 @@ class Span(Base):
 class LineRun:
     """Line run is an abstraction of spans, which is not persisted in the database."""
 
+    @staticmethod
     def _group_by_trace_id(stmt: Query) -> typing.List[Span]:
         res = list()
         current_spans = list()
@@ -88,6 +89,8 @@ class LineRun:
                 continue
             res.append(copy.deepcopy(current_spans))
             current_spans = [span]
+        if len(current_spans) > 0:
+            res.append(copy.deepcopy(current_spans))
         return res
 
     @staticmethod
