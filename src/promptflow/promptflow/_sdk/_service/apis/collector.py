@@ -9,6 +9,7 @@
 
 import json
 import traceback
+from datetime import datetime
 
 from flask import current_app, request
 from google.protobuf.json_format import MessageToJson
@@ -59,32 +60,52 @@ def trace_collector():
 
 
 def _try_write_trace_to_cosmosdb(all_spans):
-    current_app.logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
+    if not all_spans:
+        return
     try:
+        span_resource = all_spans[0]._content.get(SpanFieldName.RESOURCE, {})
+        resource_attributes = span_resource.get(SpanResourceFieldName.ATTRIBUTES, {})
+        subscription_id = resource_attributes.get(SpanResourceAttributesFieldName.SUBSCRIPTION_ID, None)
+        resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
+        workspace_name = resource_attributes.get(SpanResourceAttributesFieldName.WORKSPACE_NAME, None)
+        if subscription_id is None or resource_group_name is None or workspace_name is None:
+            current_app.logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
+            return
+
+        current_app.logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
+        start_time = datetime.now()
+        from promptflow._sdk._service.app import CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE
+        from promptflow.azure._storage.cosmosdb.client import get_client
+        from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
+        from promptflow.azure._storage.cosmosdb.summary import Summary
+
+        # Load span and summary clients first time may slow.
+        # So, we load 2 client in parallel for warm up.
+        span_thread = ThreadWithContextVars(
+            target=get_client, args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
+        )
+        span_thread.start()
+
+        get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name)
+
+        span_thread.join()
+
         for span in all_spans:
-            span_resource = span._content.get(SpanFieldName.RESOURCE, {})
-            resource_attributes = span_resource.get(SpanResourceFieldName.ATTRIBUTES, {})
-            subscription_id = resource_attributes.get(SpanResourceAttributesFieldName.SUBSCRIPTION_ID, None)
-            resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
-            workspace_name = resource_attributes.get(SpanResourceAttributesFieldName.WORKSPACE_NAME, None)
-            if subscription_id is None or resource_group_name is None or workspace_name is None:
-                current_app.logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
-                return
-            from promptflow._sdk._service.app import CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE
-            from promptflow.azure._storage.cosmosdb.client import get_client
-            from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
-            from promptflow.azure._storage.cosmosdb.summary import Summary
-
             span_client = get_client(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
-            line_summary_client = get_client(
-                CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
+            result = SpanCosmosDB(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(span_client)
+            # None means the span already exists, then we don't need to persist the summary also.
+            if result is not None:
+                line_summary_client = get_client(
+                    CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
+                )
+                Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(line_summary_client)
+        current_app.logger.info(
+            (
+                f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
+                f" Duration {datetime.now() - start_time}."
             )
+        )
 
-            if line_summary_client and span_client:
-                result = SpanCosmosDB(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(span_client)
-                # None means the span already exists, then we don't need to persist the summary also.
-                if result is not None:
-                    Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(line_summary_client)
     except Exception as e:
         stack_trace = traceback.format_exc()
         current_app.logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")
