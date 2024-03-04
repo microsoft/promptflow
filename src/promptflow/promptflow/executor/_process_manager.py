@@ -10,9 +10,12 @@ from typing import List
 import psutil
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
+from promptflow.storage import AbstractRunStorage
 
 
 @dataclass
@@ -175,8 +178,7 @@ class SpawnProcessManager(AbstractProcessManager):
         :type i: int
         """
         warning_msg = (
-            "Unexpected error occurred while end process for index {i} and process id {pid}. "
-            "Exception: {e}"
+            "Unexpected error occurred while end process for index {i} and process id {pid}. " "Exception: {e}"
         )
         try:
             pid = self._process_info[i].process_id
@@ -367,8 +369,7 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         :type i: int
         """
         warning_msg = (
-            "Unexpected error occurred while end process for index {i} and process id {pid}. "
-            "Exception: {e}"
+            "Unexpected error occurred while end process for index {i} and process id {pid}. " "Exception: {e}"
         )
         try:
             pid = self._process_info[i].process_id
@@ -434,7 +435,7 @@ def create_spawned_fork_process_manager(
     """
     # Set up signal handling for process interruption.
 
-    from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
+    from promptflow.executor._line_execution_process_pool import signal_handler
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -492,3 +493,24 @@ def create_spawned_fork_process_manager(
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass
+
+
+def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
+    if isinstance(flow_executor, ScriptExecutor):
+        return ScriptExecutor(
+            flow_file=flow_executor._flow_file,
+            connections=flow_executor._connections,
+            working_dir=flow_executor._working_dir,
+            storage=storage,
+        )
+    else:
+        run_tracker = RunTracker(run_storage=storage)
+        return FlowExecutor(
+            flow=flow_executor._flow,
+            connections=flow_executor._connections,
+            run_tracker=run_tracker,
+            cache_manager=flow_executor._cache_manager,
+            loaded_tools=flow_executor._loaded_tools,
+            raise_ex=False,
+            line_timeout_sec=flow_executor._line_timeout_sec,
+        )

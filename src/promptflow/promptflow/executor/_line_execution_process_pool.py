@@ -668,27 +668,6 @@ def _process_wrapper(
         exec_line_for_queue(executor_creation_func, input_queue, output_queue)
 
 
-def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
-    if isinstance(flow_executor, ScriptExecutor):
-        return ScriptExecutor(
-            flow_file=flow_executor._flow_file,
-            connections=flow_executor._connections,
-            working_dir=flow_executor._working_dir,
-            storage=storage,
-        )
-    else:
-        run_tracker = RunTracker(run_storage=storage)
-        return FlowExecutor(
-            flow=flow_executor._flow,
-            connections=flow_executor._connections,
-            run_tracker=run_tracker,
-            cache_manager=flow_executor._cache_manager,
-            loaded_tools=flow_executor._loaded_tools,
-            raise_ex=False,
-            line_timeout_sec=flow_executor._line_timeout_sec,
-        )
-
-
 def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
     run_storage = QueueRunStorage(output_queue)
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
