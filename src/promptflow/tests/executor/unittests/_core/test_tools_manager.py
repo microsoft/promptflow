@@ -297,7 +297,7 @@ class TestToolsManager:
         )
         assert len(result) == 2
 
-        # test gen_dynamic_list with ws_triple.
+        # test retrieve tool func result with ws_triple.
         with patch(
             "promptflow._cli._utils.get_workspace_triad_from_local",
             return_value=mocked_ws_triple
@@ -347,7 +347,7 @@ class TestToolsManager:
         result = _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
         assert isinstance(result["result"], expected)
 
-        # test gen_dynamic_list with ws_triple.
+        # test retrieve tool func result with ws_triple.
         with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
             result = _retrieve_tool_func_result(
                 func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
