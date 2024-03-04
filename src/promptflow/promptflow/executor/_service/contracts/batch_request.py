@@ -15,6 +15,9 @@ class InitializationRequest(BaseRequest):
     flow_file: Path
     working_dir: Path
     output_dir: Path
+    log_path: Path
+    line_count: int
+    worker_count: int
     connections: Optional[Mapping[str, Any]] = None
     line_timeout_sec: Optional[int] = LINE_TIMEOUT_SEC
     environment_variables: Optional[Mapping[str, Any]] = None
