@@ -86,6 +86,7 @@ class LineExecutionProcessPool:
         self,
         output_dir: Path,
         flow_executor: FlowExecutor,
+        result_dict: Dict[int, LineResult],
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
@@ -103,6 +104,7 @@ class LineExecutionProcessPool:
 
         # Init some fields from inputs
         self._output_dir = output_dir
+        self._result_dict = result_dict
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
 
@@ -264,7 +266,7 @@ class LineExecutionProcessPool:
                     break
 
                 # Handle output queue message.
-                message = self._handle_output_queue_messages(output_queue, result_dict, line_number)
+                message = self._handle_output_queue_messages(output_queue, self._result_dict, line_number)
                 if isinstance(message, LineResult):
                     completed = True
                     break
@@ -301,7 +303,7 @@ class LineExecutionProcessPool:
                     ex,
                     returned_node_run_infos,
                 )
-                result_dict[line_number] = result
+                self._result_dict[line_number] = result
 
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
