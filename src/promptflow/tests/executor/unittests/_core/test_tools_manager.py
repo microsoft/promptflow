@@ -281,7 +281,6 @@ class TestToolsManager:
             result = _gen_dynamic_list({"func_path": func_path, "func_kwargs": func_kwargs})
             assert len(result) == 2
 
-
     def test_retrieve_tool_func_result_dynamic_list_scenario(
         self,
         mocked_ws_triple,
