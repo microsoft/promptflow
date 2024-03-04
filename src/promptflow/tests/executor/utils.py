@@ -117,8 +117,8 @@ def is_image_file(file_path: Path):
     return file_extension in image_extensions
 
 
-def construct_flow_execution_request_json(flow_folder, inputs=None, connections=None):
-    working_dir = get_flow_folder(flow_folder)
+def construct_flow_execution_request_json(flow_folder, root=FLOW_ROOT, inputs=None, connections=None):
+    working_dir = get_flow_folder(flow_folder, root=root)
     tmp_dir = Path(mkdtemp())
     log_path = tmp_dir / "log.txt"
     return {

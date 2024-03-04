@@ -1,10 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from promptflow._utils.exception_utils import ErrorResponse, ResponseCode
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import LineResult
 
-from ..utils import construct_flow_execution_request_json
+from ..utils import WRONG_FLOW_ROOT, construct_flow_execution_request_json
 
 
 @pytest.mark.usefixtures("dev_connections", "executor_client")
@@ -25,7 +26,14 @@ class TestExecutorServer:
         pass
 
     def test_flow_execution_error(self, executor_client: TestClient):
-        pass
+        flow_folder = "node_circular_dependency"
+        request = construct_flow_execution_request_json(flow_folder, WRONG_FLOW_ROOT)
+        response = executor_client.post(url="/execution/flow", json=request)
+        assert response.status_code == 400
+        error_resp_json = response.json()
+        assert "test-user-agent" in error_resp_json["componentName"]
+        error_response = ErrorResponse.from_error_dict(error_resp_json["error"])
+        assert error_response.response_code == ResponseCode.CLIENT_ERROR
 
     def test_node_execution_completed(self, executor_client: TestClient):
         pass
