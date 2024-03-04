@@ -14,10 +14,9 @@ from promptflow.storage import AbstractRunStorage
 
 class ExecutorServiceStorage(AbstractRunStorage):
     def __init__(self, root_dir: Path):
-        # prepare folder ...
-        prepare_folder(root_dir / OutputsFolderName.FLOW_OUTPUTS)
-        prepare_folder(root_dir / OutputsFolderName.FLOW_ARTIFACTS)
-        prepare_folder(root_dir / OutputsFolderName.NODE_ARTIFACTS)
+        self.flow_outputs_path = prepare_folder(root_dir / OutputsFolderName.FLOW_OUTPUTS)
+        self.flow_artifacts_path = prepare_folder(root_dir / OutputsFolderName.FLOW_ARTIFACTS)
+        self.node_artifacts_path = prepare_folder(root_dir / OutputsFolderName.NODE_ARTIFACTS)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         pass
