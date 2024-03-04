@@ -17,7 +17,7 @@ class BaseExecutionRequest(BaseRequest):
     working_dir: Path
     flow_file: Path
     output_dir: Path
-    log_path: str
+    log_path: Optional[str] = None
     connections: Optional[Mapping[str, Any]] = None
     environment_variables: Optional[Mapping[str, Any]] = None
 

@@ -6,8 +6,6 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from promptflow.executor._service.app import app
-
 from .....utils import get_flow_folder, load_content
 
 
@@ -32,10 +30,7 @@ def construct_flow_execution_request_json(flow_folder, inputs=None, connections=
 
 @pytest.mark.unittest
 class TestExecutionApis:
-    def setup_method(self):
-        self.client = TestClient(app)
-
-    def test_flow_execution_completed(self):
+    def test_flow_execution_completed(self, executor_client: TestClient):
         # construct flow execution request
         flow_execution_request = construct_flow_execution_request_json(
             flow_folder="print_input_flow",
@@ -47,7 +42,7 @@ class TestExecutionApis:
         mock_result = {"result": "mock_result"}
         with patch("promptflow.executor._service.apis.execution.invoke_sync_function_in_process") as mock:
             mock.return_value = mock_result
-            response = self.client.post(url="/execution/flow", json=flow_execution_request)
+            response = executor_client.post(url="/execution/flow", json=flow_execution_request)
         # assert response
         assert response.status_code == 200
         assert response.json() == mock_result

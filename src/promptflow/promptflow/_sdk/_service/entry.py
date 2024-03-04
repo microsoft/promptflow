@@ -22,9 +22,13 @@ from promptflow._sdk._service.utils.utils import (
     get_started_service_info,
     is_port_in_use,
     kill_exist_service,
+    kill_service_get_from_original_port_file,
 )
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
+from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow.exceptions import UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def get_app(environ, start_response):
@@ -82,18 +86,19 @@ def start_service(args):
     # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     port = args.port
-    app, _ = create_app()
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
-        app.logger.setLevel(logging.DEBUG)
+
+    # add this logic to stop pfs service which is start in the original port file.
+    kill_service_get_from_original_port_file()
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
             if force_start:
-                app.logger.warning(f"Force restart the service on the port {port}.")
+                logger.warning(f"Force restart the service on the port {port}.")
                 kill_exist_service(port)
             else:
-                app.logger.warning(f"Service port {port} is used.")
+                logger.warning(f"Service port {port} is used.")
                 raise UserErrorException(f"Service port {port} is used.")
 
     if port:
@@ -106,34 +111,66 @@ def start_service(args):
     if sys.executable.endswith("pfcli.exe"):
         # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
         # after packaged by Pyinstaller.
-        app.logger.info(
-            f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-        )
+        app, _ = create_app()
+        if os.environ.get(PF_SERVICE_DEBUG) == "true":
+            app.logger.setLevel(logging.DEBUG)
+        else:
+            app.logger.setLevel(logging.INFO)
+        print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
         waitress.serve(app, host="127.0.0.1", port=port)
     else:
-        # Set host to localhost, only allow request from localhost.
-        cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
         if platform.system() == "Windows":
-            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            try:
+                import win32api
+                import win32con
+                import win32process
+            except ImportError as ex:
+                raise UserErrorException(
+                    f"Please install pywin32 by 'pip install pywin32' and retry. prompt flow "
+                    f"service start depends on pywin32.. {ex}"
+                )
+            command = f"waitress-serve --listen=127.0.0.1:{port} promptflow._sdk._service.entry:get_app"
+            startupinfo = win32process.STARTUPINFO()
+            startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = win32con.SW_HIDE
+            process_attributes = None
+            thread_attributes = None
+            inherit_handles = False
+            creation_flags = win32con.CREATE_NEW_PROCESS_GROUP | win32con.DETACHED_PROCESS
+            environment = None
+            current_directory = None
+            process_handle, thread_handle, process_id, thread_id = win32process.CreateProcess(
+                None,
+                command,
+                process_attributes,
+                thread_attributes,
+                inherit_handles,
+                creation_flags,
+                environment,
+                current_directory,
+                startupinfo,
+            )
+
+            win32api.CloseHandle(process_handle)
+            win32api.CloseHandle(thread_handle)
         else:
-            subprocess.Popen(cmd, start_new_session=True)
+            # Set host to localhost, only allow request from localhost.
+            cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
-            app.logger.info(
-                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-            )
+            print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
         else:
-            app.logger.warning(f"Pfs service start failed in {port}.")
+            logger.warning(f"Pfs service start failed in {port}.")
 
 
 def stop_service():
-    app, _ = create_app()
     port = get_port_from_config()
     if port is not None:
         kill_exist_service(port)
-        app.logger.info(f"Pfs service stop in {port}.")
+        print(f"Pfs service stop in {port}.")
 
 
 def main():
