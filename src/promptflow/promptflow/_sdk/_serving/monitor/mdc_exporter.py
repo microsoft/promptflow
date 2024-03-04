@@ -18,17 +18,17 @@ class MdcExporter(SpanExporter):
 
     def _init_data_collector(self) -> bool:
         """init data collector for tracing spans."""
-        self.logger.info("Init mdc for tracing_spans...")
+        self.logger.info("Init mdc for app_traces...")
         try:
             from azureml.ai.monitoring import Collector
 
-            self.span_collector = Collector(name="tracing_spans")
+            self.span_collector = Collector(name="app_traces")
             return True
         except ImportError as e:
             self.logger.warn(f"Load mdc related module failed: {e}")
             return False
         except Exception as e:
-            self.logger.warn(f"Init mdc for tracing_spans failed: {e}")
+            self.logger.warn(f"Init mdc for app_traces failed: {e}")
             return False
 
     def export(self, spans: Sequence[ReadableSpan]):

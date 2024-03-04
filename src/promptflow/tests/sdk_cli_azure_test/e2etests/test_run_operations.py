@@ -81,6 +81,29 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
+    def test_run_resume(self, pf, runtime: str, randstr: Callable[[str], str]):
+        # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
+        name = "resume_from_run0"
+        try:
+            run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            run = pf.run(
+                flow=f"{FLOWS_DIR}/web_classification",
+                data=f"{DATAS_DIR}/webClassification1.jsonl",
+                column_mapping={"url": "${data.url}"},
+                variant="${summarize_text_content.variant_0}",
+                runtime=runtime,
+                name=name,
+            )
+        assert isinstance(run, Run)
+        assert run.name == name
+
+        # name2 = randstr("name")
+        run2 = pf.run(resume_from=run, name=name)
+        assert isinstance(run2, Run)
+        # Enable name assert after PFS released
+        # assert run2.name == name2
+
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
         run = load_run(
@@ -947,10 +970,6 @@ class TestFlowRun:
             pf.runs.download(run=run.name, output=temp)
             assert Path(temp, run.name, "snapshot/requirements").exists()
 
-    @pytest.mark.skipif(
-        condition=is_live(),
-        reason="removed requirement.txt to avoid compliance check.",
-    )
     def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str], simple_eager_run: Run):
         run = simple_eager_run
         run = pf.runs.get(run)
@@ -975,10 +994,6 @@ class TestFlowRun:
         # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         # assert run_data[hidden] is False
 
-    @pytest.mark.skipif(
-        condition=is_live(),
-        reason="removed requirement.txt to avoid compliance check.",
-    )
     def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
         """Test cancel eager flow."""
         # create a run
@@ -995,10 +1010,6 @@ class TestFlowRun:
         # the run status might still be cancel requested, but it should be canceled eventually
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
-    @pytest.mark.skipif(
-        condition=is_live(),
-        reason="removed requirement.txt to avoid compliance check.",
-    )
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
         run = simple_eager_run
@@ -1054,6 +1065,28 @@ class TestFlowRun:
 
         run = pf.stream(run)
         assert run.status == RunStatus.COMPLETED
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_eager_flow_meta_generation(self, pf: PFClient, randstr: Callable[[str], str]):
+        # delete the .promptflow/ folder
+        shutil.rmtree(f"{EAGER_FLOWS_DIR}/simple_with_req/.promptflow", ignore_errors=True)
+        run = pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=randstr("name"),
+        )
+        pf.runs.stream(run)
+        run = pf.runs.get(run)
+        assert run.status == RunStatus.COMPLETED
+
+        # download the run and check .promptflow/flow.json
+        expected_files = [
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/.promptflow/flow.json",
+        ]
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run.name, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run.name, file).exists()
 
     def test_session_id_with_different_env(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1120,7 +1153,6 @@ class TestFlowRun:
         assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "2"
         assert details.loc[1, "inputs.key"] == "env2" and details.loc[1, "outputs.output"] == "spawn"
 
-    @pytest.mark.skip("Need server side to fix the bug: 2982972")
     def test_run_with_environment_variables_run_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run_obj = load_run(
             source=f"{FLOWS_DIR}/flow_with_environment_variables/run.yaml",
