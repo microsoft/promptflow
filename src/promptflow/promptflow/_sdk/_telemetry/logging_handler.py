@@ -71,23 +71,6 @@ class PromptFlowSDKExporter(AzureMonitorLogExporter):
     def _should_collect_stats(self):
         return False
 
-    def disable_statsbeat(self):
-        """Disable statsbeat for the exporter.
-
-        Setting environment variables is the most complete disable stats, for example,
-        the following function will use environment variables:
-
-        azure.monitor.opentelemetry.exporter.export.logs._exporter._set_statsbeat_custom_events_feature
-
-        But it will also affect the use of metrics in other parts of the program,
-        so we will not call this function to set environment variables temporarily.
-        If we encounter problems in the future, we will solve them when needed.
-        """
-
-        # from azure.monitor.opentelemetry.exporter._constants import _APPLICATIONINSIGHTS_STATSBEAT_DISABLED_ALL
-        # os.environ[_APPLICATIONINSIGHTS_STATSBEAT_DISABLED_ALL] = "false"
-        pass
-
 
 # cspell:ignore AzureMLSDKLogHandler
 class PromptFlowSDKLogHandler(LoggingHandler):
