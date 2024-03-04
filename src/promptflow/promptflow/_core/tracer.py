@@ -279,7 +279,7 @@ def enrich_span_with_context(span):
         logging.warning(f"Failed to enrich span with context: {e}")
 
 
-def enrich_span_with_trace(span, trace_type, func_name, node_name=None):
+def enrich_span_with_base_info(span, trace_type, func_name, node_name):
     try:
         span.set_attributes(
             {
@@ -492,7 +492,7 @@ def _traced_async(
         trace = create_trace(func, args, kwargs)
         # Fall back to function name if we can't get node name for better view.
         with open_telemetry_tracer.start_as_current_span(node_name or func_name) as span:
-            enrich_span_with_trace(span, trace_type, func_name, node_name)
+            enrich_span_with_base_info(span, trace_type, func_name, node_name)
             enrich_span_with_prompt_info(span, func, kwargs)
 
             # Should not extract these codes to a separate function here.
@@ -542,7 +542,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
         trace = create_trace(func, args, kwargs)
         # Fall back to function name if we can't get node name for better view.
         with open_telemetry_tracer.start_as_current_span(node_name or func_name) as span:
-            enrich_span_with_trace(span, trace_type, func_name, node_name)
+            enrich_span_with_base_info(span, trace_type, func_name, node_name)
             enrich_span_with_prompt_info(span, func, kwargs)
 
             # Should not extract these codes to a separate function here.

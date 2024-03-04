@@ -523,10 +523,13 @@ class TestOTelTracer:
         root_spans = [span for span in span_list if span.parent is None]
         assert len(root_spans) == 1
         root_span = root_spans[0]
+        attrs = []
         for span in span_list:
             assert span.status.status_code == StatusCode.OK
             assert isinstance(span.name, str)
-            assert span.attributes["line_run_id"] == line_run_id
+            if "line_run_id" not in span.attributes:
+                attrs.append(span.attributes)
+            # assert span.attributes["line_run_id"] == line_run_id
             assert span.attributes["framework"] == "promptflow"
             if span.parent is None:
                 expected_span_types = [TraceType.FLOW]
@@ -546,6 +549,7 @@ class TestOTelTracer:
             output = json.loads(span.attributes["output"])
             assert isinstance(inputs, dict)
             assert output is not None
+        assert False, f"attrs: {attrs}"
 
     def validate_openai_tokens(self, span_list):
         span_dict = {span.context.span_id: span for span in span_list}
