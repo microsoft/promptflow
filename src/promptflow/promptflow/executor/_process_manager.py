@@ -136,6 +136,9 @@ class AbstractProcessManager:
                 raise ProcessTerminatedTimeout(self._PROCESS_TERMINATED_TIMEOUT)
             time.sleep(1)
 
+    def is_process_alive(self, process_id):
+        return psutil.pid_exists(process_id)
+
 
 class SpawnProcessManager(AbstractProcessManager):
     """

@@ -177,9 +177,6 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
-    def _is_process_alive(self, process_id):
-        return psutil.pid_exists(process_id)
-
     def _handle_output_queue_messages(self, output_queue: Queue, result_dict: Dict[int, LineResult], line_number: int):
         try:
             message = output_queue.get(timeout=1)
@@ -251,7 +248,7 @@ class LineExecutionProcessPool:
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
             while not self._line_timeout_expired(start_time):
                 # Monitor process aliveness.
-                crashed = not self._is_process_alive(process_id)
+                crashed = not self._processes_manager.is_process_alive(process_id)
                 if crashed:
                     break
 
