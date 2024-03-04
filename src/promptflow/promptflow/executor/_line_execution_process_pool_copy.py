@@ -199,6 +199,11 @@ class LineExecutionProcessPool:
         self._monitor_pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
 
     def end(self):
+        # TODO: end?????????
+        for input_queue in self._input_queues:
+            input_queue.put(TERMINATE_SIGNAL)
+        for _ in range(self._n_process):
+            self._task_queue.put(TERMINATE_SIGNAL)
         if self._monitor_pool is not None:
             self._monitor_pool.close()
             self._monitor_pool.join()
