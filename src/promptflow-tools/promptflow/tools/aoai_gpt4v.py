@@ -77,7 +77,7 @@ def list_deployment_names(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection
+    connection = ""
 ) -> List[Dict[str, str]]:
     res = []
     try:

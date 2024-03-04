@@ -43,10 +43,7 @@ def azure_openai_provider(azure_open_ai_connection) -> AzureOpenAI:
 def mock_build_connection_dict_func1(**kwargs):
     from promptflow.azure.operations._arm_connection_operations import OpenURLFailedUserError
 
-    if isinstance(kwargs['name'], str):
-        raise OpenURLFailedUserError
-    else:
-        return {"value" : {"resource_id": "abc"}}
+    raise OpenURLFailedUserError
 
 
 def mock_build_connection_dict_func2(**kwargs):
