@@ -81,6 +81,29 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
+    def test_run_resume(self, pf, runtime: str, randstr: Callable[[str], str]):
+        # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
+        name = "resume_from_run0"
+        try:
+            run = pf.runs.get(run=name)
+        except RunNotFoundError:
+            run = pf.run(
+                flow=f"{FLOWS_DIR}/web_classification",
+                data=f"{DATAS_DIR}/webClassification1.jsonl",
+                column_mapping={"url": "${data.url}"},
+                variant="${summarize_text_content.variant_0}",
+                runtime=runtime,
+                name=name,
+            )
+        assert isinstance(run, Run)
+        assert run.name == name
+
+        # name2 = randstr("name")
+        run2 = pf.run(resume_from=run, name=name)
+        assert isinstance(run2, Run)
+        # Enable name assert after PFS released
+        # assert run2.name == name2
+
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
         run = load_run(
@@ -1130,7 +1153,6 @@ class TestFlowRun:
         assert details.loc[0, "inputs.key"] == "env1" and details.loc[0, "outputs.output"] == "2"
         assert details.loc[1, "inputs.key"] == "env2" and details.loc[1, "outputs.output"] == "spawn"
 
-    @pytest.mark.skip("Need server side to fix the bug: 2982972")
     def test_run_with_environment_variables_run_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
         run_obj = load_run(
             source=f"{FLOWS_DIR}/flow_with_environment_variables/run.yaml",

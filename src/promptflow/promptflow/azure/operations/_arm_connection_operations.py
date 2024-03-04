@@ -17,7 +17,7 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.azure._models._models import WorkspaceConnectionPropertiesV2BasicResource
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_arm_token
+from promptflow.azure._utils.general import get_arm_token
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 GET_CONNECTION_URL = (
