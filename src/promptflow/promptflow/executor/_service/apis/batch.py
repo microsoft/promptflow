@@ -11,9 +11,8 @@ from promptflow.executor._service.contracts.batch_request import (
     InitializationRequest,
     LineExecutionRequest,
 )
-from promptflow.executor._service.utils.service_process_pool import ServiceProcessPool
 from promptflow.executor._service.utils.service_utils import (
-    get_service_log_context,
+    get_log_context,
     set_environment_variables,
     update_and_get_operation_context,
 )
@@ -23,7 +22,8 @@ router = APIRouter()
 
 @router.post("/initialize")
 async def initialize(request: InitializationRequest):
-    with get_service_log_context(request):
+    # TODO: Need to change
+    with get_log_context(request):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received batch init request, total lines: {request.line_count}, "
@@ -35,15 +35,10 @@ async def initialize(request: InitializationRequest):
         # init flow executor and validate flow
         # storage = ...????
         flow_executor = FlowExecutor.create(request.flow_file, request.connections, request.working_dir, raise_ex=False)
+        print(flow_executor)
 
         # init line process pool
-        ServiceProcessPool(
-            flow_executor,
-            request.line_count,
-            request.output_dir,
-            request.line_timeout_sec,
-            request.worker_count,
-        )
+
         # return json response
         return {"status": "initialized"}
 
