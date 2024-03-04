@@ -105,7 +105,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 #### Deep delve into flow development
 
-[Getting started with prompt flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
+[Getting started with prompt flow](./docs/how-to-guides/quick-start.md): A step by step guidance to invoke your first flow run.
 
 ### Learn from use cases
 
@@ -116,7 +116,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-Next Step! Continue with the **Contributing**  👇 section to to contribute to prompt flow.
+Next Step! Continue with the **Contributing**  👇 section to contribute to prompt flow.
 
 ## Contributing
 

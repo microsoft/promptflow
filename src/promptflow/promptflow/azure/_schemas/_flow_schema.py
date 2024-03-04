@@ -2,14 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
-import logging
 from pathlib import Path
 
 from azure.ai.ml._schema import UnionField, YamlFileSchema
 from azure.ai.ml._schema.core.fields import LocalPathField
 from marshmallow import fields, post_load
 
-module_logger = logging.getLogger(__name__)
+from promptflow._utils.logger_utils import LoggerFactory
+
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class FlowSchema(YamlFileSchema):

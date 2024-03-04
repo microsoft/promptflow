@@ -3,42 +3,44 @@
 # ---------------------------------------------------------
 
 import copy
-import logging
 import os.path
 import sys
 import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
+from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
-    LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
     FlowRunProperties,
     ListViewType,
+    RunInfoSources,
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
-from promptflow.contracts._run_management import RunMetadata, RunVisualization
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml_string
+from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class RunOperations(TelemetryMixin):
     """RunOperations."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, client, **kwargs):
         super().__init__(**kwargs)
+        self._client = client
 
     @monitor_operation(activity_name="pf.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(
@@ -72,6 +74,9 @@ class RunOperations(TelemetryMixin):
         :return: run object retrieved from the database.
         :rtype: ~promptflow.entities.Run
         """
+        return self._get(name)
+
+    def _get(self, name: str) -> Run:
         name = Run._validate_and_return_run_name(name)
         try:
             return Run._from_orm_object(ORMRun.get(name))
@@ -87,17 +92,55 @@ class RunOperations(TelemetryMixin):
         :return: Run object created or updated.
         :rtype: ~promptflow.entities.Run
         """
+        # create run from an existing run folder
+        if run._run_source == RunInfoSources.EXISTING_RUN:
+            return self._create_run_from_existing_run_folder(run=run, **kwargs)
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
             from promptflow._sdk._submitter import RunSubmitter
 
-            created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
+            created_run = RunSubmitter(client=self._client).submit(run=run, **kwargs)
             if stream:
                 self.stream(created_run)
             return created_run
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
+
+    @monitor_operation(activity_name="pf.runs.resume", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs) -> Run:
+        """Create a run by the resume_from run, a new run will be created to rerun failed lines.
+
+        :param resume_from: Run name to resume from.
+        :type resume_from: str
+        :return: Run object created based on an existing run.
+        :rtype: ~promptflow.entities.Run
+        """
+        logger.debug(f"Resume from {resume_from!r}, kwargs: {kwargs}")
+        stream = kwargs.pop("stream", False)
+        from promptflow._sdk._submitter import RunSubmitter
+
+        created_run = RunSubmitter(client=self._client).resume(resume_from=resume_from, **kwargs)
+        if stream:
+            self.stream(created_run)
+        return created_run
+
+    def _create_run_from_existing_run_folder(self, run: Run, **kwargs) -> Run:
+        """Create run from existing run folder."""
+        try:
+            self.get(run.name)
+        except RunNotFoundError:
+            pass
+        else:
+            raise RunExistsError(f"Run {run.name!r} already exists.")
+
+        try:
+            run._dump()
+            return run
+        except Exception as e:
+            raise UserErrorException(
+                f"Failed to create run {run.name!r} from existing run folder {run.source!r}: {str(e)}"
+            ) from e
 
     def _print_run_summary(self, run: Run) -> None:
         print("======= Run Summary =======\n")
@@ -206,6 +249,22 @@ class RunOperations(TelemetryMixin):
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        name: str,
+    ) -> None:
+        """Delete run permanently.
+        Caution: This operation will delete the run permanently from your local disk.
+        Both run entity and output data will be deleted.
+
+        :param name: run name to delete
+        :return: None
+        """
+        valid_run = self.get(name)
+        LocalStorageOperations(valid_run).delete()
+        ORMRun.delete(name)
+
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
@@ -270,7 +329,9 @@ class RunOperations(TelemetryMixin):
         return local_storage.load_metrics()
 
     def _visualize(self, runs: List[Run], html_path: Optional[str] = None) -> None:
-        details, metadatas = [], []
+        details: List[RunDetail] = []
+        metadatas: List[RunMetadata] = []
+        configs: List[VisualizationConfig] = []
         for run in runs:
             # check run status first
             # if run status is not compeleted, there might be unexpected error during parse data
@@ -278,22 +339,45 @@ class RunOperations(TelemetryMixin):
             run._check_run_status_is_completed()
 
             local_storage = LocalStorageOperations(run)
-            detail = local_storage.load_detail()
+            # nan, inf and -inf are not JSON serializable, which will lead to JavaScript parse error
+            # so specify `parse_const_as_str` as True to parse them as string
+            detail = local_storage.load_detail(parse_const_as_str=True)
+            # ad-hoc step: make logs field empty to avoid too big HTML file
+            # we don't provide logs view in visualization page for now
+            # when we enable, we will save those big data (e.g. logs) in separate file(s)
+            # JS load can be faster than static HTML
+            for i in range(len(detail["node_runs"])):
+                detail["node_runs"][i]["logs"] = {"stdout": "", "stderr": ""}
+
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
                 create_time=run.created_on,
-                flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+                flow_path=run.properties.get(FlowRunProperties.FLOW_PATH, None),
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
-                metrics=self.get_metrics(name=run.name),
+                metrics=local_storage.load_metrics(parse_const_as_str=True),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
+                mode="eager" if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
-        data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
+            # TODO: add language to run metadata
+            flow_dag = load_yaml_string(metadata.dag) or {}
+            configs.append(
+                VisualizationConfig(
+                    [AvailableIDE.VS_CODE]
+                    if flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.Python
+                    else [AvailableIDE.VS]
+                )
+            )
+        data_for_visualize = RunVisualization(
+            detail=details,
+            metadata=metadatas,
+            config=configs,
+        )
         html_string = generate_html_string(asdict(data_for_visualize))
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)
@@ -339,7 +423,7 @@ class RunOperations(TelemetryMixin):
         """Get the outputs file path of the run."""
         local_storage = self._get_local_storage(run)
         # TODO: what if the data is deleted?
-        if not local_storage._data_path or not os.path.exists(local_storage._data_path):
+        if local_storage._data_path and not os.path.exists(local_storage._data_path):
             raise UserErrorException(
                 f"Data path {local_storage._data_path} for run {run.name} does not exist. "
                 "Please make sure it exists and not deleted."

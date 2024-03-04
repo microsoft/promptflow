@@ -4,15 +4,29 @@
 # this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
 
 import contextlib
+import hashlib
+import json
 import os
+import platform
+import re
+import subprocess
 import tempfile
+import time
+from collections import defaultdict
 from os import PathLike
 from pathlib import Path
+from time import sleep
+from types import GeneratorType
+from typing import Any, Dict, List
 
+import psutil
+import pydash
 from dotenv import load_dotenv
 from pydash import objects
 
+from promptflow._constants import STREAMING_ANIMATION_TIME
 from promptflow._sdk._constants import (
+    ALL_CONNECTION_TYPES,
     DEFAULT_VAR_ID,
     INPUTS,
     NODE,
@@ -23,19 +37,22 @@ from promptflow._sdk._constants import (
     VARIANTS,
     ConnectionFields,
 )
-from promptflow._sdk._errors import InvalidFlowError
+from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
-    _get_additional_includes,
     _merge_local_code_and_additional_includes,
     get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._eager_flow import EagerFlow
+from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+
+logger = get_cli_sdk_logger()
 
 
 def overwrite_variant(flow_dag: dict, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
@@ -141,7 +158,7 @@ def remove_additional_includes(flow_path: Path):
 
 @contextlib.contextmanager
 def variant_overwrite_context(
-    flow_path: Path,
+    flow: Flow,
     tuning_node: str = None,
     variant: str = None,
     connections: dict = None,
@@ -150,19 +167,23 @@ def variant_overwrite_context(
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
-    flow_dag_path, flow_dag = load_flow_dag(flow_path)
-    flow_dir_path = flow_dag_path.parent
-    if _get_additional_includes(flow_dag_path):
-        # Merge the flow folder and additional includes to temp folder.
-        with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
-            # always overwrite variant since we need to overwrite default variant if not specified.
-            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
-            overwrite_flow(flow_dag, overrides)
+    flow_dag = flow._data
+    flow_dir_path = Path(flow.code)
+    if flow.additional_includes:
+        # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
+        with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
+            if not isinstance(flow, EagerFlow):
+                # always overwrite variant since we need to overwrite default variant if not specified.
+                overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+                overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+                overwrite_flow(flow_dag, overrides)
             flow_dag.pop("additional_includes", None)
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
+    elif isinstance(flow, EagerFlow):
+        # eager flow don't support overwrite variant
+        yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
@@ -171,7 +192,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+            flow = ProtectedFlow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
@@ -186,7 +207,14 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
+        # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         from .._pf_client import PFClient
+
+        if isinstance(flow, EagerFlow):
+            # TODO(2898247): support prompt flow management connection for eager flow
+            return {}
 
         client = client or PFClient()
         with _change_working_dir(flow.code):
@@ -198,8 +226,49 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_connection_names_from_tool_meta(tools_meta: dict):
-        return []
+    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
+        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow._data)
+        connections_to_ignore = connections_to_ignore or []
+        result = {}
+        for n in connection_names:
+            if n not in connections_to_ignore:
+                conn = client.connections.get(name=n, with_secrets=True)
+                result[n] = conn._to_execution_connection_dict()
+        return result
+
+    @staticmethod
+    def get_used_connection_names(tools_meta: dict, flow_dag: dict):
+        # TODO: handle code tool meta for python
+        connection_inputs = defaultdict(set)
+        for package_id, package_meta in tools_meta.get("package", {}).items():
+            for tool_input_key, tool_input_meta in package_meta.get("inputs", {}).items():
+                if ALL_CONNECTION_TYPES.intersection(set(tool_input_meta.get("type"))):
+                    connection_inputs[package_id].add(tool_input_key)
+
+        connection_names = set()
+        # TODO: we assume that all variants are resolved here
+        # TODO: only literal connection inputs are supported
+        # TODO: check whether we should put this logic in executor as seems it's not possible to avoid touching
+        #  information for executable
+        for node in flow_dag.get("nodes", []):
+            package_id = pydash.get(node, "source.tool")
+            if package_id in connection_inputs:
+                for connection_input in connection_inputs[package_id]:
+                    connection_name = pydash.get(node, f"inputs.{connection_input}")
+                    if connection_name and not re.match(r"\${.*}", connection_name):
+                        connection_names.add(connection_name)
+        return list(connection_names)
+
+    @classmethod
+    def load_and_resolve_environment_variables(cls, flow: Flow, environment_variable_overrides: dict, client=None):
+        environment_variable_overrides = ExecutableFlow.load_env_variables(
+            flow_file=flow.path, working_dir=flow.code, environment_variables_overrides=environment_variable_overrides
+        )
+        cls.resolve_environment_variables(environment_variable_overrides, client)
+        return environment_variable_overrides
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):
@@ -209,6 +278,7 @@ class SubmitterHelper:
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
+        logger.debug("Used connection names: %s", connection_names)
         connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
@@ -223,3 +293,227 @@ class SubmitterHelper:
                 if raise_error:
                     raise e
         return result
+
+
+def show_node_log_and_output(node_run_infos, show_node_output, generator_record):
+    """Show stdout and output of nodes."""
+    from colorama import Fore
+
+    for node_name, node_result in node_run_infos.items():
+        # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
+        pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
+        if node_result.logs:
+            node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+            if node_logs:
+                for log in node_logs.rstrip("\n").split("\n"):
+                    print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                    print(log)
+        if show_node_output:
+            print(f"{Fore.CYAN}{node_name}: ", end="")
+            # TODO executor return a type string of generator
+            node_output = node_result.output
+            if isinstance(node_result.output, GeneratorType):
+                node_output = "".join(
+                    resolve_generator_output_with_cache(
+                        node_output, generator_record, generator_key=f"nodes.{node_name}.output"
+                    )
+                )
+            print(f"{Fore.LIGHTWHITE_EX}{node_output}")
+
+
+def print_chat_output(output, generator_record, *, generator_key: str):
+    if isinstance(output, GeneratorType):
+        for event in resolve_generator_output_with_cache(output, generator_record, generator_key=generator_key):
+            print(event, end="")
+            # For better animation effects
+            time.sleep(STREAMING_ANIMATION_TIME)
+        # Print a new line at the end of the response
+        print()
+    else:
+        print(output)
+
+
+def resolve_generator_output_with_cache(
+    output: GeneratorType, generator_record: Dict[str, Any], *, generator_key: str
+) -> List[str]:
+    """Get the output of a generator. If the generator has been recorded, return the recorded result. Otherwise, record
+    the result and return it.
+    We use a separate generator_key instead of the output itself as the key in the generator_record in case the output
+    is not a valid dict key in some cases.
+
+    :param output: The generator to get the output from.
+    :type output: GeneratorType
+    :param generator_record: The record of the generator.
+    :type generator_record: dict
+    :param generator_key: The key of the generator in the record, need to be unique.
+    :type generator_key: str
+    :return: The output of the generator.
+    :rtype: str
+    """
+    if isinstance(output, GeneratorType):
+        if generator_key in generator_record:
+            if hasattr(generator_record[generator_key], "items"):
+                output = iter(generator_record[generator_key].items)
+            else:
+                output = iter(generator_record[generator_key])
+        else:
+            if hasattr(output.gi_frame.f_locals, "proxy"):
+                proxy = output.gi_frame.f_locals["proxy"]
+                generator_record[generator_key] = proxy
+            else:
+                generator_record[generator_key] = list(output)
+                output = generator_record[generator_key]
+    return output
+
+
+def resolve_generator(flow_result, generator_record):
+    # resolve generator in flow result
+    for k, v in flow_result.run_info.output.items():
+        if isinstance(v, GeneratorType):
+            flow_output = "".join(
+                resolve_generator_output_with_cache(v, generator_record, generator_key=f"run.outputs.{k}")
+            )
+            flow_result.run_info.output[k] = flow_output
+            flow_result.run_info.result[k] = flow_output
+            flow_result.output[k] = flow_output
+
+    # resolve generator in node outputs
+    for node_name, node in flow_result.node_run_infos.items():
+        if isinstance(node.output, GeneratorType):
+            node_output = "".join(
+                resolve_generator_output_with_cache(
+                    node.output, generator_record, generator_key=f"nodes.{node_name}.output"
+                )
+            )
+            node.output = node_output
+            node.result = node_output
+
+    return flow_result
+
+
+# region start experiment utils
+def _start_process_in_background(args, executable_path=None):
+    if platform.system() == "Windows":
+        os.spawnve(os.P_DETACH, executable_path, args, os.environ)
+    else:
+        subprocess.Popen(" ".join(["nohup"] + args + ["&"]), shell=True, env=os.environ)
+
+
+def _windows_stop_handler(experiment_name, post_process):
+    import win32pipe
+
+    # Create a named pipe to receive the cancel signal.
+    pipe_name = r"\\.\pipe\{}".format(experiment_name)
+    pipe = win32pipe.CreateNamedPipe(
+        pipe_name,
+        win32pipe.PIPE_ACCESS_DUPLEX,
+        win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+        1,
+        65536,
+        65536,
+        0,
+        None,
+    )
+    # Wait for connection to stop orchestrator
+    win32pipe.ConnectNamedPipe(pipe, None)
+    post_process()
+
+
+def _calculate_snapshot(column_mapping, input_data, flow_path):
+    def calculate_files_content_hash(file_path):
+        file_content = {}
+        if not isinstance(file_path, (str, PathLike)) or not Path(file_path).exists():
+            return file_path
+        if Path(file_path).is_file():
+            with open(file_path, "r") as f:
+                absolute_path = Path(file_path).absolute().as_posix()
+                file_content[absolute_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+        else:
+            for root, dirs, files in os.walk(file_path):
+                for ignore_item in ["__pycache__"]:
+                    if ignore_item in dirs:
+                        dirs.remove(ignore_item)
+                for file in files:
+                    with open(os.path.join(root, file), "r") as f:
+                        relative_path = (Path(root) / file).relative_to(Path(file_path)).as_posix()
+                        try:
+                            file_content[relative_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+                        except Exception as e:
+                            raise e
+        return hashlib.md5(json.dumps(file_content, sort_keys=True).encode("utf-8")).hexdigest()
+
+    snapshot_content = {
+        "column_mapping": column_mapping,
+        "inputs": {key: calculate_files_content_hash(value) for key, value in input_data.items()},
+        "code": calculate_files_content_hash(flow_path),
+    }
+    return hashlib.md5(json.dumps(snapshot_content, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _stop_orchestrator_process(orchestrator):
+    try:
+        if platform.system() == "Windows":
+            import win32file
+
+            # Connect to named pipe to stop the orchestrator process.
+            win32file.CreateFile(
+                r"\\.\pipe\{}".format(orchestrator.experiment_name),
+                win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                0,
+                None,
+                win32file.OPEN_EXISTING,
+                0,
+                None,
+            )
+        else:
+            # Send terminate signal to orchestrator process.
+            process = psutil.Process(orchestrator.pid)
+            process.terminate()
+    except psutil.NoSuchProcess:
+        logger.debug("Experiment orchestrator process terminates abnormally.")
+        return
+
+    except Exception as e:
+        raise RunOperationError(
+            message=f"Experiment stopped failed with {e}",
+        )
+    # Wait for status updated
+    try:
+        while True:
+            psutil.Process(orchestrator.pid)
+            sleep(1)
+    except psutil.NoSuchProcess:
+        logger.debug("Experiment status has been updated.")
+
+
+def _set_up_experiment_log_handler(experiment_path, index=None):
+    """
+    Set up file handler to record experiment execution. If not set index, it will record logs in a new file.
+
+    :param experiment_path: Experiment path.
+    :type experiment_path: str
+    :param index: The number of attempt to execution experiment.
+    :type index: int
+    :return: File handler, the number of attempt to execution experiment.
+    :rtype: ~promptflow.utils.logger_utils.FileHandler, int
+    """
+    log_folder = Path(experiment_path) / "logs"
+    log_folder.mkdir(exist_ok=True, parents=True)
+    if index is None:
+        # Get max index in logs folder
+        index = 0
+        for filename in os.listdir(log_folder):
+            result = re.match(r"exp\.attempt\_(\d+)\.log", filename)
+            if result:
+                try:
+                    index = max(index, int(result.groups()[0]) + 1)
+                except Exception as e:
+                    logger.debug(f"Get index of log file failed: {e}")
+
+    log_path = Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
+    logger.info(f"Experiment execution log records in {log_path}")
+    file_handler = FileHandler(file_path=log_path)
+    return file_handler, index
+
+
+# endregion

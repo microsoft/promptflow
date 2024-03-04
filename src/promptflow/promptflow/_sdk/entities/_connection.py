@@ -9,7 +9,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
-from promptflow._core.token_provider import AzureTokenProvider, TokenProviderABC
+from marshmallow import INCLUDE
+
+from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
@@ -19,11 +21,11 @@ from promptflow._sdk._constants import (
     SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
+    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
-from promptflow._sdk._errors import UnsecureConnectionError
-from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._errors import SDKError, UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -44,9 +46,12 @@ from promptflow._sdk.schemas._connection import (
     OpenAIConnectionSchema,
     QdrantConnectionSchema,
     SerpConnectionSchema,
+    ServerlessConnectionSchema,
     WeaviateConnectionSchema,
 )
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
+from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -121,6 +126,8 @@ class _Connection(YAMLTranslatableMixin):
             return self.secrets[item]
         if item in self.configs:
             return self.configs[item]
+        # raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
+        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
 
     @classmethod
@@ -153,7 +160,9 @@ class _Connection(YAMLTranslatableMixin):
                 continue
             encrypt_secrets[k] = encrypt_secret_value(v)
         if invalid_secrets:
-            raise ValueError(f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them.")
+            raise ValidationException(
+                f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them."
+            )
         return encrypt_secrets
 
     @classmethod
@@ -162,7 +171,7 @@ class _Connection(YAMLTranslatableMixin):
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
-            raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
+            raise SDKError(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
     def _to_dict(self) -> Dict:
@@ -175,11 +184,11 @@ class _Connection(YAMLTranslatableMixin):
         type_in_override = find_type_in_override(params_override)
         type_str = type_in_override or data.get("type")
         if type_str is None:
-            raise ValueError("type is required for connection.")
+            raise ValidationException("type is required for connection.")
         type_str = cls._casting_type(type_str)
         type_cls = _supported_types.get(type_str)
         if type_cls is None:
-            raise ValueError(
+            raise ValidationException(
                 f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
             )
         return type_cls, type_str
@@ -245,6 +254,7 @@ class _Connection(YAMLTranslatableMixin):
         connection = connection_type._load_from_dict(
             data=data,
             context=context,
+            unknown=INCLUDE,
             additional_message=f"If you are trying to configure a job that is not of type {type_str}, please specify "
             f"the correct connection type in the 'type' property.",
             **kwargs,
@@ -323,9 +333,14 @@ class _StrongTypeConnection(_Connection):
         return obj
 
     @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return True
+
+    @property
     def api_key(self):
         """Return the api key."""
-        return self.secrets.get("api_key", SCRUBBED_VALUE)
+        return self.secrets.get("api_key", SCRUBBED_VALUE) if self._has_api_key else None
 
     @api_key.setter
     def api_key(self, value):
@@ -344,8 +359,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
     :type api_version: str
-    :param token_provider: The token provider.
-    :type token_provider: promptflow._core.token_provider.TokenProviderABC
+    :param auth_type: The auth type, supported value ["key", "meid_token"].
+    :type api_version: str
     :param name: Connection name.
     :type name: str
     """
@@ -354,16 +369,16 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     def __init__(
         self,
-        api_key: str,
         api_base: str,
+        api_key: str = None,
         api_type: str = "azure",
         api_version: str = "2023-07-01-preview",
-        token_provider: TokenProviderABC = None,
+        auth_mode: str = ConnectionAuthMode.KEY,
         **kwargs,
     ):
-        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
-        secrets = {"api_key": api_key}
-        self._token_provider = token_provider
+        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version, "auth_mode": auth_mode}
+        secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
+        self._token_provider = kwargs.get("token_provider")
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
     @classmethod
@@ -400,6 +415,21 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         """Set the connection api version."""
         self.configs["api_version"] = value
 
+    @property
+    def auth_mode(self):
+        """Return the connection auth mode."""
+        return self.configs.get("auth_mode", ConnectionAuthMode.KEY)
+
+    @auth_mode.setter
+    def auth_mode(self, value):
+        """Set the connection auth mode."""
+        self.configs["auth_mode"] = value
+
+    @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return self.auth_mode == ConnectionAuthMode.KEY
+
     def get_token(self):
         """Return the connection token."""
         if not self._token_provider:
@@ -415,19 +445,19 @@ class OpenAIConnection(_StrongTypeConnection):
     :type api_key: str
     :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :type organization: str
-    :param api_base: Optional. Specify when use customized api base, leave None to use open ai default api base.
-    :type api_base: str
+    :param base_url: Optional. Specify when use customized api base, leave None to use open ai default api base.
+    :type base_url: str
     :param name: Connection name.
     :type name: str
     """
 
     TYPE = ConnectionType.OPEN_AI
 
-    def __init__(self, api_key: str, organization: str = None, api_base=None, **kwargs):
-        if api_base == "":
+    def __init__(self, api_key: str, organization: str = None, base_url=None, **kwargs):
+        if base_url == "":
             # Keep empty as None to avoid disturbing openai pick the default api base.
-            api_base = None
-        configs = {"organization": organization, "api_base": api_base}
+            base_url = None
+        configs = {"organization": organization, "base_url": base_url}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -444,6 +474,39 @@ class OpenAIConnection(_StrongTypeConnection):
     def organization(self, value):
         """Set the connection organization."""
         self.configs["organization"] = value
+
+    @property
+    def base_url(self):
+        """Return the connection api base."""
+        return self.configs.get("base_url")
+
+    @base_url.setter
+    def base_url(self, value):
+        """Set the connection api base."""
+        self.configs["base_url"] = value
+
+
+class ServerlessConnection(_StrongTypeConnection):
+    """Serverless connection.
+
+    :param api_key: The api key.
+    :type api_key: str
+    :param api_base: The api base.
+    :type api_base: str
+    :param name: Connection name.
+    :type name: str
+    """
+
+    TYPE = ConnectionType.SERVERLESS
+
+    def __init__(self, api_key: str, api_base: str, **kwargs):
+        secrets = {"api_key": api_key}
+        configs = {"api_base": api_base}
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ServerlessConnectionSchema
 
     @property
     def api_base(self):
@@ -763,7 +826,8 @@ class CustomStrongTypeConnection(_Connection):
                 not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
                 or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
             ):
-                raise ValueError("custom_type and module are required for custom strong type connections.")
+                error = ValueError("custom_type and module are required for custom strong type connections.")
+                raise UserErrorException(message=str(error), error=error)
             else:
                 m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
                 custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
@@ -775,13 +839,16 @@ class CustomStrongTypeConnection(_Connection):
             module = importlib.import_module(m)
             cls = getattr(module, custom_cls)
         except ImportError:
-            raise ValueError(
+            error = ValueError(
                 f"Can't find module {m} in current environment. Please check the module is correctly configured."
             )
+            raise UserErrorException(message=str(error), error=error)
         except AttributeError:
-            raise ValueError(
-                f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+            error = ValueError(
+                f"Can't find class {custom_cls} in module {m}. "
+                f"Please check the custom_type is correctly configured."
             )
+            raise UserErrorException(message=str(error), error=error)
 
         schema_configs = {}
         schema_secrets = {}
@@ -874,11 +941,12 @@ class CustomConnection(_Connection):
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
         if not self.secrets:
-            raise ValueError(
+            error = ValueError(
                 "Secrets is required for custom connection, "
                 "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
                 "to initialize custom connection."
             )
+            raise UserErrorException(message=str(error), error=error)
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
         }
@@ -996,10 +1064,11 @@ class CustomConnection(_Connection):
         elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
             custom_conn_name = to_class
         else:
-            raise ValueError(
+            error = ValueError(
                 f"Failed to convert to custom strong type connection because of "
                 f"invalid module or class: {module}, {to_class}"
             )
+            raise UserErrorException(message=str(error), error=error)
 
         custom_defined_connection_class = getattr(module, custom_conn_name)
 

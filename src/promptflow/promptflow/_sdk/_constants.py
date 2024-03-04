@@ -2,10 +2,60 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
+from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
 LOGGER_NAME = "promptflow"
+
+PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
+PROMPT_FLOW_DIR_NAME = ".promptflow"
+
+
+def _prepare_home_dir() -> Path:
+    """Prepare prompt flow home directory.
+
+    User can configure it by setting environment variable: `PF_HOME_DIRECTORY`;
+    if not configured, or configured value is not valid, use default value: "~/.promptflow/".
+    """
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+
+    if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
+        logger.debug(
+            f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r} is set, honor it preparing home directory."
+        )
+        try:
+            pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
+            pf_home_dir.mkdir(parents=True, exist_ok=True)
+            return pf_home_dir
+        except Exception as e:  # pylint: disable=broad-except
+            _warning_message = (
+                "Invalid configuration for prompt flow home directory: "
+                f"{os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)!r}: {str(e)!r}.\n"
+                'Fall back to use default value: "~/.promptflow/".'
+            )
+            logger.warning(_warning_message)
+
+    try:
+        logger.debug("preparing home directory with default value.")
+        pf_home_dir = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+        pf_home_dir.mkdir(parents=True, exist_ok=True)
+        return pf_home_dir
+    except Exception as e:  # pylint: disable=broad-except
+        _error_message = (
+            f"Cannot create prompt flow home directory: {str(e)!r}.\n"
+            "Please check if you have proper permission to operate the directory "
+            f"{HOME_PROMPT_FLOW_DIR.as_posix()!r}; or configure it via "
+            f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r}.\n"
+        )
+        logger.error(_error_message)
+        raise Exception(_error_message)
+
+
+HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
 DAG_FILE_NAME = "flow.dag.yaml"
 NODE_VARIANTS = "node_variants"
@@ -16,15 +66,19 @@ INPUTS = "inputs"
 USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
+FLOW_META_JSON = "flow.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
-PROMPT_FLOW_DIR_NAME = ".promptflow"
-HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+FLOW_META_JSON_GEN_TIMEOUT = 60
+PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
+PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
+PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
-
-if not HOME_PROMPT_FLOW_DIR.is_dir():
-    HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
+PF_SERVICE_HOUR_TIMEOUT = 1
+PF_SERVICE_MONITOR_SECOND = 60
+PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
+PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
@@ -32,6 +86,10 @@ SCHEMA_INFO_TABLENAME = "schema_info"
 RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
+EXPERIMENT_TABLE_NAME = "experiment"
+ORCHESTRATOR_TABLE_NAME = "orchestrator"
+EXP_NODE_RUN_TABLE_NAME = "exp_node_run"
+EXPERIMENT_CREATED_ON_INDEX_NAME = "idx_experiment_created_on"
 BASE_PATH_CONTEXT_KEY = "base_path"
 SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
 SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
@@ -56,23 +114,30 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000
-BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+BULK_RUN_ERRORS = "BulkRunErrors"
 RUN_MACRO = "${run}"
 VARIANT_ID_MACRO = "${variant_id}"
 TIMESTAMP_MACRO = "${timestamp}"
 DEFAULT_VARIANT = "variant_0"
 # run visualize constants
 VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_LIB_CDN_LINK_TMPL = (
-    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
-)
-VIS_LIB_VERSION = "0.0.32"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+REMOTE_URI_PREFIX = "azureml:"
+REGISTRY_URI_PREFIX = "azureml://registries/"
+FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
+
+# trace
+TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
+TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
+SPAN_TABLENAME = "span"
+PFS_MODEL_DATETIME_FORMAT = "iso8601"
+
+AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -100,6 +165,7 @@ class RunTypes:
     BATCH = "batch"
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
+    COMMAND = "command"
 
 
 class AzureRunTypes:
@@ -186,6 +252,10 @@ class FlowRunProperties:
     NODE_VARIANT = "node_variant"
     RUN = "run"
     SYSTEM_METRICS = "system_metrics"
+    # Experiment command node fields only
+    COMMAND = "command"
+    OUTPUTS = "outputs"
+    RESUME_FROM = "resume_from"
 
 
 class CommonYamlFields:
@@ -250,16 +320,15 @@ class RunInfoSources(str, Enum):
     INDEX_SERVICE = "index_service"
     RUN_HISTORY = "run_history"
     MT_SERVICE = "mt_service"
+    EXISTING_RUN = "existing_run"
 
 
 class ConfigValueType(str, Enum):
-
     STRING = "String"
     SECRET = "Secret"
 
 
 class ConnectionType(str, Enum):
-
     _NOT_SET = "NotSet"
     AZURE_OPEN_AI = "AzureOpenAI"
     OPEN_AI = "OpenAI"
@@ -269,7 +338,18 @@ class ConnectionType(str, Enum):
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
     CUSTOM = "Custom"
+
+
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
+
+
+ALL_CONNECTION_TYPES = set(
+    map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+)
 
 
 class ConnectionFields(str, Enum):
@@ -288,11 +368,8 @@ SUPPORTED_CONNECTION_FIELDS = {
 class RunDataKeys:
     PORTAL_URL = "portal_url"
     DATA = "data"
-    DATA_PORTAL_URL = "data_portal_url"
     RUN = "run"
-    INPUT_RUN_PORTAL_URL = "input_run_portal_url"
     OUTPUT = "output"
-    OUTPUT_PORTAL_URL = "output_portal_url"
 
 
 class RunHistoryKeys:
@@ -329,3 +406,79 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
+
+
+class DownloadedRun:
+    SNAPSHOT_FOLDER = LocalStorageFilenames.SNAPSHOT_FOLDER
+    METRICS_FILE_NAME = LocalStorageFilenames.METRICS
+    LOGS_FILE_NAME = LocalStorageFilenames.LOG
+    RUN_METADATA_FILE_NAME = "run_metadata.json"
+
+
+class ExperimentNodeType(object):
+    FLOW = "flow"
+    CHAT_GROUP = "chat_group"
+    COMMAND = "command"
+
+
+class ExperimentStatus(object):
+    NOT_STARTED = "NotStarted"
+    QUEUING = "Queuing"
+    IN_PROGRESS = "InProgress"
+    TERMINATED = "Terminated"
+
+
+class ExperimentNodeRunStatus(object):
+    NOT_STARTED = "NotStarted"
+    QUEUING = "Queuing"
+    IN_PROGRESS = "InProgress"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
+    CANCELED = "Canceled"
+
+
+class ContextAttributeKey:
+    EXPERIMENT = "experiment"
+    # Note: referenced id not used for lineage, only for evaluation
+    REFERENCED_LINE_RUN_ID = "referenced.line_run_id"
+    REFERENCED_BATCH_RUN_ID = "referenced.batch_run_id"
+
+
+class EnvironmentVariables:
+    """The environment variables."""
+
+    PF_USE_AZURE_CLI_CREDENTIAL = "PF_USE_AZURE_CLI_CREDENTIAL"
+
+
+class CumulativeTokenCountFieldName:
+    COMPLETION = "completion"
+    PROMPT = "prompt"
+    TOTAL = "total"
+
+
+class LineRunFieldName:
+    LINE_RUN_ID = "line_run_id"
+    TRACE_ID = "trace_id"
+    ROOT_SPAN_ID = "root_span_id"
+    INPUTS = "inputs"
+    OUTPUTS = "outputs"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    STATUS = "status"
+    LATENCY = "latency"
+    NAME = "name"
+    KIND = "kind"
+    CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
+    EVALUATIONS = "evaluations"
+
+
+TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
+class IdentityKeys(str, Enum):
+    """Enum for identity keys."""
+
+    MANAGED = "managed"
+    USER_IDENTITY = "user_identity"
+    RESOURCE_ID = "resource_id"
+    CLIENT_ID = "client_id"

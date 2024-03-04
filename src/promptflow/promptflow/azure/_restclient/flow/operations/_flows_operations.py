@@ -115,89 +115,6 @@ def build_list_flows_request(
     )
 
 
-def build_clone_flow_request(
-    subscription_id,  # type: str
-    resource_group_name,  # type: str
-    workspace_name,  # type: str
-    flow_id,  # type: str
-    **kwargs  # type: Any
-):
-    # type: (...) -> HttpRequest
-    content_type = kwargs.pop('content_type', None)  # type: Optional[str]
-    experiment_id = kwargs.pop('experiment_id')  # type: str
-
-    accept = "application/json"
-    # Construct URL
-    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/clone')
-    path_format_arguments = {
-        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
-        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
-        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
-        "flowId": _SERIALIZER.url("flow_id", flow_id, 'str'),
-    }
-
-    url = _format_url_section(url, **path_format_arguments)
-
-    # Construct parameters
-    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
-    query_parameters['experimentId'] = _SERIALIZER.query("experiment_id", experiment_id, 'str')
-
-    # Construct headers
-    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
-    if content_type is not None:
-        header_parameters['Content-Type'] = _SERIALIZER.header("content_type", content_type, 'str')
-    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
-
-    return HttpRequest(
-        method="POST",
-        url=url,
-        params=query_parameters,
-        headers=header_parameters,
-        **kwargs
-    )
-
-
-def build_create_flow_from_sample_request(
-    subscription_id,  # type: str
-    resource_group_name,  # type: str
-    workspace_name,  # type: str
-    **kwargs  # type: Any
-):
-    # type: (...) -> HttpRequest
-    content_type = kwargs.pop('content_type', None)  # type: Optional[str]
-    experiment_id = kwargs.pop('experiment_id', None)  # type: Optional[str]
-
-    accept = "application/json"
-    # Construct URL
-    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/fromsample')
-    path_format_arguments = {
-        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
-        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
-        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
-    }
-
-    url = _format_url_section(url, **path_format_arguments)
-
-    # Construct parameters
-    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
-    if experiment_id is not None:
-        query_parameters['experimentId'] = _SERIALIZER.query("experiment_id", experiment_id, 'str')
-
-    # Construct headers
-    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
-    if content_type is not None:
-        header_parameters['Content-Type'] = _SERIALIZER.header("content_type", content_type, 'str')
-    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
-
-    return HttpRequest(
-        method="POST",
-        url=url,
-        params=query_parameters,
-        headers=header_parameters,
-        **kwargs
-    )
-
-
 def build_update_flow_request(
     subscription_id,  # type: str
     resource_group_name,  # type: str
@@ -584,50 +501,6 @@ def build_get_flow_node_run_base_path_request(
     )
 
 
-def build_clone_flow_from_flow_run_request(
-    subscription_id,  # type: str
-    resource_group_name,  # type: str
-    workspace_name,  # type: str
-    flow_id,  # type: str
-    flow_run_id,  # type: str
-    **kwargs  # type: Any
-):
-    # type: (...) -> HttpRequest
-    content_type = kwargs.pop('content_type', None)  # type: Optional[str]
-    experiment_id = kwargs.pop('experiment_id')  # type: str
-
-    accept = "application/json"
-    # Construct URL
-    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/runs/{flowRunId}/clone')
-    path_format_arguments = {
-        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
-        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
-        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
-        "flowId": _SERIALIZER.url("flow_id", flow_id, 'str'),
-        "flowRunId": _SERIALIZER.url("flow_run_id", flow_run_id, 'str'),
-    }
-
-    url = _format_url_section(url, **path_format_arguments)
-
-    # Construct parameters
-    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
-    query_parameters['experimentId'] = _SERIALIZER.query("experiment_id", experiment_id, 'str')
-
-    # Construct headers
-    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
-    if content_type is not None:
-        header_parameters['Content-Type'] = _SERIALIZER.header("content_type", content_type, 'str')
-    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
-
-    return HttpRequest(
-        method="POST",
-        url=url,
-        params=query_parameters,
-        headers=header_parameters,
-        **kwargs
-    )
-
-
 def build_list_bulk_tests_request(
     subscription_id,  # type: str
     resource_group_name,  # type: str
@@ -697,82 +570,6 @@ def build_get_bulk_test_request(
     return HttpRequest(
         method="GET",
         url=url,
-        headers=header_parameters,
-        **kwargs
-    )
-
-
-def build_get_samples_request(
-    subscription_id,  # type: str
-    resource_group_name,  # type: str
-    workspace_name,  # type: str
-    **kwargs  # type: Any
-):
-    # type: (...) -> HttpRequest
-    use_snapshot = kwargs.pop('use_snapshot', False)  # type: Optional[bool]
-
-    accept = "application/json"
-    # Construct URL
-    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/samples')
-    path_format_arguments = {
-        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
-        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
-        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
-    }
-
-    url = _format_url_section(url, **path_format_arguments)
-
-    # Construct parameters
-    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
-    if use_snapshot is not None:
-        query_parameters['useSnapshot'] = _SERIALIZER.query("use_snapshot", use_snapshot, 'bool')
-
-    # Construct headers
-    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
-    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
-
-    return HttpRequest(
-        method="GET",
-        url=url,
-        params=query_parameters,
-        headers=header_parameters,
-        **kwargs
-    )
-
-
-def build_get_evaluate_flow_samples_request(
-    subscription_id,  # type: str
-    resource_group_name,  # type: str
-    workspace_name,  # type: str
-    **kwargs  # type: Any
-):
-    # type: (...) -> HttpRequest
-    use_snapshot = kwargs.pop('use_snapshot', False)  # type: Optional[bool]
-
-    accept = "application/json"
-    # Construct URL
-    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/evaluateSamples')
-    path_format_arguments = {
-        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
-        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
-        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
-    }
-
-    url = _format_url_section(url, **path_format_arguments)
-
-    # Construct parameters
-    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
-    if use_snapshot is not None:
-        query_parameters['useSnapshot'] = _SERIALIZER.query("use_snapshot", use_snapshot, 'bool')
-
-    # Construct headers
-    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
-    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
-
-    return HttpRequest(
-        method="GET",
-        url=url,
-        params=query_parameters,
         headers=header_parameters,
         **kwargs
     )
@@ -901,6 +698,40 @@ def build_cancel_flow_run_request(
         "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
         "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
         "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "flowRunId": _SERIALIZER.url("flow_run_id", flow_run_id, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="POST",
+        url=url,
+        headers=header_parameters,
+        **kwargs
+    )
+
+
+def build_cancel_flow_test_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    flow_id,  # type: str
+    flow_run_id,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    accept = "text/plain, application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/flowTests/{flowRunId}/cancel')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "flowId": _SERIALIZER.url("flow_id", flow_id, 'str'),
         "flowRunId": _SERIALIZER.url("flow_run_id", flow_run_id, 'str'),
     }
 
@@ -1254,6 +1085,45 @@ def build_get_flow_session_status_request(
         **kwargs
     )
 
+
+def build_list_flow_session_pip_packages_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    flow_id,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    experiment_id = kwargs.pop('experiment_id')  # type: str
+
+    accept = "application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/sessions/pipPackages')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "flowId": _SERIALIZER.url("flow_id", flow_id, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct parameters
+    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
+    query_parameters['experimentId'] = _SERIALIZER.query("experiment_id", experiment_id, 'str')
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="GET",
+        url=url,
+        params=query_parameters,
+        headers=header_parameters,
+        **kwargs
+    )
+
 # fmt: on
 class FlowsOperations(object):
     """FlowsOperations operations.
@@ -1418,152 +1288,6 @@ class FlowsOperations(object):
         return deserialized
 
     list_flows.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows'}  # type: ignore
-
-
-    @distributed_trace
-    def clone_flow(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        flow_id,  # type: str
-        experiment_id,  # type: str
-        body=None,  # type: Optional["_models.CreateFlowRequest"]
-        **kwargs  # type: Any
-    ):
-        # type: (...) -> "_models.FlowDto"
-        """clone_flow.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param flow_id:
-        :type flow_id: str
-        :param experiment_id:
-        :type experiment_id: str
-        :param body:
-        :type body: ~flow.models.CreateFlowRequest
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: FlowDto, or the result of cls(response)
-        :rtype: ~flow.models.FlowDto
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
-
-        if body is not None:
-            _json = self._serialize.body(body, 'CreateFlowRequest')
-        else:
-            _json = None
-
-        request = build_clone_flow_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            flow_id=flow_id,
-            content_type=content_type,
-            experiment_id=experiment_id,
-            json=_json,
-            template_url=self.clone_flow.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('FlowDto', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    clone_flow.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/clone'}  # type: ignore
-
-
-    @distributed_trace
-    def create_flow_from_sample(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        experiment_id=None,  # type: Optional[str]
-        body=None,  # type: Optional["_models.CreateFlowFromSampleRequest"]
-        **kwargs  # type: Any
-    ):
-        # type: (...) -> "_models.FlowDto"
-        """create_flow_from_sample.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param experiment_id:
-        :type experiment_id: str
-        :param body:
-        :type body: ~flow.models.CreateFlowFromSampleRequest
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: FlowDto, or the result of cls(response)
-        :rtype: ~flow.models.FlowDto
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
-
-        if body is not None:
-            _json = self._serialize.body(body, 'CreateFlowFromSampleRequest')
-        else:
-            _json = None
-
-        request = build_create_flow_from_sample_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            content_type=content_type,
-            json=_json,
-            experiment_id=experiment_id,
-            template_url=self.create_flow_from_sample.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('FlowDto', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    create_flow_from_sample.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/fromsample'}  # type: ignore
 
 
     @distributed_trace
@@ -2220,85 +1944,6 @@ class FlowsOperations(object):
 
 
     @distributed_trace
-    def clone_flow_from_flow_run(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        flow_id,  # type: str
-        flow_run_id,  # type: str
-        experiment_id,  # type: str
-        body=None,  # type: Optional["_models.CreateFlowRequest"]
-        **kwargs  # type: Any
-    ):
-        # type: (...) -> "_models.FlowDto"
-        """clone_flow_from_flow_run.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param flow_id:
-        :type flow_id: str
-        :param flow_run_id:
-        :type flow_run_id: str
-        :param experiment_id:
-        :type experiment_id: str
-        :param body:
-        :type body: ~flow.models.CreateFlowRequest
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: FlowDto, or the result of cls(response)
-        :rtype: ~flow.models.FlowDto
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
-
-        if body is not None:
-            _json = self._serialize.body(body, 'CreateFlowRequest')
-        else:
-            _json = None
-
-        request = build_clone_flow_from_flow_run_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            flow_id=flow_id,
-            flow_run_id=flow_run_id,
-            content_type=content_type,
-            experiment_id=experiment_id,
-            json=_json,
-            template_url=self.clone_flow_from_flow_run.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('FlowDto', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    clone_flow_from_flow_run.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/runs/{flowRunId}/clone'}  # type: ignore
-
-
-    @distributed_trace
     def list_bulk_tests(
         self,
         subscription_id,  # type: str
@@ -2424,126 +2069,6 @@ class FlowsOperations(object):
         return deserialized
 
     get_bulk_test.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/bulkTests/{bulkTestId}'}  # type: ignore
-
-
-    @distributed_trace
-    def get_samples(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        use_snapshot=False,  # type: Optional[bool]
-        **kwargs  # type: Any
-    ):
-        # type: (...) -> Dict[str, "_models.FlowSampleDto"]
-        """get_samples.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param use_snapshot:
-        :type use_snapshot: bool
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: dict mapping str to FlowSampleDto, or the result of cls(response)
-        :rtype: dict[str, ~flow.models.FlowSampleDto]
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType[Dict[str, "_models.FlowSampleDto"]]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        
-        request = build_get_samples_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            use_snapshot=use_snapshot,
-            template_url=self.get_samples.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('{FlowSampleDto}', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    get_samples.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/samples'}  # type: ignore
-
-
-    @distributed_trace
-    def get_evaluate_flow_samples(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        use_snapshot=False,  # type: Optional[bool]
-        **kwargs  # type: Any
-    ):
-        # type: (...) -> Dict[str, "_models.FlowSampleDto"]
-        """get_evaluate_flow_samples.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param use_snapshot:
-        :type use_snapshot: bool
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: dict mapping str to FlowSampleDto, or the result of cls(response)
-        :rtype: dict[str, ~flow.models.FlowSampleDto]
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType[Dict[str, "_models.FlowSampleDto"]]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        
-        request = build_get_evaluate_flow_samples_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            use_snapshot=use_snapshot,
-            template_url=self.get_evaluate_flow_samples.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('{FlowSampleDto}', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    get_evaluate_flow_samples.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/evaluateSamples'}  # type: ignore
 
 
     @distributed_trace
@@ -2799,6 +2324,70 @@ class FlowsOperations(object):
         return deserialized
 
     cancel_flow_run.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/runs/{flowRunId}/cancel'}  # type: ignore
+
+
+    @distributed_trace
+    def cancel_flow_test(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        flow_run_id,  # type: str
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> str
+        """cancel_flow_test.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param flow_id:
+        :type flow_id: str
+        :param flow_run_id:
+        :type flow_run_id: str
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: str, or the result of cls(response)
+        :rtype: str
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType[str]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        
+        request = build_cancel_flow_test_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_id=flow_id,
+            flow_run_id=flow_run_id,
+            template_url=self.cancel_flow_test.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('str', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    cancel_flow_test.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/flowTests/{flowRunId}/cancel'}  # type: ignore
 
 
     @distributed_trace
@@ -3410,4 +2999,68 @@ class FlowsOperations(object):
         return deserialized
 
     get_flow_session_status.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/sessions/status'}  # type: ignore
+
+
+    @distributed_trace
+    def list_flow_session_pip_packages(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        experiment_id,  # type: str
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> str
+        """list_flow_session_pip_packages.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param flow_id:
+        :type flow_id: str
+        :param experiment_id:
+        :type experiment_id: str
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: str, or the result of cls(response)
+        :rtype: str
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType[str]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        
+        request = build_list_flow_session_pip_packages_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_id=flow_id,
+            experiment_id=experiment_id,
+            template_url=self.list_flow_session_pip_packages.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('str', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    list_flow_session_pip_packages.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/sessions/pipPackages'}  # type: ignore
 

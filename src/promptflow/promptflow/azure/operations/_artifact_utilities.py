@@ -4,7 +4,6 @@
 
 # pylint: disable=protected-access
 
-import logging
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -44,9 +43,10 @@ from azure.ai.ml.operations._datastore_operations import DatastoreOperations
 from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
+from ..._utils.logger_utils import LoggerFactory
 from ._fileshare_storeage_helper import FlowFileStorageClient
 
-module_logger = logging.getLogger(__name__)
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 def _get_datastore_name(*, datastore_name: Optional[str] = WORKSPACE_BLOB_STORE) -> str:

@@ -10,10 +10,17 @@ FROM docker.io/continuumio/miniconda3:latest
 
 WORKDIR /
 
-COPY ./flow /flow
+{% if env.python_requirements_txt %}
+COPY ./flow/{{env.python_requirements_txt}} /flow/{{env.python_requirements_txt}}
+{% endif %}
+
+# gcc is for build psutil in MacOS
+RUN apt-get update && apt-get install -y runit gcc
 
 # create conda environment
 {% if env.conda_file %}
+COPY ./flow/{{env.conda_file}} /flow/{{env.conda_file}}
+
 RUN conda create -f flow/{{env.conda_file}} -q && \
 {% else %}
 RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
@@ -34,11 +41,11 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
     conda run -n {{env.conda_env_name}} pip cache purge && \
     conda clean -a -y
 
+COPY ./flow /flow
+
 {% if env.setup_sh %}
 RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
 {% endif %}
-
-RUN apt-get update && apt-get install -y runit
 
 EXPOSE 8080
 

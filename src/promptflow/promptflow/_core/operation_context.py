@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import copy
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
@@ -18,7 +18,31 @@ class OperationContext(Dict):
     """
 
     _CONTEXT_KEY = "operation_context"
+    _OTEL_ATTRIBUTES = "_otel_attributes"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
+    USER_AGENT_KEY = "user_agent"
+    REQUEST_ID_KEY = "request_id"
+    _DEFAULT_TRACKING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source"}
+    _TRACKING_KEYS = "_tracking_keys"
+
+    def _add_otel_attributes(self, key, value):
+        attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        attributes[key] = value
+        self[OperationContext._OTEL_ATTRIBUTES] = attributes
+
+    def _remove_otel_attributes(self, keys: list):
+        if isinstance(keys, str):
+            keys = [keys]
+        attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        for key in keys:
+            attributes.pop(key, None)
+        self[OperationContext._OTEL_ATTRIBUTES] = attributes
+
+    def _get_otel_attributes(self):
+        attr_dict = self.get(OperationContext._OTEL_ATTRIBUTES, {})
+        # Filter None value out to avoid error.
+        # case: Experiment run may set 'reference.batch_run_id' to None which cause some exception.
+        return {k: v for k, v in attr_dict.items() if v is not None}
 
     @classmethod
     def get_instance(cls):
@@ -36,6 +60,8 @@ class OperationContext(Dict):
             # create a new instance and set it in the current context
             instance = OperationContext()
             cls._current_context.set(instance)
+        if cls._TRACKING_KEYS not in instance:
+            instance[cls._TRACKING_KEYS] = copy.copy(cls._DEFAULT_TRACKING_KEYS)
         return instance
 
     def __setattr__(self, name, value):
@@ -54,9 +80,6 @@ class OperationContext(Dict):
         # check that name is a string
         if not isinstance(name, str):
             raise TypeError("Name must be a string")
-        # check that value is a primitive
-        if value is not None and not isinstance(value, (int, float, str, bool)):
-            raise TypeError("Value must be a primitive")
         # set the item in the data attribute
         self[name] = value
 
@@ -103,11 +126,13 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if "user_agent" in self:
-                yield self.get("user_agent")
+            if OperationContext.USER_AGENT_KEY in self:
+                yield self.get(OperationContext.USER_AGENT_KEY)
             yield f"promptflow/{VERSION}"
 
-        return " ".join(parts())
+        # strip to avoid leading or trailing spaces, which may cause error when sending request
+        ua = " ".join(parts()).strip()
+        return ua
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -118,11 +143,16 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if "user_agent" in self:
+        if OperationContext.USER_AGENT_KEY in self:
             if user_agent not in self.user_agent:
-                self.user_agent = f"{self.user_agent} {user_agent}"
+                self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:
             self.user_agent = user_agent
+
+    def get_request_id(self):
+        if OperationContext.REQUEST_ID_KEY in self:
+            return self.get(OperationContext.REQUEST_ID_KEY)
+        return "unknown"
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
@@ -177,3 +207,7 @@ class OperationContext(Dict):
             dict: The context dictionary.
         """
         return dict(self)
+
+    def _get_tracking_info(self):
+        keys = getattr(self, self._TRACKING_KEYS, self._DEFAULT_TRACKING_KEYS)
+        return {k: v for k, v in self.items() if k in keys}

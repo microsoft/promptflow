@@ -13,7 +13,10 @@ from .utils import (
     is_json_payload_request,
     is_json_payload_response,
     sanitize_azure_workspace_triad,
+    sanitize_email,
     sanitize_experiment_id,
+    sanitize_pfs_request_body,
+    sanitize_pfs_response_body,
     sanitize_upload_hash,
     sanitize_username,
 )
@@ -197,21 +200,42 @@ class DropProcessor(RecordingProcessor):
         return request
 
 
-class TenantProcessor(RecordingProcessor):
-    """Sanitize tenant id in responses."""
-
-    def __init__(self, tenant_id: str):
-        self.tenant_id = tenant_id
+class PFSProcessor(RecordingProcessor):
+    """Sanitize request/response for PFS operations."""
 
     def process_request(self, request: Request) -> Request:
         if is_json_payload_request(request) and request.body is not None:
             body = request.body.decode("utf-8")
-            body = str(body).replace(self.tenant_id, SanitizedValues.TENANT_ID)
+            body = sanitize_pfs_request_body(body)
             request.body = body.encode("utf-8")
         return request
 
     def process_response(self, response: Dict) -> Dict:
         if is_json_payload_response(response):
+            response["body"]["string"] = sanitize_pfs_response_body(response["body"]["string"])
+        return response
+
+
+class UserInfoProcessor(RecordingProcessor):
+    """Sanitize user object id and tenant id in responses."""
+
+    def __init__(self, user_object_id: str, tenant_id: str):
+        self.user_object_id = user_object_id
+        self.tenant_id = tenant_id
+
+    def process_request(self, request: Request) -> Request:
+        if is_json_payload_request(request) and request.body is not None:
+            body = request.body.decode("utf-8")
+            body = str(body).replace(self.user_object_id, SanitizedValues.USER_OBJECT_ID)
+            body = body.replace(self.tenant_id, SanitizedValues.TENANT_ID)
+            request.body = body.encode("utf-8")
+        return request
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            response["body"]["string"] = str(response["body"]["string"]).replace(
+                self.user_object_id, SanitizedValues.USER_OBJECT_ID
+            )
             response["body"]["string"] = str(response["body"]["string"]).replace(
                 self.tenant_id, SanitizedValues.TENANT_ID
             )
@@ -227,4 +251,12 @@ class IndexServiceProcessor(RecordingProcessor):
                 body = json.loads(response["body"]["string"])
                 body.pop("continuationToken", None)
                 response["body"]["string"] = json.dumps(body)
+        return response
+
+
+class EmailProcessor(RecordingProcessor):
+    """Sanitize email address in responses."""
+
+    def process_response(self, response: Dict) -> Dict:
+        response["body"]["string"] = sanitize_email(response["body"]["string"])
         return response

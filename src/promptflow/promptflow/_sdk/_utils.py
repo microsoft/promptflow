@@ -1,61 +1,72 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import collections
+import datetime
 import hashlib
 import json
-import logging
 import multiprocessing
 import os
 import platform
 import re
-import stat
 import shutil
+import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from functools import partial
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from urllib.parse import urlparse
 
 import keyring
 import pydash
-import yaml
 from cryptography.fernet import Fernet
 from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
-from ruamel.yaml import YAML
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
-from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
+from promptflow._core.tool_meta_generator import (
+    generate_flow_meta_dict_by_file,
+    generate_tool_meta,
+    generate_tool_meta_in_subprocess,
+)
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
+    FLOW_META_JSON,
+    FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     HOME_PROMPT_FLOW_DIR,
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
-    LOGGER_NAME,
     NODE,
     NODE_VARIANTS,
     NODES,
     PROMPT_FLOW_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
+    REGISTRY_URI_PREFIX,
+    REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
+    AzureMLWorkspaceTriad,
     CommonYamlFields,
+    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
+    GenerateFlowMetaJsonError,
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
     UnsecureConnectionError,
@@ -63,7 +74,13 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import _match_reference
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
+from promptflow.exceptions import ErrorTarget, UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def snake_to_camel(name):
@@ -76,56 +93,6 @@ def find_type_in_override(params_override: Optional[list] = None) -> Optional[st
         if CommonYamlFields.TYPE in override:
             return override[CommonYamlFields.TYPE]
     return None
-
-
-def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
-    # null check - just return an empty dict.
-    # Certain CLI commands rely on this behavior to produce a resource
-    # via CLI, which is then populated through CLArgs.
-    """Load a local YAML file.
-
-    :param source: The relative or absolute path to the local file.
-    :type source: str
-    :return: A dictionary representation of the local file's contents.
-    :rtype: Dict
-    """
-    # These imports can't be placed in at top file level because it will cause a circular import in
-    # exceptions.py via _get_mfe_url_override
-
-    if source is None:
-        return {}
-
-    # pylint: disable=redefined-builtin
-    input = None
-    must_open_file = False
-    try:  # check source type by duck-typing it as an IOBase
-        readable = source.readable()
-        if not readable:  # source is misformatted stream or file
-            msg = "File Permissions Error: The already-open \n\n inputted file is not readable."
-            raise Exception(msg)
-        # source is an already-open stream or file, we can read() from it directly.
-        input = source
-    except AttributeError:
-        # source has no writable() function, assume it's a string or file path.
-        must_open_file = True
-
-    if must_open_file:  # If supplied a file path, open it.
-        try:
-            input = open(source, "r")
-        except OSError:  # FileNotFoundError introduced in Python 3
-            msg = "No such file or directory: {}"
-            raise Exception(msg.format(source))
-    # input should now be an readable file or stream. Parse it.
-    cfg = {}
-    try:
-        cfg = yaml.safe_load(input)
-    except yaml.YAMLError as e:
-        msg = f"Error while parsing yaml file: {source} \n\n {str(e)}"
-        raise Exception(msg)
-    finally:
-        if must_open_file:
-            input.close()
-    return cfg
 
 
 # region Encryption
@@ -224,20 +191,6 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
 # endregion
 
 
-def dump_yaml(*args, **kwargs):
-    """A thin wrapper over yaml.dump which forces `OrderedDict`s to be serialized as mappings.
-
-    Other behaviors identically to yaml.dump
-    """
-
-    class OrderedDumper(yaml.Dumper):
-        """A modified yaml serializer that forces pyyaml to represent an OrderedDict as a mapping instead of a
-        sequence."""
-
-    OrderedDumper.add_representer(collections.OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
-    return yaml.dump(*args, Dumper=OrderedDumper, **kwargs)
-
-
 def decorate_validation_error(schema: Any, pretty_error: str, additional_message: str = "") -> str:
     return f"Validation for {schema.__name__} failed:\n\n {pretty_error} \n\n {additional_message}"
 
@@ -269,16 +222,14 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
-
-
-def _match_reference(env_val: str):
-    env_val = env_val.strip()
-    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
-    if not m:
-        return None, None
-    name, key = m.groups()
-    return name, key
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -312,12 +263,16 @@ def update_environment_variables_with_connections(built_connections):
 
 
 def _match_env_reference(val: str):
-    val = val.strip()
-    m = re.match(r"^\$\{env:(.+)}$", val)
-    if not m:
+    try:
+        val = val.strip()
+        m = re.match(r"^\$\{env:(.+)}$", val)
+        if not m:
+            return None
+        name = m.groups()[0]
+        return name
+    except Exception:
+        # for exceptions when val is not a string, return
         return None
-    name = m.groups()[0]
-    return name
 
 
 def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
@@ -328,7 +283,6 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
     'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
     original value as a fallback.
     """
-    logger = logging.getLogger(LOGGER_NAME)
     for connection_name, connection in connections.items():
         values = connection.get("value", {})
         for key, val in values.items():
@@ -350,7 +304,7 @@ def resolve_connections_environment_variable_reference(connections: Dict[str, di
                 continue
             env_name = _match_env_reference(val)
             if env_name not in os.environ:
-                raise Exception(f"Environment variable {env_name} is not found.")
+                raise UserErrorException(f"Environment variable {env_name} is not found.")
             values[key] = os.environ[env_name]
     return connections
 
@@ -417,22 +371,14 @@ def safe_parse_object_list(obj_list, parser, message_generator):
     return results
 
 
-def _normalize_identifier_name(name):
-    normalized_name = name.lower()
-    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
-    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
-    if re.match(r"\d", normalized_name):
-        normalized_name = "n" + normalized_name  # No leading digits
-    return normalized_name
-
-
 def _sanitize_python_variable_name(name: str):
-    return _normalize_identifier_name(name).replace(" ", "_")
+    from promptflow._utils.utils import _sanitize_python_variable_name
+
+    return _sanitize_python_variable_name(name)
 
 
 def _get_additional_includes(yaml_path):
-    with open(yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
+    flow_dag = load_yaml(yaml_path)
     return flow_dag.get("additional_includes", [])
 
 
@@ -474,7 +420,6 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
-    logger = logging.getLogger(LOGGER_NAME)
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -510,7 +455,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
+                error = ValueError(f"Unable to find additional include {item}")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message=str(error),
+                    error=error,
+                )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
@@ -538,11 +488,10 @@ def print_pf_version():
     print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
-    print('Python ({}) {}'.format(platform.system(), sys.version))
+    print("Python ({}) {}".format(platform.system(), sys.version))
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs", "__pycache__"]
 
@@ -567,15 +516,21 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
-def _generate_meta_from_files(
-    tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
-) -> None:
-    with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
-        for source, tool_type in tools:
-            try:
-                tools_dict[source] = generate_tool_meta_dict_by_file(source, ToolType(tool_type))
-            except Exception as e:
-                exception_dict[source] = str(e)
+def _construct_tool_dict(tools: List[Tuple[str, str]]) -> Dict[str, Dict[str, str]]:
+    """Construct tool dict from tool list.
+
+    :param tools: tool list, like [('test.py', 'python'), ('test.jinja2', 'llm')]
+    :return: tool dict, like
+    {
+        'test.py': {
+            'tool_type': 'python'
+        },
+        'test.jinja2': {
+            'tool_type': 'llm'
+        }
+    }
+    """
+    return {source: {"tool_type": tool_type} for source, tool_type in tools}
 
 
 def _generate_tool_meta(
@@ -585,21 +540,36 @@ def _generate_tool_meta(
     timeout: int,
     *,
     include_errors_in_output: bool = False,
+    load_in_subprocess: bool = True,
 ) -> Dict[str, dict]:
-    logger = logging.getLogger(LOGGER_NAME)
-    # use multi process generate to avoid system path disturb
-    manager = multiprocessing.Manager()
-    tools_dict = manager.dict()
-    exception_dict = manager.dict()
-    p = multiprocessing.Process(
-        target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-    )
-    p.start()
-    p.join(timeout=timeout)
-    if p.is_alive():
-        p.terminate()
-        p.join()
-    res = {source: tool for source, tool in tools_dict.items()}
+    """Generate tool meta from files.
+
+    :param flow_directory: flow directory
+    :param tools: tool list
+    :param raise_error: whether raise error when generate meta failed
+    :param timeout: timeout for generate meta
+    :param include_errors_in_output: whether include errors in output
+    :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
+        If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
+    :return: tool meta dict
+    """
+    tools = _construct_tool_dict(tools)
+    if load_in_subprocess:
+        # use multiprocess generate to avoid system path disturb
+        tool_dict, exception_dict = generate_tool_meta_in_subprocess(flow_directory, tools, logger, timeout=timeout)
+    else:
+        tool_dict, exception_dict = {}, {}
+
+        #  There is no built-in method to forcefully stop a running thread/coroutine in Python
+        #  because abruptly stopping a thread can cause issues like resource leaks,
+        #  deadlocks, or inconsistent states.
+        #  Caller needs to handle the timeout outside current process.
+        logger.warning(
+            "Generate meta in current process and timeout won't take effect. "
+            "Please handle timeout manually outside current process."
+        )
+        generate_tool_meta(flow_directory, tools, tool_dict, exception_dict)
+    res = {source: tool for source, tool in tool_dict.items()}
 
     for source in res:
         # remove name in tool meta
@@ -615,13 +585,8 @@ def _generate_tool_meta(
                     if isinstance(tool_input_type[i], Enum):
                         tool_input_type[i] = tool_input_type[i].value
 
-    # collect errors and print warnings
-    errors = {
-        source: exception for source, exception in exception_dict.items()
-    }  # for not processed tools, regard as timeout error
-    for source, _ in tools:
-        if source not in res and source not in errors:
-            errors[source] = f"Generate meta timeout for source {source!r}."
+    # collect errors and print warnings, exception_dict is a dict of source and error dict
+    errors = {source: error_dict.get("message", "unknown exception") for source, error_dict in exception_dict.items()}
     for source in errors:
         if include_errors_in_output:
             res[source] = errors[source]
@@ -680,15 +645,71 @@ def _gen_dynamic_list(function_config: Dict) -> List:
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
-    import imp
-
-    import pkg_resources
-
-    imp.reload(pkg_resources)
-
     from promptflow._core.tools_manager import collect_package_tools
 
     return collect_package_tools(keys=keys)
+
+
+def _update_involved_tools_and_packages(
+    _node,
+    _node_path,
+    *,
+    tools: List,
+    used_packages: Set,
+    source_path_mapping: Dict[str, List[str]],
+):
+    source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
+
+    used_packages.add(pydash.get(_node, "source.tool", None))
+
+    if source is None or tool_type is None:
+        return
+
+    # for custom LLM tool, its source points to the used prompt template so handle it as prompt tool
+    if tool_type == ToolType.CUSTOM_LLM:
+        tool_type = ToolType.PROMPT
+
+    if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
+        return
+    pair = (source, tool_type.lower())
+    if pair not in tools:
+        tools.append(pair)
+
+    source_path_mapping[source].append(f"{_node_path}.source.path")
+
+
+def _get_involved_code_and_package(
+    data: dict,
+) -> Tuple[List[Tuple[str, str]], Set[str], Dict[str, List[str]]]:
+    tools = []  # List[Tuple[source_file, tool_type]]
+    used_packages = set()
+    source_path_mapping = collections.defaultdict(list)
+
+    for node_i, node in enumerate(data[NODES]):
+        _update_involved_tools_and_packages(
+            node,
+            f"{NODES}.{node_i}",
+            tools=tools,
+            used_packages=used_packages,
+            source_path_mapping=source_path_mapping,
+        )
+
+        # understand DAG to parse variants
+        # TODO: should we allow source to appear both in node and node variants?
+        if node.get(USE_VARIANTS) is True:
+            node_variants = data[NODE_VARIANTS][node["name"]]
+            for variant_id in node_variants[VARIANTS]:
+                node_with_variant = node_variants[VARIANTS][variant_id][NODE]
+                _update_involved_tools_and_packages(
+                    node_with_variant,
+                    f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}",
+                    tools=tools,
+                    used_packages=used_packages,
+                    source_path_mapping=source_path_mapping,
+                )
+    if None in used_packages:
+        used_packages.remove(None)
+    return tools, used_packages, source_path_mapping
 
 
 def generate_flow_tools_json(
@@ -709,63 +730,41 @@ def generate_flow_tools_json(
     :param raise_error: whether to raise the error, default value is True.
     :param timeout: timeout for generation, default value is 60 seconds.
     :param include_errors_in_output: whether to include error messages in output, default value is False.
-    :param target_source: the source name to filter result, default value is None.
+    :param target_source: the source name to filter result, default value is None. Note that we will update system path
+        in coroutine if target_source is provided given it's expected to be from a specific cli call.
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
-    with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
-        data = yaml.safe_load(f)
-    tools = []  # List[Tuple[source_file, tool_type]]
-    used_packages = set()
+    data = load_yaml(flow_directory / DAG_FILE_NAME)
 
-    def process_node(_node, _node_path):
-        source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
-        if target_source and source != target_source:
-            return
-        used_packages.add(pydash.get(_node, "source.tool", None))
+    tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
-        if source is None or tool_type is None:
-            return
+    # update passed in source_path_mapping if specified
+    if source_path_mapping is not None:
+        source_path_mapping.update(_source_path_mapping)
 
-        if tool_type == ToolType.CUSTOM_LLM:
-            tool_type = ToolType.PROMPT
-
-        if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
-            return
-        tools.append((source, tool_type.lower()))
-        if source_path_mapping is not None:
-            if source not in source_path_mapping:
-                source_path_mapping[source] = []
-
-            source_path_mapping[source].append(f"{_node_path}.source.path")
-
-    for node_i, node in enumerate(data[NODES]):
-        process_node(node, f"{NODES}.{node_i}")
-
-        # understand DAG to parse variants
-        # TODO: should we allow source to appear both in node and node variants?
-        if node.get(USE_VARIANTS) is True:
-            node_variants = data[NODE_VARIANTS][node["name"]]
-            for variant_id in node_variants[VARIANTS]:
-                current_node = node_variants[VARIANTS][variant_id][NODE]
-                process_node(current_node, f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}")
-
-    if None in used_packages:
-        used_packages.remove(None)
+    # filter tools by target_source if specified
+    if target_source is not None:
+        tools = list(filter(lambda x: x[0] == target_source, tools))
 
     # generate content
     # TODO: remove type in tools (input) and code (output)
     flow_tools = {
-        "package": _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
         "code": _generate_tool_meta(
             flow_directory,
             tools,
             raise_error=raise_error,
             timeout=timeout,
             include_errors_in_output=include_errors_in_output,
+            # we don't need to protect system path according to the target usage when target_source is specified
+            load_in_subprocess=target_source is None,
         ),
+        # specified source may only appear in code tools
+        "package": {}
+        if target_source is not None
+        else _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
     }
 
     if dump:
@@ -778,33 +777,67 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def update_user_agent_from_env_var():
-    """Update user agent from env var to OperationContext"""
-    from promptflow._core.operation_context import OperationContext
+class ClientUserAgentUtil:
+    """SDK/CLI side user agent utilities."""
 
-    if "USER_AGENT" in os.environ:
-        # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+    @classmethod
+    def _get_context(cls):
+        from promptflow._core.operation_context import OperationContext
+
+        return OperationContext.get_instance()
+
+    @classmethod
+    def get_user_agent(cls):
+        from promptflow._core.operation_context import OperationContext
+
+        context = cls._get_context()
+        # directly get from context since client side won't need promptflow/xxx.
+        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
+
+    @classmethod
+    def append_user_agent(cls, user_agent: Optional[str]):
+        if not user_agent:
+            return
+        context = cls._get_context()
+        context.append_user_agent(user_agent)
+
+    @classmethod
+    def update_user_agent_from_env_var(cls):
+        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
+        for env_name in [USER_AGENT, PF_USER_AGENT]:
+            if env_name in os.environ:
+                cls.append_user_agent(os.environ[env_name])
+
+    @classmethod
+    def update_user_agent_from_config(cls):
+        """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
+        from promptflow._sdk._configuration import Configuration
+
+        config = Configuration.get_instance()
+        user_agent = config.get_user_agent()
+        if user_agent:
+            cls.append_user_agent(user_agent)
 
 
 def setup_user_agent_to_operation_context(user_agent):
-    """Setup user agent to OperationContext"""
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    # Append user agent
-    context = OperationContext.get_instance()
-    context.append_user_agent(user_agent)
-    return context.get_user_agent()
+    """Setup user agent to OperationContext.
+    For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
+    For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
+    For calls from SDK, ua will be like: promptflow-sdk/
+    For 1p customer call which set user agent in config, ua will be like: PFCustomer_XXX/
+    """
+    # add user added UA after SDK/CLI
+    ClientUserAgentUtil.append_user_agent(user_agent)
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    ClientUserAgentUtil.update_user_agent_from_config()
+    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
     """Return true if current request is from extension."""
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    context = OperationContext().get_instance()
-    return EXTENSION_UA in context.get_user_agent()
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    user_agent = ClientUserAgentUtil.get_user_agent()
+    return EXTENSION_UA in user_agent
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -834,15 +867,20 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
+def get_local_connections_from_executable(
+    executable, client, connections_to_ignore: List[str] = None, connections_to_add: List[str] = None
+):
     """Get local connections from executable.
 
     executable: The executable flow object.
     client: Local client to get connections.
     connections_to_ignore: The connection names to ignore when getting connections.
+    connections_to_add: The connection names to add when getting connections.
     """
 
     connection_names = executable.get_connection_names()
+    if connections_to_add:
+        connection_names.update(connections_to_add)
     connections_to_ignore = connections_to_ignore or []
     result = {}
     for n in connection_names:
@@ -885,22 +923,21 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     json.dump(content, f, indent=2)
 
             # use YAML to dump template file in order to keep the comments
-            yaml = YAML()
-            yaml.preserve_quotes = True
             for connection_name, content in connection_template_yamls.items():
-                yaml_data = yaml.load(content)
+                yaml_data = load_yaml_string(content)
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
-                    yaml.dump(yaml_data, f)
+                    dump_yaml(yaml_data, f)
 
 
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
     """Dump flow result for extension.
 
     :param flow_folder: The flow folder.
     :param prefix: The file prefix.
     :param flow_result: The flow result returned by exec_line.
     :param node_result: The node result when test node returned by load_and_exec_node.
+    :param custom_path: The custom path to dump flow result.
     """
     if flow_result:
         flow_serialize_result = {
@@ -912,7 +949,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             "flow_runs": [],
             "node_runs": [serialize(node_result)],
         }
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
     dump_folder.mkdir(parents=True, exist_ok=True)
 
     with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
@@ -958,6 +996,310 @@ def interactive_credential_disabled():
 
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-    from promptflow._core.operation_context import OperationContext
 
-    return CLI_UA in OperationContext.get_instance().get_user_agent()
+    return CLI_UA in ClientUserAgentUtil.get_user_agent()
+
+
+def is_url(value: Union[PathLike, str]) -> bool:
+    try:
+        result = urlparse(str(value))
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def is_remote_uri(obj) -> bool:
+    # return True if it's supported remote uri
+    if isinstance(obj, str):
+        if obj.startswith(REMOTE_URI_PREFIX):
+            # azureml: started, azureml:name:version, azureml://xxx
+            return True
+        elif is_url(obj):
+            return True
+    return False
+
+
+def parse_remote_flow_pattern(flow: object) -> str:
+    # Check if the input matches the correct pattern
+    flow_name = None
+    error_message = (
+        f"Invalid remote flow pattern, got {flow!r} while expecting "
+        f"a remote workspace flow like '{REMOTE_URI_PREFIX}<flow-name>', or a remote registry flow like "
+        f"'{REMOTE_URI_PREFIX}//registries/<registry-name>/models/<flow-name>/versions/<version>'"
+    )
+    if not isinstance(flow, str) or not flow.startswith(REMOTE_URI_PREFIX):
+        raise UserErrorException(error_message)
+
+    # check for registry flow pattern
+    if flow.startswith(REGISTRY_URI_PREFIX):
+        pattern = r"azureml://registries/.*?/models/(?P<name>.*?)/versions/(?P<version>.*?)$"
+        match = re.match(pattern, flow)
+        if not match or len(match.groups()) != 2:
+            raise UserErrorException(error_message)
+        flow_name, _ = match.groups()
+    # check for workspace flow pattern
+    elif flow.startswith(REMOTE_URI_PREFIX):
+        pattern = r"azureml:(?P<name>.*?)$"
+        match = re.match(pattern, flow)
+        if not match or len(match.groups()) != 1:
+            raise UserErrorException(error_message)
+        flow_name = match.groups()[0]
+    return flow_name
+
+
+def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
+    """
+    Get connection operation based on connection provider.
+    This function will be called by PFClient, so please do not refer to PFClient in this function.
+
+    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+    :type connection_provider: str
+    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+    :type credential: object
+    :param user_agent: User Agent
+    :type user_agent: str
+    """
+    if connection_provider == ConnectionProvider.LOCAL.value:
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        logger.debug("PFClient using local connection operations.")
+        connection_operation = ConnectionOperations()
+    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
+        if user_agent is None:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
+        else:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
+    else:
+        error = ValueError(f"Unsupported connection provider: {connection_provider}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
+    return connection_operation
+
+
+# extract open read/write as partial to centralize the encoding
+read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+# nan, inf and -inf are not JSON serializable according to https://docs.python.org/3/library/json.html#json.loads
+# `parse_constant` will be called to handle these values
+# similar idea for below `json_load` and its parameter `parse_const_as_str`
+json_loads_parse_const_as_str = partial(json.loads, parse_constant=lambda x: str(x))
+
+
+# extract some file operations inside this file
+def json_load(file, parse_const_as_str: bool = False) -> str:
+    with read_open(file) as f:
+        if parse_const_as_str is True:
+            return json.load(f, parse_constant=lambda x: str(x))
+        else:
+            return json.load(f)
+
+
+def json_dump(obj, file) -> None:
+    with write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
+def pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)
+
+
+def get_mac_address() -> str:
+    """Obtain all MAC addresses, then sort and concatenate them."""
+    try:
+        import psutil
+
+        mac_address = []
+        net_addresses = psutil.net_if_addrs()
+        # Obtain all MAC addresses, then sort and concatenate them
+        net_address_list = sorted(net_addresses.items())  # sort by name
+        for name, net_address in net_address_list:
+            for net_interface in net_address:
+                if net_interface.family == psutil.AF_LINK and net_interface.address != "00-00-00-00-00-00":
+                    mac_address.append(net_interface.address)
+
+        return ":".join(mac_address)
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return ""
+
+
+def get_system_info() -> Tuple[str, str, str]:
+    """Get the host name, system, and machine."""
+    try:
+        import platform
+
+        return platform.node(), platform.system(), platform.machine()
+    except Exception as e:
+        logger.debug(f"get host name error: {str(e)}")
+        return "", "", ""
+
+
+def gen_uuid_by_compute_info() -> Union[str, None]:
+    mac_address = get_mac_address()
+    host_name, system, machine = get_system_info()
+    if mac_address:
+        # Use sha256 convert host_name+system+machine to a fixed length string
+        # and concatenate it after the mac address to ensure that the concatenated string is unique.
+        system_info_hash = hashlib.sha256((host_name + system + machine).encode()).hexdigest()
+        compute_info_hash = hashlib.sha256((mac_address + system_info_hash).encode()).hexdigest()
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, compute_info_hash))
+    return str(uuid.uuid4())
+
+
+def convert_time_unix_nano_to_timestamp(time_unix_nano: str) -> str:
+    nanoseconds = int(time_unix_nano)
+    seconds = nanoseconds / 1_000_000_000
+    timestamp = datetime.datetime.utcfromtimestamp(seconds)
+    return timestamp.isoformat()
+
+
+def parse_kv_from_pb_attribute(attribute: Dict) -> Tuple[str, str]:
+    attr_key = attribute["key"]
+    # suppose all values are flattened here
+    # so simply regard the first value as the attribute value
+    attr_value = list(attribute["value"].values())[0]
+    return attr_key, attr_value
+
+
+def flatten_pb_attributes(attributes: List[Dict]) -> Dict:
+    flattened_attributes = {}
+    for attribute in attributes:
+        attr_key, attr_value = parse_kv_from_pb_attribute(attribute)
+        flattened_attributes[attr_key] = attr_value
+    return flattened_attributes
+
+
+def parse_otel_span_status_code(value: int) -> str:
+    # map int value to string
+    # https://github.com/open-telemetry/opentelemetry-specification/blob/v1.22.0/specification/trace/api.md#set-status
+    # https://github.com/open-telemetry/opentelemetry-python/blob/v1.22.0/opentelemetry-api/src/opentelemetry/trace/status.py#L22-L32
+    if value == 0:
+        return "Unset"
+    elif value == 1:
+        return "Ok"
+    else:
+        return "Error"
+
+
+def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
+        try:
+            result = generate_flow_meta_dict_by_file(
+                path=source_path,
+                entry=entry,
+            )
+            meta_dict.update(result)
+        except Exception as e:
+            exception_list.append(str(e))
+
+
+def _generate_flow_meta(
+    flow_directory: Path,
+    source_path: str,
+    entry: str,
+    timeout: int,
+    *,
+    load_in_subprocess: bool = True,
+) -> Dict[str, dict]:
+    """Generate tool meta from files.
+
+    :param flow_directory: flow directory
+    :param tools: tool list
+    :param raise_error: whether raise error when generate meta failed
+    :param timeout: timeout for generate meta
+    :param include_errors_in_output: whether include errors in output
+    :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
+        If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
+    :return: tool meta dict
+    """
+    if load_in_subprocess:
+        # use multiprocess generate to avoid system path disturb
+        manager = multiprocessing.Manager()
+        meta_dict = manager.dict()
+        exception_list = manager.list()
+        p = multiprocessing.Process(
+            target=_generate_meta_from_file, args=(flow_directory, source_path, entry, meta_dict, exception_list)
+        )
+        p.start()
+        p.join(timeout=timeout)
+        if p.is_alive():
+            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
+            p.terminate()
+            p.join()
+    else:
+        meta_dict, exception_list = {}, []
+
+        #  There is no built-in method to forcefully stop a running thread/coroutine in Python
+        #  because abruptly stopping a thread can cause issues like resource leaks,
+        #  deadlocks, or inconsistent states.
+        #  Caller needs to handle the timeout outside current process.
+        logger.warning(
+            "Generate meta in current process and timeout won't take effect. "
+            "Please handle timeout manually outside current process."
+        )
+        _generate_meta_from_file(flow_directory, source_path, entry, meta_dict, exception_list)
+    # directly raise error if failed to generate meta
+    if len(exception_list) > 0:
+        error_message = "Generate meta failed, detail error:\n" + str(exception_list)
+        raise GenerateFlowMetaJsonError(error_message)
+    return dict(meta_dict)
+
+
+def generate_flow_meta(
+    flow_directory: Union[str, Path],
+    source_path: str,
+    entry: str,
+    dump: bool = True,
+    timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+    load_in_subprocess: bool = True,
+) -> dict:
+    """Generate flow.json for a flow directory."""
+
+    flow_meta = _generate_flow_meta(
+        flow_directory=flow_directory,
+        source_path=source_path,
+        entry=entry,
+        timeout=timeout,
+        load_in_subprocess=load_in_subprocess,
+    )
+
+    if dump:
+        # dump as flow.tools.json
+        promptflow_folder = flow_directory / PROMPT_FLOW_DIR_NAME
+        promptflow_folder.mkdir(exist_ok=True)
+        with open(promptflow_folder / FLOW_META_JSON, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(flow_meta, f, indent=4)
+
+    return flow_meta
+
+
+def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
+    if not match or len(match.groups()) != 5:
+        raise ValueError(
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {trace_provider}"
+        )
+    subscription_id = match.group(1)
+    resource_group_name = match.group(3)
+    workspace_name = match.group(5)
+    return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
+
+
+def overwrite_null_std_logger():
+    # For the process started in detach mode, stdout/stderr will be none.
+    # To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout

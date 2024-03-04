@@ -1,11 +1,11 @@
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, Type
 import functools
 import time
 import random
 
 
 def retry_and_handle_exceptions(
-    exception_to_check: Union[Exception, Tuple[Exception]],
+    exception_to_check: Union[Type[Exception], Tuple[Type[Exception], ...]],
     max_retries: int = 3,
     initial_delay: float = 1,
     exponential_base: float = 2,
@@ -48,7 +48,7 @@ def retry_and_handle_exceptions(
 
 
 def retry_and_handle_exceptions_for_generator(
-    exception_to_check: Union[Exception, Tuple[Exception]],
+    exception_to_check: Union[Type[Exception], Tuple[Type[Exception], ...]],
     max_retries: int = 3,
     initial_delay: float = 1,
     exponential_base: float = 2,

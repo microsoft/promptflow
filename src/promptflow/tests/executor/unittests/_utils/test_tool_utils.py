@@ -314,8 +314,7 @@ class TestToolUtils:
     @pytest.mark.parametrize(
         "res, err_msg",
         [
-            (None, "mock_func response can not be empty."),
-            ([], "mock_func response can not be empty."),
+            (None, "mock_func response can not be None."),
             (["a", "b"], "mock_func response must be a list of dict. a is not a dict."),
             ({"a": "b"}, "mock_func response must be a list."),
             ([{"a": "b"}], "mock_func response dict must have 'value' key."),
@@ -394,9 +393,11 @@ class TestToolUtils:
     def test_find_deprecated_tools(self):
         package_tools = {
             "new_tool_1": Tool(
-                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
             "new_tool_2": Tool(
-                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
         }
         with pytest.raises(DuplicateToolMappingError, match="secure operation"):
             _find_deprecated_tools(package_tools)

@@ -6,7 +6,7 @@ from typing import Dict
 
 from vcr.request import Request
 
-from .utils import is_json_payload_request
+from .utils import is_httpx_response, is_json_payload_request
 
 
 class VariableRecorder:
@@ -25,9 +25,14 @@ class VariableRecorder:
         return request
 
     def sanitize_response(self, response: Dict) -> Dict:
-        response["body"]["string"] = response["body"]["string"].decode("utf-8")
-        response["body"]["string"] = self._sanitize(response["body"]["string"])
-        response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        # httpx response: .content, string; no action needed
+        # non-httpx response: .body.string, bytes, need decode/encode
+        if is_httpx_response(response):
+            response["content"] = self._sanitize(response["content"])
+        else:
+            response["body"]["string"] = response["body"]["string"].decode("utf-8")
+            response["body"]["string"] = self._sanitize(response["body"]["string"])
+            response["body"]["string"] = response["body"]["string"].encode("utf-8")
         return response
 
     def _sanitize(self, value: str) -> str:

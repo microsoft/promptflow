@@ -1,16 +1,17 @@
 azure-identity
 azure-keyvault
 beautifulsoup4==4.12.2
-coverage==6.0.1
+coverage
 keyrings.alt  # this is possibly insecure, do not add this to setup.py
 mock
 nox
 portalocker~=1.2
 pre-commit
-promptflow-tools
+# promptflow-tools Comment this since it will take in unecessary dependencies
 pydash
 PyJWT==2.8.0  # parse token to get tenant id during sanitization
 pytest
+pytest-asyncio
 pytest-cov
 pytest-forked
 pytest-mock
@@ -23,3 +24,11 @@ setuptools_rust
 twine==4.0.0
 vcrpy==5.1.0  # record and replay http requests for pfazure tests
 wheel
+httpx
+
+# test dummy flow run in notebook, give a minimal version for vulnerability issue
+ipykernel>=6.27.1
+papermill>=2.5.0
+
+# test executor server in local
+uvicorn>=0.27.0

@@ -14,16 +14,16 @@ from promptflow._cli._params import (
     add_param_max_results,
     add_param_output_format,
     add_param_set,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
     activate_action,
-    exception_handler,
 )
-from promptflow._sdk._constants import get_list_view_type
+from promptflow._sdk._constants import AzureFlowSource, get_list_view_type
+from promptflow.azure._entities._flow import Flow
 
 
 def add_parser_flow(subparsers):
@@ -35,10 +35,9 @@ def add_parser_flow(subparsers):
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_flow_create(flow_subparsers)
+    add_parser_flow_update(flow_subparsers)
     add_parser_flow_show(flow_subparsers)
     add_parser_flow_list(flow_subparsers)
-    # add_parser_flow_delete(flow_subparsers)
-    # add_parser_flow_download(flow_subparsers)
     flow_parser.set_defaults(action="flow")
 
 
@@ -46,26 +45,30 @@ def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
     epilog = """
 Use "--set" to set flow properties like:
-    display-name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+    display_name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
     type: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
     description: Flow description. e.g. "--set description=<description>."
     tags: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
+Note:
+    In "--set" parameter, if the key name consists of multiple words, use snake-case instead of kebab-case. e.g. "--set display_name=<flow-display-name>"
+
 Examples:
+
 # Create a flow to azure portal with local flow folder.
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type>
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type>
 
 # Create a flow with more properties
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
 """  # noqa: E501
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, help="Source folder of the flow."
     )
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_set,
-    ] + logging_params
+        _set_workspace_argument_for_subparsers,
+    ] + base_params
 
     activate_action(
         name="create",
@@ -74,6 +77,43 @@ pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-n
         add_params=add_params,
         subparsers=subparsers,
         help_message="Create a flow to Azure with local flow folder.",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_flow_update(subparsers):
+    """Add flow update parser to the pf flow subparsers."""
+    epilog = """
+Use "--set" to set flow properties that you want to update. Supported properties are: [display_name, description, tags].
+
+Note:
+    1. In "--set" parameter, if the key name consists of multiple words, use snake-case instead of kebab-case. e.g. "--set display_name=<flow-display-name>"
+    2. Parameter flow is required to update a flow. It's a guid that can be found from 2 ways:
+        a. After creating a flow to azure, it can be found in the printed message in "name" attribute.
+        b. Open a flow in azure portal, the guid is in the url. e.g. https://ml.azure.com/prompts/flow/<workspace-id>/<flow-name>/xxx
+
+Examples:
+
+# Update a flow display name
+pfazure flow update --flow <flow-name> --set display_name=<flow-display-name>
+"""  # noqa: E501
+
+    add_param_source = lambda parser: parser.add_argument(  # noqa: E731
+        "--flow", type=str, help="Flow name to be updated which is a guid."
+    )
+    add_params = [
+        add_param_source,
+        add_param_set,
+        _set_workspace_argument_for_subparsers,
+    ] + base_params
+
+    activate_action(
+        name="update",
+        description="A CLI tool to update a flow's metadata on Azure.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Update a flow's metadata on azure.",
         action_param_name="sub_action",
     )
 
@@ -106,7 +146,7 @@ pfazure flow list --include-others
         add_param_include_archived,
         add_param_output_format,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -127,7 +167,7 @@ Examples:
 # Get flow:
 pfazure flow show --name <flow-name>
 """
-    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + logging_params
+    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + base_params
 
     activate_action(
         name="show",
@@ -152,7 +192,7 @@ def add_parser_flow_download(subparsers):
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_destination,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="download",
@@ -172,6 +212,8 @@ def dispatch_flow_commands(args: argparse.Namespace):
         show_flow(args)
     elif args.sub_action == "list":
         list_flows(args)
+    elif args.sub_action == "update":
+        update_flow(args)
 
 
 def _get_flow_operation(subscription_id, resource_group, workspace_name):
@@ -179,21 +221,21 @@ def _get_flow_operation(subscription_id, resource_group, workspace_name):
     return pf_client._flows
 
 
-@exception_handler("Create flow")
 def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     params = _parse_flow_metadata_args(args.params_override)
-    pf.flows.create_or_update(
-        flow=args.flow,
-        display_name=params.get("display_name", None),
-        type=params.get("type", None),
-        description=params.get("description", None),
-        tags=params.get("tags", None),
-    )
+    pf.flows.create_or_update(flow=args.flow, **params)
 
 
-@exception_handler("Show flow")
+def update_flow(args: argparse.Namespace):
+    """Update a flow for promptflow."""
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    params = _parse_flow_metadata_args(args.params_override)
+    flow_object = Flow(name=args.flow, flow_source=AzureFlowSource.PF_SERVICE)
+    pf.flows.create_or_update(flow=flow_object, **params)
+
+
 def show_flow(args: argparse.Namespace):
     """Get a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
@@ -214,19 +256,6 @@ def list_flows(args: argparse.Namespace):
     _output_result_list_with_format(flow_list, args.output)
 
 
-def download_flow(
-    source: str,
-    destination: str,
-    workspace_name: str,
-    resource_group: str,
-    subscription_id: str,
-):
-    """Download a flow from file share to local."""
-    flow_operations = _get_flow_operation(subscription_id, resource_group, workspace_name)
-    flow_operations.download(source, destination)
-    print(f"Successfully download flow from file share path {source!r} to {destination!r}.")
-
-
 def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
     result, tags = {}, {}
     if not params:
@@ -237,8 +266,7 @@ def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
                 tag_key = k.replace("tags.", "")
                 tags[tag_key] = v
                 continue
-            # replace "-" with "_" to handle the usage for both "-" and "_" in the command key
-            normalized_key = k.replace("-", "_")
-            result[normalized_key] = v
-    result["tags"] = tags
+            result[k] = v
+    if tags:
+        result["tags"] = tags
     return result

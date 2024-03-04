@@ -2,22 +2,21 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import copy
-import logging
 import typing
 from pathlib import Path
 
 from marshmallow import fields
 from marshmallow.exceptions import FieldInstanceResolutionError, ValidationError
-from marshmallow.fields import Field, Nested
+from marshmallow.fields import _T, Field, Nested
 from marshmallow.utils import RAISE, resolve_field_instance
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.schemas._base import PathAwareSchema
+from promptflow._utils.logger_utils import LoggerFactory
 
 # pylint: disable=unused-argument,no-self-use,protected-access
 
-
-module_logger = logging.getLogger(__name__)
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class StringTransformedEnum(Field):
@@ -208,3 +207,63 @@ class NestedField(Nested):
         if kwargs.get("unknown") is None:
             kwargs["unknown"] = RAISE
         super().__init__(*args, **kwargs)
+
+
+class DumpableIntegerField(fields.Integer):
+    """An int field that cannot serialize other type of values to int if self.strict."""
+
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[typing.Union[str, _T]]:
+        if self.strict and not isinstance(value, int):
+            # this implementation can serialize bool to bool
+            raise self.make_error("invalid", input=value)
+        return super()._serialize(value, attr, obj, **kwargs)
+
+
+class DumpableFloatField(fields.Float):
+    """A float field that cannot serialize other type of values to float if self.strict."""
+
+    def __init__(
+        self,
+        *,
+        strict: bool = False,
+        allow_nan: bool = False,
+        as_string: bool = False,
+        **kwargs,
+    ):
+        self.strict = strict
+        super().__init__(allow_nan=allow_nan, as_string=as_string, **kwargs)
+
+    def _validated(self, value):
+        if self.strict and not isinstance(value, float):
+            raise self.make_error("invalid", input=value)
+        return super()._validated(value)
+
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[typing.Union[str, _T]]:
+        return super()._serialize(self._validated(value), attr, obj, **kwargs)
+
+
+def PrimitiveValueField(**kwargs):
+    """Function to return a union field for primitive value.
+
+    :return: The primitive value field
+    :rtype: Field
+    """
+    return UnionField(
+        [
+            # Note: order matters here - to make sure value parsed correctly.
+            # By default, when strict is false, marshmallow downcasts float to int.
+            # Setting it to true will throw a validation error when loading a float to int.
+            # https://github.com/marshmallow-code/marshmallow/pull/755
+            # Use DumpableIntegerField to make sure there will be validation error when
+            # loading/dumping a float to int.
+            # note that this field can serialize bool instance but cannot deserialize bool instance.
+            DumpableIntegerField(strict=True),
+            # Use DumpableFloatField with strict of True to avoid '1'(str) serialized to 1.0(float)
+            DumpableFloatField(strict=True),
+            # put string schema after Int and Float to make sure they won't dump to string
+            fields.Str(),
+            # fields.Bool comes last since it'll parse anything non-falsy to True
+            fields.Bool(),
+        ],
+        **kwargs,
+    )

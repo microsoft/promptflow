@@ -1,5 +1,5 @@
 # Basic flow with custom connection
-A basic standard flow that using custom python tool calls Azure OpenAI with connection info stored in custom connection. 
+A basic standard flow that using custom python tool calls Azure OpenAI with connection info stored in custom connection.
 
 Tools used in this flow：
 - `prompt` tool
@@ -41,7 +41,7 @@ pf flow test --flow .
 pf flow test --flow . --inputs text="Hello World!"
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
+pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message."
 
 ```
 
@@ -104,5 +104,5 @@ Run flow with connection `open_ai_connection`.
 az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
-pfazure run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --column-mapping text='${data.text}' --stream --runtime example-runtime-ci
+pfazure run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --column-mapping text='${data.text}' --stream
 ```

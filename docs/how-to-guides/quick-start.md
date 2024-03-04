@@ -262,7 +262,7 @@ flow_path = "web-classification"  # "web-classification" is the directory name
 
 # Test flow
 flow_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}  # The inputs of the flow.
-flow_result = pf.test(flow=flow_path, inputs=inputs)
+flow_result = pf.test(flow=flow_path, inputs=flow_inputs)
 print(f"Flow outputs: {flow_result}")
 
 # Test node in the flow
@@ -299,7 +299,7 @@ Learn more on how to:
 - [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md): run and evaluate the flow using multi line data file.
 - [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
 - [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
-- [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
+- [Prompt flow in Azure AI](../cloud/azureai/quick-start/index.md): run and evaluate flow in Azure AI where you can collaborate with team better.
 
 And you can also check our [examples](https://github.com/microsoft/promptflow/tree/main/examples), especially:
 - [Getting started with prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.

@@ -9,8 +9,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -23,7 +23,7 @@ interactions:
       cache-control:
       - no-cache
       content-length:
-      - '3519'
+      - '3630'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.025'
+      - '0.020'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.084'
+      - '0.079'
     status:
       code: 200
       message: OK
@@ -120,8 +120,8 @@ interactions:
         {"runId": "runId=non_exist_run"}, "referenceCode": null, "detailsUri": null,
         "target": null, "details": [], "innerError": {"code": "NotFoundError", "innerError":
         null}, "debugInfo": null, "additionalInfo": null}, "correlation": {"operation":
-        "c6cd4c20f5d5db3e2e37ecbd5405efc8", "request": "c5db1da6f17d5d0e"}, "environment":
-        "eastus", "location": "eastus", "time": "2023-10-18T09:58:37.7134807+00:00",
+        "4524d4f22ddaa62600fff8c00e9256f6", "request": "6ed7f8ac3ca2136c"}, "environment":
+        "eastus", "location": "eastus", "time": "2023-11-29T09:03:44.6763704+00:00",
         "componentName": "run-history", "statusCode": 404}'
     headers:
       connection:
@@ -139,8 +139,8 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.074'
+      - '0.044'
     status:
       code: 404
-      message: Run runId=63322010-a79d-4563-a252-ad8201f2d41d was not found
+      message: Run runId=32263d2c-f56a-4298-9fe3-f90ab65f59c6 was not found
 version: 1

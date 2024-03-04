@@ -1,0 +1,17 @@
+language: csharp
+inputs:
+  question:
+    type: string
+    default: what is promptflow?
+outputs:
+  answer:
+    type: string
+    reference: ${get_answer.output}
+nodes:
+- name: get_answer
+  type: csharp
+  source:
+    type: package
+    tool: (Basic)Basic.Flow.HelloWorld
+  inputs:
+    question: ${inputs.question}

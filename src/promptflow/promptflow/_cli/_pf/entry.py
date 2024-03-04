@@ -2,8 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
-import time
 import json
+import time
+
+from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._telemetry.activity import update_activity_name
 
 # Log the start time
 start_time = time.perf_counter()
@@ -19,48 +24,32 @@ from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  #
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
+from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
-from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
-from promptflow._sdk._utils import (print_pf_version, setup_user_agent_to_operation_context,  # noqa: E402
-                                    get_promptflow_sdk_version)  # noqa: E402
+from promptflow._sdk._utils import (  # noqa: E402
+    get_promptflow_sdk_version,
+    print_pf_version,
+    setup_user_agent_to_operation_context,
+)
+from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 
-# configure logger for CLI
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+# get logger for CLI
+logger = get_cli_sdk_logger()
 
 
-def entry(argv):
-    """
-    Control plane CLI tools for promptflow.
-    """
-    parser = argparse.ArgumentParser(
-        prog="pf",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="pf: manage prompt flow assets. Learn more: https://microsoft.github.io/promptflow.",
-    )
-    parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
-    )
-
-    subparsers = parser.add_subparsers()
-    add_flow_parser(subparsers)
-    add_connection_parser(subparsers)
-    add_run_parser(subparsers)
-    add_config_parser(subparsers)
-    add_tool_parser(subparsers)
-
-    args = parser.parse_args(argv)
+def run_command(args):
     # Log the init finish time
     init_finish_time = time.perf_counter()
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.INFO)
         # --debug, enable debug logging
         if hasattr(args, "debug") and args.debug:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
+
         if args.version:
             print_pf_version()
         elif args.action == "flow":
@@ -73,6 +62,10 @@ def entry(argv):
             dispatch_config_commands(args)
         elif args.action == "tool":
             dispatch_tool_commands(args)
+        elif args.action == "upgrade":
+            upgrade_version(args)
+        elif args.action == "experiment":
+            dispatch_experiment_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex
@@ -94,17 +87,60 @@ def entry(argv):
         )
 
 
+def get_parser_args(argv):
+    parser = argparse.ArgumentParser(
+        prog="pf",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="pf: manage prompt flow assets. Learn more: https://microsoft.github.io/promptflow.",
+    )
+    parser.add_argument(
+        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
+    )
+    subparsers = parser.add_subparsers()
+    add_upgrade_parser(subparsers)
+    add_flow_parser(subparsers)
+    add_connection_parser(subparsers)
+    add_run_parser(subparsers)
+    add_config_parser(subparsers)
+    add_tool_parser(subparsers)
+
+    if Configuration.get_instance().is_internal_features_enabled():
+        add_experiment_parser(subparsers)
+
+    return parser.prog, parser.parse_args(argv)
+
+
+def entry(argv):
+    """
+    Control plane CLI tools for promptflow.
+    """
+    prog, args = get_parser_args(argv)
+    if hasattr(args, "user_agent"):
+        setup_user_agent_to_operation_context(args.user_agent)
+    activity_name = _get_cli_activity_name(cli=prog, args=args)
+    activity_name = update_activity_name(activity_name, args=args)
+    cli_exception_and_telemetry_handler(run_command, activity_name)(args)
+
+
 def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
-    if len(command_args) == 1 and command_args[0] == 'version':
+    if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(',', ': ')) + '\n'
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
+        print(version_dict_string)
+        return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
         show_privacy_statement()
         show_welcome_message()
         command_args.append("-h")
+    elif len(command_args) == 1:
+        # pf only has "pf --version" with 1 layer
+        if command_args[0] not in ["--version", "-v", "upgrade"]:
+            command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 

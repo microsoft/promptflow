@@ -19,6 +19,7 @@ Manage flows.
 | Command | Description |
 | --- | --- |
 | [pfazure flow create](#pfazure-flow-create) | Create a flow. |
+| [pfazure flow update](#pfazure-flow-update) | Update a flow. |
 | [pfazure flow list](#pfazure-flow-list) | List flows in a workspace. |
 
 
@@ -43,8 +44,50 @@ Local path to the flow directory.
 `--set`
 
 Update an object by specifying a property path and value to set.
-- `display-name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
-- `type`: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
+- `display_name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified. e.g. "--set display_name=\<display_name\>".
+- `type`: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat". e.g. "--set type=\<type\>".
+- `description`: Flow description. e.g. "--set description=\<description\>."
+- `tags`: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
+
+
+
+### pfazure flow update
+
+Update a flow's metadata, such as `display name`, `description` and `tags`.
+
+```bash
+pfazure flow update --flow
+                    [--set]
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Parameters
+
+`--flow`
+
+The flow name on azure. It's a guid that can be found from 2 ways:
+- After creating a flow to azure, it can be found in the printed message in "name" attribute.
+- Open a flow in azure portal, the guid is in the url. e.g. https://ml.azure.com/prompts/flow/{workspace-id}/{flow-name}/xxx
+
+
+`--set`
+
+Update an object by specifying a property path and value to set.
+- `display_name`: Flow display name. e.g. "--set display_name=\<display_name\>".
 - `description`: Flow description. e.g. "--set description=\<description\>."
 - `tags`: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
@@ -133,6 +176,7 @@ Manage prompt flow runs.
 | [pfazure run archive](#pfazure-run-archive) | Archive a run. |
 | [pfazure run restore](#pfazure-run-restore) | Restore a run. |
 | [pfazure run update](#pfazure-run-update) | Update a run. |
+| [pfazure run download](#pfazure-run-download) | Download a run. |
 
 ### pfazure run create
 
@@ -148,6 +192,7 @@ pfazure run create [--file]
                    [--stream]
                    [--environment-variables]
                    [--connections]
+                   [--resume-from] # require promptflow>=1.7.0
                    [--set]
                    [--subscription]
                    [--resource-group]
@@ -196,6 +241,11 @@ specified will be set into os.environ.
 
 Overwrite node level connections with provided value.
 Example: `--connections node1.connection=test_llm_connection node1.deployment_name=gpt-35-turbo`
+
+`--resume-from`
+
+Create a run resume from an existing run. (Require promptflow>=1.7.0)
+Example: `--resume-from <run_name>`
 
 `--set`
 
@@ -291,6 +341,7 @@ Stream run logs to the console.
 
 ```bash
 pfazure run stream --name
+                   [--timeout]
                    [--subscription]
                    [--resource-group]
                    [--workspace-name]
@@ -301,6 +352,10 @@ pfazure run stream --name
 `--name -n`
 
 Name of the run.
+
+`--timeout`
+
+Timeout in seconds. If the run stays in the same status and produce no new logs in a period longer than the timeout value, the stream operation will abort. Default value is 600 seconds
 
 `--subscription`
 
@@ -504,3 +559,49 @@ Resource group name, required when there is no default value from `az configure`
 
 Workspace name, required when there is no default value from `az configure`.
 
+
+### pfazure run download
+
+Download a run's metadata, such as `input`, `output`, `snapshot` and `artifact`. After the download is finished,  you can use `pf run create --source <run-info-local-folder>` to register this run as a local run record, then you can use commands like `pf run show/visualize` to inspect the run just like a run that was created from local flow.
+
+```bash
+pfazure run download --name
+                    [--output]
+                    [--overwrite]
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Examples
+
+Download a run data to local:
+```bash
+pfazure run download --name <name> --output <output-folder-path>
+```
+
+#### Parameters
+
+`--name -n`
+
+Name of the run.
+
+`--output -o`
+
+Output folder path to store the downloaded run data. Default to be `~/.promptflow/.runs` if not specified
+
+`--overwrite`
+
+Overwrite the existing run data if the output folder already exists. Default to be `False` if not specified
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.

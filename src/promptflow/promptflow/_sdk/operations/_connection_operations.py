@@ -6,10 +6,9 @@ from typing import List
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._orm import Connection as ORMConnection
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
 
 
 class ConnectionOperations(TelemetryMixin):
@@ -49,6 +48,9 @@ class ConnectionOperations(TelemetryMixin):
         :return: connection object retrieved from the database.
         :rtype: ~promptflow.sdk.entities._connection._Connection
         """
+        return self._get(name, **kwargs)
+
+    def _get(self, name: str, **kwargs) -> _Connection:
         with_secrets = kwargs.get("with_secrets", False)
         raise_error = kwargs.get("raise_error", True)
         orm_connection = ORMConnection.get(name, raise_error)

@@ -7,10 +7,11 @@ from pathlib import Path
 
 import mock
 import pytest
-import yaml
 
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, NODE_VARIANTS, PROMPT_FLOW_DIR_NAME, USE_VARIANTS
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -18,6 +19,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
@@ -155,7 +157,7 @@ class TestFlowLocalOperations:
             assert Path(temp_dir, PROMPT_FLOW_DIR_NAME, FLOW_TOOLS_JSON).is_file()
 
             with open(Path(temp_dir, "flow.dag.yaml"), "r", encoding="utf-8") as f:
-                flow_dag_content = yaml.safe_load(f)
+                flow_dag_content = load_yaml(f)
                 assert NODE_VARIANTS not in flow_dag_content
                 assert "additional_includes" not in flow_dag_content
                 assert not any([USE_VARIANTS in node for node in flow_dag_content["nodes"]])
@@ -163,7 +165,7 @@ class TestFlowLocalOperations:
     def test_flow_build_as_docker_with_variant(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
         flow_dag_path = Path(source, "flow.dag.yaml")
-        flow_dag = yaml.safe_load(flow_dag_path.read_text())
+        flow_dag = load_yaml(flow_dag_path)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             pf.flows.build(
@@ -174,7 +176,7 @@ class TestFlowLocalOperations:
             )
 
             new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
-            new_flow_dag = yaml.safe_load(new_flow_dag_path.read_text())
+            new_flow_dag = load_yaml(new_flow_dag_path)
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", new_flow_dag["nodes"]))
             target_node.pop("name")
             assert target_node == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
@@ -192,7 +194,7 @@ class TestFlowLocalOperations:
             flow_tools_path = Path(temp_dir) / "flow" / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
             assert flow_tools_path.is_file()
             # package in flow.tools.json is not determined by the flow, so we don't check it here
-            assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
+            assert load_yaml(flow_tools_path)["code"] == {
                 "classify_with_llm.jinja2": {
                     "inputs": {
                         "examples": {"type": ["string"]},
@@ -237,7 +239,7 @@ class TestFlowLocalOperations:
 
         assert flow_tools_path.is_file()
         # package in flow.tools.json is not determined by the flow, so we don't check it here
-        assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
+        assert load_yaml(flow_tools_path)["code"] == {
             "classify_with_llm.jinja2": {
                 "inputs": {
                     "examples": {"type": ["string"]},
@@ -299,7 +301,7 @@ class TestFlowLocalOperations:
         assert "line 22" in repr(validation_result)
 
         assert flow_tools_path.is_file()
-        flow_tools = yaml.safe_load(flow_tools_path.read_text())
+        flow_tools = load_yaml(flow_tools_path)
         assert "code" in flow_tools
         assert flow_tools["code"] == {
             "classify_with_llm.jinja2": {
@@ -323,7 +325,7 @@ class TestFlowLocalOperations:
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
                 "inputs": {"input_str": {"type": ["string"]}},
-                "source": os.path.join("..", "external_files", "convert_to_dict.py"),
+                "source": "convert_to_dict.py",
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
@@ -365,7 +367,7 @@ class TestFlowLocalOperations:
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
                 "inputs": {"input_str": {"type": ["string"]}},
-                "source": os.path.join("..", "external_files", "convert_to_dict.py"),
+                "source": "convert_to_dict.py",
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
@@ -405,6 +407,23 @@ class TestFlowLocalOperations:
             "package": {},
         }
         assert tools_error == {}
+
+    @pytest.mark.skip(reason="It will fail in CI for some reasons. Still need to investigate.")
+    def test_flow_generate_tools_meta_timeout(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_invalid"
+
+        for tools_meta, tools_error in [
+            pf.flows._generate_tools_meta(source, timeout=1),
+            #  There is no built-in method to forcefully stop a running thread in Python
+            #  because abruptly stopping a thread can cause issues like resource leaks,
+            #  deadlocks, or inconsistent states.
+            # Caller (VSCode extension) will handle the timeout error.
+            # pf.flows._generate_tools_meta(source, source_name="convert_to_dict.py", timeout=1),
+        ]:
+            assert tools_meta == {"code": {}, "package": {}}
+            assert tools_error
+            for error in tools_error.values():
+                assert "timeout" in error
 
     def test_flow_generate_tools_meta_with_pkg_tool_with_custom_strong_type_connection(self, pf) -> None:
         source = f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection"
@@ -455,8 +474,24 @@ class TestFlowLocalOperations:
         assert tools_meta["code"] == {
             "my_script_tool.py": {
                 "function": "my_tool",
-                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_param": {"type": ["string"]}},
+                "inputs": {
+                    "connection": {"type": ["CustomConnection"]},
+                    "input_param": {"type": ["string"]},
+                },
                 "source": "my_script_tool.py",
                 "type": "python",
             }
         }
+
+    def test_eager_flow_validate(self, pf):
+        source = f"{EAGER_FLOWS_DIR}/incorrect_entry"
+
+        validation_result = pf.flows.validate(flow=source)
+
+        assert validation_result.error_messages == {"entry": "Entry function my_func is not valid."}
+        assert "#line 1" in repr(validation_result)
+
+        with pytest.raises(UserErrorException) as e:
+            pf.flows.validate(flow=source, raise_error=True)
+
+        assert "Entry function my_func is not valid." in str(e.value)

@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import json
 import time
 from types import GeneratorType
@@ -20,7 +21,7 @@ class ResponseCreator:
         accept_mimetypes,
         stream_start_callback_func=None,
         stream_end_callback_func=None,
-        stream_event_callback_func=None
+        stream_event_callback_func=None,
     ):
         # Fields that are with GeneratorType are streaming outputs.
         stream_fields = [k for k, v in flow_run_result.items() if isinstance(v, GeneratorType)]

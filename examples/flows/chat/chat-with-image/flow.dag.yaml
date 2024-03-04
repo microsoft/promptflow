@@ -1,0 +1,31 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+  question:
+    type: list
+    default:
+    - data:image/png;url: https://images.idgesg.net/images/article/2019/11/edge-browser-logo_microsoft-100816808-large.jpg
+    - How many colors can you see?
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${chat.output}
+    is_chat_output: true
+nodes:
+- name: chat
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
+    path: chat.jinja2
+  inputs:
+    connection: aoai_gpt4v_connection
+    deployment_name: gpt-4v
+    max_tokens: 512
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}

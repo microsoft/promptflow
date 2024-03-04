@@ -1,14 +1,14 @@
 from enum import Enum
 from typing import Union
 
-import openai
+from openai import AzureOpenAI as AzureOpenAIClient, OpenAI as OpenAIClient
+from promptflow.tools.common import handle_openai_error, normalize_connection_config
+from promptflow.tools.exception import InvalidConnectionType
 
-from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
-from promptflow.tools.common import handle_openai_error
-from promptflow.tools.exception import InvalidConnectionType
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 class EmbeddingModel(str, Enum):
@@ -21,20 +21,19 @@ class EmbeddingModel(str, Enum):
 @handle_openai_error()
 def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input: str, deployment_name: str = "",
               model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
-    connection_dict = dict(connection)
     if isinstance(connection, AzureOpenAIConnection):
-        return openai.Embedding.create(
+        client = AzureOpenAIClient(**normalize_connection_config(connection))
+        return client.embeddings.create(
             input=input,
-            engine=deployment_name,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **connection_dict,
-        )["data"][0]["embedding"]
+            model=deployment_name,
+            extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}
+        ).data[0].embedding
     elif isinstance(connection, OpenAIConnection):
-        return openai.Embedding.create(
+        client = OpenAIClient(**normalize_connection_config(connection))
+        return client.embeddings.create(
             input=input,
-            model=model,
-            **connection_dict,
-        )["data"][0]["embedding"]
+            model=model
+        ).data[0].embedding
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."

@@ -3,11 +3,16 @@
 # ---------------------------------------------------------
 import mock
 import pytest
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import is_live
+
+AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
 @pytest.mark.sdk_test
@@ -15,11 +20,12 @@ from promptflow._sdk.operations._local_azure_connection_operations import LocalA
 class TestPFClient:
     # Test pf client when connection provider is azureml.
     # This tests suites need azure dependencies.
+    @pytest.mark.skipif(condition=not is_live(), reason="This test requires an actual PFClient")
     def test_connection_provider(self, subscription_id: str, resource_group_name: str, workspace_name: str):
         target = "promptflow._sdk._pf_client.Configuration"
         with mock.patch(target) as mocked:
             mocked.return_value.get_connection_provider.return_value = "abc"
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(UserErrorException) as e:
                 client = PFClient()
                 assert client.connections
             assert "Unsupported connection provider" in str(e.value)
@@ -55,12 +61,12 @@ class TestPFClient:
 
     def test_local_azure_connection_extract_workspace(self):
         res = LocalAzureConnectionOperations._extract_workspace(
-            "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/789"
+            "azureml://subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/789"
         )
         assert res == ("123", "456", "789")
 
         res = LocalAzureConnectionOperations._extract_workspace(
-            "azureml:/subscriptions/123/resourcegroups/456/workspaces/789"
+            "azureml://subscriptions/123/resourcegroups/456/workspaces/789"
         )
         assert res == ("123", "456", "789")
 
@@ -70,6 +76,6 @@ class TestPFClient:
 
         with pytest.raises(ValueError) as e:
             LocalAzureConnectionOperations._extract_workspace(
-                "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/"
+                "azureml://subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/"
             )
         assert "Malformed connection provider string" in str(e.value)

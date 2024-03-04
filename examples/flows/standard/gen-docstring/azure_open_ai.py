@@ -3,7 +3,7 @@ import logging
 import time
 import uuid
 from typing import List
-import openai
+from openai.version import VERSION as OPENAI_VERSION
 import os
 from abc import ABC, abstractmethod
 import tiktoken
@@ -13,11 +13,47 @@ from prompt import PromptLimitException
 
 class AOAI(ABC):
     def __init__(self, **kwargs):
-        openai.api_key = os.environ.get("OPENAI_API_KEY")
-        openai.api_base = os.environ.get("OPENAI_API_BASE")
-        openai.api_version = os.environ.get("OPENAI_API_VERSION")
-        openai.api_type = os.environ.get("API_TYPE")
-        openai.organization = os.environ.get("ORGANIZATION")
+        if OPENAI_VERSION.startswith("0."):
+            raise Exception(
+                "Please upgrade your OpenAI package to version >= 1.0.0 or "
+                "using the command: pip install --upgrade openai."
+            )
+        init_params = {}
+        api_type = os.environ.get("API_TYPE")
+        if os.getenv("OPENAI_API_VERSION") is not None:
+            init_params["api_version"] = os.environ.get("OPENAI_API_VERSION")
+        if os.getenv("OPENAI_ORG_ID") is not None:
+            init_params["organization"] = os.environ.get("OPENAI_ORG_ID")
+        if os.getenv("OPENAI_API_KEY") is None:
+            raise ValueError("OPENAI_API_KEY is not set in environment variables")
+        if os.getenv("OPENAI_API_BASE") is not None:
+            if api_type == "azure":
+                init_params["azure_endpoint"] = os.environ.get("OPENAI_API_BASE")
+            else:
+                init_params["base_url"] = os.environ.get("OPENAI_API_BASE")
+        init_params["api_key"] = os.environ.get("OPENAI_API_KEY")
+        # A few sanity checks
+        if api_type == "azure":
+            if init_params.get("azure_endpoint") is None:
+                raise ValueError(
+                    "OPENAI_API_BASE is not set in environment variables, this is required when api_type==azure"
+                )
+            if init_params.get("api_version") is None:
+                raise ValueError(
+                    "OPENAI_API_VERSION is not set in environment variables, this is required when api_type==azure"
+                )
+            if init_params["api_key"].startswith("sk-"):
+                raise ValueError(
+                    "OPENAI_API_KEY should not start with sk- when api_type==azure, "
+                    "are you using openai key by mistake?"
+                )
+            from openai import AzureOpenAI as Client
+            from openai import AsyncAzureOpenAI as AsyncClient
+        else:
+            from openai import OpenAI as Client
+            from openai import AsyncClient as AsyncClient
+        self.client = Client(**init_params)
+        self.async_client = AsyncClient(**init_params)
         self.default_engine = None
         self.engine = kwargs.pop('model', None) or os.environ.get("MODEL")
         self.total_tokens = 4000
@@ -100,16 +136,16 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, conversation_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = openai.ChatCompletion.create(
-            engine=self.engine,
+        response = self.client.chat.completions.create(
+            model=self.engine,
             messages=messages,
             temperature=temperature,
             max_tokens=self.max_tokens,
             stream=False,
             **kwargs,
         )
-        response_role = response["choices"][0]["message"]["role"]
-        full_response = response["choices"][0]["message"]["content"]
+        response_role = response.choices[0].message.role
+        full_response = response.choices[0].message.content
         self.add_to_conversation(text, "user", conversation_id=conversation_id)
         self.add_to_conversation(full_response, response_role, conversation_id=conversation_id)
         return full_response
@@ -119,8 +155,8 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, conversation_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = openai.ChatCompletion.create(
-            engine=self.engine,
+        response = self.client.chat.completions.create(
+            model=self.engine,
             messages=messages,
             temperature=temperature,
             max_tokens=self.max_tokens,
@@ -131,11 +167,10 @@ class ChatLLM(AOAI):
         response_role = None
         full_response = ""
         for chunk in response:
-            delta = chunk["choices"][0]["delta"]
-            if "role" in delta:
-                response_role = delta["role"]
-            if "content" in delta:
-                content = delta["content"]
+            delta = chunk.choices[0].delta
+            response_role = delta.role
+            if delta.content:
+                content = delta.content
                 full_response += content
                 yield content
         self.add_to_conversation(text, "user", conversation_id=conversation_id)
@@ -146,16 +181,16 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, conversation_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = await openai.ChatCompletion.acreate(
-            engine=self.engine,
+        response = await self.async_client.chat.completions.create(
+            model=self.engine,
             messages=messages,
             temperature=temperature,
             max_tokens=self.max_tokens,
             stream=False,
             **kwargs,
         )
-        response_role = response["choices"][0]["message"]["role"]
-        full_response = response["choices"][0]["message"]["content"]
+        response_role = response.choices[0].message.role
+        full_response = response.choices[0].message.content
         self.add_to_conversation(text, "user", conversation_id=conversation_id)
         self.add_to_conversation(full_response, response_role, conversation_id=conversation_id)
         return full_response
@@ -165,8 +200,8 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, conversation_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = await openai.ChatCompletion.acreate(
-            engine=self.engine,
+        response = await self.async_client.chat.completions.create(
+            model=self.engine,
             messages=messages,
             temperature=temperature,
             max_tokens=self.max_tokens,
@@ -177,11 +212,10 @@ class ChatLLM(AOAI):
         response_role = None
         full_response = ""
         for chunk in response:
-            delta = chunk["choices"][0]["delta"]
-            if "role" in delta:
-                response_role = delta["role"]
-            if "content" in delta:
-                content = delta["content"]
+            delta = chunk.choices[0].delta
+            response_role = delta.role
+            if delta.content:
+                content = delta.content
                 full_response += content
                 yield content
         self.add_to_conversation(text, "user", conversation_id=conversation_id)

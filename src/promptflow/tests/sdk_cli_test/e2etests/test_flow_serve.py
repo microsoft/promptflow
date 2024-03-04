@@ -7,7 +7,7 @@ import pytest
 from promptflow._core.operation_context import OperationContext
 
 
-@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_swagger(flow_serving_client):
     swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
@@ -56,7 +56,7 @@ def test_swagger(flow_serving_client):
     }
 
 
-@pytest.mark.usefixtures("serving_client_llm_chat", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_chat_swagger(serving_client_llm_chat):
     swagger_dict = json.loads(serving_client_llm_chat.get("/swagger.json").data.decode())
@@ -115,7 +115,7 @@ def test_chat_swagger(serving_client_llm_chat):
     }
 
 
-@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_user_agent(flow_serving_client):
     operation_context = OperationContext.get_instance()
@@ -123,11 +123,14 @@ def test_user_agent(flow_serving_client):
     assert "promptflow-local-serving" in operation_context.get_user_agent()
 
 
-@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client):
     response = flow_serving_client.get("/health")
     assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    response = flow_serving_client.get("/")
+    print(response.data)
+    assert response.status_code == 200
     response = flow_serving_client.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
@@ -137,7 +140,7 @@ def test_serving_api(flow_serving_client):
     assert os.environ["API_TYPE"] == "azure"
 
 
-@pytest.mark.usefixtures("evaluation_flow_serving_client", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
     response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
@@ -330,3 +333,23 @@ def test_list_image_flow(serving_client_composite_image_flow, sample_image):
     assert (
         "data:image/jpg;base64" in response["output"][0]
     ), f"data:image/jpg;base64 not in output list {response['output']}"
+
+
+@pytest.mark.usefixtures("serving_client_with_environment_variables")
+@pytest.mark.e2etest
+def test_flow_with_environment_variables(serving_client_with_environment_variables):
+    except_environment_variables = {
+        "env1": "2",
+        "env2": "runtime_env2",
+        "env3": "[1, 2, 3, 4, 5]",
+        "env4": '{"a": 1, "b": "2"}',
+        "env10": "aaaaa",
+    }
+    for key, value in except_environment_variables.items():
+        response = serving_client_with_environment_variables.post("/score", data=json.dumps({"key": key}))
+        assert (
+            response.status_code == 200
+        ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+        response = json.loads(response.data.decode())
+        assert {"output"} == response.keys()
+        assert response["output"] == value

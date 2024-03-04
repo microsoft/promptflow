@@ -1,70 +1,81 @@
-# ---------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# ---------------------------------------------------------
-
-from pathlib import Path
-from unittest.mock import patch
+import tempfile
+from unittest.mock import MagicMock, patch
 
 import pytest
+from azure.ai.ml import ManagedIdentityConfiguration
+from azure.ai.ml.entities import IdentityConfiguration
+from pytest_mock import MockerFixture
 
+from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
+from promptflow.exceptions import UserErrorException
 
-tests_root_dir = Path(__file__).parent.parent.parent
-flow_test_dir = tests_root_dir / "test_configs/flows"
-data_dir = tests_root_dir / "test_configs/datas"
+FLOWS_DIR = "./tests/test_configs/flows"
+DATAS_DIR = "./tests/test_configs/datas"
 
 
 @pytest.mark.unittest
 class TestRunOperations:
-    def test_input_output_portal_url_parser(self, pf: PFClient):
-        runs_op = pf.runs
-        common_azure_url_pattern = runs_op._service_caller._common_azure_url_pattern
+    def test_download_run_with_invalid_workspace_datastore(self, pf: PFClient, mocker: MockerFixture):
+        # test download with invalid workspace datastore
+        mocker.patch.object(pf.runs, "_validate_for_run_download")
+        mocker.patch.object(pf.runs, "_workspace_default_datastore", "test")
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with pytest.raises(UserErrorException, match="workspace default datastore is not supported"):
+                pf.runs.download(run="fake_run_name", output=tmp_dir)
 
-        # test input with datastore path
-        input_datastore_path = (
-            "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl"
+    def test_run_with_identity(self, pf: PFClient, mocker: MockerFixture):
+        mock_workspace = MagicMock()
+        mock_workspace.identity = IdentityConfiguration(
+            type="managed",
+            user_assigned_identities=[
+                ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
+            ],
         )
-        expected_input_portal_url = (
-            f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid={common_azure_url_pattern}"
-            f"&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab"
+        mocker.patch.object(pf.runs, "_workspace", mock_workspace)
+        run = Run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name="test_run",
+            identity={"type": "managed", "client_id": "fake_client_id"},
         )
-        assert runs_op._get_input_portal_url_from_input_uri(input_datastore_path) == expected_input_portal_url
+        pf.runs._resolve_identity(run)
+        rest_run = run._to_rest_object()
+        assert rest_run.identity == "fake_resource_id"
 
-        # test input with asset id
-        input_asset_id = (
-            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data/hod-qa-sample/versions/1"
+        mock_workspace = MagicMock()
+        mock_workspace.primary_user_assigned_identity = "fake_primary_user_assigned_identity"
+        mocker.patch.object(pf.runs, "_workspace", mock_workspace)
+        run = Run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name="test_run",
+            identity={"type": "managed"},
         )
-        expected_input_portal_url = f"https://ml.azure.com/data/hod-qa-sample/1/details?wsid={common_azure_url_pattern}"
-        assert runs_op._get_input_portal_url_from_input_uri(input_asset_id) == expected_input_portal_url
+        pf.runs._resolve_identity(run)
+        rest_run = run._to_rest_object()
+        assert rest_run.identity == "fake_primary_user_assigned_identity"
 
-        # test output with asset id
-        output_asset_id = (
-            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data"
-            "/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/versions/1"
-        )
-        expected_output_portal_url = (
-            "https://ml.azure.com/data/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/1/details"
-            f"?wsid={common_azure_url_pattern}"
-        )
-        assert runs_op._get_portal_url_from_asset_id(output_asset_id) == expected_output_portal_url
-
-    def test_parse_run_portal_url(self, pf):
-
-        run_id = "test_run_id"
-        common_azure_url_pattern = pf._service_caller._common_azure_url_pattern
-
-        # workspace is aml studio
-        with patch.object(pf.runs._workspace, "_kind", "default"):
-            url = pf.runs._get_run_portal_url(run_id)
-            expected_portal_url = (
-                f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={common_azure_url_pattern}"
+    @pytest.mark.parametrize(
+        "identity, error_msg",
+        [
+            # no primary_user_assigned_identity
+            ({"type": "managed"}, "Primary user assigned identity not found in workspace"),
+            # no user_assigned_identities
+            ({"type": "managed", "client_id": "xxx"}, "Failed to get identities with id"),
+            # unsupported type
+            ({"type": "managed_identity"}, "is not supported"),
+        ],
+    )
+    def test_run_with_identity_illegal_cases(self, pf: PFClient, identity, error_msg):
+        mock_workspace = MagicMock(primary_user_assigned_identity=None)
+        with patch.object(pf.runs, "_workspace", mock_workspace):
+            run = Run(
+                flow=f"{FLOWS_DIR}/print_env_var",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name="test_run",
+                identity=identity,
             )
-            assert url == expected_portal_url
-
-        # workspace is azure ai studio
-        with patch.object(pf.runs._workspace, "_kind", "project"):
-            url = pf.runs._get_run_portal_url(run_id)
-            expected_portal_url = (
-                f"https://ai.azure.com/projectflows/bulkrun/run/{run_id}/details?wsid={common_azure_url_pattern}"
-            )
-            assert url == expected_portal_url
+            with pytest.raises(UserErrorException) as e:
+                pf.runs._resolve_identity(run)
+            assert error_msg in str(e)

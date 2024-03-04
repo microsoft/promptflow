@@ -9,14 +9,14 @@ on:
     - cron: "24 20 * * *" # Every day starting at 4:24 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_runmanagement_cloudrunmanagement.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/tutorials/run-management/**, examples/requirements.txt, examples/flows/standard/web-classification/**, .github/workflows/samples_runmanagement_cloudrunmanagement.yml, examples/connections/azure_openai.yml ]
   workflow_dispatch:
 
 env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_notebook_ci:
+  samples_runmanagement_cloudrunmanagement:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

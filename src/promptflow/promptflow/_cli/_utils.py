@@ -5,12 +5,10 @@
 import argparse
 import contextlib
 import json
-import logging
 import os
 import shutil
 import sys
 import traceback
-from collections import namedtuple
 from configparser import ConfigParser
 from functools import wraps
 from pathlib import Path
@@ -20,15 +18,15 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
+from promptflow._sdk._constants import AzureMLWorkspaceTriad, CLIListOutputFormat, EnvironmentVariables
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
-AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
-
-logger = logging.getLogger(__name__)
+logger = get_cli_sdk_logger()
 
 
 def _set_workspace_argument_for_subparsers(subparser, required=False):
@@ -102,35 +100,36 @@ def get_credentials_for_cli():
     from azure.identity import AzureCliCredential, DefaultAzureCredential, ManagedIdentityCredential
 
     # May return a different one if executing in local
-    # credential priority: OBO > managed identity > default
+    # credential priority: OBO > azure cli > managed identity > default
     # check OBO via environment variable, the referenced code can be found from below search:
     # https://msdata.visualstudio.com/Vienna/_search?text=AZUREML_OBO_ENABLED&type=code&pageSize=25&filters=ProjectFilters%7BVienna%7D&action=contents
     if os.getenv(IdentityEnvironmentVariable.OBO_ENABLED_FLAG):
-        logger.info("User identity is configured, use OBO credential.")
+        logger.debug("User identity is configured, use OBO credential.")
         credential = AzureMLOnBehalfOfCredential()
+    elif _use_azure_cli_credential():
+        logger.debug("Use azure cli credential since specified in environment variable.")
+        credential = AzureCliCredential()
     else:
         client_id_from_env = os.getenv(IdentityEnvironmentVariable.DEFAULT_IDENTITY_CLIENT_ID)
         if client_id_from_env:
             # use managed identity when client id is available from environment variable.
             # reference code:
             # https://learn.microsoft.com/en-us/azure/machine-learning/how-to-identity-based-service-authentication?tabs=cli#compute-cluster
-            logger.info("Use managed identity credential.")
+            logger.debug("Use managed identity credential.")
             credential = ManagedIdentityCredential(client_id=client_id_from_env)
         elif is_in_ci_pipeline():
             # use managed identity when executing in CI pipeline.
-            logger.info("Use azure cli credential.")
+            logger.debug("Use azure cli credential since in CI pipeline.")
             credential = AzureCliCredential()
         else:
             # use default Azure credential to handle other cases.
-            logger.info("Use default credential.")
+            logger.debug("Use default credential.")
             credential = DefaultAzureCredential()
 
     return credential
 
 
-def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
-    from azure.ai.ml import MLClient
-
+def get_client_info_for_cli(subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
     if not (subscription_id and resource_group_name and workspace_name):
         workspace_triad = get_workspace_triad_from_local()
         subscription_id = subscription_id or workspace_triad.subscription_id
@@ -142,6 +141,15 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
         subscription_id = subscription_id or os.getenv("AZUREML_ARM_SUBSCRIPTION")
         resource_group_name = resource_group_name or os.getenv("AZUREML_ARM_RESOURCEGROUP")
 
+    return subscription_id, resource_group_name, workspace_name
+
+
+def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
+    from azure.ai.ml import MLClient
+
+    subscription_id, resource_group_name, workspace_name = get_client_info_for_cli(
+        subscription_id=subscription_id, resource_group_name=resource_group_name, workspace_name=workspace_name
+    )
     missing_fields = []
     for key in ["workspace_name", "subscription_id", "resource_group_name"]:
         if not locals()[key]:
@@ -160,7 +168,9 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
     )
 
 
-def confirm(question) -> bool:
+def confirm(question, skip_confirm) -> bool:
+    if skip_confirm:
+        return True
     answer = input(f"{question} [y/n]")
     while answer.lower() not in ["y", "n"]:
         answer = input("Please input 'y' or 'n':")
@@ -321,7 +331,7 @@ def _calculate_column_widths(df: "DataFrame", terminal_width: int) -> List[int]:
         )
 
     max_col_widths = [index_column_width]  # index column
-    max_col_widths += [column_widths[column] - column_margin[column] for column in df.columns]  # sub margin
+    max_col_widths += [max(column_widths[column] - column_margin[column], 1) for column in df.columns]  # sub margin
     return max_col_widths
 
 
@@ -341,30 +351,34 @@ def is_format_exception():
     return False
 
 
-def exception_handler(command: str):
+def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=None):
     """Catch known cli exceptions."""
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            telemetry_logger = get_telemetry_logger()
+            with log_activity(
+                telemetry_logger,
+                activity_name,
+                activity_type=ActivityType.PUBLICAPI,
+                custom_dimensions=custom_dimensions,
+            ):
                 return func(*args, **kwargs)
-            except Exception as e:
-                if is_format_exception():
-                    # When the flag format_exception is set in command,
-                    # it will write a json with exception info and command to stderr.
-                    error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
-                    error_msg["command"] = " ".join(sys.argv)
-                    sys.stderr.write(json.dumps(error_msg))
-                if isinstance(e, PromptflowException):
-                    print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
-                    exit(1)
-                else:
-                    raise e
+        except Exception as e:
+            if is_format_exception():
+                # When the flag format_exception is set in command,
+                # it will write a json with exception info and command to stderr.
+                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                error_msg["command"] = " ".join(sys.argv)
+                sys.stderr.write(json.dumps(error_msg))
+            if isinstance(e, PromptflowException):
+                print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+                exit(1)
+            else:
+                raise e
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 def get_secret_input(prompt, mask="*"):
@@ -449,10 +463,33 @@ def _output_result_list_with_format(result_list: List[Dict], output_format: CLIL
     elif output_format == CLIListOutputFormat.JSON:
         print(json.dumps(result_list, indent=4))
     else:
-        logger = logging.getLogger(LOGGER_NAME)
         warning_message = (
             f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
             "will print using 'json'."
         )
         logger.warning(warning_message)
         print(json.dumps(result_list, indent=4))
+
+
+def _get_cli_activity_name(cli, args):
+    activity_name = cli
+    if getattr(args, "action", None):
+        activity_name += f".{args.action}"
+    if getattr(args, "sub_action", None):
+        activity_name += f".{args.sub_action}"
+
+    return activity_name
+
+
+def _try_delete_existing_run_record(run_name: str):
+    from promptflow._sdk._errors import RunNotFoundError
+    from promptflow._sdk._orm import RunInfo as ORMRun
+
+    try:
+        ORMRun.delete(run_name)
+    except RunNotFoundError:
+        pass
+
+
+def _use_azure_cli_credential():
+    return os.environ.get(EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL, "false").lower() == "true"

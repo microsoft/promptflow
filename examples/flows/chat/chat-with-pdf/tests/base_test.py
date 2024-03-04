@@ -57,8 +57,8 @@ class BaseTest(unittest.TestCase):
         data=None,
         column_mapping=None,
         connections=None,
-        runtime=None,
         display_name="chat_run",
+        stream=True,
     ):
         if column_mapping is None:
             column_mapping = {
@@ -74,10 +74,9 @@ class BaseTest(unittest.TestCase):
             data=data,
             column_mapping=column_mapping,
             connections=connections,
-            runtime=runtime,
             display_name=display_name,
             tags={"unittest": "true"},
-            stream=True,
+            stream=stream,
         )
         self.all_runs_generated.append(run)
         self.check_run_basics(run, display_name)
@@ -89,7 +88,6 @@ class BaseTest(unittest.TestCase):
         base_run,
         column_mapping,
         connections=None,
-        runtime=None,
         display_name_postfix="",
     ):
         display_name = eval_flow_path.split("/")[-1] + display_name_postfix
@@ -98,7 +96,6 @@ class BaseTest(unittest.TestCase):
             run=base_run,
             column_mapping=column_mapping,
             connections=connections,
-            runtime=runtime,
             display_name=display_name,
             tags={"unittest": "true"},
             stream=True,
@@ -113,9 +110,7 @@ class BaseTest(unittest.TestCase):
             self.assertTrue(run.display_name.find(display_name) != -1)
         self.assertEqual(run.tags["unittest"], "true")
 
-    def run_eval_with_config(
-        self, config: dict, runtime: str = None, display_name: str = None
-    ):
+    def run_eval_with_config(self, config: dict, display_name: str = None):
         run = self.create_chat_run(
             column_mapping={
                 "question": "${data.question}",
@@ -123,7 +118,6 @@ class BaseTest(unittest.TestCase):
                 "chat_history": "${data.chat_history}",
                 "config": config,
             },
-            runtime=runtime,
             display_name=display_name,
         )
         self.pf.stream(run)  # wait for completion
@@ -137,7 +131,6 @@ class BaseTest(unittest.TestCase):
                 "answer": "${run.outputs.answer}",
                 "context": "${run.outputs.context}",
             },
-            runtime=runtime,
             display_name_postfix="_" + display_name,
         )
         self.pf.stream(eval_groundedness)  # wait for completion
@@ -158,7 +151,6 @@ class BaseTest(unittest.TestCase):
                 "answer": "${run.outputs.answer}",
                 "context": "${run.outputs.context}",
             },
-            runtime=runtime,
             display_name_postfix="_" + display_name,
         )
         self.pf.stream(eval_pi)  # wait for completion

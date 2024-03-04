@@ -5,10 +5,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
-from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
+from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
+from promptflow._sdk._errors import SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
@@ -19,9 +19,12 @@ from promptflow._sdk.entities._connection import (
     OpenAIConnection,
     QdrantConnection,
     SerpConnection,
+    ServerlessConnection,
     WeaviateConnection,
     _Connection,
 )
+from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -45,6 +48,22 @@ class TestConnection:
                 {
                     "module": "promptflow.connections",
                     "type": "azure_open_ai",
+                    "auth_mode": "key",
+                },
+            ),
+            (
+                "azure_openai_aad_connection.yaml",
+                AzureOpenAIConnection,
+                {
+                    "name": "my_azure_open_ai_connection",
+                    "api_type": "azure",
+                    "api_version": "2023-07-01-preview",
+                    "api_base": "aoai-api-endpoint",
+                    "auth_mode": "meid_token",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "azure_open_ai",
                 },
             ),
             (
@@ -61,13 +80,13 @@ class TestConnection:
                 },
             ),
             (
-                "openai_connection_api_base.yaml",
+                "openai_connection_base_url.yaml",
                 OpenAIConnection,
                 {
                     "name": "my_open_ai_connection",
                     "api_key": "<to-be-replaced>",
                     "organization": "org",
-                    "api_base": "custom_api_base",
+                    "base_url": "custom_base_url",
                 },
                 {
                     "module": "promptflow.connections",
@@ -169,13 +188,41 @@ class TestConnection:
                     "type": "weaviate",
                 },
             ),
+            (
+                "serverless_connection.yaml",
+                ServerlessConnection,
+                {
+                    "name": "my_serverless_connection",
+                    "api_key": "<to-be-replaced>",
+                    "api_base": "https://mock.api.base",
+                },
+                {
+                    "module": "promptflow.connections",
+                    "type": "serverless",
+                },
+            ),
         ],
     )
     def test_connection_load_dump(self, file_name, class_name, init_param, expected):
-        conn = _Connection._load(data=yaml.safe_load(open(CONNECTION_ROOT / file_name)))
+        conn = _Connection._load(data=load_yaml(CONNECTION_ROOT / file_name))
         expected = {**expected, **init_param}
         assert dict(conn._to_dict()) == expected
         assert class_name(**init_param)._to_dict() == expected
+
+    @pytest.mark.parametrize(
+        "file_name, error_cls, error_message",
+        [
+            (
+                "invalid/azure_openai_missing_key.yaml",
+                SDKError,
+                "'api_key' is required for key auth mode connection.",
+            )
+        ],
+    )
+    def test_connection_load_bad_case(self, file_name, error_cls, error_message):
+        with pytest.raises(error_cls) as e:
+            _Connection._load(data=load_yaml(CONNECTION_ROOT / file_name))
+        assert error_message in str(e.value)
 
     def test_connection_load_from_env(self):
         connection = _load_env_to_connection(source=CONNECTION_ROOT / ".env", params_override=[{"name": "env_conn"}])
@@ -236,6 +283,28 @@ secrets:
                 "api_key": "test_key",
                 "api_type": "azure",
                 "api_version": "2023-07-01-preview",
+                "auth_mode": ConnectionAuthMode.KEY,
+            },
+        }
+
+        # Assert strong type - AzureOpenAI - aad
+        connection = AzureOpenAIConnection(
+            name="test_connection_1",
+            type="AzureOpenAI",
+            auth_mode=ConnectionAuthMode.MEID_TOKEN,
+            api_base="test_base",
+            api_type="azure",
+            api_version="2023-07-01-preview",
+        )
+        assert connection._to_execution_connection_dict() == {
+            "module": "promptflow.connections",
+            "secret_keys": [],
+            "type": "AzureOpenAIConnection",
+            "value": {
+                "api_base": "test_base",
+                "api_type": "azure",
+                "api_version": "2023-07-01-preview",
+                "auth_mode": ConnectionAuthMode.MEID_TOKEN,
             },
         }
 
@@ -340,14 +409,14 @@ secrets:
 
         module_name = None
         with pytest.raises(
-            ValueError,
+            UserErrorException,
             match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
         ):
             connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
 
         custom_conn_type = None
         with pytest.raises(
-            ValueError,
+            UserErrorException,
             match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
         ):
             connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)

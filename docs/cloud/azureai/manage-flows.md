@@ -12,7 +12,7 @@ In general:
 - For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) and check `promptflow.azure.PFClient.flows` for more flow operations.
 
 :::{admonition} Prerequisites
-- Refer to the prerequisites in [Quick start](./quick-start.md#prerequisites).
+- Refer to the prerequisites in [Quick start](./quick-start/index.md#prerequisites).
 - Use the `az login` command in the command line to log in. This enables promptflow to access your credentials. 
 :::
 
@@ -28,7 +28,7 @@ Let's take a look at the following topics:
 :sync: CLI
 
 To set the target workspace, you can either specify it in the CLI command or set default value in the Azure CLI.
-You can refer to [Quick start](./quick-start.md#submit-a-run-to-workspace) for more information.
+You can refer to [Quick start](./quick-start/index.md#submit-a-run-to-workspace) for more information.
 
 To create a flow to Azure from local flow directory, you can use 
 
@@ -37,7 +37,7 @@ To create a flow to Azure from local flow directory, you can use
 pfazure flow create --flow <path-to-flow-folder> 
 
 # create the flow with metadata
-pfazure flow create --flow <path-to-flow-folder> --set display-name=<display-name> description=<description> tags.key1=value1
+pfazure flow create --flow <path-to-flow-folder> --set display_name=<display-name> description=<description> tags.key1=value1
 ```
 
 After the flow is created successfully, you can see the flow summary in the command line.

@@ -1,3 +1,10 @@
+import logging
+import multiprocessing
+import os
+import re
+import shutil
+import sys
+from pathlib import Path
 from types import GeneratorType
 
 import pytest
@@ -6,8 +13,10 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
+from promptflow.executor.flow_executor import execute_flow
+from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
+from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -20,7 +29,7 @@ class TestExecutor:
             inputs = self.get_bulk_inputs(flow_folder)
             return inputs[0]
         return {
-            "url": "https://www.apple.com/shop/buy-iphone/iphone-14",
+            "url": "https://www.microsoft.com/en-us/windows/",
             "text": "some_text",
         }
 
@@ -57,10 +66,12 @@ class TestExecutor:
             "connection_as_input",
             "async_tools",
             "async_tools_with_sync_tools",
+            "tool_with_assistant_definition",
         ],
     )
     def test_executor_exec_line(self, flow_folder, dev_connections):
         self.skip_serp(flow_folder, dev_connections)
+        os.chdir(get_flow_folder(flow_folder))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
         assert not executor._run_tracker._flow_runs, "Flow runs in run tracker should be empty."
@@ -68,12 +79,37 @@ class TestExecutor:
         assert isinstance(flow_result.output, dict)
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
-        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == node_count
+        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
+        assert (
+            isinstance(flow_result.run_info.api_calls[0]["children"], list)
+            and len(flow_result.run_info.api_calls[0]["children"]) == node_count
+        )
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
             assert node_run_info.node == node
             assert isinstance(node_run_info.api_calls, list)  # api calls is set
+
+    def test_long_running_log(self, dev_connections, capsys):
+        # TODO: investigate why flow_logger does not output to stdout in test case
+        from promptflow._utils.logger_utils import flow_logger
+
+        flow_logger.addHandler(logging.StreamHandler(sys.stdout))
+        os.environ["PF_TASK_PEEKING_INTERVAL"] = "1"
+
+        executor = FlowExecutor.create(get_yaml_file("async_tools"), dev_connections)
+        executor.exec_line(self.get_line_inputs())
+        captured = capsys.readouterr()
+        expected_long_running_str_1 = r".*.*Task async_passthrough has been running for 1 seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
+        assert re.match(
+            expected_long_running_str_1, captured.out, re.DOTALL
+        ), "flow_logger should contain long running async tool log"
+        expected_long_running_str_2 = r".*.*Task async_passthrough has been running for 2 seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
+        assert re.match(
+            expected_long_running_str_2, captured.out, re.DOTALL
+        ), "flow_logger should contain long running async tool log"
+        flow_logger.handlers.pop()
+        os.environ.pop("PF_TASK_PEEKING_INTERVAL")
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -106,6 +142,20 @@ class TestExecutor:
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
 
+    def test_executor_exec_node_with_llm_node(self, dev_connections):
+        # Run the test in a new process to ensure the openai api is injected correctly for the single node run
+        context = multiprocessing.get_context("spawn")
+        queue = context.Queue()
+        process = context.Process(
+            target=exec_node_within_process,
+            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True),
+        )
+        process.start()
+        process.join()
+
+        if not queue.empty():
+            raise queue.get()
+
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
@@ -127,7 +177,7 @@ class TestExecutor:
                 raise_ex=True,
             )
         assert isinstance(e.value.inner_exception, ConnectionNotFound)
-        assert "Connection 'dummy_connection' not found" in str(e.value)
+        assert "Connection of LLM node 'classify_with_llm' is not found." in str(e.value)
 
     @pytest.mark.parametrize(
         "flow_folder",
@@ -225,3 +275,64 @@ class TestExecutor:
         flow_result = executor.exec_line({"input": "World"})
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
+
+    @pytest.mark.parametrize(
+        "output_dir_name, intermediate_dir_name, run_aggregation, expected_node_counts",
+        [
+            ("output", "intermediate", True, 2),
+            ("output_1", "intermediate_1", False, 1),
+        ],
+    )
+    def test_execute_flow(
+        self, output_dir_name: str, intermediate_dir_name: str, run_aggregation: bool, expected_node_counts: int
+    ):
+        flow_folder = get_flow_folder("eval_flow_with_simple_image")
+        # prepare output folder
+        output_dir = flow_folder / output_dir_name
+        intermediate_dir = flow_folder / intermediate_dir_name
+        output_dir.mkdir(exist_ok=True)
+        intermediate_dir.mkdir(exist_ok=True)
+
+        storage = DefaultRunStorage(base_dir=flow_folder, sub_dir=Path(intermediate_dir_name))
+        line_result = execute_flow(
+            flow_file=get_yaml_file(flow_folder),
+            working_dir=flow_folder,
+            output_dir=Path(output_dir_name),
+            inputs={},
+            connections={},
+            run_aggregation=run_aggregation,
+            storage=storage,
+        )
+        assert line_result.run_info.status == Status.Completed
+        assert len(line_result.node_run_infos) == expected_node_counts
+        assert all(is_image_file(output_file) for output_file in output_dir.iterdir())
+        assert all(is_image_file(output_file) for output_file in intermediate_dir.iterdir())
+        # clean up output folder
+        shutil.rmtree(output_dir)
+        shutil.rmtree(intermediate_dir)
+
+
+def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
+    try:
+        result = FlowExecutor.load_and_exec_node(
+            flow_file=get_yaml_file(flow_file),
+            node_name=node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=dependency_nodes_outputs,
+            connections=connections,
+            raise_ex=raise_ex,
+        )
+        # Assert llm single node run contains openai traces
+        # And the traces contains system metrics
+        OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        assert len(result.api_calls) == 1
+        assert len(result.api_calls[0]["children"]) == 1
+        assert isinstance(result.api_calls[0]["children"][0]["system_metrics"], dict)
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert key in result.api_calls[0]["children"][0]["system_metrics"]
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert (
+                result.api_calls[0]["system_metrics"][key] == result.api_calls[0]["children"][0]["system_metrics"][key]
+            )
+    except Exception as ex:
+        queue.put(ex)

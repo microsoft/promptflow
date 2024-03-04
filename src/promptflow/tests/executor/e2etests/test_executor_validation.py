@@ -1,12 +1,10 @@
 import json
-import sys
 from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._core._errors import FlowOutputUnserializable
-from promptflow._core.tool_meta_generator import PythonParsingError
+from promptflow._core._errors import FlowOutputUnserializable, InvalidSource
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -20,7 +18,7 @@ from promptflow.executor._errors import (
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
-    InvalidSource,
+    InvalidConnectionType,
     NodeCircularDependency,
     NodeInputValidationError,
     NodeReferenceNotFound,
@@ -38,6 +36,16 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class, error_msg",
         [
+            (
+                "flow_llm_with_wrong_conn",
+                "flow.dag.yaml",
+                ResolveToolError,
+                InvalidConnectionType,
+                (
+                    "Tool load failed in 'wrong_llm': "
+                    "(InvalidConnectionType) Connection type CustomConnection is not supported for LLM."
+                ),
+            ),
             (
                 "nodes_names_duplicated",
                 "flow.dag.yaml",
@@ -144,7 +152,7 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class",
         [
-            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, PythonParsingError),
+            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, InvalidSource),
         ],
     )
     def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):
@@ -173,7 +181,6 @@ class TestValidation:
             ("tool_type_missing", ResolveToolError, NotImplementedError),
             ("wrong_module", FailedToImportModule, None),
             ("wrong_api", ResolveToolError, APINotFound),
-            ("wrong_provider", ResolveToolError, APINotFound),
         ],
     )
     def test_invalid_flow_dag(self, flow_folder, error_class, inner_class, dev_connections):
@@ -195,6 +202,22 @@ class TestValidation:
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         with pytest.raises(error_class):
             executor.exec_line(line_input)
+
+    def test_invalid_flow_run_inputs_should_not_saved_to_run_info(self, dev_connections):
+        flow_folder = "simple_flow_with_python_tool"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
+        invalid_input = {"num": "hello"}
+        result = executor.exec_line(invalid_input)
+        # For invalid inputs, we don't assigin them to run info.
+        assert result.run_info.inputs is None
+
+    def test_valid_flow_run_inpust_should_saved_to_run_info(self, dev_connections):
+        flow_folder = "simple_flow_with_python_tool"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
+        valid_input = {"num": 22}
+        result = executor.exec_line(valid_input)
+        # For valid inputs, we assigin them to run info.
+        assert result.run_info.inputs == valid_input
 
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_msg",
@@ -243,20 +266,10 @@ class TestValidation:
         output_dir = Path(mkdtemp())
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
-        if (
-            (sys.version_info.major == 3)
-            and (sys.version_info.minor >= 11)
-            and ((sys.platform == "linux") or (sys.platform == "darwin"))
-        ):
-            # Python >= 3.11 has a different error message on linux and macos
-            error_message_compare = error_message.replace("int", "ValueType.INT")
-            assert error_message_compare in str(
-                batch_result.line_results[0].run_info.error
-            ), f"Expected message {error_message_compare} but got {str(batch_result.line_results[0].run_info.error)}"
-        else:
-            assert error_message in str(
-                batch_results.error_summary.error_list[0].error
-            ), f"Expected message {error_message} but got {str(batch_results.error_summary.error_list[0].error)}"
+        assert error_message in str(
+            batch_results.error_summary.error_list[0].error
+        ), f"Expected message {error_message} but got {str(batch_results.error_summary.error_list[0].error)}"
+
         assert error_class in str(
             batch_results.error_summary.error_list[0].error
         ), f"Expected message {error_class} but got {str(batch_results.error_summary.error_list[0].error)}"

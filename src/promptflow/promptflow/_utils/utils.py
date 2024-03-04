@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import time
 import traceback
 from datetime import datetime
@@ -20,6 +21,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING
+from promptflow.contracts.multimedia import PFBytes
+from promptflow.contracts.types import AssistantDefinition
 
 T = TypeVar("T")
 
@@ -55,8 +58,10 @@ def is_json_serializable(value: Any) -> bool:
 
 
 def load_json(file_path: Union[str, Path]) -> dict:
-    with open(file_path, "r") as f:
-        return json.load(f)
+    if os.path.getsize(file_path) > 0:
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
@@ -64,6 +69,14 @@ def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
         for data in list_data:
             json.dump(data, jsonl_file, ensure_ascii=False)
             jsonl_file.write("\n")
+
+
+def load_list_from_jsonl(file: Union[str, Path]):
+    content = []
+    with open(file, "r", encoding=DEFAULT_ENCODING) as fin:
+        for line in fin:
+            content.append(json.loads(line))
+    return content
 
 
 def transpose(values: List[Dict[str, Any]], keys: Optional[List] = None) -> Dict[str, List]:
@@ -140,13 +153,24 @@ def log_progress(
     logger: logging.Logger,
     count: int,
     total_count: int,
-    formatter="{count} / {total_count} finished.",
+    formatter="Finished {count} / {total_count} lines.",
+    *,
+    last_log_count: Optional[int] = None,
 ):
     # Calculate log_interval to determine when to log progress.
     # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
     log_interval = min(10, max(int(total_count / 10), 1))
-    if count > 0 and (count % log_interval == 0 or count == total_count):
-        average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
+
+    # If last_log_count is not None, determine whether to log based on whether the difference
+    # between the current count and the previous count exceeds log_interval.
+    # Otherwise, decide based on whether the current count is evenly divisible by log_interval.
+    if last_log_count:
+        log_flag = (count - last_log_count) >= log_interval
+    else:
+        log_flag = count % log_interval == 0
+
+    if count > 0 and (log_flag or count == total_count):
+        average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
         logger.info(formatter.format(count=count, total_count=total_count))
         logger.info(
@@ -156,16 +180,16 @@ def log_progress(
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
-    from promptflow._core import tool
-    tool_file = tool.__file__
-    core_folder = os.path.dirname(tool_file)
+    from promptflow import _core
+
+    core_folder = os.path.dirname(_core.__file__)
 
     for i in range(len(frame_summaries) - 1):
         cur_file = frame_summaries[i].filename
         next_file = frame_summaries[i + 1].filename
-        # If the current frame is in tool.py and the next frame is not in _core folder
+        # If the current frame is in _core folder and the next frame is not in _core folder
         # then we can say that the next frame is in user code.
-        if cur_file == tool_file and not next_file.startswith(core_folder):
+        if cur_file.startswith(core_folder) and not next_file.startswith(core_folder):
             return frame_summaries[i + 1 :]
     return frame_summaries
 
@@ -235,3 +259,110 @@ def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path
         base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
         path = base_dir / sub_dir
     return path
+
+
+def parse_ua_to_dict(ua):
+    """Parse string user agent to dict with name as ua name and value as ua version."""
+    ua_dict = {}
+    ua_list = ua.split(" ")
+    for item in ua_list:
+        if item:
+            key, value = item.split("/")
+            ua_dict[key] = value
+    return ua_dict
+
+
+# TODO: Add "conditions" parameter to pass in a list of lambda functions
+# to check if the environment variable is valid.
+def get_int_env_var(env_var_name, default_value=None):
+    """
+    The function `get_int_env_var` retrieves an integer environment variable value, with an optional
+    default value if the variable is not set or cannot be converted to an integer.
+
+    :param env_var_name: The name of the environment variable you want to retrieve the value of
+    :param default_value: The default value is the value that will be returned if the environment
+    variable is not found or if it cannot be converted to an integer
+    :return: an integer value.
+    """
+    try:
+        return int(os.environ.get(env_var_name, default_value))
+    except Exception:
+        return default_value
+
+
+def prompt_y_n(msg, default=None):
+    if default not in [None, "y", "n"]:
+        raise ValueError("Valid values for default are 'y', 'n' or None")
+    y = "Y" if default == "y" else "y"
+    n = "N" if default == "n" else "n"
+    while True:
+        ans = prompt_input("{} ({}/{}): ".format(msg, y, n))
+        if ans.lower() == n.lower():
+            return False
+        if ans.lower() == y.lower():
+            return True
+        if default and not ans:
+            return default == y.lower()
+
+
+def prompt_input(msg):
+    return input("\n===> " + msg)
+
+
+def _normalize_identifier_name(name):
+    normalized_name = name.lower()
+    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
+    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
+    if re.match(r"\d", normalized_name):
+        normalized_name = "n" + normalized_name  # No leading digits
+    return normalized_name
+
+
+def _sanitize_python_variable_name(name: str):
+    return _normalize_identifier_name(name).replace(" ", "_")
+
+
+def default_json_encoder(obj):
+    if isinstance(obj, PFBytes):
+        return str(obj)
+    if isinstance(obj, AssistantDefinition):
+        return obj.serialize()
+    else:
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _match_reference(env_val: str):
+    env_val = env_val.strip()
+    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
+    if not m:
+        return None, None
+    name, key = m.groups()
+    return name, key
+
+
+def copy_file_except(src_dir, dst_dir, exclude_file):
+    """
+    Copy all files from src_dir to dst_dir recursively, excluding a specific file
+    directly under the root of src_dir.
+
+    :param src_dir: Source directory path
+    :type src_dir: str
+    :param dst_dir: Destination directory path
+    :type dst_dir: str
+    :param exclude_file: Name of the file to exclude from copying
+    :type exclude_file: str
+    """
+    os.makedirs(dst_dir, exist_ok=True)
+
+    for root, dirs, files in os.walk(src_dir):
+        rel_path = os.path.relpath(root, src_dir)
+        current_dst_dir = os.path.join(dst_dir, rel_path)
+
+        os.makedirs(current_dst_dir, exist_ok=True)
+
+        for file in files:
+            if rel_path == "." and file == exclude_file:
+                continue  # Skip the excluded file
+            src_file_path = os.path.join(root, file)
+            dst_file_path = os.path.join(current_dst_dir, file)
+            shutil.copy2(src_file_path, dst_file_path)

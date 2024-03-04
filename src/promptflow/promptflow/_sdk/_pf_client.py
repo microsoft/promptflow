@@ -1,25 +1,27 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 import os
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
-from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
-from ._logger_factory import LoggerFactory
+from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import setup_user_agent_to_operation_context
+from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
+from .entities._eager_flow import EagerFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
+from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
-from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
 from .operations._tool_operations import ToolOperations
+from .operations._trace_operations import TraceOperations
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 def _create_run(run: Run, **kwargs):
@@ -31,18 +33,27 @@ class PFClient:
     """A client class to interact with prompt flow entities."""
 
     def __init__(self, **kwargs):
-        self._runs = RunOperations()
-        self._connection_provider = None
+        logger.debug("PFClient init with kwargs: %s", kwargs)
+        self._runs = RunOperations(self)
+        self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
+        # The credential is used as an option to override
+        # DefaultAzureCredential when using workspace connection provider
+        self._credential = kwargs.get("credential", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations(client=self)
         self._tools = ToolOperations()
+        # add user agent from kwargs if any
+        if isinstance(kwargs.get("user_agent"), str):
+            ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
+        self._experiments = ExperimentOperations(self)
+        self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -53,6 +64,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -101,16 +113,48 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+        if not flow:
+            raise ValueError("'flow' is required to create a run.")
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-
+        # load flow object for validation and early failure
+        flow_obj = load_flow(source=flow)
+        # validate param conflicts
+        if isinstance(flow_obj, EagerFlow):
+            if variant or connections:
+                logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                variant, connections = None, None
         run = Run(
             name=name,
             display_name=display_name,
@@ -182,10 +226,16 @@ class PFClient:
         """Run operations that can manage runs."""
         return self._runs
 
+    @property
+    def tools(self) -> ToolOperations:
+        """Tool operations that can manage tools."""
+        return self._tools
+
     def _ensure_connection_provider(self) -> str:
         if not self._connection_provider:
             # Get a copy with config override instead of the config instance
             self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+            logger.debug("PFClient connection provider: %s", self._connection_provider)
         return self._connection_provider
 
     @property
@@ -193,14 +243,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            if self._connection_provider == ConnectionProvider.LOCAL.value:
-                logger.debug("Using local connection operations.")
-                self._connections = ConnectionOperations()
-            elif self._connection_provider.startswith(ConnectionProvider.AZUREML.value):
-                logger.debug("Using local azure connection operations.")
-                self._connections = LocalAzureConnectionOperations(self._connection_provider)
-            else:
-                raise ValueError(f"Unsupported connection provider: {self._connection_provider}")
+            self._connections = get_connection_operation(self._connection_provider, self._credential)
         return self._connections
 
     @property

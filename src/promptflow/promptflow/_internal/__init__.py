@@ -37,7 +37,6 @@ from promptflow._core.tools_manager import (
     builtins,
     collect_package_tools,
     gen_dynamic_list,
-    gen_tool_by_source,
     register_apis,
     register_builtins,
     register_connections,
@@ -72,6 +71,7 @@ from promptflow._utils.exception_utils import (
 )
 from promptflow._utils.execution_utils import handle_line_failures
 from promptflow._utils.feature_utils import Feature, FeatureState, get_feature_list
+from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.logger_utils import (
     DATETIME_FORMAT,
     LOG_FORMAT,
@@ -85,11 +85,18 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
+from promptflow._utils.multimedia_data_converter import (
+    AbstractMultimediaInfoConverter,
+    MultimediaConverter,
+    MultimediaInfo,
+    ResourceType,
+)
 from promptflow._utils.multimedia_utils import (
     _create_image_from_file,
     convert_multimedia_data_to_base64,
     is_multimedia_dict,
     persist_multimedia_data,
+    resolve_multimedia_data_recursively,
 )
 from promptflow._utils.utils import (
     AttrDict,
@@ -101,15 +108,7 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._version import VERSION
-from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
+from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
-from promptflow.storage._cache_storage import LocalCacheStorage
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.storage._sqlite_client import (
-    INDEX,
-    PRIMARY_KEY,
-    DuplicatedPrimaryKeyException,
-    NotFoundException,
-    SqliteClient,
-)

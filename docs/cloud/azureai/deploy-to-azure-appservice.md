@@ -19,7 +19,7 @@ Note that all dependent connections must be created before building as docker.
 The two scripts will do the following things:
 1. Create a resource group if not exists.
 2. Build and push the image to docker registry.
-3. Create an app service plan with the give sku.
+3. Create an app service plan with the given sku.
 4. Create an app with specified name, set the deployment container image to the pushed docker image.
 5. Set up the environment variables for the app.
 
@@ -27,14 +27,14 @@ The two scripts will do the following things:
 :::{tab-item} Bash
 Example command to use bash script:
 ```shell
-bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registry> -g <resource_group>
+bash deploy.sh --path dist -i <image_tag> --name my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 See the full parameters by `bash deploy.sh -h`.
 :::
 :::{tab-item} PowerShell
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
+.\deploy.ps1 -Path dist -i <image_tag> -n my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 See the full parameters by `.\deploy.ps1 -h`.
 :::
@@ -74,8 +74,8 @@ Browse the app at Overview and see the test page:
 
 Tips:
 - Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream).
-- Reach advanced deployment tools at https://$name.scm.azurewebsites.net/.
-- Reach more details about app service at https://learn.microsoft.com/azure/app-service/.
+- Reach advanced deployment tools at (Development Tools>Advanced Tools).
+- Reach more details about app service at [Azure App Service](https://learn.microsoft.com/azure/app-service/).
 
 ## Next steps
 - Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/azure-app-service).

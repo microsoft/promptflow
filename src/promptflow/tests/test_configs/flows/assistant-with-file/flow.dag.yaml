@@ -1,0 +1,51 @@
+version: 2
+inputs:
+  assistant_input:
+    type: list
+    default:
+      - type: text
+        text:
+          The provided file contains end-of-day (EOD) stock prices for companies A
+          and B across various dates in March. However, it does not include the
+          EOD stock prices for Company C.
+      - type: file_path
+        file_path:
+          path: ./stock_price.csv
+      - type: text
+        text:
+          Please draw a line chart with the stock price of the company A, B and C
+          and return a CVS file with the data.
+  assistant_id:
+    type: string
+    default: ""
+  thread_id:
+    type: string
+    default: ""
+outputs:
+  assistant_output:
+    type: string
+    reference: ${add_message_and_run.output}
+  thread_id:
+    type: string
+    reference: ${get_or_create_thread.output}
+nodes:
+  - name: get_or_create_thread
+    type: python
+    source:
+      type: code
+      path: get_or_create_thread.py
+    inputs:
+      conn: aoai_assistant_connection
+      thread_id: ${inputs.thread_id}
+  - name: add_message_and_run
+    type: python
+    source:
+      type: code
+      path: add_message_and_run.py
+    inputs:
+      conn: aoai_assistant_connection
+      message: ${inputs.assistant_input}
+      assistant_id: ${inputs.assistant_id}
+      thread_id: ${get_or_create_thread.output}
+      assistant_definition: assistant_definition.yaml
+      download_images: true

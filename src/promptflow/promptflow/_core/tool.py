@@ -2,14 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import functools
-import importlib
 import inspect
 import logging
 from abc import ABC
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Union, get_args, get_origin
+from typing import Callable, Dict, List, Optional, Union
+
+from promptflow._core.tracer import _traced
+from promptflow.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -71,46 +72,12 @@ def tool(
     def tool_decorator(func: Callable) -> Callable:
         from promptflow.exceptions import UserErrorException
 
-        if inspect.iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def decorated_tool(*args, **kwargs):
-                from .tracer import Tracer
-
-                if Tracer.active_instance() is None:
-                    return await func(*args, **kwargs)
-                try:
-                    Tracer.push_tool(func, args, kwargs)
-                    output = await func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-            new_f = decorated_tool
-        else:
-
-            @functools.wraps(func)
-            def decorated_tool(*args, **kwargs):
-                from .tracer import Tracer
-
-                if Tracer.active_instance() is None:
-                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                try:
-                    Tracer.push_tool(func, args, kwargs)
-                    output = func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-            new_f = decorated_tool
-
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
-        new_f.__original_function = func
-        func.__wrapped_function = new_f
+        # Calls to tool functions should be traced automatically.
+        new_f = _traced(func, trace_type=TraceType.TOOL)
+
         new_f.__tool = None  # This will be set when generating the tool definition.
         new_f.__name = name
         new_f.__description = description
@@ -176,7 +143,6 @@ class ToolProvider(ABC):
 
 @dataclass
 class DynamicList:
-
     function: InitVar[Union[str, Callable]]
     """The dynamic list function."""
 
@@ -187,44 +153,82 @@ class DynamicList:
     func_kwargs: List = field(init=False)
 
     def __post_init__(self, function, input_mapping):
-        from promptflow.contracts.tool import ValueType
-        from promptflow.exceptions import UserErrorException
+        from promptflow._constants import SKIP_FUNC_PARAMS
+        from promptflow._utils.tool_utils import _get_function_path, function_to_interface
 
-        # Validate function exist
-        if isinstance(function, str):
-            func = importlib.import_module(tool["module"])
-            func_path = function
-        elif isinstance(function, Callable):
-            func = function
-            func_path = f"{function.__module__}.{function.__name__}"
-        else:
-            raise UserErrorException(
-                "Function has invalid type, please provide callable or function name for function."
-            )
-        self.func_path = func_path
-        self._func_obj = func
+        self._func_obj, self.func_path = _get_function_path(function)
         self._input_mapping = input_mapping or {}
+        dynamic_list_func_inputs, _, _, _ = function_to_interface(
+            self._func_obj, gen_custom_type_conn=True, skip_prompt_template=True
+        )
 
         # Get function input info
         self.func_kwargs = []
         inputs = inspect.signature(self._func_obj).parameters
-        for name, value in inputs.items():
-            if value.kind != value.VAR_KEYWORD and value.kind != value.VAR_POSITIONAL:
+        for name, value in dynamic_list_func_inputs.items():
+            if name not in SKIP_FUNC_PARAMS:
                 input_info = {"name": name}
-                if value.annotation is not inspect.Parameter.empty:
-                    if get_origin(value.annotation):
-                        input_info["type"] = [annotation.__name__ for annotation in get_args(value.annotation)]
-                    else:
-                        input_info["type"] = [ValueType.from_type(value.annotation)]
+                input_info.update(asdict(value, dict_factory=lambda x: {k: v for (k, v) in x if v}))
                 if name in self._input_mapping:
                     input_info["reference"] = f"${{inputs.{self._input_mapping[name]}}}"
-                input_info["optional"] = value.default is not inspect.Parameter.empty
+                input_info["optional"] = inputs[name].default is not inspect.Parameter.empty
                 if input_info["optional"]:
-                    input_info["default"] = value.default
+                    input_info["default"] = inputs[name].default
                 self.func_kwargs.append(input_info)
 
 
 @dataclass
+class GeneratedBy:
+    """Settings of the generated by"""
+
+    function: InitVar[Union[str, Callable]]
+    """The generated by function."""
+
+    reverse_function: InitVar[Union[str, Callable]]
+    """The reverse generated by function."""
+
+    input_settings: InitVar[Dict[str, object]] = None
+    """The input settings of generated by function."""
+
+    func_path: str = field(init=False)
+    func_kwargs: List = field(init=False)
+    reverse_func_path: str = field(init=False)
+
+    def __post_init__(self, function, reverse_function, input_settings):
+        from promptflow._constants import SKIP_FUNC_PARAMS, UIONLY_HIDDEN
+        from promptflow._utils.tool_utils import _get_function_path, function_to_interface
+
+        self._func_obj, self.func_path = _get_function_path(function=function)
+        self._reverse_func_obj, self.reverse_func_path = _get_function_path(function=reverse_function)
+        self._input_settings = {}
+
+        generated_func_inputs, _, _, _ = function_to_interface(
+            self._func_obj, gen_custom_type_conn=True, skip_prompt_template=True
+        )
+
+        # Get function input info
+        self.func_kwargs = []
+        func_inputs = inspect.signature(self._func_obj).parameters
+        for name, value in generated_func_inputs.items():
+            if name not in SKIP_FUNC_PARAMS:
+                # Update kwargs in generated_by settings
+                input_info = {"name": name}
+                input_info.update(asdict(value, dict_factory=lambda x: {k: v for (k, v) in x if v}))
+                input_info["reference"] = f"${{inputs.{name}}}"
+                input_info["optional"] = func_inputs[name].default is not inspect.Parameter.empty
+                self.func_kwargs.append(input_info)
+
+                # Generated generated_by input settings in tool func
+                if name in input_settings:
+                    self._input_settings[name] = asdict(
+                        input_settings[name], dict_factory=lambda x: {k: v for (k, v) in x if v}
+                    )
+                    if "type" in input_info:
+                        self._input_settings[name]["type"] = input_info["type"]
+                    self._input_settings[name]["input_type"] = UIONLY_HIDDEN
+
+
+@dataclass(init=False)
 class InputSetting:
     """Settings of the tool input"""
 
@@ -242,3 +246,15 @@ class InputSetting:
 
     dynamic_list: DynamicList = None
     """Settings of dynamic list function."""
+
+    generated_by: GeneratedBy = None
+    """Settings of generated by function."""
+
+    def __init__(self, **kwargs):
+        self.is_multi_select = kwargs.pop("is_multi_select", None)
+        self.allow_manual_entry = kwargs.pop("allow_manual_entry", None)
+        self.enabled_by = kwargs.pop("enabled_by", None)
+        self.enabled_by_value = kwargs.pop("enabled_by_value", None)
+        self.dynamic_list = kwargs.pop("dynamic_list", None)
+        self.generated_by = kwargs.pop("generated_by", None)
+        self._kwargs = kwargs

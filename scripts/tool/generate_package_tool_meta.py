@@ -5,7 +5,7 @@ import json
 import os
 import sys
 
-import yaml
+from ruamel.yaml import YAML
 
 sys.path.append("src/promptflow-tools")
 sys.path.append(os.getcwd())
@@ -106,6 +106,9 @@ if __name__ == "__main__":
             tags=args.tags)
     # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
     tools_dict = json.loads(json.dumps(tools_dict))
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.indent(mapping=2, sequence=4, offset=2)
     with open(args.output, "w") as f:
-        yaml.safe_dump(tools_dict, f, indent=2)
+        yaml.dump(tools_dict, f)
     print(f"Tools meta generated to '{args.output}'.")

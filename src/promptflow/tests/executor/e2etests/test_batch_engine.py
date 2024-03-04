@@ -1,9 +1,14 @@
+import asyncio
+import multiprocessing
+import os
+import traceback
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._errors import EmptyInputsData
@@ -25,6 +30,52 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+
+TEST_ROOT = Path(__file__).parent.parent.parent
+RUNS_ROOT = TEST_ROOT / "test_configs/runs"
+
+
+async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
+    batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
+    await asyncio.sleep(1)
+    return batch_result
+
+
+def run_batch_with_start_method(
+    multiprocessing_start_method,
+    flow_folder,
+    inputs_mapping,
+    dev_connections,
+    exception_queue,
+):
+    try:
+        _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections)
+    except BaseException as e:
+        msg = f"Hit exception: {e}\nStack trace: {traceback.format_exc()}"
+        print(msg)
+        exception_queue.put(Exception(msg))
+        raise
+
+
+def _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
+    batch_result, output_dir = submit_batch_run(
+        flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+    )
+
+    assert isinstance(batch_result, BatchResult)
+    nlines = get_batch_inputs_line(flow_folder)
+    assert batch_result.total_lines == nlines
+    assert batch_result.completed_lines == nlines
+    assert batch_result.start_time < batch_result.end_time
+    assert batch_result.system_metrics.duration > 0
+
+    outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+    assert len(outputs) == nlines
+    for i, output in enumerate(outputs):
+        assert isinstance(output, dict)
+        assert "line_number" in output, f"line_number is not in {i}th output {output}"
+        assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
 
 def submit_batch_run(
@@ -52,6 +103,14 @@ def submit_batch_run(
 def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
     inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
     return len(inputs)
+
+
+class MockRun(object):
+    def __init__(self, name: str, output_path: Path):
+        self.name = name
+        self._output_path = output_path
+        self.data = None
+        self._run_source = None
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -111,6 +170,76 @@ class TestBatch:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+        if "spawn" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: spawn")
+        exception_queue = multiprocessing.Queue()
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method,
+            args=("spawn", flow_folder, inputs_mapping, dev_connections, exception_queue),
+        )
+        p.start()
+        p.join()
+        if p.exitcode != 0:
+            ex = exception_queue.get(timeout=1)
+            raise ex
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+        if "forkserver" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: forkserver")
+        exception_queue = multiprocessing.Queue()
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method,
+            args=("forkserver", flow_folder, inputs_mapping, dev_connections, exception_queue),
+        )
+        p.start()
+        p.join()
+        if p.exitcode != 0:
+            ex = exception_queue.get(timeout=1)
+            raise ex
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
@@ -241,3 +370,98 @@ class TestBatch:
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
+
+    def test_batch_run_in_existing_loop(self, dev_connections):
+        flow_folder = "prompt_tools"
+        inputs_mapping = {"text": "${data.text}"}
+        batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines
+
+    def test_batch_run_with_aggregation_failure(self, dev_connections):
+        flow_folder = "aggregation_node_failed"
+        inputs_mapping = {"groundtruth": "${data.groundtruth}", "prediction": "${data.prediction}"}
+        batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines
+        assert batch_result.node_status == get_flow_expected_status_summary(flow_folder)
+        # assert aggregation node error summary
+        assert batch_result.failed_lines == 0
+        aggre_node_error = batch_result.error_summary.aggr_error_dict["aggregate"]
+        assert aggre_node_error["message"] == "Execution failure in 'aggregate': (ZeroDivisionError) division by zero"
+        assert aggre_node_error["code"] == "UserError"
+        assert aggre_node_error["innerError"] == {"code": "ToolExecutionError", "innerError": None}
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name",
+        [("web_classification", "web_classification_default_20240207_165606_643000")],
+    )
+    def test_batch_resume(self, flow_folder, resume_from_run_name, dev_connections):
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=mem_run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="data.jsonl")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"url": "${data.url}"}
+
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name",
+        [("classification_accuracy_evaluation", "classification_accuracy_evaluation_default_20240208_152402_694000")],
+    )
+    def test_batch_resume_aggregation(self, flow_folder, resume_from_run_name, dev_connections):
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=mem_run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {
+            "variant_id": "${data.variant_id}",
+            "groundtruth": "${data.groundtruth}",
+            "prediction": "${data.prediction}",
+        }
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
+        assert resume_run_batch_results.metrics == {"accuracy": 0.67}

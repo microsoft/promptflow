@@ -13,14 +13,15 @@ from promptflow._core.tool_meta_generator import (
     NoToolDefined,
     PythonLoadError,
     PythonParsingError,
-    ReservedVariableCannotBeUsed,
+    generate_flow_meta_dict_by_file,
     generate_prompt_meta,
     generate_python_meta,
     generate_tool_meta_dict_by_file,
 )
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ExceptionPresenter
 
-from ...utils import FLOW_ROOT, load_json
+from ...utils import EAGER_FLOW_ROOT, FLOW_ROOT, load_json
 
 TEST_ROOT = Path(__file__).parent.parent.parent.parent
 TOOLS_ROOT = TEST_ROOT / "test_configs/wrong_tools"
@@ -33,6 +34,14 @@ def cd_and_run(working_dir, source_path, tool_type):
         return generate_tool_meta_dict_by_file(source_path, tool_type)
     except Exception as e:
         return f"({e.__class__.__name__}) {e}"
+
+
+def cd_and_run_generate_flow_meta(working_dir, source_path, entry, source=None):
+    with _change_working_dir(working_dir):
+        try:
+            return generate_flow_meta_dict_by_file(source_path, entry, source)
+        except Exception as e:
+            return f"({e.__class__.__name__}) {e}"
 
 
 def cd_and_run_with_read_text_error(working_dir, source_path, tool_type):
@@ -89,6 +98,20 @@ class TestToolMetaUtils:
         assert meta_dict == expected_dict
 
     @pytest.mark.parametrize(
+        "flow_dir, entry_path, entry",
+        [
+            ("dummy_flow_with_trace", "flow_with_trace.py", "flow_with_trace:my_flow"),
+        ]
+    )
+    def test_generate_flow_meta(self, flow_dir, entry_path, entry):
+        wd = str((EAGER_FLOW_ROOT / flow_dir).resolve())
+        meta_dict = cd_and_run_generate_flow_meta(wd, entry_path, entry, source=entry_path)
+        assert isinstance(meta_dict, dict), "Call cd_and_run_generate_flow_meta failed:\n" + meta_dict
+        target_file = (Path(wd) / entry_path).with_suffix(".meta.json")
+        expected_dict = load_json(target_file)
+        assert meta_dict == expected_dict
+
+    @pytest.mark.parametrize(
         "flow_dir, tool_path, tool_type, func, msg_pattern",
         [
             pytest.param(
@@ -124,7 +147,7 @@ class TestToolMetaUtils:
                 "python",
                 cd_and_run,
                 r"\(MetaFileNotFound\) Generate tool meta failed for python tool. "
-                r"Meta file '.*aaa.py' can not be found.",
+                r"Meta file 'aaa.py' can not be found.",
                 id="MetaFileNotFound",
             ),
             pytest.param(
@@ -133,7 +156,7 @@ class TestToolMetaUtils:
                 "python",
                 cd_and_run_with_read_text_error,
                 r"\(MetaFileReadError\) Generate tool meta failed for python tool. "
-                r"Read meta file '.*divide_num.py' failed: \(Exception\) Mock read text error.",
+                r"Read meta file 'divide_num.py' failed: \(Exception\) Mock read text error.",
                 id="MetaFileReadError",
             ),
             pytest.param(
@@ -203,24 +226,17 @@ class TestToolMetaUtils:
             pytest.param(
                 "{% zzz",
                 JinjaParsingError,
-                "Generate tool meta failed for llm tool. Jinja parsing failed: "
+                "Generate tool meta failed for llm tool. Jinja parsing failed at line 1: "
                 "(TemplateSyntaxError) Encountered unknown tag 'zzz'.",
                 id="JinjaParsingError_Code",
             ),
             pytest.param(
                 "no_end.jinja2",
                 JinjaParsingError,
-                "Generate tool meta failed for llm tool. Jinja parsing failed: "
+                "Generate tool meta failed for llm tool. Jinja parsing failed at line 2: "
                 "(TemplateSyntaxError) Unexpected end of template. Jinja was looking for the following tags: "
                 "'endfor' or 'else'. The innermost block that needs to be closed is 'for'.",
                 id="JinjaParsingError_File",
-            ),
-            pytest.param(
-                "{{max_tokens}}",
-                ReservedVariableCannotBeUsed,
-                "Generate tool meta failed for llm tool. Jinja parsing failed: "
-                "Variable name 'max_tokens' is a reserved name by llm tools, please change to another name.",
-                id="ReservedVariableCannotBeUsed",
             ),
         ],
     )
@@ -240,24 +256,17 @@ class TestToolMetaUtils:
             pytest.param(
                 "{% zzz",
                 JinjaParsingError,
-                "Generate tool meta failed for prompt tool. Jinja parsing failed: "
+                "Generate tool meta failed for prompt tool. Jinja parsing failed at line 1: "
                 "(TemplateSyntaxError) Encountered unknown tag 'zzz'.",
                 id="JinjaParsingError_Code",
             ),
             pytest.param(
                 "no_end.jinja2",
                 JinjaParsingError,
-                "Generate tool meta failed for prompt tool. Jinja parsing failed: "
+                "Generate tool meta failed for prompt tool. Jinja parsing failed at line 2: "
                 "(TemplateSyntaxError) Unexpected end of template. Jinja was looking for the following tags: "
                 "'endfor' or 'else'. The innermost block that needs to be closed is 'for'.",
                 id="JinjaParsingError_File",
-            ),
-            pytest.param(
-                "{{template}}",  # Note that only template is reserved, while llm tool has more reserved variables.
-                ReservedVariableCannotBeUsed,
-                "Generate tool meta failed for prompt tool. Jinja parsing failed: "
-                "Variable name 'template' is a reserved name by prompt tools, please change to another name.",
-                id="ReservedVariableCannotBeUsed",
             ),
         ],
     )

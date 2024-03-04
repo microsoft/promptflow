@@ -1,0 +1,29 @@
+name: 'Close stale issues and pull requests'
+on:
+  schedule:
+    - cron: '30 21 * * *'  # 5:30 Beijing Time (GMT+8)
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v8
+        with:
+          operations-per-run: 256
+          exempt-issue-labels: 'long-term,feature'  # syntax: <label1>,<label2>
+          exempt-pr-labels: 'long-term'
+          # stale issue/pull request
+          stale-issue-message: "Hi, we're sending this friendly reminder because we haven't heard back from you in 30 days. We need more information about this issue to help address it. Please be sure to give us your input. If we don't hear back from you within 7 days of this comment, the issue will be automatically closed. Thank you!"
+          stale-issue-label: 'no-recent-activity'
+          stale-pr-message: "Hi, thank you for your interest in helping to improve the prompt flow experience and for your contribution. We've noticed that there hasn't been recent engagement on this pull request. If this is still an active work stream, please let us know by pushing some changes or leaving a comment."
+          stale-pr-label: 'no-recent-activity'
+          days-before-issue-stale: 30
+          days-before-pr-stale: 14
+          # close issue/pull request
+          days-before-issue-close: 7
+          days-before-pr-close: 7
+          close-pr-message: "Hi, thank you for your contribution. Since there has not been recent engagement, we are going to close this out. Feel free to reopen if you'd like to continue working on these changes. Please be sure to remove the `no-recent-activity` label; otherwise, this is likely to be closed again with the next cleanup pass."

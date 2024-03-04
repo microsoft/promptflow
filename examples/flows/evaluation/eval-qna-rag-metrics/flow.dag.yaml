@@ -1,0 +1,536 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  metrics:
+    type: string
+    default: gpt_groundedness,gpt_relevance,gpt_retrieval_score
+    is_chat_input: false
+  answer:
+    type: string
+    default: Of the tents mentioned in the retrieved documents, the Alpine Explorer
+      Tent has the highest waterproof rating of 3000mm for its rainfly.
+    is_chat_input: false
+  question:
+    type: string
+    default: Which tent is the most waterproof?
+    is_chat_input: false
+  documents:
+    type: string
+    default: "{\"documents\"： [{\"content\":\"<h1
+      id=\\\"information-about-product-item_number-1\\\">Information about
+      product item_number: 1</h1>\\n<p>TrailMaster X4 Tent, price
+      $250,</p>\\n<h2 id=\\\"brand\\\">Brand</h2>\\n<p>OutdoorLiving</p>\\n<h2
+      id=\\\"category\\\">Category</h2>\\n<p>Tents</p>\\n<h2
+      id=\\\"features\\\">Features</h2>\\n<ul>\\n<li>Polyester material for
+      durability</li>\\n<li>Spacious interior to accommodate multiple
+      people</li>\\n<li>Easy setup with included
+      instructions</li>\\n<li>Water-resistant construction to withstand light
+      rain</li>\\n<li>Mesh panels for ventilation and insect
+      protection</li>\\n<li>Rainfly included for added weather
+      protection</li>\\n<li>Multiple doors for convenient entry and
+      exit</li>\\n<li>Interior pockets for organizing small
+      items</li>\\n<li>Reflective guy lines for improved visibility at
+      night</li>\\n<li>Freestanding design for easy setup and
+      relocation</li>\\n<li>Carry bag included for convenient storage and
+      transportation</li>\\n</ul>\\n<h2 id=\\\"technical-specs\\\">Technical
+      Specs</h2>\\n<p><strong>Best Use</strong>: Camping<br
+      />\\n<strong>Capacity</strong>: 4-person<br />\\n<strong>Season
+      Rating</strong>: 3-season<br />\\n<strong>Setup</strong>: Freestanding<br
+      />\\n<strong>Material</strong>: Polyester<br
+      />\\n<strong>Waterproof</strong>: Yes<br />\\n<strong>Floor Area</strong>:
+      80 square feet<br />\\n<strong>Peak Height</strong>: 6 feet<br
+      />\\n<strong>Number of Doors</strong>: 2<br />\\n<strong>Color</strong>:
+      Green<br />\\n<strong>Rainfly</strong>: Included<br />\\n<strong>Rainfly
+      Waterproof Rating</strong>: 2000mm<br />\\n<strong>Tent Poles</strong>:
+      Aluminum<br />\\n<strong>Pole Diameter</strong>: 9mm<br
+      />\\n<strong>Ventilation</strong>: Mesh panels and adjustable vents<br
+      />\\n<strong>Interior Pockets</strong>: Yes (4 pockets)<br
+      />\\n<strong>Gear Loft</strong>: Included<br
+      />\\n<strong>Footprint</strong>: Sold separately<br />\\n<strong>Guy
+      Lines</strong>: Reflective<br />\\n<strong>Stakes</strong>: Aluminum<br
+      />\\n<strong>Carry Bag</strong>: Included<br
+      />\\n<strong>Dimensions</strong>: 10ft x 8ft x 6ft (length x width x peak
+      height)<br />\\n<strong>Packed Size</strong>: 24 inches x 8 inches<br
+      />\\n<strong>Weight</strong>: 12 lbs </p>\\n<h2
+      id=\\\"trailmaster-x4-tent-user-guide\\\">TrailMaster X4 Tent User
+      Guide</h2>\\n<h3 id=\\\"introduction\\\">Introduction</h3>\\n<p>Thank you
+      for choosing the TrailMaster X4 Tent. This user guide provides
+      instructions on how to set up, use, and maintain your tent effectively.
+      Please read this guide thoroughly before using the tent.</p>\\n<h3
+      id=\\\"package-contents\\\">Package Contents</h3>\\n<p>Ensure that the
+      package includes the following components:</p>\\n<ul>\\n<li>TrailMaster X4
+      Tent body</li>\\n<li>Tent poles</li>\\n<li>Rainfly (if
+      applicable)</li>\\n<li>Stakes and guy lines</li>\\n<li>Carry
+      bag</li>\\n<li>User Guide</li>\\n</ul>\\n<p>If any components are missing
+      or damaged, please contact our customer support immediately.</p>\\n<h3
+      id=\\\"tent-setup\\\">Tent Setup</h3>\\n<h4
+      id=\\\"step-1-selecting-a-suitable-location\\\">Step 1: Selecting a
+      Suitable Location</h4>\\n<ul>\\n<li>Find a level and clear area for
+      pitching the tent.</li>\\n<li>Remove any sharp objects or debris that
+      could damage the tent floor.</li>\\n</ul>\\n<h4
+      id=\\\"step-2-unpacking-and-organizing-components\\\">Step 2: Unpacking
+      and Organizing Components</h4>\\n<ul>\\n<li>Lay out all the tent
+      components on the ground.</li>\\n<li>Familiarize yourself with each part,
+      including the tent body, poles, rainfly, stakes, and guy
+      lines.</li>\\n</ul>\\n<h4 id=\\\"step-3-assembling-the-tent-poles\\\">Step
+      3: Assembling the Tent Poles</h4>\\n<ul>\\n<li>Connect the tent poles
+      according to their designated color codes or numbering.</li>\\n<li>Slide
+      the connected poles through the pole sleeves or attach them to the tent
+      body clips.</li>\\n</ul>\\n<h4
+      id=\\\"step-4-setting-up-the-tent-body\\\">Step 4: Setting up the Tent
+      Body</h4>\\n<ul>\\n<li>Begin at one end and raise the tent body by pushing
+      up the poles.</li>\\n<li>Ensure that the tent body is evenly stretched and
+      centered.</li>\\n<li>Secure the tent body to the ground using stakes and
+      guy lines as needed.</li>\\n</ul>\\n<h4
+      id=\\\"step-5-attaching-the-rainfly-if-applicable\\\">Step 5: Attaching
+      the Rainfly (if applicable)</h4>\\n<ul>\\n<li>If your tent includes a
+      rainfly, spread it over the tent body.</li>\\n<li>Attach the rainfly to
+      the tent corners and secure it with the provided buckles or
+      clips.</li>\\n<li>Adjust the tension of the rainfly to ensure proper
+      airflow and weather protection.</li>\\n</ul>\\n<h4
+      id=\\\"step-6-securing-the-tent\\\">Step 6: Securing the
+      Tent</h4>\\n<ul>\\n<li>Stake down the tent corners and guy out the guy
+      lines for additional stability.</li>\\n<li>Adjust the tension of the guy
+      lines to provide optimal stability and wind resistance.</li>\\n</ul>\\n<h3
+      id=\\\"tent-takedown-and-storage\\\">Tent Takedown and Storage</h3>\\n<h4
+      id=\\\"step-1-removing-stakes-and-guy-lines\\\">Step 1: Removing Stakes
+      and Guy Lines</h4>\\n<ul>\\n<li>Remove all stakes from the
+      ground.</li>\\n<li>Untie or disconnect the guy lines from the tent and
+      store them separately.</li>\\n</ul>\",\"id\":null,\"title\":\"Information
+      about product item_number:
+      1\",\"filepath\":\"product_info_1.md\",\"url\":\"https://amipateldemo.blo\
+      b.core.windows.net/fileupload-my-product-info/product_info_1.md\",\"metad\
+      ata\":{\"chunking\":\"orignal document size=1544. Scores=3.739763Org
+      Highlight count=75.\"},\"chunk_id\":\"1\"},{\"content\":\"<h1
+      id=\\\"information-about-product-item_number-8\\\">Information about
+      product item_number: 8</h1>\\n<p>Alpine Explorer Tent, price
+      $350,</p>\\n<h2 id=\\\"brand\\\">Brand</h2>\\n<p>AlpineGear</p>\\n<h2
+      id=\\\"category\\\">Category</h2>\\n<p>Tents</p>\\n<h3
+      id=\\\"features\\\">Features</h3>\\n<ul>\\n<li>Waterproof: Provides
+      reliable protection against rain and moisture.</li>\\n<li>Easy Setup:
+      Simple and quick assembly process, making it convenient for
+      camping.</li>\\n<li>Room Divider: Includes a detachable divider to create
+      separate living spaces within the tent.</li>\\n<li>Excellent Ventilation:
+      Multiple mesh windows and vents promote airflow and reduce
+      condensation.</li>\\n<li>Gear Loft: Built-in gear loft or storage pockets
+      for organizing and storing camping gear.</li>\\n</ul>\\n<h2
+      id=\\\"technical-specs\\\">Technical Specs</h2>\\n<p><strong>Best
+      Use</strong>: Camping<br />\\n<strong>Capacity</strong>: 8-person<br
+      />\\n<strong>Season Rating</strong>: 3-season<br
+      />\\n<strong>Setup</strong>: Freestanding<br
+      />\\n<strong>Material</strong>: Polyester<br
+      />\\n<strong>Waterproof</strong>: Yes<br />\\n<strong>Floor Area</strong>:
+      120 square feet<br />\\n<strong>Peak Height</strong>: 6.5 feet<br
+      />\\n<strong>Number of Doors</strong>: 2<br />\\n<strong>Color</strong>:
+      Orange<br />\\n<strong>Rainfly</strong>: Included<br />\\n<strong>Rainfly
+      Waterproof Rating</strong>: 3000mm<br />\\n<strong>Tent Poles</strong>:
+      Aluminum<br />\\n<strong>Pole Diameter</strong>: 12mm<br
+      />\\n<strong>Ventilation</strong>: Mesh panels and adjustable vents<br
+      />\\n<strong>Interior Pockets</strong>: 4 pockets<br />\\n<strong>Gear
+      Loft</strong>: Included<br />\\n<strong>Footprint</strong>: Sold
+      separately<br />\\n<strong>Guy Lines</strong>: Reflective<br
+      />\\n<strong>Stakes</strong>: Aluminum<br />\\n<strong>Carry Bag</strong>:
+      Included<br />\\n<strong>Dimensions</strong>: 12ft x 10ft x 7ft (Length x
+      Width x Peak Height)<br />\\n<strong>Packed Size</strong>: 24 inches x 10
+      inches<br />\\n<strong>Weight</strong>: 17 lbs</p>\\n<h2
+      id=\\\"alpine-explorer-tent-user-guide\\\">Alpine Explorer Tent User
+      Guide</h2>\\n<p>Thank you for choosing the Alpine Explorer Tent. This user
+      guide provides instructions on how to set up, use, and maintain your tent
+      effectively. Please read this guide thoroughly before using the
+      tent.</p>\\n<h3 id=\\\"package-contents\\\">Package
+      Contents</h3>\\n<p>Ensure that the package includes the following
+      components:</p>\\n<ul>\\n<li>Alpine Explorer Tent body</li>\\n<li>Tent
+      poles</li>\\n<li>Rainfly</li>\\n<li>Stakes and guy lines</li>\\n<li>Carry
+      bag</li>\\n<li>User Guide</li>\\n</ul>\\n<p>If any components are missing
+      or damaged, please contact our customer support immediately.</p>\\n<h3
+      id=\\\"tent-setup\\\">Tent Setup</h3>\\n<p><strong>Step 1: Selecting a
+      Suitable Location</strong></p>\\n<ul>\\n<li>Find a level and clear area
+      for pitching the tent.</li>\\n<li>Remove any sharp objects or debris that
+      could damage the tent floor.</li>\\n</ul>\\n<p><strong>Step 2: Unpacking
+      and Organizing Components</strong></p>\\n<ul>\\n<li>Lay out all the tent
+      components on the ground.</li>\\n<li>Familiarize yourself with each part,
+      including the tent body, poles, rainfly, stakes, and guy
+      lines.</li>\\n</ul>\\n<p><strong>Step 3: Assembling the Tent
+      Poles</strong></p>\\n<ul>\\n<li>Connect the tent poles according to their
+      designated color codes or numbering.</li>\\n<li>Slide the connected poles
+      through the pole sleeves or attach them to the tent body
+      clips.</li>\\n</ul>\\n<p><strong>Step 4: Setting up the Tent
+      Body</strong></p>\\n<ul>\\n<li>Begin at one end and raise the tent body by
+      pushing up the poles.</li>\\n<li>Ensure that the tent body is evenly
+      stretched and centered.</li>\\n<li>Secure the tent body to the ground
+      using stakes and guy lines as needed.</li>\\n</ul>\\n<p><strong>Step 5:
+      Attaching the Rainfly</strong></p>\\n<ul>\\n<li>Spread the rainfly over
+      the tent body.</li>\\n<li>Attach the rainfly to the tent corners and
+      secure it with the provided buckles or clips.</li>\\n<li>Adjust the
+      tension of the rainfly to ensure proper airflow and weather
+      protection.</li>\\n</ul>\\n<p><strong>Step 6: Securing the
+      Tent</strong></p>\\n<ul>\\n<li>Stake down the tent corners and guy out the
+      guy lines for additional stability.</li>\\n<li>Adjust the tension of the
+      guy lines to provide optimal stability and wind
+      resistance.</li>\\n</ul>\\n<h3 id=\\\"tent-takedown-and-storage\\\">Tent
+      Takedown and Storage</h3>\\n<p><strong>Step 1: Removing Stakes and Guy
+      Lines</strong></p>\\n<ul>\\n<li>Remove all stakes from the
+      ground.</li>\\n<li>Untie or disconnect the guy lines from the tent and
+      store them separately.</li>\\n</ul>\\n<p><strong>Step 2: Taking Down the
+      Tent Body</strong></p>\\n<ul>\\n<li>Start by collapsing the tent poles
+      carefully.</li>\\n<li>Remove the poles from the pole sleeves or
+      clips.</li>\\n</ul>\",\"id\":null,\"title\":\"Information about product
+      item_number:
+      8\",\"filepath\":\"product_info_8.md\",\"url\":\"https://amipateldemo.blo\
+      b.core.windows.net/fileupload-my-product-info/product_info_8.md\",\"metad\
+      ata\":{\"chunking\":\"orignal document size=1419. Scores=3.8508284Org
+      Highlight count=77.\"},\"chunk_id\":\"1\"},{\"content\":\"<h1
+      id=\\\"information-about-product-item_number-15\\\">Information about
+      product item_number: 15</h1>\\n<p>SkyView 2-Person Tent, price
+      $200,</p>\\n<h2 id=\\\"brand\\\">Brand</h2>\\n<p>OutdoorLiving</p>\\n<h2
+      id=\\\"category\\\">Category</h2>\\n<p>Tents</p>\\n<h2
+      id=\\\"features\\\">Features</h2>\\n<ul>\\n<li>Spacious interior
+      comfortably accommodates two people</li>\\n<li>Durable and waterproof
+      materials for reliable protection against the elements</li>\\n<li>Easy and
+      quick setup with color-coded poles and intuitive design</li>\\n<li>Two
+      large doors for convenient entry and exit</li>\\n<li>Vestibules provide
+      extra storage space for gear</li>\\n<li>Mesh panels for enhanced
+      ventilation and reduced condensation</li>\\n<li>Rainfly included for added
+      weather protection</li>\\n<li>Freestanding design allows for versatile
+      placement</li>\\n<li>Multiple interior pockets for organizing small
+      items</li>\\n<li>Reflective guy lines and stake points for improved
+      visibility at night</li>\\n<li>Compact and lightweight for easy
+      transportation and storage</li>\\n<li>Double-stitched seams for increased
+      durability</li>\\n<li>Comes with a carrying bag for convenient
+      portability</li>\\n</ul>\\n<h2 id=\\\"technical-specs\\\">Technical
+      Specs</h2>\\n<ul>\\n<li><strong>Best Use</strong>: Camping,
+      Hiking</li>\\n<li><strong>Capacity</strong>:
+      2-person</li>\\n<li><strong>Seasons</strong>:
+      3-season</li>\\n<li><strong>Packed Weight</strong>: Approx. 8
+      lbs</li>\\n<li><strong>Number of Doors</strong>:
+      2</li>\\n<li><strong>Number of Vestibules</strong>:
+      2</li>\\n<li><strong>Vestibule Area</strong>: Approx. 8 square feet per
+      vestibule</li>\\n<li><strong>Rainfly</strong>:
+      Included</li>\\n<li><strong>Pole Material</strong>: Lightweight
+      aluminum</li>\\n<li><strong>Freestanding</strong>:
+      Yes</li>\\n<li><strong>Footprint Included</strong>:
+      No</li>\\n<li><strong>Tent Bag Dimensions</strong>: 7ft x 5ft x
+      4ft</li>\\n<li><strong>Packed Size</strong>:
+      Compact</li>\\n<li><strong>Color:</strong>
+      Blue</li>\\n<li><strong>Warranty</strong>: Manufacturer's warranty
+      included</li>\\n</ul>\\n<h2 id=\\\"user-guidemanual\\\">User
+      Guide/Manual</h2>\\n<ol>\\n<li>Tent Components</li>\\n</ol>\\n<p>The
+      SkyView 2-Person Tent includes the following components:\\n- Tent body\\n-
+      Rainfly\\n- Aluminum tent poles\\n- Tent stakes\\n- Guy lines\\n- Tent
+      bag</p>\\n<ol start=\\\"2\\\">\\n<li>Tent Setup</li>\\n</ol>\\n<p>Follow
+      these steps to set up your SkyView 2-Person Tent:</p>\\n<p>Step 1: Find a
+      suitable camping site with a level ground and clear of debris.\\nStep 2:
+      Lay out the tent body on the ground, aligning the doors and vestibules as
+      desired.\\nStep 3: Assemble the tent poles and insert them into the
+      corresponding pole sleeves or grommets on the tent body.\\nStep 4: Attach
+      the rainfly over the tent body, ensuring a secure fit.\\nStep 5: Stake
+      down the tent and rainfly using the provided tent stakes, ensuring a taut
+      pitch.\\nStep 6: Adjust the guy lines as needed to enhance stability and
+      ventilation.\\nStep 7: Once the tent is properly set up, organize your
+      gear inside and enjoy your camping experience.</p>\\n<ol
+      start=\\\"3\\\">\\n<li>Tent Takedown</li>\\n</ol>\\n<p>To dismantle and
+      pack up your SkyView 2-Person Tent, follow these steps:</p>\\n<p>Step 1:
+      Remove all gear and belongings from the tent.\\nStep 2: Remove the stakes
+      and guy lines from the ground.\\nStep 3: Detach the rainfly from the tent
+      body.\\nStep 4: Disassemble the tent poles and remove them from the tent
+      body.\\nStep 5: Fold and roll up the tent body, rainfly, and poles
+      separately.\\nStep 6: Place all components back into the tent bag,
+      ensuring a compact and organized packing.</p>\\n<ol
+      start=\\\"4\\\">\\n<li>Tent Care and Maintenance</li>\\n</ol>\\n<p>To
+      extend the lifespan of your SkyView 2-Person Tent, follow these care and
+      maintenance guidelines:</p>\\n<ul>\\n<li>Always clean and dry the tent
+      before storing it.</li>\\n<li>Avoid folding or storing the tent when it is
+      wet or damp to prevent mold or mildew growth.</li>\\n<li>Use a mild soap
+      and water solution to clean the tent if necessary, and avoid using harsh
+      chemicals or solvents.</li>\\n<li>Inspect the tent regularly for any
+      damages such as tears, punctures, or broken components. Repair or replace
+      as needed.</li>\\n<li>Store the tent in a cool, dry place away from direct
+      sunlight and extreme temperatures.</li>\\n<li>Avoid placing sharp objects
+      or excessive weight on the tent, as this may cause
+      damage.</li>\\n<li>Follow the manufacturer's recommendations for seam
+      sealing or re-waterproofing the tent if necessary.</li>\\n</ul>\\n<ol
+      start=\\\"5\\\">\\n<li>Safety Precautions</li>\\n</ol>\\n<ul>\\n<li>Always
+      choose a safe and suitable camping location, considering factors such as
+      terrain, weather conditions, and potential
+      hazards.</li>\\n</ul>\",\"id\":null,\"title\":\"Information about product
+      item_number:
+      15\",\"filepath\":\"product_info_15.md\",\"url\":\"https://amipateldemo.b\
+      lob.core.windows.net/fileupload-my-product-info/product_info_15.md\",\"me\
+      tadata\":{\"chunking\":\"orignal document size=1342. Scores=3.4607773Org
+      Highlight
+      count=70.\"},\"chunk_id\":\"1\"},{\"content\":\"<ul>\\n<li><strong>If
+      Membership status \\\"None \\\":</strong> Returns are accepted within 30
+      days of purchase, provided the tent is unused, undamaged and in its
+      original packaging. Customer is responsible for the cost of return
+      shipping. Once the returned item is received, a refund will be issued for
+      the cost of the item minus a 10% restocking fee. If the item was damaged
+      during shipping or if there is a defect, the customer should contact
+      customer service within 7 days of receiving the
+      item.</li>\\n<li><strong>If Membership status \\\"Gold\\\":</strong>
+      Returns are accepted within 60 days of purchase, provided the tent is
+      unused, undamaged and in its original packaging. Free return shipping is
+      provided. Once the returned item is received, a full refund will be
+      issued. If the item was damaged during shipping or if there is a defect,
+      the customer should contact customer service within 7 days of receiving
+      the item.</li>\\n<li><strong>If Membership status
+      \\\"Platinum\\\":</strong> Returns are accepted within 90 days of
+      purchase, provided the tent is unused, undamaged and in its original
+      packaging. Free return shipping is provided, and a full refund will be
+      issued. If the item was damaged during shipping or if there is a defect,
+      the customer should contact customer service within 7 days of receiving
+      the item.</li>\\n</ul>\\n<h2 id=\\\"reviews\\\">Reviews</h2>\\n<p>36)
+      <strong>Rating:</strong> 5\\n <strong>Review:</strong> The Alpine Explorer
+      Tent is amazing! It's easy to set up, has excellent ventilation, and the
+      room divider is a great feature for added privacy. Highly recommend it for
+      family camping trips!</p>\\n<p>37) <strong>Rating:</strong> 4\\n
+      <strong>Review:</strong> I bought the Alpine Explorer Tent, and while it's
+      waterproof and spacious, I wish it had more storage pockets. Overall, it's
+      a good tent for camping.</p>\\n<p>38) <strong>Rating:</strong> 5\\n
+      <strong>Review:</strong> The Alpine Explorer Tent is perfect for my
+      family's camping adventures. It's easy to set up, has great ventilation,
+      and the gear loft is an excellent addition. Love it!</p>\\n<p>39)
+      <strong>Rating:</strong> 4\\n <strong>Review:</strong> I like the Alpine
+      Explorer Tent, but I wish it came with a footprint. It's comfortable and
+      has many useful features, but a footprint would make it even better.
+      Overall, it's a great tent.</p>\\n<p>40) <strong>Rating:</strong> 5\\n
+      <strong>Review:</strong> This tent is perfect for our family camping
+      trips. It's spacious, easy to set up, and the room divider is a great
+      feature for added privacy. The gear loft is a nice bonus for extra
+      storage.</p>\\n<h2 id=\\\"faq\\\">FAQ</h2>\\n<p>34) How easy is it to set
+      up the Alpine Explorer Tent?\\n The Alpine Explorer Tent features a quick
+      and easy setup, thanks to color-coded poles and intuitive design. Most
+      users can set it up in just a few minutes.</p>\\n<p>35) Can the Alpine
+      Explorer Tent accommodate two queen-sized air mattresses?\\n Yes, the
+      Alpine Explorer Tent is spacious enough to accommodate two queen-sized air
+      mattresses, making it an ideal choice for comfortable family
+      camping.</p>\\n<p>36) What is the purpose of the room divider in the
+      Alpine Explorer Tent?\\n The room divider in the Alpine Explorer Tent
+      allows you to create separate sleeping and living spaces, providing
+      privacy and organization for your camping experience.</p>\\n<p>37) How
+      does the gear loft in the Alpine Explorer Tent work?\\n The gear loft in
+      the Alpine Explorer Tent is a suspended mesh shelf that provides
+      additional storage space for small items, keeping them organized and
+      easily accessible.</p>\\n<p>38) Can the Alpine Explorer Tent be used in
+      snowy conditions?\\n The Alpine Explorer Tent is designed primarily for
+      three-season use. While it can withstand light snowfall, it may not
+      provide adequate structural support and insulation during heavy snow or
+      extreme winter conditions.</p>\",\"id\":null,\"title\":\"Information about
+      product item_number:
+      8\",\"filepath\":\"product_info_8.md\",\"url\":\"https://amipateldemo.blo\
+      b.core.windows.net/fileupload-my-product-info/product_info_8.md\",\"metad\
+      ata\":{\"chunking\":\"orignal document size=906. Scores=5.568323Org
+      Highlight count=85.\"},\"chunk_id\":\"0\"},{\"content\":\"<p>If you have
+      any questions or need further assistance, please contact our customer
+      support:</p>\\n<ul>\\n<li>Customer Support Phone:
+      +1-800-123-4567</li>\\n<li>Customer Support Email:
+      support@example.com</li>\\n</ul>\\n<h2 id=\\\"return-policy\\\">Return
+      Policy</h2>\\n<ul>\\n<li><strong>If Membership status \\\"None
+      \\\":</strong> Returns are accepted within 30 days of purchase, provided
+      the tent is unused, undamaged and in its original packaging. Customer is
+      responsible for the cost of return shipping. Once the returned item is
+      received, a refund will be issued for the cost of the item minus a 10%
+      restocking fee. If the item was damaged during shipping or if there is a
+      defect, the customer should contact customer service within 7 days of
+      receiving the item.</li>\\n<li><strong>If Membership status
+      \\\"Gold\\\":</strong> Returns are accepted within 60 days of purchase,
+      provided the tent is unused, undamaged and in its original packaging. Free
+      return shipping is provided. Once the returned item is received, a full
+      refund will be issued. If the item was damaged during shipping or if there
+      is a defect, the customer should contact customer service within 7 days of
+      receiving the item.</li>\\n<li><strong>If Membership status
+      \\\"Platinum\\\":</strong> Returns are accepted within 90 days of
+      purchase, provided the tent is unused, undamaged and in its original
+      packaging. Free return shipping is provided, and a full refund will be
+      issued. If the item was damaged during shipping or if there is a defect,
+      the customer should contact customer service within 7 days of receiving
+      the item.</li>\\n</ul>\\n<h2 id=\\\"reviews\\\">Reviews</h2>\\n<p>1)
+      <strong>Rating:</strong> 5\\n <strong>Review:</strong> I am extremely
+      happy with my TrailMaster X4 Tent! It's spacious, easy to set up, and kept
+      me dry during a storm. The UV protection is a great addition too. Highly
+      recommend it to anyone who loves camping!</p>\\n<p>2)
+      <strong>Rating:</strong> 3\\n <strong>Review:</strong> I bought the
+      TrailMaster X4 Tent, and while it's waterproof and has a spacious
+      interior, I found it a bit difficult to set up. It's a decent tent, but I
+      wish it were easier to assemble.</p>\\n<p>3) <strong>Rating:</strong> 5\\n
+      <strong>Review:</strong> The TrailMaster X4 Tent is a fantastic investment
+      for any serious camper. The easy setup and spacious interior make it
+      perfect for extended trips, and the waterproof design kept us dry in heavy
+      rain.</p>\\n<p>4) <strong>Rating:</strong> 4\\n <strong>Review:</strong> I
+      like the TrailMaster X4 Tent, but I wish it came in more colors. It's
+      comfortable and has many useful features, but the green color just isn't
+      my favorite. Overall, it's a good tent.</p>\\n<p>5)
+      <strong>Rating:</strong> 5\\n <strong>Review:</strong> This tent is
+      perfect for my family camping trips. The spacious interior and convenient
+      storage pocket make it easy to stay organized. It's also super easy to set
+      up, making it a great addition to our gear.</p>\\n<h2
+      id=\\\"faq\\\">FAQ</h2>\\n<p>1) Can the TrailMaster X4 Tent be used in
+      winter conditions?\\n The TrailMaster X4 Tent is designed for 3-season use
+      and may not be suitable for extreme winter conditions with heavy snow and
+      freezing temperatures.</p>\\n<p>2) How many people can comfortably sleep
+      in the TrailMaster X4 Tent?\\n The TrailMaster X4 Tent can comfortably
+      accommodate up to 4 people with room for their gear.</p>\\n<p>3) Is there
+      a warranty on the TrailMaster X4 Tent?\\n Yes, the TrailMaster X4 Tent
+      comes with a 2-year limited warranty against manufacturing
+      defects.</p>\\n<p>4) Are there any additional accessories included with
+      the TrailMaster X4 Tent?\\n The TrailMaster X4 Tent includes a rainfly,
+      tent stakes, guy lines, and a carry bag for easy transport.</p>\\n<p>5)
+      Can the TrailMaster X4 Tent be easily carried during hikes?\\n Yes, the
+      TrailMaster X4 Tent weighs just 12lbs, and when packed in its carry bag,
+      it can be comfortably carried during
+      hikes.</p>\",\"id\":null,\"title\":\"Information about product
+      item_number:
+      1\",\"filepath\":\"product_info_1.md\",\"url\":\"https://amipateldemo.blo\
+      b.core.windows.net/fileupload-my-product-info/product_info_1.md\",\"metad\
+      ata\":{\"chunking\":\"orignal document size=981. Scores=4.0350547Org
+      Highlight count=74.\"},\"chunk_id\":\"0\"}]}"
+    is_chat_input: false
+outputs:
+  gpt_relevance:
+    type: string
+    reference: ${concat_scores.output.gpt_relevance}
+  gpt_groundedness:
+    type: string
+    reference: ${concat_scores.output.gpt_groundedness}
+  gpt_retrieval_score:
+    type: string
+    reference: ${concat_scores.output.gpt_retrieval_score}
+nodes:
+- name: concat_scores
+  type: python
+  source:
+    type: code
+    path: concat_scores.py
+  inputs:
+    rag_generation_score: ${parse_generation_score.output}
+    rag_grounding_score: ${parse_grounding_score.output}
+    rag_retrieval_score: ${parse_retrieval_score.output}
+  use_variants: false
+- name: aggregate_variants_results
+  type: python
+  source:
+    type: code
+    path: aggregate_variants_results.py
+  inputs:
+    metrics: ${inputs.metrics}
+    results: ${concat_scores.output}
+  aggregation: true
+  use_variants: false
+- name: gpt_groundedness
+  type: llm
+  source:
+    type: code
+    path: rag_groundedness_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1000
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    FullBody: ${inputs.documents}
+    answer: ${inputs.answer}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_groundedness}
+    is: true
+  use_variants: false
+- name: gpt_retrieval_score
+  type: llm
+  source:
+    type: code
+    path: rag_retrieval_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1000
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    FullBody: ${inputs.documents}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_retrieval_score}
+    is: true
+  use_variants: false
+- name: gpt_relevance
+  type: llm
+  source:
+    type: code
+    path: rag_generation_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1000
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    FullBody: ${inputs.documents}
+    answer: ${inputs.answer}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_relevance}
+    is: true
+  use_variants: false
+- name: parse_generation_score
+  type: python
+  source:
+    type: code
+    path: parse_generation_score.py
+  inputs:
+    rag_generation_score: ${gpt_relevance.output}
+  use_variants: false
+- name: parse_retrieval_score
+  type: python
+  source:
+    type: code
+    path: parse_retrival_score.py
+  inputs:
+    retrieval_output: ${gpt_retrieval_score.output}
+  use_variants: false
+- name: parse_grounding_score
+  type: python
+  source:
+    type: code
+    path: parse_groundedness_score.py
+  inputs:
+    rag_grounding_score: ${gpt_groundedness.output}
+  use_variants: false
+- name: select_metrics
+  type: python
+  source:
+    type: code
+    path: select_metrics.py
+  inputs:
+    metrics: ${inputs.metrics}
+  use_variants: false
+- name: validate_input
+  type: python
+  source:
+    type: code
+    path: validate_input.py
+  inputs:
+    answer: ${inputs.answer}
+    documents: ${inputs.documents}
+    question: ${inputs.question}
+    selected_metrics: ${select_metrics.output}
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt

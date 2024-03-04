@@ -1,0 +1,19 @@
+inputs:
+  key:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${print_env.output.value}
+nodes:
+- name: print_env
+  type: python
+  source:
+    type: code
+    path: print_env.py
+  inputs:
+    key: ${inputs.key}
+additional_includes:
+  - ../flow_with_environment/requirements
+environment:
+  python_requirements_txt: requirements

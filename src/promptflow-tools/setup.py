@@ -28,20 +28,37 @@ if not version:
 with open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
+with open("CHANGELOG.md", encoding="utf-8") as f:
+    changelog = f.read()
+
 setup(
     name=PACKAGE_NAME,
     version=version,
     description="Prompt flow built-in tools",
     long_description_content_type="text/markdown",
-    long_description=readme,
+    long_description=readme + "\n\n" + changelog,
     author="Microsoft Corporation",
+    author_email="aml-pt-eng@microsoft.com",
+    url="https://github.com/microsoft/promptflow",
     classifiers=[
+        "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "License :: Other/Proprietary License",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     python_requires="<4.0,>=3.8",
     install_requires=parse_requirements('requirements.txt'),
+    extras_require={
+        "azure": [
+            # Dependency to list deployment in aoai_gpt4v
+            "azure-mgmt-cognitiveservices==13.5.0"
+        ]
+    },
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
     entry_points={
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],

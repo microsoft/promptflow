@@ -38,6 +38,7 @@ FILTER_HEADERS = [
 
 
 class SanitizedValues:
+    UUID = "00000000-0000-0000-0000-000000000000"
     SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
     RESOURCE_GROUP_NAME = "00000"
     WORKSPACE_NAME = "00000"
@@ -56,9 +57,19 @@ class SanitizedValues:
     # storage
     UPLOAD_HASH = "000000000000000000000000000000000000"
     BLOB_STORAGE_REQUEST_HOST = "fake_account_name.blob.core.windows.net"
+    FILE_SHARE_REQUEST_HOST = "fake_account_name.file.core.windows.net"
+    # PFS
+    RUNTIME_NAME = "fake-runtime-name"
+    SESSION_ID = "000000000000000000000000000000000000000000000000"
+    FLOW_LINEAGE_ID = "0000000000000000000000000000000000000000000000000000000000000000"
+    REGION = "fake-region"
+    FLOW_ID = "00000000-0000-0000-0000-000000000000"
+    COMPUTE_NAME = "fake-compute"
     # trick: "unknown_user" is the value when client fails to get username
     #        use this value so that we don't do extra logic when replay
     USERNAME = "unknown_user"
+    # MISC
+    EMAIL_USERNAME = "username"
 
 
 class AzureMLResourceTypes:
@@ -71,4 +82,6 @@ TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING = [
     "TestCliWithAzure",
     "TestFlowRun",
     "TestFlow",
+    "TestTelemetry",
+    "TestAzureCliPerf",
 ]

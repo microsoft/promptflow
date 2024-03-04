@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
+from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, _is_url, is_multimedia_dict
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -86,21 +86,22 @@ def get_test_cases_for_node_run():
     ]
 
 
-def contain_image_reference(value):
+def contain_image_reference(value, parent_path="temp"):
     if isinstance(value, (FlowRunInfo, RunInfo)):
-        assert contain_image_reference(value.api_calls)
-        assert contain_image_reference(value.inputs)
-        assert contain_image_reference(value.output)
+        assert contain_image_reference(value.api_calls, parent_path)
+        assert contain_image_reference(value.inputs, parent_path)
+        assert contain_image_reference(value.output, parent_path)
         return True
     assert not isinstance(value, Image)
     if isinstance(value, list):
-        return any(contain_image_reference(item) for item in value)
+        return any(contain_image_reference(item, parent_path) for item in value)
     if isinstance(value, dict):
         if is_multimedia_dict(value):
             v = list(value.values())[0]
             assert isinstance(v, str)
+            assert _is_url(v) or str(Path(v).parent) == parent_path
             return True
-        return any(contain_image_reference(v) for v in value.values())
+        return any(contain_image_reference(v, parent_path) for v in value.values())
     return False
 
 
@@ -147,17 +148,49 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_sub_dir=("./temp"),
+            storage=storage,
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
         assert contain_image_reference(run_info)
+
+    # Assert image could be persisted to the specified path.
+    @pytest.mark.parametrize(
+        "output_sub_dir, assign_storage, expected_path",
+        [
+            ("test_path", True, "test_storage"),
+            ("test_path", False, "test_path"),
+            (None, True, "test_storage"),
+            (None, False, "."),
+        ],
+    )
+    def test_executor_exec_node_with_image_storage_and_path(self, output_sub_dir, assign_storage, expected_path):
+        flow_folder = SIMPLE_IMAGE_FLOW
+        node_name = "python_node"
+        image = {"data:image/jpg;path": str(get_flow_folder(SIMPLE_IMAGE_FLOW) / "logo.jpg")}
+        flow_inputs = {"image": image}
+        working_dir = get_flow_folder(flow_folder)
+        os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./test_storage"))
+        run_info = FlowExecutor.load_and_exec_node(
+            get_yaml_file(flow_folder),
+            node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=None,
+            connections=None,
+            storage=storage if assign_storage else None,
+            output_sub_dir=output_sub_dir,
+            raise_ex=True,
+        )
+        assert run_info.status == Status.Completed
+        assert contain_image_reference(run_info, parent_path=expected_path)
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -181,13 +214,14 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_sub_dir=("./temp"),
+            storage=storage,
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
@@ -286,3 +320,31 @@ class TestExecutorWithImage:
         for _, node_run_info in aggregation_results.node_run_infos.items():
             assert node_run_info.status == Status.Completed
             assert contain_image_reference(node_run_info)
+
+    def test_batch_run_then_eval_with_image(self):
+        # submit a flow in batch mode fisrt
+        batch_flow_folder = get_flow_folder(COMPOSITE_IMAGE_FLOW)
+        batch_flow_file = get_yaml_file(batch_flow_folder)
+        batch_working_dir = get_flow_folder(batch_flow_folder)
+        batch_output_dir = Path(mkdtemp())
+        batch_input_dirs = {"data": "inputs.jsonl"}
+        batch_inputs_mapping = {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"}
+        batch_result = BatchEngine(batch_flow_file, batch_working_dir).run(
+            batch_input_dirs, batch_inputs_mapping, batch_output_dir
+        )
+        assert batch_result.completed_lines == batch_result.total_lines
+
+        # use the output of batch run as input of eval flow
+        eval_flow_folder = get_flow_folder(EVAL_FLOW_WITH_COMPOSITE_IMAGE)
+        eval_flow_file = get_yaml_file(eval_flow_folder)
+        eval_working_dir = get_flow_folder(eval_flow_folder)
+        eval_output_dir = Path(mkdtemp())
+        eval_input_dirs = {
+            "data": batch_flow_folder / "inputs.jsonl",
+            "run.outputs": batch_output_dir / OUTPUT_FILE_NAME,
+        }
+        eval_inputs_mapping = {"image_list": "${run.outputs.output}", "image_dict": "${data.image_dict}"}
+        eval_result = BatchEngine(eval_flow_file, eval_working_dir).run(
+            eval_input_dirs, eval_inputs_mapping, eval_output_dir
+        )
+        assert eval_result.completed_lines == eval_result.total_lines

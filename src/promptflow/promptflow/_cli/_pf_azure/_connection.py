@@ -2,18 +2,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import logging
 from pathlib import Path
 
 from dotenv import dotenv_values
 
-from promptflow._cli._params import add_param_connection_name, add_param_env, logging_params
+from promptflow._cli._params import add_param_connection_name, add_param_env, base_params
 from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activate_action, get_client_for_cli
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import Secret
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 def add_connection_parser(subparsers):
@@ -38,7 +37,7 @@ def add_connection_create(subparsers):
         add_param_connection_name,
         add_param_type,
         add_param_env,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="create",
@@ -56,7 +55,7 @@ def add_connection_get(subparsers):
         _set_workspace_argument_for_subparsers,
         add_param_connection_name,
         add_param_env,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="get",

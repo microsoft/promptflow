@@ -1,6 +1,15 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from traceback import TracebackException
 
-from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info, is_pf_core_frame
+from promptflow._utils.exception_utils import (
+    ADDITIONAL_INFO_USER_EXECUTION_ERROR,
+    is_pf_core_frame,
+    last_frame_info,
+    remove_suffix,
+)
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
@@ -28,6 +37,20 @@ class MissingRequiredInputs(ValidationException):
     pass
 
 
+class InputTypeMismatch(ValidationException):
+    pass
+
+
+class ToolCanceledError(UserErrorException):
+    """Exception raised when tool execution is canceled."""
+
+    pass
+
+
+class InvalidSource(ValidationException):
+    pass
+
+
 class ToolLoadError(UserErrorException):
     """Exception raised when tool load failed."""
 
@@ -43,22 +66,20 @@ class ToolExecutionError(UserErrorException):
         super().__init__(target=ErrorTarget.TOOL, module=module)
 
     @property
-    def message_format(self):
+    def message(self):
         if self.inner_exception:
-            return "Execution failure in '{node_name}': {error_type_and_message}"
+            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            return remove_suffix(self._message, ".") + f": {error_type_and_message}"
         else:
-            return "Execution failure in '{node_name}'."
+            return self._message
+
+    @property
+    def message_format(self):
+        return "Execution failure in '{node_name}'."
 
     @property
     def message_parameters(self):
-        error_type_and_message = None
-        if self.inner_exception:
-            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
-
-        return {
-            "node_name": self._node_name,
-            "error_type_and_message": error_type_and_message,
-        }
+        return {"node_name": self._node_name}
 
     @property
     def tool_last_frame_info(self):
@@ -108,7 +129,7 @@ class ToolExecutionError(UserErrorException):
 
 
 class GenerateMetaUserError(UserErrorException):
-    """Base exception raised when failed to validate tool."""
+    """Base user exception raised when failed to validate tool."""
 
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
@@ -119,6 +140,22 @@ class MetaFileNotFound(GenerateMetaUserError):
 
 
 class MetaFileReadError(GenerateMetaUserError):
+    pass
+
+
+class GenerateMetaTimeout(GenerateMetaUserError):
+    def __init__(self, source):
+        super().__init__(message_format="Generate meta timeout for source '{source}'.", source=source)
+
+
+class GenerateMetaSystemError(SystemErrorException):
+    """Base system exception raised when failed to validate tool."""
+
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
+
+
+class NoToolTypeDefined(GenerateMetaSystemError):
     pass
 
 
@@ -136,4 +173,11 @@ class ProcessPoolError(SystemErrorException):
 
 class DuplicateToolMappingError(ValidationException):
     """Exception raised when multiple tools are linked to the same deprecated tool id."""
+
+    pass
+
+
+class ResumeCopyError(SystemErrorException):
+    """Exception raised when failed to copy the results when resuming the run."""
+
     pass

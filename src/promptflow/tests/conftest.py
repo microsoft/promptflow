@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from _constants import (
     CONNECTION_FILE,
+    DEFAULT_COMPUTE_INSTANCE_NAME,
+    DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
     DEFAULT_RUNTIME_NAME,
     DEFAULT_SUBSCRIPTION_ID,
@@ -24,7 +26,6 @@ from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 
@@ -49,15 +50,6 @@ def mock_build_info():
         buid_info = {"build_number": f"ci-{build_number}" if build_number else "local-pytest"}
         m.setenv("BUILD_INFO", json.dumps(buid_info))
         yield m
-
-
-@pytest.fixture(autouse=True, scope="session")
-def inject_api():
-    """Inject OpenAI API during test session.
-
-    AOAI call in promptflow should involve trace logging and header injection. Inject
-    function to API call in test scenario."""
-    inject_openai_api()
 
 
 @pytest.fixture
@@ -235,7 +227,7 @@ def mock_module_with_for_retrieve_tool_func_result(
 
 
 # below fixtures are used for pfazure and global config tests
-@pytest.fixture
+@pytest.fixture(scope="session")
 def subscription_id() -> str:
     if is_replay():
         return SanitizedValues.SUBSCRIPTION_ID
@@ -243,7 +235,7 @@ def subscription_id() -> str:
         return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def resource_group_name() -> str:
     if is_replay():
         return SanitizedValues.RESOURCE_GROUP_NAME
@@ -251,7 +243,7 @@ def resource_group_name() -> str:
         return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def workspace_name() -> str:
     if is_replay():
         return SanitizedValues.WORKSPACE_NAME
@@ -259,6 +251,28 @@ def workspace_name() -> str:
         return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def runtime_name() -> str:
     return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture(scope="session")
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
+
+
+@pytest.fixture
+def enable_logger_propagate():
+    """This is for test cases that need to check the log output."""
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+    original_value = logger.propagate
+    logger.propagate = True
+    yield
+    logger.propagate = original_value
+
+
+@pytest.fixture(scope="session")
+def compute_instance_name() -> str:
+    return os.getenv("PROMPT_FLOW_COMPUTE_INSTANCE_NAME", DEFAULT_COMPUTE_INSTANCE_NAME)

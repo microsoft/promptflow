@@ -5,8 +5,6 @@
 # pylint: disable=unused-argument,no-self-use
 
 import copy
-import logging
-from collections import OrderedDict
 from pathlib import Path
 from typing import Optional
 
@@ -16,9 +14,10 @@ from marshmallow.schema import Schema, SchemaMeta
 from pydash import objects
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FILE_PREFIX, PARAMS_OVERRIDE_KEY
-from promptflow._sdk._utils import load_yaml
+from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.yaml_utils import load_yaml
 
-module_logger = logging.getLogger(__name__)
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class PatchedMeta:
@@ -34,7 +33,7 @@ class PatchedBaseSchema(Schema):
     @post_dump
     def remove_none(self, data, **kwargs):
         """Prevents from dumping attributes that are None, thus making the dump more compact."""
-        return OrderedDict((key, value) for key, value in data.items() if value is not None)
+        return dict((key, value) for key, value in data.items() if value is not None)
 
 
 class PatchedSchemaMeta(SchemaMeta):

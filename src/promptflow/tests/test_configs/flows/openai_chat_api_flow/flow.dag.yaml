@@ -3,6 +3,8 @@ inputs:
     type: string
   chat_history:
     type: list
+  stream:
+    type: bool
 outputs:
   answer:
     type: string
@@ -17,3 +19,4 @@ nodes:
     question: ${inputs.question}
     chat_history: ${inputs.chat_history}
     connection: azure_open_ai_connection
+    stream: ${inputs.stream}

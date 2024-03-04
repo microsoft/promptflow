@@ -1,3 +1,7 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+---
+
 # Deploy flow using Azure App Service
 
 This example demos how to deploy a flow using Azure App Service.
@@ -32,19 +36,19 @@ The two scripts will do the following things:
 
 Example command to use bash script:
 ```shell
-bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registry> -g <resource_group>
+bash deploy.sh --path dist -i <image_tag> --name my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
+.\deploy.ps1 -Path dist -i <image_tag> -n my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 
 See the full parameters by `bash deploy.sh -h` or `.\deploy.ps1 -h`.
 
 ## View and test the web app
-The web app can be found via [azure portal](https://portal.azure.com/) 
+The web app can be found via [azure portal](https://portal.azure.com/)
 
 ![img](assets/azure_portal_img.png)
 
@@ -57,7 +61,13 @@ Browse the app at Overview and see the test page:
 
 ![img](assets/test_page.png)
 
+You can also test the app by sending a POST request to the app like:
+```shell
+curl http://<Default-domain-of-app-service>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
+```
+
+
 Tips:
 - Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream).
-- Reach advanced deployment tools at https://$name.scm.azurewebsites.net/.
-- Reach more details about app service at https://learn.microsoft.com/azure/app-service/.
+- Reach advanced deployment tools at  (Development Tools>Advanced Tools).
+- Reach more details about app service at [Azure App Service](https://learn.microsoft.com/azure/app-service/).

@@ -1,19 +1,24 @@
+import contextlib
 import os
 import sys
+from pathlib import Path
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock, patch
 
 import pandas as pd
 import pytest
 from pytest_mock import MockFixture
 
-from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
-from promptflow.azure.operations._flow_operations import FlowOperations
-from promptflow.azure.operations._run_operations import RunOperations
+
+tests_root_dir = Path(__file__).parent.parent.parent
+flow_test_dir = tests_root_dir / "test_configs/flows"
+data_dir = tests_root_dir / "test_configs/datas"
 
 
 def run_pf_command(*args, cwd=None):
+    from promptflow._cli._pf_azure.entry import main
+
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:
         sys.argv = ["pfazure"] + list(args)
@@ -46,6 +51,8 @@ class TestAzureCli:
         assert "0.0.1\n" in out
 
     def test_run_show(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked = mocker.patch.object(RunOperations, "get")
         # show_run will print the run object, so we need to mock the return value
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
@@ -59,6 +66,8 @@ class TestAzureCli:
         mocked.assert_called_once()
 
     def test_run_show_details(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked = mocker.patch.object(RunOperations, "get_details")
         # show_run_details will print details, so we need to mock the return value
         mocked.return_value = pd.DataFrame([{"input": "input_value", "output": "output_value"}])
@@ -75,6 +84,8 @@ class TestAzureCli:
         mocked.assert_called_once()
 
     def test_run_show_metrics(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked = mocker.patch.object(RunOperations, "get_metrics")
         # show_metrics will print the metrics, so we need to mock the return value
         mocked.return_value = {"accuracy": 0.9}
@@ -95,6 +106,8 @@ class TestAzureCli:
         resource_group_name: str,
         workspace_name: str,
     ):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked_run = MagicMock()
         mocked_run._to_dict.return_value = {"name": "test_run"}
         mocked = mocker.patch.object(RunOperations, "list")
@@ -168,6 +181,8 @@ class TestAzureCli:
         mocker: MockFixture,
         operation_scope_args,
     ):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked = mocker.patch.object(RunOperations, "archive")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
         run_pf_command(
@@ -184,6 +199,8 @@ class TestAzureCli:
         mocker: MockFixture,
         operation_scope_args,
     ):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked = mocker.patch.object(RunOperations, "restore")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
         run_pf_command(
@@ -200,6 +217,8 @@ class TestAzureCli:
         mocker: MockFixture,
         operation_scope_args,
     ):
+        from promptflow.azure.operations._run_operations import RunOperations
+
         mocked = mocker.patch.object(RunOperations, "update")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
         run_pf_command(
@@ -220,27 +239,78 @@ class TestAzureCli:
         mocker: MockFixture,
         operation_scope_args,
     ):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
         mocked = mocker.patch.object(FlowOperations, "create_or_update")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
         run_pf_command(
             "flow",
             "create",
             "--flow",
-            ".",
+            flow_dir,
             "--set",
-            "name=test_flow",
+            "display_name=test_flow",
             "type=standard",
             "description='test_description'",
             "tags.key1=value1",
             *operation_scope_args,
         )
-        mocked.assert_called_once()
+        mocked.assert_called_with(
+            flow=flow_dir,
+            display_name="test_flow",
+            type="standard",
+            description="test_description",
+            tags={"key1": "value1"},
+        )
+
+    def test_flow_create_with_unknown_field(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
+        mocked = mocker.patch.object(FlowOperations, "create_or_update")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
+        run_pf_command(
+            "flow",
+            "create",
+            "--flow",
+            flow_dir,
+            "--set",
+            "random_key=random_value",
+            *operation_scope_args,
+        )
+        mocked.assert_called_with(flow=flow_dir, random_key="random_value")
+
+    def test_flow_update(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
+        mocked = mocker.patch.object(FlowOperations, "_update_azure_flow")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "flow",
+            "update",
+            "--flow",
+            "test_flow",
+            "--set",
+            "display_name=test_flow_display_name",
+            "description='test_description'",
+            "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_with(
+            flow=ANY,
+            display_name="test_flow_display_name",
+            description="test_description",
+            tags={"key1": "value1"},
+        )
 
     def test_flow_list(
         self,
         mocker: MockFixture,
         operation_scope_args,
     ):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
         mocked_flow = MagicMock()
         mocked_flow._to_dict.return_value = {"name": "test_flow"}
         mocked = mocker.patch.object(FlowOperations, "list")
@@ -256,6 +326,79 @@ class TestAzureCli:
             "--include-others",
             "--output",
             "table",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_run_telemetry(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+    ):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked_run = MagicMock()
+        mocked_run._to_dict.return_value = {"name": "test_run"}
+        mocked = mocker.patch.object(RunOperations, "list")
+        # list_runs will print the run list, so we need to mock the return value
+        mocked.return_value = [mocked_run]
+        mocker.patch.dict(
+            os.environ,
+            {
+                "AZUREML_ARM_WORKSPACE_NAME": workspace_name,
+                "AZUREML_ARM_SUBSCRIPTION": subscription_id,
+                "AZUREML_ARM_RESOURCEGROUP": resource_group_name,
+            },
+        )
+
+        @contextlib.contextmanager
+        def check_workspace_info(*args, **kwargs):
+            if "custom_dimensions" in kwargs:
+                assert kwargs["custom_dimensions"]["workspace_name"] == workspace_name
+                assert kwargs["custom_dimensions"]["resource_group_name"] == resource_group_name
+                assert kwargs["custom_dimensions"]["subscription_id"] == subscription_id
+            yield None
+
+        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
+            mock_log_activity.side_effect = check_workspace_info
+            run_pf_command(
+                "run",
+                "list",
+                "--max-results",
+                "10",
+                "--include-archived",
+                *operation_scope_args,
+            )
+
+    def test_run_download(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "download")
+        mocked.return_value = "fake_output_run_dir"
+        run_pf_command(
+            "run",
+            "download",
+            "--name",
+            "test_run",
+            "--output",
+            "fake_output_dir",
+            "--overwrite",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_run_cancel(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "cancel")
+        run_pf_command(
+            "run",
+            "cancel",
+            "--name",
+            "test_run",
             *operation_scope_args,
         )
         mocked.assert_called_once()

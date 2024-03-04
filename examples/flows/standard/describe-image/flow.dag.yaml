@@ -1,0 +1,35 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    default: Please describe this image.
+  input_image:
+    type: image
+    default: https://developer.microsoft.com/_devcom/images/logo-ms-social.png
+outputs:
+  answer:
+    type: string
+    reference: ${question_on_image.output}
+  output_image:
+    type: string
+    reference: ${flip_image.output}
+nodes:
+- name: flip_image
+  type: python
+  source:
+    type: code
+    path: flip_image.py
+  inputs:
+    input_image: ${inputs.input_image}
+- name: question_on_image
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
+    path: question_on_image.jinja2
+  inputs:
+    connection: aoai_gpt4v_connection
+    deployment_name: gpt-4v
+    max_tokens: 512
+    question: ${inputs.question}
+    test_image: ${flip_image.output}

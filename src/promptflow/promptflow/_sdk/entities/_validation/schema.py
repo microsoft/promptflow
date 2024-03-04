@@ -5,14 +5,15 @@
 # pylint: disable=protected-access
 
 import json
-import logging
 import typing
 
 from marshmallow import Schema, ValidationError
 
+from promptflow._utils.logger_utils import LoggerFactory
+
 from .core import MutableValidationResult, ValidationResultBuilder
 
-module_logger = logging.getLogger(__name__)
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class SchemaValidatableMixin:

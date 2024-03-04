@@ -1,6 +1,8 @@
 inputs:
   prompt:
     type: string
+  stream:
+    type: bool
 outputs:
   output:
     type: string
@@ -14,3 +16,4 @@ nodes:
   inputs:
     prompt: ${inputs.prompt}
     connection: azure_open_ai_connection
+    stream: ${inputs.stream}

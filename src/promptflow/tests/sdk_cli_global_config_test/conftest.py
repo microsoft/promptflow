@@ -3,10 +3,12 @@
 # ---------------------------------------------------------
 
 import pytest
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
+
+AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
 @pytest.fixture

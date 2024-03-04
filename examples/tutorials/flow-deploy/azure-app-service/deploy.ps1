@@ -22,9 +22,9 @@ The app subscription, default using az account subscription.
 verbose mode.
 
 .EXAMPLE
-PS> .\deploy.ps1 -Path <folder-path> -Name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group>
+PS> .\deploy.ps1 -Path <folder-path> -i <image_tag> -r <registry> -n <app_name> -g <resource_group>
 .EXAMPLE
-PS> .\deploy.ps1 -Path <folder-path> -Name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group> -Subscription "xxxx-xxxx-xxxx-xxxx-xxxx" -Verbose
+PS> .\deploy.ps1 -Path <folder-path> -i <image_tag> -r <registry> -n <app_name> -g <resource_group> -Subscription "xxxx-xxxx-xxxx-xxxx-xxxx" -Verbose
 #>
 [CmdletBinding()]
 param(
@@ -51,8 +51,8 @@ if (!$ImageTag) {
 
 # check if : in image_tag
 if (!$ImageTag.Contains(":")) {
-    version="v$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-    image_tag="${ImageTag}:${version}"
+    $version="v$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    $image_tag="${ImageTag}:${version}"
 }
 
 Write-Host "image_tag: $ImageTag"
@@ -104,10 +104,9 @@ if ($Registry.Contains("azurecr.io")) {
     $ImageTag = $AcrImageTag
 }
 else {
-    Write-Host "Make sure you have docker account login!!!"
-    printf "***************************************************\n"
-    printf "* WARN: Make sure you have docker account login!!!*\n"
-    printf "***************************************************\n"
+    Write-Host "***************************************************\n"
+    Write-Host "* WARN: Make sure you have docker account login!!!*\n"
+    Write-Host "***************************************************\n"
 
     $DockerImageTag = $Registry + "/" + $ImageTag
 
@@ -163,7 +162,8 @@ $Command="az webapp create --name $Name -p $ServicePlanName --deployment-contain
 Invoke-Expression-And-Check "$Command"
 # Config environment variable
 Write-Host "Config app...$Name"
-$Command="az webapp config appsettings set -g $ResourceGroup --name $Name --settings USER_AGENT=promptflow-appservice ('@settings.json')"
+# Port default to 8080 corresponding to the DockerFile
+$Command="az webapp config appsettings set -g $ResourceGroup --name $Name --settings USER_AGENT=promptflow-appservice WEBSITES_PORT=8080 ('@settings.json')"
 Invoke-Expression-And-Check "$Command"
 Write-Host "Please go to https://portal.azure.com/ to config environment variables and restart the app: $Name at (Settings>Configuration) or (Settings>Environment variables)"
 Write-Host "Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream)"

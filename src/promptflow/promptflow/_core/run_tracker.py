@@ -2,20 +2,22 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import json
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
+from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
-from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
+from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
+from promptflow._utils.utils import default_json_encoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -168,12 +170,43 @@ class RunTracker(ThreadLocalSingleton):
                 output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
-    def _update_flow_run_info_with_node_runs(self, run_info):
+    def _update_flow_run_info_with_node_runs(self, run_info: FlowRunInfo):
         run_id = run_info.run_id
-        run_info.api_calls = self._collect_traces_from_nodes(run_id)
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        # TODO: Refactor Tracer to support flow level tracing,
+        # then we can remove the hard-coded root level api_calls here.
+        # It has to be a list for UI backward compatibility.
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        # This implementation deep copies the inputs and output of the flow run, and extracts items from GeneratorProxy.
+        # So that both image and generator will be supported.
+        # It's a short term solution, while the long term one will be implemented in the next generation of Tracer.
+        inputs = None
+        output = None
+        try:
+            inputs = _deep_copy_and_extract_items_from_generator_proxy(run_info.inputs)
+            output = _deep_copy_and_extract_items_from_generator_proxy(run_info.output)
+        except Exception as e:
+            flow_logger.warning(
+                f"Failed to serialize inputs or output for flow run because of {e}."
+                "The inputs and output field in api_calls will be None."
+            )
+        run_info.api_calls = [
+            {
+                "name": "flow",
+                "node_name": "flow",
+                "type": "Flow",
+                "start_time": start_timestamp,
+                "end_time": end_timestamp,
+                "children": self._collect_traces_from_nodes(run_id),
+                "system_metrics": run_info.system_metrics,
+                "inputs": inputs,
+                "output": output,
+                "error": run_info.error,
+            }
+        ]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -209,6 +242,21 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
+    def cancel_node_runs(self, msg: str, flow_run_id):
+        node_runs = self.collect_node_runs(flow_run_id)
+        for node_run_info in node_runs:
+            if node_run_info.status != Status.Running:
+                continue
+            msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
+            err = ToolCanceledError(
+                message_format="Tool execution is canceled because of the error: {msg}.",
+                msg=msg,
+                target=ErrorTarget.EXECUTOR,
+            )
+            self.end_run(node_run_info.run_id, ex=err)
+            node_run_info.status = Status.Canceled
+            self.persist_node_run(node_run_info)
+
     def end_run(
         self,
         run_id: str,
@@ -227,8 +275,13 @@ class RunTracker(ThreadLocalSingleton):
                 target=ErrorTarget.RUN_TRACKER,
                 run_id=run_id,
             )
+        # If the run is already canceled, do nothing.
+        if run_info.status == Status.Canceled:
+            return run_info
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
+            if traces:
+                run_info.api_calls = traces
         elif isinstance(run_info, RunInfo):
             run_info.api_calls = traces
             self._node_run_postprocess(run_info, result, ex)
@@ -257,10 +310,9 @@ class RunTracker(ThreadLocalSingleton):
         }
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
-        serializable_output = {}
-        for k, v in output.items():
+        def _wrap_serializable_error(value):
             try:
-                serializable_output[k] = self._ensure_serializable_value(v)
+                return self._ensure_serializable_value(value)
             except Exception as e:
                 # If a specific key-value pair is not serializable, raise an exception with the key.
                 error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -276,12 +328,23 @@ class RunTracker(ThreadLocalSingleton):
                     error_type_and_message=error_type_and_message,
                 ) from e
 
+        # support primitive outputs in eager mode
+        if not isinstance(output, dict):
+            return _wrap_serializable_error(output)
+        serializable_output = {}
+        for k, v in output.items():
+            serializable_output[k] = _wrap_serializable_error(v)
+
         return serializable_output
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
-        run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
-        run_info.status = Status.Failed
+        # Update status to Cancelled the run terminates because of KeyboardInterruption or CancelledError.
+        if isinstance(ex, KeyboardInterrupt) or isinstance(ex, asyncio.CancelledError):
+            run_info.status = Status.Canceled
+        else:
+            run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
+            run_info.status = Status.Failed
 
     def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
         flow_runs = self.flow_run_list
@@ -337,7 +400,7 @@ class RunTracker(ThreadLocalSingleton):
             traces.extend(node_run_info.api_calls or [])
         return traces
 
-    OPENAI_AGGREGATE_METRICS = ["total_tokens"]
+    OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
 
     def collect_metrics(self, run_infos: List[RunInfo], aggregate_metrics: List[str] = []):
         if not aggregate_metrics:
@@ -380,29 +443,32 @@ class RunTracker(ThreadLocalSingleton):
     def get_status_summary(self, run_id: str):
         node_run_infos = self.collect_node_runs(run_id)
         status_summary = {}
-        line_status = {}
+
         for run_info in node_run_infos:
             node_name = run_info.node
             if run_info.index is not None:
-                if run_info.index not in line_status.keys():
-                    line_status[run_info.index] = True
-
-                line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
-                    Status.Completed,
-                    Status.Bypassed,
-                )
-
                 # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
                 if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
                     node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
                     status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
-
             # For reduce node, the index is None.
             else:
                 status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
-        status_summary["__pf__.lines.completed"] = sum(line_status.values())
-        status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]
+        # Runtime will start root flow run with run_id == root_run_id,
+        # line flow run will have run id f"{root_run_id}_{line_number}"
+        # We filter out root flow run accordingly.
+        line_flow_run_infos = [
+            flow_run_info
+            for flow_run_info in self.flow_run_list
+            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id
+        ]
+        total_lines = len(line_flow_run_infos)
+        completed_lines = len(
+            [flow_run_info for flow_run_info in line_flow_run_infos if flow_run_info.status == Status.Completed]
+        )
+        status_summary["__pf__.lines.completed"] = completed_lines
+        status_summary["__pf__.lines.failed"] = total_lines - completed_lines
         return status_summary
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):

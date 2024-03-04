@@ -3,28 +3,18 @@
 # ---------------------------------------------------------
 import copy
 
-from marshmallow import ValidationError, fields, pre_dump, validates
+from marshmallow import ValidationError, fields, post_load, pre_dump, validates
 
 from promptflow._sdk._constants import (
     SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
     SCHEMA_KEYS_CONTEXT_SECRET_KEY,
+    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
 from promptflow._sdk.schemas._base import YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
 from promptflow._utils.utils import camel_to_snake
-
-
-def _casting_type(typ):
-    type_dict = {
-        ConnectionType.AZURE_OPEN_AI: "azure_open_ai",
-        ConnectionType.OPEN_AI: "open_ai",
-    }
-
-    if typ in type_dict:
-        return type_dict.get(typ)
-    return camel_to_snake(typ)
 
 
 class ConnectionSchema(YamlFileSchema):
@@ -48,17 +38,35 @@ class ConnectionSchema(YamlFileSchema):
 
 class AzureOpenAIConnectionSchema(ConnectionSchema):
     type = StringTransformedEnum(allowed_values="azure_open_ai", required=True)
-    api_key = fields.Str(required=True)
+    api_key = fields.Str()
     api_base = fields.Str(required=True)
     api_type = fields.Str(dump_default="azure")
     api_version = fields.Str(dump_default="2023-07-01-preview")
+    auth_mode = StringTransformedEnum(
+        allowed_values=[ConnectionAuthMode.MEID_TOKEN, ConnectionAuthMode.KEY],
+        allow_none=True,
+        dump_default=ConnectionAuthMode.KEY,
+    )
+
+    @post_load()
+    def _validate(self, data, **kwargs):
+        # Validate api_key for KEY and None
+        if data.get("auth_mode") != ConnectionAuthMode.MEID_TOKEN and not data.get("api_key"):
+            raise ValidationError("'api_key' is required for key auth mode connection.")
+        return data
 
 
 class OpenAIConnectionSchema(ConnectionSchema):
     type = StringTransformedEnum(allowed_values="open_ai", required=True)
     api_key = fields.Str(required=True)
     organization = fields.Str()
-    api_base = fields.Str()
+    base_url = fields.Str()
+
+
+class ServerlessConnectionSchema(ConnectionSchema):
+    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.SERVERLESS), required=True)
+    api_key = fields.Str(required=True)
+    api_base = fields.Str(required=True)
 
 
 class EmbeddingStoreConnectionSchema(ConnectionSchema):

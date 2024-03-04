@@ -32,7 +32,7 @@ nodes:
     type: code
     path: classify_with_llm.jinja2
   inputs:
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     suffix: ''
     max_tokens: '128'
     temperature: '0.1'
@@ -49,7 +49,7 @@ nodes:
     text_content: ${summarize_text_content.output}
   provider: AzureOpenAI
   connection: azure_open_ai_connection
-  api: completion
+  api: chat
   module: promptflow.tools.aoai
 - name: convert_to_dict
   type: python
@@ -69,7 +69,7 @@ node_variants:
             type: code
             path: summarize_text_content.jinja2
           inputs:
-            deployment_name: text-davinci-003
+            deployment_name: gpt-35-turbo
             suffix: ''
             max_tokens: '128'
             temperature: '0.2'
@@ -84,7 +84,7 @@ node_variants:
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
           connection: azure_open_ai_connection
-          api: completion
+          api: chat
           module: promptflow.tools.aoai
       variant_1:
         node:
@@ -93,7 +93,7 @@ node_variants:
             type: code
             path: summarize_text_content__variant_1.jinja2
           inputs:
-            deployment_name: text-davinci-003
+            deployment_name: gpt-35-turbo
             suffix: ''
             max_tokens: '256'
             temperature: '0.3'
@@ -108,5 +108,5 @@ node_variants:
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
           connection: azure_open_ai_connection
-          api: completion
+          api: chat
           module: promptflow.tools.aoai

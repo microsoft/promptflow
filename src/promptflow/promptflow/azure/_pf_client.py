@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -12,13 +11,15 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
+from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
-from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.azure.operations._trace_operations import TraceOperations
+from promptflow.exceptions import UserErrorException
 
 
 class PFClient:
@@ -48,7 +49,12 @@ class PFClient:
         **kwargs,
     ):
         self._validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs)
-        self._add_user_agent(kwargs)
+        # add user agent from kwargs if any
+        if isinstance(kwargs.get("user_agent", None), str):
+            ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
+        # append SDK ua to context
+        user_agent = setup_user_agent_to_operation_context(USER_AGENT)
+        kwargs.setdefault("user_agent", user_agent)
         self._ml_client = kwargs.pop("ml_client", None) or MLClient(
             credential=credential,
             subscription_id=subscription_id,
@@ -56,7 +62,10 @@ class PFClient:
             workspace_name=workspace_name,
             **kwargs,
         )
-        workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        try:
+            workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        except Exception as e:
+            raise UserErrorException(message=str(e), error=e)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
             workspace=workspace,
             credential=self._ml_client._credential,
@@ -95,6 +104,12 @@ class PFClient:
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
+            service_caller=self._service_caller,
+            **kwargs,
+        )
+        self._traces = TraceOperations(
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
             service_caller=self._service_caller,
             **kwargs,
         )
@@ -169,7 +184,7 @@ class PFClient:
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -180,6 +195,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -233,20 +249,34 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
-        if is_remote_uri(data):
-            # Pass through ARM id or remote url, the error will happen in runtime if format is not correct currently.
-            pass
-        else:
-            if data and not os.path.exists(data):
-                raise FileNotFoundError(f"data path {data} does not exist")
-        if not run and not data:
-            raise ValueError("at least one of data or run must be provided")
-
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+        # TODO(2887134): support cloud eager Run CRUD
         run = Run(
             name=name,
             display_name=display_name,
@@ -255,7 +285,7 @@ class PFClient:
             column_mapping=column_mapping,
             run=run,
             variant=variant,
-            flow=Path(flow),
+            flow=flow,
             connections=connections,
             environment_variables=environment_variables,
         )
@@ -314,8 +344,3 @@ class PFClient:
         :type run: Union[str, ~promptflow.sdk.entities.Run]
         """
         self.runs.visualize(runs)
-
-    def _add_user_agent(self, kwargs) -> None:
-        user_agent = kwargs.pop("user_agent", None)
-        user_agent = f"{user_agent} {USER_AGENT}" if user_agent else USER_AGENT
-        kwargs.setdefault("user_agent", user_agent)

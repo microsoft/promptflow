@@ -67,6 +67,6 @@
     <Error Text="The WiX Toolset v3.10 build tools must be installed to build this project. To download the WiX Toolset, see https://wixtoolset.org/releases/v3.10/stable" />
   </Target>
   <Target Name="BeforeBuild">
-    <HeatDirectory Directory="$(PromptflowSource)" ToolPath="$(WixToolPath)" AutogenerateGuids="true" ComponentGroupName="PromptflowCliComponentGroup" SuppressRootDirectory="true" DirectoryRefId="DynamicCliDir" OutputFile="out\promptflow.wxs" PreprocessorVariable="var.PromptflowSource" />
+    <HeatDirectory Directory="$(PromptflowSource)" ToolPath="$(WixToolPath)" AutogenerateGuids="true" ComponentGroupName="PromptflowCliComponentGroup" SuppressRootDirectory="true" DirectoryRefId="APPLICATIONFOLDER" OutputFile="out\promptflow.wxs" PreprocessorVariable="var.PromptflowSource" />
   </Target>
 </Project>

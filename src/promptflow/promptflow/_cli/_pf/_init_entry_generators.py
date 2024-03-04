@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 import inspect
-import logging
+import json
 import shutil
 from abc import ABC, abstractmethod
 from ast import literal_eval
@@ -12,12 +12,13 @@ from pathlib import Path
 
 from jinja2 import Environment, Template, meta
 
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import UserErrorException
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
 CHAT_FLOW_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "chat_flow" / "template"
 TOOL_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "package_tool"
@@ -38,7 +39,7 @@ class BaseGenerator(ABC):
 
     def generate(self) -> str:
         """Generate content based on given template and actual value of template keys."""
-        with open(self.tpl_file) as f:
+        with open(self.tpl_file, encoding=DEFAULT_ENCODING) as f:
             entry_template = f.read()
             entry_template = Template(entry_template, trim_blocks=True, lstrip_blocks=True)
 
@@ -49,7 +50,7 @@ class BaseGenerator(ABC):
         target = Path(target).resolve()
         action = "Overwriting" if target.exists() else "Creating"
         print(f"{action} {target.resolve()}...")
-        with open(target, "w", encoding="utf-8") as f:
+        with open(target, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(self.generate())
 
 
@@ -223,68 +224,81 @@ class FlowMetaYamlGenerator(BaseGenerator):
         return ["flow_name"]
 
 
-class StreamlitFileGenerator(BaseGenerator):
-    def __init__(self, flow_name, flow_dag_path, connection_provider):
+class StreamlitFileReplicator:
+    def __init__(self, flow_name, flow_dag_path):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
-        self.connection_provider = connection_provider
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
         self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
-        if not self.is_chat_flow:
-            raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
-        self._chat_input_name = next(
-            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None
-        )
-        self._chat_input = self.executable.inputs[self._chat_input_name]
-        if self._chat_input.type not in [ValueType.STRING.value, ValueType.LIST.value]:
-            raise UserErrorException(
-                f"Only support string or list type for chat input, but got {self._chat_input.type}."
-            )
 
     @property
-    def chat_input_default_value(self):
-        return self._chat_input.default
+    def flow_inputs(self):
+        if self.is_chat_flow:
+            results = {}
+            for flow_input, value in self.executable.inputs.items():
+                if not value.is_chat_history:
+                    if value.type.value not in [ValueType.STRING.value, ValueType.LIST.value]:
+                        raise UserErrorException(
+                            f"Only support string or list type for chat flow input, but got {value.type.value}."
+                        )
+                    results.update({flow_input: (value.default, value.type.value)})
+        else:
+            results = {
+                flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
+            }
+        return results
 
     @property
-    def chat_input_value_type(self):
-        return self._chat_input.type
+    def label(self):
+        return "Chat" if self.is_chat_flow else "Run"
 
     @property
-    def chat_input_name(self):
-        return self._chat_input_name
-
-    @property
-    def flow_inputs_params(self):
-        return f"{self.chat_input_name}={self.chat_input_name}"
-
-    @property
-    def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2"
+    def py_file(self):
+        return SERVE_TEMPLATE_PATH / "main.py"
 
     @property
     def flow_path(self):
         return self.flow_dag_path.as_posix()
 
     @property
+    def chat_output_name(self):
+        try:
+            output_name = next(
+                filter(
+                    lambda key: self.executable.outputs[key].is_chat_output,
+                    self.executable.outputs.keys(),
+                )
+            )
+        except StopIteration:
+            output_name = None
+        return output_name
+
+    @property
+    def is_streaming(self):
+        return True if self.is_chat_flow else False
+
+    @property
     def entry_template_keys(self):
         return [
             "flow_name",
-            "chat_input_name",
-            "flow_inputs_params",
             "flow_path",
             "is_chat_flow",
             "chat_history_input_name",
-            "connection_provider",
-            "chat_input_default_value",
-            "chat_input_value_type",
-            "chat_input_name",
+            "flow_inputs",
+            "label",
+            "chat_output_name",
+            "is_streaming",
         ]
 
     def generate_to_file(self, target):
         if Path(target).name == "main.py":
-            super().generate_to_file(target=target)
+            target = Path(target).resolve()
+            shutil.copy(self.py_file, target)
+            config_content = {key: getattr(self, key) for key in self.entry_template_keys}
+            with open(target.parent / "config.json", "w") as file:
+                json.dump(config_content, file, indent=4)
         else:
             shutil.copy(SERVE_TEMPLATE_PATH / Path(target).name, target)
 
@@ -368,19 +382,6 @@ class ToolPackageGenerator(BaseGenerator):
     @property
     def entry_template_keys(self):
         return ["tool_name", "extra_info", "icon"]
-
-
-class ManifestGenerator(BaseGenerator):
-    def __init__(self, package_name):
-        self.package_name = package_name
-
-    @property
-    def tpl_file(self):
-        return TOOL_TEMPLATE_PATH / "MANIFEST.in.jinja2"
-
-    @property
-    def entry_template_keys(self):
-        return ["package_name"]
 
 
 class SetupGenerator(BaseGenerator):

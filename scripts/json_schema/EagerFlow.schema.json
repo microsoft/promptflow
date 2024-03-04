@@ -1,0 +1,67 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "EagerFlowSchema": {
+            "properties": {
+                "additional_includes": {
+                    "title": "additional_includes",
+                    "type": "array",
+                    "items": {
+                        "title": "additional_includes",
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "display_name": {
+                    "title": "display_name",
+                    "type": "string"
+                },
+                "entry": {
+                    "title": "entry",
+                    "type": "string"
+                },
+                "environment": {
+                    "title": "environment",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "$schema": {
+                    "title": "$schema",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "tags": {
+                    "title": "tags",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "tags",
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "title": "type",
+                    "type": "string",
+                    "enum": [
+                        "standard",
+                        "evaluation",
+                        "chat"
+                    ],
+                    "enumNames": []
+                }
+            },
+            "type": "object",
+            "required": [
+                "entry"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "$ref": "#/definitions/EagerFlowSchema"
+}

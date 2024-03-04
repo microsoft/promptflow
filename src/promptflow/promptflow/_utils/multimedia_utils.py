@@ -1,5 +1,4 @@
 import base64
-import filetype
 import os
 import re
 import uuid
@@ -10,18 +9,13 @@ from urllib.parse import urlparse
 
 import requests
 
-from promptflow.contracts._errors import InvalidImageInput
+from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
-
-
-def _get_mime_type_from_path(path: Path):
-    ext = path.suffix[1:]
-    return f"image/{ext}" if ext else "image/*"
 
 
 def _get_extension_from_mime_type(mime_type: str):
@@ -63,34 +57,27 @@ def _is_base64(value: str):
 
 
 def _create_image_from_file(f: Path, mime_type: str = None):
-    if not mime_type:
-        mime_type = _get_mime_type_from_path(f)
     with open(f, "rb") as fin:
         return Image(fin.read(), mime_type=mime_type)
 
 
 def _create_image_from_base64(base64_str: str, mime_type: str = None):
     image_bytes = base64.b64decode(base64_str)
-    if not mime_type:
-        mime_type = filetype.guess_mime(image_bytes)
-        if not mime_type.startswith("image/"):
-            mime_type = "image/*"
     return Image(image_bytes, mime_type=mime_type)
 
 
 def _create_image_from_url(url: str, mime_type: str = None):
     response = requests.get(url)
     if response.status_code == 200:
-        if not mime_type:
-            mime_type = filetype.guess_mime(response.content)
-            if not mime_type.startswith("image/"):
-                mime_type = "image/*"
         return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
-            message_format=f"Error while fetching image from URL: {url}. "
-            "Error code: {response.status_code}. Error message: {response.text}.",
+            message_format="Failed to fetch image from URL: {url}. Error code: {error_code}. "
+            "Error message: {error_message}.",
             target=ErrorTarget.EXECUTOR,
+            url=url,
+            error_code=response.status_code,
+            error_message=response.text,
         )
 
 
@@ -135,10 +122,12 @@ def create_image(value: any):
         else:
             raise InvalidImageInput(
                 message_format="Invalid image input format. The image input should be a dictionary like: "
-                "{data:image/<image_type>;[path|base64|url]: <image_data>}.",
+                "{{data:image/<image_type>;[path|base64|url]: <image_data>}}.",
                 target=ErrorTarget.EXECUTOR,
             )
     elif isinstance(value, str):
+        if not value:
+            raise InvalidImageInput(message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR)
         return _create_image_from_string(value)
     else:
         raise InvalidImageInput(
@@ -167,6 +156,8 @@ def _save_image_to_file(
 def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
+        if obj.source_url:
+            return {f"data:{obj._mime_type};url": obj.source_url}
         if isinstance(obj, PFBytes):
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
@@ -174,13 +165,6 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
 
     return pfbytes_file_reference_encoder
-
-
-def default_json_encoder(obj):
-    if isinstance(obj, PFBytes):
-        return str(obj)
-    else:
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
@@ -195,29 +179,46 @@ def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=Fal
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
+def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None, inplace: bool = False) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
                 return f(value)
     if isinstance(value, list):
-        return [_process_recursively(v, process_funcs) for v in value]
-    if isinstance(value, dict):
-        return {k: _process_recursively(v, process_funcs) for k, v in value.items()}
+        if inplace:
+            for i in range(len(value)):
+                value[i] = _process_recursively(value[i], process_funcs, inplace)
+        else:
+            return [_process_recursively(v, process_funcs, inplace) for v in value]
+    elif isinstance(value, dict):
+        if inplace:
+            for k, v in value.items():
+                value[k] = _process_recursively(v, process_funcs, inplace)
+        else:
+            return {k: _process_recursively(v, process_funcs, inplace) for k, v in value.items()}
     return value
 
 
 def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
-        if value.type == ValueType.IMAGE:
-            if isinstance(updated_inputs[key], list):
-                # For aggregation node, the image input is a list.
-                updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
-            else:
-                updated_inputs[key] = create_image(updated_inputs[key])
-        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
-            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+        try:
+            if value.type == ValueType.IMAGE:
+                if isinstance(updated_inputs[key], list):
+                    # For aggregation node, the image input is a list.
+                    updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+                else:
+                    updated_inputs[key] = create_image(updated_inputs[key])
+            elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+                updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+        except Exception as ex:
+            error_type_and_message = f"({ex.__class__.__name__}) {ex}"
+            raise LoadMultimediaDataError(
+                message_format="Failed to load image for input '{key}': {error_type_and_message}",
+                key=key,
+                error_type_and_message=error_type_and_message,
+                target=ErrorTarget.EXECUTOR,
+            ) from ex
     return updated_inputs
 
 
