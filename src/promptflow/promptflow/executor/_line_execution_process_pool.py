@@ -1,4 +1,5 @@
 import contextvars
+import multiprocessing
 import os
 import queue
 import signal
@@ -22,7 +23,6 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
-from promptflow._utils.process_utils import use_fork_for_process
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
@@ -106,7 +106,18 @@ class LineExecutionProcessPool:
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
-        self._use_fork = use_fork_for_process()
+
+        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
+        sys_start_methods = multiprocessing.get_all_start_methods()
+        if multiprocessing_start_method not in sys_start_methods:
+            bulk_logger.warning(
+                f"Failed to set start method to '{multiprocessing_start_method}', "
+                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+            )
+            bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            multiprocessing_start_method = multiprocessing.get_start_method()
+        self._use_fork = multiprocessing_start_method in ["fork", "forkserver"]
+
         if isinstance(flow_executor, ScriptExecutor):
             self._storage = flow_executor._storage
         else:
