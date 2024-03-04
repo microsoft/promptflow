@@ -29,6 +29,7 @@ from promptflow._sdk._constants import (
     AzureRunTypes,
     DownloadedRun,
     FlowRunProperties,
+    IdentityKeys,
     RestRunTypes,
     RunDataKeys,
     RunInfoSources,
@@ -136,6 +137,7 @@ class Run(YAMLTranslatableMixin):
         self.tags = tags
         self.variant = variant
         self.run = run
+        self._resume_from = kwargs.get("resume_from", None)
         self._created_on = created_on or datetime.datetime.now()
         self._status = status or RunStatus.NOT_STARTED
         self.environment_variables = environment_variables or {}
@@ -181,6 +183,7 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
+        self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
 
@@ -210,6 +213,9 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.COMMAND] = self._command
             if self._outputs:
                 result[FlowRunProperties.OUTPUTS] = self._outputs
+            if self._resume_from:
+                resume_from_name = self._resume_from.name if isinstance(self._resume_from, Run) else self._resume_from
+                result[FlowRunProperties.RESUME_FROM] = resume_from_name
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             result = {
                 FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
@@ -240,6 +246,7 @@ class Run(YAMLTranslatableMixin):
             output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
+            resume_from=properties_json.get(FlowRunProperties.RESUME_FROM, None),
             display_name=obj.display_name,
             description=str(obj.description) if obj.description else None,
             tags=json.loads(str(obj.tags)) if obj.tags else None,
@@ -552,6 +559,9 @@ class Run(YAMLTranslatableMixin):
             vm_size = None
             compute_name = None
 
+        # parse identity resource id
+        identity_resource_id = self._identity.get(IdentityKeys.RESOURCE_ID, None)
+
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
             SubmitBulkRunRequest,
@@ -574,6 +584,7 @@ class Run(YAMLTranslatableMixin):
             vm_size=vm_size,
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
             compute_name=compute_name,
+            identity=identity_resource_id,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
@@ -701,3 +712,30 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
             **kwargs,
         )
+
+    def _copy(self, **kwargs):
+        """Copy a new run object.
+
+        This is used for resume run scenario, a new run will be created with the same properties as the original run.
+        Allowed to override some properties with kwargs. Supported properties are:
+        Meta: name, display_name, description, tags.
+        Run setting: runtime, resources, identity.
+        """
+        init_params = {
+            "flow": self.flow,
+            "data": self.data,
+            "variant": self.variant,
+            "run": self.run,
+            "column_mapping": self.column_mapping,
+            "display_name": self.display_name,
+            "description": self.description,
+            "tags": self.tags,
+            "environment_variables": self.environment_variables,
+            "connections": self.connections,
+            # "properties": self._properties,  # Do not copy system metrics
+            "source": self.source,
+            "identity": self._identity,
+            **kwargs,
+        }
+        logger.debug(f"Run init params: {init_params}")
+        return Run(**init_params)

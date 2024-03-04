@@ -299,6 +299,13 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
+    def test_flow_with_aad_connection(self):
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/flow_with_aad_connection")
+        output_path = Path(FLOWS_DIR) / "flow_with_aad_connection" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        output = json.loads(open(output_path, "r", encoding="utf-8").read())
+        assert output["result"] == "meid_token"
+
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         question = "什么是 chat gpt"
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
@@ -2054,3 +2061,56 @@ class TestCli:
         ]:
             path = Path(tmpdir) / filename
             assert path.is_file()
+
+    def test_flow_run_resume_from(self, capfd, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        new_run_id = str(uuid.uuid4())
+        display_name = "test"
+        description = "new description"
+        run_pf_command(
+            "run",
+            "create",
+            "--resume-from",
+            run_id,
+            "--name",
+            new_run_id,
+            "--set",
+            f"display_name={display_name}",
+            f"description={description}",
+            "tags.A=A",
+            "tags.B=B",
+        )
+        run = local_client.runs.get(name=new_run_id)
+        assert run.name == new_run_id
+        assert run.display_name == display_name
+        assert run.description == description
+        assert run.tags == {"A": "A", "B": "B"}
+        assert run._resume_from == run_id
+
+    def test_flow_run_exclusive_param(self, capfd) -> None:
+        # fetch std out
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--resume-from",
+                "mock",
+            )
+        out, _ = capfd.readouterr()
+        assert "More than one is provided for exclusive options" in out

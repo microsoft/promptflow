@@ -466,6 +466,7 @@ pf run create [--file]
               [--connections]
               [--set]
               [--source]
+              [--resume-from] # require promptflow>=1.7.0
 ```
 
 #### Examples
@@ -492,6 +493,18 @@ Create a run from an existing run record folder.
 
 ```bash
 pf run create --source <path-to-run-folder>
+```
+
+Create a run by specifying the `resume_from`. (Require promptflow>=1.7.0)
+
+Succeeded line result of the original run will be reused, only remaining/failed lines will be run.
+
+```bash
+pf run create --resume-from <original-run-name>
+```
+
+```bash
+pf run create --resume-from <original-run-name> --name <new-run-name> --set display_name='A new run' description='my run description' tags.Type=Test
 ```
 
 #### Optional Parameters
