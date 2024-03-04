@@ -184,6 +184,19 @@ class LineExecutionProcessPool:
         # TODO: init thread??????
         monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._monitor_pool = monitor_pool
+        args_list = [
+            (
+                self._task_queue,  # Shared task queue for all sub processes to read the input data.
+                self._result_dict,  # Line result list of the batch run.
+                i,  # Index of the sub process.
+                # Specific input queue for sub process, used to send input data to it.
+                self._input_queues[i],
+                # Specific output queue for the sub process, used to receive results from it.
+                self._output_queues[i],
+            )
+            for i in range(self._n_process)
+        ]
+        self._monitor_pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
 
     def end(self):
         if self._monitor_pool is not None:
@@ -266,7 +279,7 @@ class LineExecutionProcessPool:
                     break
 
                 # Handle output queue message.
-                message = self._handle_output_queue_messages(output_queue, self._result_dict, line_number)
+                message = self._handle_output_queue_messages(output_queue, result_dict, line_number)
                 if isinstance(message, LineResult):
                     completed = True
                     break
@@ -303,7 +316,7 @@ class LineExecutionProcessPool:
                     ex,
                     returned_node_run_infos,
                 )
-                self._result_dict[line_number] = result
+                result_dict[line_number] = result
 
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
