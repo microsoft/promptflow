@@ -177,9 +177,7 @@ class SpawnProcessManager(AbstractProcessManager):
         :param i: Index of the process to terminate.
         :type i: int
         """
-        warning_msg = (
-            "Unexpected error occurred while end process for index {i} and process id {pid}. " "Exception: {e}"
-        )
+        warning_msg = "Unexpected error occurred while end process for index {i} and process id {pid}. Exception: {e}"
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
@@ -368,9 +366,7 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         :param i: Index of the process to terminate.
         :type i: int
         """
-        warning_msg = (
-            "Unexpected error occurred while end process for index {i} and process id {pid}. " "Exception: {e}"
-        )
+        warning_msg = "Unexpected error occurred while end process for index {i} and process id {pid}. Exception: {e}"
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
