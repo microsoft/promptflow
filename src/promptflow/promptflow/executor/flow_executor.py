@@ -121,7 +121,7 @@ class FlowExecutor(BaseExecutor):
         super().__init__(
             flow_file,
             connections,
-            flow_id=flow.id or str(uuid.uuid4()),
+            flow_id=flow.id,
             working_dir=working_dir,
             storage=storage,
             raise_ex=raise_ex,
@@ -600,23 +600,24 @@ class FlowExecutor(BaseExecutor):
         finally:
             remove_metric_logger(_log_metric)
 
-    def exec(self, inputs: dict, node_concurrency=DEFAULT_CONCURRENCY_FLOW) -> dict:
-        """Executes the flow with the given inputs and returns the output.
+    # Seems this method is not used.
+    # def exec(self, inputs: dict, node_concurrency=DEFAULT_CONCURRENCY_FLOW) -> dict:
+    #     """Executes the flow with the given inputs and returns the output.
 
-        :param inputs: A dictionary containing the input values for the flow.
-        :type inputs: dict
-        :param node_concurrency: The maximum number of nodes that can be executed concurrently.
-        :type node_concurrency: int
-        :return: A dictionary containing the output values of the flow.
-        :rtype: dict
-        """
-        self._node_concurrency = node_concurrency
-        inputs = apply_default_value_for_input(self._flow.inputs, inputs)
-        run_tracker = RunTracker(self._storage)
-        result = self._exec(inputs, run_tracker)
-        #  TODO: remove this line once serving directly calling self.exec_line
-        self._add_line_results([result], run_tracker)
-        return result.output or {}
+    #     :param inputs: A dictionary containing the input values for the flow.
+    #     :type inputs: dict
+    #     :param node_concurrency: The maximum number of nodes that can be executed concurrently.
+    #     :type node_concurrency: int
+    #     :return: A dictionary containing the output values of the flow.
+    #     :rtype: dict
+    #     """
+    #     self._node_concurrency = node_concurrency
+    #     inputs = apply_default_value_for_input(self._flow.inputs, inputs)
+    #     run_tracker = RunTracker(self._storage)
+    #     result = self._exec(inputs, run_tracker)
+    #     #  TODO: remove this line once serving directly calling self.exec_line
+    #     self._add_line_results([result], run_tracker)
+    #     return result.output or {}
 
     def _extract_aggregation_inputs(self, nodes_outputs: dict):
         return {
@@ -870,15 +871,16 @@ class FlowExecutor(BaseExecutor):
             self._tools_manager, inputs, nodes, self._node_concurrency, context,
         ).execute(self._line_timeout_sec)
 
-    @staticmethod
-    def apply_inputs_mapping(
-        inputs: Mapping[str, Mapping[str, Any]],
-        inputs_mapping: Mapping[str, str],
-    ) -> Dict[str, Any]:
-        # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
+    # Seems no need here anymore 
+    # @staticmethod
+    # def apply_inputs_mapping(
+    #     inputs: Mapping[str, Mapping[str, Any]],
+    #     inputs_mapping: Mapping[str, str],
+    # ) -> Dict[str, Any]:
+    #     # TODO: This function will be removed after the batch engine refactoring is completed.
+    #     from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
 
-        return apply_inputs_mapping(inputs, inputs_mapping)
+    #     return apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.

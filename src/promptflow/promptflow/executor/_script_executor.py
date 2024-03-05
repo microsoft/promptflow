@@ -69,10 +69,9 @@ class ScriptExecutor(BaseExecutor):
         operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
         run_id = run_id or str(uuid.uuid4())
         line_run_id = run_id if index is None else f"{run_id}_{index}"
-        default_flow_id = "default_flow_id"
         run_tracker = RunTracker(self._storage)
         run_info = run_tracker.start_flow_run(
-            flow_id=default_flow_id,
+            flow_id=self._flow_id,
             root_run_id=run_id,
             run_id=line_run_id,
             parent_run_id=run_id,

@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -75,7 +75,7 @@ class BaseExecutor:
 
         self._flow_file = flow_file
         self._connections = connections
-        self._flow_id = flow_id
+        self._flow_id = flow_id or str(uuid.uuid4())
         self._working_dir = working_dir
         self._storage = storage or DefaultRunStorage()
         self._raise_ex = raise_ex
