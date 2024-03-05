@@ -1,14 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import os
 from pathlib import Path
 from unittest.mock import patch
 
+import mock
 import pytest
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
 from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
-from promptflow._sdk._errors import SDKError
+from promptflow._sdk._errors import RequiredEnvironmentVariablesNotSetError, SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
@@ -420,3 +422,47 @@ secrets:
             match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
         ):
             connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
+
+    def test_connection_from_env(self):
+        with pytest.raises(RequiredEnvironmentVariablesNotSetError) as e:
+            AzureOpenAIConnection.from_env()
+        assert "to build AzureOpenAIConnection not set" in str(e.value)
+
+        with pytest.raises(RequiredEnvironmentVariablesNotSetError) as e:
+            OpenAIConnection.from_env()
+        assert "to build OpenAIConnection not set" in str(e.value)
+
+        # Happy path
+        # AzureOpenAI
+        with mock.patch.dict(
+            os.environ,
+            {
+                "AZURE_OPENAI_ENDPOINT": "test_endpoint",
+                "AZURE_OPENAI_API_KEY": "test_key",
+                "AZURE_OPENAI_API_VERSION": "2024-01-01-preview",
+            },
+        ):
+            connection = AzureOpenAIConnection.from_env("test_connection")
+            assert connection._to_dict() == {
+                "name": "test_connection",
+                "module": "promptflow.connections",
+                "type": "azure_open_ai",
+                "api_base": "test_endpoint",
+                "api_key": "test_key",
+                "api_type": "azure",
+                "api_version": "2024-01-01-preview",
+                "auth_mode": "key",
+            }
+        # OpenAI
+        with mock.patch.dict(
+            os.environ, {"OPENAI_API_KEY": "test_key", "OPENAI_BASE_URL": "test_base", "OPENAI_ORG_ID": "test_org"}
+        ):
+            connection = OpenAIConnection.from_env("test_connection")
+            assert connection._to_dict() == {
+                "name": "test_connection",
+                "module": "promptflow.connections",
+                "type": "open_ai",
+                "api_key": "test_key",
+                "organization": "test_org",
+                "base_url": "test_base",
+            }
