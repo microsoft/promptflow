@@ -463,7 +463,7 @@ class TestBatch:
 
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
-        [("eval_flow_with_image_resume", "eval_flow_with_image_resume_default_20240301_175759_297000")],
+        [("eval_flow_with_image_resume", "eval_flow_with_image_resume_default_20240305_111258_103000")],
     )
     def test_batch_resume_aggregation_with_image(self, flow_folder, resume_from_run_name, dev_connections):
         run_storage = LocalStorageOperations(Run(flow="eval_flow_with_image_resume"))
