@@ -1,6 +1,13 @@
 import json
+import uuid
 from pathlib import Path
-from typing import Union, Dict
+from tempfile import mkdtemp
+from typing import Dict, Union
+
+import opentelemetry
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
@@ -16,17 +23,17 @@ WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 EAGER_FLOWS_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
-def get_flow_folder(folder_name, root: str = FLOW_ROOT):
+def get_flow_folder(folder_name, root: str = FLOW_ROOT) -> Path:
     flow_folder_path = Path(root) / folder_name
     return flow_folder_path
 
 
-def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml"):
+def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml") -> Path:
     yaml_file = get_flow_folder(folder_name, root) / file_name
     return yaml_file
 
 
-def get_entry_file(folder_name, root: str = EAGER_FLOW_ROOT, file_name: str = "entry.py"):
+def get_entry_file(folder_name, root: str = EAGER_FLOW_ROOT, file_name: str = "entry.py") -> Path:
     entry_file = get_flow_folder(folder_name, root) / file_name
     return entry_file
 
@@ -37,7 +44,7 @@ def get_flow_from_folder(folder_name, root: str = FLOW_ROOT, file_name: str = "f
         return Flow.deserialize(load_yaml(fin))
 
 
-def get_flow_inputs_file(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl"):
+def get_flow_inputs_file(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl") -> Path:
     inputs_file = get_flow_folder(folder_name, root) / file_name
     return inputs_file
 
@@ -110,6 +117,25 @@ def is_image_file(file_path: Path):
     return file_extension in image_extensions
 
 
+def construct_flow_execution_request_json(flow_folder, root=FLOW_ROOT, inputs=None, connections=None):
+    working_dir = get_flow_folder(flow_folder, root=root)
+    tmp_dir = Path(mkdtemp())
+    log_path = tmp_dir / "log.txt"
+    return {
+        "run_id": str(uuid.uuid4()),
+        "working_dir": working_dir.as_posix(),
+        "flow_file": "flow.dag.yaml",
+        "output_dir": tmp_dir.as_posix(),
+        "connections": connections,
+        "log_path": log_path.as_posix(),
+        "inputs": inputs,
+        "operation_context": {
+            "request_id": "test-request-id",
+            "user_agent": "test-user-agent",
+        },
+    }
+
+
 class MemoryRunStorage(AbstractRunStorage):
     def __init__(self):
         self._node_runs: Dict[str, NodeRunInfo] = {}
@@ -120,3 +146,12 @@ class MemoryRunStorage(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo):
         self._node_runs[run_info.run_id] = run_info
+
+
+def prepare_memory_exporter():
+    tracer_provider = TracerProvider()
+    memory_exporter = InMemorySpanExporter()
+    span_processor = SimpleSpanProcessor(memory_exporter)
+    tracer_provider.add_span_processor(span_processor)
+    opentelemetry.trace.set_tracer_provider(tracer_provider)
+    return memory_exporter

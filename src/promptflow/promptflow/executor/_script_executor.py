@@ -1,19 +1,19 @@
 import asyncio
+import importlib
 import inspect
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
-from promptflow._core.tracer import _traced, Tracer
+from promptflow._core.tool_meta_generator import PythonLoadError
+from promptflow._core.tracer import Tracer, _traced
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._base_executor import BaseExecutor
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
@@ -24,35 +24,21 @@ class ScriptExecutor(BaseExecutor):
     def __init__(
         self,
         flow_file: Path,
-        entry: str,
-        *,
+        connections: Optional[dict] = None,
         working_dir: Optional[Path] = None,
+        storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
 
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        super().__init__(flow_file, working_dir=working_dir, **kwargs)
-
         self._flow_file = flow_file
-        # TODO: Refine the logic here
-        m = load_python_module_from_file(flow_file)
-        func: Callable = getattr(m, entry, None)
-        if func is None or not inspect.isfunction(func):
-            raise PythonLoadError(
-                message_format="Failed to load python function '{entry}' from file '{flow_file}'.",
-                entry=entry,
-                flow_file=flow_file,
-            )
-        # If the function is not decorated with trace, add trace for it.
-        if not hasattr(func, "__original_function"):
-            func = _traced(func)
-
-        inputs, _, _, _ = function_to_interface(func)
-        self._func = func
-        self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
-        self._entry = entry
-        self._is_async = inspect.iscoroutinefunction(self._func)
+        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        self._initialize_function()
+        self._connections = connections
+        self._storage = storage or DefaultRunStorage()
+        self._flow_id = "default_flow_id"
+        self._log_interval = 60
+        self._line_timeout_sec = 600
 
     def exec_line(
         self,
@@ -61,13 +47,13 @@ class ScriptExecutor(BaseExecutor):
         run_id: Optional[str] = None,
         **kwargs,
     ) -> LineResult:
-        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
-        # so, we need remove line_number from inputs if it is not included in input of python function.
-        if LINE_NUMBER_KEY in inputs and LINE_NUMBER_KEY not in self._inputs:
-            inputs.pop(LINE_NUMBER_KEY)
-        operation_context = OperationContext.get_instance()
-        operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
         run_id = run_id or str(uuid.uuid4())
+        with self._update_operation_context(run_id, index):
+            return self._exec_line(inputs, index, run_id)
+
+    def _exec_line(
+        self, inputs: Mapping[str, Any], index: Optional[int] = None, run_id: Optional[str] = None
+    ) -> LineResult:
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         run_tracker = RunTracker(self._storage)
         run_info = run_tracker.start_flow_run(
@@ -78,6 +64,9 @@ class ScriptExecutor(BaseExecutor):
             inputs=inputs,
             index=index,
         )
+        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
+        # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
+        inputs = {k: inputs[k] for k in self._inputs if k in inputs}
         output = None
         traces = []
         try:
@@ -109,3 +98,29 @@ class ScriptExecutor(BaseExecutor):
 
     def get_inputs_definition(self):
         return self._inputs
+
+    def _initialize_function(self):
+        module_name, func_name = self._parse_flow_file()
+        module = importlib.import_module(module_name)
+        func = getattr(module, func_name, None)
+        if func is None or not inspect.isfunction(func):
+            raise PythonLoadError(
+                message_format="Failed to load python function '{func_name}' from file '{module_name}'.",
+                func_name=func_name,
+                module_name=module_name,
+            )
+        # If the function is not decorated with trace, add trace for it.
+        if not hasattr(func, "__original_function"):
+            func = _traced(func)
+        self._func = func
+        inputs, _, _, _ = function_to_interface(self._func)
+        self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
+        self._is_async = inspect.iscoroutinefunction(self._func)
+        return func
+
+    def _parse_flow_file(self):
+        with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        entry = flow_dag.get("entry", "")
+        module_name, func_name = entry.split(":")
+        return module_name, func_name

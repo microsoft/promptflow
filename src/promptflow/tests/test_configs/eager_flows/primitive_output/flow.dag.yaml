@@ -1,2 +1,1 @@
-path: ./entry.py
-entry: my_flow
+entry: primitive_output_entry:my_flow

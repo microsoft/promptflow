@@ -34,8 +34,11 @@ class TestAOAI:
             temperature=0,
             user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
+            seed=123
         )
         assert "additional details" in result.lower()
+        # verify if openai built-in retry mechanism is disabled
+        assert aoai_provider._client.max_retries == 0
 
     def test_aoai_chat_api(self, azure_open_ai_connection, example_prompt_template, chat_history):
         result = chat(
@@ -48,6 +51,22 @@ class TestAOAI:
             chat_history=chat_history,
         )
         assert "Product X".lower() in result.lower()
+
+    def test_correctly_pass_params(self, aoai_provider, example_prompt_template, chat_history):
+        seed_value = 123
+        with patch.object(aoai_provider._client.chat.completions, 'create') as mock_create:
+            aoai_provider.chat(
+                prompt=example_prompt_template,
+                deployment_name="gpt-35-turbo",
+                max_tokens="32",
+                temperature=0,
+                user_input="Fill in more details about trend 2.",
+                chat_history=chat_history,
+                seed=seed_value
+            )
+            mock_create.assert_called_once()
+            called_with_params = mock_create.call_args[1]
+            assert called_with_params['seed'] == seed_value
 
     @pytest.mark.parametrize(
         "function_call",

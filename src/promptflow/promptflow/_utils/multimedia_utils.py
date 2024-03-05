@@ -127,9 +127,7 @@ def create_image(value: any):
             )
     elif isinstance(value, str):
         if not value:
-            raise InvalidImageInput(
-                message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR
-            )
+            raise InvalidImageInput(message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR)
         return _create_image_from_string(value)
     else:
         raise InvalidImageInput(
@@ -167,13 +165,6 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
 
     return pfbytes_file_reference_encoder
-
-
-def default_json_encoder(obj):
-    if isinstance(obj, PFBytes):
-        return str(obj)
-    else:
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
@@ -224,8 +215,9 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
             error_type_and_message = f"({ex.__class__.__name__}) {ex}"
             raise LoadMultimediaDataError(
                 message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                key=key, error_type_and_message=error_type_and_message,
-                target=ex.target
+                key=key,
+                error_type_and_message=error_type_and_message,
+                target=ErrorTarget.EXECUTOR,
             ) from ex
     return updated_inputs
 

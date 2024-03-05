@@ -11,21 +11,35 @@ from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
 
 from promptflow import PFClient
+from promptflow._core.openai_injector import inject_openai_api
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from .recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
+from .recording_utilities import (
+    RecordStorage,
+    check_pydantic_v2,
+    delete_count_lock_file,
+    inject_async_with_recording,
+    inject_sync_with_recording,
+    is_live,
+    is_record,
+    is_replay,
+    mock_tool,
+    recording_array_reset,
+)
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
+EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 
 @pytest.fixture(scope="session")
@@ -140,9 +154,14 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
 
 
 def create_client_by_model(
-    model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None, environment_variables={}
+    model_name: str,
+    mocker: MockerFixture,
+    connections: dict = {},
+    extension_type=None,
+    environment_variables={},
+    model_root=MODEL_ROOT,
 ):
-    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
+    model_path = (Path(model_root) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     if connections:
         mocker.patch.dict(os.environ, connections)
@@ -193,12 +212,19 @@ def serving_client_with_environment_variables(mocker: MockerFixture):
 
 
 @pytest.fixture
-def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
-        RecordStorage.get_instance(file_path)
-    yield
+def simple_eager_flow(mocker: MockerFixture):
+    return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
 
+
+@pytest.fixture
+def simple_eager_flow_primitive_output(mocker: MockerFixture):
+    return create_client_by_model("simple_with_yaml", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+# ==================== Recording injection ====================
+# To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
+# in fork mode, this is automatically enabled.
+# in spawn mode, we need to decalre recording in each process separately.
 
 SpawnProcess = multiprocessing.get_context("spawn").Process
 
@@ -213,7 +239,7 @@ class MockSpawnProcess(SpawnProcess):
 
 
 @pytest.fixture
-def recording_injection(mocker: MockerFixture, recording_file_override):
+def recording_injection(mocker: MockerFixture):
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
@@ -222,10 +248,10 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     patches = setup_recording_injection_if_enabled()
 
     try:
-        yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
+        yield
     finally:
-        if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-            RecordStorage.get_instance().delete_lock_file()
+        RecordStorage.get_instance().delete_lock_file()
+        delete_count_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class
@@ -238,19 +264,38 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
 
 def setup_recording_injection_if_enabled():
     patches = []
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+
+    def start_patches(patch_targets):
+        for target, mock_func in patch_targets.items():
+            patcher = patch(target, mock_func)
+            patches.append(patcher)
+            patcher.start()
+
+    if is_replay() or is_record():
+        check_pydantic_v2()
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
-        patch_targets = ["promptflow._core.tool.tool", "promptflow._internal.tool", "promptflow.tool"]
+        patch_targets = {
+            "promptflow._core.tool.tool": mocked_tool,
+            "promptflow._internal.tool": mocked_tool,
+            "promptflow.tool": mocked_tool,
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
 
-        for target in patch_targets:
-            patcher = patch(target, mocked_tool)
-            patches.append(patcher)
-            patcher.start()
+    if is_live() and is_in_ci_pipeline():
+        patch_targets = {
+            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+        }
+        start_patches(patch_targets)
+
+    inject_openai_api()
     return patches
 
 

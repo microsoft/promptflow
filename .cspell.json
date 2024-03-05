@@ -25,6 +25,7 @@
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/promptflow/azure/_restclient/swagger.json",
+    "src/promptflow/promptflow/azure/_models/**",
     "src/promptflow/tests/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
@@ -83,7 +84,13 @@
     "nunit",
     "astext",
     "Likert",
-    "pfsvc"
+    "pfsvc",
+    "geval",
+    "Summ",
+    "Bhavik",
+    "meid",
+    "Entra",
+    "uvicorn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -164,7 +171,16 @@
     "WBITS",
     "laddr",
     "nrows",
-    "Dumpable"
+    "Dumpable",
+    "XCLASS",
+    "otel",
+    "OTLP",
+    "spawnv",
+    "spawnve",
+    "addrs",
+    "pywin",
+    "STARTF",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"

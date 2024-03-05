@@ -178,7 +178,18 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping):
     return result if include_image else chat_str
 
 
-def handle_openai_error(tries: int = 10, delay: float = 8.0):
+def generate_retry_interval(retry_count: int) -> float:
+    min_backoff_in_sec = 3
+    max_backoff_in_sec = 60
+    retry_interval = min_backoff_in_sec + ((2 ** retry_count) - 1)
+
+    if retry_interval > max_backoff_in_sec:
+        retry_interval = max_backoff_in_sec
+    return retry_interval
+
+
+# TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
+def handle_openai_error(tries: int = 100):
     """
     A decorator function that used to handle OpenAI error.
     OpenAI Error falls into retriable vs non-retriable ones.
@@ -224,14 +235,14 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         retry_after_in_header = None
 
                     if not retry_after_in_header:
-                        retry_after_seconds = delay * (2 ** i)
+                        retry_after_seconds = generate_retry_interval(i)
                         msg = (
                             f"{type(e).__name__} #{i}, but no Retry-After header, "
                             + f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     else:
-                        retry_after_seconds = float(retry_after_in_header) * (2 ** i)
+                        retry_after_seconds = float(retry_after_in_header)
                         msg = (
                             f"{type(e).__name__} #{i}, Retry-After={retry_after_in_header}, "
                             f"Back off {retry_after_seconds} seconds for retry."
@@ -372,13 +383,37 @@ def normalize_connection_config(connection):
     ensuring it is compatible and standardized for use.
     """
     if isinstance(connection, AzureOpenAIConnection):
-        return {
-            "api_key": connection.api_key,
-            "api_version": connection.api_version,
-            "azure_endpoint": connection.api_base
-        }
+        use_key_auth = True
+        try:
+            from promptflow._sdk._constants import ConnectionAuthMode
+            if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
+                use_key_auth = False
+        except ImportError as e:
+            if "cannot import name 'ConnectionAuthMode' from 'promptflow._sdk._constants'" in str(e):
+                print("Failed to import ConnectionAuthMode, use key auth by default.")
+                pass
+            else:
+                raise e
+
+        if use_key_auth:
+            return {
+                # disable OpenAI's built-in retry mechanism by using our own retry
+                # for better debuggability and real-time status updates.
+                "max_retries": 0,
+                "api_key": connection.api_key,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+            }
+        else:
+            return {
+                "max_retries": 0,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+                "azure_ad_token_provider": connection.get_token,
+            }
     elif isinstance(connection, OpenAIConnection):
         return {
+            "max_retries": 0,
             "api_key": connection.api_key,
             "organization": connection.organization,
             "base_url": connection.base_url
@@ -387,3 +422,33 @@ def normalize_connection_config(connection):
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
+
+
+def init_openai_client(connection: OpenAIConnection):
+    try:
+        from openai import OpenAI as OpenAIClient
+    except ImportError as e:
+        if "cannot import name 'OpenAI' from 'openai'" in str(e):
+            raise ImportError(
+                "Please upgrade your OpenAI package to version 1.0.0 or later" +
+                "using the command: pip install --upgrade openai.")
+        else:
+            raise e
+
+    conn_dict = normalize_connection_config(connection)
+    return OpenAIClient(**conn_dict)
+
+
+def init_azure_openai_client(connection: AzureOpenAIConnection):
+    try:
+        from openai import AzureOpenAI as AzureOpenAIClient
+    except ImportError as e:
+        if "cannot import name 'AzureOpenAI' from 'openai'" in str(e):
+            raise ImportError(
+                "Please upgrade your OpenAI package to version 1.0.0 or later" +
+                "using the command: pip install --upgrade openai.")
+        else:
+            raise e
+
+    conn_dict = normalize_connection_config(connection)
+    return AzureOpenAIClient(**conn_dict)

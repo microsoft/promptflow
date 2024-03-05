@@ -1,2 +1,2 @@
-entry: my_func
-path: ./not_exist.py
+entry: module:my_func
+path: ./some_path.py

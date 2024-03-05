@@ -11,7 +11,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
-from typing import List, Union
+from typing import List, Optional, Union
 
 import psutil
 
@@ -24,7 +24,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import get_int_env_var, log_progress, set_context
+from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -32,6 +32,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._base_executor import BaseExecutor
 from promptflow.executor._errors import (
+    BatchExecutionTimeoutError,
     LineExecutionTimeoutError,
     ProcessCrashError,
     ProcessInfoObtainedTimeout,
@@ -42,6 +43,8 @@ from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
+
+TERMINATE_SIGNAL = "terminate"
 
 
 def signal_handler(signum, frame):
@@ -94,14 +97,13 @@ class LineExecutionProcessPool:
         flow_executor: FlowExecutor,
         nlines,
         run_id,
-        variant_id,
-        validate_inputs,
         output_dir,
+        batch_timeout_sec: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
+        worker_count: Optional[int] = None,
     ):
         self._nlines = nlines
         self._run_id = run_id
-        self._variant_id = variant_id
-        self._validate_inputs = validate_inputs
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method not in sys_start_methods:
@@ -119,9 +121,8 @@ class LineExecutionProcessPool:
         self._storage = flow_executor._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
-        self._line_timeout_sec = flow_executor._line_timeout_sec
-        if self._line_timeout_sec is None:
-            self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
+        self._batch_timeout_sec = batch_timeout_sec
         self._output_dir = output_dir
         self._flow_create_kwargs = {
             "flow_file": flow_executor._flow_file,
@@ -130,8 +131,10 @@ class LineExecutionProcessPool:
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
         }
-        if hasattr(flow_executor, "_entry"):
-            self._flow_create_kwargs["entry"] = flow_executor._entry
+
+        # Will set to True if the batch run is timeouted.
+        self._is_timeout = False
+        self._worker_count = self._determine_worker_count(worker_count)
 
     def __enter__(self):
         manager = Manager()
@@ -139,7 +142,7 @@ class LineExecutionProcessPool:
         self._completed_idx = manager.dict()
 
         self._task_queue = Queue()
-        self._n_process = self._determine_worker_count()
+        self._n_process = self._worker_count
 
         # When using fork, we first spawn a sub process, the SemLock created in fork context (multiprocessing.Queue()）
         # can't used in a spawn context. Since spawn does not share memory, synchronization primitives created by
@@ -179,6 +182,7 @@ class LineExecutionProcessPool:
             self._processes_manager = SpawnProcessManager(executor_creation_func, **common_kwargs)
 
         self._processes_manager.start_processes()
+        self._processes_manager.ensure_healthy()
 
         monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._monitor_pool = monitor_pool
@@ -190,9 +194,14 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
+    @property
+    def is_timeout(self):
+        return self._is_timeout
+
     def _get_process_info(self, index):
         start_time = time.time()
         while True:
+            self._processes_manager.ensure_healthy()
             try:
                 if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
                     raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
@@ -206,7 +215,7 @@ class LineExecutionProcessPool:
                 time.sleep(1)
                 continue
             except Exception as e:
-                bulk_logger.warning(f"Unexpected error occurred while get process info. Exception: {e}")
+                raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
 
     def _ensure_process_terminated_within_timeout(self, process_id):
         start_time = time.time()
@@ -218,7 +227,7 @@ class LineExecutionProcessPool:
     def _is_process_alive(self, process_id):
         return psutil.pid_exists(process_id)
 
-    def _handle_output_queue_messages(self, output_queue: Queue, result_list):
+    def _handle_output_queue_messages(self, output_queue: Queue, result_list: List[LineResult]):
         try:
             message = output_queue.get(timeout=1)
             if isinstance(message, LineResult):
@@ -236,26 +245,41 @@ class LineExecutionProcessPool:
         return None
 
     def _monitor_workers_and_process_tasks_in_thread(
-        self, task_queue: Queue, timeout_time, result_list: List[FlowRunInfo], index, input_queue, output_queue
+        self,
+        task_queue: Queue,
+        result_list: List[LineResult],
+        index: int,
+        input_queue: Queue,
+        output_queue: Queue,
+        batch_start_time: datetime,
     ):
         index, process_id, process_name = self._get_process_info(index)
 
-        while True:
+        # Entering the while loop requires two conditions:
+        # 1. The task queue is not empty, meaning there are lines yet to be executed.
+        # 2. The batch run has not reached the batch timeout limit.
+        while not self._batch_timeout_expired(batch_start_time):
+            self._processes_manager.ensure_healthy()
             try:
                 # Get task from task_queue
-                args = task_queue.get(timeout=1)
+                inputs, line_number, run_id = task_queue.get(timeout=1)
             except queue.Empty:
-                self._processes_manager.end_process(index)
-                # In fork mode, the main process and the sub spawn process communicate through _process_info.
-                # We need to ensure the process has been killed before returning. Otherwise, it may cause
-                # the main process have exited but the spawn process is still alive.
-                # At this time, a connection error will be reported.
-                self._ensure_process_terminated_within_timeout(process_id)
-                return
+                break
+
+            # Calculate the line timeout for the current line.
+            line_timeout_sec = self._line_timeout_sec
+            if self._batch_timeout_sec:
+                remaining_execution_time = (
+                    self._batch_timeout_sec - (datetime.utcnow() - batch_start_time).total_seconds()
+                )
+                if remaining_execution_time <= 0:
+                    self._is_timeout = True
+                    break
+                line_timeout_sec = min(line_timeout_sec, remaining_execution_time)
 
             # Put task into input_queue
+            args = (inputs, line_number, run_id, line_timeout_sec)
             input_queue.put(args)
-            inputs, line_number, run_id = args[:3]
 
             self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
@@ -263,15 +287,10 @@ class LineExecutionProcessPool:
             start_time = datetime.utcnow()
             completed = False
             crashed = False
-            timeouted = False
             returned_node_run_infos = {}
 
-            # Responsible for checking the output queue messages and
-            # processing them within a specified timeout period.
-            # Here we add more seconds because of the following reasons:
-            # 1. At the last second, there would be several timeout message from exec_line.
-            # 2. It may take time to create worker so actual timeout time may be longer.
-            while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time + 10:
+            # Responsible for checking the output queue messages and processing them within a specified timeout period.
+            while not self._batch_timeout_expired(batch_start_time) and not self._line_timeout_expired(start_time):
                 # Monitor process aliveness.
                 crashed = not self._is_process_alive(process_id)
                 if crashed:
@@ -285,9 +304,6 @@ class LineExecutionProcessPool:
                 if isinstance(message, NodeRunInfo):
                     returned_node_run_infos[message.node] = message
 
-            # Check if the loop ended due to timeout
-            timeouted = not completed and not crashed
-
             # Handle line execution completed.
             if completed:
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
@@ -299,15 +315,26 @@ class LineExecutionProcessPool:
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
-                # Handle line execution timeout.
-                elif timeouted:
-                    bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, timeout_time)
                 else:
-                    # This branch should not be reached, add this warning for the case.
+                    # Handle line execution timeout.
+                    if self._line_timeout_expired(start_time):
+                        bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
+                        ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
+                    # Handle batch execution timeout.
+                    if self._batch_timeout_expired(batch_start_time):
+                        bulk_logger.warning(
+                            f"Line {line_number} execution terminated due to the total "
+                            f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
+                        )
+                        ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
+                        # Set is_timeout to True if the batch run exceeds the batch timeout.
+                        self._is_timeout = True
+                # This branch should not be reached, add this warning for the case.
+                if ex is None:
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
                     bulk_logger.warning(msg)
                     ex = UnexpectedError(msg)
+
                 result = self._generate_line_result_for_exception(
                     inputs,
                     run_id,
@@ -322,8 +349,10 @@ class LineExecutionProcessPool:
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
-                # If there are still tasks in task_queue, restart a new process to execute the task.
-                if not task_queue.empty():
+                # If there are still tasks in the task_queue and the batch run does not exceed the batch timeout,
+                # restart a new process to execute the task.
+                run_finished = task_queue.empty() or self._batch_timeout_expired(batch_start_time)
+                if not run_finished:
                     self._processes_manager.restart_process(index)
                     # We need to ensure the process has been killed before continuing to execute.
                     # Otherwise the process will receive new task, and during the execution, the process
@@ -332,6 +361,32 @@ class LineExecutionProcessPool:
                     index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
+
+        # If the while loop exits due to batch run timeout, we should set is_timeout to True if we didn't set it before.
+        self._is_timeout = self._is_timeout or self._batch_timeout_expired(batch_start_time)
+
+        if not self._is_timeout:
+            input_queue.put(TERMINATE_SIGNAL)
+
+        # End the process when the batch timeout is exceeded or when all lines have been executed.
+        self._processes_manager.end_process(index)
+
+        # In fork mode, the main process and the sub spawn process communicate through _process_info.
+        # We need to ensure the process has been killed before returning. Otherwise, it may cause
+        # the main process have exited but the spawn process is still alive.
+        # At this time, a connection error will be reported.
+        self._ensure_process_terminated_within_timeout(process_id)
+
+    def _batch_timeout_expired(self, start_time: datetime) -> bool:
+        if self._batch_timeout_sec is None:
+            return False
+        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
+
+    def _line_timeout_expired(self, start_time: datetime) -> bool:
+        # Here we add more seconds because of the following reasons:
+        # 1. At the last second, there would be several timeout message from exec_line.
+        # 2. It may take time to create worker so actual timeout time may be longer.
+        return (datetime.utcnow() - start_time).total_seconds() > self._line_timeout_sec + 10
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
         """Replace multimedia data in line result with string place holder to prevent OOM
@@ -424,8 +479,6 @@ class LineExecutionProcessPool:
                     inputs,
                     index,
                     self._run_id,
-                    self._variant_id,
-                    self._validate_inputs,
                 )
             )
 
@@ -443,16 +496,17 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
+                batch_start_time = datetime.utcnow()
                 args_list = [
                     (
                         self._task_queue,  # Shared task queue for all sub processes to read the input data.
-                        self._line_timeout_sec,  # Line execution timeout.
-                        result_list,  # Bath run result list.
+                        result_list,  # Line result list of the batch run.
                         i,  # Index of the sub process.
                         # Specific input queue for sub process, used to send input data to it.
                         self._input_queues[i],
                         # Specific output queue for the sub process, used to receive results from it.
                         self._output_queues[i],
+                        batch_start_time,
                     )
                     for i in range(self._n_process)
                 ]
@@ -482,7 +536,7 @@ class LineExecutionProcessPool:
                                 total_count=self._nlines,
                             )
                             last_log_count = current_result_count
-                            # Check every 1 second
+                        # Check every 1 second
                         async_result.wait(1)
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
                     # The exceptions raised will be re-raised by the get() method.
@@ -494,9 +548,9 @@ class LineExecutionProcessPool:
             except PromptflowException:
                 raise
             except Exception as e:
-                bulk_logger.error(f"Process {os.getpid()} failed with exception: {e}")
+                bulk_logger.error(f"ProcessPool failed with exception: {e}")
                 raise ProcessPoolError(
-                    message_format=f"Process {os.getpid()} failed with exception: {e}",
+                    message_format=f"ProcessPool failed with exception: {e}",
                     target=ErrorTarget.EXECUTOR,
                 ) from e
         return result_list
@@ -518,11 +572,9 @@ class LineExecutionProcessPool:
             msgs.append("Processing Lines: " + ", ".join(lines) + ".")
         return msgs
 
-    def _determine_worker_count(self):
-        worker_count = get_int_env_var("PF_WORKER_COUNT")
-
-        # Starting a new process in non-fork mode requires to allocate memory. Calculate the maximum number of processes
-        # based on available memory to avoid memory bursting.
+    def _determine_worker_count(self, worker_count):
+        # Starting a new process in non-fork mode requires to allocate memory.
+        # Calculate the maximum number of processes based on available memory to avoid memory bursting.
         estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
 
         # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
@@ -548,7 +600,7 @@ class LineExecutionProcessPool:
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
-        bulk_logger.info(f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
+        bulk_logger.info(f"Set process count to {worker_count}.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
                 f"The current process count ({worker_count}) is larger than recommended process count "
@@ -558,23 +610,15 @@ class LineExecutionProcessPool:
 
 
 def _exec_line(
-    executor: FlowExecutor,
-    output_queue,
-    *,
-    inputs: dict,
-    run_id,
-    index: int,
-    variant_id,
-    validate_inputs,
+    executor: FlowExecutor, output_queue: Queue, *, inputs: dict, run_id: str, index: int, line_timeout_sec: int
 ):
     try:
         line_result = executor.exec_line(
             inputs=inputs,
             run_id=run_id,
             index=index,
-            variant_id=variant_id,
-            validate_inputs=validate_inputs,
             node_concurrency=DEFAULT_CONCURRENCY_BULK,
+            line_timeout_sec=line_timeout_sec,
         )
         if line_result is not None:
             # For eager flow, the output may be a dataclass which is not picklable, we need to convert it to dict.
@@ -617,6 +661,12 @@ def _process_wrapper(
     else:
         bulk_logger.info("Current thread is not main thread, skip signal handler registration in batch process pool.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
+
+    # set up OpenTelemetry exporter in process who executes the line
+    from promptflow._trace._start_trace import setup_exporter_from_environ
+
+    setup_exporter_from_environ()
+
     if log_context_initialization_func:
         with log_context_initialization_func():
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
@@ -628,7 +678,6 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
     if isinstance(flow_executor, ScriptExecutor):
         return ScriptExecutor(
             flow_file=flow_executor._flow_file,
-            entry=flow_executor._entry,
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
             storage=storage,
@@ -652,16 +701,18 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 
     while True:
         try:
-            args = input_queue.get(timeout=1)
-            inputs, line_number, run_id, variant_id, validate_inputs = args[:5]
+            data = input_queue.get(timeout=1)
+            if data == TERMINATE_SIGNAL:
+                # If found the terminate signal, exit the process.
+                break
+            inputs, line_number, run_id, line_timeout_sec = data
             result = _exec_line(
                 executor=executor,
                 output_queue=output_queue,
                 inputs=inputs,
                 run_id=run_id,
                 index=line_number,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
+                line_timeout_sec=line_timeout_sec,
             )
             output_queue.put(result)
         except queue.Empty:

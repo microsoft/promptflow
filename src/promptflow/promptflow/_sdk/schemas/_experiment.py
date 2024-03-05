@@ -15,16 +15,18 @@ from promptflow._sdk.schemas._fields import (
 from promptflow._sdk.schemas._run import RunSchema
 
 
-class ScriptNodeSchema(metaclass=PatchedSchemaMeta):
+class CommandNodeSchema(YamlFileSchema):
     # TODO: Not finalized now. Need to revisit.
     name = fields.Str(required=True)
-    type = StringTransformedEnum(allowed_values=ExperimentNodeType.CODE, required=True)
-    path = UnionField([LocalPathField(required=True), fields.Str(required=True)])
+    display_name = fields.Str()
+    type = StringTransformedEnum(allowed_values=ExperimentNodeType.COMMAND, required=True)
+    code = LocalPathField()
+    command = fields.Str(required=True)
     inputs = fields.Dict(keys=fields.Str)
+    outputs = fields.Dict(keys=fields.Str, values=LocalPathField(allow_none=True))
+    environment_variables = fields.Dict(keys=fields.Str, values=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()  # TODO: Revisit the required fields
-    display_name = fields.Str()
-    environment_variables = fields.Dict(keys=fields.Str, values=fields.Str)
 
 
 class FlowNodeSchema(RunSchema):
@@ -54,18 +56,24 @@ class ExperimentInputSchema(metaclass=PatchedSchemaMeta):
 
 
 class ExperimentTemplateSchema(YamlFileSchema):
-    name = fields.Str()
     description = fields.Str()
     data = fields.List(NestedField(ExperimentDataSchema))  # Optional
     inputs = fields.List(NestedField(ExperimentInputSchema))  # Optional
-    nodes = fields.List(UnionField([NestedField(FlowNodeSchema), NestedField(ScriptNodeSchema)]), required=True)
+    nodes = fields.List(
+        UnionField(
+            [
+                NestedField(CommandNodeSchema),
+                NestedField(FlowNodeSchema),
+            ]
+        ),
+        required=True,
+    )
 
     @post_load
     def resolve_nodes(self, data, **kwargs):
-        from promptflow._sdk.entities._experiment import FlowNode, ScriptNode
+        from promptflow._sdk.entities._experiment import CommandNode, FlowNode
 
         nodes = data.get("nodes", [])
-
         resolved_nodes = []
         for node in nodes:
             if not isinstance(node, dict):
@@ -73,9 +81,9 @@ class ExperimentTemplateSchema(YamlFileSchema):
             node_type = node.get("type", None)
             if node_type == ExperimentNodeType.FLOW:
                 resolved_nodes.append(FlowNode._load_from_dict(data=node, context=self.context, additional_message=""))
-            elif node_type == ExperimentNodeType.CODE:
+            elif node_type == ExperimentNodeType.COMMAND:
                 resolved_nodes.append(
-                    ScriptNode._load_from_dict(data=node, context=self.context, additional_message="")
+                    CommandNode._load_from_dict(data=node, context=self.context, additional_message="")
                 )
             else:
                 raise ValueError(f"Unknown node type {node_type} for node {node}.")
@@ -109,6 +117,7 @@ class ExperimentTemplateSchema(YamlFileSchema):
 
 
 class ExperimentSchema(ExperimentTemplateSchema):
+    name = fields.Str()
     node_runs = fields.Dict(keys=fields.Str(), values=fields.Str())  # TODO: Revisit this
     status = fields.Str(dump_only=True)
     properties = fields.Dict(keys=fields.Str(), values=fields.Str(allow_none=True))

@@ -6,8 +6,14 @@ import argparse
 import json
 from functools import partial
 
-from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, base_params
-from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
+from promptflow._cli._params import (
+    add_param_all_results,
+    add_param_max_results,
+    add_param_set,
+    add_param_yes,
+    base_params,
+)
+from promptflow._cli._utils import activate_action, confirm, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
@@ -121,7 +127,7 @@ pf connection delete -n my_connection_name
         name="delete",
         description="Delete a connection with specific name.",
         epilog=epilog,
-        add_params=[partial(add_param_name, required=True)] + base_params,
+        add_params=[partial(add_param_name, required=True), add_param_yes] + base_params,
         subparsers=subparsers,
         help_message="Delete a connection with specific name.",
         action_param_name="sub_action",
@@ -179,7 +185,6 @@ def validate_and_interactive_get_secrets(connection, is_update=False):
 # | <no-change>      | prompt input | use existing values | use existing values  |
 # | <user-input>     | prompt input | prompt input        | raise error          |
 # --------------------------------------------------------------------------------
-@exception_handler("Connection create")
 def create_connection(file_path, params_override=None, name=None):
     params_override = params_override or []
     if name:
@@ -194,13 +199,11 @@ def create_connection(file_path, params_override=None, name=None):
     print(json.dumps(connection._to_dict(), indent=4))
 
 
-@exception_handler("Connection show")
 def show_connection(name):
     connection = _get_pf_client().connections.get(name)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
-@exception_handler("Connection list")
 def list_connection(max_results=MAX_LIST_CLI_RESULTS, all_results=False):
     connections = _get_pf_client().connections.list(max_results, all_results)
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
@@ -223,7 +226,6 @@ def _upsert_connection_from_file(file, params_override=None):
     return connection
 
 
-@exception_handler("Connection update")
 def update_connection(name, params_override=None):
     params_override = params_override or []
     existing_connection = _get_pf_client().connections.get(name)
@@ -235,9 +237,8 @@ def update_connection(name, params_override=None):
     print(json.dumps(connection._to_dict(), indent=4))
 
 
-@exception_handler("Connection delete")
-def delete_connection(name):
-    if confirm("Are you sure you want to perform this operation?"):
+def delete_connection(name, skip_confirm: bool = False):
+    if confirm("Are you sure you want to perform this operation?", skip_confirm):
         _get_pf_client().connections.delete(name)
     else:
         print("The delete operation was canceled.")
@@ -253,4 +254,4 @@ def dispatch_connection_commands(args: argparse.Namespace):
     elif args.sub_action == "update":
         update_connection(args.name, args.params_override)
     elif args.sub_action == "delete":
-        delete_connection(args.name)
+        delete_connection(args.name, args.yes)

@@ -5,12 +5,14 @@
 import json
 import os
 import re
+from typing import Any, Tuple
 
 from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow._sdk._serving.extension.default_extension import AppExtension
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
 from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
+from promptflow._sdk._serving.monitor.mdc_exporter import MdcExporter
 from promptflow._sdk._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
 from promptflow._utils.retry_utils import retry
 from promptflow._version import VERSION
@@ -60,6 +62,12 @@ class AzureMLExtension(AppExtension):
         self.flow_monitor = FlowMonitor(
             self.logger, self.get_flow_name(), data_collector, metrics_recorder=metrics_recorder
         )
+        # initialize MDC trace exporter by default for azureml-serving
+        mdc_exporter = MdcExporter(self.logger)
+        self.trace_exporters = [mdc_exporter]
+        customized_exporters = super().get_trace_exporters(self.project_path)
+        if customized_exporters:
+            self.trace_exporters.extend(customized_exporters)
 
     def get_flow_project_path(self) -> str:
         return self.project_path
@@ -76,7 +84,10 @@ class AzureMLExtension(AppExtension):
     def get_flow_monitor(self) -> FlowMonitor:
         return self.flow_monitor
 
-    def get_override_connections(self, flow: Flow) -> (dict, dict):
+    def get_trace_exporters(self, flow_dir: str):
+        return self.trace_exporters
+
+    def get_override_connections(self, flow: Flow) -> Tuple[dict, dict]:
         connection_names = flow.get_connection_names()
         connections = {}
         connections_name_overrides = {}
@@ -193,8 +204,13 @@ class AzureMLExtension(AppExtension):
 
 def _get_managed_identity_credential_with_retry(**kwargs):
     from azure.identity import ManagedIdentityCredential
+    from azure.identity._constants import EnvironmentVariables
 
     class ManagedIdentityCredentialWithRetry(ManagedIdentityCredential):
+        def __init__(self, **kwargs: Any) -> None:
+            client_id = kwargs.pop("client_id", None) or os.environ.get(EnvironmentVariables.AZURE_CLIENT_ID)
+            super().__init__(client_id=client_id, **kwargs)
+
         @retry(Exception)
         def get_token(self, *scopes, **kwargs):
             return super().get_token(*scopes, **kwargs)

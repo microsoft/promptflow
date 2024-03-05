@@ -1,13 +1,6 @@
 import json
-
-try:
-    from openai import AzureOpenAI as AzureOpenAIClient
-except Exception:
-    raise Exception(
-        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
-
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response, normalize_connection_config
+    validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -20,8 +13,7 @@ class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
         self.connection = connection
-        self._connection_dict = normalize_connection_config(self.connection)
-        self._client = AzureOpenAIClient(**self._connection_dict)
+        self._client = init_azure_openai_client(connection)
 
     def calculate_cache_string_for_completion(
         self,
@@ -122,6 +114,7 @@ class AzureOpenAI(ToolProvider):
         function_call: object = None,
         functions: list = None,
         response_format: object = None,
+        seed: int = None,
         **kwargs,
     ) -> [str, dict]:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
@@ -143,6 +136,7 @@ class AzureOpenAI(ToolProvider):
             "logit_bias": logit_bias,
             "user": user,
             "response_format": response_format,
+            "seed": seed,
             "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         }
         if functions is not None:
@@ -217,6 +211,7 @@ def chat(
     function_call: object = None,
     functions: list = None,
     response_format: object = None,
+    seed: int = None,
     **kwargs,
 ) -> str:
     # chat model is not available in azure openai, so need to set the environment variable.
@@ -236,5 +231,6 @@ def chat(
         function_call=function_call,
         functions=functions,
         response_format=response_format,
+        seed=seed,
         **kwargs,
     )

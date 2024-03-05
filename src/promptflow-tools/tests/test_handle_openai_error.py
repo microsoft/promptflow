@@ -118,8 +118,7 @@ class TestHandleOpenAIError:
 
             # Apply the retry decorator to the patched test_method
             max_retry = 2
-            delay = 0.2
-            decorated_test_method = handle_openai_error(tries=max_retry, delay=delay)(patched_test_method)
+            decorated_test_method = handle_openai_error(tries=max_retry)(patched_test_method)
             mock_sleep = mocker.patch("time.sleep")  # Create a separate mock for time.sleep
 
             with pytest.raises(UserErrorException) as exc_info:
@@ -130,8 +129,8 @@ class TestHandleOpenAIError:
             error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
             assert exc_info.value.error_codes == error_codes.split("/")
             expected_calls = [
-                mocker.call(delay),
-                mocker.call(delay * 2),
+                mocker.call(3),
+                mocker.call(4),
             ]
             mock_sleep.assert_has_calls(expected_calls)
 
@@ -162,9 +161,8 @@ class TestHandleOpenAIError:
 
             # Apply the retry decorator to the patched test_method
             max_retry = 2
-            delay = 0.2
             header_delay = 0.3
-            decorated_test_method = handle_openai_error(tries=max_retry, delay=delay)(patched_test_method)
+            decorated_test_method = handle_openai_error(tries=max_retry)(patched_test_method)
             mock_sleep = mocker.patch("time.sleep")  # Create a separate mock for time.sleep
 
             with pytest.raises(UserErrorException) as exc_info:
@@ -176,7 +174,7 @@ class TestHandleOpenAIError:
             assert exc_info.value.error_codes == error_codes.split("/")
             expected_calls = [
                 mocker.call(header_delay),
-                mocker.call(header_delay * 2),
+                mocker.call(header_delay),
             ]
             mock_sleep.assert_has_calls(expected_calls)
 

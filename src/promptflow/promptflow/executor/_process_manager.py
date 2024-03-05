@@ -12,6 +12,7 @@ import psutil
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._base_executor import BaseExecutor
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 
 
 @dataclass
@@ -52,7 +53,8 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> None:
         self._input_queues = input_queues
         self._output_queues = output_queues
@@ -86,6 +88,14 @@ class AbstractProcessManager:
 
         :param i: Index of the process to terminate.
         :type i: int
+        """
+        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        This method should be implemented in subclasses to provide specific health check mechanisms.
         """
         raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
 
@@ -164,19 +174,39 @@ class SpawnProcessManager(AbstractProcessManager):
         :param i: Index of the process to terminate.
         :type i: int
         """
+        warning_msg = (
+            "Unexpected error occurred while end process for index {i} and process id {pid}. "
+            "Exception: {e}"
+        )
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
-            process.terminate()
-            process.wait()
-            self._process_info.pop(i)
+            # The subprocess will get terminate signal from input queue, so we need to wait for the process to exit.
+            # If the process is still running after 10 seconds, it will raise psutil.TimeoutExpired exception.
+            process.wait(timeout=10)
         except psutil.NoSuchProcess:
-            bulk_logger.warning(f"Process {pid} had been terminated")
+            bulk_logger.warning(f"Process {pid} had been terminated.")
+        except psutil.TimeoutExpired:
+            try:
+                # If the process is still running after waiting 10 seconds, terminate it.
+                process.terminate()
+                process.wait()
+            except Exception as e:
+                bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
         except Exception as e:
-            bulk_logger.warning(
-                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
-                f"Exception: {e}"
-            )
+            bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
+        finally:
+            self._process_info.pop(i)
+
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        Note:
+        Health checks for spawn mode processes are currently not performed.
+        Add detailed checks in this function if needed in the future.
+        """
+        pass
 
 
 class ForkProcessManager(AbstractProcessManager):
@@ -225,6 +255,7 @@ class ForkProcessManager(AbstractProcessManager):
             ),
         )
         process.start()
+        self._spawned_fork_process_manager_pid = process.pid
 
     def restart_process(self, i):
         """
@@ -252,6 +283,16 @@ class ForkProcessManager(AbstractProcessManager):
         :type i: int
         """
         self._control_signal_queue.put((ProcessControlSignal.START, i))
+
+    def ensure_healthy(self):
+        # A 'zombie' process is a process that has finished running but still remains in
+        # the process table, waiting for its parent process to collect and handle its exit status.
+        # The normal state of the spawned process is 'running'. If the process does not start successfully
+        # or exit unexpectedly, its state will be 'zombie'.
+        if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
+            bulk_logger.error("The spawned fork process manager failed to start.")
+            ex = SpawnedForkProcessManagerStartFailure()
+            raise ex
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):
@@ -325,19 +366,29 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         :param i: Index of the process to terminate.
         :type i: int
         """
+        warning_msg = (
+            "Unexpected error occurred while end process for index {i} and process id {pid}. "
+            "Exception: {e}"
+        )
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
-            process.terminate()
-            process.wait()
-            self._process_info.pop(i)
+            # The subprocess will get terminate signal from input queue, so we need to wait for the process to exit.
+            # If the process is still running after 10 seconds, it will raise psutil.TimeoutExpired exception.
+            process.wait(timeout=10)
         except psutil.NoSuchProcess:
-            bulk_logger.warning(f"Process {pid} had been terminated")
+            bulk_logger.warning(f"Process {pid} had been terminated.")
+        except psutil.TimeoutExpired:
+            try:
+                # If the process is still running after waiting 10 seconds, terminate it.
+                process.terminate()
+                process.wait()
+            except Exception as e:
+                bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
         except Exception as e:
-            bulk_logger.warning(
-                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
-                f"Exception: {e}"
-            )
+            bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
+        finally:
+            self._process_info.pop(i)
 
     def restart_process(self, i):
         """

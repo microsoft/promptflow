@@ -10,6 +10,7 @@
 After cloning the full repo and setting up the proper test environment following [dev_setup.md](./dev_setup.md), run the following command in the root directory of the repo:
 
 1. If you have changed/affected tests in __sdk_cli_test__ : Copy or rename the file [dev-connections.json.example](../../src/promptflow/dev-connections.json.example) to `connections.json` in the same folder.
+   * There are some python package version requirements for running the replay/record tests. It needs pydantic >= 2.0.0.
 2. In your Python environment, set the environment variable `PROMPT_FLOW_TEST_MODE` to `'replay'` and run the test(s).
 
 These tests should work properly without any real connection settings.

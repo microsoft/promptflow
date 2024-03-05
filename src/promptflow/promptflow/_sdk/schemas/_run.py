@@ -4,11 +4,12 @@
 import os.path
 
 from dotenv import dotenv_values
-from marshmallow import fields, post_load, pre_load
+from marshmallow import RAISE, fields, post_load, pre_load
 
+from promptflow._sdk._constants import IdentityKeys
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import LocalPathField, NestedField, UnionField
+from promptflow._sdk.schemas._fields import LocalPathField, NestedField, StringTransformedEnum, UnionField
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
@@ -30,7 +31,23 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
     """Schema for resources."""
 
     instance_type = fields.Str()
-    idle_time_before_shutdown_minutes = fields.Int()
+    # compute instance name for session usage
+    compute = fields.Str()
+
+
+class ManagedIdentitySchema(metaclass=PatchedSchemaMeta):
+    type = StringTransformedEnum(
+        required=True,
+        allowed_values=IdentityKeys.MANAGED,
+    )
+    client_id = fields.Str()
+
+
+class UserIdentitySchema(metaclass=PatchedSchemaMeta):
+    type = StringTransformedEnum(
+        required=True,
+        allowed_values=IdentityKeys.USER_IDENTITY,
+    )
 
 
 class RemotePathStr(fields.Str):
@@ -87,7 +104,15 @@ class RunSchema(YamlFileSchema):
     column_mapping = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()
-    resources = NestedField(ResourcesSchema)
+    # raise unknown exception for unknown fields in resources
+    resources = NestedField(ResourcesSchema, unknown=RAISE)
+    # raise unknown exception for unknown fields in identity
+    identity = UnionField(
+        [
+            NestedField(ManagedIdentitySchema, unknown=RAISE),
+            NestedField(UserIdentitySchema, unknown=RAISE),
+        ]
+    )
     run = fields.Str()
 
     # region: context
@@ -101,6 +126,11 @@ class RunSchema(YamlFileSchema):
     )
     connections = fields.Dict(keys=fields.Str(), values=fields.Dict(keys=fields.Str()))
     # endregion: context
+
+    # region: command node
+    command = fields.Str(dump_only=True)
+    outputs = fields.Dict(key=fields.Str(), dump_only=True)
+    # endregion: command node
 
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):

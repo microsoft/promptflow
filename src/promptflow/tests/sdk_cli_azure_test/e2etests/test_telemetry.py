@@ -28,6 +28,7 @@ from promptflow._sdk._telemetry import (
     is_telemetry_enabled,
     log_activity,
 )
+from promptflow._sdk._telemetry.logging_handler import get_promptflow_sdk_log_handler
 from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
@@ -78,6 +79,11 @@ class TestTelemetry:
             assert handler._is_telemetry_enabled is True
 
         with cli_consent_config_overwrite(False):
+            handler = get_appinsights_log_handler()
+            assert isinstance(handler, PromptFlowSDKLogHandler)
+            assert handler._is_telemetry_enabled is True
+
+            get_promptflow_sdk_log_handler.cache_clear()
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is False
@@ -342,13 +348,17 @@ class TestTelemetry:
 
         def assert_node_run(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.node_test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            assert record.msg.startswith("pf.flows.node_test"), f"'pf.flows.node_test' not found in {record.msg!r}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            ), f"'pf.flows.node_test' not found in {record.custom_dimensions['activity_name']}"
 
         def assert_flow_test(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.test"
+            assert record.msg.startswith("pf.flows.test"), f"'pf.flows.test' not found in {record.msg!r}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.test"
+            ), f"'pf.flows.test' not found in {record.custom_dimensions['activity_name']}"
 
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)

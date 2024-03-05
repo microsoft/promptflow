@@ -30,8 +30,11 @@ class TestConfig:
         assert config.get_config("test_key") == "test_value"
 
     def test_get_or_set_installation_id(self, config):
-        user_id = config.get_or_set_installation_id()
-        assert user_id is not None
+        user_id1 = config.get_or_set_installation_id()
+        assert user_id1 is not None
+
+        user_id2 = config.get_or_set_installation_id()
+        assert user_id1 == user_id2
 
     def test_config_instance(self, config):
         new_config = Configuration.get_instance()
