@@ -620,6 +620,6 @@ def validate_flow(args):
     )
     print(repr(validation_result))
     if not validation_result.passed:
-        exit(1)
+        sys.exit(1)
     else:
-        exit(0)
+        sys.exit(0)

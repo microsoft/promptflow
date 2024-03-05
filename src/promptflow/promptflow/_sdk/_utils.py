@@ -558,8 +558,6 @@ def _generate_tool_meta(
         # use multiprocess generate to avoid system path disturb
         tool_dict, exception_dict = generate_tool_meta_in_subprocess(flow_directory, tools, logger, timeout=timeout)
     else:
-        tool_dict, exception_dict = {}, {}
-
         #  There is no built-in method to forcefully stop a running thread/coroutine in Python
         #  because abruptly stopping a thread can cause issues like resource leaks,
         #  deadlocks, or inconsistent states.
@@ -568,7 +566,7 @@ def _generate_tool_meta(
             "Generate meta in current process and timeout won't take effect. "
             "Please handle timeout manually outside current process."
         )
-        generate_tool_meta(flow_directory, tools, tool_dict, exception_dict)
+        tool_dict, exception_dict = generate_tool_meta(flow_directory, tools)
     res = {source: tool for source, tool in tool_dict.items()}
 
     for source in res:
