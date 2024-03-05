@@ -160,6 +160,11 @@ class SpanLinkFieldName:
     ATTRIBUTES = "attributes"
 
 
+class MessageFormatType:
+    BASIC = "basic"
+    OPENAI_VISION = "openai_vision"
+
+
 class OutputsFolderName:
     FLOW_OUTPUTS = "flow_outputs"
     FLOW_ARTIFACTS = "flow_artifacts"

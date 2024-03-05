@@ -356,3 +356,15 @@ class TestFlowTest:
         with pytest.raises(ValidationError) as e:
             _client._flows._generate_flow_meta(flow=flow_path)
         assert "Entry function my_func is not valid." in str(e.value)
+
+    def test_init_executable(self):
+        from promptflow import load_flow
+        from promptflow.contracts.flow import FlowInputDefinition, FlowOutputDefinition
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml").absolute()
+        flow = load_flow(flow_path)
+        executable = flow._init_executable()
+        # call values in executable.inputs are FlowInputDefinitions
+        assert all([isinstance(value, FlowInputDefinition) for value in executable.inputs.values()])
+        # call values in executable.outputs are FlowOutputDefinitions
+        assert all([isinstance(value, FlowOutputDefinition) for value in executable.outputs.values()])

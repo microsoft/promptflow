@@ -13,7 +13,7 @@ import waitress
 
 from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import LOGGER_NAME, PF_SERVICE_DEBUG
+from promptflow._sdk._constants import LOGGER_NAME, PF_SERVICE_DEBUG, PF_SERVICE_WORKER_NUM
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
@@ -22,7 +22,6 @@ from promptflow._sdk._service.utils.utils import (
     get_started_service_info,
     is_port_in_use,
     kill_exist_service,
-    kill_service_get_from_original_port_file,
 )
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
@@ -89,9 +88,6 @@ def start_service(args):
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
 
-    # add this logic to stop pfs service which is start in the original port file.
-    kill_service_get_from_original_port_file()
-
     def validate_port(port, force_start):
         if is_port_in_use(port):
             if force_start:
@@ -117,7 +113,7 @@ def start_service(args):
         else:
             app.logger.setLevel(logging.INFO)
         print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
-        waitress.serve(app, host="127.0.0.1", port=port)
+        waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
@@ -131,7 +127,10 @@ def start_service(args):
                     f"Please install pywin32 by 'pip install pywin32' and retry. prompt flow "
                     f"service start depends on pywin32.. {ex}"
                 )
-            command = f"waitress-serve --listen=127.0.0.1:{port} promptflow._sdk._service.entry:get_app"
+            command = (
+                f"waitress-serve --listen=127.0.0.1:{port} --threads={PF_SERVICE_WORKER_NUM} "
+                "promptflow._sdk._service.entry:get_app"
+            )
             startupinfo = win32process.STARTUPINFO()
             startupinfo.dwFlags |= win32process.STARTF_USESHOWWINDOW
             startupinfo.wShowWindow = win32con.SW_HIDE
