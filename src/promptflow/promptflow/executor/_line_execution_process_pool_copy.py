@@ -129,6 +129,7 @@ class LineExecutionProcessPool:
         self.end()
 
     def start(self):
+        """Start the process pool and create a thread pool monitoring process status"""
         manager = Manager()
 
         self._task_queue = Queue()
@@ -190,14 +191,17 @@ class LineExecutionProcessPool:
         self._monitor_pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
 
     def end(self):
-        # TODO: end?????????
+        """End the process pool and close the thread pool."""
+        # Put n (equal to processes number) terminate signals to the task queue to ensure each thread receives one.
         for _ in range(self._n_process):
             self._task_queue.put(TERMINATE_SIGNAL)
+        # Close the thread pool and wait for all threads to complete.
         if self._monitor_pool is not None:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
     async def submit(self, inputs: dict, run_id: str, line_number: int):
+        """Submit a line execution request to the process pool and return the line result."""
         self._task_queue.put((inputs, line_number, run_id))
         start_time = datetime.utcnow()
         line_result = None
