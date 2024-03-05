@@ -463,7 +463,7 @@ def _traced_async(
 
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
-        node_name = kwargs.pop('node_name', None)
+        node_name = kwargs.pop('__pf_node_name__', None)
         trace = create_trace(func, args, kwargs)
         # Fall back to trace.name if we can't get node name for better view.
         span_name = node_name or trace.name if trace_type == TraceType.TOOL else trace.name
@@ -513,7 +513,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        node_name = kwargs.pop('node_name', None)
+        node_name = kwargs.pop('__pf_node_name__', None)
         trace = create_trace(func, args, kwargs)
         # Fall back to trace.name if we can't get node name for better view.
         span_name = node_name or trace.name if trace_type == TraceType.TOOL else trace.name
