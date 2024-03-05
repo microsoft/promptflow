@@ -707,15 +707,16 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
         try:
             data = input_queue.get(timeout=1)
             if data == TERMINATE_SIGNAL:
+                # Add try catch in case of shutdown method is not implemented in the tracer provider.
                 try:
                     import opentelemetry.trace as otel_trace
 
-                    # Meet span missing issue when end process normally.
-                    # Shutdown the span processor to flush the remaining spans.
-                    # The span processor is created for each process, so it's ok to shutdown it here.
-                    otel_trace.get_tracer_provider()._active_span_processor.shutdown()
+                    # Meet span missing issue when end process normally (even add wait() when end it).
+                    # Shutdown the tracer provider to flush the remaining spans.
+                    # The tracer provider is created for each process, so it's ok to shutdown it here.
+                    otel_trace.get_tracer_provider().shutdown()
                 except Exception as e:
-                    bulk_logger.warning(f"Error occurred while shutting down span processor: {e}")
+                    bulk_logger.warning(f"Error occurred while shutting down tracer provider: {e}")
 
                 # If found the terminate signal, exit the process.
                 break
