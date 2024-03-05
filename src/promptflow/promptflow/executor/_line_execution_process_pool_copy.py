@@ -1,3 +1,4 @@
+import asyncio
 import contextvars
 import multiprocessing
 import os
@@ -198,13 +199,14 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
-    def submit(self, inputs: dict, run_id: str, line_number: int):
+    async def submit(self, inputs: dict, run_id: str, line_number: int):
         self._task_queue.put((inputs, line_number, run_id))
         start_time = datetime.utcnow()
         line_result = None
         while not self._line_timeout_expired(start_time) and not line_result:
             service_logger.info(f"line_result: {line_result}")
             line_result = self._result_dict.get(line_number, None)
+            await asyncio.sleep(1)
         return line_result
 
     def _handle_output_queue_messages(self, output_queue: Queue, result_dict: Dict[int, LineResult], line_number: int):

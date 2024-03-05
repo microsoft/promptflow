@@ -49,7 +49,7 @@ async def initialize(request: InitializationRequest):
 
 @router.post("/execution")
 async def execution(request: LineExecutionRequest):
-    return BatchCoordinator.get_instance().submit(request)
+    return await BatchCoordinator.get_instance().submit(request)
 
 
 @router.post("/aggregation")

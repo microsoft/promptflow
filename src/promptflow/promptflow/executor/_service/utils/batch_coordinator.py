@@ -39,8 +39,8 @@ class BatchCoordinator:
     def start(self):
         self._process_pool.start()
 
-    def submit(self, request: LineExecutionRequest):
-        return self._process_pool.submit(request.inputs, request.run_id, request.line_number)
+    async def submit(self, request: LineExecutionRequest):
+        return await self._process_pool.submit(request.inputs, request.run_id, request.line_number)
 
     def shutdown(self):
         self._process_pool.end()
