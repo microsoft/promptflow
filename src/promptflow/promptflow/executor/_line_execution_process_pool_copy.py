@@ -192,8 +192,6 @@ class LineExecutionProcessPool:
 
     def end(self):
         # TODO: end?????????
-        for input_queue in self._input_queues:
-            input_queue.put(TERMINATE_SIGNAL)
         for _ in range(self._n_process):
             self._task_queue.put(TERMINATE_SIGNAL)
         if self._monitor_pool is not None:
