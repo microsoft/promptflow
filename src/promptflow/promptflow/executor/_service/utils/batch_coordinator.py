@@ -37,6 +37,12 @@ class BatchCoordinator:
         self._flow_executor = flow_executor
         self._init = True
 
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            raise Exception("Singleton instance has not been initialized yet.")
+        return cls._instance
+
     def start(self):
         self._process_pool.start()
 
@@ -53,9 +59,3 @@ class BatchCoordinator:
         self._process_pool.end()
         self._init = False
         self._instance = None
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            raise Exception("Singleton instance has not been initialized yet.")
-        return cls._instance
