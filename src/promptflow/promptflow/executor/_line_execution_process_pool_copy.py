@@ -240,7 +240,7 @@ class LineExecutionProcessPool:
         self._processes_manager.ensure_healthy()
         # TODO: Only get the process can break the while loop????
         exit_loop = False
-        while True:
+        while not exit_loop:
             while True:
                 try:
                     # Get task from task_queue
