@@ -540,7 +540,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
         try:
             data = input_queue.get(timeout=1)
             if data == TERMINATE_SIGNAL:
-                service_logger.info("Process ... received terminate signal.")
+                bulk_logger.info(f"The process [{os.getpid()}] has received a terminate signal.")
                 # If found the terminate signal, exit the process.
                 break
             inputs, line_number, run_id, line_timeout_sec = data
