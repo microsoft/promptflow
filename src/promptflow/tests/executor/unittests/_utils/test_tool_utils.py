@@ -377,7 +377,7 @@ class TestToolUtils:
                 "dummy_scenario",
                 "dummy_result",
                 f"Invalid tool func call scenario: dummy_scenario. "
-                f"Available scenarios are {ToolFuncCallScenario.__members__.values()}"
+                f"Available scenarios are {list(ToolFuncCallScenario)}"
             ),
         ],
     )
