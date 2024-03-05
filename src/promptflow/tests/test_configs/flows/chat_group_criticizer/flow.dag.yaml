@@ -17,3 +17,5 @@ nodes:
     path: criticizer.py
   inputs:
     words: ${inputs.words}
+    third_party_comments: ${inputs.third_party_comments}
+    chat_history: ${inputs.chat_history}

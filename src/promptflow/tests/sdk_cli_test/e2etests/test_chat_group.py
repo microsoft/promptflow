@@ -21,7 +21,7 @@ class TestChatGroup:
         chat_group = ChatGroup(
             agents=[joke_master, criticizer],
             # entry_agent=joke_master,
-            max_turns=10,
+            max_turns=4,
             max_tokens=1000,
             max_time=1000,
             inputs={
@@ -49,4 +49,12 @@ class TestChatGroup:
             third_party_comments=chat_group.inputs.comments,
             chat_history=chat_group.chat_history,
         )
-        chat_group.invoke()
+
+        group_input_request = "Hi, tell me a joke pls."
+        chat_group.invoke(request=group_input_request)
+
+        # Initial group level input plus 4 turns, so 5 in total
+        history = chat_group.chat_history.history
+        assert len(history) == 5
+        assert history[0][1]["request"] == group_input_request
+        assert history[0][1]["comments"] == "I like it"
