@@ -201,6 +201,14 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
+    def submit(self, inputs: dict, run_id: str, line_number: int):
+        self._task_queue.put((inputs, line_number, run_id))
+        start_time = datetime.utcnow()
+        line_result = None
+        while self._line_timeout_expired(start_time) and not line_result:
+            line_result = self._result_dict.get(line_number, None)
+        return line_result
+
     def _handle_output_queue_messages(self, output_queue: Queue, result_dict: Dict[int, LineResult], line_number: int):
         try:
             message = output_queue.get(timeout=1)
