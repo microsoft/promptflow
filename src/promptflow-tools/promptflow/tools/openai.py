@@ -108,6 +108,7 @@ class OpenAI(ToolProvider):
         function_call: object = None,
         functions: list = None,
         response_format: object = None,
+        seed: int = None,
         **kwargs
     ) -> [str, dict]:
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
@@ -127,7 +128,8 @@ class OpenAI(ToolProvider):
             "frequency_penalty": float(frequency_penalty),
             "logit_bias": logit_bias,
             "user": user,
-            "response_format": response_format
+            "response_format": response_format,
+            "seed": seed,
         }
 
         if functions is not None:
@@ -202,6 +204,7 @@ def chat(
     function_call: object = None,
     functions: list = None,
     response_format: object = None,
+    seed: int = None,
     **kwargs
 ) -> [str, dict]:
     return OpenAI(connection).chat(
@@ -220,5 +223,6 @@ def chat(
         function_call=function_call,
         functions=functions,
         response_format=response_format,
+        seed=seed,
         **kwargs,
     )

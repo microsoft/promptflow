@@ -156,6 +156,7 @@ class AzureOpenAI(ToolProvider):
         max_tokens: int = None,
         presence_penalty: float = 0,
         frequency_penalty: float = 0,
+        seed: int = None,
         **kwargs,
     ) -> str:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
@@ -188,6 +189,8 @@ class AzureOpenAI(ToolProvider):
             params["stop"] = stop
         if max_tokens is not None:
             params["max_tokens"] = max_tokens
+        if seed is not None:
+            params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, None)
