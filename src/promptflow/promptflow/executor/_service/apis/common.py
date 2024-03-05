@@ -12,12 +12,12 @@ router = APIRouter()
 
 
 @router.get("/health")
-async def health_check():
+def health_check():
     return PlainTextResponse("healthy")
 
 
 @router.get("/version")
-async def version():
+def version():
     return {
         "status": "healthy",
         "version": get_executor_version(),
