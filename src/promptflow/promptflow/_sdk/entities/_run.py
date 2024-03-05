@@ -216,6 +216,8 @@ class Run(YAMLTranslatableMixin):
             if self._resume_from:
                 resume_from_name = self._resume_from.name if isinstance(self._resume_from, Run) else self._resume_from
                 result[FlowRunProperties.RESUME_FROM] = resume_from_name
+            if self.column_mapping:
+                result[FlowRunProperties.COLUMN_MAPPING] = self.column_mapping
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             result = {
                 FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
@@ -262,6 +264,7 @@ class Run(YAMLTranslatableMixin):
             # experiment command node only fields
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
+            column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
         )
 
     @classmethod

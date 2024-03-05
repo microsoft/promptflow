@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import shutil
+import sys
 from pathlib import Path
 
 from promptflow._cli._params import add_param_set_tool_extra_info, base_params
@@ -217,4 +218,4 @@ def validate_tool(args):
     validation_result = pf_client._tools.validate(source)
     print(repr(validation_result))
     if not validation_result.passed:
-        exit(1)
+        sys.exit(1)

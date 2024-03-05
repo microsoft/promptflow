@@ -256,6 +256,7 @@ class FlowRunProperties:
     COMMAND = "command"
     OUTPUTS = "outputs"
     RESUME_FROM = "resume_from"
+    COLUMN_MAPPING = "column_mapping"
 
 
 class CommonYamlFields:
