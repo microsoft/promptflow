@@ -16,6 +16,7 @@ from promptflow.storage import AbstractRunStorage
 TEST_ROOT = Path(__file__).parent.parent
 DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+ASSISTANT_DEFINITION_ROOT = TEST_ROOT / "test_configs/assistant_definitions"
 EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 EAGER_FLOWS_ROOT = TEST_ROOT / "test_configs/eager_flows"

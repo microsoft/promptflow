@@ -171,7 +171,7 @@ class ToolResolver:
             parameters = sig.parameters
             # Attempt to extract the description, handling exceptions
             try:
-                description, params = DocstringParser.parse(func.__doc__)
+                description, params = DocstringParser.parse_description(func.__doc__)
             except Exception as e:
                 # Log the exception if necessary
                 print(f"Failed to parse docstring for function {func.__name__}: {e}")
@@ -200,7 +200,7 @@ class ToolResolver:
                 # Construct parameter definition
                 func_definition["parameters"]["properties"][name] = {
                     "type": json_type,
-                    "description": params[name].get("description", ""),
+                    "description": params.get(name, {}).get("description", ""),
                 }
 
                 # Handle enums separately to include possible values
