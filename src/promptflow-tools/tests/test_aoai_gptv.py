@@ -35,7 +35,7 @@ class TestAzureOpenAIGPT4V:
                 break
         assert "10" == answer
 
-    def test_correctly_pass_params(self, azure_openai_provider, example_prompt_template_with_image, example_image):
+    def test_correctly_pass_params(self, aoai_vision_provider, example_prompt_template_with_image, example_image):
         seed_value = 123
         with patch.object(azure_openai_provider._client.chat.completions, 'create') as mock_create:
             azure_openai_provider.chat(

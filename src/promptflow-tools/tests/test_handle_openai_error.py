@@ -9,7 +9,7 @@ from openai import (
     APITimeoutError, InternalServerError, UnprocessableEntityError
 )
 from promptflow.tools.aoai import chat, completion
-from promptflow.tools.common import handle_openai_error, list_deployment_connections
+from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
     JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
 from promptflow.tools.openai import chat as openai_chat

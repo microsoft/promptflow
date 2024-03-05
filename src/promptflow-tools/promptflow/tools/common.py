@@ -4,7 +4,7 @@ import os
 import re
 import sys
 import time
-from typing import List, Mapping, Dict
+from typing import List, Mapping
 
 from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
@@ -206,21 +206,6 @@ def generate_retry_interval(retry_count: int) -> float:
     return retry_interval
 
 
-def _get_credential():
-    from azure.identity import DefaultAzureCredential
-    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
-    # Support sovereign cloud cases, like mooncake, fairfax.
-    cloud_name = _get_default_cloud_name()
-    if cloud_name != AzureEnvironments.ENV_DEFAULT:
-        cloud = _get_cloud(cloud=cloud_name)
-        authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
-        credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
-    else:
-        credential = DefaultAzureCredential()
-
-    return credential
-
-
 def _build_deployment_dict(item) -> Deployment:
     model = item.properties.model
     return Deployment(item.name, model.name, model.version)
@@ -322,7 +307,7 @@ def list_deployment_connections(
 
 
 def handle_unsupported_model_error(connection, deployment_name, model):
-    error_message = f"LLM supports only text models. Please ensure you're using the correct tool for your model."
+    error_message = "LLM supports only text models. Please ensure you're using the correct tool for your model."
     try:
         if isinstance(connection, AzureOpenAIConnection):
             subscription_id, resource_group, workspace_name = get_workspace_details()
