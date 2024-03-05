@@ -204,7 +204,8 @@ class LineExecutionProcessPool:
         self._task_queue.put((inputs, line_number, run_id))
         start_time = datetime.utcnow()
         line_result = None
-        while self._line_timeout_expired(start_time) and not line_result:
+        while not self._line_timeout_expired(start_time) and not line_result:
+            print("line_result: ", line_result)
             line_result = self._result_dict.get(line_number, None)
         return line_result
 
