@@ -62,13 +62,15 @@ class RunSubmitter:
         return required_run
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
-        attributes = kwargs.get("attributes", {})
+        attributes: dict = kwargs.get("attributes", {})
         # validate & resolve variant
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
         else:
             tuning_node, variant = None, None
 
+        # always pop reference.batch_run_id to avoid mis-inheritance
+        attributes.pop(ContextAttributeKey.REFERENCED_BATCH_RUN_ID, None)
         if run.run is not None:
             # Set for flow test against run and no experiment scenario
             if ContextAttributeKey.REFERENCED_BATCH_RUN_ID not in attributes:
