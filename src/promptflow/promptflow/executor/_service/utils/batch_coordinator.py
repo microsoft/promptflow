@@ -3,11 +3,12 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
 from promptflow.executor._service.contracts.batch_request import AggregationRequest, LineExecutionRequest
+from promptflow.storage._executor_service_storage import ExecutorServiceStorage
 
 
 class BatchCoordinator:
@@ -21,20 +22,24 @@ class BatchCoordinator:
 
     def __init__(
         self,
+        working_dir: Path,
+        flow_file: Path,
         output_dir: Path,
-        flow_executor: FlowExecutor,
+        connections: Optional[Mapping[str, Any]] = None,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
         if self._init:
             return
+        # init flow executor and validate flow
+        storage = ExecutorServiceStorage(output_dir)
+        self._flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
         self._process_pool = LineExecutionProcessPool(
             output_dir,
-            flow_executor,
+            self._flow_executor,
             worker_count=worker_count,
             line_timeout_sec=line_timeout_sec,
         )
-        self._flow_executor = flow_executor
         self._init = True
 
     @classmethod
