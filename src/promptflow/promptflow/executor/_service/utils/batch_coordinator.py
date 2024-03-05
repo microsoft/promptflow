@@ -7,7 +7,7 @@ from typing import Optional
 
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
-from promptflow.executor._service.contracts.batch_request import LineExecutionRequest
+from promptflow.executor._service.contracts.batch_request import AggregationRequest, LineExecutionRequest
 
 
 class BatchCoordinator:
@@ -34,13 +34,20 @@ class BatchCoordinator:
             worker_count=worker_count,
             line_timeout_sec=line_timeout_sec,
         )
+        self._flow_executor = flow_executor
         self._init = True
 
     def start(self):
         self._process_pool.start()
 
-    async def submit(self, request: LineExecutionRequest):
+    async def exec_line(self, request: LineExecutionRequest):
         return await self._process_pool.submit(request.inputs, request.run_id, request.line_number)
+
+    def exec_aggregation(self, request: AggregationRequest):
+        with self._flow_executor._run_tracker.node_log_manager:
+            return self._flow_executor._exec_aggregation(
+                request.batch_inputs, request.aggregation_inputs, request.run_id
+            )
 
     def shutdown(self):
         self._process_pool.end()

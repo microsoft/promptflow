@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 @router.post("/initialize")
-async def initialize(request: InitializationRequest):
+def initialize(request: InitializationRequest):
     with get_log_context(request, enable_service_logger=True):
         request.validate_request()
         operation_context = update_and_get_operation_context(request.operation_context)
@@ -49,14 +49,14 @@ async def initialize(request: InitializationRequest):
 
 @router.post("/execution")
 async def execution(request: LineExecutionRequest):
-    return await BatchCoordinator.get_instance().submit(request)
+    return await BatchCoordinator.get_instance().exec_line(request)
 
 
 @router.post("/aggregation")
-async def aggregation(request: AggregationRequest):
-    pass
+def aggregation(request: AggregationRequest):
+    return BatchCoordinator.get_instance().exec_aggregation(request)
 
 
 @router.post("/finalize")
-async def finalize():
+def finalize():
     return BatchCoordinator.get_instance().shutdown()
