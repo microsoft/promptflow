@@ -14,11 +14,10 @@ from promptflow._sdk._load_functions import load_flow, load_run
 
 from ._sdk._pf_client import PFClient
 from ._version import VERSION
-from .tracing._start_trace import start_trace
 
 # backward compatibility
 log_flow_metric = log_metric
 
 __version__ = VERSION
 
-__all__ = ["PFClient", "load_flow", "load_run", "log_metric", "start_trace", "ToolProvider", "tool", "trace"]
+__all__ = ["PFClient", "load_flow", "load_run", "log_metric", "ToolProvider", "tool", "trace"]
