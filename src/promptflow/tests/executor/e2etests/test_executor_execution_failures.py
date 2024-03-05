@@ -10,7 +10,7 @@ SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 SAMPLE_FLOW_WITH_LANGCHAIN_TRACES = "flow_with_langchain_traces"
 
-expected_node_stack_traces = {
+expected_stack_traces = {
     "sync_tools_failures": """Traceback (most recent call last):
 sync_fail.py", line 11, in raise_an_exception
     raise_exception(s)
@@ -28,48 +28,6 @@ Exception: In tool raise_an_exception: dummy_input
         "\n"
     ),
     "async_tools_failures": """Traceback (most recent call last):
-async_fail.py", line 11, in raise_an_exception_async
-    await raise_exception_async(s)
-async_fail.py", line 5, in raise_exception_async
-    raise Exception(msg)
-Exception: In raise_exception_async: dummy_input
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-in raise_an_exception_async
-    raise Exception(f"In tool raise_an_exception_async: {s}") from e
-Exception: In tool raise_an_exception_async: dummy_input
-""".split(
-        "\n"
-    ),
-}
-
-expected_line_stack_traces = {
-    "sync_tools_failures": """Traceback (most recent call last):
-sync_fail.py", line 11, in raise_an_exception
-    raise_exception(s)
-sync_fail.py", line 5, in raise_exception
-    raise Exception(msg)
-Exception: In raise_exception: dummy_input
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-sync_fail.py", line 13, in raise_an_exception
-    raise Exception(f"In tool raise_an_exception: {s}") from e
-Exception: In tool raise_an_exception: dummy_input
-""".split(
-        "\n"
-    ),
-    "async_tools_failures": """Traceback (most recent call last):
-in _traverse_nodes
-    loop = asyncio.get_running_loop()
-RuntimeError: no running event loop
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
 async_fail.py", line 11, in raise_an_exception_async
     await raise_exception_async(s)
 async_fail.py", line 5, in raise_exception_async
@@ -115,7 +73,7 @@ class TestExecutorFailures:
         assert message == user_error_info["message"]
         #  Make sure the stack trace is as expected
         stacktrace = user_error_info["traceback"].split("\n")
-        expected_stack_trace = expected_node_stack_traces[flow_folder]
+        expected_stack_trace = expected_stack_traces[flow_folder]
         assert len(stacktrace) == len(expected_stack_trace)
         for expected_item, actual_item in zip(expected_stack_trace, stacktrace):
             assert expected_item in actual_item
@@ -146,7 +104,7 @@ class TestExecutorFailures:
         assert message == user_error_info["message"]
         #  Make sure the stack trace is as expected
         stacktrace = user_error_info["traceback"].split("\n")
-        expected_stack_trace = expected_line_stack_traces[flow_folder]
+        expected_stack_trace = expected_stack_traces[flow_folder]
         assert len(stacktrace) == len(expected_stack_trace)
         for expected_item, actual_item in zip(expected_stack_trace, stacktrace):
             assert expected_item in actual_item

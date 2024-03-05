@@ -200,3 +200,38 @@ class FlowInvoker:
                 invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
+
+
+class AsyncFlowInvoker(FlowInvoker):
+    async def _invoke_async(self, data: dict, run_id=None, disable_input_output_logging=False):
+        log_data = "<REDACTED>" if disable_input_output_logging else data
+        self.logger.info(f"Validating flow input with data {log_data!r}")
+        validate_request_data(self.flow, data)
+        self.logger.info(f"Execute flow with data {log_data!r}")
+        # Pass index 0 as extension require for dumped result.
+        # TODO: Remove this index after extension remove this requirement.
+        result = await self.executor.exec_line_async(
+            data, index=0, run_id=run_id, allow_generator_output=self.streaming()
+        )
+        if LINE_NUMBER_KEY in result.output:
+            # Remove line number from output
+            del result.output[LINE_NUMBER_KEY]
+        return result
+
+    async def invoke_async(self, data: dict, run_id=None, disable_input_output_logging=False):
+        result = await self._invoke_async(
+            data, run_id=run_id, disable_input_output_logging=disable_input_output_logging
+        )
+        # Get base64 for multi modal object
+        resolved_outputs = self._convert_multimedia_data_to_base64(result)
+        self._dump_invoke_result(result)
+        log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
+        self.logger.info(f"Flow run result: {log_outputs}")
+        if not self.raise_ex:
+            # If raise_ex is False, we will return the trace flow & node run info.
+            return FlowResult(
+                output=resolved_outputs or {},
+                run_info=result.run_info,
+                node_run_infos=result.node_run_infos,
+            )
+        return resolved_outputs

@@ -14,7 +14,6 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-import nest_asyncio
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -974,13 +973,7 @@ class FlowExecutor:
         if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            try:
-                # Check current running loop.
-                loop = asyncio.get_running_loop()
-                nest_asyncio.apply(loop)
-                nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
-            except RuntimeError:
-                nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
             nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)

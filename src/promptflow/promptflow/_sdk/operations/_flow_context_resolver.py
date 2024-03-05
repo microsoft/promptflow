@@ -40,6 +40,14 @@ class FlowContextResolver:
         resolver._resolve(flow_context=flow.context)
         return resolver._create_invoker(flow_context=flow.context)
 
+    @classmethod
+    @lru_cache
+    def resolve_async_invoker(cls, flow: Flow) -> "AsyncFlowInvoker":
+        """Resolve flow to flow invoker."""
+        resolver = cls(flow_path=flow.path)
+        resolver._resolve(flow_context=flow.context)
+        return resolver._create_async_invoker(flow_context=flow.context)
+
     def _resolve(self, flow_context: FlowContext):
         """Resolve flow context."""
         # TODO(2813319): support node overrides
@@ -108,6 +116,19 @@ class FlowContextResolver:
         # use updated flow dag to create new flow object for invoker
         resolved_flow = Flow(code=self.working_dir, path=self.flow_path, dag=self.flow_dag)
         invoker = FlowInvoker(
+            flow=resolved_flow,
+            connections=connections,
+            streaming=flow_context.streaming,
+        )
+        return invoker
+
+    async def _create_async_invoker(self, flow_context: FlowContext) -> "AsyncFlowInvoker":
+        from promptflow._sdk._serving.flow_invoker import AsyncFlowInvoker
+
+        connections = self._resolve_connection_objs(flow_context=flow_context)
+
+        resolved_flow = Flow(code=self.working_dir, path=self.flow_path, dag=self.flow_dag)
+        invoker = AsyncFlowInvoker(
             flow=resolved_flow,
             connections=connections,
             streaming=flow_context.streaming,
