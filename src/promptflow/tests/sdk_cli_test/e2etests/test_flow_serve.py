@@ -420,12 +420,21 @@ def test_eager_flow_swagger(simple_eager_flow):
 def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
     response = simple_eager_flow_primitive_output.post("/score", data=json.dumps({"input_val": "hi"}))
     assert (
-        response.status_code == 400
+        response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
-    assert response == {
-        "error": {
-            "code": "UserError",
-            "message": "Not supported flow output type <class 'str'>. Only dict is supported.",
-        }
-    }
+    # response original value
+    assert response == "Hello world! hi"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve_dataclass(simple_eager_flow_dataclass_output):
+    response = simple_eager_flow_dataclass_output.post(
+        "/score", data=json.dumps({"text": "my_text", "models": ["my_model"]})
+    )
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # response dict of dataclass
+    assert response == {"models": ["my_model"], "text": "my_text"}

@@ -155,7 +155,7 @@ class FlowInvoker:
         # Pass index 0 as extension require for dumped result.
         # TODO: Remove this index after extension remove this requirement.
         result = self.executor.exec_line(data, index=0, run_id=run_id, allow_generator_output=self.streaming())
-        if LINE_NUMBER_KEY in result.output:
+        if isinstance(result.output, dict) and LINE_NUMBER_KEY in result.output:
             # Remove line number from output
             del result.output[LINE_NUMBER_KEY]
         return result

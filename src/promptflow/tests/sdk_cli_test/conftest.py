@@ -218,7 +218,12 @@ def simple_eager_flow(mocker: MockerFixture):
 
 @pytest.fixture
 def simple_eager_flow_primitive_output(mocker: MockerFixture):
-    return create_client_by_model("simple_with_yaml", mocker, model_root=EAGER_FLOW_ROOT)
+    return create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def simple_eager_flow_dataclass_output(mocker: MockerFixture):
+    return create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
 
 
 # ==================== Recording injection ====================
