@@ -22,8 +22,8 @@ router = APIRouter()
 
 @router.post("/initialize")
 async def initialize(request: InitializationRequest):
-    # TODO: Need to change
     with get_log_context(request, enable_service_logger=True):
+        request.validate_request()
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received batch init request, total lines: {request.line_count}, "
