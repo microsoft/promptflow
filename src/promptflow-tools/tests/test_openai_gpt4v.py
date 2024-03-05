@@ -43,7 +43,7 @@ class TestOpenAIGPT4V:
             except Exception:
                 break
         assert "10" == answer
-    
+
     def test_correctly_pass_params(self, openai_provider, example_prompt_template_with_image, example_image):
         seed_value = 123
         with patch.object(openai_provider._client.chat.completions, 'create') as mock_create:
