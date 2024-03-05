@@ -451,7 +451,7 @@ def generate_tool_meta_in_subprocess(
     return tool_dict, exception_dict
 
 
-def generate_flow_meta_dict(entry: str, source: str = None, path: str = None):
+def generate_flow_meta_dict_by_file(entry: str, source: str = None, path: str = None):
     if path:
         m = load_python_module_from_file(Path(path))
     else:
