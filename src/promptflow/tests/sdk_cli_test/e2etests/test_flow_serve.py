@@ -252,7 +252,7 @@ def test_stream_python_stream_tools(
 
             # The last line is empty
             lines = lines[:-1]
-            assert all(f"data: {json.dumps({'output_echo' : f'{w} '})}" == l for w, l in zip(words, lines))
+            assert all(f"data: {json.dumps({'output_echo': f'{w} '})}" == l for w, l in zip(words, lines))
         else:
             # For json response, iterator is joined into a string with "" as delimiter
             words = expected_output.split()
@@ -428,7 +428,7 @@ def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
 
 
 @pytest.mark.e2etest
-def test_eager_flow_serve_dataclass(simple_eager_flow_dataclass_output):
+def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
     response = simple_eager_flow_dataclass_output.post(
         "/score", data=json.dumps({"text": "my_text", "models": ["my_model"]})
     )
@@ -438,3 +438,20 @@ def test_eager_flow_serve_dataclass(simple_eager_flow_dataclass_output):
     response = json.loads(response.data.decode())
     # response dict of dataclass
     assert response == {"models": ["my_model"], "text": "my_text"}
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve_non_json_serializable_output(non_json_serializable_output):
+    response = non_json_serializable_output.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 400
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == {
+        "error": {
+            "code": "UserError",
+            "message": "The output 'output' for flow is incorrect. The output value is not JSON serializable. "
+            "JSON dump failed: (TypeError) Object of type Output is not JSON serializable. "
+            "Please verify your flow output and make sure the value serializable.",
+        }
+    }
