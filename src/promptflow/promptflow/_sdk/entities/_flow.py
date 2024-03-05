@@ -200,13 +200,17 @@ class Flow(FlowBase):
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
+        from promptflow.contracts.flow import Flow as ExecutableFlow
+
+        if not tuning_node and not variant:
+            # for DAG flow, use data to init executable to improve performance
+            return ExecutableFlow._from_dict(flow_dag=self._data, working_dir=self.code)
 
         # TODO: check if there is potential bug here
         # this is a little wired:
         # 1. the executable is created from a temp folder when there is additional includes
         # 2. after the executable is returned, the temp folder is deleted
         with variant_overwrite_context(self, tuning_node, variant) as flow:
-            from promptflow.contracts.flow import Flow as ExecutableFlow
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
 

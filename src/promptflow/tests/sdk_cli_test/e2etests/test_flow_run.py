@@ -111,10 +111,11 @@ class TestFlowRun:
         # df = pf.show_details(baseline, v1, v2)
 
     def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+        column_mapping = {"url": "${data.url}"}
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
-            column_mapping={"url": "${data.url}"},
+            column_mapping=column_mapping,
         )
         local_storage = LocalStorageOperations(result)
         detail = local_storage.load_detail()
@@ -125,6 +126,7 @@ class TestFlowRun:
 
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
+        assert run.column_mapping == column_mapping
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
