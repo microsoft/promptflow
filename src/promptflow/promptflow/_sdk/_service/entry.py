@@ -22,7 +22,6 @@ from promptflow._sdk._service.utils.utils import (
     get_started_service_info,
     is_port_in_use,
     kill_exist_service,
-    kill_service_get_from_original_port_file,
 )
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
@@ -88,9 +87,6 @@ def start_service(args):
     port = args.port
     if args.debug:
         os.environ[PF_SERVICE_DEBUG] = "true"
-
-    # add this logic to stop pfs service which is start in the original port file.
-    kill_service_get_from_original_port_file()
 
     def validate_port(port, force_start):
         if is_port_in_use(port):
