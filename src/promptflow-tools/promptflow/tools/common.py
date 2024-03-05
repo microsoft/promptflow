@@ -387,8 +387,8 @@ def handle_openai_error(tries: int = 100):
                     if not retry_after_in_header:
                         retry_after_seconds = generate_retry_interval(i)
                         msg = (
-                                f"{type(e).__name__} #{i}, but no Retry-After header, "
-                                + f"Back off {retry_after_seconds} seconds for retry."
+                            f"{type(e).__name__} #{i}, but no Retry-After header, "
+                            + f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     else:
