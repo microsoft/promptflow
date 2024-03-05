@@ -80,7 +80,7 @@ class RunSubmitter:
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # Start trace
         if Configuration(overrides=self._client._config).is_internal_features_enabled():
-            from promptflow._trace._start_trace import start_trace
+            from promptflow.tracing._start_trace import start_trace
 
             logger.debug("Starting trace for flow run...")
             start_trace(session=kwargs.get("session", None), attributes=attributes, run=run.name)
