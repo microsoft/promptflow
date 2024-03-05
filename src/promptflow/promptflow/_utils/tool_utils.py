@@ -273,7 +273,7 @@ def validate_tool_func_result(func_call_scenario: str, result):
     if func_call_scenario not in list(ToolFuncCallScenario):
         raise RetrieveToolFuncResultValidationError(
                 f"Invalid tool func call scenario: {func_call_scenario}. "
-                f"Available scenarios are {ToolFuncCallScenario.__members__.values()}"
+                f"Available scenarios are {list(ToolFuncCallScenario)}"
         )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
