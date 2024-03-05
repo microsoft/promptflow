@@ -58,3 +58,6 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
       default: 0
       type:
         - double
+    seed:
+      type:
+        - int
