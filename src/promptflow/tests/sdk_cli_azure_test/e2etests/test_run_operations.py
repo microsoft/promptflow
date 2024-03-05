@@ -565,7 +565,13 @@ class TestFlowRun:
                 )
                 with pytest.raises(FlowRequestException):
                     remote_client.runs.create_or_update(run=mock_run)
-                assert mock_request.call_count == 4
+                # collect submit call count since new telemetry API will also call RequestsTransport.send
+                call_args_list = mock_request.call_args_list
+                submit_count = 0
+                for call_arg in call_args_list:
+                    if call_arg[0][0].url.endswith("submit"):
+                        submit_count += 1
+                assert submit_count == 4
 
     def test_pf_run_with_env_var(self, pf, randstr: Callable[[str], str]):
         from promptflow.azure.operations import RunOperations
