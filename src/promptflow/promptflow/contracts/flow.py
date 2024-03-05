@@ -14,7 +14,7 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 
-from .._constants import LANGUAGE_KEY, FlowLanguage
+from .._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
@@ -538,6 +538,8 @@ class Flow:
     :type program_language: str
     :param environment_variables: The default environment variables of the flow.
     :type environment_variables: Dict[str, object]
+    :param message_format: The message format type of the flow to represent different multimedia contracts.
+    :type message_format: str
     """
 
     id: str
@@ -549,6 +551,7 @@ class Flow:
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    message_format: str = MessageFormatType.BASIC
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -564,6 +567,7 @@ class Flow:
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
             "language": self.program_language,
+            "message_format": self.message_format,
         }
         return data
 
@@ -610,6 +614,7 @@ class Flow:
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+            message_format=data.get("message_format", MessageFormatType.BASIC),
         )
 
     def _apply_default_node_variants(self: "Flow"):

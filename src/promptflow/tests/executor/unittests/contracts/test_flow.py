@@ -194,6 +194,7 @@ class TestFlow:
                     "outputs": {},
                     "tools": [],
                     "language": "python",
+                    "message_format": "basic",
                 },
             ),
             (
@@ -213,6 +214,7 @@ class TestFlow:
                     "outputs": {"output1": {"type": ValueType.STRING.value}},
                     "tools": [],
                     "language": "python",
+                    "message_format": "basic",
                 },
             ),
         ],
