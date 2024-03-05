@@ -1,6 +1,9 @@
 import pytest
 from unittest.mock import patch
 
+from promptflow.tools.aoai_gpt4v import list_deployment_names
+from tests.utils import Deployment
+
 
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestAzureOpenAIGPT4V:
@@ -51,3 +54,15 @@ class TestAzureOpenAIGPT4V:
             mock_create.assert_called_once()
             called_with_params = mock_create.call_args[1]
             assert called_with_params['seed'] == seed_value
+
+    def test_list_deployment_names(self):
+        with patch('promptflow.tools.aoai_gpt4v.list_deployment_connections') as mock_list:
+            mock_list.return_value = {
+                Deployment("deployment1", "model1", "vision-preview"),
+                Deployment("deployment2", "model2", "version2")
+            }
+
+            res = list_deployment_names("sub", "rg", "ws", "con")
+            assert len(res) == 1
+            assert res[0].get("value") == "deployment1"
+            assert res[0].get("display_value") == "deployment1"

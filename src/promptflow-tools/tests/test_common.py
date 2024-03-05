@@ -315,22 +315,14 @@ class TestCommon:
             )
             assert len(res) == 2
 
-    def test_handle_unsupported_model_error(self, azure_open_ai_connection, monkeypatch):
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-        from azure.ai.ml._azure_environments import AzureEnvironments
-        monkeypatch.setattr(
-            ArmConnectionOperations,
-            "_build_connection_dict",
-            mock_build_connection_dict_func3
-        )
+    def test_handle_unsupported_model_error(self, azure_open_ai_connection):
         with (
-            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock,
+            patch('promptflow.tools.common.get_workspace_details') as mock_get,
+            patch('promptflow.tools.common.list_deployment_connections') as mock_list,
             pytest.raises(LLMError) as exc_info
         ):
-            mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
-            instance = mock.return_value
-            instance.deployments.list.return_value = {
+            mock_get.return_value = (DEFAULT_SUBSCRIPTION_ID, DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_WORKSPACE_NAME)
+            mock_list.return_value = {
                 Deployment("deployment1", "model1", "vision-preview"),
                 Deployment("deployment2", "model2", "version2")
             }
