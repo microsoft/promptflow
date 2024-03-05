@@ -205,6 +205,7 @@ class LineExecutionProcessPool:
         self._task_queue.put((inputs, line_number, run_id))
         start_time = datetime.utcnow()
         line_result = None
+        # TODO: time???????? +20?????
         while not self._line_timeout_expired(start_time) and not line_result:
             service_logger.info(f"line_result: {line_result}")
             line_result = self._result_dict.get(line_number, None)
@@ -236,11 +237,13 @@ class LineExecutionProcessPool:
         input_queue: Queue,
         output_queue: Queue,
     ):
-        # TODO: zombie?????
+        # Get the process info of the thread monitoring from the manager.
         index, process_id, process_name = self._processes_manager.get_process_info(index)
-
         self._processes_manager.ensure_healthy()
-        # TODO: Only get the process can break the while loop????
+
+        # The main loop of the thread, responsible for getting tasks from the task queue and
+        # processing them through the input queue, while also monitoring for terminate signals.
+        # Currently, it exits this loop only upon receiving a terminate signal (TERMINATE_SIGNAL).
         exit_loop = False
         while not exit_loop:
             while True:
@@ -248,17 +251,20 @@ class LineExecutionProcessPool:
                     # Get task from task_queue
                     data = task_queue.get(timeout=1)
                     if data == TERMINATE_SIGNAL:
-                        service_logger.info(f"Thread {process_id} received terminate signal.")
+                        bulk_logger.info(
+                            "The thread monitoring the process "
+                            f"[{process_id}-{process_name}] has received a terminate signal."
+                        )
+                        # Put the terminate signal into the input queue to notify the sub process to exit.
                         input_queue.put(data)
-                        # If found the terminate signal, exit the process.
-                        # End the process if found the terminate signal
+                        # End the process if found the terminate signal.
                         self._processes_manager.end_process(index)
-
                         # In fork mode, the main process and the sub spawn process communicate through _process_info.
                         # We need to ensure the process has been killed before returning. Otherwise, it may cause
                         # the main process have exited but the spawn process is still alive.
                         # At this time, a connection error will be reported.
                         self._processes_manager.ensure_process_terminated_within_timeout(process_id)
+                        # Set exit_loop to True to exit the main loop.
                         exit_loop = True
                         break
                     # TODO: Calculate the line timeout for the current line.???????
