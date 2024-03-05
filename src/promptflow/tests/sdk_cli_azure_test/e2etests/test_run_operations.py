@@ -83,7 +83,7 @@ class TestFlowRun:
 
     def test_run_resume(self, pf, runtime: str, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
-        name = "resume_from_run0"
+        name = "resume_from_run1"
         try:
             run = pf.runs.get(run=name)
         except RunNotFoundError:
@@ -98,8 +98,8 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
-        # name2 = randstr("name")
-        run2 = pf.run(resume_from=run, name=name)
+        name2 = randstr("name")
+        run2 = pf.run(resume_from=run, name=name2)
         assert isinstance(run2, Run)
         # Enable name assert after PFS released
         # assert run2.name == name2
