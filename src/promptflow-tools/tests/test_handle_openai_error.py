@@ -313,4 +313,5 @@ class TestHandleOpenAIError:
             chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
 
         assert mock_create.call_count == 1
-        assert exc_info.value.message == "LLM supports only text models. Please ensure you're using the correct tool for your model."
+        assert exc_info.value.message == "LLM supports only text models. " \
+                                         "Please ensure you're using the correct tool for your model."

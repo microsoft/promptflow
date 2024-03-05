@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -37,8 +38,8 @@ class TestAzureOpenAIGPT4V:
 
     def test_correctly_pass_params(self, aoai_vision_provider, example_prompt_template_with_image, example_image):
         seed_value = 123
-        with patch.object(azure_openai_provider._client.chat.completions, 'create') as mock_create:
-            azure_openai_provider.chat(
+        with patch.object(aoai_vision_provider._client.chat.completions, 'create') as mock_create:
+            aoai_vision_provider.chat(
                 prompt=example_prompt_template_with_image,
                 deployment_name="gpt-4v",
                 max_tokens=480,
