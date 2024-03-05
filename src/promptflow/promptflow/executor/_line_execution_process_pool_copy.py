@@ -134,9 +134,6 @@ class LineExecutionProcessPool:
 
     def start(self):
         manager = Manager()
-        # TODO: Need remove?????????
-        self._processing_idx = manager.dict()
-        self._completed_idx = manager.dict()
 
         self._task_queue = Queue()
         self._n_process = self._worker_count
@@ -268,14 +265,12 @@ class LineExecutionProcessPool:
             if exit_loop:
                 break
 
-            self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
-            log_process_status(process_name, process_id, line_number)
-
             start_time = datetime.utcnow()
             completed = False
             crashed = False
             returned_node_run_infos = {}
 
+            log_process_status(process_name, process_id, line_number)
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
             while not self._line_timeout_expired(start_time):
                 # Monitor process aliveness.
@@ -293,7 +288,6 @@ class LineExecutionProcessPool:
 
             # Handle line execution completed.
             if completed:
-                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_completed=True)
             # Handle line execution is not completed.
             else:
@@ -322,8 +316,6 @@ class LineExecutionProcessPool:
                     returned_node_run_infos,
                 )
                 result_dict[line_number] = result
-
-                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
                 # TODO: if has exception restart anyway?????????????
@@ -333,8 +325,6 @@ class LineExecutionProcessPool:
                 # is killed, which will result in the 'ProcessCrashError'.
                 self._processes_manager.ensure_process_terminated_within_timeout(process_id)
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
-
-            self._processing_idx.pop(line_number)
 
     def _line_timeout_expired(self, start_time: datetime) -> bool:
         # Here we add more seconds because of the following reasons:
@@ -425,23 +415,6 @@ class LineExecutionProcessPool:
         # We need to find a way to avoid this.
         self._storage.persist_flow_run(result.run_info)
         return result
-
-    def _generate_thread_status_messages(self, pool: ThreadPool, total_count: int):
-        msgs = []
-        active_threads = sum(thread.is_alive() for thread in pool._pool)
-        msgs.append(f"[Process Pool] [Active processes: {active_threads} / {len(pool._pool)}]")
-        processing_lines_copy = self._processing_idx.copy()
-        completed_lines_copy = self._completed_idx.copy()
-        msgs.append(
-            f"[Lines] [Finished: {len(completed_lines_copy)}] [Processing: {len(processing_lines_copy)}] "
-            f"[Pending: {total_count - len(processing_lines_copy) - len(completed_lines_copy)}]"
-        )
-        lines = []
-        for idx, thread_name in sorted(processing_lines_copy.items()):
-            lines.append(f"line {idx} ({thread_name})")
-        if len(lines) > 0:
-            msgs.append("Processing Lines: " + ", ".join(lines) + ".")
-        return msgs
 
     def _determine_worker_count(self, worker_count):
         # Starting a new process in non-fork mode requires to allocate memory.
