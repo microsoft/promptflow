@@ -193,3 +193,13 @@ class AzureContentSafetySystemError(SystemErrorException):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class ListDeploymentsError(UserErrorException):
+    def __init__(self, msg, **kwargs):
+        super().__init__(msg, target=ErrorTarget.TOOL, **kwargs)
+
+
+class ParseConnectionError(ListDeploymentsError):
+    def __init__(self, msg, **kwargs):
+        super().__init__(msg, **kwargs)

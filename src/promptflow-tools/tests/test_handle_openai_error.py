@@ -9,7 +9,7 @@ from openai import (
     APITimeoutError, InternalServerError, UnprocessableEntityError
 )
 from promptflow.tools.aoai import chat, completion
-from promptflow.tools.common import handle_openai_error
+from promptflow.tools.common import handle_openai_error, list_deployment_connections
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
     JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
 from promptflow.tools.openai import chat as openai_chat
@@ -301,3 +301,16 @@ class TestHandleOpenAIError:
             )
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_aoai_with_vision_model(self, azure_open_ai_connection, mocker: MockerFixture):
+        dummyEx = BadRequestError("'2 validation errors for Request\nbody -> stop\n none is not an allowed value "
+                                  "(type=type_error.none.not_allowed)\nbody -> "
+                                  "logit_bias\n extra fields not permitted (type=value_error.extra)",
+                                  response=httpx.get('https://www.example.com'), body=None)
+        mock_create = mocker.patch("openai.resources.chat.Completions.create", side_effect=dummyEx)
+
+        with pytest.raises(LLMError) as exc_info:
+            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
+
+        assert mock_create.call_count == 1
+        assert exc_info.value.message == "LLM supports only text models. Please ensure you're using the correct tool for your model."
