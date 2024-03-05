@@ -157,7 +157,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
     async def _invoke_tool_async_inner(self, node: Node, f: Callable, kwargs):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         try:
-            return await f(**kwargs)
+            return await f(**kwargs, node_name=node.name)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
@@ -187,7 +187,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 log_message_function=generate_elapsed_time_messages,
                 args=(logging_name, start_time, interval_seconds, thread_id),
             ):
-                return f(**kwargs)
+                return f(**kwargs, node_name=node.name)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
