@@ -266,8 +266,8 @@ class TestCommon:
             mock_build_connection_dict_func3
         )
         with (
-                patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-        patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
+            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
         ):
             mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
             instance = mock.return_value
@@ -293,10 +293,10 @@ class TestCommon:
             mock_build_connection_dict_func3
         )
         with (
-                patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
-        patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
-        patch('azure.identity.DefaultAzureCredential') as mock_cre,
-        patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
+            patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name,
+            patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud,
+            patch('azure.identity.DefaultAzureCredential') as mock_cre,
+            patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock
         ):
             mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
             cloud = mock_cloud.return_value
