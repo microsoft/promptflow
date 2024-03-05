@@ -63,12 +63,8 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
-def format_current_process_info(process_name, pid, line_number: int):
-    return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
-
-
 def log_process_status(process_name, pid, line_number: int, is_completed=False, is_failed=False):
-    process_info = format_current_process_info(process_name, pid, line_number)
+    process_info = f"Process name({process_name})-Process id({pid})-Line number({line_number})"
     if is_completed:
         bulk_logger.info(f"{process_info} completed.")
     elif is_failed:
