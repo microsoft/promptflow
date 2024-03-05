@@ -52,5 +52,6 @@ promptflow.tools.openai_gpt4v.OpenAI.chat:
       type:
         - double
     seed:
+      default: ""
       type:
         - int
