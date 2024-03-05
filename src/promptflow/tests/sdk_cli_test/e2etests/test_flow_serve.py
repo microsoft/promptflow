@@ -428,6 +428,50 @@ def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
 
 
 @pytest.mark.e2etest
+def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output):
+    swagger_dict = json.loads(simple_eager_flow_primitive_output.get("/swagger.json").data.decode())
+    assert swagger_dict == {
+        "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
+        "info": {"title": "Promptflow[primitive_output] API", "version": "1.0.0", "x-flow-name": "primitive_output"},
+        "openapi": "3.0.0",
+        "paths": {
+            "/score": {
+                "post": {
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "example": {},
+                                "schema": {
+                                    "properties": {"input_val": {"type": "string"}},
+                                    "required": ["input_val"],
+                                    "type": "object",
+                                },
+                            }
+                        },
+                        "description": "promptflow " "input data",
+                        "required": True,
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"properties": {"output": {"type": "string"}}, "type": "object"}
+                                }
+                            },
+                            "description": "successful " "operation",
+                        },
+                        "400": {"description": "Invalid " "input"},
+                        "default": {"description": "unexpected " "error"},
+                    },
+                    "summary": "run promptflow: primitive_output " "with an given input",
+                }
+            }
+        },
+        "security": [{"bearerAuth": []}],
+    }
+
+
+@pytest.mark.e2etest
 def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
     response = simple_eager_flow_dataclass_output.post(
         "/score", data=json.dumps({"text": "my_text", "models": ["my_model"]})
