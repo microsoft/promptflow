@@ -85,8 +85,12 @@
     "astext",
     "Likert",
     "pfsvc",
+    "geval",
+    "Summ",
+    "Bhavik",
     "meid",
-    "Entra"
+    "Entra",
+    "uvicorn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -173,7 +177,10 @@
     "OTLP",
     "spawnv",
     "spawnve",
-    "addrs"
+    "addrs",
+    "pywin",
+    "STARTF",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"

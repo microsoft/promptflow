@@ -29,6 +29,7 @@ class SummaryLine:
     latency: float
     name: str
     kind: str
+    created_by: typing.Dict
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
     evaluations: typing.Dict = field(default_factory=dict)
     # Only for batch run
@@ -49,6 +50,7 @@ class LineEvaluation:
     trace_id: str
     root_span_id: str
     display_name: str
+    created_by: typing.Dict
     flow_id: str = None
     # Only for batch run
     batch_run_id: str = None
@@ -58,8 +60,9 @@ class LineEvaluation:
 
 
 class Summary:
-    def __init__(self, span: Span) -> None:
+    def __init__(self, span: Span, created_by: typing.Dict) -> None:
         self.span = span
+        self.created_by = created_by
 
     def persist(self, client):
         if self.span.parent_span_id:
@@ -67,15 +70,18 @@ class Summary:
             return
         attributes = self.span._content[SpanFieldName.ATTRIBUTES]
 
+        # Persist span as a line run, since even evaluation is a line run, could be referenced by other evaluations.
+        self._persist_line_run(client)
+
         if (
             SpanAttributeFieldName.LINE_RUN_ID not in attributes
             and SpanAttributeFieldName.BATCH_RUN_ID not in attributes
         ):
-            current_app.logger.info("No line run id or batch run id found. Could be aggregate node. Just ignore.")
+            current_app.logger.info(
+                "No line run id or batch run id found. Could be aggregate node, eager flow or arbitrary script. "
+                "Ignore for patching evaluations."
+            )
             return
-
-        # Persist span as a line run, since even evaluation is a line run, could be referenced by other evaluations.
-        self._persist_line_run(client)
 
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes or (
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes
@@ -119,8 +125,8 @@ class Summary:
             session_id=session_id,
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
-            inputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.INPUTS]),
-            outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
+            inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "null")),
+            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "null")),
             start_time=start_time,
             end_time=end_time,
             status=self.span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
@@ -128,6 +134,7 @@ class Summary:
             name=self.span.name,
             kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
             cumulative_token_count=cumulative_token_count,
+            created_by=self.created_by,
         )
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
@@ -147,6 +154,7 @@ class Summary:
             root_span_id=self.span.span_id,
             outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
             display_name=name,
+            created_by=self.created_by,
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
             # Query to get item id from line run id.

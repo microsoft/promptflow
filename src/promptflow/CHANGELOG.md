@@ -1,6 +1,17 @@
 # Release History
 
-## 1.6.0 (TBD)
+## 1.7.0 (Upcoming)
+
+### Features Added
+
+- [SDK/CLI] Create a run with `resume_from`, note that only run created with `promptflow>=1.7.0` can be used as the value of `resume_from`:
+  - CLI: Support `pf run create --resume-from <original-run-name>` to create a run resume from another run.
+  - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+- [SDK/CLI][azure] Create a run with `resume_from`.
+  - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
+  - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+
+## 1.6.0 (2024.03.01)
 
 ### Features Added
 
@@ -10,6 +21,7 @@
   ```
 - [SDK/CLI] Support setting timeout for `pfazure run stream`.
 - [SDK/CLI] Support `pfazure flow update` to update flow's metadata like `display_name`, `description` or `tags`.
+- [SDK/CLI][azure] Support [identity support](https://microsoft.github.io/promptflow/reference/run-yaml-schema-reference.html#identity-schema) for run for automatic runtime.
 
 ### Bugs Fixed
 

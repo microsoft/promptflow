@@ -53,7 +53,7 @@ class PFClient:
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -64,6 +64,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -112,9 +113,35 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+        if not flow:
+            raise ValueError("'flow' is required to create a run.")
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):

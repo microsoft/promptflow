@@ -93,6 +93,12 @@ class GenerateFlowToolsJsonError(SDKError):
     pass
 
 
+class GenerateFlowMetaJsonError(SDKError):
+    """Exception raised if flow json generation failed."""
+
+    pass
+
+
 class BulkRunException(SDKError):
     """Exception raised when bulk run failed."""
 

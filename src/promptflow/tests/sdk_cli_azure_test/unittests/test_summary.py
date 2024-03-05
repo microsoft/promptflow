@@ -10,6 +10,8 @@ from promptflow.azure._storage.cosmosdb.summary import LineEvaluation, Summary, 
 
 
 class TestSummary:
+    FAKE_CREATED_BY = {"oid": "fake_oid"}
+
     @pytest.fixture(autouse=True)
     def setup_data(self):
         test_span = Span(
@@ -30,7 +32,7 @@ class TestSummary:
             run="test_run",
             experiment="test_experiment",
         )
-        self.summary = Summary(test_span)
+        self.summary = Summary(test_span, self.FAKE_CREATED_BY)
         app = Flask(__name__)
         with app.app_context():
             yield
@@ -55,7 +57,7 @@ class TestSummary:
             attributes.pop(SpanAttributeFieldName.LINE_RUN_ID, None)
             attributes.pop(SpanAttributeFieldName.BATCH_RUN_ID, None)
             self.summary.persist(mock_client)
-            mock_persist_line_run.assert_not_called()
+            mock_persist_line_run.assert_called_once()
             mock_insert_evaluation.assert_not_called()
 
     def test_non_evaluation_span_persists_as_main_run(self):
@@ -112,6 +114,8 @@ class TestSummary:
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
+            display_name=self.summary.span.name,
+            created_by=self.FAKE_CREATED_BY,
         )
         expected_patch_operations = [
             {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
@@ -158,6 +162,8 @@ class TestSummary:
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
+            display_name=self.summary.span.name,
+            created_by=self.FAKE_CREATED_BY,
         )
 
         expected_patch_operations = [
@@ -203,6 +209,7 @@ class TestSummary:
             latency=60.0,
             name=self.summary.span.name,
             kind="promptflow.TraceType.Flow",
+            created_by=self.FAKE_CREATED_BY,
             cumulative_token_count={
                 "completion": 10,
                 "prompt": 5,
@@ -245,6 +252,7 @@ class TestSummary:
             status="OK",
             latency=60.0,
             name=self.summary.span.name,
+            created_by=self.FAKE_CREATED_BY,
             kind="promptflow.TraceType.Flow",
             cumulative_token_count={
                 "completion": 10,

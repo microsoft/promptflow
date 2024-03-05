@@ -1,13 +1,7 @@
-try:
-    from openai import AzureOpenAI as AzureOpenAIClient
-except Exception:
-    raise Exception(
-        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
-
 from typing import List, Dict
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
-    preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
+    preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
     post_process_chat_api_response, list_deployment_connections, _build_deployment_dict, GPT4V_VERSION
 
 from promptflow._internal import ToolProvider, tool
@@ -16,10 +10,10 @@ from promptflow.contracts.types import PromptTemplate
 
 
 def list_deployment_names(
-        subscription_id,
-        resource_group_name,
-        workspace_name,
-        connection: AzureOpenAIConnection = None
+    subscription_id,
+    resource_group_name,
+    workspace_name,
+    connection=""
 ) -> List[Dict[str, str]]:
     res = []
     deployment_collection = list_deployment_connections(subscription_id, resource_group_name, workspace_name,
@@ -42,34 +36,24 @@ def list_deployment_names(
 class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
-        self.connection = connection
-        self._connection_dict = normalize_connection_config(self.connection)
-
-        azure_endpoint = self._connection_dict.get("azure_endpoint")
-        api_version = self._connection_dict.get("api_version")
-        api_key = self._connection_dict.get("api_key")
-
-        self._client = AzureOpenAIClient(
-            azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key,
-            # disable OpenAI's built-in retry mechanism by using our own retry
-            # for better debuggability and real-time status updates.
-            max_retries=0)
+        self._client = init_azure_openai_client(connection)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
     def chat(
-            self,
-            prompt: PromptTemplate,
-            deployment_name: str,
-            temperature: float = 1.0,
-            top_p: float = 1.0,
-            # stream is a hidden to the end user, it is only supposed to be set by the executor.
-            stream: bool = False,
-            stop: list = None,
-            max_tokens: int = None,
-            presence_penalty: float = 0,
-            frequency_penalty: float = 0,
-            **kwargs,
+        self,
+        prompt: PromptTemplate,
+        deployment_name: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        # stream is a hidden to the end user, it is only supposed to be set by the executor.
+        stream: bool = False,
+        stop: list = None,
+        max_tokens: int = None,
+        presence_penalty: float = 0,
+        frequency_penalty: float = 0,
+        seed: int = None,
+        **kwargs,
     ) -> str:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
         prompt = preprocess_template_string(prompt)
@@ -101,6 +85,8 @@ class AzureOpenAI(ToolProvider):
             params["stop"] = stop
         if max_tokens is not None:
             params["max_tokens"] = max_tokens
+        if seed is not None:
+            params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, None)

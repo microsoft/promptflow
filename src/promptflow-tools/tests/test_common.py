@@ -1,11 +1,14 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
-    ParseConnectionError, _parse_resource_id, list_deployment_connections, handle_unsupported_model_error
-
-from promptflow.contracts.multimedia import Image
+    ParseConnectionError, _parse_resource_id, list_deployment_connections, handle_unsupported_model_error, \
+    normalize_connection_config
 from promptflow.tools.exception import ListDeploymentsError, LLMError
+
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.contracts.multimedia import Image
 from tests.utils import CustomException, Deployment
 
 DEFAULT_SUBSCRIPTION_ID = "sub"
@@ -30,6 +33,7 @@ def mock_build_connection_dict_func3(**kwargs):
         f"/providers/Microsoft.CognitiveServices/accounts/{DEFAULT_ACCOUNT}"
     )
     return {"value": {"resource_id": resource_id}}
+
 
 class TestCommon:
     @pytest.mark.parametrize(
@@ -337,3 +341,30 @@ class TestCommon:
         error_message = "Please use the tool 'Azure OpenAI GPT-4 Turbo with Vision' for vision model."
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
+
+    @pytest.mark.parametrize(
+        "input_data, expected_output",
+        [
+            (OpenAIConnection(api_key="fake_key", organization="fake_org", base_url="https://openai"),
+             {"max_retries": 0, "api_key": "fake_key", "organization": "fake_org", "base_url": "https://openai"}),
+            (AzureOpenAIConnection(api_key="fake_key", api_base="https://aoai", api_version="v1"),
+             {"max_retries": 0, "api_key": "fake_key", "api_version": "v1", "azure_endpoint": "https://aoai"}),
+        ]
+    )
+    def test_normalize_connection_config(self, input_data, expected_output):
+        actual_result = normalize_connection_config(input_data)
+        assert actual_result == expected_output
+
+    def test_normalize_connection_config_for_aoai_meid(self):
+        aoai_meid_connection = AzureOpenAIConnection(
+            api_base="https://aoai",
+            api_version="v1",
+            auth_mode="meid_token")
+        normalized_config = normalize_connection_config(aoai_meid_connection)
+        expected_output = {
+            "max_retries": 0,
+            "api_version": "v1",
+            "azure_endpoint": "https://aoai",
+            "azure_ad_token_provider": aoai_meid_connection.get_token
+        }
+        assert normalized_config == expected_output

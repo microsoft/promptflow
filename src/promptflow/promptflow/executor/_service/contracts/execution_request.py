@@ -17,7 +17,7 @@ class BaseExecutionRequest(BaseRequest):
     working_dir: Path
     flow_file: Path
     output_dir: Path
-    log_path: str
+    log_path: Optional[str] = None
     connections: Optional[Mapping[str, Any]] = None
     environment_variables: Optional[Mapping[str, Any]] = None
 
@@ -37,7 +37,7 @@ class BaseExecutionRequest(BaseRequest):
 class FlowExecutionRequest(BaseExecutionRequest):
     """Request model for flow execution."""
 
-    inputs: Mapping[str, Any] = None
+    inputs: Optional[Mapping[str, Any]] = None
 
     def get_run_mode(self):
         return RunMode.Test
@@ -52,3 +52,9 @@ class NodeExecutionRequest(BaseExecutionRequest):
 
     def get_run_mode(self):
         return RunMode.SingleNode
+
+
+class CancelExecutionRequest(BaseRequest):
+    """Request model for canceling execution."""
+
+    run_id: str

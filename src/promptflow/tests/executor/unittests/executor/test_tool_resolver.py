@@ -1,7 +1,7 @@
 import re
 import sys
 from pathlib import Path
-from typing import List
+from typing import Callable, List
 from unittest.mock import mock_open
 
 import pytest
@@ -540,3 +540,76 @@ class TestToolResolver:
 
         with pytest.raises(InvalidSource) as _:
             resolver._load_source_content(node)
+
+    @pytest.mark.parametrize(
+        "predefined_inputs", [({"connection": "conn_name"}), ({"connection": "conn_name", "input_int": 1})]
+    )
+    def test_load_tools(self, predefined_inputs):
+        input_int = 1
+        input_str = "test"
+        tool_definitions = [
+            {"type": "code_interpreter"},
+            {"type": "retrieval"},
+            {
+                "type": "function",
+                "tool_type": "python",
+                "source": {"type": "code", "path": "test_assistant_tool_invoker.py"},
+                "predefined_inputs": predefined_inputs,
+            },
+        ]
+
+        assistant_definitions = AssistantDefinition(model="model", instructions="instructions", tools=tool_definitions)
+        assistant_definitions.tools = tool_definitions
+        assert assistant_definitions._tool_invoker is None
+
+        # Test load tools
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
+        tool_resolver._resolve_assistant_tool(assistant_definitions)
+        invoker = assistant_definitions._tool_invoker
+        assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
+        for tool_name, assistant_tool in invoker._assistant_tools.items():
+            assert tool_name in ("code_interpreter", "retrieval", "sample_tool")
+            assert assistant_tool.name == tool_name
+            assert isinstance(assistant_tool.openai_definition, dict)
+            if tool_name in ("code_interpreter", "retrieval"):
+                assert assistant_tool.func is None
+            else:
+                assert isinstance(assistant_tool.func, Callable)
+
+        # Test to_openai_tools
+        descriptions = invoker.to_openai_tools()
+        assert len(descriptions) == len(tool_definitions)
+        properties = {
+            "input_int": {"description": "This is a sample input int.", "type": "number"},
+            "input_str": {"description": "This is a sample input str.", "type": "string"},
+        }
+        required = ["input_int", "input_str"]
+        self._remove_predefined_inputs(properties, predefined_inputs.keys())
+        self._remove_predefined_inputs(required, predefined_inputs.keys())
+        for description in descriptions:
+            if description["type"] in ("code_interpreter", "retrieval"):
+                assert description == {"type": description["type"]}
+            else:
+                assert description == {
+                    "type": "function",
+                    "function": {
+                        "name": "sample_tool",
+                        "description": "This is a sample tool.",
+                        "parameters": {"type": "object", "properties": properties, "required": required},
+                    },
+                }
+
+        # Test invoke tool
+        kwargs = {"input_int": input_int, "input_str": input_str}
+        self._remove_predefined_inputs(kwargs, predefined_inputs.keys())
+        result = invoker.invoke_tool(func_name="sample_tool", kwargs=kwargs)
+        assert result == (input_int, input_str)
+
+    def _remove_predefined_inputs(self, value: any, predefined_inputs: list):
+        for input in predefined_inputs:
+            if input in value:
+                if isinstance(value, dict):
+                    value.pop(input)
+                elif isinstance(value, list):
+                    value.remove(input)

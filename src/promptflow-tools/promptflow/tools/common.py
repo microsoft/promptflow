@@ -206,6 +206,21 @@ def generate_retry_interval(retry_count: int) -> float:
     return retry_interval
 
 
+def _get_credential():
+    from azure.identity import DefaultAzureCredential
+    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    # Support sovereign cloud cases, like mooncake, fairfax.
+    cloud_name = _get_default_cloud_name()
+    if cloud_name != AzureEnvironments.ENV_DEFAULT:
+        cloud = _get_cloud(cloud=cloud_name)
+        authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
+        credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+    else:
+        credential = DefaultAzureCredential()
+
+    return credential
+
+
 def _build_deployment_dict(item) -> Deployment:
     model = item.properties.model
     return Deployment(item.name, model.name, model.version)
@@ -251,7 +266,7 @@ def list_deployment_connections(
     subscription_id,
     resource_group_name,
     workspace_name,
-    connection: AzureOpenAIConnection = None,
+    connection="",
 ):
     try:
         # Does not support dynamic list for local.
@@ -261,9 +276,14 @@ def list_deployment_connections(
     except ImportError:
         return None
 
+    # For local, subscription_id is None. Does not support dynamic list for local.
+    if not subscription_id:
+        return None
+
     try:
         credential = _get_credential()
         try:
+            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
             conn = ArmConnectionOperations._build_connection_dict(
                 name=connection,
                 subscription_id=subscription_id,
@@ -289,8 +309,9 @@ def list_deployment_connections(
         )
         return client.deployments.list(
             resource_group_name=conn_rg,
-            account_name=conn_account
+            account_name=conn_account,
         )
+
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 403:
             msg = f"Failed to list deployments due to permission issue: {e}"
@@ -307,7 +328,7 @@ def handle_unsupported_model_error(connection, deployment_name, model):
             subscription_id, resource_group, workspace_name = get_workspace_details()
             if subscription_id and resource_group and workspace_name:
                 deployment_collection = list_deployment_connections(subscription_id, resource_group, workspace_name,
-                                                                    connection)
+                                                                    connection.name)
                 for item in deployment_collection:
                     if deployment_name == item.name:
                         if item.properties.model.version in [GPT4V_VERSION]:
@@ -523,13 +544,37 @@ def normalize_connection_config(connection):
     ensuring it is compatible and standardized for use.
     """
     if isinstance(connection, AzureOpenAIConnection):
-        return {
-            "api_key": connection.api_key,
-            "api_version": connection.api_version,
-            "azure_endpoint": connection.api_base
-        }
+        use_key_auth = True
+        try:
+            from promptflow._sdk._constants import ConnectionAuthMode
+            if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
+                use_key_auth = False
+        except ImportError as e:
+            if "cannot import name 'ConnectionAuthMode' from 'promptflow._sdk._constants'" in str(e):
+                print("Failed to import ConnectionAuthMode, use key auth by default.")
+                pass
+            else:
+                raise e
+
+        if use_key_auth:
+            return {
+                # disable OpenAI's built-in retry mechanism by using our own retry
+                # for better debuggability and real-time status updates.
+                "max_retries": 0,
+                "api_key": connection.api_key,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+            }
+        else:
+            return {
+                "max_retries": 0,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+                "azure_ad_token_provider": connection.get_token,
+            }
     elif isinstance(connection, OpenAIConnection):
         return {
+            "max_retries": 0,
             "api_key": connection.api_key,
             "organization": connection.organization,
             "base_url": connection.base_url
@@ -538,3 +583,33 @@ def normalize_connection_config(connection):
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
+
+
+def init_openai_client(connection: OpenAIConnection):
+    try:
+        from openai import OpenAI as OpenAIClient
+    except ImportError as e:
+        if "cannot import name 'OpenAI' from 'openai'" in str(e):
+            raise ImportError(
+                "Please upgrade your OpenAI package to version 1.0.0 or later" +
+                "using the command: pip install --upgrade openai.")
+        else:
+            raise e
+
+    conn_dict = normalize_connection_config(connection)
+    return OpenAIClient(**conn_dict)
+
+
+def init_azure_openai_client(connection: AzureOpenAIConnection):
+    try:
+        from openai import AzureOpenAI as AzureOpenAIClient
+    except ImportError as e:
+        if "cannot import name 'AzureOpenAI' from 'openai'" in str(e):
+            raise ImportError(
+                "Please upgrade your OpenAI package to version 1.0.0 or later" +
+                "using the command: pip install --upgrade openai.")
+        else:
+            raise e
+
+    conn_dict = normalize_connection_config(connection)
+    return AzureOpenAIClient(**conn_dict)
