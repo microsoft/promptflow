@@ -236,7 +236,7 @@ class FlowOperations(TelemetryMixin):
                     for log_handler in log.handlers:
                         if isinstance(log_handler, StringHandlerConcurrentWrapper) and log_handler.handler:
                             log_content += log_handler.handler.log
-                return Result(executor_result=result, log=log)
+                return Result(executor_result=result, log=log_content)
             else:
                 return result
 
