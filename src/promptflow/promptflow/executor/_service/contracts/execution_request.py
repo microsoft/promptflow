@@ -13,7 +13,6 @@ from promptflow.executor._service.contracts.base_request import BaseRequest
 class BaseExecutionRequest(BaseRequest):
     """Base request model for execution."""
 
-    run_id: str
     working_dir: Path
     flow_file: Path
     output_dir: Path
@@ -37,6 +36,7 @@ class BaseExecutionRequest(BaseRequest):
 class FlowExecutionRequest(BaseExecutionRequest):
     """Request model for flow execution."""
 
+    run_id: str
     inputs: Optional[Mapping[str, Any]] = None
 
     def get_run_mode(self):
@@ -46,6 +46,7 @@ class FlowExecutionRequest(BaseExecutionRequest):
 class NodeExecutionRequest(BaseExecutionRequest):
     """Request model for node execution."""
 
+    run_id: str
     node_name: str
     flow_inputs: Mapping[str, Any] = None
     dependency_nodes_outputs: Mapping[str, Any] = None
