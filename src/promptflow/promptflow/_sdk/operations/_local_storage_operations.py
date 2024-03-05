@@ -74,6 +74,7 @@ class LoggerOperations(LogContext):
         with read_open(self.file_path) as f:
             return f.read()
 
+    @classmethod
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
         result = super()._get_execute_loggers_list()
         result.append(logger)

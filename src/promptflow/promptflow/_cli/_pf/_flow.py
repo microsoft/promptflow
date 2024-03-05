@@ -12,6 +12,8 @@ import sys
 import tempfile
 import webbrowser
 from pathlib import Path
+from urllib.parse import urlencode, urlunparse
+from promptflow._utils.utils import encrypt_flow_path
 
 from promptflow._cli._params import (
     add_param_config,
@@ -420,26 +422,24 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args, pf_client):
+def _test_flow_multi_modal(args):
     """Test flow with multi modality mode."""
+    from promptflow._trace._start_trace import _start_pfs
+    from promptflow._sdk._service.utils.utils import get_port_from_config
     from promptflow._sdk._load_functions import load_flow
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        flow = load_flow(args.flow)
+    # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
+    def generate_url(flow_path):
+        encrypted_flow_path = encrypt_flow_path(flow_path)
+        query_params = urlencode({'flow': encrypted_flow_path})
+        return urlunparse(('http', f'127.0.0.1:{pfs_port}', '/v1.0/ui/chat', '', query_params, ''))
 
-        script_path = [
-            os.path.join(temp_dir, "main.py"),
-            os.path.join(temp_dir, "utils.py"),
-            os.path.join(temp_dir, "logo.png"),
-        ]
-        for script in script_path:
-            StreamlitFileReplicator(
-                flow_name=flow.display_name if flow.display_name else flow.name,
-                flow_dag_path=flow.flow_dag_path,
-            ).generate_to_file(script)
-        main_script_path = os.path.join(temp_dir, "main.py")
-        logger.info("Start streamlit with main script generated at: %s", main_script_path)
-        pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
+    pfs_port = get_port_from_config(create_if_not_exists=True)
+    _start_pfs(pfs_port)
+    flow = load_flow(args.flow)
+    flow_dir = os.path.abspath(flow.code)
+    chat_page_url = generate_url(flow_dir)
+    webbrowser.open(chat_page_url)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):

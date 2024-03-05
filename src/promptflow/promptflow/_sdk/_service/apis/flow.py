@@ -13,6 +13,7 @@ from promptflow._sdk._constants import UX_INPUTS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.utils import decrypt_flow_path
 from pathlib import Path
 
 api = Namespace("Flows", description="Flows Management")
@@ -23,7 +24,6 @@ dict_field = api.schema_model("FlowDict", {"additionalProperties": True, "type":
 flow_test_model = api.model(
     "FlowTest",
     {
-        "flow": fields.String(required=True, description="Path to flow directory to test."),
         "node": fields.String(required=False, description="If specified it will only test this node, else it will "
                                                           "test the flow."),
         "variant": fields.String(required=False, description="Node & variant name in format of ${"
@@ -54,7 +54,9 @@ class FlowTest(Resource):
     @api.doc(description="Flow test")
     @api.expect(flow_test_model)
     def post(self):
-        flow = api.payload["flow"]
+        args = flow_path_parser.parse_args()
+        flow = args.flow
+        flow = decrypt_flow_path(flow)
         inputs = api.payload.get("inputs", None)
         environment_variables = api.payload.get("environment_variables", None)
         variant = api.payload.get("variant", None)
@@ -70,6 +72,7 @@ class FlowTest(Resource):
                 node=node,
                 experiment=experiment,
                 output_path=output_path,
+                ux_call=True,
             )
         else:
             result = get_client_from_request().flows.test(
@@ -82,6 +85,7 @@ class FlowTest(Resource):
                 stream_output=False,
                 dump_test_result=True,
                 output_path=output_path,
+                ux_call=True,
             )
         return result
 
@@ -93,6 +97,7 @@ class FlowGet(Resource):
     def get(self):
         args = flow_path_parser.parse_args()
         flow_path = args.flow
+        flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
             return make_response("The flow doesn't exist", 404)
         flow_path = resolve_flow_path(Path(flow_path))
@@ -107,6 +112,7 @@ class FlowUxInputs(Resource):
     def get(self):
         args = flow_path_parser.parse_args()
         flow_path = args.flow
+        flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
             return make_response("The flow doesn't exist", 404)
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
@@ -124,8 +130,9 @@ class FlowUxInputs(Resource):
     def post(self):
         content = api.payload["ux_inputs"]
         flow_path = api.payload["flow"]
+        flow_path = decrypt_flow_path(flow_path)
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(content, f, indent=2)
+            json.dump(content, f, ensure_ascii=False, indent=2)
         return make_response("UX_INPUTS_JSON content updated successfully", 200)
