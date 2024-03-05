@@ -331,7 +331,6 @@ class LineExecutionProcessPool:
                 result_dict[line_number] = result
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
-                # TODO: if has exception restart anyway?????????????
                 self._processes_manager.restart_process(index)
                 # We need to ensure the process has been killed before continuing to execute.
                 # Otherwise the process will receive new task, and during the execution, the process
