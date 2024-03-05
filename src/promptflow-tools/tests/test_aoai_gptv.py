@@ -1,10 +1,6 @@
 import pytest
 from unittest.mock import patch
 
-from azure.ai.ml._azure_environments import AzureEnvironments
-from promptflow.azure.operations._arm_connection_operations import \
-    ArmConnectionOperations, OpenURLFailedUserError
-
 from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError, \
     _parse_resource_id, list_deployment_names, GPT4V_VERSION
 
@@ -45,6 +41,8 @@ def azure_openai_provider(azure_open_ai_connection) -> AzureOpenAI:
 
 
 def mock_build_connection_dict_func1(**kwargs):
+    from promptflow.azure.operations._arm_connection_operations import OpenURLFailedUserError
+
     raise OpenURLFailedUserError
 
 
@@ -85,6 +83,8 @@ def test_parse_resource_id_with_error(resource_id, error_message):
 
 
 def test_list_deployment_names_with_conn_error(monkeypatch):
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
     monkeypatch.setattr(
         ArmConnectionOperations,
         "_build_connection_dict",
@@ -100,6 +100,8 @@ def test_list_deployment_names_with_conn_error(monkeypatch):
 
 
 def test_list_deployment_names_with_wrong_connection_id(monkeypatch):
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
     monkeypatch.setattr(
         ArmConnectionOperations,
         "_build_connection_dict",
@@ -115,6 +117,8 @@ def test_list_deployment_names_with_wrong_connection_id(monkeypatch):
 
 
 def test_list_deployment_names_with_permission_issue(monkeypatch):
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
     monkeypatch.setattr(
         ArmConnectionOperations,
         "_build_connection_dict",
@@ -133,6 +137,9 @@ def test_list_deployment_names_with_permission_issue(monkeypatch):
 
 
 def test_list_deployment_names(monkeypatch):
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    from azure.ai.ml._azure_environments import AzureEnvironments
+
     monkeypatch.setattr(
         ArmConnectionOperations,
         "_build_connection_dict",
@@ -160,6 +167,9 @@ def test_list_deployment_names(monkeypatch):
 
 
 def test_list_deployment_names_sovereign_credential(monkeypatch):
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    from azure.ai.ml._azure_environments import AzureEnvironments
+
     monkeypatch.setattr(
         ArmConnectionOperations,
         "_build_connection_dict",
@@ -201,6 +211,7 @@ class TestAzureOpenAIGPT4V:
             temperature=0,
             question="which number did you see in this picture?",
             image_input=example_image,
+            seed=123
         )
         assert "10" == result
         # verify if openai built-in retry mechanism is disabled
@@ -214,6 +225,7 @@ class TestAzureOpenAIGPT4V:
             temperature=0,
             question="which number did you see in this picture?",
             image_input=example_image,
+            stream=True,
         )
         answer = ""
         while True:
@@ -221,4 +233,20 @@ class TestAzureOpenAIGPT4V:
                 answer += next(result)
             except Exception:
                 break
-        assert "10" == result
+        assert "10" == answer
+
+    def test_correctly_pass_params(self, azure_openai_provider, example_prompt_template_with_image, example_image):
+        seed_value = 123
+        with patch.object(azure_openai_provider._client.chat.completions, 'create') as mock_create:
+            azure_openai_provider.chat(
+                prompt=example_prompt_template_with_image,
+                deployment_name="gpt-4v",
+                max_tokens=480,
+                temperature=0,
+                question="which number did you see in this picture?",
+                image_input=example_image,
+                seed=seed_value
+            )
+            mock_create.assert_called_once()
+            called_with_params = mock_create.call_args[1]
+            assert called_with_params['seed'] == seed_value

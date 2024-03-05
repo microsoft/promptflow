@@ -4,7 +4,6 @@
 from typing import Any, Dict, Union
 
 import requests
-from azure.ai.ml._restclient.v2023_06_01_preview.models import WorkspaceConnectionPropertiesV2BasicResource
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
     OperationsContainer,
@@ -13,10 +12,12 @@ from azure.ai.ml._scope_dependent_operations import (
 )
 from azure.core.exceptions import ClientAuthenticationError
 
+from promptflow._sdk._constants import ConnectionAuthMode
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.retry_utils import http_retry_wrapper
+from promptflow.azure._models._models import WorkspaceConnectionPropertiesV2BasicResource
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_arm_token
+from promptflow.azure._utils.general import get_arm_token
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 GET_CONNECTION_URL = (
@@ -30,6 +31,8 @@ LIST_CONNECTION_URL = (
 FLOW_META_PREFIX = "azureml.flow."
 
 
+# Note: We define the category and auth type here because newly added enum values may
+# depend on azure-ai-ml package update, which is not in our control.
 class ConnectionCategory:
     AzureOpenAI = "AzureOpenAI"
     CognitiveSearch = "CognitiveSearch"
@@ -39,6 +42,11 @@ class ConnectionCategory:
     Serp = "Serp"
     Serverless = "Serverless"
     BingLLMSearch = "BingLLMSearch"
+
+
+class ConnectionAuthType:
+    ApiKey = "ApiKey"
+    AAD = "AAD"
 
 
 def get_case_insensitive_key(d, key, default=None):
@@ -181,9 +189,19 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
         meta = {"type": type_name, "module": module}
 
+        def get_auth_config(props):
+            unsupported_message = "Unsupported connection auth type %r, supported types are 'ApiKey' and 'AAD'."
+            if not isinstance(props.auth_type, str):
+                raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
+            if props.auth_type.lower() == ConnectionAuthType.ApiKey.lower():
+                return {"api_key": props.credentials.key, "auth_mode": ConnectionAuthMode.KEY}
+            elif props.auth_type.lower() == ConnectionAuthType.AAD.lower():
+                return {"api_key": None, "auth_mode": ConnectionAuthMode.MEID_TOKEN}
+            raise UnsupportedConnectionAuthType(message=unsupported_message % props.auth_type)
+
         if properties.category == ConnectionCategory.AzureOpenAI:
             value = {
-                "api_key": properties.credentials.key,
+                **get_auth_config(properties),
                 "api_base": properties.target,
                 "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
@@ -194,18 +212,18 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 value["resource_id"] = resource_id
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
-                "api_key": properties.credentials.key,
+                **get_auth_config(properties),
                 "api_base": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
         elif properties.category == ConnectionCategory.Serverless:
             value = {
-                "api_key": properties.credentials.key,
+                **get_auth_config(properties),
                 "api_base": properties.target,
             }
         elif properties.category == ConnectionCategory.CognitiveService:
             value = {
-                "api_key": properties.credentials.key,
+                **get_auth_config(properties),
                 "endpoint": properties.target,
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
@@ -328,5 +346,10 @@ class OpenURLFailedUserError(UserErrorException):
 
 
 class UnknownConnectionType(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CONTROL_PLANE_SDK, **kwargs)
+
+
+class UnsupportedConnectionAuthType(UserErrorException):
     def __init__(self, **kwargs):
         super().__init__(target=ErrorTarget.CONTROL_PLANE_SDK, **kwargs)

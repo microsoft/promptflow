@@ -206,6 +206,8 @@ def sanitize_pfs_request_body(body: str) -> str:
         body_dict["runtimeName"] = SanitizedValues.RUNTIME_NAME
     if "sessionId" in body_dict:
         body_dict["sessionId"] = SanitizedValues.SESSION_ID
+    if "computeName" in body_dict:
+        body_dict["computeName"] = SanitizedValues.COMPUTE_NAME
     if "flowLineageId" in body:
         body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
     if "flowDefinitionResourceId" in body_dict:

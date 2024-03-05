@@ -33,11 +33,18 @@ from marshmallow import ValidationError
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
-from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._core.tool_meta_generator import (
+    generate_flow_meta_dict_by_file,
+    generate_tool_meta,
+    generate_tool_meta_in_subprocess,
+)
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
+    FLOW_META_JSON,
+    FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
     HOME_PROMPT_FLOW_DIR,
@@ -53,11 +60,13 @@ from promptflow._sdk._constants import (
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
+    AzureMLWorkspaceTriad,
     CommonYamlFields,
     ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
+    GenerateFlowMetaJsonError,
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
     UnsecureConnectionError,
@@ -507,15 +516,21 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
-def _generate_meta_from_files(
-    tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
-) -> None:
-    with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
-        for source, tool_type in tools:
-            try:
-                tools_dict[source] = generate_tool_meta_dict_by_file(source, ToolType(tool_type))
-            except Exception as e:
-                exception_dict[source] = str(e)
+def _construct_tool_dict(tools: List[Tuple[str, str]]) -> Dict[str, Dict[str, str]]:
+    """Construct tool dict from tool list.
+
+    :param tools: tool list, like [('test.py', 'python'), ('test.jinja2', 'llm')]
+    :return: tool dict, like
+    {
+        'test.py': {
+            'tool_type': 'python'
+        },
+        'test.jinja2': {
+            'tool_type': 'llm'
+        }
+    }
+    """
+    return {source: {"tool_type": tool_type} for source, tool_type in tools}
 
 
 def _generate_tool_meta(
@@ -538,22 +553,12 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
+    tools = _construct_tool_dict(tools)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
-        manager = multiprocessing.Manager()
-        tools_dict = manager.dict()
-        exception_dict = manager.dict()
-        p = multiprocessing.Process(
-            target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-        )
-        p.start()
-        p.join(timeout=timeout)
-        if p.is_alive():
-            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
-            p.terminate()
-            p.join()
+        tool_dict, exception_dict = generate_tool_meta_in_subprocess(flow_directory, tools, logger, timeout=timeout)
     else:
-        tools_dict, exception_dict = {}, {}
+        tool_dict, exception_dict = {}, {}
 
         #  There is no built-in method to forcefully stop a running thread/coroutine in Python
         #  because abruptly stopping a thread can cause issues like resource leaks,
@@ -563,8 +568,8 @@ def _generate_tool_meta(
             "Generate meta in current process and timeout won't take effect. "
             "Please handle timeout manually outside current process."
         )
-        _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
-    res = {source: tool for source, tool in tools_dict.items()}
+        generate_tool_meta(flow_directory, tools, tool_dict, exception_dict)
+    res = {source: tool for source, tool in tool_dict.items()}
 
     for source in res:
         # remove name in tool meta
@@ -580,13 +585,8 @@ def _generate_tool_meta(
                     if isinstance(tool_input_type[i], Enum):
                         tool_input_type[i] = tool_input_type[i].value
 
-    # collect errors and print warnings
-    errors = {
-        source: exception for source, exception in exception_dict.items()
-    }  # for not processed tools, regard as timeout error
-    for source, _ in tools:
-        if source not in res and source not in errors:
-            errors[source] = f"Generate meta timeout for source {source!r}."
+    # collect errors and print warnings, exception_dict is a dict of source and error dict
+    errors = {source: error_dict.get("message", "unknown exception") for source, error_dict in exception_dict.items()}
     for source in errors:
         if include_errors_in_output:
             res[source] = errors[source]
@@ -1188,3 +1188,118 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
+
+
+def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
+        try:
+            result = generate_flow_meta_dict_by_file(
+                path=source_path,
+                entry=entry,
+            )
+            meta_dict.update(result)
+        except Exception as e:
+            exception_list.append(str(e))
+
+
+def _generate_flow_meta(
+    flow_directory: Path,
+    source_path: str,
+    entry: str,
+    timeout: int,
+    *,
+    load_in_subprocess: bool = True,
+) -> Dict[str, dict]:
+    """Generate tool meta from files.
+
+    :param flow_directory: flow directory
+    :param tools: tool list
+    :param raise_error: whether raise error when generate meta failed
+    :param timeout: timeout for generate meta
+    :param include_errors_in_output: whether include errors in output
+    :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
+        If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
+    :return: tool meta dict
+    """
+    if load_in_subprocess:
+        # use multiprocess generate to avoid system path disturb
+        manager = multiprocessing.Manager()
+        meta_dict = manager.dict()
+        exception_list = manager.list()
+        p = multiprocessing.Process(
+            target=_generate_meta_from_file, args=(flow_directory, source_path, entry, meta_dict, exception_list)
+        )
+        p.start()
+        p.join(timeout=timeout)
+        if p.is_alive():
+            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
+            p.terminate()
+            p.join()
+    else:
+        meta_dict, exception_list = {}, []
+
+        #  There is no built-in method to forcefully stop a running thread/coroutine in Python
+        #  because abruptly stopping a thread can cause issues like resource leaks,
+        #  deadlocks, or inconsistent states.
+        #  Caller needs to handle the timeout outside current process.
+        logger.warning(
+            "Generate meta in current process and timeout won't take effect. "
+            "Please handle timeout manually outside current process."
+        )
+        _generate_meta_from_file(flow_directory, source_path, entry, meta_dict, exception_list)
+    # directly raise error if failed to generate meta
+    if len(exception_list) > 0:
+        error_message = "Generate meta failed, detail error:\n" + str(exception_list)
+        raise GenerateFlowMetaJsonError(error_message)
+    return dict(meta_dict)
+
+
+def generate_flow_meta(
+    flow_directory: Union[str, Path],
+    source_path: str,
+    entry: str,
+    dump: bool = True,
+    timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+    load_in_subprocess: bool = True,
+) -> dict:
+    """Generate flow.json for a flow directory."""
+
+    flow_meta = _generate_flow_meta(
+        flow_directory=flow_directory,
+        source_path=source_path,
+        entry=entry,
+        timeout=timeout,
+        load_in_subprocess=load_in_subprocess,
+    )
+
+    if dump:
+        # dump as flow.tools.json
+        promptflow_folder = flow_directory / PROMPT_FLOW_DIR_NAME
+        promptflow_folder.mkdir(exist_ok=True)
+        with open(promptflow_folder / FLOW_META_JSON, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(flow_meta, f, indent=4)
+
+    return flow_meta
+
+
+def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
+    if not match or len(match.groups()) != 5:
+        raise ValueError(
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {trace_provider}"
+        )
+    subscription_id = match.group(1)
+    resource_group_name = match.group(3)
+    workspace_name = match.group(5)
+    return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
+
+
+def overwrite_null_std_logger():
+    # For the process started in detach mode, stdout/stderr will be none.
+    # To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout

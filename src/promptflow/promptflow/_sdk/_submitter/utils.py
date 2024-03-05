@@ -49,7 +49,7 @@ from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
-from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
 
 logger = get_cli_sdk_logger()
@@ -426,7 +426,8 @@ def _calculate_snapshot(column_mapping, input_data, flow_path):
             return file_path
         if Path(file_path).is_file():
             with open(file_path, "r") as f:
-                file_content[file_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+                absolute_path = Path(file_path).absolute().as_posix()
+                file_content[absolute_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
         else:
             for root, dirs, files in os.walk(file_path):
                 for ignore_item in ["__pycache__"]:
@@ -483,6 +484,36 @@ def _stop_orchestrator_process(orchestrator):
             sleep(1)
     except psutil.NoSuchProcess:
         logger.debug("Experiment status has been updated.")
+
+
+def _set_up_experiment_log_handler(experiment_path, index=None):
+    """
+    Set up file handler to record experiment execution. If not set index, it will record logs in a new file.
+
+    :param experiment_path: Experiment path.
+    :type experiment_path: str
+    :param index: The number of attempt to execution experiment.
+    :type index: int
+    :return: File handler, the number of attempt to execution experiment.
+    :rtype: ~promptflow.utils.logger_utils.FileHandler, int
+    """
+    log_folder = Path(experiment_path) / "logs"
+    log_folder.mkdir(exist_ok=True, parents=True)
+    if index is None:
+        # Get max index in logs folder
+        index = 0
+        for filename in os.listdir(log_folder):
+            result = re.match(r"exp\.attempt\_(\d+)\.log", filename)
+            if result:
+                try:
+                    index = max(index, int(result.groups()[0]) + 1)
+                except Exception as e:
+                    logger.debug(f"Get index of log file failed: {e}")
+
+    log_path = Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
+    logger.info(f"Experiment execution log records in {log_path}")
+    file_handler = FileHandler(file_path=log_path)
+    return file_handler, index
 
 
 # endregion

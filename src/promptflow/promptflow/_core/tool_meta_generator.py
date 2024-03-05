@@ -8,20 +8,37 @@ This file can generate a meta file for the given prompt template or a python fil
 import importlib.util
 import inspect
 import json
+import logging
+import multiprocessing
+import os
 import re
 import types
 from pathlib import Path
 from traceback import TracebackException
+from typing import Mapping
 
 from jinja2 import TemplateSyntaxError
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
 from promptflow._constants import PF_MAIN_MODULE_NAME
-from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
+from promptflow._core._errors import (
+    GenerateMetaTimeout,
+    MetaFileNotFound,
+    MetaFileReadError,
+    NoToolTypeDefined,
+    NotSupported,
+)
 from promptflow._core.tool import ToolProvider
 from promptflow._core.tool_settings_parser import _parser_tool_icon, _parser_tool_input_settings
 from promptflow._core.tool_validation import _validate_tool_function, _validate_tool_schema
-from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
+from promptflow._utils.exception_utils import (
+    ADDITIONAL_INFO_USER_CODE_STACKTRACE,
+    ExceptionPresenter,
+    get_tb_next,
+    last_frame_info,
+)
+from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -371,11 +388,75 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
         )
 
 
+def generate_tool_meta(
+    working_dir: Path,
+    tools: Mapping[str, Mapping[str, str]],
+    tool_dict: dict,
+    exception_dict: dict,
+    prevent_terminate_signal_propagation: bool = False,
+):
+    # This method might run in a child process, and when executed within a uvicorn app,
+    # the termination signal of the child process could be propagated to the parent process.
+    # So, we add this parameter to prevent this behavior.
+    if prevent_terminate_signal_propagation:
+        block_terminate_signal_to_parent()
+
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
+        for source, config in tools.items():
+            try:
+                if "tool_type" not in config:
+                    raise NoToolTypeDefined(
+                        message_format="Tool type not defined for source '{source}'.",
+                        source=source,
+                    )
+                tool_type = ToolType(config.get("tool_type"))
+                tool_dict[source] = generate_tool_meta_dict_by_file(source, tool_type)
+            except Exception as e:
+                exception_dict[source] = ExceptionPresenter.create(e).to_dict()
+
+
+def generate_tool_meta_in_subprocess(
+    working_dir: Path,
+    tools: Mapping[str, Mapping[str, str]],
+    input_logger: logging.Logger,
+    timeout: int = 10,
+    prevent_terminate_signal_propagation: bool = False,
+):
+    manager = multiprocessing.Manager()
+    process_tool_dict = manager.dict()
+    process_exception_dict = manager.dict()
+    p = multiprocessing.Process(
+        target=generate_tool_meta,
+        args=(working_dir, tools, process_tool_dict, process_exception_dict, prevent_terminate_signal_propagation),
+    )
+    p.start()
+    input_logger.info(f"[{os.getpid()}--{p.pid}] Start process to generate tool meta.")
+
+    p.join(timeout=timeout)
+
+    if p.is_alive():
+        input_logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
+        p.terminate()
+        p.join()
+
+    # These dict was created by manager.dict(), so convert to normal dict here.
+    tool_dict = {source: tool for source, tool in process_tool_dict.items()}
+    exception_dict = {source: exception for source, exception in process_exception_dict.items()}
+
+    # For not processed tools, treat as timeout error.
+    for source in tools.keys():
+        if source not in tool_dict and source not in exception_dict:
+            exception_dict[source] = ExceptionPresenter.create(GenerateMetaTimeout(source=source)).to_dict()
+
+    return tool_dict, exception_dict
+
+
 def generate_flow_meta_dict(entry: str, source: str = None, path: str = None):
     if path:
         m = load_python_module_from_file(Path(path))
     else:
         m = load_python_module_from_entry(entry)
+
     f = collect_flow_entry_in_module(m, entry)
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.

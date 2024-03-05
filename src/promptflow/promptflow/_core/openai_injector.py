@@ -5,6 +5,7 @@
 import asyncio
 import functools
 import importlib
+import json
 import logging
 import os
 from importlib.metadata import version
@@ -17,7 +18,7 @@ from promptflow.contracts.trace import TraceType
 from .tracer import _traced_async, _traced_sync
 
 USER_AGENT_HEADER = "x-ms-useragent"
-PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
+PROMPTFLOW_HEADER = "ms-azure-ai-promptflow"
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
@@ -47,7 +48,6 @@ def get_aoai_telemetry_headers() -> dict:
     # get promptflow info from operation context
     operation_context = OperationContext.get_instance()
     tracking_info = operation_context._get_tracking_info()
-    tracking_info = {k.replace("_", "-"): v for k, v in tracking_info.items()}
 
     def is_primitive(value):
         return value is None or isinstance(value, (int, float, str, bool))
@@ -59,7 +59,7 @@ def get_aoai_telemetry_headers() -> dict:
     headers = {USER_AGENT_HEADER: operation_context.get_user_agent()}
 
     # update header with promptflow info
-    headers.update({f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else "" for k, v in tracking_info.items()})
+    headers[PROMPTFLOW_HEADER] = json.dumps(tracking_info)
 
     return headers
 
