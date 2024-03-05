@@ -220,7 +220,7 @@ def run_command(args):
         else:
             logger = logging.getLogger(LOGGER_NAME)
             logger.warning("Promptflow service is not started.")
-            exit(1)
+            sys.exit(1)
     elif args.action == "start":
         start_service(args)
     elif args.action == "stop":

@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import re
+import sys
 from typing import List
 
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, MAX_LIST_CLI_RESULTS
@@ -64,7 +65,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
                     "Please run 'az login' or 'az login --use-device-code' to set up account. "
                     "See https://docs.microsoft.com/cli/azure/authenticate-azure-cli for more details."
                 )
-                exit(1)
+                sys.exit(1)
         if interactive_credential_disabled():
             return DefaultAzureCredential(exclude_interactive_browser_credential=True)
         if is_github_codespaces():

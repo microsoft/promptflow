@@ -192,7 +192,7 @@ pfazure run create [--file]
                    [--stream]
                    [--environment-variables]
                    [--connections]
-                   [--resume-from] # require promptflow>=1.7.0
+                   [--resume-from] # require promptflow>=1.7.0, and original run created with promptflow>=1.7.0
                    [--set]
                    [--subscription]
                    [--resource-group]
@@ -244,7 +244,7 @@ Example: `--connections node1.connection=test_llm_connection node1.deployment_na
 
 `--resume-from`
 
-Create a run resume from an existing run. (Require promptflow>=1.7.0)
+Create a run resume from an existing run. (Require promptflow>=1.7.0, and original run created with promptflow>=1.7.0)
 Example: `--resume-from <run_name>`
 
 `--set`
