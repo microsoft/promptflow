@@ -331,7 +331,7 @@ class TestCommon:
                 Deployment("deployment2", "model2", "version2")
             }
 
-            handle_unsupported_model_error(azure_open_ai_connection, "model1", "")
+            handle_unsupported_model_error(azure_open_ai_connection, "deployment1", "")
 
         error_codes = "UserError/LLMError"
         error_message = "Please use the tool 'Azure OpenAI GPT-4 Turbo with Vision' for vision model."

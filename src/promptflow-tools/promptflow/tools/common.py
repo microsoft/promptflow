@@ -309,7 +309,7 @@ def handle_unsupported_model_error(connection, deployment_name, model):
                 deployment_collection = list_deployment_connections(subscription_id, resource_group, workspace_name,
                                                                     connection)
                 for item in deployment_collection:
-                    if deployment_name == item.properties.model.name:
+                    if deployment_name == item.name:
                         if item.properties.model.version in [GPT4V_VERSION]:
                             error_message = f"LLM supports only text model for azure openai connection. " \
                                             f"Please use the tool 'Azure OpenAI GPT-4 Turbo with Vision' for vision model."
