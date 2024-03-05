@@ -174,18 +174,16 @@ class LineExecutionProcessPool:
         self._processes_manager.start_processes()
         self._processes_manager.ensure_healthy()
 
-        # TODO: init thread??????
+        # Start a thread pool to monitor the processes.
         monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._monitor_pool = monitor_pool
         args_list = [
             (
                 self._task_queue,  # Shared task queue for all sub processes to read the input data.
-                self._result_dict,  # Line result list of the batch run.
+                self._result_dict,  # Line result dict of the batch run.
                 i,  # Index of the sub process.
-                # Specific input queue for sub process, used to send input data to it.
-                self._input_queues[i],
-                # Specific output queue for the sub process, used to receive results from it.
-                self._output_queues[i],
+                self._input_queues[i],  # Specific input queue for sub process, used to send input data to it.
+                self._output_queues[i],  # Specific output queue for the sub process, used to receive results from it.
             )
             for i in range(self._n_process)
         ]
