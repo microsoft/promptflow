@@ -26,10 +26,7 @@ async def initialize(request: InitializationRequest):
     with get_log_context(request, enable_service_logger=True):
         request.validate_request()
         operation_context = update_and_get_operation_context(request.operation_context)
-        service_logger.info(
-            f"Received batch init request, total lines: {request.line_count}, "
-            f"executor version: {operation_context.get_user_agent()}."
-        )
+        service_logger.info(f"Received batch init request, executor version: {operation_context.get_user_agent()}.")
         # resolve environment variables
         set_environment_variables(request.environment_variables)
 
