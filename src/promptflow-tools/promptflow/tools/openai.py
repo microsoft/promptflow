@@ -133,7 +133,7 @@ class OpenAI(ToolProvider):
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
 
-        # to avoid gptv model validation error for empty param values.
+        # to avoid vision model validation error for empty param values.
         if stop:
             params["stop"] = stop
         if max_tokens is not None and str(max_tokens).lower() != "inf":
