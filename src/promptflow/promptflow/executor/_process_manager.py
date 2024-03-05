@@ -16,7 +16,7 @@ from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor.flow_executor import FlowExecutor
 
-SPANED_FORK_PROCESS_MANAGER_LOG_PATH = Path(".promptflow")
+SPANED_FORK_PROCESS_MANAGER_LOG_PATH = Path(".")
 SPANED_FORK_PROCESS_MANAGER_LOG_NAME = "spawned_fork_process_manager_stderr.log"
 
 
@@ -443,7 +443,6 @@ def create_spawned_fork_process_manager(
     process_target_func,
 ):
     # Ensure the directory exists
-
     if not SPANED_FORK_PROCESS_MANAGER_LOG_PATH.exists():
         SPANED_FORK_PROCESS_MANAGER_LOG_PATH.mkdir(parents=True, exist_ok=True)
     log_path = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME

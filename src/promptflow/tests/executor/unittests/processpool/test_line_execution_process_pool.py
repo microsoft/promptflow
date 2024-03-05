@@ -16,13 +16,19 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor._line_execution_process_pool import (
+    PROCESS_LOG_NAME,
+    PROCESS_LOG_PATH,
     LineExecutionProcessPool,
     _exec_line,
     format_current_process_info,
     get_available_max_worker_count,
     log_process_status,
 )
-from promptflow.executor._process_manager import create_spawned_fork_process_manager
+from promptflow.executor._process_manager import (
+    SPANED_FORK_PROCESS_MANAGER_LOG_NAME,
+    SPANED_FORK_PROCESS_MANAGER_LOG_PATH,
+    create_spawned_fork_process_manager,
+)
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -208,6 +214,14 @@ class TestLineExecutionProcessPool:
                 None,
             ) as pool:
                 result_list = pool.run(zip(range(nlines), bulk_inputs))
+                # 检查 'spawned_fork_process_manager_stderr.log' 文件是否存在
+                log_file = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+                assert log_file.exists() is True
+                child_process_log_exit = False
+                for file in PROCESS_LOG_PATH.iterdir():
+                    if file.name.startswith(PROCESS_LOG_NAME):
+                        child_process_log_exit = True
+                assert child_process_log_exit is True
             assert len(result_list) == nlines
             for i, line_result in enumerate(result_list):
                 assert isinstance(line_result, LineResult)

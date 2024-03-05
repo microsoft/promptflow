@@ -50,7 +50,7 @@ from ._process_manager import (
     ProcessControlSignal,
 )
 
-PROCESS_LOG_PATH = Path(".promptflow")
+PROCESS_LOG_PATH = Path(".")
 PROCESS_LOG_NAME = "process_stderr"
 TERMINATE_SIGNAL = "terminate"
 
