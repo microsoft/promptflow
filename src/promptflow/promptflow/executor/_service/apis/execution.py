@@ -19,7 +19,8 @@ from promptflow.executor._service.utils.service_utils import (
     set_environment_variables,
     update_and_get_operation_context,
 )
-from promptflow.executor.flow_executor import FlowExecutor, execute_flow
+from promptflow.executor._base_executor import execute_flow
+from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
 router = APIRouter(prefix="/execution")

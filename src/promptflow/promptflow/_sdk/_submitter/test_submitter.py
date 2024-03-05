@@ -433,7 +433,7 @@ class TestSubmitter:
 
         if self.flow.language == FlowLanguage.Python:
             # TODO: replace with implementation based on PythonExecutorProxy
-            from promptflow.executor.flow_executor import execute_flow
+            from promptflow.executor._base_executor import execute_flow
 
             line_result = execute_flow(
                 flow_file=self.flow.path,

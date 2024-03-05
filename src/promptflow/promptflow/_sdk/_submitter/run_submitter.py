@@ -137,7 +137,6 @@ class RunSubmitter:
                 flow.path,
                 flow.code,
                 connections=connections,
-                entry=flow.entry if isinstance(flow, EagerFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
                 resume_from_run_storage=resume_from_run_storage,

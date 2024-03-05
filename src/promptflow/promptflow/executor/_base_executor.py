@@ -1,58 +1,18 @@
-import asyncio
-import copy
-import functools
-import inspect
-import os
 import uuid
 from pathlib import Path
-from threading import current_thread
-from types import GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._core._errors import NotSupported, UnexpectedError
-from promptflow._core.cache_manager import AbstractCacheManager
-from promptflow._core.flow_execution_context import FlowExecutionContext
-from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
+from promptflow._core._errors import UnexpectedError
 from promptflow._core.openai_injector import inject_openai_api
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
-from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.execution_utils import (
-    apply_default_value_for_input,
-    collect_lines,
-    get_aggregation_inputs_properties,
-)
-from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import (
-    load_multimedia_data,
-    load_multimedia_data_recursively,
-    persist_multimedia_data,
-)
-from promptflow._utils.utils import transpose, get_int_env_var
+from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow._utils.utils import get_int_env_var
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.run_info import FlowRunInfo, Status
-from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import PromptflowException
-from promptflow.executor import _input_assignment_parser
-from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
-from promptflow.executor._errors import (
-    InvalidFlowFileError,
-    NodeOutputNotFound,
-    OutputReferenceNotExist,
-    SingleNodeValidationError
-)
-from promptflow.executor._flow_nodes_scheduler import (
-    DEFAULT_CONCURRENCY_BULK,
-    DEFAULT_CONCURRENCY_FLOW,
-    FlowNodesScheduler,
-)
-from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.executor._tool_resolver import ToolResolver
-from promptflow.executor.flow_validator import FlowValidator
+from promptflow.executor._errors import InvalidFlowRequest
+from promptflow.executor._flow_nodes_scheduler import DEFAULT_CONCURRENCY_BULK
+from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -91,7 +51,6 @@ class BaseExecutor:
         connections: dict,
         *,
         working_dir: Optional[Path] = None,
-        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: Optional[bool] = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -101,12 +60,8 @@ class BaseExecutor:
         from promptflow.executor.flow_executor import FlowExecutor
 
         if cls._is_eager_flow(flow_file, working_dir):
-            if Path(flow_file).suffix.lower() in [".yml", ".yaml"]:
-                entry, path = cls._parse_eager_flow_yaml(flow_file, working_dir)
-                flow_file = Path(path)
             return ScriptExecutor(
                 flow_file=flow_file,
-                entry=entry,
                 connections=connections,
                 working_dir=working_dir,
                 storage=storage,
@@ -123,7 +78,7 @@ class BaseExecutor:
                 line_timeout_sec=line_timeout_sec,
             )
         else:
-            raise InvalidFlowFileError(
+            raise InvalidFlowRequest(
                 message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
             )
 
@@ -194,6 +149,7 @@ class BaseExecutor:
                 for node_run_info in result.node_run_infos.values()
             }
         )
+
 
 def execute_flow(
     flow_file: Path,

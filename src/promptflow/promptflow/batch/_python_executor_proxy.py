@@ -19,8 +19,8 @@ from promptflow.storage._run_storage import AbstractRunStorage
 
 
 class PythonExecutorProxy(AbstractExecutorProxy):
-    def __init__(self, flow_executor: BaseExecutor):
-        self._flow_executor = flow_executor
+    def __init__(self, executor: BaseExecutor):
+        self._executor = executor
 
     @classmethod
     async def create(
@@ -32,8 +32,10 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
-        flow_executor = BaseExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
-        return cls(flow_executor)
+        executor = BaseExecutor.create(
+            flow_file, connections, working_dir=working_dir, storage=storage, raise_ex=False
+        )
+        return cls(executor)
 
     async def exec_aggregation_async(
         self,
@@ -41,9 +43,9 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        run_tracker = RunTracker(self._flow_executor._storage)
+        run_tracker = RunTracker(self._executor._storage)
         with run_tracker.node_log_manager:
-            return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_tracker, run_id=run_id)
+            return self._executor._exec_aggregation(batch_inputs, aggregation_inputs, run_tracker, run_id=run_id)
 
     def _exec_batch(
         self,
@@ -55,14 +57,14 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         worker_count: Optional[int] = None,
     ) -> Tuple[List[LineResult], bool]:
         # TODO: Refine the logic here since the script executor actually doesn't have the 'node' concept
-        if isinstance(self._flow_executor, ScriptExecutor):
-            run_tracker = RunTracker(self._flow_executor._storage)
+        if isinstance(self._executor, ScriptExecutor):
+            run_tracker = RunTracker(self._executor._storage)
         else:
-            run_tracker = self._flow_executor._run_tracker
+            run_tracker = self._executor._run_tracker
 
         with run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            if self._flow_executor._flow_file is None:
+            if self._executor._flow_file is None:
                 raise UnexpectedError(
                     "Unexpected error occurred while init FlowExecutor. Error details: flow file is missing."
                 )
@@ -71,7 +73,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 bulk_logger.info(f"The timeout for the batch run is {batch_timeout_sec} seconds.")
 
             with LineExecutionProcessPool(
-                self._flow_executor,
+                self._executor,
                 len(batch_inputs),
                 run_id,
                 output_dir,
@@ -83,11 +85,11 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 line_results = pool.run(zip(line_number, batch_inputs))
 
             # For bulk run, currently we need to add line results to run_tracker
-            self._flow_executor._add_line_results(line_results, run_tracker)
+            self._executor._add_line_results(line_results, run_tracker)
         return line_results, pool.is_timeout
 
     def get_inputs_definition(self):
-        return self._flow_executor.get_inputs_definition()
+        return self._executor.get_inputs_definition()
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:

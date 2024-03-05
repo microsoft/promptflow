@@ -10,7 +10,6 @@ import inspect
 import os
 import uuid
 from pathlib import Path
-from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
@@ -20,7 +19,6 @@ from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
-from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
@@ -41,11 +39,7 @@ from promptflow._utils.execution_utils import (
     get_aggregation_inputs_properties,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import (
-    load_multimedia_data,
-    load_multimedia_data_recursively,
-    persist_multimedia_data,
-)
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -262,6 +256,7 @@ class FlowExecutor(BaseExecutor):
         executor = FlowExecutor(
             flow=flow,
             connections=connections,
+            storage=storage,
             cache_manager=cache_manager,
             loaded_tools={r.node.name: r.callable for r in resolved_tools},
             raise_ex=raise_ex,
@@ -283,7 +278,6 @@ class FlowExecutor(BaseExecutor):
         return False
 
     @classmethod
-
     def load_and_exec_node(
         cls,
         flow_file: Path,
@@ -699,6 +693,7 @@ class FlowExecutor(BaseExecutor):
             with self._update_operation_context(run_id, index):
                 line_result = self._exec(
                     inputs,
+                    run_tracker=run_tracker,
                     run_id=run_id,
                     line_number=index,
                     variant_id=variant_id,
