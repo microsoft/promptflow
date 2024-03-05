@@ -20,7 +20,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
-from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.logger_utils import bulk_logger, service_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.utils import set_context
 from promptflow.contracts.multimedia import Image
@@ -205,7 +205,7 @@ class LineExecutionProcessPool:
         start_time = datetime.utcnow()
         line_result = None
         while not self._line_timeout_expired(start_time) and not line_result:
-            print("line_result: ", line_result)
+            service_logger.info(f"line_result: {line_result}")
             line_result = self._result_dict.get(line_number, None)
         return line_result
 
@@ -246,6 +246,7 @@ class LineExecutionProcessPool:
                     # Get task from task_queue
                     data = task_queue.get(timeout=1)
                     if data == TERMINATE_SIGNAL:
+                        service_logger.info(f"Thread {process_id} received terminate signal.")
                         input_queue.put(data)
                         # If found the terminate signal, exit the process.
                         # End the process if found the terminate signal
@@ -532,6 +533,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
         try:
             data = input_queue.get(timeout=1)
             if data == TERMINATE_SIGNAL:
+                service_logger.info("Process ... received terminate signal.")
                 # If found the terminate signal, exit the process.
                 break
             inputs, line_number, run_id, line_timeout_sec = data
