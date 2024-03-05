@@ -11,6 +11,7 @@ from promptflow.executor._service.contracts.batch_request import (
     InitializationRequest,
     LineExecutionRequest,
 )
+from promptflow.executor._service.utils.batch_coordinator import BatchCoordinator
 from promptflow.executor._service.utils.service_utils import (
     get_log_context,
     set_environment_variables,
@@ -35,9 +36,15 @@ async def initialize(request: InitializationRequest):
         # init flow executor and validate flow
         # storage = ...????
         flow_executor = FlowExecutor.create(request.flow_file, request.connections, request.working_dir, raise_ex=False)
-        print(flow_executor)
 
         # init line process pool
+        batch_coordinator = BatchCoordinator(
+            request.output_dir,
+            flow_executor,
+            worker_count=request.worker_count,
+            line_timeout_sec=request.line_timeout_sec,
+        )
+        batch_coordinator.start()
 
         # return json response
         return {"status": "initialized"}
@@ -45,13 +52,7 @@ async def initialize(request: InitializationRequest):
 
 @router.post("/execution")
 async def execution(request: LineExecutionRequest):
-    # get pool
-
-    # submit a run
-
-    # return line result
-
-    pass
+    return BatchCoordinator.get_instance().submit(request)
 
 
 @router.post("/aggregation")
@@ -61,4 +62,4 @@ async def aggregation(request: AggregationRequest):
 
 @router.post("/finalize")
 async def finalize():
-    pass
+    return BatchCoordinator.get_instance().shutdown()

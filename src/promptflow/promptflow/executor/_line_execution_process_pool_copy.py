@@ -82,7 +82,6 @@ class LineExecutionProcessPool:
         self,
         output_dir: Path,
         flow_executor: FlowExecutor,
-        result_dict: Dict[int, LineResult],
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
@@ -100,7 +99,7 @@ class LineExecutionProcessPool:
 
         # Init some fields from inputs
         self._output_dir = output_dir
-        self._result_dict = result_dict
+        self._result_dict: Dict[int, LineResult] = {}
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
 
