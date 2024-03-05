@@ -712,20 +712,62 @@ class TestAssistantToolResolver:
                 },
             }
 
-    def test_input_type_is_enum(self):
-        assert True
+    @pytest.mark.parametrize("path", ["assistant_definition_types.yaml"])
+    def test_types_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
 
-    def test_input_type_is_float(self):
-        assert True
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, AssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "function": {
+                    "description": "This tool is used to echo the message back.",
+                    "name": "echo",
+                    "parameters": {
+                        "properties": {
+                            "message_bool": {"description": "", "type": "boolean"},
+                            "message_custom_type": {"description": "", "type": "object"},
+                            "message_default": {"description": "", "type": "number"},
+                            "message_dict": {"description": "", "type": "object"},
+                            "message_enum_str": {"description": "", "enum": ["c", "f"], "type": "string"},
+                            "message_float": {"description": "", "type": "number"},
+                            "message_int": {"description": "", "type": "number"},
+                            "message_list": {"description": "", "type": "array"},
+                            "message_no_type": {"description": "", "type": "object"},
+                            "message_none": {"description": "", "type": "object"},
+                            "message_str": {"description": "", "type": "string"},
+                        },
+                        "required": [
+                            "message_str",
+                            "message_float",
+                            "message_int",
+                            "message_bool",
+                            "message_list",
+                            "message_dict",
+                            "message_none",
+                            "message_enum_str",
+                            "message_custom_type",
+                            "message_no_type",
+                        ],
+                        "type": "object",
+                    },
+                },
+                "type": "function",
+            }
 
     def test_init_args(self):
-        assert True
-
-    def test_type_not_in_mapping(self):
-        assert True
-
-    def test_customized_input_type(self):
-        assert True
-
-    def test_enum_input_type(self):
         assert True

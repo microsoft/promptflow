@@ -204,8 +204,8 @@ class ToolResolver:
                 }
 
                 # Handle enums separately to include possible values
-                if isinstance(json_type, dict) and "enum" in json_type:
-                    func_definition["parameters"]["properties"][name]["enum"] = json_type["enum"]
+                if tool.inputs[name].enum:
+                    func_definition["parameters"]["properties"][name]["enum"] = tool.inputs[name].enum
 
             return {
                 "type": "function",
