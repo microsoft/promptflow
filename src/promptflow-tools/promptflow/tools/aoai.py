@@ -153,8 +153,8 @@ class AzureOpenAI(ToolProvider):
         # to avoid gptv model validation error for empty param values.
         if stop:
             params["stop"] = stop
-        if max_tokens is not None:
-            params["max_tokens"] = max_tokens
+        if max_tokens is not None and str(max_tokens).lower() != "inf":
+            params["max_tokens"] = int(max_tokens)
         if logit_bias:
             params["logit_bias"] = logit_bias
         if response_format:
