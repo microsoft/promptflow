@@ -17,6 +17,7 @@ from promptflow.executor._service.utils.service_utils import (
     set_environment_variables,
     update_and_get_operation_context,
 )
+from promptflow.storage._executor_service_storage import ExecutorServiceStorage
 
 router = APIRouter()
 
@@ -31,8 +32,10 @@ def initialize(request: InitializationRequest):
         set_environment_variables(request.environment_variables)
 
         # init flow executor and validate flow
-        # storage = ...????
-        flow_executor = FlowExecutor.create(request.flow_file, request.connections, request.working_dir, raise_ex=False)
+        storage = ExecutorServiceStorage(request.output_dir)
+        flow_executor = FlowExecutor.create(
+            request.flow_file, request.connections, request.working_dir, storage=storage, raise_ex=False
+        )
 
         # init line process pool
         batch_coordinator = BatchCoordinator(
