@@ -223,7 +223,7 @@ Supported types are as follows:
 |  | base_url | OPENAI_BASE_URL                                  |
 | AzureOpenAIConnection | api_key | AZURE_OPENAI_API_KEY                             |
 |  | api_base | AZURE_OPENAI_ENDPOINT                            |
-|  | api_version | OPENAI_API_VERSION _or_ AZURE_OPENAI_API_VERSION |
+|  | api_version | OPENAI_API_VERSION |
 
 For example, with `OPENAI_API_KEY` set to environment, an `OpenAIConnection` object can be loaded with `OpenAIConnection.from_env()`.
 

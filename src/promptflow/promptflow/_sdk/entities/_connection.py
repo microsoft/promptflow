@@ -444,8 +444,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
         api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        # Note: OpenAI supports OPENAI_API_VERSION, but we also enrich AZURE_OPENAI_API_VERSION for consistency.
-        api_version = os.getenv("OPENAI_API_VERSION") or os.getenv("AZURE_OPENAI_API_VERSION")
+        # Note: Name OPENAI_API_VERSION from OpenAI.
+        api_version = os.getenv("OPENAI_API_VERSION")
         if api_base is None or api_key is None:
             raise RequiredEnvironmentVariablesNotSetError(
                 env_vars=["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"], cls_name=cls.__name__

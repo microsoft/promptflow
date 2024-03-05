@@ -439,7 +439,7 @@ secrets:
             {
                 "AZURE_OPENAI_ENDPOINT": "test_endpoint",
                 "AZURE_OPENAI_API_KEY": "test_key",
-                "AZURE_OPENAI_API_VERSION": "2024-01-01-preview",
+                "OPENAI_API_VERSION": "2024-01-01-preview",
             },
         ):
             connection = AzureOpenAIConnection.from_env("test_connection")
