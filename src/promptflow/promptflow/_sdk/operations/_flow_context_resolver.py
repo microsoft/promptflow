@@ -48,7 +48,7 @@ class FlowContextResolver:
         """Resolve flow to flow invoker."""
         resolver = cls(flow_path=flow.path)
         resolver._resolve(flow_context=flow.context)
-        return resolver._create_invoker(flow_context=flow.context, is_async=True)
+        return resolver._create_invoker(flow_context=flow.context, is_async_call=True)
 
     def _resolve(self, flow_context: FlowContext):
         """Resolve flow context."""
@@ -111,7 +111,9 @@ class FlowContextResolver:
             connections[key] = connection_obj._to_execution_connection_dict()
         return connections
 
-    def _create_invoker(self, flow_context: FlowContext, is_async=False) -> Union["FlowInvoker", "AsyncFlowInvoker"]:
+    def _create_invoker(
+        self, flow_context: FlowContext, is_async_call=False
+    ) -> Union["FlowInvoker", "AsyncFlowInvoker"]:
         from promptflow._sdk._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
 
         connections = self._resolve_connection_objs(flow_context=flow_context)
@@ -123,7 +125,7 @@ class FlowContextResolver:
             with open(flow_file, "w") as fp:
                 dump_yaml(self.flow_dag, fp)
             resolved_flow._path = flow_file.absolute().as_posix()
-            if is_async:
+            if is_async_call:
                 return AsyncFlowInvoker(
                     flow=resolved_flow,
                     connections=connections,

@@ -168,11 +168,6 @@ class Flow(FlowBase):
         return data.get("entry")
 
     @classmethod
-    def _is_async_flow(cls, kwargs):
-        """Check if the flow is an async flow."""
-        return kwargs.pop("async_call", False)
-
-    @classmethod
     def load(
         cls,
         source: Union[str, PathLike],
@@ -195,12 +190,12 @@ class Flow(FlowBase):
                 data = load_yaml_string(flow_content)
                 content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
-            is_async_flow = cls._is_async_flow(kwargs)
+            is_async_call = kwargs.pop("is_async_call", False)
             if is_eager_flow:
                 return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
-                if is_async_flow:
+                if is_async_call:
                     return AsyncProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
                 else:
                     return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
@@ -375,11 +370,11 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 class AsyncProtectedFlow(ProtectedFlow):
     """This class is used to represent an async flow."""
 
-    async def __call__(self, *async_args, **async_kwargs):
-        if async_args:
+    async def __call__(self, *args, **kwargs):
+        if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        result = await self.invoke_async(inputs=async_kwargs)
+        result = await self.invoke_async(inputs=kwargs)
         return result.output
 
     async def invoke_async(self, inputs: dict) -> "LineResult":
@@ -389,6 +384,7 @@ class AsyncProtectedFlow(ProtectedFlow):
 
         if self.language == FlowLanguage.CSharp:
             # Sync C# calling
+            # TODO: Async C# support: Task(3002242)
             with TestSubmitter(flow=self, flow_context=self.context).init(
                 stream_output=self.context.streaming
             ) as submitter:

@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import GeneratorType
 
+import mock
 import pytest
 
 from promptflow import load_flow
@@ -49,9 +50,43 @@ class TestFlowAsFunc:
         ],
     )
     async def test_flow_as_a_func_asynckw(self, async_call_folder):
-        f = load_flow(async_call_folder, async_call=True)
+        f = load_flow(async_call_folder, is_async_call=True)
         result = await f(key="PATH")
         assert result["output"] is not None
+
+    @pytest.mark.asyncio
+    async def test_flow_as_a_func_real_async(self):
+        from promptflow._sdk.entities._flow import AsyncProtectedFlow
+
+        original_async_func = AsyncProtectedFlow.invoke_async
+
+        # Modify the original function and retrieve the time info.
+        run_info = None
+        node_run_infos = None
+
+        async def parse_invoke_async(*args, **kwargs):
+            nonlocal run_info, node_run_infos
+            obj = await original_async_func(*args, **kwargs)
+            run_info = obj.run_info
+            node_run_infos = obj.node_run_infos
+            return obj
+
+        with mock.patch("promptflow._sdk.entities._flow.AsyncProtectedFlow.invoke_async", parse_invoke_async):
+            f = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
+            result = await f(input_str="Hello")
+            assert result is not None
+            # Flow dag structure:
+            # Node1(3 seconds) -> Node2(3 seconds)
+            #                  -> Node3(3 seconds)
+            # Time assertion: flow running time should be quite less than sum of all node running time.
+            time_spent_run = run_info.end_time - run_info.start_time
+            time_spent_nodes = []
+            for _, node_run_info in node_run_infos.items():
+                time_spent = node_run_info.end_time - node_run_info.start_time
+                time_spent_nodes.append(time_spent)
+            # All three node running time should be less than the total flow running time
+            sum_time_nodes = time_spent_nodes[0] + time_spent_nodes[1] + time_spent_nodes[2]
+            assert time_spent_run < sum_time_nodes
 
     def test_flow_as_a_func_with_connection_overwrite(self):
         from promptflow._sdk._errors import ConnectionNotFoundError
