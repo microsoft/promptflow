@@ -345,6 +345,7 @@ class LineExecutionProcessPool:
             crashed = False
             returned_node_run_infos = {}
 
+            self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
             while not self._line_timeout_expired(start_time):
@@ -363,6 +364,7 @@ class LineExecutionProcessPool:
 
             # Handle line execution completed.
             if completed:
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_completed=True)
             # Handle line execution is not completed.
             else:
@@ -391,6 +393,8 @@ class LineExecutionProcessPool:
                     returned_node_run_infos,
                 )
                 result_dict[line_number] = result
+
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
                 self._processes_manager.restart_process(index)
@@ -399,6 +403,8 @@ class LineExecutionProcessPool:
                 # is killed, which will result in the 'ProcessCrashError'.
                 self._processes_manager.ensure_process_terminated_within_timeout(process_id)
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
+
+            self._processing_idx.pop(line_number)
 
     def _monitor_thread_pool_status(self):
         try:
