@@ -382,8 +382,8 @@ class LineExecutionProcessPool:
                     ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
-                    bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
+                    bulk_logger.warning(f"Line {line_number} timeout after {line_timeout_sec} seconds.")
+                    ex = LineExecutionTimeoutError(line_number, line_timeout_sec)
                 else:
                     # This branch should not be reached, add this warning for the case.
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
