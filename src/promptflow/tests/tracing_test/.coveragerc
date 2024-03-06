@@ -12,7 +12,7 @@ omit =
     */promptflow/contracts/*
     */promptflow/entities/*
     */promptflow/executor/*
-    */promptflow/integration/*
+    */promptflow/integrations/*
     */promptflow/operations/*
     */promptflow/storage/*
     *__init__.py*
