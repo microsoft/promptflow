@@ -1,12 +1,15 @@
+import os
 import uuid
 from pathlib import Path
 
 import pydash
 import pytest
+from mock import mock
 
 from promptflow._sdk._constants import SCRUBBED_VALUE
+from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
+from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection, OpenAIConnection
 
 _client = PFClient()
 
@@ -118,3 +121,9 @@ class TestConnection:
         ), "Assert secrets not updated failed, expected: {}, actual: {}".format(
             expected_secret_item[1], result._secrets[expected_secret_item[0]]
         )
+
+    def test_create_connection_no_name(self):
+        with mock.patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"}):
+            connection = OpenAIConnection.from_env()
+            with pytest.raises(ConnectionNameNotSetError):
+                _client.connections.create_or_update(connection)
