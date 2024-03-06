@@ -22,6 +22,7 @@ from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
 
+from .execution_context_vars import ExecutionContextVars
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
 from .tracer import Tracer
@@ -85,8 +86,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
+                ExecutionContextVars.start(vars = {"node_name": node.name})
                 result = self._invoke_tool_with_timer(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
+                ExecutionContextVars.end()
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
@@ -133,8 +136,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
         traces = []
         try:
             Tracer.start_tracing(node_run_id, node.name)
+            ExecutionContextVars.start(vars = {"node_name": node.name})
             result = await self._invoke_tool_async_inner(node, f, kwargs)
             traces = Tracer.end_tracing(node_run_id)
+            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
@@ -157,7 +162,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
     async def _invoke_tool_async_inner(self, node: Node, f: Callable, kwargs):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         try:
-            return await f(**kwargs, __pf_node_name__=node.name)
+            return await f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
@@ -187,7 +192,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 log_message_function=generate_elapsed_time_messages,
                 args=(logging_name, start_time, interval_seconds, thread_id),
             ):
-                return f(**kwargs, __pf_node_name__=node.name)
+                return f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
