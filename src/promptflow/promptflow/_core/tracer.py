@@ -12,7 +12,7 @@ from contextvars import ContextVar
 from datetime import datetime
 from importlib.metadata import version
 from threading import Lock
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Any
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace import Link
@@ -295,13 +295,42 @@ def enrich_span_with_input(span, input):
     return input
 
 
-def enrich_span_with_trace_type(span, inputs, output, trace_type):
+def _try_get_attr(item, attr):
+    if isinstance(item, dict):
+        return item.get(attr)
+    return getattr(item, attr, None)
+
+
+def get_doc_attrs(doc, attr_mappings: Dict[str, str]):
+    attrs = {}
+    metadata_attr = attr_mappings.get("metadata") or "metadata"
+    metadata = None
+    if isinstance(metadata_attr, dict):
+        metadata = {k: _try_get_attr(doc, v) for k, v in metadata_attr.items()}
+    elif isinstance(metadata_attr, str):
+        metadata = _try_get_attr(doc, metadata_attr)
+        if not isinstance(metadata, dict):
+            metadata = None  # Ignore non-dict metadata
+    attrs["document.metadata"] = metadata
+    for attr in ["id", "score", "content"]:
+        attrs[f"document.{attr}"] = _try_get_attr(doc, attr_mappings.get(attr) or attr)
+    return {k: v for k, v in attrs.items() if v is not None}
+
+
+def enrich_span_with_trace_type(span, inputs, output, trace_type, attr_mappings: Optional[Dict[str, str]] = None):
+    attr_mappings = attr_mappings or {}
     if trace_type == TraceType.LLM:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_llm_model(span, output)
     elif trace_type == TraceType.EMBEDDING:
         token_collector.collect_openai_tokens(span, output)
         enrich_span_with_embedding(span, inputs, output)
+    elif trace_type == TraceType.RETRIEVAL:
+        docs = [get_doc_attrs(doc, attr_mappings) for doc in output]
+        span.set_attributes({
+            "retrieval.query": inputs.get("query", attr_mappings.get("query", "query")),
+            "retrieval.documents": serialize_attribute(docs),
+        })
     enrich_span_with_openai_tokens(span, trace_type)
     return enrich_span_with_output(span, output)
 
@@ -422,7 +451,8 @@ def serialize_attribute(value):
 
 
 def _traced(
-    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION,
+    attr_mappings: Optional[Dict[str, str]] = None
 ) -> Callable:
     """
     Decorator that adds tracing to a function.
@@ -437,7 +467,7 @@ def _traced(
         Callable: The traced function.
     """
     wrapped_method = _traced_async if inspect.iscoroutinefunction(func) else _traced_sync
-    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+    return wrapped_method(func, args_to_ignore=args_to_ignore, trace_type=trace_type, attr_mappings=attr_mappings)
 
 
 def _traced_async(
@@ -491,7 +521,10 @@ def _traced_async(
     return wrapped
 
 
-def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION) -> Callable:
+def _traced_sync(
+    func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION,
+    attr_mappings: Optional[Dict[str, str]] = None
+) -> Callable:
     """
     Decorator that adds tracing to a synchronous function.
 
@@ -526,7 +559,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 Tracer.push(trace)
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
-                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type, attr_mappings)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
@@ -540,7 +573,12 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     return wrapped
 
 
-def trace(func: Callable = None) -> Callable:
+def trace(
+    func: Callable = None,
+    *,
+    span_type: Optional[str] = None,
+    attr_mappings: Optional[Dict[str, Any]] = None,
+) -> Callable:
     """A decorator to add trace to a function.
 
     When a function is wrapped by this decorator, the function name,
@@ -575,5 +613,32 @@ def trace(func: Callable = None) -> Callable:
             name = await get_name_async(user_id)
             return f"Hello, {name}"
     """
+    if func is not None:
+        return _traced(func, trace_type=TraceType.FUNCTION)
 
-    return _traced(func, trace_type=TraceType.FUNCTION)
+    def trace_decorator(func):
+        trace_type = TraceType.RETRIEVAL if span_type == "Retrieval" else TraceType.FUNCTION
+        return _traced(func, trace_type=trace_type, attr_mappings=attr_mappings)
+    return trace_decorator
+
+
+from typing import Union
+
+
+def retrieval(
+    func: Optional[Callable] = None,
+    *,
+    content_key: Optional[str] = None,
+    score_key: Optional[Union[str, float]] = None,
+    id_key: Optional[str] = None,
+    metadata_key: Optional[str] = None,
+    metadata_mapping: Optional[Dict[str, str]] = None,
+) -> Callable:
+    if func is not None:
+        return _traced(func, trace_type=TraceType.RETRIEVAL)
+
+    def retrieval_decorator(func):
+        return _traced(func, trace_type=TraceType.RETRIEVAL, attr_mappings={
+            "content": content_key, "score": score_key, "id": id_key, "metadata": metadata_key or metadata_mapping,
+        })
+    return retrieval_decorator

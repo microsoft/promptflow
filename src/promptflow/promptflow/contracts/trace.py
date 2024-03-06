@@ -16,6 +16,7 @@ class TraceType(str, Enum):
     LANGCHAIN = "LangChain"
     FLOW = "Flow"
     EMBEDDING = "Embedding"
+    RETRIEVAL = "Retrieval"
 
 
 @dataclass

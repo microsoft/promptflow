@@ -239,6 +239,7 @@ def _determine_trace_url(
     run: typing.Optional[str] = None,
     session_id: typing.Optional[str] = None,
 ) -> str:
+    session_configured = True
     ui_url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
     if experiment is not None:
         ui_url += f"?experiment={experiment}"
