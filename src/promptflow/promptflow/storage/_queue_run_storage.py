@@ -32,18 +32,18 @@ class QueueRunStorage(AbstractRunStorage):
 class ServiceQueueRunStorage(QueueRunStorage):
     def __init__(self, queue: Queue, output_dir: Path):
         super().__init__(queue)
-        self._flow_outputs_path = prepare_folder(output_dir / OutputsFolderName.FLOW_OUTPUTS)
-        self._flow_artifacts_path = prepare_folder(output_dir / OutputsFolderName.FLOW_ARTIFACTS)
-        self._node_artifacts_path = prepare_folder(output_dir / OutputsFolderName.NODE_ARTIFACTS)
+        self._flow_outputs_path = output_dir / OutputsFolderName.FLOW_OUTPUTS
+        self._flow_artifacts_path = output_dir / OutputsFolderName.FLOW_ARTIFACTS
+        self._node_artifacts_path = output_dir / OutputsFolderName.NODE_ARTIFACTS
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         super().persist_flow_run(run_info)
-        flow_folder = prepare_folder(self._flow_artifacts_path / str(run_info.index))
+        flow_folder = self._flow_artifacts_path / str(run_info.index)
         self._process_multimedia_in_run_info(run_info, flow_folder)
 
     def persist_node_run(self, run_info: NodeRunInfo):
         super().persist_node_run(run_info)
-        node_folder = prepare_folder(self._node_artifacts_path / str(run_info.index) / run_info.node)
+        node_folder = self._node_artifacts_path / str(run_info.index) / run_info.node
         self._process_multimedia_in_run_info(run_info, node_folder)
 
     def _process_multimedia_in_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path):
