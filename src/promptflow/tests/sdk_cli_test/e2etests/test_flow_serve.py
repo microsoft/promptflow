@@ -252,7 +252,7 @@ def test_stream_python_stream_tools(
 
             # The last line is empty
             lines = lines[:-1]
-            assert all(f"data: {json.dumps({'output_echo' : f'{w} '})}" == l for w, l in zip(words, lines))
+            assert all(f"data: {json.dumps({'output_echo': f'{w} '})}" == l for w, l in zip(words, lines))
         else:
             # For json response, iterator is joined into a string with "" as delimiter
             words = expected_output.split()
@@ -420,12 +420,82 @@ def test_eager_flow_swagger(simple_eager_flow):
 def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
     response = simple_eager_flow_primitive_output.post("/score", data=json.dumps({"input_val": "hi"}))
     assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # response original value
+    assert response == "Hello world! hi"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output):
+    swagger_dict = json.loads(simple_eager_flow_primitive_output.get("/swagger.json").data.decode())
+    assert swagger_dict == {
+        "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
+        "info": {"title": "Promptflow[primitive_output] API", "version": "1.0.0", "x-flow-name": "primitive_output"},
+        "openapi": "3.0.0",
+        "paths": {
+            "/score": {
+                "post": {
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "example": {},
+                                "schema": {
+                                    "properties": {"input_val": {"type": "string"}},
+                                    "required": ["input_val"],
+                                    "type": "object",
+                                },
+                            }
+                        },
+                        "description": "promptflow " "input data",
+                        "required": True,
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {"properties": {"output": {"type": "string"}}, "type": "object"}
+                                }
+                            },
+                            "description": "successful " "operation",
+                        },
+                        "400": {"description": "Invalid " "input"},
+                        "default": {"description": "unexpected " "error"},
+                    },
+                    "summary": "run promptflow: primitive_output " "with an given input",
+                }
+            }
+        },
+        "security": [{"bearerAuth": []}],
+    }
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve_dataclass_output(simple_eager_flow_dataclass_output):
+    response = simple_eager_flow_dataclass_output.post(
+        "/score", data=json.dumps({"text": "my_text", "models": ["my_model"]})
+    )
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # response dict of dataclass
+    assert response == {"models": ["my_model"], "text": "my_text"}
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve_non_json_serializable_output(non_json_serializable_output):
+    response = non_json_serializable_output.post("/score", data=json.dumps({}))
+    assert (
         response.status_code == 400
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
     assert response == {
         "error": {
             "code": "UserError",
-            "message": "Not supported flow output type <class 'str'>. Only dict is supported.",
+            "message": "The output 'output' for flow is incorrect. The output value is not JSON serializable. "
+            "JSON dump failed: (TypeError) Object of type Output is not JSON serializable. "
+            "Please verify your flow output and make sure the value serializable.",
         }
     }

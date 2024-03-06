@@ -102,6 +102,7 @@ class TestToolMetaUtils:
         [
             ("dummy_flow_with_trace", "flow_with_trace:my_flow", "flow_with_trace.py"),
             ("dummy_flow_with_trace", "flow_with_trace:my_flow", None),
+            ("flow_with_dataclass_output", "flow_with_dataclass:my_flow", "flow_with_dataclass.py"),
         ]
     )
     def test_generate_flow_meta(self, flow_dir, entry, path):
