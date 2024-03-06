@@ -210,6 +210,23 @@ On the VS Code primary sidebar > prompt flow pane. You can find the connections 
 :::
 ::::
 
+## Load from environment variables
+With `promptflow>=1.7.0`, user is able to load a connection object from os environment variables with `<ConnectionType>.from_env` func.
+Note that the connection object will **NOT BE CREATED** to local database.
+
+Supported types are as follows:
+
+| Connection Type       | Field | Relevant Environment Variable                    |
+|-----------------------| --- |--------------------------------------------------|
+| OpenAIConnection | api_key | OPENAI_API_KEY                                   |
+|  | organization | OPENAI_ORG_ID                                    |
+|  | base_url | OPENAI_BASE_URL                                  |
+| AzureOpenAIConnection | api_key | AZURE_OPENAI_API_KEY                             |
+|  | api_base | AZURE_OPENAI_ENDPOINT                            |
+|  | api_version | OPENAI_API_VERSION |
+
+For example, with `OPENAI_API_KEY` set to environment, an `OpenAIConnection` object can be loaded with `OpenAIConnection.from_env()`.
+
 
 ## Next steps
 - Reach more detail about [connection concepts](../../concepts/concept-connections.md).

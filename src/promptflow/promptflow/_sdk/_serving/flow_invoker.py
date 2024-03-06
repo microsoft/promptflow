@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import dataclasses
 from pathlib import Path
 from typing import Callable, Union
 
@@ -20,9 +20,9 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
-from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -168,11 +168,12 @@ class FlowInvoker:
         """
         result = self._invoke(data, run_id=run_id, disable_input_output_logging=disable_input_output_logging)
         # Get base64 for multi modal object
-        # TODO(2991935): support primitive type & dataclass
-        if not isinstance(result.output, dict):
-            # validation error
-            raise UserErrorException(f"Not supported flow output type {type(result.output)}. Only dict is supported.")
-        resolved_outputs = self._convert_multimedia_data_to_base64(result)
+        output_dict = convert_eager_flow_output_to_dict(result.output)
+        if not isinstance(result.output, dict) and not dataclasses.is_dataclass(result.output):
+            returned_non_dict_output = True
+        else:
+            returned_non_dict_output = False
+        resolved_outputs = self._convert_multimedia_data_to_base64(output_dict)
         self._dump_invoke_result(result)
         log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
         self.logger.info(f"Flow run result: {log_outputs}")
@@ -182,13 +183,13 @@ class FlowInvoker:
                 output=resolved_outputs or {},
                 run_info=result.run_info,
                 node_run_infos=result.node_run_infos,
+                response_original_value=returned_non_dict_output,
             )
         return resolved_outputs
 
-    def _convert_multimedia_data_to_base64(self, invoke_result):
+    def _convert_multimedia_data_to_base64(self, output_dict):
         resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
-            for k, v in invoke_result.output.items()
+            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in output_dict.items()
         }
         return resolved_outputs
 
