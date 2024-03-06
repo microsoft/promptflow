@@ -29,6 +29,7 @@ class SummaryLine:
     latency: float
     name: str
     kind: str
+    created_by: typing.Dict
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
     evaluations: typing.Dict = field(default_factory=dict)
     # Only for batch run
@@ -49,6 +50,7 @@ class LineEvaluation:
     trace_id: str
     root_span_id: str
     display_name: str
+    created_by: typing.Dict
     flow_id: str = None
     # Only for batch run
     batch_run_id: str = None
@@ -58,8 +60,9 @@ class LineEvaluation:
 
 
 class Summary:
-    def __init__(self, span: Span) -> None:
+    def __init__(self, span: Span, created_by: typing.Dict) -> None:
         self.span = span
+        self.created_by = created_by
 
     def persist(self, client):
         if self.span.parent_span_id:
@@ -131,6 +134,7 @@ class Summary:
             name=self.span.name,
             kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
             cumulative_token_count=cumulative_token_count,
+            created_by=self.created_by,
         )
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
@@ -150,6 +154,7 @@ class Summary:
             root_span_id=self.span.span_id,
             outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
             display_name=name,
+            created_by=self.created_by,
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
             # Query to get item id from line run id.

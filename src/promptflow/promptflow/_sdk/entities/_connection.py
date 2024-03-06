@@ -4,6 +4,7 @@
 import abc
 import importlib
 import json
+import os
 import types
 from os import PathLike
 from pathlib import Path
@@ -25,7 +26,7 @@ from promptflow._sdk._constants import (
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
-from promptflow._sdk._errors import SDKError, UnsecureConnectionError
+from promptflow._sdk._errors import RequiredEnvironmentVariablesNotSetError, SDKError, UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -76,7 +77,7 @@ class _Connection(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        name: str = "default_connection",
+        name: str = None,
         module: str = "promptflow.connections",
         configs: Dict[str, str] = None,
         secrets: Dict[str, str] = None,
@@ -437,6 +438,29 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
         return self._token_provider.get_token()
 
+    @classmethod
+    def from_env(cls, name=None):
+        """
+        Build connection from environment variables.
+
+        Relevant environment variables:
+        - AZURE_OPENAI_ENDPOINT: The api base.
+        - AZURE_OPENAI_API_KEY: The api key.
+        - OPENAI_API_VERSION: Optional. The api version, default "2023-07-01-preview".
+        """
+        # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
+        api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+        api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        # Note: Name OPENAI_API_VERSION from OpenAI.
+        api_version = os.getenv("OPENAI_API_VERSION")
+        if api_base is None or api_key is None:
+            raise RequiredEnvironmentVariablesNotSetError(
+                env_vars=["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"], cls_name=cls.__name__
+            )
+        # Note: Do not pass api_version None when init class object as we have default version.
+        optional_args = {"api_version": api_version} if api_version else {}
+        return cls(api_base=api_base, api_key=api_key, name=name, **optional_args)
+
 
 class OpenAIConnection(_StrongTypeConnection):
     """Open AI connection.
@@ -484,6 +508,24 @@ class OpenAIConnection(_StrongTypeConnection):
     def base_url(self, value):
         """Set the connection api base."""
         self.configs["base_url"] = value
+
+    @classmethod
+    def from_env(cls, name=None):
+        """
+        Build connection from environment variables.
+
+        Relevant environment variables:
+        - OPENAI_API_KEY: The api key.
+        - OPENAI_ORG_ID: Optional. The unique identifier for your organization which can be used in API requests.
+        - OPENAI_BASE_URL: Optional. Specify when use customized api base, leave None to use OpenAI default api base.
+        """
+        # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/_client.py#L92
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_BASE_URL")
+        organization = os.getenv("OPENAI_ORG_ID")
+        if api_key is None:
+            raise RequiredEnvironmentVariablesNotSetError(env_vars=["OPENAI_API_KEY"], cls_name=cls.__name__)
+        return cls(api_key=api_key, organization=organization, base_url=base_url, name=name)
 
 
 class ServerlessConnection(_StrongTypeConnection):

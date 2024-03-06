@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import tempfile
 from functools import lru_cache
 from os import PathLike
 from pathlib import Path
@@ -11,6 +12,7 @@ from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities import FlowContext
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.flow_utils import load_flow_dag
+from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts.flow import Node
 from promptflow.exceptions import UserErrorException
 
@@ -107,9 +109,14 @@ class FlowContextResolver:
         connections = self._resolve_connection_objs(flow_context=flow_context)
         # use updated flow dag to create new flow object for invoker
         resolved_flow = Flow(code=self.working_dir, path=self.flow_path, dag=self.flow_dag)
-        invoker = FlowInvoker(
-            flow=resolved_flow,
-            connections=connections,
-            streaming=flow_context.streaming,
-        )
-        return invoker
+        # dump to file since executor requires a file path to load flow
+        with tempfile.TemporaryDirectory() as folder:
+            flow_file = Path(folder) / "flow.dag.yaml"
+            with open(flow_file, "w") as fp:
+                dump_yaml(self.flow_dag, fp)
+            resolved_flow._path = flow_file.absolute().as_posix()
+            return FlowInvoker(
+                flow=resolved_flow,
+                connections=connections,
+                streaming=flow_context.streaming,
+            )

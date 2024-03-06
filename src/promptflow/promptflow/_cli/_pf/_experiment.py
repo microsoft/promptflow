@@ -5,17 +5,19 @@ import argparse
 import json
 
 from promptflow._cli._params import (
+    AppendToDictAction,
     add_param_all_results,
     add_param_archived_only,
     add_param_include_archived,
     add_param_max_results,
     base_params,
 )
-from promptflow._cli._utils import activate_action
+from promptflow._cli._utils import activate_action, list_of_dict_to_dict
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 _client = None
@@ -34,6 +36,29 @@ def add_param_template(parser):
 
 def add_param_name(parser):
     parser.add_argument("--name", "-n", type=str, help="The experiment name.")
+
+
+def add_param_file(parser):
+    parser.add_argument("--file", "-f", type=str, help="File path of the experiment yaml.")
+
+
+def add_param_input(parser):
+    parser.add_argument(
+        "--inputs",
+        action=AppendToDictAction,
+        help="Input datas for the experiment. Example: --inputs data1=data1_val data2=data2_val",
+        nargs="+",
+    )
+
+
+def add_param_stream(parser):
+    parser.add_argument(
+        "-s",
+        "--stream",
+        action="store_true",
+        default=False,
+        help="Indicates whether to stream the experiment execution logs to the console.",
+    )
 
 
 def add_experiment_create(subparsers):
@@ -103,14 +128,16 @@ def add_experiment_start(subparsers):
     epilog = """
     Examples:
 
-    # Start an experiment:
-    pf experiment start -n my_experiment
+    # Start a named experiment:
+    pf experiment start -n my_experiment --inputs data1=data1_val data2=data2_val
+    # Run an experiment by yaml file:
+    pf experiment start --file path/to/my_experiment.exp.yaml --inputs data1=data1_val data2=data2_val
     """
     activate_action(
         name="start",
         description="Start an experiment.",
         epilog=epilog,
-        add_params=[add_param_name] + base_params,
+        add_params=[add_param_name, add_param_file, add_param_input, add_param_stream] + base_params,
         subparsers=subparsers,
         help_message="Start an experiment.",
         action_param_name="sub_action",
@@ -121,14 +148,16 @@ def add_experiment_stop(subparsers):
     epilog = """
     Examples:
 
-    # Stop an experiment:
+    # Stop an named experiment:
     pf experiment stop -n my_experiment
+    # Stop an experiment started by yaml file:
+    pf experiment stop --file path/to/my_experiment.exp.yaml
     """
     activate_action(
         name="stop",
         description="Stop an experiment.",
         epilog=epilog,
-        add_params=[add_param_name] + base_params,
+        add_params=[add_param_name, add_param_file] + base_params,
         subparsers=subparsers,
         help_message="Stop an experiment.",
         action_param_name="sub_action",
@@ -197,11 +226,41 @@ def show_experiment(args: argparse.Namespace):
     print(json.dumps(result._to_dict(), indent=4))
 
 
+def test_experiment(args: argparse.Namespace):
+    result = _get_pf_client()._experiments._test(args.name)
+    print(json.dumps(result._to_dict(), indent=4))
+
+
 def start_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments.start(args.name)
+    if args.name:
+        logger.debug(f"Starting a named experiment {args.name}.")
+        inputs = list_of_dict_to_dict(args.inputs)
+        if inputs:
+            logger.warning("The inputs of named experiment cannot be modified.")
+        client = _get_pf_client()
+        experiment = client._experiments.get(args.name)
+        result = client._experiments.start(experiment=experiment, stream=args.stream)
+    elif args.file:
+        from promptflow._sdk._load_functions import _load_experiment
+
+        logger.debug(f"Starting an anonymous experiment {args.file}.")
+        experiment = _load_experiment(source=args.file)
+        inputs = list_of_dict_to_dict(args.inputs)
+        result = _get_pf_client()._experiments.start(experiment=experiment, inputs=inputs, stream=args.stream)
+    else:
+        raise UserErrorException("To start an experiment, one of [name, file] must be specified.")
     print(json.dumps(result._to_dict(), indent=4))
 
 
 def stop_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments.stop(args.name)
+    client = _get_pf_client()
+    if args.name:
+        logger.debug(f"Stop a named experiment {args.name}.")
+        experiment = client._experiments.get(args.name)
+    elif args.file:
+        from promptflow._sdk._load_functions import _load_experiment
+
+        logger.debug(f"Stop an anonymous experiment {args.file}.")
+        experiment = _load_experiment(source=args.file)
+    result = client._experiments.stop(experiment)
     print(json.dumps(result._to_dict(), indent=4))
