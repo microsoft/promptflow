@@ -133,5 +133,5 @@ jobs:
         testResultTitle: promptflow-tracing unit test result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        # coverageThreshold: 40
+        coverageThreshold: 40
         context: test/tracing
