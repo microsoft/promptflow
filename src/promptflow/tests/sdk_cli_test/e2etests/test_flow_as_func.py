@@ -1,7 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import shutil
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import GeneratorType
@@ -61,32 +63,50 @@ class TestFlowAsFunc:
         original_async_func = AsyncProtectedFlow.invoke_async
 
         # Modify the original function and retrieve the time info.
-        run_info = None
-        node_run_infos = None
+        run_info_group = []
+        node_run_infos_group = []
 
         async def parse_invoke_async(*args, **kwargs):
-            nonlocal run_info, node_run_infos
+            nonlocal run_info_group, node_run_infos_group
             obj = await original_async_func(*args, **kwargs)
-            run_info = obj.run_info
-            node_run_infos = obj.node_run_infos
+            run_info_group.append(obj.run_info)
+            node_run_infos_group.append(obj.node_run_infos)
             return obj
 
         with mock.patch("promptflow._sdk.entities._flow.AsyncProtectedFlow.invoke_async", parse_invoke_async):
-            f = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
-            result = await f(input_str="Hello")
-            assert result is not None
-            # Flow dag structure:
+            f_async_tools = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
+            f_env_var_async = load_flow(f"{FLOWS_DIR}/print_env_var_async", is_async_call=True)
+
+            time_start = datetime.now()
+            results = await asyncio.gather(
+                f_async_tools(input_str="Hello"), f_async_tools(input_str="World"), f_env_var_async(key="PATH")
+            )
+            assert len(results) == 3
+            time_spent_flows = datetime.now() - time_start
+
+            # async_tools dag structure:
             # Node1(3 seconds) -> Node2(3 seconds)
             #                  -> Node3(3 seconds)
+            # print_env_var_async dag structure:
+            # get_env_var(1 second)
             # Time assertion: flow running time should be quite less than sum of all node running time.
-            time_spent_run = run_info.end_time - run_info.start_time
+            # The time spent of get_env_var is far less than the time spent of async_tools.
+
+            # Here is the time assertion of async_tools:
+            # Flow running time should be quite less than sum of all node running time.
+            time_spent_run = run_info_group[1].end_time - run_info_group[1].start_time
             time_spent_nodes = []
-            for _, node_run_info in node_run_infos.items():
+            for _, node_run_info in node_run_infos_group[1].items():
                 time_spent = node_run_info.end_time - node_run_info.start_time
                 time_spent_nodes.append(time_spent)
             # All three node running time should be less than the total flow running time
             sum_time_nodes = time_spent_nodes[0] + time_spent_nodes[1] + time_spent_nodes[2]
             assert time_spent_run < sum_time_nodes
+
+            # Here is the time assertion of all flows:
+            # Group running time should less than the total flow running time
+            sum_running_time = [run_info.end_time - run_info.start_time for run_info in run_info_group]
+            assert time_spent_flows < sum_running_time[0] + sum_running_time[1] + sum_running_time[2]
 
     def test_flow_as_a_func_with_connection_overwrite(self):
         from promptflow._sdk._errors import ConnectionNotFoundError

@@ -5,6 +5,6 @@ from promptflow import tool
 
 @tool
 async def get_env_var(key: str):
-    await asyncio.sleep(0)
+    await asyncio.sleep(1)
     # get from env var
     return {"value": os.environ.get(key)}
