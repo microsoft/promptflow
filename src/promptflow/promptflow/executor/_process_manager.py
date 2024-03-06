@@ -65,8 +65,8 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
-        output_dir: Path,
-        serialize_multimedia: bool,
+        output_dir: Path = None,
+        serialize_multimedia: bool = False,
         *args,
         **kwargs,
     ) -> None:

@@ -10,6 +10,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import List, Optional, Union
 
 import psutil
@@ -620,6 +621,8 @@ def _exec_line(
 
 def _process_wrapper(
     executor_creation_func,
+    output_dir: Path,
+    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -638,12 +641,14 @@ def _process_wrapper(
 
     if log_context_initialization_func:
         with log_context_initialization_func():
-            exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+            exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
     else:
-        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
 
 
-def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
+def exec_line_for_queue(
+    executor_creation_func, output_dir: Path, serialize_multimedia: bool, input_queue: Queue, output_queue: Queue
+):
     run_storage = QueueRunStorage(output_queue)
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
