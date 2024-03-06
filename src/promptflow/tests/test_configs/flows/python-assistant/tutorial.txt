@@ -1,0 +1,5 @@
+{
+  "title": "Basics of Python Programming",
+  "description": "An introductory guide to Python programming, covering fundamental concepts.",
+  "content": "Python is a high-level, interpreted programming language known for its simplicity and versatility. It supports multiple programming paradigms, including procedural, object-oriented, and functional programming. Python's syntax is designed to be readable and straightforward, which makes it an excellent choice for beginners in programming. This guide covers basic concepts such as variables, data types, control structures, functions, and error handling. Additionally, it introduces more advanced topics like file handling, modules, and object-oriented programming concepts. With Python's extensive standard library and the vast ecosystem of external packages, developers can easily perform a wide range of tasks, from web development to data analysis."
+}
