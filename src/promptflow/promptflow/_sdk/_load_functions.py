@@ -85,7 +85,7 @@ def load_flow(
     :return: A Flow object
     :rtype: Flow
     """
-    return Flow.load(source, **kwargs)
+    return Flow.load(source, is_async_call=is_async_call, **kwargs)
 
 
 def load_run(
