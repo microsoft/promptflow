@@ -1359,3 +1359,41 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+
+    def test_run_with_deployment_overwrite(self, pf):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/python_tool_deployment_name",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"env": "${data.key}"},
+            connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
+        )
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.env": ["API_BASE"],
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"deployment_name": "my_deployment_name", "key": "API_BASE", "model": "my_model"}],
+        }
+
+    def test_deployment_overwrite_failure(self, local_client, local_aoai_connection, pf):
+        # deployment name not exist
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            connections={"classify_with_llm": {"deployment_name": "not_exist"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert "The API deployment for this resource does not exist." in run_dict["error"]["message"]
+
+        # deployment name not a param
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            connections={"print_env": {"deployment_name": "not_exist"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert "got an unexpected keyword argument 'deployment_name'." in run_dict["error"]["message"]

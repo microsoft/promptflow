@@ -111,26 +111,29 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
             raise InvalidFlowError(f"Invalid connection overwrite format: {connection_dict}, only dict is supported.")
         node = node_name_2_node[node_name]
         executable_node = executable_flow.get_node(node_name=node_name)
+        unsupported_keys = connection_dict.keys() - SUPPORTED_CONNECTION_FIELDS
+        if unsupported_keys:
+            raise InvalidFlowError(
+                f"Unsupported llm connection overwrite keys: {unsupported_keys},"
+                f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
+            )
+        connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
+        # override deployment_name and model
+        for field in [ConnectionFields.DEPLOYMENT_NAME.value, ConnectionFields.MODEL.value]:
+            if field in connection_dict:
+                node[INPUTS][field] = connection_dict[field]
+                connection_dict.pop(field)
+        # override connections
         if executable_flow.is_llm_node(executable_node):
-            unsupported_keys = connection_dict.keys() - SUPPORTED_CONNECTION_FIELDS
-            if unsupported_keys:
-                raise InvalidFlowError(
-                    f"Unsupported llm connection overwrite keys: {unsupported_keys},"
-                    f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
-                )
             try:
                 connection = connection_dict.get(ConnectionFields.CONNECTION)
                 if connection:
                     node[ConnectionFields.CONNECTION] = connection
-                deploy_name = connection_dict.get(ConnectionFields.DEPLOYMENT_NAME)
-                if deploy_name:
-                    node[INPUTS][ConnectionFields.DEPLOYMENT_NAME] = deploy_name
             except KeyError as e:
                 raise InvalidFlowError(
                     f"Failed to overwrite llm node {node_name} with connections {connections}"
                 ) from e
         else:
-            connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
             for c, v in connection_dict.items():
                 if c not in connection_inputs:
                     raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
