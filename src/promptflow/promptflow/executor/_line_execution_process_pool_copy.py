@@ -210,9 +210,9 @@ class LineExecutionProcessPool:
         for index, inputs in batch_inputs:
             self._task_queue.put(
                 (
-                    inputs,
-                    index,
                     self._run_id,
+                    index,
+                    inputs,
                 )
             )
 
