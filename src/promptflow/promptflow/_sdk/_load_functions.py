@@ -70,6 +70,7 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
+    is_async_call: Optional[bool] = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
@@ -78,8 +79,8 @@ def load_flow(
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
-    :param is_async_call: Keyword-only argument to indicate the return value is an async function.
-        Default is False, if True, the return value is an async function.
+    :param is_async_call: Optional argument to indicate the return value is an async function.
+        If True, the return value is an async function, otherwise, it is a sync function.
     :type is_async_call: bool
     :return: A Flow object
     :rtype: Flow
