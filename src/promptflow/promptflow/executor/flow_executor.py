@@ -1346,3 +1346,63 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+async def execute_flow_async(
+    flow_file: Path,
+    working_dir: Path,
+    output_dir: Path,
+    connections: dict,
+    inputs: Mapping[str, Any],
+    *,
+    run_id: str = None,
+    run_aggregation: bool = True,
+    enable_stream_output: bool = False,
+    allow_generator_output: bool = False,  # TODO: remove this
+    **kwargs,
+) -> LineResult:
+    """Execute the flow asynchronously.
+
+    :param flow_file: The path to the flow file.
+    :type flow_file: Path
+    :param working_dir: The working directory of the flow.
+    :type working_dir: Path
+    :param output_dir: Relative path relative to working_dir.
+    :type output_dir: Path
+    :param connections: A dictionary containing connection information.
+    :type connections: dict
+    :param inputs: A dictionary containing the input values for the flow.
+    :type inputs: Mapping[str, Any]
+    :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
+    :type enable_stream_output: Optional[bool]
+    :param run_id: Run id will be set in operation context and used for session.
+    :type run_id: Optional[str]
+    :param kwargs: Other keyword arguments to create flow executor.
+    :type kwargs: Any
+    :return: The line result of executing the flow.
+    :rtype: ~promptflow.executor._result.LineResult
+    """
+    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
+    flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
+    with _change_working_dir(working_dir):
+        # execute nodes in the flow except the aggregation nodes
+        # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
+        # (run_id_index, eg. xxx_0) for displaying the interface
+        line_result = await flow_executor.exec_line_async(
+            inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
+        )
+        # persist the output to the output directory
+        line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
+        if run_aggregation and line_result.aggregation_inputs:
+            # convert inputs of aggregation to list type
+            flow_inputs = {k: [v] for k, v in inputs.items()}
+            aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+            aggregation_results = flow_executor.exec_aggregation(
+                flow_inputs, aggregation_inputs=aggregation_inputs, run_id=run_id
+            )
+            line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
+            line_result.run_info.metrics = aggregation_results.metrics
+        if isinstance(line_result.output, dict):
+            # remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
+        return line_result
