@@ -10,17 +10,19 @@ class ExecutionContextVars(ThreadLocalSingleton):
     CONTEXT_VAR_NAME = "ContextVars"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
-    def __init__(self, vars: Optional[Dict[str, Any]] = None):
+    def __init__(self):
         self._context_vars: Dict[str, ContextVar] = {}
         self._tokens: Dict[str, Token] = {}
-        if vars:
-            for name, value in vars.items():
-                self.set(name, value)
 
     @classmethod
     def start(cls, vars: Optional[Dict[str, Any]] = None):
-        instance = cls(vars)
-        instance._activate_in_context()
+        instance = cls.active_instance()
+        if not instance:
+            instance = cls()
+            instance._activate_in_context()
+        if vars:
+            for name, value in vars.items():
+                instance.set(name, value)
         return instance
 
     @classmethod

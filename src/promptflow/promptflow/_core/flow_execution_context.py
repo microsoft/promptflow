@@ -102,6 +102,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             if not traces:
                 traces = Tracer.end_tracing(node_run_id)
+            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
@@ -149,11 +150,13 @@ class FlowExecutionContext(ThreadLocalSingleton):
         except asyncio.CancelledError as e:
             logger.info(f"Node {node.name} in line {self._line_number} is canceled.")
             traces = Tracer.end_tracing(node_run_id)
+            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             traces = Tracer.end_tracing(node_run_id)
+            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
