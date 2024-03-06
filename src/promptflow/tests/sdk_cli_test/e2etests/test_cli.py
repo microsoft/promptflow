@@ -1125,7 +1125,7 @@ class TestCli:
             assert prefix in log_msg
             assert expect_dict == log_inputs
 
-        with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
+        with caplog.at_level(level=logging.WARNING, logger=LOGGER_NAME):
             run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/web_classification", *extra_args)
             for log, expected_input, expected_log_prefix in zip(caplog.records, expected_inputs, expected_log_prefixes):
                 validate_log(

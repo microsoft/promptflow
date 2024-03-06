@@ -466,7 +466,7 @@ pf run create [--file]
               [--connections]
               [--set]
               [--source]
-              [--resume-from] # require promptflow>=1.7.0
+              [--resume-from] # require promptflow>=1.7.0, and original run created with promptflow>=1.7.0
 ```
 
 #### Examples
@@ -495,7 +495,7 @@ Create a run from an existing run record folder.
 pf run create --source <path-to-run-folder>
 ```
 
-Create a run by specifying the `resume_from`. (Require promptflow>=1.7.0)
+Create a run by specifying the `resume_from`. (Require promptflow>=1.7.0, and original run created with promptflow>=1.7.0)
 
 Succeeded line result of the original run will be reused, only remaining/failed lines will be run.
 

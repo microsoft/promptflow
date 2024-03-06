@@ -353,3 +353,79 @@ def test_flow_with_environment_variables(serving_client_with_environment_variabl
         response = json.loads(response.data.decode())
         assert {"output"} == response.keys()
         assert response["output"] == value
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve(simple_eager_flow):
+    response = simple_eager_flow.post("/score", data=json.dumps({"input_val": "hi"}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == {"output": "Hello world! hi"}
+
+
+@pytest.mark.e2etest
+def test_eager_flow_swagger(simple_eager_flow):
+    swagger_dict = json.loads(simple_eager_flow.get("/swagger.json").data.decode())
+    assert swagger_dict == {
+        "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
+        "info": {
+            "title": "Promptflow[simple_with_dict_output] API",
+            "version": "1.0.0",
+            "x-flow-name": "simple_with_dict_output",
+        },
+        "openapi": "3.0.0",
+        "paths": {
+            "/score": {
+                "post": {
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "example": {},
+                                "schema": {
+                                    "properties": {"input_val": {"type": "string"}},
+                                    "required": ["input_val"],
+                                    "type": "object",
+                                },
+                            }
+                        },
+                        "description": "promptflow " "input data",
+                        "required": True,
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {"output": {"additionalProperties": {}, "type": "object"}},
+                                        "type": "object",
+                                    }
+                                }
+                            },
+                            "description": "successful " "operation",
+                        },
+                        "400": {"description": "Invalid " "input"},
+                        "default": {"description": "unexpected " "error"},
+                    },
+                    "summary": "run promptflow: " "simple_with_dict_output with an " "given input",
+                }
+            }
+        },
+        "security": [{"bearerAuth": []}],
+    }
+
+
+@pytest.mark.e2etest
+def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
+    response = simple_eager_flow_primitive_output.post("/score", data=json.dumps({"input_val": "hi"}))
+    assert (
+        response.status_code == 400
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == {
+        "error": {
+            "code": "UserError",
+            "message": "Not supported flow output type <class 'str'>. Only dict is supported.",
+        }
+    }

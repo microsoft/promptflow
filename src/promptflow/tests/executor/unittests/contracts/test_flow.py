@@ -194,6 +194,7 @@ class TestFlow:
                     "outputs": {},
                     "tools": [],
                     "language": "python",
+                    "message_format": "basic",
                 },
             ),
             (
@@ -213,6 +214,7 @@ class TestFlow:
                     "outputs": {"output1": {"type": ValueType.STRING.value}},
                     "tools": [],
                     "language": "python",
+                    "message_format": "basic",
                 },
             ),
         ],
@@ -487,7 +489,15 @@ class TestFlow:
                 variants={"variant1": NodeVariant(node_variant, None)},
             )
         }
-        flow = Flow("test_flow_id", "test_flow", [node0, node1, node2], {}, {}, [], node_variants)
+        flow = Flow(
+            id="test_flow_id",
+            name="test_flow",
+            nodes=[node0, node1, node2],
+            inputs={},
+            outputs={},
+            tools=[],
+            node_variants=node_variants,
+        )
         # flow = Flow.from_yaml(get_yaml_file("web_classification"))
         tool_cnt = len(flow.tools)
         flow._replace_with_variant(node_variant, [flow.nodes[1].tool, flow.nodes[2].tool])
