@@ -179,9 +179,6 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
-    def run(self):
-        pass
-
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
         self._task_queue.put((run_id, line_number, inputs))
@@ -191,6 +188,9 @@ class LineExecutionProcessPool:
             line_result = self._result_dict.get(line_number, None)
             await asyncio.sleep(1)
         return line_result
+
+    def run(self):
+        pass
 
     # region private function
     def _determine_worker_count(self, worker_count):
