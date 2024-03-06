@@ -7,6 +7,7 @@ from typing import Any, Mapping, Optional
 
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
+from promptflow.executor._service._errors import UninitializedError
 from promptflow.executor._service.contracts.batch_request import AggregationRequest, LineExecutionRequest
 from promptflow.storage._executor_service_storage import ExecutorServiceStorage
 
@@ -45,7 +46,9 @@ class BatchCoordinator:
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
-            raise Exception("Singleton instance has not been initialized yet.")
+            raise UninitializedError(
+                "Please initialize the executor service with the '/initialize' api before sending execution requests."
+            )
         return cls._instance
 
     def start(self):
