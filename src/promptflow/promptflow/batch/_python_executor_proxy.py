@@ -12,7 +12,7 @@ from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
-from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
+from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.storage._run_storage import AbstractRunStorage
