@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import FlowLanguage
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import ProtectedFlow
@@ -62,13 +63,16 @@ class RunSubmitter:
         return required_run
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
-        attributes = kwargs.get("attributes", {})
+        attributes: dict = kwargs.get("attributes", {})
         # validate & resolve variant
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
         else:
             tuning_node, variant = None, None
 
+        # always remove reference.batch_run_id from operation context to avoid mis-inheritance
+        operation_context = OperationContext.get_instance()
+        operation_context._remove_otel_attributes(ContextAttributeKey.REFERENCED_BATCH_RUN_ID)
         if run.run is not None:
             # Set for flow test against run and no experiment scenario
             if ContextAttributeKey.REFERENCED_BATCH_RUN_ID not in attributes:
