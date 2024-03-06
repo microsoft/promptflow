@@ -165,6 +165,9 @@ class MessageFormatType:
     OPENAI_VISION = "openai_vision"
 
 
+DEFAULT_OUTPUT_NAME = "output"
+
+
 class OutputsFolderName:
     FLOW_OUTPUTS = "flow_outputs"
     FLOW_ARTIFACTS = "flow_artifacts"
