@@ -355,7 +355,7 @@ class LineExecutionProcessPool:
             self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
-            while not self._line_timeout_expired(start_time):
+            while not self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                 # Monitor process aliveness.
                 crashed = not self._processes_manager.is_process_alive(process_id)
                 if crashed:
@@ -380,7 +380,7 @@ class LineExecutionProcessPool:
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
-                elif self._line_timeout_expired(start_time):
+                elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
                     bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
                     ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
@@ -468,13 +468,14 @@ class LineExecutionProcessPool:
             return False
         return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
 
-    def _line_timeout_expired(self, start_time: datetime, buffer_sec: int = 10) -> bool:
+    def _line_timeout_expired(self, start_time: datetime, line_timeout_sec: int = None, buffer_sec: int = 10) -> bool:
         # Here we add more seconds (buffer_sec) because of the following reasons:
         # 1. At the last second, there would be several timeout message from exec_line.
         # 2. It may take time to create worker so actual timeout time may be longer.
         # 3. When using submit function to submit one line, the buffer_sec should be
         #    larger than the monitor thread's internal buffer time.
-        return (datetime.utcnow() - start_time).total_seconds() > self._line_timeout_sec + buffer_sec
+        line_timeout_sec = line_timeout_sec or self._line_timeout_sec
+        return (datetime.utcnow() - start_time).total_seconds() > line_timeout_sec + buffer_sec
 
     def _handle_output_queue_messages(self, output_queue: Queue, result_dict: Dict[int, LineResult], line_number: int):
         try:
