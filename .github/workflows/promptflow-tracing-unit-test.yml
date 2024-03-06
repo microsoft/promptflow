@@ -98,7 +98,8 @@ jobs:
           -p promptflow `
           -t ${{ github.workspace }}/src/promptflow/tests/tracing_test/unittests `
           -l eastus `
-          -m "all" `
+          -m "unittest" `
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/tracing_test/.coveragerc `
           -o "${{ env.testWorkingDirectory }}/test-results-tracing.xml"
 
     - name: Upload Test Results
