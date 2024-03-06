@@ -102,7 +102,7 @@ class FlowBase(abc.ABC):
         self._path = Path(path).resolve()
         # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
-        super().__init__()
+        super().__init__(**kwargs)
 
     @property
     def context(self) -> FlowContext:
@@ -379,10 +379,10 @@ class AsyncProtectedFlow(ProtectedFlow):
         if async_args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        result = await self.invoke(inputs=async_kwargs)
+        result = await self.invoke_async(inputs=async_kwargs)
         return result.output
 
-    async def invoke(self, inputs: dict) -> "LineResult":
+    async def invoke_async(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         from promptflow._sdk._submitter import TestSubmitter
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver

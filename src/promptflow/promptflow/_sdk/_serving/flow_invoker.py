@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Callable, Union
 
 from promptflow import PFClient
-from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.flow_result import FlowResult
@@ -137,6 +136,12 @@ class FlowInvoker:
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
 
+    def _invoke_context(self, data: dict, disable_input_output_logging=False):
+        log_data = "<REDACTED>" if disable_input_output_logging else data
+        self.logger.info(f"Validating flow input with data {log_data!r}")
+        validate_request_data(self.flow, data)
+        self.logger.info(f"Execute flow with data {log_data!r}")
+
     def _invoke(self, data: dict, run_id=None, disable_input_output_logging=False):
         """
         Process a flow request in the runtime.
@@ -148,17 +153,9 @@ class FlowInvoker:
         :return: The result of executor.
         :rtype: ~promptflow.executor._result.LineResult
         """
-        log_data = "<REDACTED>" if disable_input_output_logging else data
-        self.logger.info(f"Validating flow input with data {log_data!r}")
-        validate_request_data(self.flow, data)
-        self.logger.info(f"Execute flow with data {log_data!r}")
-        # Pass index 0 as extension require for dumped result.
-        # TODO: Remove this index after extension remove this requirement.
-        result = self.executor.exec_line(data, index=0, run_id=run_id, allow_generator_output=self.streaming())
-        if LINE_NUMBER_KEY in result.output:
-            # Remove line number from output
-            del result.output[LINE_NUMBER_KEY]
-        return result
+
+        self._invoke_context(data, disable_input_output_logging)
+        return self.executor.exec_line(data, run_id=run_id, allow_generator_output=self.streaming())
 
     def invoke(self, data: dict, run_id=None, disable_input_output_logging=False):
         """
@@ -205,19 +202,8 @@ class FlowInvoker:
 
 class AsyncFlowInvoker(FlowInvoker):
     async def _invoke_async(self, data: dict, run_id=None, disable_input_output_logging=False):
-        log_data = "<REDACTED>" if disable_input_output_logging else data
-        self.logger.info(f"Validating flow input with data {log_data!r}")
-        validate_request_data(self.flow, data)
-        self.logger.info(f"Execute flow with data {log_data!r}")
-        # Pass index 0 as extension require for dumped result.
-        # TODO: Remove this index after extension remove this requirement.
-        result = await self.executor.exec_line_async(
-            data, index=0, run_id=run_id, allow_generator_output=self.streaming()
-        )
-        if LINE_NUMBER_KEY in result.output:
-            # Remove line number from output
-            del result.output[LINE_NUMBER_KEY]
-        return result
+        self._invoke_context(data, disable_input_output_logging)
+        return await self.executor.exec_line_async(data, run_id=run_id, allow_generator_output=self.streaming())
 
     async def invoke_async(self, data: dict, run_id=None, disable_input_output_logging=False):
         result = await self._invoke_async(
