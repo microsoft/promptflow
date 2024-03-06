@@ -503,7 +503,6 @@ class TestOTelTracer:
         assert line_result.output == {"output": "Hello"}
 
         span_list = memory_exporter.get_finished_spans()
-        self.validate_span_list(span_list, line_run_id, 3)
         for span in span_list:
             if span.attributes.get("span_type", "") != "Flow":
                 inputs = span.attributes.get("inputs", None)
@@ -529,17 +528,17 @@ class TestOTelTracer:
             assert span.attributes["line_run_id"] == line_run_id
             assert span.attributes["framework"] == "promptflow"
             if span.parent is None:
-                expected_span_types = [TraceType.FLOW]
+                expected_span_type = TraceType.FLOW
             elif span.parent.span_id == root_span.context.span_id:
-                expected_span_types = [TraceType.TOOL]
+                expected_span_type = TraceType.TOOL
             elif span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                expected_span_types = [TraceType.LLM]
+                expected_span_type = TraceType.LLM
             elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                expected_span_types = [TraceType.EMBEDDING]
+                expected_span_type = TraceType.EMBEDDING
             else:
-                expected_span_types = [TraceType.FUNCTION, TraceType.TOOL]
-            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_types}"
-            assert span.attributes["span_type"] in expected_span_types, msg
+                expected_span_type = TraceType.FUNCTION
+            msg = f"span_type: {span.attributes['span_type']}, expected: {expected_span_type}"
+            assert span.attributes["span_type"] == expected_span_type, msg
             if span != root_span:  # Non-root spans should have a parent
                 assert span.attributes["function"]
             inputs = json.loads(span.attributes["inputs"])

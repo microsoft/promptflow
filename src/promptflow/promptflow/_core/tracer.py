@@ -28,7 +28,6 @@ from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
 from .._utils.utils import default_json_encoder
-from ._execution_context_vars import ExecutionContextVars
 from .thread_local_singleton import ThreadLocalSingleton
 
 
@@ -45,6 +44,7 @@ class Tracer(ThreadLocalSingleton):
     def __init__(self, run_id, node_name: Optional[str] = None):
         self._run_id = run_id
         self._node_name = node_name
+        self._is_node_name_consumed = False
         self._traces = []
         self._current_trace_id = ContextVar("current_trace_id", default="")
         self._id_to_trace: Dict[str, Trace] = {}
@@ -240,11 +240,22 @@ def _create_trace_from_function_call(
     )
 
 
-def get_node_name_from_context():
+def get_node_name_from_context(consume_once=False):
     tracer = Tracer.active_instance()
     if tracer is not None:
-        return tracer._node_name
+        if consume_once:
+            if not tracer._is_node_name_consumed:
+                tracer._is_node_name_consumed = True
+                return tracer._node_name
+        else:
+            return tracer._node_name
     return None
+
+
+def get_node_name_for_node_span():
+    # Since only the name of direct children of flow span should be set to node name, we need to check if
+    # the node name is consumed, if consumed, the span name should set to the function name.
+    return get_node_name_from_context(consume_once=True)
 
 
 def enrich_span_with_context(span):
@@ -465,8 +476,8 @@ def _traced_async(
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = ExecutionContextVars.pop("node_name") or trace.name
+        # For node span we set the span name to node name, otherwise we use the function name.
+        span_name = get_node_name_for_node_span() or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
@@ -514,8 +525,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = ExecutionContextVars.pop("node_name") or trace.name
+        # For node span we set the span name to node name, otherwise we use the function name.
+        span_name = get_node_name_for_node_span() or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)

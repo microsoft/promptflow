@@ -22,7 +22,6 @@ from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
 
-from ._execution_context_vars import ExecutionContextVars
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
 from .tracer import Tracer
@@ -86,10 +85,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
-                ExecutionContextVars.start(vars={"node_name": node.name})
                 result = self._invoke_tool_with_timer(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
-                ExecutionContextVars.end()
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
@@ -102,7 +99,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             if not traces:
                 traces = Tracer.end_tracing(node_run_id)
-            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
@@ -137,10 +133,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
         traces = []
         try:
             Tracer.start_tracing(node_run_id, node.name)
-            ExecutionContextVars.start(vars={"node_name": node.name})
             result = await self._invoke_tool_async_inner(node, f, kwargs)
             traces = Tracer.end_tracing(node_run_id)
-            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
@@ -150,13 +144,11 @@ class FlowExecutionContext(ThreadLocalSingleton):
         except asyncio.CancelledError as e:
             logger.info(f"Node {node.name} in line {self._line_number} is canceled.")
             traces = Tracer.end_tracing(node_run_id)
-            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             traces = Tracer.end_tracing(node_run_id)
-            ExecutionContextVars.end()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
