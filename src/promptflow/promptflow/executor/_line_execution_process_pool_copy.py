@@ -338,7 +338,7 @@ class LineExecutionProcessPool:
                         self._is_timeout = True
                         exit_loop = True
                         break
-                    args = (run_id, line_number, inputs, self._line_timeout_sec)
+                    args = (run_id, line_number, inputs, line_timeout_sec)
                     input_queue.put(args)
                     break
                 except queue.Empty:
