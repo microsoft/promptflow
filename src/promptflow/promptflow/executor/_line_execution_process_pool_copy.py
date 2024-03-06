@@ -107,6 +107,10 @@ class LineExecutionProcessPool:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    @property
+    def is_timeout(self):
+        return self._is_timeout
+
     def start(self):
         """Start the process pool and create a thread pool monitoring process status"""
         manager = Manager()
@@ -251,7 +255,7 @@ class LineExecutionProcessPool:
 
         if self._batch_timeout_expired(batch_start_time):
             self._is_timeout = True
-        return [self._result_dict[key] for key in sorted(self._result_dict)], self._is_timeout
+        return [self._result_dict[key] for key in sorted(self._result_dict)]
 
     # region private function
 
