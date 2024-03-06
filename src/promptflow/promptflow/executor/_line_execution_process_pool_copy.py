@@ -227,15 +227,15 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
-                batch_start_time = datetime.utcnow()
+                self._batch_start_time = datetime.utcnow()
                 # Only log when the number of results changes to avoid duplicate logging.
                 last_log_count = 0
                 # Wait for batch run to complete or timeout
-                while not self._batch_timeout_expired(batch_start_time) and not self._is_batch_run_completed():
+                while not self._batch_timeout_expired(self._batch_start_time) and not self._is_batch_run_completed():
                     current_result_count = len(self._result_dict)
                     if current_result_count != last_log_count:
                         log_progress(
-                            run_start_time=batch_start_time,
+                            run_start_time=self._batch_start_time,
                             logger=bulk_logger,
                             count=current_result_count,
                             total_count=self._nlines,
@@ -331,6 +331,13 @@ class LineExecutionProcessPool:
                         exit_loop = True
                         break
                     run_id, line_number, inputs = data
+                    # Calculate the line timeout for the current line.
+                    line_timeout_sec = self._calculate_line_timeout_sec()
+                    if line_timeout_sec is None:
+                        # line_timeout_sec is None means the batch run is timeouted.
+                        self._is_timeout = True
+                        exit_loop = True
+                        break
                     args = (run_id, line_number, inputs, self._line_timeout_sec)
                     input_queue.put(args)
                     break
@@ -405,6 +412,19 @@ class LineExecutionProcessPool:
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
 
             self._processing_idx.pop(line_number)
+
+    def _calculate_line_timeout_sec(self):
+        """Calculate the line timeout for the current line."""
+        line_timeout_sec = self._line_timeout_sec
+        if self._batch_timeout_sec:
+            remaining_execution_time = (
+                self._batch_timeout_sec - (datetime.utcnow() - self._batch_start_time).total_seconds()
+            )
+            if remaining_execution_time <= 0:
+                self._is_timeout = True
+                return None
+            line_timeout_sec = min(line_timeout_sec, remaining_execution_time)
+        return line_timeout_sec
 
     def _monitor_thread_pool_status(self):
         try:
