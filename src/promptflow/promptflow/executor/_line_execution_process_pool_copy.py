@@ -193,6 +193,7 @@ class LineExecutionProcessPool:
         pass
 
     # region private function
+
     def _determine_worker_count(self, worker_count):
         # Starting a new process in non-fork mode requires to allocate memory.
         # Calculate the maximum number of processes based on available memory to avoid memory bursting.
@@ -433,6 +434,8 @@ class LineExecutionProcessPool:
 
 
 # region process target functions
+
+
 def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
@@ -556,6 +559,8 @@ def _exec_line(
 
 
 # region utils function
+
+
 def log_process_status(process_name, pid, line_number: int, is_completed=False, is_failed=False):
     process_info = format_current_process_info(process_name, pid, line_number)
     if is_completed:
