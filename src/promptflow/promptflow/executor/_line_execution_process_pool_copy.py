@@ -231,7 +231,8 @@ class LineExecutionProcessPool:
                 # Only log when the number of results changes to avoid duplicate logging.
                 last_log_count = 0
                 # Wait for batch run to complete or timeout
-                while not self._batch_timeout_expired(self._batch_start_time) and not self._is_batch_run_completed():
+                while not self._batch_timeout_expired(self._batch_start_time):
+                    # As long as result_dict changes, print the process logs.
                     current_result_count = len(self._result_dict)
                     if current_result_count != last_log_count:
                         log_progress(
@@ -241,6 +242,9 @@ class LineExecutionProcessPool:
                             total_count=self._nlines,
                         )
                         last_log_count = current_result_count
+                    # If the batch run is completed, break the loop.
+                    if self._is_batch_run_completed():
+                        break
                     # Check monitor status every 1 second
                     self._monitor_thread_pool_status()
                     await asyncio.sleep(1)
@@ -255,6 +259,7 @@ class LineExecutionProcessPool:
 
         if self._batch_timeout_expired(self._batch_start_time):
             self._is_timeout = True
+        bulk_logger.error(f"Batch run completed with {len(self._result_dict)} results.")
         return [self._result_dict[key] for key in sorted(self._result_dict)]
 
     # region private function
