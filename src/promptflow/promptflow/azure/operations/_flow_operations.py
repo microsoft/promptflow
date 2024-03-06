@@ -604,7 +604,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         from promptflow._sdk.entities._eager_flow import EagerFlow
 
         flow = load_local_flow(code.path)
-        if isinstance(flow, EagerFlow) and flow.language == FlowLanguage.CSharp:
+        if isinstance(flow, EagerFlow) and flow.language == FlowLanguage.Python:
             # TODO: support generate meta for CSharp flow
             generate_flow_meta(
                 flow_directory=code.path,
