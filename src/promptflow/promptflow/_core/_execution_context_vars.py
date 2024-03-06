@@ -5,9 +5,7 @@ from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 
 
 class ExecutionContextVars(ThreadLocalSingleton):
-    """The context variables for execution."""
-
-    CONTEXT_VAR_NAME = "ContextVars"
+    CONTEXT_VAR_NAME = "ExecutionContextVars"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
     def __init__(self):
@@ -30,6 +28,8 @@ class ExecutionContextVars(ThreadLocalSingleton):
         instance = cls.active_instance()
         if instance:
             instance._reset_all()
+            instance._tokens.clear()
+            instance._context_vars.clear()
             instance._deactivate_in_context()
 
     def set(self, name: str, value: Any):
@@ -48,18 +48,14 @@ class ExecutionContextVars(ThreadLocalSingleton):
     def _reset(self, name: str):
         if name in self._tokens:
             self._context_vars[name].reset(self._tokens[name])
-            del self._tokens[name]
 
     def _reset_all(self):
         for name, token in self._tokens.items():
             if name in self._context_vars:
                 self._context_vars[name].reset(token)
-        self._tokens.clear()
 
     @classmethod
     def pop(cls, name: str, default: Optional[Any] = None) -> Any:
-        """Pop the context variable, reset its value, and remove it from the manager."""
-
         instance = cls.active_instance()
         if not instance:
             return default
@@ -67,6 +63,7 @@ class ExecutionContextVars(ThreadLocalSingleton):
         if name in instance._context_vars:
             value = instance.get(name, default)
             instance._reset(name)
+            del instance._tokens[name]
             del instance._context_vars[name]
             return value
         return default

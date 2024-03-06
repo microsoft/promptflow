@@ -28,7 +28,7 @@ from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
 from .._utils.utils import default_json_encoder
-from .execution_context_vars import ExecutionContextVars
+from ._execution_context_vars import ExecutionContextVars
 from .thread_local_singleton import ThreadLocalSingleton
 
 

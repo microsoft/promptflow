@@ -22,7 +22,7 @@ from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
 
-from .execution_context_vars import ExecutionContextVars
+from ._execution_context_vars import ExecutionContextVars
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
 from .tracer import Tracer
