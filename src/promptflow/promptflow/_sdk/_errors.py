@@ -88,6 +88,12 @@ class RequiredEnvironmentVariablesNotSetError(SDKError):
         super().__init__(f"Required environment variables {env_vars} to build {cls_name} not set.")
 
 
+class ConnectionNameNotSetError(SDKError):
+    """Exception raised if connection not set when create or update."""
+
+    pass
+
+
 class InvalidRunError(SDKError):
     """Exception raised if run name is not legal."""
 

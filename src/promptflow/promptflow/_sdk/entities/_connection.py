@@ -77,7 +77,7 @@ class _Connection(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        name: str = "default_connection",
+        name: str = None,
         module: str = "promptflow.connections",
         configs: Dict[str, str] = None,
         secrets: Dict[str, str] = None,
@@ -439,8 +439,15 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         return self._token_provider.get_token()
 
     @classmethod
-    def from_env(cls, name="default_env_connection"):
-        """Build connection from environment variables."""
+    def from_env(cls, name=None):
+        """
+        Build connection from environment variables.
+
+        Relevant environment variables:
+        - AZURE_OPENAI_ENDPOINT: The api base.
+        - AZURE_OPENAI_API_KEY: The api key.
+        - OPENAI_API_VERSION: Optional. The api version, default "2023-07-01-preview".
+        """
         # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
         api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -503,8 +510,15 @@ class OpenAIConnection(_StrongTypeConnection):
         self.configs["base_url"] = value
 
     @classmethod
-    def from_env(cls, name="default_env_connection"):
-        """Build connection from environment variables."""
+    def from_env(cls, name=None):
+        """
+        Build connection from environment variables.
+
+        Relevant environment variables:
+        - OPENAI_API_KEY: The api key.
+        - OPENAI_ORG_ID: Optional. The unique identifier for your organization which can be used in API requests.
+        - OPENAI_BASE_URL: Optional. Specify when use customized api base, leave None to use OpenAI default api base.
+        """
         # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/_client.py#L92
         api_key = os.getenv("OPENAI_API_KEY")
         base_url = os.getenv("OPENAI_BASE_URL")
