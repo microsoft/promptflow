@@ -4,8 +4,9 @@ import os
 from pathlib import Path
 
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
-from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow.tracing.contracts.trace import TraceType
+from promptflow.tracing.tracer import _create_trace_from_function_call
 
 from .record_storage import (
     Counter,
@@ -145,7 +146,7 @@ def mock_tool(original_tool):
 
                 @functools.wraps(func)
                 async def decorated_tool(*args, **kwargs):
-                    from promptflow._core.tracer import Tracer
+                    from promptflow.tracing.tracer import Tracer
 
                     if Tracer.active_instance() is None:
                         return await call_func_async(func, args, kwargs)
@@ -162,7 +163,7 @@ def mock_tool(original_tool):
 
                 @functools.wraps(func)
                 def decorated_tool(*args, **kwargs):
-                    from promptflow._core.tracer import Tracer
+                    from promptflow.tracing.tracer import Tracer
 
                     if Tracer.active_instance() is None:
                         return call_func(func, args, kwargs)

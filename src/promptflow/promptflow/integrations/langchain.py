@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 
-from promptflow._core.tracer import Trace, Tracer, TraceType
+from promptflow.tracing.contracts.trace import Trace, TraceType
+from promptflow.tracing.tracer import Tracer
 
 
 class LangChainEventType(Enum):

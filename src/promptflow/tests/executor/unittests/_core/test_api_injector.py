@@ -21,13 +21,13 @@ from promptflow._core.openai_injector import (
     recover_openai_api,
 )
 from promptflow._core.operation_context import OperationContext
-from promptflow._core.tracer import Tracer
 from promptflow._version import VERSION
 from promptflow.connections import AzureOpenAIConnection
-from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
+from promptflow.tracing.contracts.trace import TraceType
+from promptflow.tracing.tracer import Tracer
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
