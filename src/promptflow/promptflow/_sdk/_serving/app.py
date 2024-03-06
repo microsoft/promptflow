@@ -22,6 +22,8 @@ from promptflow._sdk._serving.utils import (
     handle_error_to_response,
     load_request_data,
     streaming_response_required,
+    try_extract_trace_context,
+    serialize_attribute_value,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._utils.exception_utils import ErrorResponse
@@ -30,6 +32,7 @@ from promptflow._version import VERSION
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import SystemErrorException
 from promptflow.storage._run_storage import DummyRunStorage
+from opentelemetry import context, baggage
 
 from .swagger import generate_swagger
 
@@ -164,8 +167,16 @@ def add_default_routes(app: PromptflowServingApp):
         run_id = g.get("req_id", None)
         # TODO: refine this once we can directly set the input/output log level to DEBUG in flow_invoker.
         disable_data_logging = logger.level >= logging.INFO
-        flow_result = app.flow_invoker.invoke(data, run_id=run_id, disable_input_output_logging=disable_data_logging)
-        g.flow_result = flow_result
+        # try parse trace context and attach it as current context if exist
+        ctx = try_extract_trace_context(logger)
+        token = context.attach(ctx) if ctx else None
+        try:
+            flow_result = app.flow_invoker.invoke(data, run_id=run_id, disable_input_output_logging=disable_data_logging) # noqa
+            g.flow_result = flow_result
+        finally:
+            # detach trace context if exist
+            if token:
+                context.detach(token)
 
         # check flow result, if failed, return error response
         if flow_result.run_info.status != Status.Completed:
@@ -210,6 +221,36 @@ def add_default_routes(app: PromptflowServingApp):
         except Exception:
             version = VERSION
         return {"status": "Healthy", "build_info": build_info, "version": version}
+
+    @app.route("/feedback", methods=["POST"])
+    def feedback():
+        ctx = try_extract_trace_context(logger)
+        from promptflow._core.tracer import open_telemetry_tracer
+        token = context.attach(ctx) if ctx else None
+        try:
+            with open_telemetry_tracer.start_as_current_span('feedback') as span:
+                data = request.get_data()
+                should_flattern = request.args.get('flatten', 'false').lower() == 'true'
+                if should_flattern:
+                    try:
+                        # try flatten the data to avoid data too big issue (especially for app insights scenario)
+                        data = json.loads(data)
+                        for k in data:
+                            span.set_attribute(k, serialize_attribute_value(data[k]))
+                    except Exception as e:
+                        logger.warning(f"Failed to flatten the feedback, fall back to non-flattern mode. Error: {e}.")
+                        span.set_attribute('feedback', str(data))
+                else:
+                    span.set_attribute('feedback', str(data))
+                # add baggage data if exist
+                data = baggage.get_all()
+                if data:
+                    for k, v in data.items():
+                        span.set_attribute(k, v)
+        finally:
+            if token:
+                context.detach(token)
+        return {"status": "Feedback received."}
 
 
 def create_app(**kwargs):

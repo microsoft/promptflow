@@ -20,7 +20,7 @@ from promptflow.contracts.flow import Flow
 
 USER_AGENT = f"promptflow-cloud-serving/{VERSION}"
 AML_DEPLOYMENT_RESOURCE_ID_REGEX = "/subscriptions/(.*)/resourceGroups/(.*)/providers/Microsoft.MachineLearningServices/workspaces/(.*)/onlineEndpoints/(.*)/deployments/(.*)"  # noqa: E501
-AML_CONNECTION_PROVIDER_TEMPLATE = "azureml:/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
+AML_CONNECTION_PROVIDER_TEMPLATE = "azureml://subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"  # noqa: E501
 
 
 class AzureMLExtension(AppExtension):

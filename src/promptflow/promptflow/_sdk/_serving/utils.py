@@ -17,6 +17,9 @@ from promptflow._sdk._serving._errors import (
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow.contracts.flow import Flow as FlowContract
 from promptflow.exceptions import ErrorTarget
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.baggage.propagation import W3CBaggagePropagator
+from opentelemetry.context import Context
 
 
 def load_request_data(flow, raw_data, logger):
@@ -137,3 +140,38 @@ def encode_dict(data: dict) -> str:
     b64_data = base64.b64encode(zipped_data)
     # bytes -> str
     return b64_data.decode()
+
+
+def try_extract_trace_context(logger) -> Context:
+    """Try to extract trace context from request headers."""
+    trace_parent = request.headers.get('Traceparent')
+    if trace_parent:
+        carrier = {'traceparent': trace_parent}
+        trace_state = request.headers.get('Tracestate')
+        if trace_state:
+            carrier['tracestate'] = trace_state
+        ctx = TraceContextTextMapPropagator().extract(carrier=carrier)
+    else:
+        ctx = None
+    baggage = request.headers.get('Baggage')
+    if baggage:
+        b2 = {'baggage': baggage}
+        baggage_ctx = W3CBaggagePropagator().extract(b2, context=ctx)
+    else:
+        baggage_ctx = ctx
+    if baggage_ctx:
+        logger.info(f"Received trace context: {baggage_ctx}")
+    return baggage_ctx
+
+
+def serialize_attribute_value(v):
+    if isinstance(v, (str, int, float, bool)):
+        return v
+    elif isinstance(v, list):
+        return [serialize_attribute_value(x) for x in v]
+    else:
+        try:
+            v_str = json.dumps(v)
+        except Exception:
+            v_str = str(v)
+        return v_str
