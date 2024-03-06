@@ -253,7 +253,7 @@ class LineExecutionProcessPool:
                     target=ErrorTarget.EXECUTOR,
                 ) from e
 
-        if self._batch_timeout_expired(batch_start_time):
+        if self._batch_timeout_expired(self._batch_start_time):
             self._is_timeout = True
         return [self._result_dict[key] for key in sorted(self._result_dict)]
 
