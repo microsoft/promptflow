@@ -218,7 +218,8 @@ class LineExecutionProcessPool:
         ):
             try:
                 self._batch_start_time = datetime.utcnow()
-                # Put all inputs to task queue
+                # After starting time, put the input in self._task_queue, because the
+                # monitor thread will use self._batch_start_time after get the input data.
                 for index, inputs in batch_inputs:
                     self._task_queue.put(
                         (
