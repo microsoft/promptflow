@@ -4,7 +4,8 @@
 
 from pathlib import Path
 from typing import Any, Mapping, Optional
-
+from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow._constants import OutputsFolderName
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
@@ -33,6 +34,7 @@ class BatchCoordinator:
         if self._init:
             return
         # init flow executor and validate flow
+        self._output_dir = output_dir
         self._flow_executor = FlowExecutor.create(
             flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False
         )
@@ -62,9 +64,15 @@ class BatchCoordinator:
 
     def exec_aggregation(self, request: AggregationRequest):
         with self._flow_executor._run_tracker.node_log_manager:
-            return self._flow_executor._exec_aggregation(
+            aggregation_result = self._flow_executor._exec_aggregation(
                 request.batch_inputs, request.aggregation_inputs, request.run_id
             )
+            # TODO: Not elegant 
+            for node_run_info in aggregation_result.node_run_infos.values():
+                #????????????????index
+                base_dir = self._output_dir / OutputsFolderName.NODE_ARTIFACTS / node_run_info.node
+                DefaultRunStorage(base_dir).persist_node_run(node_run_info)
+        return aggregation_result
 
     def stop(self):
         self._process_pool.end()

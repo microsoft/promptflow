@@ -5,6 +5,7 @@ import os
 import queue
 import signal
 import sys
+from tempfile import mkdtemp
 import threading
 from datetime import datetime
 from functools import partial
@@ -179,7 +180,7 @@ class LineExecutionProcessPool:
             )
             for i in range(self._n_process)
         ]
-        self._monitor_pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
+        async_result = self._monitor_pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
 
     def end(self):
         """End the process pool and close the thread pool."""
@@ -343,6 +344,9 @@ class LineExecutionProcessPool:
         self._process_multimedia_in_flow_run(result.run_info)
         for node_name, node_run_info in result.node_run_infos.items():
             result.node_run_infos[node_name] = self._process_multimedia_in_node_run(node_run_info)
+        # TODO: refine?????????????
+        if self._serialize_multimedia_during_execution:
+            result.aggregation_inputs = persist_multimedia_data(result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True)
         result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
 

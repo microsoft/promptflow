@@ -600,6 +600,8 @@ class FlowExecutor:
             return AggregationResult({}, {}, {})
         run_id = run_id or str(uuid.uuid4())
         nodes = [copy.deepcopy(node) for node in self._flow.nodes if node.aggregation]
+        # Load multimedia data from aggregation_inputs
+        aggregation_inputs = load_multimedia_data_recursively(aggregation_inputs)
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {

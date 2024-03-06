@@ -153,7 +153,7 @@ def _save_image_to_file(
     return image_reference
 
 
-def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
+def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if obj.source_url:
@@ -167,8 +167,8 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
     return pfbytes_file_reference_encoder
 
 
-def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
-    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
+def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None, use_absolute_path=False):
+    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir, use_absolute_path=use_absolute_path)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return _process_recursively(value, process_funcs=serialization_funcs)
 
