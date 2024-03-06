@@ -81,9 +81,9 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
-    def test_run_resume(self, pf, runtime: str, randstr: Callable[[str], str]):
+    def test_run_resume(self, pf: PFClient, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
-        name = "resume_from_run1"
+        name = "resume_from_run_using_automatic_runtime"
         try:
             run = pf.runs.get(run=name)
         except RunNotFoundError:
@@ -92,7 +92,6 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/webClassification1.jsonl",
                 column_mapping={"url": "${data.url}"},
                 variant="${summarize_text_content.variant_0}",
-                runtime=runtime,
                 name=name,
             )
         assert isinstance(run, Run)
