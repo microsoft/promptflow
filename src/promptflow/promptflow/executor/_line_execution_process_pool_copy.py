@@ -33,7 +33,7 @@ from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.storage import AbstractRunStorage
+from promptflow.storage._queue_run_storage import QueueRunStorage, ServiceQueueRunStorage
 
 TERMINATE_SIGNAL = "terminate"
 
@@ -49,19 +49,6 @@ def signal_handler(signum, frame):
         bulk_logger.warning("Error when handling execution stop signal", exc_info=True)
     finally:
         sys.exit(1)
-
-
-class QueueRunStorage(AbstractRunStorage):
-    """This storage persists run info by putting it into a queue."""
-
-    def __init__(self, queue: Queue):
-        self.queue = queue
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        self.queue.put(run_info)
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        self.queue.put(run_info)
 
 
 def log_process_status(process_name, pid, line_number: int, is_completed=False, is_failed=False):
@@ -85,6 +72,7 @@ class LineExecutionProcessPool:
         flow_executor: FlowExecutor,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
+        serialize_multimedia_during_execution: bool = False,
     ):
         # Determine whether to use fork to create process
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -103,6 +91,7 @@ class LineExecutionProcessPool:
         self._result_dict: Dict[int, LineResult] = {}
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
+        self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Init some fields from flow_executor
         self._flow_id = flow_executor._flow_id
@@ -155,6 +144,8 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
+            "output_dir": self._output_dir,
+            "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -509,6 +500,8 @@ def _exec_line(
 
 def _process_wrapper(
     executor_creation_func,
+    output_dir: Path,
+    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -527,13 +520,17 @@ def _process_wrapper(
 
     if log_context_initialization_func:
         with log_context_initialization_func():
-            exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+            exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
     else:
-        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
 
 
-def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
-    run_storage = QueueRunStorage(output_queue)
+def exec_line_for_queue(
+    executor_creation_func, output_dir: Path, serialize_multimedia: bool, input_queue: Queue, output_queue: Queue
+):
+    run_storage = (
+        ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
+    )
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     while True:

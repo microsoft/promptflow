@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Queue
+from pathlib import Path
 from typing import Dict, List
 
 import psutil
@@ -64,13 +65,17 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
+        output_dir: Path,
+        serialize_multimedia: bool,
         *args,
         **kwargs,
     ) -> None:
+        self._output_dir = output_dir
         self._input_queues = input_queues
         self._output_queues = output_queues
         self._process_info: Dict[int, ProcessInfo] = process_info
         self._process_target_func = process_target_func
+        self._serialize_multimedia = serialize_multimedia
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
@@ -173,6 +178,8 @@ class SpawnProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._serialize_multimedia,
+                self._output_dir,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
@@ -375,6 +382,8 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,

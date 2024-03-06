@@ -9,7 +9,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
 from promptflow.executor._service.contracts.batch_request import AggregationRequest, LineExecutionRequest
-from promptflow.storage._executor_service_storage import ExecutorServiceStorage
+from promptflow.storage._run_storage import DummyRunStorage
 
 
 class BatchCoordinator:
@@ -33,14 +33,16 @@ class BatchCoordinator:
         if self._init:
             return
         # init flow executor and validate flow
-        storage = ExecutorServiceStorage(output_dir)
-        self._flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
+        self._flow_executor = FlowExecutor.create(
+            flow_file, connections, working_dir, storage=DummyRunStorage(), raise_ex=False
+        )
         # init process pool
         self._process_pool = LineExecutionProcessPool(
             output_dir,
             self._flow_executor,
             worker_count=worker_count,
             line_timeout_sec=line_timeout_sec,
+            serialize_multimedia_during_execution=True,
         )
         self._init = True
 
