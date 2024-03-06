@@ -60,17 +60,6 @@ class LineExecutionProcessPool:
         line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
     ):
-        # Initialize some fields from inputs.
-        self._nlines = nlines
-        self._run_id = run_id
-        self._output_dir = output_dir
-        self._batch_timeout_sec = batch_timeout_sec
-        self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
-        self._worker_count = self._determine_worker_count(worker_count)
-
-        # Initialize the results dictionary that stores line results.
-        self._result_dict: Dict[int, LineResult] = {}
-
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
         sys_start_methods = multiprocessing.get_all_start_methods()
@@ -82,6 +71,17 @@ class LineExecutionProcessPool:
             bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
             multiprocessing_start_method = multiprocessing.get_start_method()
         self._use_fork = multiprocessing_start_method in ["fork", "forkserver"]
+
+        # Initialize some fields from inputs.
+        self._nlines = nlines
+        self._run_id = run_id
+        self._output_dir = output_dir
+        self._batch_timeout_sec = batch_timeout_sec
+        self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
+        self._worker_count = self._determine_worker_count(worker_count)
+
+        # Initialize the results dictionary that stores line results.
+        self._result_dict: Dict[int, LineResult] = {}
 
         # Initialize some fields from flow_executor and construct flow_create_kwargs
         self._flow_id = flow_executor._flow_id
