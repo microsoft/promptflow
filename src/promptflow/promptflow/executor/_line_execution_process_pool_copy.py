@@ -12,6 +12,7 @@ import sys
 import threading
 from datetime import datetime
 from functools import partial
+from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -20,7 +21,7 @@ from typing import Dict, Optional, Union
 import psutil
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
-from promptflow._core._errors import UnexpectedError
+from promptflow._core._errors import ProcessPoolError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
@@ -28,11 +29,13 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
 from promptflow._utils.process_utils import get_available_max_worker_count
-from promptflow._utils.utils import set_context
+from promptflow._utils.thread_utils import RepeatLogTimer
+from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
+from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError, ThreadCrashError
 from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -157,17 +160,26 @@ class LineExecutionProcessPool:
         self._monitor_pool = ThreadPool(
             self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),)
         )
-        args_list = [
-            (
-                self._task_queue,  # Shared task queue for all sub processes to read the input data.
-                self._result_dict,  # Line result dict of the batch run.
-                i,  # Index of the sub process.
-                self._input_queues[i],  # Specific input queue for sub process, used to send input data to it.
-                self._output_queues[i],  # Specific output queue for the sub process, used to receive results from it.
+        # The variable 'async_result' here is not the actual result of the batch run
+        # but an AsyncResult object that can be used to check if the execution are finished
+        # The actual results of the batch run are stored in 'result_dict'
+
+        # Create _n_process monitoring threads, mainly used to assign tasks and receive line result.
+        # When receiving terminate signal, end the process.
+        # When line execution timeout or process crash, restart the process.
+        self._async_tasks = [
+            self._monitor_pool.apply_async(
+                func=self._monitor_workers_and_process_tasks_in_thread,
+                args=(
+                    self._task_queue,  # Shared task queue for all sub processes to read the input data.
+                    self._result_dict,  # Line result dict of the batch run.
+                    i,  # Index of the sub process.
+                    self._input_queues[i],  # Specific input queue for sub process, used to send input data to it.
+                    self._output_queues[i],  # Specific output queue for sub process, used to receive results from it.
+                ),
             )
             for i in range(self._n_process)
         ]
-        self._monitor_pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
 
     def close(self):
         """End the process pool and close the thread pool."""
@@ -189,8 +201,57 @@ class LineExecutionProcessPool:
             await asyncio.sleep(1)
         return line_result
 
-    def run(self):
-        pass
+    async def run(self, batch_inputs):
+        # Put all inputs to task queue
+        for index, inputs in batch_inputs:
+            self._task_queue.put(
+                (
+                    inputs,
+                    index,
+                    self._run_id,
+                )
+            )
+
+        with RepeatLogTimer(
+            interval_seconds=self._log_interval,
+            logger=bulk_logger,
+            level=INFO,
+            log_message_function=self._generate_thread_status_messages,
+            args=(
+                self._monitor_pool,
+                self._nlines,
+            ),
+        ):
+            try:
+                batch_start_time = datetime.utcnow()
+                # Only log when the number of results changes to avoid duplicate logging.
+                last_log_count = 0
+                # Wait for batch run to complete or timeout
+                while not self._batch_timeout_expired(batch_start_time) and not self._is_batch_run_completed():
+                    current_result_count = len(self._result_dict)
+                    if current_result_count != last_log_count:
+                        log_progress(
+                            run_start_time=batch_start_time,
+                            logger=bulk_logger,
+                            count=current_result_count,
+                            total_count=self._nlines,
+                        )
+                        last_log_count = current_result_count
+                    # Check monitor status every 1 second
+                    self._monitor_thread_pool_status()
+                    await asyncio.sleep(1)
+            except PromptflowException:
+                raise
+            except Exception as e:
+                bulk_logger.error(f"ProcessPool failed with exception: {e}")
+                raise ProcessPoolError(
+                    message_format=f"ProcessPool failed with exception: {e}",
+                    target=ErrorTarget.EXECUTOR,
+                ) from e
+
+        if self._batch_timeout_expired(batch_start_time):
+            self._is_timeout = True
+        return [self._result_dict[key] for key in sorted(self._result_dict)], self._is_timeout
 
     # region private function
 
@@ -335,6 +396,48 @@ class LineExecutionProcessPool:
                 # is killed, which will result in the 'ProcessCrashError'.
                 self._processes_manager.ensure_process_terminated_within_timeout(process_id)
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
+
+    def _monitor_thread_pool_status(self):
+        try:
+            for async_task in self._async_tasks:
+                if not async_task.ready():
+                    continue
+                # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
+                # The exceptions raised will be re-raised by the get() method.
+                # Related link:
+                # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult
+                async_task.get()
+        except Exception as e:
+            raise ThreadCrashError(
+                target=ErrorTarget.BATCH,
+                message_format="The monitor thread in the process pool crashed. Error: {error_type_and_message}.",
+                error_type_and_message=f"({e.__class__.__name__}) {e}",
+            ) from e
+
+    def _generate_thread_status_messages(self, pool: ThreadPool, total_count: int):
+        msgs = []
+        active_threads = sum(thread.is_alive() for thread in pool._pool)
+        msgs.append(f"[Process Pool] [Active processes: {active_threads} / {len(pool._pool)}]")
+        processing_lines_copy = self._processing_idx.copy()
+        completed_lines_copy = self._completed_idx.copy()
+        msgs.append(
+            f"[Lines] [Finished: {len(completed_lines_copy)}] [Processing: {len(processing_lines_copy)}] "
+            f"[Pending: {total_count - len(processing_lines_copy) - len(completed_lines_copy)}]"
+        )
+        lines = []
+        for idx, thread_name in sorted(processing_lines_copy.items()):
+            lines.append(f"line {idx} ({thread_name})")
+        if len(lines) > 0:
+            msgs.append("Processing Lines: " + ", ".join(lines) + ".")
+        return msgs
+
+    def _is_batch_run_completed(self):
+        return len(self._result_dict) == self._nlines
+
+    def _batch_timeout_expired(self, start_time: datetime) -> bool:
+        if self._batch_timeout_sec is None:
+            return False
+        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
 
     def _line_timeout_expired(self, start_time: datetime, buffer_sec: int = 10) -> bool:
         # Here we add more seconds (buffer_sec) because of the following reasons:
