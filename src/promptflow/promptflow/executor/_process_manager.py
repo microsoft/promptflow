@@ -178,8 +178,8 @@ class SpawnProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
-                self._serialize_multimedia,
                 self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
