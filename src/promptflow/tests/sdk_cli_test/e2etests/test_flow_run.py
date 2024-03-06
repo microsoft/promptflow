@@ -1396,4 +1396,4 @@ class TestFlowRun:
         )
         run_dict = run._to_dict()
         assert "error" in run_dict
-        assert "got an unexpected keyword argument 'deployment_name'." in run_dict["error"]["message"]
+        assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]

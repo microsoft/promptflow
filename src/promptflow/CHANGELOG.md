@@ -11,6 +11,10 @@
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
 
+### Bugs Fixed
+
+- [SDK/CLI] Support override "deployment_name" in python tool.
+
 ## 1.6.0 (2024.03.01)
 
 ### Features Added
