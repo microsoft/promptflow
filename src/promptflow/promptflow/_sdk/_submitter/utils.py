@@ -426,7 +426,8 @@ def _calculate_snapshot(column_mapping, input_data, flow_path):
             return file_path
         if Path(file_path).is_file():
             with open(file_path, "r") as f:
-                file_content[file_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+                absolute_path = Path(file_path).absolute().as_posix()
+                file_content[absolute_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
         else:
             for root, dirs, files in os.walk(file_path):
                 for ignore_item in ["__pycache__"]:

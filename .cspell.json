@@ -89,7 +89,8 @@
     "Summ",
     "Bhavik",
     "meid",
-    "Entra"
+    "Entra",
+    "uvicorn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -178,7 +179,10 @@
     "arxiv",
     "autogen",
     "spawnve",
-    "addrs"
+    "addrs",
+    "pywin",
+    "STARTF",
+    "mltable"
   ],
   "flagWords": [
     "Prompt Flow"

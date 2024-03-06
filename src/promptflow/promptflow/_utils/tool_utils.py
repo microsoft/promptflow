@@ -270,6 +270,11 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
 
 
 def validate_tool_func_result(func_call_scenario: str, result):
+    if func_call_scenario not in list(ToolFuncCallScenario):
+        raise RetrieveToolFuncResultValidationError(
+                f"Invalid tool func call scenario: {func_call_scenario}. "
+                f"Available scenarios are {list(ToolFuncCallScenario)}"
+        )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(
@@ -434,11 +439,11 @@ def _get_function_path(function):
 
 
 class RetrieveToolFuncResultError(UserErrorException):
-    """Base exception raised for retreive tool func result errors."""
+    """Base exception raised for retrieve tool func result errors."""
 
     def __init__(self, message):
         msg = (
-            f"Unable to retreive tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"Unable to retrieve tool func result due to '{message}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)

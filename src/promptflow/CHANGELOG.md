@@ -1,6 +1,19 @@
 # Release History
 
-## 1.6.0 (TBD)
+## 1.7.0 (Upcoming)
+
+### Features Added
+
+- [SDK/CLI] Create a run with `resume_from`, note that only run created with `promptflow>=1.7.0` can be used as the value of `resume_from`:
+  - CLI: Support `pf run create --resume-from <original-run-name>` to create a run resume from another run.
+  - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+- [SDK/CLI][azure] Create a run with `resume_from`.
+  - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
+  - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+
+- [SDK/CLI] Support `AzureOpenAIConnection.from_env` and `OpenAIConnection.from_env`. Reach more details [here](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#load-from-environment-variables).
+
+## 1.6.0 (2024.03.01)
 
 ### Features Added
 

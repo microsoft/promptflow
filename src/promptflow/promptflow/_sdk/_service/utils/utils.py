@@ -11,6 +11,7 @@ import time
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 
 import psutil
 import requests
@@ -45,7 +46,7 @@ def local_user_only(func):
 
 
 def get_current_env_pfs_file(file_name):
-    executable_path = sys.executable
+    executable_path = Path(sys.executable.lower()).as_posix()
     dir_name = os.path.basename(os.path.dirname(executable_path))
     # Hash the executable path
     hash_object = hashlib.sha1(executable_path.encode())
@@ -59,7 +60,11 @@ def get_current_env_pfs_file(file_name):
 
 
 def get_port_from_config(create_if_not_exists=False):
-    port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
+    if sys.executable.endswith("pfcli.exe"):
+        port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
+        port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
+    else:
+        port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
     with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
@@ -73,22 +78,13 @@ def get_port_from_config(create_if_not_exists=False):
     return port
 
 
-def kill_service_get_from_original_port_file():
-    if (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).exists():
-        with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
-            service_config = load_yaml(f) or {}
-            port = service_config.get("service", {}).get("port", None)
-            if port:
-                if is_port_in_use(port):
-                    logger.debug(f"Kill the deprecated port {port} got from service key in thr pfs.port file.")
-                    kill_exist_service(port)
-        # delete original .promptflow/pfs.port
-        (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).unlink()
-
-
 def dump_port_to_config(port):
-    # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will overwrite it.
-    port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
+    if sys.executable.endswith("pfcli.exe"):
+        port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
+        port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
+    else:
+        # Set port to ~/.promptflow/pfs/**_pf.port, if already have a port in file , will overwrite it.
+        port_file_path = get_current_env_pfs_file(PF_SERVICE_PORT_FILE)
     with open(port_file_path, "r", encoding=DEFAULT_ENCODING) as f:
         service_config = load_yaml(f) or {}
     with open(port_file_path, "w", encoding=DEFAULT_ENCODING) as f:
