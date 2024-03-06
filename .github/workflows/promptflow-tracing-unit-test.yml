@@ -99,7 +99,7 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/tracing_test/unittests `
           -l eastus `
           -m "all"
-          -o "${{ env.testWorkingDirectory }}/test-results-tracing.xml" `
+          -o "${{ env.testWorkingDirectory }}/test-results-tracing.xml"
 
     - name: Upload Test Results
       if: always()
