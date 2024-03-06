@@ -4,7 +4,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'Prompt flow'
-copyright = '2023, Microsoft'
+copyright = '2024, Microsoft'
 author = 'Microsoft'
 
 sys.path.append(".")
