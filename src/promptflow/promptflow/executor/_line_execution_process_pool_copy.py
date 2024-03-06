@@ -206,16 +206,6 @@ class LineExecutionProcessPool:
         return line_result
 
     async def run(self, batch_inputs):
-        # Put all inputs to task queue
-        for index, inputs in batch_inputs:
-            self._task_queue.put(
-                (
-                    self._run_id,
-                    index,
-                    inputs,
-                )
-            )
-
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
             logger=bulk_logger,
@@ -228,6 +218,15 @@ class LineExecutionProcessPool:
         ):
             try:
                 self._batch_start_time = datetime.utcnow()
+                # Put all inputs to task queue
+                for index, inputs in batch_inputs:
+                    self._task_queue.put(
+                        (
+                            self._run_id,
+                            index,
+                            inputs,
+                        )
+                    )
                 # Only log when the number of results changes to avoid duplicate logging.
                 last_log_count = 0
                 # Wait for batch run to complete or timeout
