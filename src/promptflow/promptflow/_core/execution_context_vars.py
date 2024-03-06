@@ -31,16 +31,16 @@ class ExecutionContextVars(ThreadLocalSingleton):
             instance._deactivate_in_context()
 
     def set(self, name: str, value: Any):
-        if name not in self._context_vars:  
-            self._context_vars[name] = ContextVar(name)  
-        self._tokens[name] = self._context_vars[name].set(value)  
+        if name not in self._context_vars:
+            self._context_vars[name] = ContextVar(name)
+        self._tokens[name] = self._context_vars[name].set(value)
 
-    def get(self, name: str, default: Optional[Any] = None):  
-        if name in self._context_vars:  
-            try:  
+    def get(self, name: str, default: Optional[Any] = None):
+        if name in self._context_vars:
+            try:
                 return self._context_vars[name].get()
-            except LookupError:  
-                return default  
+            except LookupError:
+                return default
         return default
 
     def _reset(self, name: str):
@@ -55,7 +55,7 @@ class ExecutionContextVars(ThreadLocalSingleton):
         self._tokens.clear()
 
     @classmethod
-    def pop(cls, name: str, default: Optional[Any] = None) -> Any:  
+    def pop(cls, name: str, default: Optional[Any] = None) -> Any:
         """Pop the context variable, reset its value, and remove it from the manager."""
 
         instance = cls.active_instance()

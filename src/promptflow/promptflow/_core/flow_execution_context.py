@@ -86,7 +86,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
-                ExecutionContextVars.start(vars = {"node_name": node.name})
+                ExecutionContextVars.start(vars={"node_name": node.name})
                 result = self._invoke_tool_with_timer(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
                 ExecutionContextVars.end()
@@ -136,7 +136,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         traces = []
         try:
             Tracer.start_tracing(node_run_id, node.name)
-            ExecutionContextVars.start(vars = {"node_name": node.name})
+            ExecutionContextVars.start(vars={"node_name": node.name})
             result = await self._invoke_tool_async_inner(node, f, kwargs)
             traces = Tracer.end_tracing(node_run_id)
             ExecutionContextVars.end()
