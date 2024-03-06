@@ -330,7 +330,6 @@ class LineExecutionProcessPool:
                         # Set exit_loop to True to exit the main loop.
                         exit_loop = True
                         break
-                    # TODO: Calculate the line timeout for the current line.???????
                     run_id, line_number, inputs = data
                     args = (run_id, line_number, inputs, self._line_timeout_sec)
                     input_queue.put(args)
