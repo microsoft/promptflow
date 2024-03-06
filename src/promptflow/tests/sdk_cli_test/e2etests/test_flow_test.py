@@ -368,3 +368,9 @@ class TestFlowTest:
         assert all([isinstance(value, FlowInputDefinition) for value in executable.inputs.values()])
         # call values in executable.outputs are FlowOutputDefinitions
         assert all([isinstance(value, FlowOutputDefinition) for value in executable.outputs.values()])
+
+    def test_eager_flow_stream_output(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/stream_output/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! VAL"
