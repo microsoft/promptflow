@@ -27,11 +27,31 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self):
-        f = load_flow(f"{FLOWS_DIR}/print_env_var")
+    @pytest.mark.parametrize(
+        "test_folder",
+        [
+            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/print_env_var_async",
+        ],
+    )
+    def test_flow_as_a_func(self, test_folder):
+        f = load_flow(test_folder)
         result = f(key="unknown")
         assert result["output"] is None
         assert "line_number" not in result
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "async_call_folder",
+        [
+            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/print_env_var_async",
+        ],
+    )
+    async def test_flow_as_a_func_asynckw(self, async_call_folder):
+        f = load_flow(async_call_folder, async_call=True)
+        result = await f(key="PATH")
+        assert result["output"] is not None
 
     def test_flow_as_a_func_with_connection_overwrite(self):
         from promptflow._sdk._errors import ConnectionNotFoundError

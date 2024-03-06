@@ -102,7 +102,7 @@ class FlowBase(abc.ABC):
         self._path = Path(path).resolve()
         # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
-        super().__init__(**kwargs)
+        super().__init__()
 
     @property
     def context(self) -> FlowContext:
@@ -168,6 +168,11 @@ class Flow(FlowBase):
         return data.get("entry")
 
     @classmethod
+    def _is_async_flow(cls, kwargs):
+        """Check if the flow is an async flow."""
+        return kwargs.pop("async_call", False)
+
+    @classmethod
     def load(
         cls,
         source: Union[str, PathLike],
@@ -190,11 +195,15 @@ class Flow(FlowBase):
                 data = load_yaml_string(flow_content)
                 content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
+            is_async_flow = cls._is_async_flow(kwargs)
             if is_eager_flow:
                 return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
-                return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                if is_async_flow:
+                    return AsyncProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                else:
+                    return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
         # if non-YAML file is provided, raise user error exception
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
@@ -358,6 +367,36 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         else:
             invoker = FlowContextResolver.resolve(flow=self)
             result = invoker._invoke(
+                data=inputs,
+            )
+            return result
+
+
+class AsyncProtectedFlow(ProtectedFlow):
+    """This class is used to represent an async flow."""
+
+    async def __call__(self, *async_args, **async_kwargs):
+        if async_args:
+            raise UserErrorException("Flow can only be called with keyword arguments.")
+
+        result = await self.invoke(inputs=async_kwargs)
+        return result.output
+
+    async def invoke(self, inputs: dict) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+        from promptflow._sdk._submitter import TestSubmitter
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+
+        if self.language == FlowLanguage.CSharp:
+            # Sync C# calling
+            with TestSubmitter(flow=self, flow_context=self.context).init(
+                stream_output=self.context.streaming
+            ) as submitter:
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
+                return result
+        else:
+            invoker = FlowContextResolver.resolve_async_invoker(flow=self)
+            result = await invoker._invoke_async(
                 data=inputs,
             )
             return result
