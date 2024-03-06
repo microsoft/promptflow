@@ -64,9 +64,8 @@ class PromptflowServingApp(Flask):
                 from opentelemetry import trace
                 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
                 from opentelemetry.sdk.trace import TracerProvider
-                from opentelemetry.sdk.trace.export import (
-                    BatchSpanProcessor,
-                )
+                from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
                 resource = Resource(
                     attributes={
                         SERVICE_NAME: "promptflow",
@@ -186,6 +185,7 @@ def add_default_routes(app: PromptflowServingApp):
         response_creator = ResponseCreator(
             flow_run_result=result_output,
             accept_mimetypes=request.accept_mimetypes,
+            response_original_value=flow_result.response_original_value,
         )
         app.flow_monitor.setup_streaming_monitor_if_needed(response_creator, data, intermediate_output)
         return response_creator.create_response()
