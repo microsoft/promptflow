@@ -56,5 +56,5 @@ def aggregation(request: AggregationRequest):
 
 @router.post("/finalize")
 def finalize():
-    BatchCoordinator.get_instance().shutdown()
+    BatchCoordinator.get_instance().stop()
     return {"status": "finalized"}

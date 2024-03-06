@@ -35,6 +35,7 @@ class BatchCoordinator:
         # init flow executor and validate flow
         storage = ExecutorServiceStorage(output_dir)
         self._flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
+        # init process pool
         self._process_pool = LineExecutionProcessPool(
             output_dir,
             self._flow_executor,
@@ -63,7 +64,7 @@ class BatchCoordinator:
                 request.batch_inputs, request.aggregation_inputs, request.run_id
             )
 
-    def shutdown(self):
+    def stop(self):
         self._process_pool.end()
         self._init = False
         self._instance = None
