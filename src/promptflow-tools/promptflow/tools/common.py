@@ -384,16 +384,19 @@ def normalize_connection_config(connection):
     """
     if isinstance(connection, AzureOpenAIConnection):
         use_key_auth = True
-        try:
-            from promptflow._sdk._constants import ConnectionAuthMode
-            if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
-                use_key_auth = False
-        except ImportError as e:
-            if "cannot import name 'ConnectionAuthMode' from 'promptflow._sdk._constants'" in str(e):
-                print("Failed to import ConnectionAuthMode, use key auth by default.")
-                pass
-            else:
-                raise e
+
+        if not connection.api_key:
+            try:
+                from promptflow._sdk._constants import ConnectionAuthMode
+                if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
+                    use_key_auth = False
+            except ImportError as e:
+                if "cannot import name 'ConnectionAuthMode' from 'promptflow._sdk._constants'" in str(e):
+                    print("Failed to import ConnectionAuthMode, use meid_token auth by default.")
+                    use_key_auth = False
+                    pass
+                else:
+                    raise e
 
         if use_key_auth:
             return {
