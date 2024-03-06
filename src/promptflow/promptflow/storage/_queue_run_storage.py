@@ -9,7 +9,6 @@ from typing import Union
 
 from promptflow._constants import OutputsFolderName
 from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
-from promptflow._utils.utils import prepare_folder
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
