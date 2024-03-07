@@ -5,7 +5,7 @@ from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions,
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, refine_extra_fields_not_permitted_error, \
     normalize_connection_config
-from promptflow.tools.exception import ListDeploymentsError, LLMError
+from promptflow.tools.exception import ListDeploymentsError
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.contracts.multimedia import Image
@@ -327,8 +327,7 @@ class TestCommon:
             }
 
             error_message = refine_extra_fields_not_permitted_error(azure_open_ai_connection, "deployment1", "")
-            
-        assert "Please kindly avoid using vision model in LLM tool" in error_message
+            assert "Please kindly avoid using vision model in LLM tool" in error_message
 
     @pytest.mark.parametrize(
         "input_data, expected_output",
