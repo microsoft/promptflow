@@ -4,6 +4,7 @@
 
 import copy
 import inspect
+import logging
 import types
 from dataclasses import dataclass
 from functools import partial
@@ -174,7 +175,7 @@ class ToolResolver:
                 description, params = DocstringParser.parse_description(func.__doc__)
             except Exception as e:
                 # Log the exception if necessary
-                print(f"Failed to parse docstring for function {func.__name__}: {e}")
+                logging.warning(f"Failed to parse docstring for function {func.__name__}: {e}")
                 # Set description to None or an empty string
                 description = None  # or description = ""
                 params = {}
