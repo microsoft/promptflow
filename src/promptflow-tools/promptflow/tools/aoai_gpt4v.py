@@ -1,5 +1,4 @@
 from promptflow._internal import ToolProvider, tool
-from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -11,6 +10,21 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 
 
 GPT4V_VERSION = "vision-preview"
+
+
+def _get_credential():
+    from azure.identity import DefaultAzureCredential
+    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    # Support sovereign cloud cases, like mooncake, fairfax.
+    cloud_name = _get_default_cloud_name()
+    if cloud_name != AzureEnvironments.ENV_DEFAULT:
+        cloud = _get_cloud(cloud=cloud_name)
+        authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
+        credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+    else:
+        credential = DefaultAzureCredential()
+
+    return credential
 
 
 def _parse_resource_id(resource_id):
@@ -72,7 +86,7 @@ def list_deployment_names(
         return res
 
     try:
-        credential = get_default_azure_credential()
+        credential = _get_credential()
         try:
             # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
             conn = ArmConnectionOperations._build_connection_dict(
