@@ -272,6 +272,7 @@ class LineExecutionProcessPool:
             while not self._timeout_expired(start_time, self._THREAD_TERMINATED_TIMEOUT):
                 if self._all_tasks_ready():
                     break
+                await asyncio.sleep(1)
             # Set the timeout flag to True and log the warning.
             self._is_timeout = True
             bulk_logger.warning(f"The batch run timed out, with {len(self._result_dict)} line results processed.")
