@@ -769,5 +769,20 @@ class TestAssistantToolResolver:
                 "type": "function",
             }
 
-    def test_init_args(self):
-        assert True
+    @pytest.mark.parametrize("path", ["assistant_definition_non_existing.yaml"])
+    def test_invalid_assistant_definition_path(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
+        with pytest.raises(InvalidSource) as e:
+            tool_resolver._convert_to_assistant_definition(
+                assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+            )
+        assert (
+            e.value.message == "Input 'input_name' for node 'dummy_node' of "
+            "value 'assistant_definition_non_existing.yaml' is not a valid path."
+        )

@@ -69,14 +69,14 @@ class ToolResolver:
         resolver._activate_in_context(force=True)
         return resolver
 
-    def _convert_to_connection_value(self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType]):
+    def _convert_to_connection_value(self, k: str, v: InputAssignment, node_name: str, conn_types: List[ValueType]):
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
-            raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+            raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name} input {k!r}.")
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
-                f"Input '{k}' for node '{node.name}' of type {type(connection_value).__name__!r}"
+                f"Input '{k}' for node '{node_name}' of type {type(connection_value).__name__!r}"
                 f" is not supported, valid types {conn_types}."
             )
             raise NodeInputValidationError(message=msg)
@@ -235,7 +235,7 @@ class ToolResolver:
                         k, v, node, tool, tool_input.custom_type, module=module
                     )
                 else:
-                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node.name, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 try:
                     updated_inputs[k].value = create_image(v.value)
