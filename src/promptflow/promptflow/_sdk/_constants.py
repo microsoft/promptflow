@@ -134,6 +134,7 @@ FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 # trace
+TRACE_DEFAULT_SESSION_ID = "default"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"
