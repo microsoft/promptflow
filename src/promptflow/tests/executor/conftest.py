@@ -1,6 +1,5 @@
 import multiprocessing
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from executor.process_utils import (
@@ -10,16 +9,14 @@ from executor.process_utils import (
     current_process_wrapper_var,
     override_process_class,
 )
+from executor.record_utils import setup_recording
 from fastapi.testclient import TestClient
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
     delete_count_lock_file,
-    inject_async_with_recording,
-    inject_sync_with_recording,
     is_live,
     is_record,
     is_replay,
-    mock_tool,
     recording_array_extend,
     recording_array_reset,
 )
@@ -31,7 +28,6 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.executor._service.app import app
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 
 
 @pytest.fixture
@@ -42,43 +38,6 @@ def recording_setup():
     finally:
         for patcher in patches:
             patcher.stop()
-
-
-def setup_recording():
-    patches = []
-
-    def start_patches(patch_targets):
-        for target, mock_func in patch_targets.items():
-            patcher = patch(target, mock_func)
-            patches.append(patcher)
-            patcher.start()
-
-    if is_replay() or is_record():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
-        RecordStorage.get_instance(file_path)
-
-        from promptflow._core.tool import tool as original_tool
-
-        mocked_tool = mock_tool(original_tool)
-        patch_targets = {
-            "promptflow._core.tool.tool": mocked_tool,
-            "promptflow._internal.tool": mocked_tool,
-            "promptflow.tool": mocked_tool,
-            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
-        }
-        start_patches(patch_targets)
-        inject_openai_api()
-
-    if is_live():
-        patch_targets = {
-            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
-        }
-        start_patches(patch_targets)
-        inject_openai_api()
-
-    return patches
 
 
 def _default_mock_process_wrapper(*args, **kwargs):

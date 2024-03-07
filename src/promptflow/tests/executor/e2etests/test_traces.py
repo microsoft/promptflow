@@ -14,14 +14,7 @@ from promptflow.executor._result import LineResult
 from promptflow.tracing import trace
 from promptflow.tracing.contracts.trace import TraceType
 
-from ..conftest import setup_recording
-from ..process_utils import (
-    MockForkServerProcess,
-    MockSpawnProcess,
-    _run_in_subprocess,
-    execute_function_in_subprocess,
-    override_process_class,
-)
+from ..process_utils import execute_function_in_subprocess
 from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, load_content, prepare_memory_exporter
 
 LLM_FUNCTION_NAMES = [
@@ -320,15 +313,6 @@ class TestExecutorTraces:
             )
 
 
-def _mock_run_in_subprocess(*args, **kwargs):
-    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
-    override_process_class(process_class_dict)
-
-    # recording injection again since this method is running in a new process
-    setup_recording()
-    _run_in_subprocess(*args, **kwargs)
-
-
 @pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestOTelTracer:
@@ -347,7 +331,7 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces, _mock_run_in_subprocess, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces, dev_connections, flow_file, inputs, expected_span_length
         )
 
     def assert_otel_traces(self, dev_connections, flow_file, inputs, expected_span_length):
@@ -377,7 +361,6 @@ class TestOTelTracer:
     ):
         execute_function_in_subprocess(
             self.assert_otel_traces_with_prompt,
-            _mock_run_in_subprocess,
             dev_connections,
             flow_file,
             inputs,
@@ -423,7 +406,6 @@ class TestOTelTracer:
     ):
         execute_function_in_subprocess(
             self.assert_otel_traces_with_llm,
-            _mock_run_in_subprocess,
             dev_connections,
             flow_file,
             inputs,
@@ -464,7 +446,6 @@ class TestOTelTracer:
     ):
         execute_function_in_subprocess(
             self.assert_otel_traces_with_embedding,
-            _mock_run_in_subprocess,
             dev_connections,
             flow_file,
             inputs,
@@ -495,7 +476,7 @@ class TestOTelTracer:
                     assert inputs["input"] in embeddings
 
     def test_flow_with_traced_function(self):
-        execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function, _mock_run_in_subprocess)
+        execute_function_in_subprocess(self.assert_otel_traces_run_flow_then_traced_function)
 
     def assert_otel_traces_run_flow_then_traced_function(self):
         memory_exporter = prepare_memory_exporter()
