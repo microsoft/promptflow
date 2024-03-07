@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 import argparse
 import json
+from pathlib import Path
+import datetime
 
 from promptflow._cli._params import (
     AppendToDictAction,
@@ -13,9 +15,7 @@ from promptflow._cli._params import (
     base_params,
 )
 from promptflow._cli._utils import activate_action, list_of_dict_to_dict
-from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -203,27 +203,27 @@ def dispatch_experiment_commands(args: argparse.Namespace):
 
 
 def create_experiment(args: argparse.Namespace):
-    from promptflow._sdk._load_functions import _load_experiment_template
-
-    template_path = args.template
-    logger.debug("Loading experiment template from %s", template_path)
-    template = _load_experiment_template(source=template_path)
-    logger.debug("Creating experiment from template %s", template.dir_name)
-    experiment = Experiment.from_template(template, name=args.name)
-    logger.debug("Creating experiment %s", experiment.name)
-    exp = _get_pf_client()._experiments.create_or_update(experiment)
-    print(json.dumps(exp._to_dict(), indent=4))
+    if not Path(args.template).is_absolute():
+        raise UserErrorException("Please provide the absolute path to the experiment template.")
+    if not Path(args.template).exists():
+        raise UserErrorException(f"Experiment template path {args.template} does not exist.")
+    experiment_name = args.name
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    experiment_name = experiment_name or f"{Path(args.template).parent.name}_{timestamp}"
+    logger.debug("Creating experiment %s", experiment_name)
+    exp = _get_pf_client()._pfs_client.create_experiment(name=experiment_name, template=args.template)
+    print(json.dumps(exp.to_dict(), indent=4))
 
 
 def list_experiment(args: argparse.Namespace):
-    list_view_type = get_list_view_type(archived_only=args.archived_only, include_archived=args.include_archived)
-    results = _get_pf_client()._experiments.list(args.max_results, list_view_type=list_view_type)
-    print(json.dumps([result._to_dict() for result in results], indent=4))
+    results = _get_pf_client()._pfs_client.list_experiment(
+        max_results=args.max_results, all_results=args.all_results, archived_only=args.archived_only, include_archived=args.include_archived)
+    print(json.dumps([result.to_dict() for result in results], indent=4))
 
 
 def show_experiment(args: argparse.Namespace):
-    result = _get_pf_client()._experiments.get(args.name)
-    print(json.dumps(result._to_dict(), indent=4))
+    result = _get_pf_client()._pfs_client.show_experiment(args.name)
+    print(json.dumps(result.to_dict(), indent=4))
 
 
 def test_experiment(args: argparse.Namespace):
@@ -249,18 +249,19 @@ def start_experiment(args: argparse.Namespace):
         result = _get_pf_client()._experiments.start(experiment=experiment, inputs=inputs, stream=args.stream)
     else:
         raise UserErrorException("To start an experiment, one of [name, file] must be specified.")
-    print(json.dumps(result._to_dict(), indent=4))
+    print(json.dumps(result.to_dict(), indent=4))
 
 
 def stop_experiment(args: argparse.Namespace):
     client = _get_pf_client()
     if args.name:
         logger.debug(f"Stop a named experiment {args.name}.")
-        experiment = client._experiments.get(args.name)
+        experiment_name = args.name
     elif args.file:
         from promptflow._sdk._load_functions import _load_experiment
 
         logger.debug(f"Stop an anonymous experiment {args.file}.")
         experiment = _load_experiment(source=args.file)
-    result = client._experiments.stop(experiment)
-    print(json.dumps(result._to_dict(), indent=4))
+        experiment_name = experiment.name
+    result = client._pfs_client.stop_experiment(name=experiment_name)
+    print(json.dumps(result.to_dict(), indent=4))

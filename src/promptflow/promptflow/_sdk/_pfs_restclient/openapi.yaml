@@ -1,0 +1,920 @@
+openapi: 3.0.0
+paths:
+  /Connections/:
+    get:
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Connection"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: List all connection
+      operationId: get_connection_list
+      parameters:
+        - name: working_directory
+          in: query
+          schema:
+            type: string
+      tags:
+        - Connections
+  /Connections/specs:
+    get:
+      responses:
+        "200":
+          description: List connection spec
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSpec"
+      description: List connection spec
+      operationId: get_connection_specs
+      tags:
+        - Connections
+  "/Connections/{name}":
+    parameters:
+      - in: path
+        description: The connection name.
+        name: name
+        required: true
+        schema:
+          type: string
+    put:
+      responses:
+        "200":
+          description: Connection details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDict"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: Update connection
+      operationId: put_connection
+      requestBody:
+        $ref: "#/components/requestBodies/ConnectionDict"
+      tags:
+        - Connections
+    delete:
+      responses:
+        "204":
+          description: Delete connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDict"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: Delete connection
+      operationId: delete_connection
+      tags:
+        - Connections
+    get:
+      responses:
+        "200":
+          description: Connection details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDict"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: Get connection
+      operationId: get_connection
+      parameters:
+        - name: working_directory
+          in: query
+          schema:
+            type: string
+      tags:
+        - Connections
+    post:
+      responses:
+        "200":
+          description: Connection details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDict"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: Create connection
+      operationId: post_connection
+      requestBody:
+        $ref: "#/components/requestBodies/ConnectionDict"
+      tags:
+        - Connections
+  "/Connections/{name}/listsecrets":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Connection details with secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDict"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: Get connection with secret
+      operationId: get_connection_with_secret
+      parameters:
+        - name: working_directory
+          in: query
+          schema:
+            type: string
+      tags:
+        - Connections
+  /Experiments/:
+    get:
+      responses:
+        "200":
+          description: Experiments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentList"
+      description: List all experiments
+      operationId: get_experiment_list
+      parameters:
+        - name: max_results
+          in: query
+          schema:
+            type: integer
+        - name: all_results
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: archived_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: include_archived
+          in: query
+          schema:
+            type: boolean
+            default: false
+      tags:
+        - Experiments
+  "/Experiments/{name}":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Update experiment
+      operationId: put_experiment
+      tags:
+        - Experiments
+    delete:
+      responses:
+        "200":
+          description: Success
+      description: Delete experiment
+      operationId: delete_experiment
+      tags:
+        - Experiments
+    get:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Get experiment
+      operationId: get_experiment
+      tags:
+        - Experiments
+    post:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Create experiment
+      operationId: post_experiment
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                template:
+                  type: string
+              required:
+                - template
+        required: true
+      tags:
+        - Experiments
+  "/Experiments/{name}/start":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Start experiment
+      operationId: post_experiment_start
+      parameters:
+        - name: from_nodes
+          in: query
+          schema:
+            type: string
+        - name: nodes
+          in: query
+          schema:
+            type: string
+        - name: executable_path
+          in: query
+          schema:
+            type: string
+      tags:
+        - Experiments
+  "/Experiments/{name}/stop":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Stop experiment
+      operationId: get_experiment_stop
+      requestBody:
+        $ref: "#/components/requestBodies/ExperimentDict"
+      tags:
+        - Experiments
+  "/Experiments/{name}/test":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Test experiment
+      operationId: post_experiment_test
+      requestBody:
+        $ref: "#/components/requestBodies/ExperimentDict"
+      tags:
+        - Experiments
+  /LineRuns/list:
+    get:
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LineRun"
+      description: List line runs
+      operationId: get_line_runs
+      tags:
+        - LineRuns
+  /Runs/:
+    get:
+      responses:
+        "200":
+          description: Runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunList"
+      description: List all runs
+      operationId: get_run_list
+      tags:
+        - Runs
+  /Runs/submit:
+    post:
+      responses:
+        "200":
+          description: Submit run info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Submit run
+      operationId: post_run_submit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunDict"
+        required: true
+      tags:
+        - Runs
+  "/Runs/{name}":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      responses:
+        "200":
+          description: Update run info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Update run
+      operationId: put_run
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                description:
+                  type: string
+                tags:
+                  type: string
+      tags:
+        - Runs
+    delete:
+      responses:
+        "204":
+          description: Delete run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Delete run
+      operationId: delete_run
+      tags:
+        - Runs
+    get:
+      responses:
+        "200":
+          description: Get run info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Get run
+      operationId: get_run
+      tags:
+        - Runs
+  "/Runs/{name}/archive":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Archived run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Archive run
+      operationId: get_archive_run
+      tags:
+        - Runs
+  "/Runs/{name}/childRuns":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Child runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunList"
+      description: Get child runs
+      operationId: get_flow_child_runs
+      tags:
+        - Runs
+  "/Runs/{name}/logContent":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Log content
+          content:
+            application/json:
+              schema:
+                type: string
+      description: Get run log content
+      operationId: get_log_content
+      tags:
+        - Runs
+  "/Runs/{name}/metaData":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Run metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Get metadata of run
+      operationId: get_meta_data
+      tags:
+        - Runs
+  "/Runs/{name}/metrics":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Run metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Get run metrics
+      operationId: get_metrics
+      tags:
+        - Runs
+  "/Runs/{name}/nodeRuns/{node_name}":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Node runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunList"
+      description: Get node runs info
+      operationId: get_flow_node_runs
+      tags:
+        - Runs
+  "/Runs/{name}/restore":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Restored run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Restore run
+      operationId: get_restore_run
+      tags:
+        - Runs
+  "/Runs/{name}/visualize":
+    parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Visualize run
+          content:
+            text/html:
+              schema:
+                type: string
+      description: Visualize run
+      operationId: get_visualize_run
+      tags:
+        - Runs
+  /Spans/list:
+    get:
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Span"
+      description: List spans
+      operationId: get_spans
+      tags:
+        - Spans
+  /Telemetries/:
+    post:
+      responses:
+        "200":
+          description: Create telemetry record
+          headers:
+            x-ms-promptflow-request-id:
+              schema:
+                type: string
+        "400":
+          description: Input payload validation failed
+          headers:
+            x-ms-promptflow-request-id:
+              schema:
+                type: string
+        "403":
+          description: Telemetry is disabled or X-Remote-User is not set.
+          headers:
+            x-ms-promptflow-request-id:
+              schema:
+                type: string
+      description: Create telemetry record
+      operationId: post_telemetry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Telemetry"
+        required: true
+      tags:
+        - Telemetries
+  /ui/traces:
+    get:
+      responses:
+        "200":
+          description: Success
+      operationId: get_trace_ui
+      tags:
+        - ui
+info:
+  title: Prompt Flow Service
+  version: "1.0"
+tags:
+  - name: Connections
+    description: Connections Management
+  - name: Experiments
+    description: Experiments Management
+  - name: Runs
+    description: Runs Management
+  - name: Telemetries
+    description: Telemetry Management
+  - name: Spans
+    description: Spans Management
+  - name: LineRuns
+    description: Line runs management
+  - name: ui
+    description: UI
+servers:
+  - url: /v1.0
+components:
+  responses:
+    ParseError:
+      description: When a mask can't be parsed
+    MaskError:
+      description: When any error occurs on mask
+    Exception:
+      description: When any error occurs on the server, return a formatted error message
+  requestBodies:
+    ExperimentDict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ExperimentDict"
+      required: true
+    ConnectionDict:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ConnectionDict"
+      required: true
+  schemas:
+    Connection:
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        module:
+          type: string
+        expiry_time:
+          type: string
+        created_date:
+          type: string
+        last_modified_date:
+          type: string
+      type: object
+    ConnectionDict:
+      additionalProperties: true
+      type: object
+    ConnectionSpec:
+      properties:
+        connection_type:
+          type: string
+        config_spec:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectionConfigSpec"
+      type: object
+    ConnectionConfigSpec:
+      properties:
+        name:
+          type: string
+        optional:
+          type: boolean
+        default:
+          type: string
+      type: object
+    ExperimentList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ExperimentDict"
+    ExperimentDict:
+      additionalProperties: true
+      type: object
+    RunList:
+      type: array
+      items:
+        $ref: "#/components/schemas/RunDict"
+    RunDict:
+      additionalProperties: true
+      type: object
+    Telemetry:
+      required:
+        - eventType
+        - timestamp
+      properties:
+        eventType:
+          type: string
+          description: The event type of the telemetry.
+          example: Start
+          enum:
+            - Start
+            - End
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp of the telemetry.
+        firstCall:
+          type: boolean
+          description: Whether current activity is the first activity in the call chain.
+          default: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+      type: object
+    Metadata:
+      required:
+        - activityName
+        - activityType
+      properties:
+        activityName:
+          type: string
+          description: The name of the activity.
+          example: pf.flow.test
+          enum:
+            - pf.flow.test
+            - pf.flow.node_test
+            - pf.flow._generate_tools_meta
+        activityType:
+          type: string
+          description: The type of the activity.
+        completionStatus:
+          type: string
+          description: The completion status of the activity.
+          example: Success
+          enum:
+            - Success
+            - Failure
+        durationMs:
+          type: integer
+          description: The duration of the activity in milliseconds.
+        errorCategory:
+          type: string
+          description: The error category of the activity.
+        errorType:
+          type: string
+          description: The error type of the activity.
+        errorTarget:
+          type: string
+          description: The error target of the activity.
+        errorMessage:
+          type: string
+          description: The error message of the activity.
+        errorDetails:
+          type: string
+          description: The error details of the activity.
+      type: object
+    Span:
+      required:
+        - attributes
+        - context
+        - kind
+        - name
+        - resource
+      properties:
+        name:
+          type: string
+        context:
+          $ref: "#/components/schemas/Context"
+        kind:
+          type: string
+        parent_id:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/Status"
+        attributes:
+          type: object
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        resource:
+          $ref: "#/components/schemas/Resource"
+      type: object
+    Context:
+      required:
+        - span_id
+        - trace_id
+        - trace_state
+      properties:
+        trace_id:
+          type: string
+        span_id:
+          type: string
+        trace_state:
+          type: string
+      type: object
+    Status:
+      required:
+        - status_code
+      properties:
+        status_code:
+          type: string
+        description:
+          type: string
+      type: object
+    Event:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        attributes:
+          type: object
+      type: object
+    Link:
+      properties:
+        context:
+          $ref: "#/components/schemas/Context"
+        attributes:
+          type: object
+      type: object
+    Resource:
+      required:
+        - attributes
+      properties:
+        attributes:
+          type: object
+        schema_url:
+          type: string
+      type: object
+    LineRun:
+      required:
+        - end_time
+        - inputs
+        - kind
+        - latency
+        - line_run_id
+        - name
+        - outputs
+        - root_span_id
+        - start_time
+        - status
+        - trace_id
+      properties:
+        line_run_id:
+          type: string
+        trace_id:
+          type: string
+        root_span_id:
+          type: string
+        inputs:
+          type: object
+        outputs:
+          type: object
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+        latency:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+        cumulative_token_count:
+          $ref: "#/components/schemas/CumulativeTokenCount"
+        evaluations:
+          type: object
+      type: object
+    CumulativeTokenCount:
+      properties:
+        completion:
+          type: integer
+        prompt:
+          type: integer
+        total:
+          type: integer
+      type: object

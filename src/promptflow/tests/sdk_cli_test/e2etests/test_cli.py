@@ -1942,6 +1942,39 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
+    def test_experiment_create_and_list(self, monkeypatch, capfd):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            experiment_path = f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml"
+            with pytest.raises(SystemExit):
+                # Raise exception when template path is a relative path.
+                run_pf_command(
+                    "experiment",
+                    "create",
+                    "--template",
+                    experiment_path,
+                )
+
+            experiment_name = str(uuid.uuid4())
+            run_pf_command(
+                "experiment",
+                "create",
+                "--name",
+                experiment_name,
+                "--template",
+                Path(experiment_path).absolute().as_posix(),
+            )
+            out, _ = capfd.readouterr()
+            assert experiment_name in out
+
+            run_pf_command(
+                "experiment",
+                "list",
+            )
+
+            out, _ = capfd.readouterr()
+            assert experiment_name in out
+
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
