@@ -379,4 +379,15 @@ class TestFlowTest:
         assert output == "Hello world! "
 
     def test_stream_output_with_builtin_llm(self):
-        pass
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/builtin_llm/").absolute()
+        result = _client._flows._test(
+            flow=flow_path,
+            inputs={"stream": True},
+            environment_variables={
+                "OPENAI_API_KEY": "${azure_open_ai_connection.api_key}",
+                "AZURE_OPENAI_ENDPOINT": "${azure_open_ai_connection.api_base}",
+            },
+        )
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return generator to align with the behavior of DAG flow test
+        assert isinstance(result.output, GeneratorType)

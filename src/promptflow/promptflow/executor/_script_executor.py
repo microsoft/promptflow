@@ -100,6 +100,7 @@ class ScriptExecutor(FlowExecutor):
         return line_result
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
+        # no need to inject streaming here, user can directly pass the param to the function
         return
 
     def get_inputs_definition(self):
