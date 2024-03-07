@@ -358,7 +358,8 @@ def handle_openai_error(tries: int = 100):
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
-                    # Handle llm use some unsupported model like vision error
+                    # Vision model does not support all chat api parameters, e.g. response_format and function_call.
+                    # Recommend user to use vision model in vision tools, rather than LLM tool.
                     # Related issue https://github.com/microsoft/promptflow/issues/1683
                     if isinstance(e, BadRequestError) and "extra fields not permitted" in str(e).lower():
                         refined_error_message = \
@@ -366,7 +367,7 @@ def handle_openai_error(tries: int = 100):
                                                                     kwargs.get("deployment_name", ""),
                                                                     kwargs.get("model", ""))
                         if refined_error_message:
-                            raise LLMError(message=refined_error_message)
+                            raise LLMError(message=str(e).lower() + refined_error_message)
                         else:
                             raise WrappedOpenAIError(e)
 
