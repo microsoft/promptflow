@@ -367,8 +367,9 @@ class LineExecutionProcessPool:
                     break
 
                 # Handle output queue message.
-                message = self._handle_output_queue_messages(output_queue, result_dict, line_number)
+                message = self._handle_output_queue_messages(output_queue)
                 if isinstance(message, LineResult):
+                    result_dict[line_number] = message
                     completed = True
                     break
                 if isinstance(message, NodeRunInfo):
@@ -482,12 +483,11 @@ class LineExecutionProcessPool:
         line_timeout_sec = line_timeout_sec or self._line_timeout_sec
         return (datetime.utcnow() - start_time).total_seconds() > line_timeout_sec + buffer_sec
 
-    def _handle_output_queue_messages(self, output_queue: Queue, result_dict: Dict[int, LineResult], line_number: int):
+    def _handle_output_queue_messages(self, output_queue: Queue):
         try:
             message = output_queue.get(timeout=1)
             if isinstance(message, LineResult):
                 message = self._process_multimedia(message)
-                result_dict[line_number] = message
                 return message
             elif isinstance(message, FlowRunInfo):
                 self._storage.persist_flow_run(message)
