@@ -135,11 +135,13 @@ promptflow.tools.llm.llm:
     functions:
       type:
       - list
-      section_name: Function calling
-      display_format: default
+      group: 
+        name: Function calling
+        display_style: table  # or tile
     function_call:
       type:
       - string
       - object
-      section_name: Function calling
-      display_format: default
+      group: 
+        name: Function calling
+        display_style: table
