@@ -206,7 +206,7 @@ def generate_retry_interval(retry_count: int) -> float:
     return retry_interval
 
 
-def _build_deployment_dict(item) -> Deployment:
+def build_deployment_dict(item) -> Deployment:
     model = item.properties.model
     return Deployment(item.name, model.name, model.version)
 
@@ -239,12 +239,16 @@ def _get_credential():
     return credential
 
 
-def get_workspace_details():
+def get_workspace_triad():
+    # If flow is submitted from cloud, runtime will save the workspace triad to environment
+    # If you start a process from the cloud, the system will save key workspace details. If you start it locally, it will get these details from your Azure Cloud config file. If this file isn't set up, it will return 'None'.
     if 'AZUREML_ARM_SUBSCRIPTION' in os.environ and 'AZUREML_ARM_RESOURCEGROUP' in os.environ \
             and 'AZUREML_ARM_WORKSPACE_NAME' in os.environ:
         return os.environ["AZUREML_ARM_SUBSCRIPTION"], os.environ["AZUREML_ARM_RESOURCEGROUP"], \
                os.environ["AZUREML_ARM_WORKSPACE_NAME"]
     else:
+        # If flow is submitted from local, it will get workspace triad from your azure cloud config file
+        # If this config file isn't set up, it will return None.
         workspace_triad = get_workspace_triad_from_local()
         return workspace_triad.subscription_id, workspace_triad.resource_group_name, workspace_triad.workspace_name
 
@@ -256,7 +260,7 @@ def list_deployment_connections(
     connection="",
 ):
     try:
-        # Does not support dynamic list for local.
+        # Do not support dynamic list for local.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
         from promptflow.azure.operations._arm_connection_operations import \
             ArmConnectionOperations, OpenURLFailedUserError
@@ -298,7 +302,6 @@ def list_deployment_connections(
             resource_group_name=conn_rg,
             account_name=conn_account,
         )
-
     except Exception as e:
         if hasattr(e, 'status_code') and e.status_code == 403:
             msg = f"Failed to list deployments due to permission issue: {e}"
@@ -308,29 +311,28 @@ def list_deployment_connections(
             raise ListDeploymentsError(msg=msg) from e
 
 
-def handle_unsupported_model_error(connection, deployment_name, model):
-    error_message = "LLM supports only text models. Please ensure you're using the correct tool for your model."
+def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
+    tsg = "Please kindly avoid using vision model in LLM tool " \
+          "because vision model cannot work with some chat api parameters. " \
+          "You can change to use tool 'Azure OpenAI GPT-4 Turbo with Vision' " \
+          "or 'OpenAI GPT-4V' for vision model."
     try:
         if isinstance(connection, AzureOpenAIConnection):
-            subscription_id, resource_group, workspace_name = get_workspace_details()
+            subscription_id, resource_group, workspace_name = get_workspace_triad()
             if subscription_id and resource_group and workspace_name:
                 deployment_collection = list_deployment_connections(subscription_id, resource_group, workspace_name,
                                                                     connection.name)
                 for item in deployment_collection:
                     if deployment_name == item.name:
                         if item.properties.model.version in [GPT4V_VERSION]:
-                            error_message = "LLM supports only text model for azure openai connection. " \
-                                            "Please use the tool 'Azure OpenAI GPT-4 Turbo with Vision' " \
-                                            "for vision model."
+                            return tsg
         elif isinstance(connection, OpenAIConnection) and model in ["gpt-4-vision-preview"]:
-            error_message = "OpenAI API hits exception: BadRequestError: " \
-                            "LLM only supports text model for openai connection. " \
-                            "Please use the tool 'OpenAI GPT-4V' for vision model."
+            return tsg
     except Exception as e:
-        print(f"Exception occurs when handle unsupported model error for llm: "
+        print(f"Exception occurs when refine extra fields not permitted error for llm: "
               f"{type(e).__name__}: {str(e)}", file=sys.stderr)
 
-    raise LLMError(message=error_message)
+    raise None
 
 
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
@@ -357,11 +359,16 @@ def handle_openai_error(tries: int = 100):
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
-                    if isinstance(e, BadRequestError) and \
-                            ("extra fields not permitted" in str(e).lower()
-                             or "none is not an allowed value" in str(e).lower()):
-                        handle_unsupported_model_error(args[0].connection,
+                    # Handle llm use some unsupported model like vision error
+                    # Related issue https://github.com/microsoft/promptflow/issues/1683
+                    if isinstance(e, BadRequestError) and "extra fields not permitted" in str(e).lower():
+                        refined_error_message = refine_extra_fields_not_permitted_error(args[0].connection,
                                                        kwargs.get("deployment_name", ""), kwargs.get("model", ""))
+                        if refined_error_message:
+                            raise LLMError(refined_error_message)
+                        else:
+                            raise WrappedOpenAIError(e)
+
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
                             and "connection aborted" not in str(e).lower():
                         raise WrappedOpenAIError(e)
