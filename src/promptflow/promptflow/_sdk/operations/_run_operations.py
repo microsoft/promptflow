@@ -107,6 +107,24 @@ class RunOperations(TelemetryMixin):
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
 
+    @monitor_operation(activity_name="pf.runs.resume", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs) -> Run:
+        """Create a run by the resume_from run, a new run will be created to rerun failed lines.
+
+        :param resume_from: Run name to resume from.
+        :type resume_from: str
+        :return: Run object created based on an existing run.
+        :rtype: ~promptflow.entities.Run
+        """
+        logger.debug(f"Resume from {resume_from!r}, kwargs: {kwargs}")
+        stream = kwargs.pop("stream", False)
+        from promptflow._sdk._submitter import RunSubmitter
+
+        created_run = RunSubmitter(client=self._client).resume(resume_from=resume_from, **kwargs)
+        if stream:
+            self.stream(created_run)
+        return created_run
+
     def _create_run_from_existing_run_folder(self, run: Run, **kwargs) -> Run:
         """Create run from existing run folder."""
         try:

@@ -8,15 +8,17 @@ import threading
 
 client_map = {}
 _thread_lock = threading.Lock()
+_container_lock_dict = {}
 _token_timeout = 60 * 4  # Will try to refresh token if exceed 4 minutes
 
 
 def get_client(container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str):
-    # Must ensure that client exists
     client_key = _get_db_client_key(container_name, subscription_id, resource_group_name, workspace_name)
     container_client = _get_client_from_map(client_key)
     if container_client is None:
-        with _thread_lock:
+        # Use lock to avoid too many requests for same container token
+        container_lock = _get_container_lock(client_key)
+        with container_lock:
             container_client = _get_client_from_map(client_key)
             if container_client is None:
                 token = _get_resource_token(container_name, subscription_id, resource_group_name, workspace_name)
@@ -43,6 +45,15 @@ def _get_client_from_map(client_key: str):
         return client["client"]
 
     return None
+
+
+def _get_container_lock(client_key: str):
+    with _thread_lock:
+        container_lock = _container_lock_dict.get(client_key, None)
+        if container_lock is None:
+            container_lock = threading.Lock()
+            _container_lock_dict[client_key] = container_lock
+    return container_lock
 
 
 def _get_resource_token(

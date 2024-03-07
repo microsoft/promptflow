@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import re
+import sys
 from typing import List
 
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, MAX_LIST_CLI_RESULTS
@@ -10,7 +11,7 @@ from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli,
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.credential_utils import get_credential
-from promptflow.azure._utils.gerneral import get_arm_token
+from promptflow.azure._utils.general import get_arm_token
 
 logger = get_cli_sdk_logger()
 
@@ -58,7 +59,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
                     "Please run 'az login' or 'az login --use-device-code' to set up account. "
                     "See https://docs.microsoft.com/cli/azure/authenticate-azure-cli for more details."
                 )
-                exit(1)
+                sys.exit(1)
         if interactive_credential_disabled():
             return DefaultAzureCredential(exclude_interactive_browser_credential=True)
         if is_github_codespaces():

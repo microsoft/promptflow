@@ -17,5 +17,6 @@ def inject_api_executor():
 @pytest.fixture(autouse=True, scope="session")
 def executor_client():
     """Executor client for testing."""
-
-    yield TestClient(app)
+    # Set raise_server_exceptions to False to avoid raising exceptions
+    # from the server and return them as error response.
+    yield TestClient(app, raise_server_exceptions=False)

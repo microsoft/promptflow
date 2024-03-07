@@ -38,6 +38,7 @@ from promptflow._utils.exception_utils import (
     get_tb_next,
     last_frame_info,
 )
+from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow._utils.tool_utils import asdict_without_none, function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -113,11 +114,11 @@ def collect_tool_functions_in_module(m):
 
 
 def collect_flow_entry_in_module(m, entry):
-    entry = entry.split(":")[-1]
-    func = getattr(m, entry, None)
+    func_name = entry.split(":")[-1]
+    func = getattr(m, func_name, None)
     if isinstance(func, types.FunctionType):
         return func
-    raise PythonParsingError(
+    raise PythonLoadError(
         message_format="Failed to collect flow entry '{entry}' in module '{module}'.",
         entry=entry,
         module=m.__name__,
@@ -254,6 +255,21 @@ def load_python_module_from_file(src_file: Path):
     return m
 
 
+def load_python_module_from_entry(entry: str):
+    try:
+        module_name = entry.split(":")[0]
+        return importlib.import_module(module_name)
+    except Exception as e:
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
+        raise PythonLoadError(
+            message_format="Failed to load python module '{module_name}' from entry '{entry}': "
+            "{error_type_and_message}",
+            module_name=module_name,
+            entry=entry,
+            error_type_and_message=error_type_and_message,
+        ) from e
+
+
 def load_python_module(content, source=None):
     # Source represents code first experience.
     if source is not None and Path(source).exists():
@@ -375,9 +391,24 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
 def generate_tool_meta(
     working_dir: Path,
     tools: Mapping[str, Mapping[str, str]],
-    tool_dict: dict,
-    exception_dict: dict,
 ):
+    """
+    Generate tool meta for a list of tools.
+    Sample input tools:
+    {
+        "filename.py": { "tool_type": "python" },
+    }
+
+    Note: this function is referred in pf utils, so it should be kept as is.
+    :param working_dir: The working directory where the tools are located.
+    :type working_dir: Path
+    :param tools: A dictionary of tool sources and their configurations.
+    :type tools: Mapping[str, Mapping[str, str]]
+    :return: A tuple of dictionaries, containing generated metadata and exceptions on generation.
+    :rtype: Tuple[dict, dict]
+    """
+    tool_dict, exception_dict = {}, {}
+
     with _change_working_dir(working_dir), inject_sys_path(working_dir):
         for source, config in tools.items():
             try:
@@ -390,6 +421,22 @@ def generate_tool_meta(
                 tool_dict[source] = generate_tool_meta_dict_by_file(source, tool_type)
             except Exception as e:
                 exception_dict[source] = ExceptionPresenter.create(e).to_dict()
+    return tool_dict, exception_dict
+
+
+def _generate_tool_meta_and_update_dict(
+    working_dir: Path,
+    tools: Mapping[str, Mapping[str, str]],
+    tool_dict: dict,
+    exception_dict: dict,
+    prevent_terminate_signal_propagation: bool = False,
+):
+    if prevent_terminate_signal_propagation:
+        block_terminate_signal_to_parent()
+
+    _tool_dict, _exception_dict = generate_tool_meta(working_dir, tools)
+    tool_dict.update(_tool_dict)
+    exception_dict.update(_exception_dict)
 
 
 def generate_tool_meta_in_subprocess(
@@ -397,12 +444,31 @@ def generate_tool_meta_in_subprocess(
     tools: Mapping[str, Mapping[str, str]],
     input_logger: logging.Logger,
     timeout: int = 10,
+    prevent_terminate_signal_propagation: bool = False,
 ):
+    """
+    :param working_dir: The working directory where the tools are located.
+    :type working_dir: Path
+    :param tools: A dictionary of tool sources and their configurations.
+    :type tools: Mapping[str, Mapping[str, str]]
+    :param input_logger: The logger to log the input.
+    :type input_logger: logging.Logger
+    :param timeout: The timeout in seconds for the subprocess to generate the tool meta.
+    :type timeout: int
+    :param prevent_terminate_signal_propagation: If True, the termination signal of the child process will not be
+    propagated to the parent process. This is to avoid the main process being terminated when the child process is
+    terminated, which is a default behavior within an uvicorn app.
+    :type prevent_terminate_signal_propagation: bool
+    :return: A tuple of dictionaries, containing generated metadata and exceptions on generation.
+    :rtype: Tuple[dict, dict]
+    """
     manager = multiprocessing.Manager()
     process_tool_dict = manager.dict()
     process_exception_dict = manager.dict()
+
     p = multiprocessing.Process(
-        target=generate_tool_meta, args=(working_dir, tools, process_tool_dict, process_exception_dict)
+        target=_generate_tool_meta_and_update_dict,
+        args=(working_dir, tools, process_tool_dict, process_exception_dict, prevent_terminate_signal_propagation),
     )
     p.start()
     input_logger.info(f"[{os.getpid()}--{p.pid}] Start process to generate tool meta.")
@@ -426,8 +492,12 @@ def generate_tool_meta_in_subprocess(
     return tool_dict, exception_dict
 
 
-def generate_flow_meta_dict_by_file(path: str, entry: str, source: str = None):
-    m = load_python_module_from_file(Path(path))
+def generate_flow_meta_dict_by_file(entry: str, source: str = None, path: str = None):
+    if path:
+        m = load_python_module_from_file(Path(path))
+    else:
+        m = load_python_module_from_entry(entry)
+
     f = collect_flow_entry_in_module(m, entry)
     # Since the flow meta is generated from the entry function, we leverage the function
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.

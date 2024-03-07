@@ -374,7 +374,7 @@ def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=N
                 sys.stderr.write(json.dumps(error_msg))
             if isinstance(e, PromptflowException):
                 print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
-                exit(1)
+                sys.exit(1)
             else:
                 raise e
 

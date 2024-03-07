@@ -16,7 +16,7 @@ from opentelemetry.sdk.trace import TracerProvider
 
 from promptflow._constants import SpanResourceAttributesFieldName, SpanResourceFieldName, TraceEnvironmentVariableName
 from promptflow._sdk.entities._trace import Span
-from promptflow._trace._start_trace import (
+from promptflow.tracing._start_trace import (
     _create_resource,
     _is_tracer_provider_configured,
     _provision_session_id,
