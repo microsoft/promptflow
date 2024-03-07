@@ -78,7 +78,7 @@ class LineExecutionProcessPool:
             multiprocessing_start_method = multiprocessing.get_start_method()
         self._use_fork = multiprocessing_start_method in ["fork", "forkserver"]
 
-        # Initialize some fields from inputs.
+        # Initialize some fields from the init parameters.
         self._nlines = nlines
         self._run_id = run_id
         self._output_dir = output_dir
@@ -170,9 +170,9 @@ class LineExecutionProcessPool:
         self._monitor_pool = ThreadPool(
             self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),)
         )
-        # The variable 'async_result' here is not the actual result of the batch run
-        # but an AsyncResult object that can be used to check if the execution are finished
-        # The actual results of the batch run are stored in 'result_dict'
+        # The variable '_async_tasks' here is a list of AsyncResult object
+        # that can be used to check if the execution are finished.
+        # The actual line results of the batch run are stored in 'result_dict'.
 
         # Create _n_process monitoring threads, mainly used to assign tasks and receive line result.
         # When receiving terminate signal, end the process.
