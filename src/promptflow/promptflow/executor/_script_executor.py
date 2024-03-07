@@ -46,17 +46,23 @@ class ScriptExecutor(FlowExecutor):
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
         with self._update_operation_context(run_id, index):
-            return self._exec_line(inputs, index, run_id)
+            return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
     def _exec_line(
-        self, inputs: Mapping[str, Any], index: Optional[int] = None, run_id: Optional[str] = None
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
     ) -> LineResult:
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         run_tracker = RunTracker(self._storage)
+        run_tracker.allow_generator_types = allow_generator_output
         run_info = run_tracker.start_flow_run(
             flow_id=self._flow_id,
             root_run_id=run_id,
@@ -94,7 +100,6 @@ class ScriptExecutor(FlowExecutor):
         return line_result
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
-        # TODO(2901157): check if eager mode should have streaming
         return
 
     def get_inputs_definition(self):

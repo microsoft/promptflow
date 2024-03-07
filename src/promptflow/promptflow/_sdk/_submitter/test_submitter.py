@@ -471,10 +471,7 @@ class TestSubmitter:
                 # remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
 
-        if isinstance(line_result.output, dict):
-            generator_outputs = self._get_generator_outputs(line_result.output)
-            if generator_outputs:
-                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+        self._get_generator_outputs(line_result.output)
         return line_result
 
     def node_test(
@@ -585,4 +582,10 @@ class TestSubmitter:
     @staticmethod
     def _get_generator_outputs(outputs):
         outputs = outputs or {}
-        return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+        if isinstance(outputs, dict):
+            generator_outputs = {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+            if generator_outputs:
+                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+        elif isinstance(outputs, GeneratorType):
+            logger.info("Streaming output in the result.")
+            return outputs
