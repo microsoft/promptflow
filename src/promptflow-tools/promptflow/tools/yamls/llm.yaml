@@ -62,7 +62,6 @@ promptflow.tools.llm.llm:
         - string
       enabled_by: connection
       enabled_by_type: [OpenAIConnection]
-      is_engine: true
       dynamic_list:
         func_path: promptflow.tools.llm.list_models
         func_kwargs:
