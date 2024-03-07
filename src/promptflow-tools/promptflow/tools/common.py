@@ -241,7 +241,6 @@ def _get_credential():
 
 def get_workspace_triad():
     # If flow is submitted from cloud, runtime will save the workspace triad to environment
-    # If you start a process from the cloud, the system will save key workspace details. If you start it locally, it will get these details from your Azure Cloud config file. If this file isn't set up, it will return 'None'.
     if 'AZUREML_ARM_SUBSCRIPTION' in os.environ and 'AZUREML_ARM_RESOURCEGROUP' in os.environ \
             and 'AZUREML_ARM_WORKSPACE_NAME' in os.environ:
         return os.environ["AZUREML_ARM_SUBSCRIPTION"], os.environ["AZUREML_ARM_RESOURCEGROUP"], \
