@@ -274,48 +274,7 @@ class LineExecutionProcessPool:
             bulk_logger.warning(f"The batch run timed out, with {len(self._result_dict)} line results processed.")
         return [self._result_dict[key] for key in sorted(self._result_dict)]
 
-    # region private function
-
-    def _all_tasks_ready(self):
-        return all(async_task.ready() for async_task in self._async_tasks)
-
-    def _terminate_tasks(self):
-        if not self._all_tasks_ready():
-            for _ in range(self._n_process):
-                self._task_queue.put(TERMINATE_SIGNAL)
-
-    def _determine_worker_count(self, worker_count):
-        # Starting a new process in non-fork mode requires to allocate memory.
-        # Calculate the maximum number of processes based on available memory to avoid memory bursting.
-        estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
-
-        # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
-        if worker_count is not None and worker_count > 0:
-            bulk_logger.info(f"Set process count to {worker_count}.")
-            if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
-                bulk_logger.warning(
-                    f"The current process count ({worker_count}) is larger than recommended process count "
-                    f"({estimated_available_worker_count}) that estimated by system available memory. This may "
-                    f"cause memory exhaustion"
-                )
-            return worker_count
-
-        # If the environment variable PF_WORKER_COUNT is not set or invalid, take the minimum value among the
-        # factors: default_worker_count, row_count and estimated_worker_count_based_on_memory_usage
-        factors = {
-            "default_worker_count": self._DEFAULT_WORKER_COUNT,
-            "row_count": self._nlines,
-            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count,
-        }
-
-        valid_factors = {k: v for k, v in factors.items() if v is not None and v > 0}
-
-        # Take the minimum value as the result
-        worker_count = min(valid_factors.values())
-        bulk_logger.info(
-            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}."
-        )
-        return worker_count
+    # region monitor thread target function
 
     def _monitor_workers_and_process_tasks_in_thread(
         self,
@@ -440,6 +399,51 @@ class LineExecutionProcessPool:
                 index, process_id, process_name = self._processes_manager.get_process_info(index)
 
             self._processing_idx.pop(line_number)
+
+    # endregion
+
+    # region private methods
+
+    def _all_tasks_ready(self):
+        return all(async_task.ready() for async_task in self._async_tasks)
+
+    def _terminate_tasks(self):
+        if not self._all_tasks_ready():
+            for _ in range(self._n_process):
+                self._task_queue.put(TERMINATE_SIGNAL)
+
+    def _determine_worker_count(self, worker_count):
+        # Starting a new process in non-fork mode requires to allocate memory.
+        # Calculate the maximum number of processes based on available memory to avoid memory bursting.
+        estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
+
+        # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
+        if worker_count is not None and worker_count > 0:
+            bulk_logger.info(f"Set process count to {worker_count}.")
+            if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
+                bulk_logger.warning(
+                    f"The current process count ({worker_count}) is larger than recommended process count "
+                    f"({estimated_available_worker_count}) that estimated by system available memory. This may "
+                    f"cause memory exhaustion"
+                )
+            return worker_count
+
+        # If the environment variable PF_WORKER_COUNT is not set or invalid, take the minimum value among the
+        # factors: default_worker_count, row_count and estimated_worker_count_based_on_memory_usage
+        factors = {
+            "default_worker_count": self._DEFAULT_WORKER_COUNT,
+            "row_count": self._nlines,
+            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count,
+        }
+
+        valid_factors = {k: v for k, v in factors.items() if v is not None and v > 0}
+
+        # Take the minimum value as the result
+        worker_count = min(valid_factors.values())
+        bulk_logger.info(
+            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}."
+        )
+        return worker_count
 
     def _calculate_line_timeout_sec(self):
         """Calculate the line timeout for the current line."""
