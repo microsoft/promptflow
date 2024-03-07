@@ -1,7 +1,7 @@
 import asyncio
 import functools
 
-from promptflow._core.openai_injector import inject_function_async, inject_function_sync, inject_operation_headers
+from promptflow.tracing._openai_injector import inject_function_async, inject_function_sync, inject_operation_headers
 
 from .mock_tool import call_func, call_func_async
 
