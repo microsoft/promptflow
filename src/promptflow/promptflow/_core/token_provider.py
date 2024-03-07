@@ -1,6 +1,7 @@
 import threading
 from abc import ABC, abstractmethod
 from promptflow.exceptions import UserErrorException
+from promptflow._utils.credential_utils import get_credential
 
 
 # to access azure ai services, we need to get the token with this audience
@@ -39,23 +40,7 @@ class AzureTokenProvider(TokenProviderABC):
     def _init_instance(self):
         try:
             # Initialize a credential instance
-            from azure.identity import DefaultAzureCredential
-
-            # Support sovereign cloud cases, like mooncake, fairfax.
-            from azure.ai.ml._azure_environments import (
-                _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
-            )
-
-            cloud_name = _get_default_cloud_name()
-            if cloud_name != AzureEnvironments.ENV_DEFAULT:
-                cloud = _get_cloud(cloud=cloud_name)
-                authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
-                self.credential = DefaultAzureCredential(
-                    authority=authority,
-                    exclude_shared_token_cache_credential=True
-                )
-            else:
-                self.credential = DefaultAzureCredential()
+            self.credential = get_credential()
         except ImportError as ex:
             raise UserErrorException(
                 "Failed to initialize AzureTokenProvider. "
