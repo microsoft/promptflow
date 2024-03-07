@@ -318,13 +318,15 @@ class LineExecutionProcessPool:
                 try:
                     # Get task from task_queue
                     data = task_queue.get(timeout=1)
-                    if data == TERMINATE_SIGNAL:
+                    # Calculate the line timeout for the current line.
+                    line_timeout_sec = self._calculate_line_timeout_sec()
+                    # If the task is a terminate signal or the batch run is timeouted, exit the loop.
+                    if data == TERMINATE_SIGNAL or line_timeout_sec is None:
                         bulk_logger.info(
-                            "The thread monitoring the process "
-                            f"[{process_id}-{process_name}] has received a terminate signal."
+                            f"The thread monitoring the process [{process_id}-{process_name}] will be terminated."
                         )
                         # Put the terminate signal into the input queue to notify the sub process to exit.
-                        input_queue.put(data)
+                        input_queue.put(TERMINATE_SIGNAL)
                         # End the process if found the terminate signal.
                         self._processes_manager.end_process(index)
                         # In fork mode, the main process and the sub spawn process communicate through _process_info.
@@ -335,14 +337,8 @@ class LineExecutionProcessPool:
                         # Set exit_loop to True to exit the main loop.
                         exit_loop = True
                         break
+                    # If the task is a line execution request, put the request into the input queue.
                     run_id, line_number, inputs = data
-                    # Calculate the line timeout for the current line.
-                    line_timeout_sec = self._calculate_line_timeout_sec()
-                    if line_timeout_sec is None:
-                        # line_timeout_sec is None means the batch run is timeouted.
-                        self._is_timeout = True
-                        exit_loop = True
-                        break
                     args = (run_id, line_number, inputs, line_timeout_sec)
                     input_queue.put(args)
                     break
