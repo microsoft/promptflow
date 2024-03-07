@@ -193,7 +193,7 @@ class LineExecutionProcessPool:
 
     def close(self):
         """End the process pool and close the thread pool."""
-        # Put n (equal to processes number) terminate signals to the task queue to ensure each thread receives one.
+        # Terminate the task of monitor threads.
         self._terminate_tasks()
         # Close the thread pool and wait for all threads to complete.
         if self._monitor_pool is not None:
@@ -410,9 +410,11 @@ class LineExecutionProcessPool:
         return all(async_task.ready() for async_task in self._async_tasks)
 
     def _terminate_tasks(self):
-        if not self._all_tasks_ready():
-            for _ in range(self._n_process):
-                self._task_queue.put(TERMINATE_SIGNAL)
+        if self._all_tasks_ready():
+            return
+        # Put n (equal to processes number) terminate signals to the task queue to ensure each thread receives one.
+        for _ in range(self._n_process):
+            self._task_queue.put(TERMINATE_SIGNAL)
 
     def _determine_worker_count(self, worker_count):
         # Starting a new process in non-fork mode requires to allocate memory.
