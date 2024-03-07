@@ -14,6 +14,18 @@ You can check the runtime image version from the flow execution log:
 
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
+
+### 20240228.v3
+
+#### New features
+- NA
+
+#### Bugs fixed
+- Fix bug when collect package tools
+- Update expected error message of 'test_completion_with_chat_model'
+- Fix naming error of legacy 'OpenSourceLLMOnlineEndpointError'
+
+
 ### 20240222.v3
 
 #### New features
@@ -40,7 +52,7 @@ NA
 
 #### Bugs fixed
 - Fix the bug that exception raised during preparing data is not set in run history.
-- Fix the bug that unexpected exception is raised when executor process crushes. 
+- Fix the bug that unexpected exception is raised when executor process crushes.
 
 ### 20240116.v1
 
