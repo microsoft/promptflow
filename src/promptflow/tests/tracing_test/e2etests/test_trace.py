@@ -4,7 +4,7 @@ import json
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.openai_injector import inject_openai_api
+from promptflow.tracing._openai_injector import inject_openai_api
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..utils import execute_function_in_subprocess, prepare_memory_exporter
