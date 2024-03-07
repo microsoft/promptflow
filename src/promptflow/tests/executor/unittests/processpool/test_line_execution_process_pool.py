@@ -291,13 +291,14 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_process_pool_run_with_exception(self, flow_folder, dev_connections, mocker: MockFixture):
+    async def test_process_pool_run_with_exception(self, flow_folder, dev_connections, mocker: MockFixture):
         # mock process pool run execution raise error
         test_error_msg = "Test user error"
         mocker.patch(
@@ -316,7 +317,7 @@ class TestLineExecutionProcessPool:
             None,
         ) as pool:
             with pytest.raises(UserErrorException) as e:
-                pool.run(zip(range(nlines), bulk_inputs))
+                await pool.run(zip(range(nlines), bulk_inputs))
             assert e.value.message == test_error_msg
             assert e.value.target == ErrorTarget.AZURE_RUN_STORAGE
             assert e.value.error_codes[0] == "UserError"
@@ -406,6 +407,7 @@ class TestLineExecutionProcessPool:
         assert p.exitcode == 0
 
     @pytest.mark.skipif(sys.platform == "win32" or sys.platform == "darwin", reason="Only test on linux")
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
@@ -416,7 +418,7 @@ class TestLineExecutionProcessPool:
         "promptflow.executor._process_manager.create_spawned_fork_process_manager",
         custom_create_spawned_fork_process_manager,
     )
-    def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
+    async def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
@@ -429,7 +431,7 @@ class TestLineExecutionProcessPool:
                 run_id,
                 None,
             ) as pool:
-                pool.run(zip(range(nlines), bulk_inputs))
+                await pool.run(zip(range(nlines), bulk_inputs))
         assert "Failed to start spawned fork process manager" in str(e.value)
 
 
