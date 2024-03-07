@@ -10,7 +10,7 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow._utils.credential_utils import get_credential
+from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow.azure._utils.general import get_arm_token
 
 logger = get_cli_sdk_logger()
@@ -52,7 +52,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         if is_from_cli():
             try:
                 # Try getting token for cli without interactive login
-                credential = get_credential()
+                credential = get_default_azure_credential()
                 get_arm_token(credential=credential)
             except Exception:
                 print_red_error(

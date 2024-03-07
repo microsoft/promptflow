@@ -1,5 +1,5 @@
 from promptflow._internal import ToolProvider, tool
-from promptflow._utils.credential_utils import get_credential
+from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -72,7 +72,7 @@ def list_deployment_names(
         return res
 
     try:
-        credential = get_credential()
+        credential = get_default_azure_credential()
         try:
             # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
             conn = ArmConnectionOperations._build_connection_dict(
