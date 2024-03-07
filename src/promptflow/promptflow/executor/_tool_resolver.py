@@ -187,7 +187,11 @@ class ToolResolver:
             }
 
             for name, param in parameters.items():
+                if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+                    # Exclude positional and keyword arguments from definition generation
+                    continue
                 if name in predefined_inputs:
+                    # Exclude predefined inputs from definition generation
                     continue
                 # Determine if parameter is required (has no default value)
                 is_required = param.default is param.empty
