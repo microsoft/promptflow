@@ -18,12 +18,10 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20240228.v3
 
 #### New features
-- NA
+- Async flow test and single node run support.
 
 #### Bugs fixed
-- Fix bug when collect package tools
-- Update expected error message of 'test_completion_with_chat_model'
-- Fix naming error of legacy 'OpenSourceLLMOnlineEndpointError'
+- Fix bug when collecting package tools.
 
 
 ### 20240222.v3
