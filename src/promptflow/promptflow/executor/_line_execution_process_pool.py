@@ -35,7 +35,12 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
-from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError, ThreadCrashError
+from promptflow.executor._errors import (
+    BatchExecutionTimeoutError,
+    LineExecutionTimeoutError,
+    ProcessCrashError,
+    ThreadCrashError,
+)
 from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
@@ -400,7 +405,13 @@ class LineExecutionProcessPool:
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
                     bulk_logger.warning(f"Line {line_number} timeout after {line_timeout_sec} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, line_timeout_sec)
+                    if line_timeout_sec < self._line_timeout_sec:
+                        # If execution times out with a timeout lower than the default (self._line_timeout_sec),
+                        # it indicates the _batch_timeout_sec has been reached.
+                        # We should use the exception of BatchExecutionTimeoutError.
+                        ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
+                    else:
+                        ex = LineExecutionTimeoutError(line_number, line_timeout_sec)
                 else:
                     # This branch should not be reached, add this warning for the case.
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
