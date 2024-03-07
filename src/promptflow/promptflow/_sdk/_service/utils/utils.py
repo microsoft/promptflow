@@ -95,6 +95,9 @@ def dump_port_to_config(port):
 
 def is_port_in_use(port: int):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # OS will wait for timeout when connecting to an unused port, so it will take about 2s. Set timeout here to
+        # avoid long waiting time
+        s.settimeout(0.1)
         return s.connect_ex(("localhost", port)) == 0
 
 
@@ -105,13 +108,23 @@ def get_random_port():
 
 
 def _get_process_by_port(port):
-    for proc in psutil.process_iter(["pid", "connections", "create_time"]):
-        try:
-            for connection in proc.connections():
-                if connection.laddr.port == port:
-                    return proc
-        except psutil.AccessDenied:
-            pass
+    # use net_connections api to accelerate the process, but require root privileges on macOS and AIX. So use original
+    # way to get process on these platforms. Note: (Solaris) UNIX sockets are not supported, (OpenBSD) laddr and raddr
+    # fields for UNIX sockets are always set to “”. This is a limitation of the OS.
+    # Refer here for more details: https://psutil.readthedocs.io/en/latest/#psutil.AccessDenied
+    try:
+        for conn in psutil.net_connections():
+            if conn.laddr.port == port:
+                return psutil.Process(conn.pid)
+    except (psutil.AccessDenied, NotImplementedError) as e:
+        logger.warning(f"Failed to get process by port {port} using net_connections: {e}")
+        for proc in psutil.process_iter(["pid", "connections", "create_time"]):
+            try:
+                for connection in proc.connections():
+                    if connection.laddr.port == port:
+                        return proc
+            except (psutil.AccessDenied, NotImplementedError) as ex:
+                logger.warning(f"Failed to get process by port {port} using process_iter: {ex}")
 
 
 def kill_exist_service(port):
@@ -125,7 +138,7 @@ def get_started_service_info(port):
     service_info = {}
     proc = _get_process_by_port(port)
     if proc:
-        create_time = proc.info["create_time"]
+        create_time = proc.create_time()
         process_uptime = datetime.now() - datetime.fromtimestamp(create_time)
         service_info["create_time"] = str(datetime.fromtimestamp(create_time))
         service_info["uptime"] = str(process_uptime)

@@ -13,7 +13,7 @@ import waitress
 
 from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import LOGGER_NAME, PF_SERVICE_DEBUG, PF_SERVICE_WORKER_NUM
+from promptflow._sdk._constants import PF_SERVICE_DEBUG, PF_SERVICE_WORKER_NUM
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
@@ -68,6 +68,12 @@ def add_stop_service_action(subparsers):
         description="Stop promptflow service.",
         help="pfs stop",
     )
+    stop_pfs_parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="The flag to turn on debug mode for pfs.",
+    )
     stop_pfs_parser.set_defaults(action="stop")
 
 
@@ -113,6 +119,9 @@ def start_service(args):
         else:
             app.logger.setLevel(logging.INFO)
         print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
+        app.logger.info(
+            f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+        )
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
@@ -161,15 +170,21 @@ def start_service(args):
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
             print(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
+            logger.info(
+                f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+            )
         else:
             logger.warning(f"Pfs service start failed in {port}.")
 
 
 def stop_service():
     port = get_port_from_config()
-    if port is not None:
+    if port is not None and is_port_in_use(port):
         kill_exist_service(port)
+        logger.debug(f"Pfs service stop in {port}.")
         print(f"Pfs service stop in {port}.")
+    else:
+        logger.debug("Pfs service is not started.")
 
 
 def main():
@@ -204,6 +219,10 @@ def entry(command_args):
 
 
 def run_command(args):
+    # --debug, enable debug logging
+    if hasattr(args, "debug") and args.debug:
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG)
     if args.version:
         print_pf_version()
         return
@@ -214,7 +233,6 @@ def run_command(args):
             print(status)
             return
         else:
-            logger = logging.getLogger(LOGGER_NAME)
             logger.warning("Promptflow service is not started.")
             sys.exit(1)
     elif args.action == "start":

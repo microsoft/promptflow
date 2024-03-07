@@ -137,9 +137,11 @@ def create_app():
             else:
                 request_body = request.get_data()
 
+            app.logger.info(
+                "Request coming in: %s, last request time: %s", request.url, app.config["last_request_time"]
+            )
             app.logger.debug(
-                "Last request time: %s, Headers: %s, Body: %s",
-                app.config["last_request_time"],
+                "Headers: %s, Body: %s",
                 request.headers,
                 request_body,
             )
