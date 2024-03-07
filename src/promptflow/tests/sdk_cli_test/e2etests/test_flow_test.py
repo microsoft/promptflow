@@ -1,6 +1,7 @@
 import logging
 import sys
 import tempfile
+from dataclasses import is_dataclass
 from pathlib import Path
 from types import GeneratorType
 
@@ -389,3 +390,19 @@ class TestFlowTest:
         assert result.run_info.status.value == "Completed", result.run_info.error
         # directly return the consumed generator to align with the behavior of DAG flow test
         assert isinstance(result.output, str)
+
+    def test_eager_flow_multiple_stream_outputs(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/multiple_stream_outputs/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert result.output == {"output1": "0123456789", "output2": "0123456789"}
+
+    def test_eager_flow_multiple_stream_outputs_dataclass(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/multiple_stream_outputs_dataclass/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert is_dataclass(result.output)
+        assert result.output.output1 == "0123456789"
+        assert result.output.output2 == "0123456789"

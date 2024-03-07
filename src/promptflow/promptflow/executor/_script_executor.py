@@ -1,7 +1,9 @@
 import asyncio
+import dataclasses
 import importlib
 import inspect
 import uuid
+from dataclasses import is_dataclass
 from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Mapping, Optional
@@ -103,8 +105,17 @@ class ScriptExecutor(FlowExecutor):
         return line_result
 
     def _stringify_generator_output(self, output):
-        if isinstance(output, GeneratorType):
-            output = "".join(str(chuck) for chuck in output)
+        if isinstance(output, dict):
+            return super()._stringify_generator_output(output)
+        elif is_dataclass(output):
+            fields = dataclasses.fields(output)
+            for field in fields:
+                if isinstance(getattr(output, field.name), GeneratorType):
+                    consumed_values = "".join(str(chuck) for chuck in getattr(output, field.name))
+                    setattr(output, field.name, consumed_values)
+        else:
+            if isinstance(output, GeneratorType):
+                output = "".join(str(chuck) for chuck in output)
         return output
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
