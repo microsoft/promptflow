@@ -4,8 +4,8 @@ from typing import List
 from openai import AsyncAzureOpenAI
 
 from promptflow import tool
-from promptflow._core.tracer import trace
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.tracing import trace
 
 
 def create_messages(question, chat_history):

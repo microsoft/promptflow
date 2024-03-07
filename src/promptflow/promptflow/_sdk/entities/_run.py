@@ -128,6 +128,7 @@ class Run(YAMLTranslatableMixin):
         source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
+        # !!! Caution !!!: Please update self._copy() if you add new fields to init
         # TODO: remove when RUN CRUD don't depend on this
         self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
