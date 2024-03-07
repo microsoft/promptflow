@@ -199,6 +199,9 @@ class LineExecutionProcessPool:
         if self._monitor_pool is not None:
             self._monitor_pool.close()
             self._monitor_pool.join()
+        # If a thread crashed for some reason, the processes it monitors might not be able to exit because
+        # they do not receive a terminate signal. So we need to terminate these unmonitored processes.
+        self._processes_manager.ensure_all_processes_terminated()
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
