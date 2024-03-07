@@ -13,8 +13,9 @@ from importlib.metadata import version
 import openai
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.tracing._trace import _traced_async, _traced_sync
-from promptflow.tracing.contracts.trace import TraceType
+
+from ._trace import _traced_async, _traced_sync
+from .contracts.trace import TraceType
 
 
 USER_AGENT_HEADER = "x-ms-useragent"

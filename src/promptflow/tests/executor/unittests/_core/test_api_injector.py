@@ -8,7 +8,13 @@ from unittest.mock import MagicMock, patch
 import openai
 import pytest
 
-from promptflow._core.openai_injector import (
+from promptflow._core.operation_context import OperationContext
+from promptflow._version import VERSION
+from promptflow.connections import AzureOpenAIConnection
+from promptflow.exceptions import UserErrorException
+from promptflow.tools.aoai import AzureOpenAI
+from promptflow.tools.embedding import embedding
+from promptflow.tracing._openai_injector import (
     PROMPTFLOW_HEADER,
     USER_AGENT_HEADER,
     _generate_api_and_injector,
@@ -20,12 +26,6 @@ from promptflow._core.openai_injector import (
     inject_sync,
     recover_openai_api,
 )
-from promptflow._core.operation_context import OperationContext
-from promptflow._version import VERSION
-from promptflow.connections import AzureOpenAIConnection
-from promptflow.exceptions import UserErrorException
-from promptflow.tools.aoai import AzureOpenAI
-from promptflow.tools.embedding import embedding
 from promptflow.tracing._tracer import Tracer
 from promptflow.tracing.contracts.trace import TraceType
 
@@ -355,7 +355,7 @@ def test_aoai_chat_tool_prompt():
     ],
 )
 def test_api_list(is_legacy, expected_apis_with_injectors):
-    with patch("promptflow._core.openai_injector.IS_LEGACY_OPENAI", is_legacy):
+    with patch("promptflow.tracing._openai_injector.IS_LEGACY_OPENAI", is_legacy):
         # Using list comprehension to get all items from the generator
         actual_apis_with_injectors = list(_openai_api_list())
         # Assert that the actual list matches the expected list
@@ -501,7 +501,7 @@ def test_inject_and_recover_openai_api():
 
     # Mock the generator function to yield our mocked api and method
     with patch(
-        "promptflow._core.openai_injector.available_openai_apis_and_injectors",
+        "promptflow.tracing._openai_injector.available_openai_apis_and_injectors",
         return_value=[
             (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector),
             (FakeAPIWithOriginal, "create", TraceType.LLM, injector),
