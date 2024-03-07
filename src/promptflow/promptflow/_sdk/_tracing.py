@@ -32,6 +32,7 @@ from promptflow._sdk._service.entry import entry
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, is_port_in_use
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.tracing._start_trace import _force_set_tracer_provider, _is_tracer_provider_set
 
 logger = get_cli_sdk_logger()
 
@@ -136,15 +137,19 @@ def _inject_res_attrs_to_environ(
         os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = f"http://localhost:{pfs_port}/v1/traces"
 
 
-def _create_res(
-    session_id: str,
+def _create_or_merge_res(
+    session_id: typing.Optional[str],
     exp: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> Resource:
-    res_attrs = {
-        SpanResourceAttributesFieldName.SERVICE_NAME: OTEL_RESOURCE_SERVICE_NAME,
-        SpanResourceAttributesFieldName.SESSION_ID: session_id,
-    }
+    res_attrs = dict()
+    if session_id is not None:
+        res_attrs[SpanResourceAttributesFieldName.SESSION_ID] = session_id
+    if _is_tracer_provider_set():
+        tracer_provider: TracerProvider = trace.get_tracer_provider()
+        for attr_key, attr_value in tracer_provider.resource.attributes.items():
+            res_attrs[attr_key] = attr_value
+    res_attrs[SpanResourceAttributesFieldName.SERVICE_NAME] = OTEL_RESOURCE_SERVICE_NAME
     if exp is not None:
         res_attrs[SpanResourceAttributesFieldName.EXPERIMENT_NAME] = exp
     if ws_triad is not None:
@@ -188,7 +193,7 @@ def start_trace_with_devkit(
 
 def setup_exporter_to_pfs() -> None:
     # get resource attributes from environment
-    session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID)
+    session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID, None)
     exp = os.getenv(TraceEnvironmentVariableName.EXPERIMENT, None)
     # local to cloud scenario: workspace triad in resource.attributes
     workspace_triad = None
@@ -201,11 +206,15 @@ def setup_exporter_to_pfs() -> None:
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
-    # create resource
-    res = _create_res(session_id=session_id, exp=exp, ws_triad=workspace_triad)
+    # create resource, or merge to existing resource
+    res = _create_or_merge_res(session_id=session_id, exp=exp, ws_triad=workspace_triad)
     tracer_provider = TracerProvider(resource=res)
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
     otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
-    trace.set_tracer_provider(tracer_provider)
+    # set tracer provider
+    if _is_tracer_provider_set():
+        _force_set_tracer_provider(tracer_provider)
+    else:
+        trace.set_tracer_provider(tracer_provider)
