@@ -168,7 +168,8 @@ class FlowUxInputs(Resource):
     @api.expect(flow_ux_input_model)
     def post(self):
         content = api.payload["ux_inputs"]
-        flow_path = api.payload["flow"]
+        args = flow_path_parser.parse_args()
+        flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)

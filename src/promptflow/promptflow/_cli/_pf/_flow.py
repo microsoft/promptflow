@@ -395,7 +395,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args, pf_client)
+        _test_flow_multi_modal(args)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)

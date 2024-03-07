@@ -7,7 +7,7 @@ from flask_restx import reqparse
 import base64
 import os
 import uuid
-from flask import make_response, request, send_from_directory
+from flask import make_response, send_from_directory
 from pathlib import Path
 from werkzeug.utils import safe_join
 
@@ -74,7 +74,7 @@ class MediaSave(Resource):
         safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
             message = f'The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!'
-            make_response(message, 403)
+            return make_response(message, 403)
         file_path = save_image(safe_path, base64_data, extension)
         path = Path(file_path).relative_to(flow)
         return str(path)
@@ -94,7 +94,7 @@ class ImageView(Resource):
         safe_path = safe_join(flow, image_path)
         if safe_path is None:
             message = f'The untrusted path {image_path} relative to the base directory {flow} detected!'
-            make_response(message, 403)
+            return make_response(message, 403)
         safe_path = Path(safe_path).resolve().as_posix()
         if not os.path.exists(safe_path):
             return make_response("The image doesn't exist", 404)
