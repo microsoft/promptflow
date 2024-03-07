@@ -59,6 +59,9 @@ promptflow.tools.llm.llm:
     model:
       type:
         - string
+      enum:
+        - a
+        - b
       enabled_by: connection
       enabled_by_type: [OpenAIConnection]
       dynamic_list:
