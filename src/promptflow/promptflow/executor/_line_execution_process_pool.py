@@ -47,6 +47,7 @@ TERMINATE_SIGNAL = "terminate"
 
 class LineExecutionProcessPool:
     _DEFAULT_WORKER_COUNT = 4
+    _THREAD_TERMINATED_TIMEOUT = 10
     _PROCESS_TERMINATED_TIMEOUT = 60
     _PROCESS_INFO_OBTAINED_TIMEOUT = 60
 
@@ -188,8 +189,7 @@ class LineExecutionProcessPool:
     def close(self):
         """End the process pool and close the thread pool."""
         # Put n (equal to processes number) terminate signals to the task queue to ensure each thread receives one.
-        for _ in range(self._n_process):
-            self._task_queue.put(TERMINATE_SIGNAL)
+        self._terminate_tasks()
         # Close the thread pool and wait for all threads to complete.
         if self._monitor_pool is not None:
             self._monitor_pool.close()
@@ -256,11 +256,28 @@ class LineExecutionProcessPool:
                 ) from e
 
         if self._batch_timeout_expired(self._batch_start_time):
+            # Send terminate signal to all threads and wait for them to exit.
+            self._terminate_tasks()
+            # Wait for up to 10s for thread termination, aiming to ensure that
+            # the line results in the result dict are as complete as possible.
+            start_time = datetime.utcnow()
+            while self._timeout_expired(start_time, self._THREAD_TERMINATED_TIMEOUT):
+                if self._all_tasks_ready():
+                    break
+            # Set the timeout flag to True and log the warning.
             self._is_timeout = True
-        bulk_logger.error(f"Batch run completed with {len(self._result_dict)} results.")
+            bulk_logger.warning(f"The batch run timed out, with {len(self._result_dict)} line results processed.")
         return [self._result_dict[key] for key in sorted(self._result_dict)]
 
     # region private function
+
+    def _all_tasks_ready(self):
+        return all(async_task.ready() for async_task in self._async_tasks)
+
+    def _terminate_tasks(self):
+        if not self._all_tasks_ready():
+            for _ in range(self._n_process):
+                self._task_queue.put(TERMINATE_SIGNAL)
 
     def _determine_worker_count(self, worker_count):
         # Starting a new process in non-fork mode requires to allocate memory.
@@ -417,8 +434,8 @@ class LineExecutionProcessPool:
         """Calculate the line timeout for the current line."""
         line_timeout_sec = self._line_timeout_sec
         if self._batch_timeout_sec:
-            remaining_execution_time = round(
-                self._batch_timeout_sec - (datetime.utcnow() - self._batch_start_time).total_seconds(), 2
+            remaining_execution_time = int(
+                round(self._batch_timeout_sec - (datetime.utcnow() - self._batch_start_time).total_seconds())
             )
             if remaining_execution_time <= 0:
                 self._is_timeout = True
@@ -468,7 +485,7 @@ class LineExecutionProcessPool:
     def _batch_timeout_expired(self, start_time: datetime) -> bool:
         if self._batch_timeout_sec is None:
             return False
-        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
+        return self._timeout_expired(start_time, self._batch_timeout_sec + 10)
 
     def _line_timeout_expired(self, start_time: datetime, line_timeout_sec: int = None, buffer_sec: int = 10) -> bool:
         # Here we add more seconds (buffer_sec) because of the following reasons:
@@ -477,7 +494,10 @@ class LineExecutionProcessPool:
         # 3. When using submit function to submit one line, the buffer_sec should be
         #    larger than the monitor thread's internal buffer time.
         line_timeout_sec = line_timeout_sec or self._line_timeout_sec
-        return (datetime.utcnow() - start_time).total_seconds() > line_timeout_sec + buffer_sec
+        return self._timeout_expired(start_time, line_timeout_sec + buffer_sec)
+
+    def _timeout_expired(self, start_time: datetime, timeout_sec: int) -> bool:
+        return (datetime.utcnow() - start_time).total_seconds() > timeout_sec
 
     def _handle_output_queue_messages(self, output_queue: Queue):
         try:
