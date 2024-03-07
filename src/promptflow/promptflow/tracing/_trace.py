@@ -158,7 +158,7 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
         yield from generator_proxy
         generator_output = generator_proxy.items
 
-        # Enrich LLM span for OpenAI steaming output
+        # Enrich LLM span for OpenAI streaming output
         if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
             from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
             from openai.types.completion import Completion
