@@ -32,11 +32,8 @@ from promptflow._sdk._service.entry import entry
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, is_port_in_use
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.tracing._start_trace import (
-    _force_set_tracer_provider,
-    _is_tracer_provider_set,
-    setup_exporter_from_environ,
-)
+from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._start_trace import _force_set_tracer_provider, _is_tracer_provider_set
 
 logger = get_cli_sdk_logger()
 
@@ -191,8 +188,9 @@ def start_trace_with_devkit(
     pfs_port = _invoke_pf_svc()
 
     _inject_res_attrs_to_environ(pfs_port=pfs_port, session_id=session_id, exp=exp, ws_triad=ws_triad)
-    # same way to setup exporter as promptflow-tracing
-    setup_exporter_from_environ()
+    # instrument openai and setup exporter to pfs here for flex mode
+    inject_openai_api()
+    setup_exporter_to_pfs()
     # print tracing url(s)
     _print_tracing_url_from_local(pfs_port=pfs_port, session_id=session_id, exp=exp, run=run)
     _print_tracing_url_from_azure_portal(ws_triad=ws_triad, session_id=session_id, exp=exp, run=run)
