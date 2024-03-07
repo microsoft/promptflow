@@ -366,7 +366,7 @@ def handle_openai_error(tries: int = 100):
                                                                     kwargs.get("deployment_name", ""),
                                                                     kwargs.get("model", ""))
                         if refined_error_message:
-                            raise LLMError(refined_error_message)
+                            raise LLMError(message=refined_error_message)
                         else:
                             raise WrappedOpenAIError(e)
 
