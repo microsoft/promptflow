@@ -302,7 +302,7 @@ class TestHandleOpenAIError:
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    pytest.mark.skip("Skip this before we figure out how to make token provider work on github action")
+    @pytest.mark.skip("Skip this before we figure out how to make token provider work on github action")
     def test_authentication_fail_for_aoai_meid_token_connection(self, azure_open_ai_connection_meid):
         prompt_template = "please complete this sentence: world war II "
         raw_message = (
