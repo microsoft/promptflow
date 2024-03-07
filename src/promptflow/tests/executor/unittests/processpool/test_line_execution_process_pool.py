@@ -452,7 +452,7 @@ class TestGetAvailableMaxWorkerCount:
                 mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
                 with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
                     mock_logger.warning.return_value = None
-                    estimated_available_worker_count = get_available_max_worker_count()
+                    estimated_available_worker_count = get_available_max_worker_count(mock_logger)
                     assert estimated_available_worker_count == expected_max_worker_count
                     if actual_calculate_worker_count < 1:
                         mock_logger.warning.assert_called_with(
