@@ -207,6 +207,8 @@ class LineExecutionProcessPool:
         line_result = None
         while not self._line_timeout_expired(start_time, buffer_sec=20) and not line_result:
             line_result = self._result_dict.get(line_number, None)
+            # Check monitor status every 1 second
+            self._monitor_thread_pool_status()
             await asyncio.sleep(1)
         return line_result
 
