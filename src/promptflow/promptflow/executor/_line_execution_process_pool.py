@@ -261,7 +261,7 @@ class LineExecutionProcessPool:
             # Wait for up to 10s for thread termination, aiming to ensure that
             # the line results in the result dict are as complete as possible.
             start_time = datetime.utcnow()
-            while self._timeout_expired(start_time, self._THREAD_TERMINATED_TIMEOUT):
+            while not self._timeout_expired(start_time, self._THREAD_TERMINATED_TIMEOUT):
                 if self._all_tasks_ready():
                     break
             # Set the timeout flag to True and log the warning.
