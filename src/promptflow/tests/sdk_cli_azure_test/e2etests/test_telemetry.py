@@ -312,32 +312,36 @@ class TestTelemetry:
         assert first_sdk_calls[-1] is True
 
     def test_scrub_fields(self):
-        from promptflow import PFClient
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
 
-        pf = PFClient()
+        envelope = None
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000", custom_dimensions={}
+        )._log_to_envelope
 
-        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
 
-        def log_event(*args, **kwargs):
-            record = args[0]
-            assert record.custom_dimensions is not None
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger:
+            mock_logger.side_effect = log_event
+            logger = get_telemetry_logger()
+            logger.info("message", extra={"custom_dimensions": {"key": "test"}})
+            logger.handlers[0].flush()
+
             logger = get_telemetry_logger()
             handler = logger.handlers[0]
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            envelope = handler.log_record_to_envelope(record)
+
+            assert "message" == envelope.data.base_data.name
+            assert "key" in envelope.data.base_data.properties
+            assert "test" == envelope.data.base_data.properties["key"]
+
             # device name removed
             assert "ai.cloud.roleInstance" not in envelope.tags
             assert "ai.device.id" not in envelope.tags
             # role name should be scrubbed or kept in whitelist
             assert envelope.tags["ai.cloud.role"] in [os.path.basename(sys.argv[0]), "***"]
-
-        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
-            mock_logger.side_effect = log_event
-            # mock_error_logger.side_effect = log_event
-            try:
-                pf.runs.get("not_exist")
-            except RunNotFoundError:
-                pass
 
     def test_different_event_for_node_run(self):
         from promptflow import PFClient
