@@ -42,7 +42,6 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
-from promptflow._core.tracer import Tracer
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.response_creator import ResponseCreator
 from promptflow._sdk._serving.swagger import generate_swagger
@@ -112,3 +111,4 @@ from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._tracer import Tracer

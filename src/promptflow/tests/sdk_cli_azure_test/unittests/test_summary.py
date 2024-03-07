@@ -10,6 +10,8 @@ from promptflow.azure._storage.cosmosdb.summary import LineEvaluation, Summary, 
 
 
 class TestSummary:
+    FAKE_CREATED_BY = {"oid": "fake_oid"}
+
     @pytest.fixture(autouse=True)
     def setup_data(self):
         test_span = Span(
@@ -30,7 +32,7 @@ class TestSummary:
             run="test_run",
             experiment="test_experiment",
         )
-        self.summary = Summary(test_span)
+        self.summary = Summary(test_span, self.FAKE_CREATED_BY)
         app = Flask(__name__)
         with app.app_context():
             yield
@@ -113,6 +115,7 @@ class TestSummary:
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
             display_name=self.summary.span.name,
+            created_by=self.FAKE_CREATED_BY,
         )
         expected_patch_operations = [
             {"op": "add", "path": f"/evaluations/{self.summary.span.name}", "value": asdict(expected_item)}
@@ -160,6 +163,7 @@ class TestSummary:
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
             display_name=self.summary.span.name,
+            created_by=self.FAKE_CREATED_BY,
         )
 
         expected_patch_operations = [
@@ -205,6 +209,7 @@ class TestSummary:
             latency=60.0,
             name=self.summary.span.name,
             kind="promptflow.TraceType.Flow",
+            created_by=self.FAKE_CREATED_BY,
             cumulative_token_count={
                 "completion": 10,
                 "prompt": 5,
@@ -247,6 +252,7 @@ class TestSummary:
             status="OK",
             latency=60.0,
             name=self.summary.span.name,
+            created_by=self.FAKE_CREATED_BY,
             kind="promptflow.TraceType.Flow",
             cumulative_token_count={
                 "completion": 10,
