@@ -301,3 +301,14 @@ class TestHandleOpenAIError:
             )
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_authentication_fail_for_aoai_meid_token_connection(self, azure_open_ai_connection_meid):
+        prompt_template = "please complete this sentence: world war II "
+        raw_message = (
+            "please make sure you have proper role assignment on your azure openai resource"
+        )
+        error_codes = "UserError/OpenAIError/AuthenticationError"
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(azure_open_ai_connection_meid, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
+        assert raw_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")
