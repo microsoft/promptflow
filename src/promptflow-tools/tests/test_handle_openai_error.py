@@ -309,9 +309,8 @@ class TestHandleOpenAIError:
                                   response=httpx.get('https://www.example.com'), body=None)
         mock_create = mocker.patch("openai.resources.chat.Completions.create", side_effect=dummyEx)
 
-        with pytest.raises(LLMError) as exc_info:
+        with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
 
         assert mock_create.call_count == 1
-        assert exc_info.value.message == "LLM supports only text models. " \
-                                         "Please ensure you're using the correct tool for your model."
+        assert "extra fields not permitted" in exc_info.value.message

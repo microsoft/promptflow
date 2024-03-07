@@ -331,7 +331,7 @@ def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
         print(f"Exception occurs when refine extra fields not permitted error for llm: "
               f"{type(e).__name__}: {str(e)}", file=sys.stderr)
 
-    raise None
+    return None
 
 
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
