@@ -23,6 +23,7 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 
 from .recording_utilities import (
     RecordStorage,
+    check_pydantic_v2,
     delete_count_lock_file,
     inject_async_with_recording,
     inject_sync_with_recording,
@@ -38,6 +39,7 @@ RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
+EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 
 @pytest.fixture(scope="session")
@@ -152,9 +154,14 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
 
 
 def create_client_by_model(
-    model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None, environment_variables={}
+    model_name: str,
+    mocker: MockerFixture,
+    connections: dict = {},
+    extension_type=None,
+    environment_variables={},
+    model_root=MODEL_ROOT,
 ):
-    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
+    model_path = (Path(model_root) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     if connections:
         mocker.patch.dict(os.environ, connections)
@@ -202,6 +209,26 @@ def serving_client_with_environment_variables(mocker: MockerFixture):
         mocker,
         environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
     )
+
+
+@pytest.fixture
+def simple_eager_flow(mocker: MockerFixture):
+    return create_client_by_model("simple_with_dict_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def simple_eager_flow_primitive_output(mocker: MockerFixture):
+    return create_client_by_model("primitive_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def simple_eager_flow_dataclass_output(mocker: MockerFixture):
+    return create_client_by_model("flow_with_dataclass_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def non_json_serializable_output(mocker: MockerFixture):
+    return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
 
 
 # ==================== Recording injection ====================
@@ -257,6 +284,7 @@ def setup_recording_injection_if_enabled():
             patcher.start()
 
     if is_replay() or is_record():
+        check_pydantic_v2()
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
 

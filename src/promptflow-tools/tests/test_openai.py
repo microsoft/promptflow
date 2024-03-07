@@ -1,5 +1,6 @@
 import pytest
 import json
+from unittest.mock import patch
 
 from promptflow.tools.openai import chat, completion, OpenAI
 from promptflow.tools.exception import WrappedOpenAIError
@@ -33,6 +34,7 @@ class TestOpenAI:
             temperature=0,
             user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
+            seed=42
         )
         assert "trend 2" in result.lower()
         # verify if openai built-in retry mechanism is disabled
@@ -67,6 +69,22 @@ class TestOpenAI:
             chat_history=chat_history,
         )
         assert "Product X".lower() in result.lower()
+
+    def test_correctly_pass_params(self, openai_provider, example_prompt_template, chat_history):
+        seed_value = 123
+        with patch.object(openai_provider._client.chat.completions, 'create') as mock_create:
+            openai_provider.chat(
+                prompt=example_prompt_template,
+                deployment_name="gpt-35-turbo",
+                max_tokens="32",
+                temperature=0,
+                user_input="Fill in more details about trend 2.",
+                chat_history=chat_history,
+                seed=seed_value
+            )
+            mock_create.assert_called_once()
+            called_with_params = mock_create.call_args[1]
+            assert called_with_params['seed'] == seed_value
 
     def test_openai_prompt_with_function(
             self, open_ai_connection, example_prompt_template_with_function, functions):

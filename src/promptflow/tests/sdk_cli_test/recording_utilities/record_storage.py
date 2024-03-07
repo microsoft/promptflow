@@ -39,6 +39,16 @@ def is_recording_enabled() -> bool:
     return is_record() or is_replay() or is_live()
 
 
+def check_pydantic_v2():
+    try:
+        from importlib.metadata import version
+
+        if version("pydantic") < "2.0.0":
+            raise ImportError("pydantic version is less than 2.0.0. Recording cannot work properly.")
+    except ImportError:
+        raise ImportError("pydantic is not installed, this is required component for openai recording.")
+
+
 class RecordItemMissingException(PromptflowException):
     """Exception raised when record item missing."""
 

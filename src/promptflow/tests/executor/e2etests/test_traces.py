@@ -6,12 +6,13 @@ from types import GeneratorType
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
+from promptflow.tracing import trace
+from promptflow.tracing.contracts.trace import TraceType
 
 from ..conftest import setup_recording
 from ..process_utils import (

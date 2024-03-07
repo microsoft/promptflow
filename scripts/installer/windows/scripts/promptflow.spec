@@ -11,7 +11,8 @@ datas += collect_data_files('streamlit')
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit_quill')
 datas += collect_data_files('promptflow')
-hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs', 'win32timezone', 'promptflow']
+datas += copy_metadata('opentelemetry-sdk')
+hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs', 'win32timezone', 'promptflow', 'opentelemetry.exporter.otlp.proto.http']
 
 block_cipher = None
 
