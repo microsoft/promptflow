@@ -296,6 +296,8 @@ class ForkProcessManager(AbstractProcessManager):
                 self._flow_create_kwargs,
                 self._process_info,
                 self._process_target_func,
+                self._output_dir, 
+                self._serialize_multimedia,
             ),
         )
         process.start()
@@ -471,6 +473,8 @@ def create_spawned_fork_process_manager(
     flow_create_kwargs,
     process_info,
     process_target_func,
+    output_dir,
+    serialize_multimedia,
 ):
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
@@ -497,6 +501,8 @@ def create_spawned_fork_process_manager(
         output_queues,
         process_info,
         process_target_func,
+        output_dir,
+        serialize_multimedia,
     )
 
     # Initialize processes.
