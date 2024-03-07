@@ -289,13 +289,13 @@ class LineExecutionProcessPool:
     ):
         # Get the process info of the thread monitoring from the manager.
         index, process_id, process_name = self._processes_manager.get_process_info(index)
-        self._processes_manager.ensure_healthy()
 
         # The main loop of the thread, responsible for getting tasks from the task queue and
         # processing them through the input queue, while also monitoring for terminate signals.
         # Currently, it exits this loop only upon receiving a terminate signal (TERMINATE_SIGNAL).
         exit_loop = False
         while not exit_loop:
+            self._processes_manager.ensure_healthy()
             while True:
                 try:
                     # Get task from task_queue
