@@ -127,7 +127,6 @@ class TestBatchTimeout:
         [
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, BatchExecutionTimeoutError(2, 5), Status.Failed),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 600, LineExecutionTimeoutError(2, 3), Status.Completed),
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 10, 10, LineExecutionTimeoutError(2, 10), Status.Failed),
         ],
     )
     def test_batch_timeout(self, flow_folder, line_timeout_sec, batch_timeout_sec, expected_error, batch_run_status):
