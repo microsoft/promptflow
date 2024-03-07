@@ -256,21 +256,6 @@
             }
         },
         "/Flows/ux_inputs": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    }
-                },
-                "description": "Get the file content of file UX_INPUTS_JSON",
-                "operationId": "get_flow_ux_inputs",
-                "tags": [
-                    "Flows"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -292,6 +277,21 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Flows"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Get the file content of file UX_INPUTS_JSON",
+                "operationId": "get_flow_ux_inputs",
                 "tags": [
                     "Flows"
                 ]
@@ -711,6 +711,19 @@
                 ]
             }
         },
+        "/ui/chat": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "get_chat_ui",
+                "tags": [
+                    "ui"
+                ]
+            }
+        },
         "/ui/image": {
             "get": {
                 "responses": {
@@ -722,37 +735,6 @@
                     }
                 },
                 "description": "Get image url",
-                "operationId": "get_image_url",
-                "tags": [
-                    "ui"
-                ]
-            }
-        },
-        "/ui/image/{directory}/{filename}": {
-            "parameters": [
-                {
-                    "name": "directory",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                },
-                {
-                    "name": "filename",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                }
-            ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Visualize image",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "description": "Visualize image",
                 "operationId": "get_image_view",
                 "tags": [
                     "ui"
@@ -1217,14 +1199,7 @@
             "type": "object"
         },
         "FlowTest": {
-            "required": [
-                "flow"
-            ],
             "properties": {
-                "flow": {
-                    "type": "string",
-                    "description": "Path to flow directory to test."
-                },
                 "node": {
                     "type": "string",
                     "description": "If specified it will only test this node, else it will test the flow."
