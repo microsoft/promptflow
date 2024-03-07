@@ -361,8 +361,10 @@ def handle_openai_error(tries: int = 100):
                     # Handle llm use some unsupported model like vision error
                     # Related issue https://github.com/microsoft/promptflow/issues/1683
                     if isinstance(e, BadRequestError) and "extra fields not permitted" in str(e).lower():
-                        refined_error_message = refine_extra_fields_not_permitted_error(args[0].connection,
-                                                       kwargs.get("deployment_name", ""), kwargs.get("model", ""))
+                        refined_error_message = \
+                            refine_extra_fields_not_permitted_error(args[0].connection,
+                                                                    kwargs.get("deployment_name", ""),
+                                                                    kwargs.get("model", ""))
                         if refined_error_message:
                             raise LLMError(refined_error_message)
                         else:
