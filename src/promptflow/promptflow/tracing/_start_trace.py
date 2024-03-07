@@ -9,12 +9,12 @@ from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 
-from promptflow._core.openai_injector import inject_openai_api
-from promptflow.tracing._constants import (
+from ._constants import (
     PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON,
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
     ResourceAttributesFieldName,
 )
+from ._openai_injector import inject_openai_api
 
 
 def start_trace(
