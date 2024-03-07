@@ -373,10 +373,8 @@ class TestFlowTest:
         flow_path = Path(f"{EAGER_FLOWS_DIR}/stream_output/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={})
         assert result.run_info.status.value == "Completed", result.run_info.error
-        # directly return generator to align with the behavior of DAG flow test
-        assert isinstance(result.output, GeneratorType)
-        output = "".join(result.output)
-        assert output == "Hello world! "
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert result.output == "Hello world! "
 
     def test_stream_output_with_builtin_llm(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/builtin_llm/").absolute()
@@ -389,5 +387,5 @@ class TestFlowTest:
             },
         )
         assert result.run_info.status.value == "Completed", result.run_info.error
-        # directly return generator to align with the behavior of DAG flow test
-        assert isinstance(result.output, GeneratorType)
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert isinstance(result.output, str)

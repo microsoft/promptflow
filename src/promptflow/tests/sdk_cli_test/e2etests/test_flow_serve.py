@@ -499,3 +499,49 @@ def test_eager_flow_serve_non_json_serializable_output(non_json_serializable_out
             "Please verify your flow output and make sure the value serializable.",
         }
     }
+
+
+@pytest.mark.e2etest
+@pytest.mark.parametrize(
+    "accept, expected_status_code, expected_content_type",
+    [
+        ("text/event-stream", 200, "text/event-stream; charset=utf-8"),
+        ("text/html", 406, "application/json"),
+        ("application/json", 200, "application/json"),
+        ("*/*", 200, "application/json"),
+        ("text/event-stream, application/json", 200, "text/event-stream; charset=utf-8"),
+        ("application/json, */*", 200, "application/json"),
+        ("", 200, "application/json"),
+    ],
+)
+def test_eager_flow_stream_output(
+    stream_output,
+    accept,
+    expected_status_code,
+    expected_content_type,
+):
+    payload = {
+        "input_val": "val",
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": accept,
+    }
+    response = stream_output.post("/score", json=payload, headers=headers)
+    error_msg = f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    assert response.status_code == expected_status_code, error_msg
+    assert response.content_type == expected_content_type
+
+    if response.status_code == 406:
+        assert response.json["error"]["code"] == "UserError"
+        assert (
+            f"Media type {accept} in Accept header is not acceptable. Supported media type(s) -"
+            in response.json["error"]["message"]
+        )
+
+    if "text/event-stream" in response.content_type:
+        for line in response.data.decode().split("\n"):
+            print(line)
+    else:
+        result = response.json
+        print(result)
