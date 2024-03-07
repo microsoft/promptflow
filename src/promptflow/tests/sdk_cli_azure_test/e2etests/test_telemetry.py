@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import contextlib
 import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -99,19 +100,32 @@ class TestTelemetry:
         context.user_agent = context.user_agent.replace("prompt-flow-extension/1.0.0", "")
 
     def test_custom_event(self, pf):
-        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+        from promptflow._sdk._configuration import Configuration
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
 
-        def log_event(*args, **kwargs):
-            record = args[0]
-            assert record.custom_dimensions is not None
+        envelope = None
+        config = Configuration.get_instance()
+        custom_dimensions = {
+            "python_version": platform.python_version(),
+            "installation_id": config.get_or_set_installation_id(),
+        }
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",
+            custom_dimensions=custom_dimensions,
+        )._log_to_envelope
+
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
+
+        def check_evelope():
             logger = get_telemetry_logger()
             handler = logger.handlers[0]
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            envelope = handler.log_record_to_envelope(record)
-            custom_dimensions = pydash.get(envelope, "data.baseData.properties")
+            custom_dimensions = pydash.get(envelope, "data.base_data.properties")
             assert isinstance(custom_dimensions, dict)
             # Note: need privacy review if we add new fields.
-            if "start" in record.message:
+            if "start" in envelope.data.base_data.name:
                 assert custom_dimensions.keys() == {
                     "request_id",
                     "activity_name",
@@ -125,8 +139,13 @@ class TestTelemetry:
                     "installation_id",
                     "first_call",
                     "from_ci",
+                    "error_category",
+                    "error_type",
+                    "error_target",
+                    "error_message",
+                    "error_detail",
                 }
-            elif "complete" in record.message:
+            elif "complete" in envelope.data.base_data.name:
                 assert custom_dimensions.keys() == {
                     "request_id",
                     "activity_name",
@@ -142,18 +161,25 @@ class TestTelemetry:
                     "installation_id",
                     "first_call",
                     "from_ci",
+                    "error_category",
+                    "error_type",
+                    "error_target",
+                    "error_message",
+                    "error_detail",
                 }
             else:
-                raise ValueError("Invalid message: {}".format(record.message))
-            assert record.message.startswith("pfazure.runs.get")
+                raise ValueError("Invalid message: {}".format(envelope.data.base_data.name))
+            assert envelope.data.base_data.name.startswith("pfazure.runs.get")
 
-        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger:
             mock_logger.side_effect = log_event
-            # mock_error_logger.side_effect = log_event
             try:
                 pf.runs.get("not_exist")
             except RunNotFoundError:
                 pass
+            logger = get_telemetry_logger()
+            logger.handlers[0].flush()
+            check_evelope()
 
     def test_default_logging_behavior(self):
         assert is_telemetry_enabled() is True
@@ -323,12 +349,7 @@ class TestTelemetry:
             nonlocal envelope
             envelope = log_to_envelope(log_data)
 
-        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger:
-            mock_logger.side_effect = log_event
-            logger = get_telemetry_logger()
-            logger.info("message", extra={"custom_dimensions": {"key": "test"}})
-            logger.handlers[0].flush()
-
+        def check_evelope():
             logger = get_telemetry_logger()
             handler = logger.handlers[0]
             assert isinstance(handler, PromptFlowSDKLogHandler)
@@ -342,6 +363,13 @@ class TestTelemetry:
             assert "ai.device.id" not in envelope.tags
             # role name should be scrubbed or kept in whitelist
             assert envelope.tags["ai.cloud.role"] in [os.path.basename(sys.argv[0]), "***"]
+
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger:
+            mock_logger.side_effect = log_event
+            logger = get_telemetry_logger()
+            logger.info("message", extra={"custom_dimensions": {"key": "test"}})
+            logger.handlers[0].flush()
+            check_evelope()
 
     def test_different_event_for_node_run(self):
         from promptflow import PFClient
