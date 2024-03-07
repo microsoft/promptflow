@@ -184,13 +184,14 @@ def custom_create_spawned_fork_process_manager(*args, **kwargs):
 
 @pytest.mark.unittest
 class TestLineExecutionProcessPool:
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_line_execution_process_pool(self, flow_folder, dev_connections):
+    async def test_line_execution_process_pool(self, flow_folder, dev_connections):
         log_path = str(Path(mkdtemp()) / "test.log")
         log_context_initializer = LogContext(log_path).get_initializer()
         log_context = log_context_initializer()
@@ -207,19 +208,20 @@ class TestLineExecutionProcessPool:
                 run_id,
                 None,
             ) as pool:
-                result_list = pool.run(zip(range(nlines), bulk_inputs))
+                result_list = await pool.run(zip(range(nlines), bulk_inputs))
             assert len(result_list) == nlines
             for i, line_result in enumerate(result_list):
                 assert isinstance(line_result, LineResult)
                 assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_line_execution_not_completed(self, flow_folder, dev_connections):
+    async def test_line_execution_not_completed(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
@@ -231,8 +233,7 @@ class TestLineExecutionProcessPool:
             None,
             line_timeout_sec=1,
         ) as pool:
-            result_list = pool.run(zip(range(nlines), bulk_inputs))
-            result_list = sorted(result_list, key=lambda r: r.run_info.index)
+            result_list = await pool.run(zip(range(nlines), bulk_inputs))
         assert len(result_list) == nlines
         for i, line_result in enumerate(result_list):
             assert isinstance(line_result, LineResult)

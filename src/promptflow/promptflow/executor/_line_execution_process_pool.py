@@ -16,7 +16,7 @@ from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import psutil
 
@@ -205,7 +205,7 @@ class LineExecutionProcessPool:
             await asyncio.sleep(1)
         return line_result
 
-    async def run(self, batch_inputs):
+    async def run(self, batch_inputs) -> List[LineResult]:
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
             logger=bulk_logger,
@@ -436,6 +436,8 @@ class LineExecutionProcessPool:
                 # Related link:
                 # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult
                 async_task.get()
+        except PromptflowException:
+            raise
         except Exception as e:
             raise ThreadCrashError(
                 target=ErrorTarget.BATCH,
