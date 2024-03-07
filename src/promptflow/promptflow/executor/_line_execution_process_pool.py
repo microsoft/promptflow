@@ -223,8 +223,8 @@ class LineExecutionProcessPool:
         ):
             try:
                 self._batch_start_time = datetime.utcnow()
-                # After starting time, put the input in self._task_queue, because the
-                # monitor thread will use self._batch_start_time after get the input data.
+                # After starting time, put the input in self._task_queue, because the monitor thread will
+                # use self._batch_start_time to calculate the remain execution time after get the input data.
                 for index, inputs in batch_inputs:
                     self._task_queue.put(
                         (
