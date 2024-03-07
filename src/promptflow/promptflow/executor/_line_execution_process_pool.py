@@ -213,6 +213,7 @@ class LineExecutionProcessPool:
         return line_result
 
     async def run(self, batch_inputs) -> List[LineResult]:
+        """Submit all batch inputs to the process pool and return the line results."""
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
             logger=bulk_logger,
