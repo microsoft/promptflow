@@ -3,6 +3,7 @@ import importlib
 import inspect
 import uuid
 from pathlib import Path
+from types import GeneratorType
 from typing import Any, Callable, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -82,6 +83,7 @@ class ScriptExecutor(FlowExecutor):
                 output = asyncio.run(self._func(**inputs))
             else:
                 output = self._func(**inputs)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
             # so it must be a dict.
@@ -98,6 +100,11 @@ class ScriptExecutor(FlowExecutor):
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
+
+    def _stringify_generator_output(self, output):
+        if isinstance(output, GeneratorType):
+            output = "".join(str(chuck) for chuck in output)
+        return output
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         # no need to inject streaming here, user can directly pass the param to the function
