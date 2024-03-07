@@ -311,7 +311,7 @@ def list_deployment_connections(
 
 
 def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
-    tsg = "Please kindly avoid using vision model in LLM tool " \
+    tsg = "Please kindly avoid using vision model in LLM tool, " \
           "because vision model cannot work with some chat api parameters. " \
           "You can change to use tool 'Azure OpenAI GPT-4 Turbo with Vision' " \
           "or 'OpenAI GPT-4V' for vision model."
