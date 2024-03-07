@@ -185,7 +185,9 @@ def start_trace_with_devkit(
     ws_triad = _get_ws_triad_from_pf_config()
     # invoke prompt flow service
     pfs_port = _invoke_pf_svc()
+
     _inject_res_attrs_to_environ(pfs_port=pfs_port, session_id=session_id, exp=exp, ws_triad=ws_triad)
+    setup_exporter_to_pfs()
     # print tracing url(s)
     _print_tracing_url_from_local(pfs_port=pfs_port, session_id=session_id, exp=exp, run=run)
     _print_tracing_url_from_azure_portal(ws_triad=ws_triad, session_id=session_id, exp=exp, run=run)
