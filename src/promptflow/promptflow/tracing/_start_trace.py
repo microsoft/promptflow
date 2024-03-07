@@ -27,6 +27,7 @@ from promptflow._sdk._constants import PF_TRACE_CONTEXT, AzureMLWorkspaceTriad
 from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.tracing._constants import PF_TRACING_SKIP_LOCAL_SETUP
 
 _logger = get_cli_sdk_logger()
 
@@ -49,11 +50,6 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
         return
 
     from promptflow._sdk._constants import ContextAttributeKey
-    from promptflow._sdk._service.utils.utils import get_port_from_config
-
-    pfs_port = get_port_from_config(create_if_not_exists=True)
-    _start_pfs(pfs_port)
-    _logger.debug("Promptflow service is serving on port %s", pfs_port)
 
     # set strict limitation for session id currently
     if session is not None:
@@ -82,9 +78,48 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
     else:
         operation_context._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
 
-    # trace provider from pf config, for local to cloud scenario
+    if _skip_tracing_local_setup():
+        _logger.debug("Environment variable {PF_TRACING_SKIP_LOCAL_SETUP!r} is set, skip local setup for tracing.")
+        return
+
+    _tracing_local_setup(
+        session_id=session_id,
+        session_id_configured=session is not None,
+        experiment=experiment,
+        run=kwargs.get("run", None),
+    )
+
+
+def _skip_tracing_local_setup() -> bool:
+    return str(os.getenv(PF_TRACING_SKIP_LOCAL_SETUP, "false")).lower() == "true"
+
+
+def _tracing_local_setup(
+    session_id: str,
+    session_id_configured: bool,
+    experiment: typing.Optional[str],
+    run: typing.Optional[str],
+) -> None:
+    """Local setup for tracing.
+
+    The setup includes:
+      1. invoke local prompt flow service
+      2. prepare OTLP exporter required environment variables
+      3. check whether local to cloud feature is enabled
+      4. print trace UI url(s)
+    Executor calls `setup_exporter_from_environ` to setup exporter from environment variables.
+    """
+    from promptflow._sdk._service.utils.utils import get_port_from_config
+
+    # invoke local prompt flow service
+    pfs_port = get_port_from_config(create_if_not_exists=True)
+    _start_pfs(pfs_port)
+    _logger.debug("Promptflow service is serving on port %s", pfs_port)
+
+    # check whether local to cloud feature is enabled: trace provider from pf config
     workspace_triad = _get_workspace_triad_from_config()
 
+    # prepare OTLP exporter required environment variables
     # init the global tracer with endpoint
     _init_otel_trace_exporter(
         otlp_port=pfs_port,
@@ -93,11 +128,11 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
         workspace_triad=workspace_triad,
     )
 
-    # print url(s) for user to view the trace
+    # print trace UI url(s)
     print_url_kwargs = {
-        "session_configured": session is not None,
+        "session_configured": session_id_configured,
         "experiment": experiment,
-        "run": kwargs.get("run", None),
+        "run": run,
         "session_id": session_id,
     }
     _print_trace_url_for_local(pfs_port=pfs_port, **print_url_kwargs)

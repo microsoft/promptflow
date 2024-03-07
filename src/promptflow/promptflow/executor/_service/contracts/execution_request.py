@@ -37,7 +37,7 @@ class BaseExecutionRequest(BaseRequest):
 class FlowExecutionRequest(BaseExecutionRequest):
     """Request model for flow execution."""
 
-    inputs: Mapping[str, Any] = None
+    inputs: Optional[Mapping[str, Any]] = None
 
     def get_run_mode(self):
         return RunMode.Test
@@ -52,3 +52,9 @@ class NodeExecutionRequest(BaseExecutionRequest):
 
     def get_run_mode(self):
         return RunMode.SingleNode
+
+
+class CancelExecutionRequest(BaseRequest):
+    """Request model for canceling execution."""
+
+    run_id: str
