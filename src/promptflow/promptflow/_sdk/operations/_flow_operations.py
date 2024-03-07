@@ -206,7 +206,6 @@ class FlowOperations(TelemetryMixin):
                     run_id=run_id,
                 )
 
-
     @staticmethod
     def _is_chat_flow(flow):
         """

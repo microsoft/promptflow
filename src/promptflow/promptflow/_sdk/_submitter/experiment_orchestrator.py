@@ -800,11 +800,7 @@ class ExperimentHelper:
                     raise ExperimentValueError(
                         f"Node {node_name!r} inputs {value!r} related experiment run {name!r} not found."
                     )
-                if (isinstance(experiment_runs[name], dict) and "flow_runs" in experiment_runs[name] and
-                        len(experiment_runs[name]["flow_runs"]) > 0):
-                    run[name] = experiment_runs[name]["flow_runs"][0].get("output", {})
-                else:
-                    run[name] = experiment_runs[name]
+                run[name] = experiment_runs[name]
         return data, run
 
     @staticmethod

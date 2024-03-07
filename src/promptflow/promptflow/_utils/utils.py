@@ -374,7 +374,4 @@ def encrypt_flow_path(flow_path):
 
 
 def decrypt_flow_path(encrypted_flow_path):
-    padding = len(encrypted_flow_path) % 4
-    if padding > 0:
-        encrypted_flow_path += '=' * (4 - padding)
     return base64.urlsafe_b64decode(encrypted_flow_path).decode()
