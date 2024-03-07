@@ -13,7 +13,7 @@ from promptflow._core.openai_injector import inject_openai_api
 from promptflow.tracing._constants import (
     PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON,
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
-    ResourceAttributesKey,
+    ResourceAttributesFieldName,
 )
 
 
@@ -33,9 +33,9 @@ def start_trace(
     :type session: typing.Optional[str]
     """
     # prepare resource.attributes and set tracer provider
-    res_attrs = {ResourceAttributesKey.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME}
+    res_attrs = {ResourceAttributesFieldName.SERVICE_NAME: RESOURCE_ATTRIBUTES_SERVICE_NAME}
     if session is not None:
-        res_attrs[ResourceAttributesKey.SESSION_ID] = session
+        res_attrs[ResourceAttributesFieldName.SESSION_ID] = session
     if isinstance(resource_attributes, dict):
         for attr_key, attr_value in resource_attributes.items():
             res_attrs[attr_key] = attr_value

@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 
-class ResourceAttributesKey:
+class ResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
     SESSION_ID = "session.id"
 

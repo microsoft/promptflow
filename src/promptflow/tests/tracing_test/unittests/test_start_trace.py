@@ -14,7 +14,7 @@ from promptflow.tracing import start_trace
 from promptflow.tracing._constants import (
     PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON,
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
-    ResourceAttributesKey,
+    ResourceAttributesFieldName,
 )
 
 
@@ -25,8 +25,8 @@ class TestStartTrace:
         tracer_provider = trace.get_tracer_provider()
         assert isinstance(tracer_provider, TracerProvider)
         attrs = tracer_provider.resource.attributes
-        assert attrs[ResourceAttributesKey.SERVICE_NAME] == RESOURCE_ATTRIBUTES_SERVICE_NAME
-        assert ResourceAttributesKey.SESSION_ID not in attrs
+        assert attrs[ResourceAttributesFieldName.SERVICE_NAME] == RESOURCE_ATTRIBUTES_SERVICE_NAME
+        assert ResourceAttributesFieldName.SESSION_ID not in attrs
 
     def test_tracer_provider_overwritten(self) -> None:
         trace.set_tracer_provider(TracerProvider())
@@ -41,7 +41,7 @@ class TestStartTrace:
         start_trace(resource_attributes=res_attrs, session=session_id)
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         attrs = tracer_provider.resource.attributes
-        assert attrs[ResourceAttributesKey.SESSION_ID] == session_id
+        assert attrs[ResourceAttributesFieldName.SESSION_ID] == session_id
         assert attrs["attr1"] == "value1"
         assert attrs["attr2"] == "value2"
 
