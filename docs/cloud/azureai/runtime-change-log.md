@@ -18,7 +18,7 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20240228.v3
 
 #### New features
-- Async flow test and single node run support.
+- Support async flow test for long running jobs.
 
 #### Bugs fixed
 - Fix bug when collecting package tools.
