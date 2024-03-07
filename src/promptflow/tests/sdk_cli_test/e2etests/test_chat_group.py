@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._sdk.entities._chat_group._chat_agent import ChatAgent
 from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -15,8 +15,8 @@ FLOWS_DIR = TEST_ROOT / "test_configs/flows"
 @pytest.mark.e2etest
 class TestChatGroup:
     def test_basic_invoke(self):
-        joke_master = ChatAgent(flow=FLOWS_DIR / "chat_group_joke_master")
-        criticizer = ChatAgent(flow=FLOWS_DIR / "chat_group_criticizer")
+        joke_master = ChatRole(flow=FLOWS_DIR / "chat_group_joke_master")
+        criticizer = ChatRole(flow=FLOWS_DIR / "chat_group_criticizer")
 
         chat_group = ChatGroup(
             agents=[joke_master, criticizer],

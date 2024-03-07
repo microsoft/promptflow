@@ -211,7 +211,7 @@ class ChatGroupError(SDKError):
     pass
 
 
-class ChatAgentError(SDKError):
+class ChatRoleError(SDKError):
     """Exception raised if chat agent operation failed."""
 
     pass

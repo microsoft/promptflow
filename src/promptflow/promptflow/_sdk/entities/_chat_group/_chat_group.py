@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Union
 from promptflow._sdk._constants import CHAT_GROUP_NAME, ChatGroupSpeakOrder
 from promptflow._sdk._errors import ChatGroupError
 from promptflow._sdk._utils import parse_chat_group_data_binding
-from promptflow._sdk.entities._chat_group._chat_agent import ChatAgent
 from promptflow._sdk.entities._chat_group._chat_group_io import ChatGroupInputs, ChatGroupOutputs
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 
-# from promptflow._sdk.entities._chat_group._chat_group_io import ChatAgentOutputs
+# from promptflow._sdk.entities._chat_group._chat_group_io import ChatRoleOutputs
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
@@ -22,8 +22,8 @@ class ChatGroup:
 
     def __init__(
         self,
-        agents: List[ChatAgent] = None,
-        entry_agent: ChatAgent = None,
+        roles: List[ChatRole] = None,
+        entry_role: ChatRole = None,
         speak_order: ChatGroupSpeakOrder = ChatGroupSpeakOrder.SEQUENTIAL,
         max_turns: int = None,
         max_tokens: int = None,
@@ -31,48 +31,44 @@ class ChatGroup:
         inputs: Dict[str, Dict[str, Any]] = None,
         outputs: Dict[str, Dict[str, Any]] = None,
     ):
-        self._agents = agents
-        self._entry_agent = entry_agent
+        self._roles = roles
+        self._entry_role = entry_role
         self._speak_order = speak_order
-        self._agents_dict, self._speak_order_list = self._prepare_agents(agents, entry_agent, speak_order)
+        self._roles_dict, self._speak_order_list = self._prepare_roles(roles, entry_role, speak_order)
         self._max_turns, self._max_tokens, self._max_time = self._validate_int_parameters(
             max_turns, max_tokens, max_time
         )
         self.inputs, self.outputs = self._prepare_io(inputs, outputs)
         self.chat_history = ChatGroupHistory(self)
 
-    def _prepare_agents(self, agents: List[ChatAgent], entry_agent: ChatAgent, speak_order: ChatGroupSpeakOrder):
-        """Prepare agents"""
-        logger.info("Preparing agents in chat group.")
-        # check agents is a non-empty list of ChatAgent
-        if (
-            not isinstance(agents, list)
-            or len(agents) == 0
-            or not all(isinstance(agent, ChatAgent) for agent in agents)
-        ):
-            raise ChatGroupError(f"Agents should be a non-empty list of ChatAgent. Got {agents!r} instead.")
+    def _prepare_roles(self, roles: List[ChatRole], entry_role: ChatRole, speak_order: ChatGroupSpeakOrder):
+        """Prepare roles"""
+        logger.info("Preparing roles in chat group.")
+        # check roles is a non-empty list of ChatRole
+        if not isinstance(roles, list) or len(roles) == 0 or not all(isinstance(role, ChatRole) for role in roles):
+            raise ChatGroupError(f"Agents should be a non-empty list of ChatRole. Got {roles!r} instead.")
 
-        # check entry_agent is in agents
-        if entry_agent is not None and entry_agent not in agents:
-            raise ChatGroupError(f"Entry agent {entry_agent.name} is not in agents list {agents}.")
+        # check entry_role is in roles
+        if entry_role is not None and entry_role not in roles:
+            raise ChatGroupError(f"Entry role {entry_role.name} is not in roles list {roles}.")
 
-        speak_order_list = self._calculate_speak_order(agents, entry_agent, speak_order)
-        agents_dict = {agent.name: agent for agent in agents}
-        return agents_dict, cycle(speak_order_list)
+        speak_order_list = self._calculate_speak_order(roles, entry_role, speak_order)
+        roles_dict = {role.name: role for role in roles}
+        return roles_dict, cycle(speak_order_list)
 
     def _calculate_speak_order(
-        self, agents: List[ChatAgent], entry_agent: ChatAgent, speak_order: ChatGroupSpeakOrder
+        self, roles: List[ChatRole], entry_role: ChatRole, speak_order: ChatGroupSpeakOrder
     ) -> List[str]:
         """Calculate speak order"""
-        logger.info(f"Calculating agents speak order for chat group with specified speak order {speak_order.value!r}.")
+        logger.info(f"Calculating roles speak order for chat group with specified speak order {speak_order.value!r}.")
         if speak_order == ChatGroupSpeakOrder.SEQUENTIAL:
-            if entry_agent:
+            if entry_role:
                 logger.warn(
-                    f"Entry agent {entry_agent.name!r} is ignored when speak order is sequential. "
-                    f"The first agent in the list will be the entry agent: {agents[0].name!r}."
+                    f"Entry role {entry_role.name!r} is ignored when speak order is sequential. "
+                    f"The first role in the list will be the entry role: {roles[0].name!r}."
                 )
-            speak_order_list = [agent.name for agent in agents]
-            logger.info(f"Calculated agent speak order is {speak_order_list!r}.")
+            speak_order_list = [role.name for role in roles]
+            logger.info(f"Calculated role speak order is {speak_order_list!r}.")
             return speak_order_list
         else:
             raise NotImplementedError(f"Speak order {speak_order.value} is not supported yet.")
@@ -89,15 +85,15 @@ class ChatGroup:
         for key in inputs:
             inputs[key]["referenced_name"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
             # TODO: Remove "initialize for" and implement a more elegant way to handle it
-            # initialize_for is a temporary solution to provide the first reference for agent's input. In the scenario
-            # that a agent's input is bound with another agent's output but that agent has not run yet and we hope
+            # initialize_for is a temporary solution to provide the first reference for role's input. In the scenario
+            # that a role's input is bound with another role's output but that role has not run yet and we hope
             # the first round input can be provided by chat group inputs, we can use "initialize_for" to do the trick.
             if "initialize_for" in inputs[key]:
                 value = inputs[key]["initialize_for"]
                 if isinstance(value, str):
-                    agent_name, io_type, io_name = parse_chat_group_data_binding(value)
-                    agent_input = getattr(self._agents_dict[agent_name], io_type)[io_name]
-                    agent_input["first_reference"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
+                    role_name, io_type, io_name = parse_chat_group_data_binding(value)
+                    role_input = getattr(self._roles_dict[role_name], io_type)[io_name]
+                    role_input["first_reference"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
                 elif isinstance(value, dict):
                     value["first_reference"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
         logger.debug(f"Chat group inputs: {inputs!r}")
@@ -152,14 +148,14 @@ class ChatGroup:
         while True:
             chat_round += 1
 
-            # select current agent and run
-            current_agent = self._select_agent()
-            logger.info(f"[Round {chat_round}] Chat agent {current_agent.name!r} is speaking.")
-            agent_input_values = self._get_agent_input_values(current_agent)
-            result = current_agent.invoke(**agent_input_values)
+            # select current role and run
+            current_role = self._select_role()
+            logger.info(f"[Round {chat_round}] Chat role {current_role.name!r} is speaking.")
+            role_input_values = self._get_role_input_values(current_role)
+            result = current_role.invoke(**role_input_values)
 
-            # post process after agent's invocation
-            self._update_information_with_result(current_agent, result)
+            # post process after role's invocation
+            self._update_information_with_result(current_role, result)
             # TODO: Get used token from result and update chat_token
 
             # check if the chat group should continue
@@ -207,50 +203,50 @@ class ChatGroup:
                 f"Ignoring inputs {ignored_keys!r} for the chat group, " f"expected one of {list(self.inputs.keys())}."
             )
 
-    def _select_agent(self) -> ChatAgent:
-        """Select next agent"""
+    def _select_role(self) -> ChatRole:
+        """Select next role"""
         if self._speak_order == ChatGroupSpeakOrder.LLM:
-            return self._predict_next_agent_with_llm()
-        next_agent_name = next(self._speak_order_list)
-        return self._agents_dict[next_agent_name]
+            return self._predict_next_role_with_llm()
+        next_role_name = next(self._speak_order_list)
+        return self._roles_dict[next_role_name]
 
-    def _get_agent_input_values(self, agent: ChatAgent) -> Dict[str, Any]:
-        """Get agent input values"""
+    def _get_role_input_values(self, role: ChatRole) -> Dict[str, Any]:
+        """Get role input values"""
         input_values = {}
-        for key in agent.inputs:
-            agent_input = agent.inputs[key]
+        for key in role.inputs:
+            role_input = role.inputs[key]
             value = None
-            # first reference works as the initial value for agent's input, so it should be removed after the first use
-            if "first_reference" in agent_input:
-                reference = agent_input["first_reference"]
+            # first reference works as the initial value for role's input, so it should be removed after the first use
+            if "first_reference" in role_input:
+                reference = role_input["first_reference"]
                 owner, io_type, io_name = parse_chat_group_data_binding(reference)
-                owner = self if owner == CHAT_GROUP_NAME else self._agents_dict[owner]
+                owner = self if owner == CHAT_GROUP_NAME else self._roles_dict[owner]
                 value = getattr(owner, io_type)[io_name]["value"]
-                agent_input.pop("first_reference", None)
-            elif "reference" in agent_input:
-                reference = agent_input["reference"]
+                role_input.pop("first_reference", None)
+            elif "reference" in role_input:
+                reference = role_input["reference"]
                 owner, io_type, io_name = parse_chat_group_data_binding(reference)
-                owner = self if owner == CHAT_GROUP_NAME else self._agents_dict[owner]
+                owner = self if owner == CHAT_GROUP_NAME else self._roles_dict[owner]
                 value = getattr(owner, io_type)[io_name]["value"]
-            elif "value" in agent_input:
-                value = agent_input["value"]
-            elif "default" in agent_input:
-                value = agent_input["default"]
+            elif "value" in role_input:
+                value = role_input["value"]
+            elif "default" in role_input:
+                value = role_input["default"]
             input_values[key] = value
-        logger.debug(f"Input values for agent {agent.name!r}: {input_values!r}")
+        logger.debug(f"Input values for role {role.name!r}: {input_values!r}")
         return input_values
 
-    def _update_information_with_result(self, agent: ChatAgent, result: dict) -> None:
+    def _update_information_with_result(self, role: ChatRole, result: dict) -> None:
         """Update information with result"""
-        logger.debug(f"Updating chat group information with result from agent {agent.name!r}: {result!r}.")
+        logger.debug(f"Updating chat group information with result from role {role.name!r}: {result!r}.")
 
         # 1. update group chat history
-        self.chat_history._update_history(agent, result)
+        self.chat_history._update_history(role, result)
 
-        # 2. Update the agent output value
+        # 2. Update the role output value
         for key, value in result.items():
-            if key in agent.outputs:
-                agent.outputs[key]["value"] = value
+            if key in role.outputs:
+                role.outputs[key]["value"] = value
 
     def _check_continue_condition(self, chat_round: int, chat_token: int, chat_start_time: float) -> bool:
         continue_chat = True
@@ -278,8 +274,8 @@ class ChatGroup:
             )
         return continue_chat
 
-    def _predict_next_agent_with_llm(self) -> ChatAgent:
-        """Predict next agent for non-deterministic speak order."""
+    def _predict_next_role_with_llm(self) -> ChatRole:
+        """Predict next role for non-deterministic speak order."""
         raise NotImplementedError(f"Speak order {self._speak_order} is not supported yet.")
 
 
@@ -290,15 +286,15 @@ class ChatGroupHistory:
         self._history = []
         self._chat_group = chat_group
 
-    def _update_history(self, agent: Union[ChatAgent, ChatGroup], result: Any):
+    def _update_history(self, role: Union[ChatRole, ChatGroup], result: Any):
         """Update chat history"""
-        is_agent = isinstance(agent, ChatAgent)
-        speaker = agent.name if is_agent else CHAT_GROUP_NAME
+        is_role = isinstance(role, ChatRole)
+        speaker = role.name if is_role else CHAT_GROUP_NAME
         message = None
-        # Normally we assume every agent only has 1 output so we take the first one.
+        # Normally we assume every role only has 1 output so we take the first one.
         # For the initial chat group level input, we put all inputs into the history.
         if isinstance(result, dict) and len(result) > 0:
-            message = list(result.values())[0] if is_agent else result
+            message = list(result.values())[0] if is_role else result
         elif isinstance(result, str):
             message = result
         self._history.append((speaker, message))

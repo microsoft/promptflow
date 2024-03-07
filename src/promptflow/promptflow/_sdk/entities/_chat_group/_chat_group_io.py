@@ -21,12 +21,12 @@ class AttrDict(UserDict):
         return res
 
 
-class ChatAgentInputs(AttrDict):
-    """Chat agent inputs"""
+class ChatRoleInputs(AttrDict):
+    """Chat role inputs"""
 
 
-class ChatAgentOutputs(AttrDict):
-    """Chat agent outputs"""
+class ChatRoleOutputs(AttrDict):
+    """Chat role outputs"""
 
 
 class ChatGroupInputs(AttrDict):
