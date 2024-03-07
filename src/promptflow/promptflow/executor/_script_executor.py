@@ -17,7 +17,7 @@ from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
-from promptflow.tracing.tracer import Tracer
+from promptflow.tracing._tracer import Tracer
 
 from .flow_executor import FlowExecutor
 

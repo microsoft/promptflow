@@ -5,8 +5,8 @@ import pytest
 from promptflow import tool
 from promptflow._core.tool import InputSetting, ToolType
 from promptflow.exceptions import UserErrorException
+from promptflow.tracing._tracer import Tracer
 from promptflow.tracing.contracts.trace import TraceType
-from promptflow.tracing.tracer import Tracer
 
 
 @tool

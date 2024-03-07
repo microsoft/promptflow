@@ -26,8 +26,8 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
+from promptflow.tracing._tracer import Tracer
 from promptflow.tracing.contracts.trace import TraceType
-from promptflow.tracing.tracer import Tracer
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 

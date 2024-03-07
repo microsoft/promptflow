@@ -111,4 +111,4 @@ from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.tracing.tracer import Tracer
+from promptflow.tracing._tracer import Tracer

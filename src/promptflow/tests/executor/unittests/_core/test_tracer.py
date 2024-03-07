@@ -7,8 +7,8 @@ from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tracing import trace
 from promptflow.tracing._trace import _traced
+from promptflow.tracing._tracer import Tracer, _create_trace_from_function_call
 from promptflow.tracing.contracts.trace import Trace, TraceType
-from promptflow.tracing.tracer import Tracer, _create_trace_from_function_call
 
 from ...utils import prepare_memory_exporter
 from ...process_utils import execute_function_in_subprocess

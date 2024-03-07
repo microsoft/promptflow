@@ -23,9 +23,8 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 
 from .._utils.utils import default_json_encoder
+from ._tracer import _create_trace_from_function_call, get_node_name_from_context, Tracer
 from .contracts.trace import TraceType
-from .tracer import _create_trace_from_function_call, get_node_name_from_context, Tracer
-
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
