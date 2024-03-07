@@ -27,7 +27,7 @@ from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
-    FailedToParseAssistantTool,
+    FailedToGenerateToolDefinition,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     NodeInputValidationError,
@@ -217,7 +217,15 @@ class ToolResolver:
                 "function": func_definition,
             }
         except Exception as e:
-            raise FailedToParseAssistantTool(func_name=func.__name__) from e
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            raise FailedToGenerateToolDefinition(
+                message_format=(
+                    "Failed to generate openai tool definition for function '{func_name}'. "
+                    "Error: {error_type_and_message}."
+                ),
+                func_name=func.__name__,
+                error_type_and_message=error_type_and_message,
+            ) from e
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
