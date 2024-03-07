@@ -928,25 +928,6 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     dump_yaml(yaml_data, f)
 
 
-def get_flow_detail(flow_result=None, node_result=None):
-    """Dump flow result for extension.
-
-    :param flow_result: The flow result returned by exec_line.
-    :param node_result: The node result when test node returned by load_and_exec_node.
-    """
-    if flow_result:
-        flow_serialize_result = {
-            "flow_runs": [serialize(flow_result.run_info)],
-            "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
-        }
-    else:
-        flow_serialize_result = {
-            "flow_runs": [],
-            "node_runs": [serialize(node_result)],
-        }
-    return flow_serialize_result
-
-
 def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
     """Dump flow result for extension.
 

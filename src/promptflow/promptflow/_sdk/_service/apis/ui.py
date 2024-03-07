@@ -12,7 +12,7 @@ from pathlib import Path
 from werkzeug.utils import safe_join
 
 
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._utils.utils import decrypt_flow_path
 
@@ -27,10 +27,10 @@ media_save_model = api.model(
 )
 
 flow_path_parser = reqparse.RequestParser()
-flow_path_parser.add_argument('flow', type=str, required=True, help='Path to flow directory.')
+flow_path_parser.add_argument('flow', type=str, required=True, location='args', help='Path to flow directory.')
 
 image_path_parser = reqparse.RequestParser()
-image_path_parser.add_argument('image_path', type=str, required=True, help='Path of image.')
+image_path_parser.add_argument('image_path', type=str, required=True, location='args', help='Path of image.')
 
 
 @api.route("/traces")
@@ -57,7 +57,7 @@ def save_image(directory, base64_data, extension):
     file_path = Path(directory) / f"{filename}.{extension}"
     with open(file_path, "wb") as f:
         f.write(image_data)
-    return str(file_path)
+    return file_path
 
 
 @api.route('/media_save')
@@ -71,12 +71,13 @@ class MediaSave(Resource):
         flow = decrypt_flow_path(flow)
         base64_data = api.payload["base64_data"]
         extension = api.payload["extension"]
-        safe_path = safe_join(flow, HOME_PROMPT_FLOW_DIR)
+        safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
-            print('Dangerous path detected!')
+            message = f'The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!'
+            make_response(message, 403)
         file_path = save_image(safe_path, base64_data, extension)
-
-        return file_path
+        path = Path(file_path).relative_to(flow)
+        return str(path)
 
 
 @api.route('/image')
@@ -92,10 +93,11 @@ class ImageView(Resource):
         image_path = args.image_path
         safe_path = safe_join(flow, image_path)
         if safe_path is None:
-            print('Dangerous path detected!')
-
+            message = f'The untrusted path {image_path} relative to the base directory {flow} detected!'
+            make_response(message, 403)
+        safe_path = Path(safe_path).resolve().as_posix()
         if not os.path.exists(safe_path):
             return make_response("The image doesn't exist", 404)
 
-        directory, filename = os.path.split(image_path)
+        directory, filename = os.path.split(safe_path)
         return send_from_directory(directory, filename)

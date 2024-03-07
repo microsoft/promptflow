@@ -10,11 +10,13 @@ from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._sdk._constants import UX_INPUTS_JSON, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import json_load, read_write_by_user
+from promptflow._sdk._utils import json_load, read_write_by_user, parse_variant
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.utils import decrypt_flow_path
 from pathlib import Path
+import shutil
+import uuid
 
 api = Namespace("Flows", description="Flows Management")
 
@@ -45,7 +47,7 @@ flow_ux_input_model = api.model(
 )
 
 flow_path_parser = reqparse.RequestParser()
-flow_path_parser.add_argument('flow', type=str, required=True, help='Path to flow directory.')
+flow_path_parser.add_argument('flow', type=str, required=True, location='args', help='Path to flow directory.')
 
 
 @api.route("/test")
@@ -63,31 +65,68 @@ class FlowTest(Resource):
         node = api.payload.get("node", None)
         experiment = api.payload.get("experiment", None)
         output_path = api.payload.get("output_path", None)
-        if Configuration.get_instance().is_internal_features_enabled() and experiment:
-            result = get_client_from_request().flows.test(
-                flow=flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=variant,
-                node=node,
-                experiment=experiment,
-                output_path=output_path,
-                ux_call=True,
-            )
-        else:
-            result = get_client_from_request().flows.test(
-                flow=flow,
-                inputs=inputs,
-                environment_variables=environment_variables,
-                variant=variant,
-                node=node,
-                allow_generator_output=False,
-                stream_output=False,
-                dump_test_result=True,
-                output_path=output_path,
-                ux_call=True,
-            )
-        return result
+        remove_dir = False
+
+        if output_path is None:
+            filename = str(uuid.uuid4())
+            if os.path.isdir(flow):
+                output_path = Path(flow) / PROMPT_FLOW_DIR_NAME / filename
+            else:
+                output_path = Path(os.path.dirname(flow)) / PROMPT_FLOW_DIR_NAME / filename
+            os.makedirs(output_path, exist_ok=True)
+            remove_dir = True
+        output_path = Path(output_path).resolve()
+        try:
+            if Configuration.get_instance().is_internal_features_enabled() and experiment:
+                result = get_client_from_request().flows.test(
+                    flow=flow,
+                    inputs=inputs,
+                    environment_variables=environment_variables,
+                    variant=variant,
+                    node=node,
+                    experiment=experiment,
+                    output_path=output_path,
+                    ux_call=True,
+                )
+                return_output = {}
+                for key in result:
+                    detail_path = output_path / key / "flow.detail.json"
+                    log_path = output_path / key / "flow.log"
+                    detail_content = json_load(detail_path)
+                    with open(log_path, 'r') as file:
+                        log_content = file.read()
+                    return_output[key] = {"detail": detail_content, "log": log_content}
+            else:
+                get_client_from_request().flows.test(
+                    flow=flow,
+                    inputs=inputs,
+                    environment_variables=environment_variables,
+                    variant=variant,
+                    node=node,
+                    allow_generator_output=False,
+                    stream_output=False,
+                    dump_test_result=True,
+                    output_path=output_path,
+                    ux_call=True,
+                )
+                if node:
+                    detail_path = output_path / f"flow-{node}.node.detail.json"
+                    log_path = output_path / f"{node}.node.log"
+                else:
+                    if variant:
+                        tuning_node, node_variant = parse_variant(variant)
+                        detail_path = output_path / f"flow-{tuning_node}-{node_variant}.detail.json"
+                    else:
+                        detail_path = output_path / "flow.detail.json"
+                    log_path = output_path / "flow.log"
+                detail_content = json_load(detail_path)
+                with open(log_path, 'r') as file:
+                    log_content = file.read()
+                return_output = {"flow": {"detail": detail_content, "log": log_content}}
+        finally:
+            if remove_dir:
+                shutil.rmtree(output_path)
+        return return_output
 
 
 @api.route("/get")

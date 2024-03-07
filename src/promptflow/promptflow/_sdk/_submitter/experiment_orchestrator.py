@@ -13,7 +13,6 @@ import tempfile
 import uuid
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
-from collections import namedtuple
 from dataclasses import is_dataclass
 from datetime import datetime
 from pathlib import Path
@@ -66,7 +65,6 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 
 overwrite_null_std_logger()
 logger = get_cli_sdk_logger()
-Result = namedtuple('Result', ['detail', 'log'])
 
 
 class ExperimentOrchestrator:
@@ -96,7 +94,6 @@ class ExperimentOrchestrator:
         :type environment_variables: dict
         """
         flow_path = Path(flow).resolve().absolute()
-        ux_call = kwargs.pop("ux_call", None)
         logger.info(f"Testing flow {flow_path.as_posix()} in experiment {template._base_path.absolute().as_posix()}.")
         inputs, environment_variables = inputs or {}, environment_variables or {}
         # Find start nodes, must be flow nodes
@@ -120,33 +117,25 @@ class ExperimentOrchestrator:
             session=kwargs.get("session"),
         )
 
-        experiment_log = ""
         for node in nodes_to_test:
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
                 # Start nodes inputs should be updated, as original value could be a constant without data reference.
                 # Filter unknown key out to avoid warning (case: user input with eval key to override data).
                 node.inputs = {**node.inputs, **{k: v for k, v in inputs.items() if k in node.inputs}}
-            node_result = self._test_node(node, test_context, ux_call)
-            if ux_call:
-                test_context.add_node_result(node.name, node_result["flow_detail"])
-                experiment_log += node_result["flow_log"]
-            else:
-                test_context.add_node_result(node.name, node_result)
+            node_result = self._test_node(node, test_context)
+            test_context.add_node_result(node.name, node_result)
         logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
-        if ux_call:
-            return {"flow_detail": test_context.node_results, "flow_log": experiment_log}
-        else:
-            return test_context.node_results
+        return test_context.node_results
 
-    def _test_node(self, node, test_context, ux_call=None) -> Run:
+    def _test_node(self, node, test_context) -> Run:
         if node.type == ExperimentNodeType.FLOW:
-            return self._test_flow_node(node, test_context, ux_call)
+            return self._test_flow_node(node, test_context)
         elif node.type == ExperimentNodeType.COMMAND:
             return self._test_command_node(node, test_context)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
-    def _test_flow_node(self, node, test_context, ux_call=None):
+    def _test_flow_node(self, node, test_context):
         # Resolve experiment related inputs
         inputs_mapping = ExperimentHelper.resolve_column_mapping(node.name, node.inputs, test_context.test_inputs)
         data, runs = ExperimentHelper.get_referenced_data_and_run(
@@ -170,7 +159,6 @@ class ExperimentOrchestrator:
             stream_output=False,
             run_id=test_context.node_name_to_id[node.name],
             session=test_context.session,
-            ux_call=ux_call,
         )
 
     def _test_command_node(self, *args, **kwargs):

@@ -9,7 +9,7 @@ from unittest import mock
 
 import werkzeug
 from flask.testing import FlaskClient
-
+from promptflow._utils.utils import encrypt_flow_path
 
 @contextlib.contextmanager
 def check_activity_end_telemetry(
@@ -238,33 +238,40 @@ class PFSOperations:
         return response
 
     def get_flow(self, flow_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
         response = self._client.get(f"{self.Flow_URL_PREFIX}/get", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
 
-    def test_flow(self, request_body, status_code=None):
-        response = self._client.post(f"{self.Flow_URL_PREFIX}/test", json=request_body)
+    def test_flow(self, flow_path, request_body, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/test", json=request_body, query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
 
     def get_flow_ux_inputs(self, flow_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
         response = self._client.get(f"{self.Flow_URL_PREFIX}/ux_inputs", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
 
-    def save_flow_image(self, request_body, status_code=None):
-        response = self._client.post(f"{self.UI_URL_PREFIX}/media_save", json=request_body)
+    def save_flow_image(self, flow_path: str, request_body, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.post(f"{self.UI_URL_PREFIX}/media_save", json=request_body, query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
 
-    def show_image(self, image_path: str, status_code=None):
-        query_string = {"image_path": image_path}
+    def show_image(self, flow_path: str, image_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path, "image_path": image_path}
         response = self._client.get(f"{self.UI_URL_PREFIX}/image", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text

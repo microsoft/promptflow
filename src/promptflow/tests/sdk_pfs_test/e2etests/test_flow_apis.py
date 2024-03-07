@@ -4,7 +4,6 @@
 
 import base64
 import os
-import re
 from io import BytesIO
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from ..utils import PFSOperations, check_activity_end_telemetry
 
 FLOW_PATH = "./tests/test_configs/flows/print_env_var"
 IMAGE_PATH = "./tests/test_configs/datas/logo.jpg"
+FLOW_WITH_IMAGE_PATH = "./tests/test_configs/flows/chat_flow_with_image"
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -39,7 +39,8 @@ class TestFlowAPIs:
     def test_flow_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(activity_name="pf.flows.test"):
             response = pfs_op.test_flow(
-                request_body={"flow": Path(FLOW_PATH).absolute().as_posix(), "inputs": {"key": "value"}},
+                flow_path=FLOW_PATH,
+                request_body={"inputs": {"key": "value"}},
                 status_code=200,
             ).json
         assert len(response) >= 1
@@ -60,15 +61,16 @@ class TestFlowAPIs:
         extension = os.path.splitext(IMAGE_PATH)[1].lstrip(".")
         with check_activity_end_telemetry(expected_activities=[]):
             response = pfs_op.save_flow_image(
+                flow_path=FLOW_PATH,
                 request_body={
                     "base64_data": image_base64,
                     "extension": extension,
                 },
             ).json
 
-        os.remove(response)
+        os.remove(os.path.join(FLOW_PATH, response))
 
     def test_image_view(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            response = pfs_op.show_image(image_path=Path(IMAGE_PATH).absolute().as_posix())
-            assert response.status_code == 403
+            response = pfs_op.show_image(flow_path=FLOW_WITH_IMAGE_PATH, image_path="logo.jpg")
+            assert response.status_code == 200

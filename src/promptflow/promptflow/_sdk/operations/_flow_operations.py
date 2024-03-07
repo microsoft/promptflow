@@ -12,7 +12,6 @@ from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
-from collections import namedtuple
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -37,7 +36,6 @@ from promptflow._sdk._utils import (
     generate_random_string,
     logger,
     parse_variant,
-    get_flow_detail,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
@@ -45,9 +43,6 @@ from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException, ErrorTarget
-
-
-Result = namedtuple('Result', ['executor_result', 'log'])
 
 
 class FlowOperations(TelemetryMixin):
@@ -90,7 +85,6 @@ class FlowOperations(TelemetryMixin):
         """
         experiment = kwargs.pop("experiment", None)
         output_path = kwargs.get("output_path", None)
-        ux_call = kwargs.get("ux_call", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             if variant is not None or node is not None:
                 error = ValueError("--variant or --node is not supported experiment is specified.")
@@ -115,25 +109,13 @@ class FlowOperations(TelemetryMixin):
             environment_variables=environment_variables,
             **kwargs,
         )
-        if ux_call:
-            if node:
-                flow_detail = get_flow_detail(
-                    node_result=result.executor_result
-                )
-            else:
-                flow_detail = get_flow_detail(
-                    flow_result=result.executor_result,
-                )
-            executor_result = result.executor_result
-        else:
-            executor_result = result
         dump_test_result = kwargs.get("dump_test_result", False)
         if dump_test_result:
             # Dump flow/node test info
             flow = load_flow(flow)
             if node:
                 dump_flow_result(
-                    flow_folder=flow.code, node_result=executor_result, prefix=f"flow-{node}.node", custom_path=output_path
+                    flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node", custom_path=output_path
                 )
             else:
                 if variant:
@@ -143,15 +125,12 @@ class FlowOperations(TelemetryMixin):
                     prefix = "flow"
                 dump_flow_result(
                     flow_folder=flow.code,
-                    flow_result=executor_result,
+                    flow_result=result,
                     prefix=prefix,
                     custom_path=output_path,
                 )
-        TestSubmitter._raise_error_when_test_failed(executor_result, show_trace=node is not None)
-        if ux_call:
-            return {"flow_detail": flow_detail, "flow_log": result.log}
-        else:
-            return result.output
+        TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
+        return result.output
 
     def _test(
         self,
@@ -189,7 +168,6 @@ class FlowOperations(TelemetryMixin):
         session = kwargs.pop("session", None)
         # Run id will be set in operation context and used for session
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
-        ux_call = kwargs.pop("ux_call", None)
         flow: FlowBase = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
@@ -217,28 +195,17 @@ class FlowOperations(TelemetryMixin):
                 )
 
             if node:
-                result = submitter.node_test(
+                return submitter.node_test(
                     flow_inputs=flow_inputs,
                     dependency_nodes_outputs=dependency_nodes_outputs,
                 )
             else:
-                result = submitter.flow_test(
+                return submitter.flow_test(
                     inputs=flow_inputs,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                     run_id=run_id,
                 )
-            if ux_call:
-                from promptflow._sdk.operations._local_storage_operations import LoggerOperations
-                from promptflow._utils.logger_utils import StringHandlerConcurrentWrapper
-                loggers = LoggerOperations._get_execute_loggers_list()
-                log_content = ""
-                for log in loggers:
-                    for log_handler in log.handlers:
-                        if isinstance(log_handler, StringHandlerConcurrentWrapper) and log_handler.handler:
-                            log_content += log_handler.handler.log
-                return Result(executor_result=result, log=log_content)
-            else:
-                return result
+
 
     @staticmethod
     def _is_chat_flow(flow):

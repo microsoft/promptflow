@@ -168,77 +168,6 @@ class FileHandlerConcurrentWrapper(logging.Handler):
         self._context_var.set(None)
 
 
-class StringHandler:
-    """Write compliant log to a string."""
-
-    def __init__(self, formatter: Optional[logging.Formatter] = None):
-        self._handler = self._get_handler()
-        if formatter is None:
-            # Default formatter to scrub credentials in log message, exception and stack trace.
-            self._formatter = CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
-        else:
-            self._formatter = formatter
-        self._handler.setFormatter(self._formatter)
-        self.log = ""
-
-    def set_credential_list(self, credential_list: List[str]):
-        """Set credential list, which will be scrubbed in logs."""
-        self._formatter.set_credential_list(credential_list)
-
-    def emit(self, record: logging.LogRecord):
-        """Write logs."""
-        self.log += self._formatter.format(record) + "\n"
-
-    def close(self):
-        """Clear log."""
-        self.log = ""
-        self._handler.close()
-        self._formatter.clear()
-
-    def _get_handler(self) -> logging.Handler:
-        return logging.Handler()
-
-
-class StringHandlerConcurrentWrapper(logging.Handler):
-    """Wrap context-local StringHandler instance for thread safety.
-
-    A logger instance can write different log to different strings in different contexts.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._context_var = ContextVar("handler", default=None)
-
-    @property
-    def handler(self) -> StringHandler:
-        return self._context_var.get()
-
-    @handler.setter
-    def handler(self, handler: StringHandler):
-        self._context_var.set(handler)
-
-    def emit(self, record: logging.LogRecord):
-        """Override logging.Handler's emit method.
-
-        Get inner string handler in current context and write log.
-        """
-        string_handler: StringHandler = self._context_var.get()
-        if string_handler is None:
-            return
-        string_handler.emit(record)
-
-    def clear(self):
-        """Clear string handler and clear context variable."""
-        handler: StringHandler = self._context_var.get()
-        if handler:
-            try:
-                handler.close()
-            except:  # NOQA: E722
-                # Do nothing if handler close failed.
-                pass
-        self._context_var.set(None)
-
-
 valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", "DEBUG", "NOTSET"}
 
 
@@ -258,7 +187,6 @@ def get_logger(name: str) -> logging.Logger:
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
     logger.addHandler(stdout_handler)
-    logger.addHandler(StringHandlerConcurrentWrapper())
     return logger
 
 
@@ -326,7 +254,7 @@ class LogContext:
             all_logger_list.append(self.input_logger)
         for logger_ in all_logger_list:
             for handler in logger_.handlers:
-                if isinstance(handler, (FileHandlerConcurrentWrapper, StringHandlerConcurrentWrapper)):
+                if isinstance(handler, FileHandlerConcurrentWrapper):
                     handler.clear()
                 elif isinstance(handler.formatter, CredentialScrubberFormatter):
                     handler.formatter.clear()
@@ -342,9 +270,6 @@ class LogContext:
                 if isinstance(log_handler, FileHandlerConcurrentWrapper):
                     handler = FileHandler(self.file_path)
                     log_handler.handler = handler
-                elif isinstance(log_handler, StringHandlerConcurrentWrapper):
-                    handler = StringHandler()
-                    log_handler.handler = handler
 
     def _set_credential_list(self):
         # Set credential list to all loggers.
@@ -354,7 +279,7 @@ class LogContext:
         credential_list = self.credential_list or []
         for logger_ in all_logger_list:
             for handler in logger_.handlers:
-                if isinstance(handler, (FileHandlerConcurrentWrapper, StringHandlerConcurrentWrapper)) and handler.handler:
+                if isinstance(handler, FileHandlerConcurrentWrapper) and handler.handler:
                     handler.handler.set_credential_list(credential_list)
                 elif isinstance(handler.formatter, CredentialScrubberFormatter):
                     handler.formatter.set_credential_list(credential_list)
@@ -401,7 +326,7 @@ def scrub_credentials(s: str):
     "print accountkey=**data_scrubbed**"
     """
     for h in logger.handlers:
-        if isinstance(h, (FileHandlerConcurrentWrapper, StringHandlerConcurrentWrapper)):
+        if isinstance(h, FileHandlerConcurrentWrapper):
             if h.handler and h.handler._formatter:
                 credential_scrubber = h.handler._formatter.credential_scrubber
                 if credential_scrubber:
