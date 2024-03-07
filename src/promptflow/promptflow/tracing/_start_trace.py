@@ -40,14 +40,6 @@ def start_trace(*, session: typing.Optional[str] = None, **kwargs):
 
     Note that this function is still under preview, and may change at any time.
     """
-    # trace is currently a preview feature, users should explicitly enable to use it
-    if Configuration.get_instance().is_internal_features_enabled() is False:
-        warning_message = (
-            "`start_trace` is currently a preview feature, "
-            'please enable it with `pf config set enable_internal_features="true"`'
-        )
-        _logger.warning(warning_message)
-        return
 
     from promptflow._sdk._constants import ContextAttributeKey
 
