@@ -89,7 +89,8 @@
     "Summ",
     "Bhavik",
     "meid",
-    "Entra"
+    "Entra",
+    "uvicorn"
   ],
   "ignoreWords": [
     "openmpi",
@@ -177,6 +178,8 @@
     "spawnv",
     "spawnve",
     "addrs",
+    "pywin",
+    "STARTF",
     "mltable"
   ],
   "flagWords": [

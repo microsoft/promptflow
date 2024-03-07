@@ -128,6 +128,7 @@ class Run(YAMLTranslatableMixin):
         source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
+        # !!! Caution !!!: Please update self._copy() if you add new fields to init
         # TODO: remove when RUN CRUD don't depend on this
         self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
@@ -137,6 +138,7 @@ class Run(YAMLTranslatableMixin):
         self.tags = tags
         self.variant = variant
         self.run = run
+        self._resume_from = kwargs.get("resume_from", None)
         self._created_on = created_on or datetime.datetime.now()
         self._status = status or RunStatus.NOT_STARTED
         self.environment_variables = environment_variables or {}
@@ -212,6 +214,11 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.COMMAND] = self._command
             if self._outputs:
                 result[FlowRunProperties.OUTPUTS] = self._outputs
+            if self._resume_from:
+                resume_from_name = self._resume_from.name if isinstance(self._resume_from, Run) else self._resume_from
+                result[FlowRunProperties.RESUME_FROM] = resume_from_name
+            if self.column_mapping:
+                result[FlowRunProperties.COLUMN_MAPPING] = self.column_mapping
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             result = {
                 FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
@@ -242,6 +249,7 @@ class Run(YAMLTranslatableMixin):
             output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
+            resume_from=properties_json.get(FlowRunProperties.RESUME_FROM, None),
             display_name=obj.display_name,
             description=str(obj.description) if obj.description else None,
             tags=json.loads(str(obj.tags)) if obj.tags else None,
@@ -257,6 +265,7 @@ class Run(YAMLTranslatableMixin):
             # experiment command node only fields
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
+            column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
         )
 
     @classmethod
@@ -707,3 +716,30 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
             **kwargs,
         )
+
+    def _copy(self, **kwargs):
+        """Copy a new run object.
+
+        This is used for resume run scenario, a new run will be created with the same properties as the original run.
+        Allowed to override some properties with kwargs. Supported properties are:
+        Meta: name, display_name, description, tags.
+        Run setting: runtime, resources, identity.
+        """
+        init_params = {
+            "flow": self.flow,
+            "data": self.data,
+            "variant": self.variant,
+            "run": self.run,
+            "column_mapping": self.column_mapping,
+            "display_name": self.display_name,
+            "description": self.description,
+            "tags": self.tags,
+            "environment_variables": self.environment_variables,
+            "connections": self.connections,
+            # "properties": self._properties,  # Do not copy system metrics
+            "source": self.source,
+            "identity": self._identity,
+            **kwargs,
+        }
+        logger.debug(f"Run init params: {init_params}")
+        return Run(**init_params)

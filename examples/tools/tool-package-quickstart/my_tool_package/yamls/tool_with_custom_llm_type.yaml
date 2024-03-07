@@ -8,3 +8,20 @@ my_tool_package.tools.tool_with_custom_llm_type.my_tool:
     connection:
       type:
         - CustomConnection
+      ui_hints:
+        text_box_size: lg
+    api:
+      type:
+      - string
+      ui_hints:
+        text_box_size: sm
+    deployment_name:
+      type:
+      - string
+      ui_hints:
+        text_box_size: md
+    temperature:
+      type:
+      - double
+      ui_hints:
+        text_box_size: xs

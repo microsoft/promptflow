@@ -15,7 +15,13 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import (
+    CHAT_HISTORY,
+    DEFAULT_ENCODING,
+    FLOW_META_JSON_GEN_TIMEOUT,
+    FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    LOCAL_MGMT_DB_PATH,
+)
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
@@ -25,6 +31,7 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
+    generate_flow_meta,
     generate_flow_tools_json,
     generate_random_string,
     logger,
@@ -792,3 +799,47 @@ class FlowOperations(TelemetryMixin):
         flow_tools["code"] = flow_tools_meta
 
         return flow_tools, tools_errors
+
+    @monitor_operation(activity_name="pf.flows._generate_flow_meta", activity_type=ActivityType.INTERNALCALL)
+    def _generate_flow_meta(
+        self,
+        flow: Union[str, PathLike],
+        *,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        dump: bool = False,
+        load_in_subprocess: bool = True,
+    ) -> dict:
+        """Generate flow meta for a specific flow or a specific node in the flow.
+
+        This is a private interface for vscode extension, so do not change the interface unless necessary.
+
+        Usage:
+        from promptflow import PFClient
+        PFClient().flows._generate_flow_meta(flow="flow.dag.yaml")
+
+        :param flow: path to the flow directory or flow dag to export
+        :type flow: Union[str, PathLike]
+        :param timeout: timeout for generating flow meta
+        :type timeout: int
+        :param dump: whether to dump the flow meta to .promptflow/flow.json
+        :type dump: bool
+        :param load_in_subprocess: whether to load flow in subprocess. will set to False for VSCode extension since
+            it's already executes in a separate process.
+        :type load_in_subprocess: bool
+        :return: dict of flow meta
+        :rtype: Tuple[dict, dict]
+        """
+        flow: Union[ProtectedFlow, EagerFlow] = load_flow(source=flow)
+        if not isinstance(flow, EagerFlow):
+            # No flow meta for DAG flow
+            return {}
+
+        with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
+            return generate_flow_meta(
+                flow_directory=new_flow_dag_path.parent,
+                source_path=flow.entry_file,
+                entry=flow.entry,
+                dump=dump,
+                timeout=timeout,
+                load_in_subprocess=load_in_subprocess,
+            )
