@@ -79,6 +79,29 @@ promptflow.tools.llm.llm:
       is_multi_select: false
       ui_hints:
         text_box_size: lg
+    model2:
+      type:
+        - string
+      enum:
+        - a
+        - c
+      enabled_by: connection
+      enabled_by_type: [OpenAIConnection]
+      dynamic_list:
+        func_path: promptflow.tools.llm.list_models
+        func_kwargs:
+        - name: connection_name
+          type: 
+          - string
+          reference: ${inputs.connection}
+        - name: api_name
+          type: 
+          - string
+          reference: ${inputs.api}
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
     temperature:
       default: 1
       type:
