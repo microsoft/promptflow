@@ -5,7 +5,7 @@ import tempfile
 from functools import lru_cache
 from os import PathLike
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 from promptflow._sdk._constants import NODES
 from promptflow._sdk._utils import parse_variant
@@ -41,6 +41,14 @@ class FlowContextResolver:
         resolver = cls(flow_path=flow.path)
         resolver._resolve(flow_context=flow.context)
         return resolver._create_invoker(flow_context=flow.context)
+
+    @classmethod
+    @lru_cache
+    def resolve_async_invoker(cls, flow: Flow) -> "AsyncFlowInvoker":
+        """Resolve flow to flow invoker."""
+        resolver = cls(flow_path=flow.path)
+        resolver._resolve(flow_context=flow.context)
+        return resolver._create_invoker(flow_context=flow.context, is_async_call=True)
 
     def _resolve(self, flow_context: FlowContext):
         """Resolve flow context."""
@@ -103,8 +111,10 @@ class FlowContextResolver:
             connections[key] = connection_obj._to_execution_connection_dict()
         return connections
 
-    def _create_invoker(self, flow_context: FlowContext) -> "FlowInvoker":
-        from promptflow._sdk._serving.flow_invoker import FlowInvoker
+    def _create_invoker(
+        self, flow_context: FlowContext, is_async_call=False
+    ) -> Union["FlowInvoker", "AsyncFlowInvoker"]:
+        from promptflow._sdk._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
 
         connections = self._resolve_connection_objs(flow_context=flow_context)
         # use updated flow dag to create new flow object for invoker
@@ -115,8 +125,15 @@ class FlowContextResolver:
             with open(flow_file, "w") as fp:
                 dump_yaml(self.flow_dag, fp)
             resolved_flow._path = flow_file.absolute().as_posix()
-            return FlowInvoker(
-                flow=resolved_flow,
-                connections=connections,
-                streaming=flow_context.streaming,
-            )
+            if is_async_call:
+                return AsyncFlowInvoker(
+                    flow=resolved_flow,
+                    connections=connections,
+                    streaming=flow_context.streaming,
+                )
+            else:
+                return FlowInvoker(
+                    flow=resolved_flow,
+                    connections=connections,
+                    streaming=flow_context.streaming,
+                )

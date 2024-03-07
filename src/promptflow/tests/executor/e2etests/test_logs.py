@@ -166,6 +166,8 @@ class TestExecutorLogs:
             "INFO     Start to run 1 nodes with concurrency level 16.",
             "INFO     Executing node long_run_node.",
             "WARNING  long_run_node in line 0 has been running for 60 seconds, stacktrace of thread",
+            "in wrapped",
+            "output = func(*args, **kwargs)",
             ", line 16, in long_run_func",
             "return f2()",
             ", line 11, in f2",
