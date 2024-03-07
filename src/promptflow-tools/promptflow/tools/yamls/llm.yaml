@@ -41,6 +41,7 @@ promptflow.tools.llm.llm:
         - string
       enabled_by: connection
       enabled_by_type: [AzureOpenAIConnection]
+      is_engine: true
       dynamic_list:
         func_path: promptflow.tools.llm.list_deployment_names
         func_kwargs:
@@ -61,6 +62,7 @@ promptflow.tools.llm.llm:
         - string
       enabled_by: connection
       enabled_by_type: [OpenAIConnection]
+      is_engine: true
       dynamic_list:
         func_path: promptflow.tools.llm.list_models
         func_kwargs:
@@ -132,9 +134,10 @@ promptflow.tools.llm.llm:
         text_box_size: lg
     functions:
       type:
-      - function_list
-      advanced: false
+      - list
+      section_name: Function calling
     function_call:
       type:
-      - function_str
-      advanced: false
+      - string
+      - object
+      section_name: Function calling
