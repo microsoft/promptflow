@@ -136,8 +136,10 @@ promptflow.tools.llm.llm:
       type:
       - list
       section_name: Function calling
+      display_format: default
     function_call:
       type:
       - string
       - object
       section_name: Function calling
+      display_format: default
