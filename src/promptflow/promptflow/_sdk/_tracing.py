@@ -64,7 +64,7 @@ def _invoke_pf_svc() -> str:
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
         else:
-            return
+            return port
     entry(cmd_args)
     logger.debug("Prompt flow service is serving on port %s", port)
     return port
