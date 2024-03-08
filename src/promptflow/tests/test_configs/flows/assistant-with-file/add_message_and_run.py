@@ -42,7 +42,9 @@ async def add_message_and_run(
 
     messages = await get_message(cli, thread_id)
 
-    file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
+    await get_run_steps(cli, thread_id, run.id)
+
+    file_id_references = await get_openai_file_references(cli, messages.data[0].content, download_images, conn)
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
 
@@ -150,9 +152,10 @@ async def wait_for_run_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], threa
 @trace
 async def get_run_steps(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str):
     run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
-    print("step details: \n")
+    step_runs = []
     for step_data in run_steps.data:
-        print(step_data.step_details)
+        step_runs.append(step_data.dict())
+    return step_runs
 
 
 @trace
@@ -187,7 +190,9 @@ async def extract_file_ids_from_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI
     return file_ids
 
 
-async def get_openai_file_references(content: list, download_image: bool,
+async def get_openai_file_references(cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
+                                     content: list,
+                                     download_image: bool,
                                      conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     file_id_references = {}
     file_id = None
@@ -196,7 +201,7 @@ async def get_openai_file_references(content: list, download_image: bool,
             file_id = item.image_file.file_id
             if download_image:
                 file_id_references[file_id] = {
-                    "content": await download_openai_image(file_id, conn),
+                    "content": await download_openai_image(cli, file_id, conn),
                 }
         elif isinstance(item, MessageContentText):
             for annotation in item.text.annotations:
@@ -244,8 +249,8 @@ def to_pf_content(content: list):
     return pf_content
 
 
-async def download_openai_image(file_id: str, conn: Union[AzureOpenAIConnection, OpenAIConnection]):
-    cli = await get_assistant_client(conn)
+async def download_openai_image(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], file_id: str,
+                                conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     image_data = await cli.files.content(file_id)
     return Image(image_data.read())
 
