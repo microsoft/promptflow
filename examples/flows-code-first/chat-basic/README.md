@@ -1,4 +1,4 @@
-# Basic chat (code-first)
+# Basic chat
 This example shows how to create a basic chat flow using code-first approach. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
 
 Tools used in this flow：

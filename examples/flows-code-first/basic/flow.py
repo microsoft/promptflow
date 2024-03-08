@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypedDict
 
 from jinja2 import Template
 from llm import my_llm_tool
 
-from promptflow import trace
+from promptflow.tracing import trace
 
 BASE_DIR = Path(__file__).absolute().parent
 
 
-@dataclass
-class Result:
+class Result(TypedDict):
     output: str
 
 
@@ -31,7 +31,7 @@ def flow_entry(text: str = "Hello World!") -> Result:
 
 
 if __name__ == "__main__":
-    from promptflow import start_trace
+    from promptflow.tracing import start_trace
 
     start_trace()
 

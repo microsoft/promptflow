@@ -5,8 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from jinja2 import Template
 
-from promptflow import trace
-from promptflow._sdk.entities import AzureOpenAIConnection
+from promptflow.tracing import trace
+from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import chat
 
 BASE_DIR = Path(__file__).absolute().parent
@@ -55,7 +55,7 @@ def flow_entry(question: str = "What is ChatGPT?", chat_history: list = []) -> R
 
 
 if __name__ == "__main__":
-    from promptflow import start_trace
+    from promptflow.tracing import start_trace
 
     start_trace()
 

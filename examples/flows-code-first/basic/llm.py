@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from openai.version import VERSION as OPENAI_VERSION
 
-from promptflow import trace
+from promptflow.tracing import trace
 
 
 def get_client():

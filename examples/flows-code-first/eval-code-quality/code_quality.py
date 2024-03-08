@@ -6,8 +6,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from jinja2 import Template
 
-from promptflow import trace
-from promptflow._sdk.entities import AzureOpenAIConnection
+from promptflow.tracing import trace
+from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import AzureOpenAI
 
 BASE_DIR = Path(__file__).absolute().parent
@@ -68,7 +68,7 @@ def eval_code(code: str) -> Result:
 
 
 if __name__ == "__main__":
-    from promptflow import start_trace
+    from promptflow.tracing import start_trace
     start_trace()
 
     result = eval_code('print("Hello, world!")')

@@ -1,5 +1,5 @@
 from openai import AzureOpenAI
-from promptflow import trace, start_trace
+from promptflow.tracing import trace, start_trace
 import ast
 import os
 

@@ -1,4 +1,4 @@
-# Basic standard flow (code-first)
+# Basic standard flow
 A basic standard flow using code-first approach calls Azure OpenAI with connection info stored in environment variables.
 
 ## Prerequisites
@@ -123,3 +123,4 @@ pfazure run show-details --name $name
 # visualize run in browser
 pfazure run visualize --name $name
 ```
+
