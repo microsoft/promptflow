@@ -180,7 +180,7 @@ def enrich_span_with_openai_tokens(span, trace_type):
     try:
         tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
         if tokens:
-            span_tokens = {f"__computed__.cumulative_usage.{k}": v for k, v in tokens.items()}
+            span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
             if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
                 llm_tokens = {f"{trace_type.value.lower()}.usage.{k}": v for k, v in tokens.items()}
                 span_tokens.update(llm_tokens)
