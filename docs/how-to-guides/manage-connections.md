@@ -7,7 +7,7 @@ This is an experimental feature, and may change at any time. Learn [more](faq.md
 [Connection](../../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM (Large Language Models) and other external tools, for example, Azure Content Safety.
 
 :::{note}
-To use azureml workspace connection locally, refer to [this guide](../how-to-guides/set-global-configs.md#connectionprovider).
+This document target for manage connections locally. To use Azure AI connections locally, refer to [this guide](../cloud/azureai/consume-connections-from-azure-ai.md).
 :::
 
 ## Connection types

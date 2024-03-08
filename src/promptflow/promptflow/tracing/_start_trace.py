@@ -20,7 +20,6 @@ from promptflow._constants import (
     SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, AzureMLWorkspaceTriad
@@ -28,6 +27,8 @@ from promptflow._sdk._service.utils.utils import is_pfs_service_healthy
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.tracing._constants import PF_TRACING_SKIP_LOCAL_SETUP
+
+from ._openai_injector import inject_openai_api
 
 _logger = get_cli_sdk_logger()
 
