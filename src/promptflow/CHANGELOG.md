@@ -14,6 +14,10 @@
 
 - [SDK/CLI] Support `AzureOpenAIConnection.from_env` and `OpenAIConnection.from_env`. Reach more details [here](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#load-from-environment-variables).
 
+### Bugs Fixed
+
+- [SDK/CLI] environment variable `PF_HOME_DIRECTORY` doesn't work for run details & logs.
+
 ## 1.6.0 (2024.03.01)
 
 ### Features Added

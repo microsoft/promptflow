@@ -30,10 +30,10 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_RUNS_DIR_NAME,
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
@@ -931,7 +931,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # process the output path
         if output is None:
             # default to be "~/.promptflow/.runs" folder
-            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+            output_directory = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_RUNS_DIR_NAME
         else:
             output_directory = Path(output)
 
