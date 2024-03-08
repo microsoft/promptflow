@@ -229,7 +229,7 @@ def enrich_span_with_llm_model(span, output):
             from openai.types.completion import Completion
 
             if isinstance(output, (ChatCompletion, Completion)):
-                span.set_attribute("llm.model", output.model)
+                span.set_attribute("llm.response.model", output.model)
     except Exception as e:
         logging.warning(f"Failed to enrich span with llm model: {e}")
 

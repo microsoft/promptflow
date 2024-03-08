@@ -15,7 +15,7 @@ from promptflow.tracing import trace
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..process_utils import execute_function_in_subprocess
-from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter, load_content
+from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, load_content, prepare_memory_exporter
 
 LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -30,9 +30,9 @@ EMBEDDING_FUNCTION_NAMES = [
 ]
 
 LLM_TOKEN_NAMES = [
-    "llm.token_count.prompt",
-    "llm.token_count.completion",
-    "llm.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.completion_tokens",
+    "llm.usage.total_tokens",
 ]
 
 EMBEDDING_TOKEN_NAMES = [
@@ -350,7 +350,7 @@ class TestOTelTracer:
             ("llm_tool", {"topic": "Hello", "stream": False}, "joke.jinja2"),
             # Add back this test case after changing the interface of render_template_jinja2
             # ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
-        ]
+        ],
     )
     def test_otel_trace_with_prompt(
         self,
@@ -419,7 +419,7 @@ class TestOTelTracer:
         self.validate_openai_tokens(span_list)
         for span in span_list:
             if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                assert span.attributes.get("llm.model", "") in ["gpt-35-turbo", "text-ada-001"]
+                assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
         "flow_file, inputs, expected_span_length",
@@ -427,7 +427,7 @@ class TestOTelTracer:
             ("openai_embedding_api_flow", {"input": "Hello"}, 3),
             # [9906] is the tokenized version of "Hello"
             ("openai_embedding_api_flow_with_token", {"input": [9906]}, 3),
-        ]
+        ],
     )
     def test_otel_trace_with_embedding(
         self,
