@@ -775,6 +775,7 @@ class FlowExecutor:
     @contextlib.contextmanager
     def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
+        original_context = operation_context.copy()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
         if original_mode == RunMode.Batch.name:
@@ -791,13 +792,7 @@ class FlowExecutor:
                 operation_context._add_otel_attributes(k, v)
             yield
         finally:
-            for k in values_for_context:
-                operation_context.pop(k)
-            operation_context._remove_otel_attributes(values_for_otel.keys())
-            if original_mode is None:
-                operation_context.pop("run_mode")
-            else:
-                operation_context.run_mode = original_mode
+            OperationContext.set_instance(original_context)
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
