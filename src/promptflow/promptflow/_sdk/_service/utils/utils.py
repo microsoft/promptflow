@@ -117,14 +117,14 @@ def _get_process_by_port(port):
             if conn.laddr.port == port:
                 return psutil.Process(conn.pid)
     except (psutil.AccessDenied, NotImplementedError) as e:
-        logger.warning(f"Failed to get process by port {port} using net_connections: {e}")
+        logger.debug(f"Failed to get process by port {port} using net_connections: {e}")
         for proc in psutil.process_iter(["pid", "connections", "create_time"]):
             try:
                 for connection in proc.connections():
                     if connection.laddr.port == port:
                         return proc
             except (psutil.AccessDenied, NotImplementedError) as ex:
-                logger.warning(f"Failed to get process by port {port} using process_iter: {ex}")
+                logger.debug(f"Failed to get process by port {port} using process_iter: {ex}")
 
 
 def kill_exist_service(port):
