@@ -22,10 +22,10 @@ from sdk_cli_test.recording_utilities import (
 )
 from sdk_cli_test.recording_utilities.record_storage import is_recording_enabled
 
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._service.app import app
+from promptflow.tracing._openai_injector import inject_openai_api
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 

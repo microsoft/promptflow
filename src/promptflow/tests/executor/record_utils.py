@@ -11,7 +11,7 @@ from sdk_cli_test.recording_utilities import (
     mock_tool,
 )
 
-from promptflow._core.openai_injector import inject_openai_api
+from promptflow.tracing._openai_injector import inject_openai_api
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
@@ -41,8 +41,8 @@ def setup_recording():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
-            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
         inject_openai_api()
@@ -50,8 +50,8 @@ def setup_recording():
     if is_live():
         # For live mode, we setup openai_injector mock for token collection purpose
         patch_targets = {
-            "promptflow._core.openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow._core.openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
         inject_openai_api()
