@@ -91,7 +91,8 @@ class AbstractProcessManager:
         :param i: Index of the process to restart.
         :type i: int
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for restart_process.")
+        self.end_process(i)
+        self.new_process(i)
 
     def end_process(self, i):
         """
@@ -100,7 +101,11 @@ class AbstractProcessManager:
         :param i: Index of the process to terminate.
         :type i: int
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+        try:
+            pid = self._process_info[i].process_id
+            self._terminate_process(i, pid)
+        finally:
+            self._process_info.pop(i)
 
     def ensure_healthy(self):
         """
@@ -142,13 +147,6 @@ class AbstractProcessManager:
 
     def is_process_alive(self, process_id):
         return psutil.pid_exists(process_id)
-
-    def _end_process(self, i):
-        try:
-            pid = self._process_info[i].process_id
-            self._terminate_process(i, pid)
-        finally:
-            self._process_info.pop(i)
 
     def _terminate_process(self, i, pid):
         warning_msg = "Unexpected error occurred while end process for index {i} and process id {pid}. Exception: {e}"
@@ -226,25 +224,6 @@ class SpawnProcessManager(AbstractProcessManager):
                 f"Exception: {e}"
             )
         return process
-
-    def restart_process(self, i):
-        """
-        Restarts a specified process by first terminating it then creating a new one.
-
-        :param i: Index of the process to restart.
-        :type i: int
-        """
-        self.end_process(i)
-        self.new_process(i)
-
-    def end_process(self, i):
-        """
-        Terminates a specified process.
-
-        :param i: Index of the process to terminate.
-        :type i: int
-        """
-        self._end_process(i)
 
     def ensure_healthy(self):
         """
@@ -406,25 +385,6 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 f"Exception: {e}"
             )
         return process
-
-    def end_process(self, i):
-        """
-        Terminates a specified process.
-
-        :param i: Index of the process to terminate.
-        :type i: int
-        """
-        self._end_process(i)
-
-    def restart_process(self, i):
-        """
-        Restarts a specified process by first terminating it then creating a new one.
-
-        :param i: Index of the process to restart.
-        :type i: int
-        """
-        self.end_process(i)
-        self.new_process(i)
 
     def handle_signals(self, control_signal, i):
         """
