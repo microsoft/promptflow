@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 - Setup environment variables
 
-Ensure you have put your azure open ai endpoint key in [.env](.env) file. You can create one refer to this [example file](.env.example).
+Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You can create one refer to this [example file](../.env.example).
 
 ```bash
 cat .env

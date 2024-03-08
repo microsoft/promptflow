@@ -11,20 +11,17 @@ def get_client():
         raise Exception(
             "Please upgrade your OpenAI package to version >= 1.0.0 or using the command: pip install --upgrade openai."
         )
-    api_key = os.environ["OPENAI_API_KEY"]
-    conn = dict(
-        api_key=os.environ["OPENAI_API_KEY"],
-    )
-    if api_key.startswith("sk-"):
-        from openai import OpenAI as Client
-    else:
-        from openai import AzureOpenAI as Client
+    api_key = os.environ.get("OPENAI_API_KEY", None)
+    if api_key:
+        from openai import OpenAI
 
-        conn.update(
-            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            api_version=os.environ.get("OPENAI_API_VERSION", "2023-07-01-preview"),
+        return OpenAI()
+    else:
+        from openai import AzureOpenAI
+
+        return AzureOpenAI(
+            api_version=os.environ.get("OPENAI_API_VERSION", "2023-07-01-preview")
         )
-    return Client(**conn)
 
 
 @trace
@@ -47,12 +44,14 @@ def my_llm_tool(
     user: str = "",
     **kwargs,
 ) -> str:
-    if "OPENAI_API_KEY" not in os.environ:
+    if "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
 
-    if "OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: OPENAI_API_KEY")
+    if "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ:
+        raise Exception(
+            "Please specify environment variables: OPENAI_API_KEY or AZURE_OPENAI_API_KEY"
+        )
 
     response = get_client().completions.create(
         prompt=prompt,

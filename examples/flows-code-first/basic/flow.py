@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
 
@@ -18,7 +17,9 @@ class Result(TypedDict):
 def load_prompt(jinja2_template: str, text: str) -> str:
     """Load prompt function."""
     with open(BASE_DIR / jinja2_template, "r", encoding="utf-8") as f:
-        prompt = Template(f.read(), trim_blocks=True, keep_trailing_newline=True).render(text=text)
+        prompt = Template(
+            f.read(), trim_blocks=True, keep_trailing_newline=True
+        ).render(text=text)
         return prompt
 
 
@@ -26,7 +27,9 @@ def load_prompt(jinja2_template: str, text: str) -> str:
 def flow_entry(text: str = "Hello World!") -> Result:
     """Flow entry function."""
     prompt = load_prompt("hello.jinja2", text)
-    output = my_llm_tool(prompt=prompt, deployment_name="text-davinci-003", max_tokens=120)
+    output = my_llm_tool(
+        prompt=prompt, deployment_name="text-davinci-003", max_tokens=120
+    )
     return Result(output=output)
 
 

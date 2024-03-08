@@ -41,7 +41,7 @@ See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/cre
 
 - Setup environment variables
 
-Ensure you have put your azure open ai endpoint key in [.env](.env) file. You can create one refer to this [example file](.env.example).
+Ensure you have put your azure open ai endpoint key in [.env](../.env) file. You can create one refer to this [example file](../.env.example).
 
 ```bash
 cat .env

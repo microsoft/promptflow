@@ -48,18 +48,14 @@ def check(answer: str, statement: str):
 
     prompt = load_prompt("prompt.md", answer, statement, examples)
 
-    if "OPENAI_API_KEY" not in os.environ:
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
 
-    if "OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please specify environment variables: OPENAI_API_KEY")
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
+        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
 
-    connection = AzureOpenAIConnection(
-        api_key=os.environ["OPENAI_API_KEY"],
-        api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_version=os.environ.get("OPENAI_API_VERSION", "2023-07-01-preview"),
-    )
+    connection = AzureOpenAIConnection.from_env()
 
     output = chat(
         connection=connection,
