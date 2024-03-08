@@ -99,7 +99,7 @@ def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
                 line_summary_client = get_client(
                     CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
                 )
-                Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(line_summary_client)
+                Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE, logger).persist(line_summary_client)
         logger.info(
             (
                 f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
