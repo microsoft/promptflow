@@ -171,9 +171,8 @@ def is_pfs_service_healthy(pfs_port) -> bool:
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
-    logger.warning(
-        f"Promptflow service can't be reached through port {pfs_port}, will try to start/force restart "
-        f"promptflow service."
+    logger.debug(
+        f"Promptflow service can't be reached through port {pfs_port}, will try to (force) start promptflow service."
     )
     return False
 

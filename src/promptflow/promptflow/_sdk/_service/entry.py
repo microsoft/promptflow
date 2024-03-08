@@ -118,9 +118,7 @@ def start_service(args):
             app.logger.setLevel(logging.DEBUG)
         else:
             app.logger.setLevel(logging.INFO)
-        app.logger.info(
-            f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
-        )
+        app.logger.info(f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}")
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
     else:
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
@@ -168,7 +166,7 @@ def start_service(args):
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
-            message = f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}"
+            message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}"
             print(message)
             logger.info(message)
         else:
@@ -179,10 +177,11 @@ def stop_service():
     port = get_port_from_config()
     if port is not None and is_port_in_use(port):
         kill_exist_service(port)
-        logger.debug(f"Pfs service stop in {port}.")
-        print(f"Pfs service stop in {port}.")
+        message = f"Pfs service stop in {port}."
     else:
-        logger.debug("Pfs service is not started.")
+        message = "Pfs service is not started."
+    logger.debug(message)
+    print(message)
 
 
 def main():
