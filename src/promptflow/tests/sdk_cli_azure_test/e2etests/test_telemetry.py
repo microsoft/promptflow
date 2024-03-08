@@ -171,7 +171,9 @@ class TestTelemetry:
                 raise ValueError("Invalid message: {}".format(envelope.data.base_data.name))
             assert envelope.data.base_data.name.startswith("pfazure.runs.get")
 
-        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger:
+        with (patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger,
+              patch("promptflow._sdk._telemetry.telemetry.get_telemetry_logger",
+                    side_effect=get_telemetry_logger)):
             mock_logger.side_effect = log_event
             try:
                 pf.runs.get("not_exist")
