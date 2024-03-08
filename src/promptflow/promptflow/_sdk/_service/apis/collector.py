@@ -21,6 +21,7 @@ from promptflow._constants import (
     SpanResourceAttributesFieldName,
     SpanResourceFieldName,
 )
+from promptflow._sdk._constants import TRACE_DEFAULT_SESSION_ID
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
 from promptflow._utils.thread_utils import ThreadWithContextVars
@@ -39,6 +40,8 @@ def trace_collector():
                 attribute_dict = json.loads(MessageToJson(attribute))
                 attr_key, attr_value = parse_kv_from_pb_attribute(attribute_dict)
                 resource_attributes[attr_key] = attr_value
+            if SpanResourceAttributesFieldName.SESSION_ID not in resource_attributes:
+                resource_attributes[SpanResourceAttributesFieldName.SESSION_ID] = TRACE_DEFAULT_SESSION_ID
             resource = {
                 SpanResourceFieldName.ATTRIBUTES: resource_attributes,
                 SpanResourceFieldName.SCHEMA_URL: resource_span.schema_url,
