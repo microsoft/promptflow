@@ -13,8 +13,24 @@ description = "Prompt flow tracing"
 authors = [
   {name = "Microsoft Corporation", email = "aml-pt-eng@microsoft.com"}
 ]
+requires-python = ">=3.8,<4.0"
 license = {text = "MIT License"}
 readme = "README.md"
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Bug Reports" = "https://github.com/microsoft/promptflow/issues"
+"Source" = "https://github.com/microsoft/promptflow"
 
 [tool.black]
 line-length = 120
