@@ -1,2 +1,20 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "promptflow-tracing"
+version = "0.1.0b1"
+dependencies = [
+  "openai",
+  "tiktoken>=0.4.0",
+  "opentelemetry-sdk>=1.0.0b21,<2.0.0",
+]
+description = "Prompt flow tracing"
+authors = [
+  {name = "Microsoft Corporation", email = "aml-pt-eng@microsoft.com"}
+]
+license = {text = "MIT License"}
+readme = "README.md"
+
 [tool.black]
 line-length = 120
