@@ -1,0 +1,29 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+
+type: command
+
+name: data_prep
+display_name: data preparation
+version: 0.0.1
+
+inputs:
+  source_data:
+    type: uri_folder
+  pf_output_data:
+    type: uri_folder
+
+outputs:
+  merged_data :
+    type: uri_folder
+
+code: ./
+
+environment: 
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:20240123.v1
+  conda_file: ./conda.yaml
+
+command: >-
+  python result-parser.py
+  --source_data ${{inputs.source_data}}
+  --pf_output_data ${{inputs.pf_output_data}}
+  --merged_data ${{outputs.merged_data}}
