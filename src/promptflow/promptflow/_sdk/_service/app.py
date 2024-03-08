@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import logging
 import sys
+import threading
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
@@ -11,6 +12,7 @@ from flask import Blueprint, Flask, current_app, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_HOUR_TIMEOUT,
@@ -31,7 +33,12 @@ from promptflow._sdk._service.utils.utils import (
     get_port_from_config,
     kill_exist_service,
 )
-from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
+from promptflow._sdk._utils import (
+    extract_workspace_triad_from_trace_provider,
+    get_promptflow_sdk_version,
+    overwrite_null_std_logger,
+    read_write_by_user,
+)
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
@@ -42,7 +49,41 @@ def heartbeat():
     return jsonify(response)
 
 
-CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE = {}
+created_by_for_local_to_cloud_trace = {}
+created_by_for_local_to_cloud_trace_lock = threading.Lock()
+
+
+def retrieve_created_by_info_with_cache():
+    if len(created_by_for_local_to_cloud_trace) > 0:
+        return created_by_for_local_to_cloud_trace
+    trace_provider = Configuration.get_instance().get_trace_provider()
+    if trace_provider is None or extract_workspace_triad_from_trace_provider(trace_provider) is None:
+        return
+    with created_by_for_local_to_cloud_trace_lock:
+        if len(created_by_for_local_to_cloud_trace) > 0:
+            return created_by_for_local_to_cloud_trace
+        try:
+            # The total time of collecting info is about 3s.
+            # We may need to run below code more than once
+            # because user may not run `az login` before running pfs service.
+            import jwt
+            from azure.identity import DefaultAzureCredential
+
+            from promptflow.azure._utils.general import get_arm_token
+
+            default_credential = DefaultAzureCredential()
+
+            token = get_arm_token(credential=default_credential)
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+            created_by_for_local_to_cloud_trace.update(
+                {
+                    "object_id": decoded_token["oid"],
+                    "tenant_id": decoded_token["tid"],
+                    "name": decoded_token.get("name", "unknown"),
+                }
+            )
+        except Exception as e:
+            current_app.logger.error(f"Failed to get created_by info, ignore it: {e}")
 
 
 def create_app():
@@ -85,33 +126,6 @@ def create_app():
         handler.setFormatter(formatter)
         # Set app logger to the only one RotatingFileHandler to avoid duplicate logs
         app.logger.handlers = [handler]
-
-        def initialize_created_by_info():
-            from promptflow._sdk._configuration import Configuration
-            from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
-
-            trace_provider = Configuration.get_instance().get_trace_provider()
-            if trace_provider is None or extract_workspace_triad_from_trace_provider(trace_provider) is None:
-                return
-            try:
-                import jwt
-                from azure.identity import DefaultAzureCredential
-
-                from promptflow.azure._utils.general import get_arm_token
-
-                default_credential = DefaultAzureCredential()
-
-                token = get_arm_token(credential=default_credential)
-                decoded_token = jwt.decode(token, options={"verify_signature": False})
-                user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
-                CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE.update(
-                    {
-                        "object_id": user_object_id,
-                        "tenant_id": user_tenant_id,
-                    }
-                )
-            except Exception as e:
-                current_app.logger.error(f"Failed to get created_by info, ignore it: {e}")
 
         # Basic error handler
         @api.errorhandler(Exception)
@@ -167,7 +181,8 @@ def create_app():
                         kill_exist_service(port)
                     break
 
-        initialize_created_by_info()
+        # Retrieve created_by info and cache it in advance to avoid blocking the first request.
+        retrieve_created_by_info_with_cache()
         if not sys.executable.endswith("pfcli.exe"):
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
             monitor_thread.start()

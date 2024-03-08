@@ -78,7 +78,7 @@ def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
 
         logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
         start_time = datetime.now()
-        from promptflow._sdk._service.app import CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE
+        from promptflow._sdk._service.app import retrieve_created_by_info_with_cache
         from promptflow.azure._storage.cosmosdb.client import get_client
         from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
         from promptflow.azure._storage.cosmosdb.summary import Summary
@@ -92,17 +92,22 @@ def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
 
         get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name)
 
+        # Retrieve created_by info, we already get it in advance as starting the service.
+        # But user may not run `az login` before running pfs service.
+        # So we need to call this function again to get the created_by info.
+        created_by = retrieve_created_by_info_with_cache()
+
         span_thread.join()
 
         for span in all_spans:
             span_client = get_client(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
-            result = SpanCosmosDB(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(span_client)
+            result = SpanCosmosDB(span, created_by).persist(span_client)
             # None means the span already exists, then we don't need to persist the summary also.
             if result is not None:
                 line_summary_client = get_client(
                     CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
                 )
-                Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE, logger).persist(line_summary_client)
+                Summary(span, created_by, logger).persist(line_summary_client)
         logger.info(
             (
                 f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
