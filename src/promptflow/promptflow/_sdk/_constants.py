@@ -10,6 +10,8 @@ from pathlib import Path
 LOGGER_NAME = "promptflow"
 
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
+# Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
+# Use HOME_PROMPT_FLOW_DIR instead
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 
 
