@@ -654,12 +654,12 @@ class FlowExecutor:
         return result.output or {}
 
     def _exec_in_thread(self, args) -> LineResult:
-        inputs, run_id, line_number, variant_id, validate_inputs = args
+        inputs, run_id, line_number, validate_inputs = args
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
         results = self._exec(
-            inputs, run_id=run_id, line_number=line_number, variant_id=variant_id, validate_inputs=validate_inputs
+            inputs, run_id=run_id, line_number=line_number, validate_inputs=validate_inputs
         )
         self._run_tracker._deactivate_in_context()
         self._processing_idx.pop(line_number)
@@ -671,7 +671,6 @@ class FlowExecutor:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        variant_id: str = "",
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
@@ -685,8 +684,6 @@ class FlowExecutor:
         :type index: Optional[int]
         :param run_id: The ID of the flow run.
         :type run_id: Optional[str]
-        :param variant_id: The ID of the variant to execute.
-        :type variant_id: str
         :param validate_inputs: Whether to validate the input values.
         :type validate_inputs: bool
         :param node_concurrency: The maximum number of nodes that can be executed concurrently.
@@ -713,7 +710,6 @@ class FlowExecutor:
                     inputs,
                     run_id=run_id,
                     line_number=index,
-                    variant_id=variant_id,
                     validate_inputs=validate_inputs,
                     allow_generator_output=allow_generator_output,
                 )
@@ -727,7 +723,6 @@ class FlowExecutor:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        variant_id: str = "",
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
@@ -740,8 +735,6 @@ class FlowExecutor:
         :type index: Optional[int]
         :param run_id: The ID of the flow run.
         :type run_id: Optional[str]
-        :param variant_id: The ID of the variant to execute.
-        :type variant_id: str
         :param validate_inputs: Whether to validate the input values.
         :type validate_inputs: bool
         :param node_concurrency: The maximum number of nodes that can be executed concurrently.
@@ -763,7 +756,6 @@ class FlowExecutor:
                 inputs,
                 run_id=run_id,
                 line_number=index,
-                variant_id=variant_id,
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
@@ -884,7 +876,6 @@ class FlowExecutor:
         inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
         line_number: Optional[int] = None,
-        variant_id: str = "",
         validate_inputs: bool = False,
         allow_generator_output: bool = False,
     ) -> LineResult:
@@ -917,7 +908,6 @@ class FlowExecutor:
             run_id=line_run_id,
             parent_run_id=run_id,
             index=line_number,
-            variant_id=variant_id,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -926,7 +916,6 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
-            variant_id=variant_id,
         )
         output = {}
         aggregation_inputs = {}
@@ -962,7 +951,6 @@ class FlowExecutor:
         inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
         line_number: Optional[int] = None,
-        variant_id: str = "",
         validate_inputs: bool = False,
         allow_generator_output: bool = False,
     ) -> LineResult:
@@ -997,7 +985,6 @@ class FlowExecutor:
             parent_run_id=run_id,
             inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
             index=line_number,
-            variant_id=variant_id,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -1006,7 +993,6 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
-            variant_id=variant_id,
         )
         output = {}
         aggregation_inputs = {}
