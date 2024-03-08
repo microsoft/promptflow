@@ -49,43 +49,6 @@ def heartbeat():
     return jsonify(response)
 
 
-created_by_for_local_to_cloud_trace = {}
-created_by_for_local_to_cloud_trace_lock = threading.Lock()
-
-
-def retrieve_created_by_info_with_cache():
-    if len(created_by_for_local_to_cloud_trace) > 0:
-        return created_by_for_local_to_cloud_trace
-    trace_provider = Configuration.get_instance().get_trace_provider()
-    if trace_provider is None or extract_workspace_triad_from_trace_provider(trace_provider) is None:
-        return
-    with created_by_for_local_to_cloud_trace_lock:
-        if len(created_by_for_local_to_cloud_trace) > 0:
-            return created_by_for_local_to_cloud_trace
-        try:
-            # The total time of collecting info is about 3s.
-            # We may need to run below code more than once
-            # because user may not run `az login` before running pfs service.
-            import jwt
-            from azure.identity import DefaultAzureCredential
-
-            from promptflow.azure._utils.general import get_arm_token
-
-            default_credential = DefaultAzureCredential()
-
-            token = get_arm_token(credential=default_credential)
-            decoded_token = jwt.decode(token, options={"verify_signature": False})
-            created_by_for_local_to_cloud_trace.update(
-                {
-                    "object_id": decoded_token["oid"],
-                    "tenant_id": decoded_token["tid"],
-                    "name": decoded_token.get("name", "unknown"),
-                }
-            )
-        except Exception as e:
-            current_app.logger.error(f"Failed to get created_by info, ignore it: {e}")
-
-
 def create_app():
     app = Flask(__name__)
 
@@ -95,7 +58,9 @@ def create_app():
     CORS(app)
 
     app.add_url_rule("/heartbeat", view_func=heartbeat)
-    app.add_url_rule("/v1/traces", view_func=lambda: trace_collector(app.logger), methods=["POST"])
+    app.add_url_rule(
+        "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]
+    )
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
 
@@ -182,8 +147,48 @@ def create_app():
                     break
 
         # Retrieve created_by info and cache it in advance to avoid blocking the first request.
-        retrieve_created_by_info_with_cache()
+        get_created_by_info_with_cache()
         if not sys.executable.endswith("pfcli.exe"):
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
             monitor_thread.start()
     return app, api
+
+
+created_by_for_local_to_cloud_trace = {}
+created_by_for_local_to_cloud_trace_lock = threading.Lock()
+
+
+def get_created_by_info_with_cache():
+    if len(created_by_for_local_to_cloud_trace) > 0:
+        return created_by_for_local_to_cloud_trace
+    trace_provider = Configuration.get_instance().get_trace_provider()
+    if trace_provider is None or extract_workspace_triad_from_trace_provider(trace_provider) is None:
+        return
+    with created_by_for_local_to_cloud_trace_lock:
+        if len(created_by_for_local_to_cloud_trace) > 0:
+            return created_by_for_local_to_cloud_trace
+        try:
+            # The total time of collecting info is about 3s.
+            # We may need to run below code more than once
+            # because user may not run `az login` before running pfs service.
+            import jwt
+            from azure.identity import DefaultAzureCredential
+
+            from promptflow.azure._utils.general import get_arm_token
+
+            default_credential = DefaultAzureCredential()
+
+            token = get_arm_token(credential=default_credential)
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+            created_by_for_local_to_cloud_trace.update(
+                {
+                    "object_id": decoded_token["oid"],
+                    "tenant_id": decoded_token["tid"],
+                    # Use appid as fallback for service principal scenario.
+                    "name": decoded_token.get("name", decoded_token.get("appid", "")),
+                }
+            )
+        except Exception as e:
+            # This function is only target to be used in Flask app.
+            current_app.logger.error(f"Failed to get created_by info, ignore it: {e}")
+    return created_by_for_local_to_cloud_trace

@@ -11,6 +11,7 @@ import json
 import logging
 import traceback
 from datetime import datetime
+from typing import Callable
 
 from flask import request
 from google.protobuf.json_format import MessageToJson
@@ -28,7 +29,9 @@ from promptflow._sdk.entities._trace import Span
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
-def trace_collector(logger: logging.Logger):
+# Pass in the get_created_by_info_with_cache and logger to avoid app related dependency.
+# To guarantee we can reuse this function in other places.
+def trace_collector(get_created_by_info_with_cache: Callable, logger: logging.Logger):
     content_type = request.headers.get("Content-Type")
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
@@ -55,7 +58,9 @@ def trace_collector(logger: logging.Logger):
                     all_spans.append(span)
 
         # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
-        ThreadWithContextVars(target=_try_write_trace_to_cosmosdb, args=(all_spans, logger)).start()
+        ThreadWithContextVars(
+            target=_try_write_trace_to_cosmosdb, args=(all_spans, get_created_by_info_with_cache, logger)
+        ).start()
         return "Traces received", 200
 
     # JSON protobuf encoding
@@ -63,7 +68,7 @@ def trace_collector(logger: logging.Logger):
         raise NotImplementedError
 
 
-def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
+def _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache: Callable, logger: logging.Logger):
     if not all_spans:
         return
     try:
@@ -78,7 +83,6 @@ def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
 
         logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
         start_time = datetime.now()
-        from promptflow._sdk._service.app import retrieve_created_by_info_with_cache
         from promptflow.azure._storage.cosmosdb.client import get_client
         from promptflow.azure._storage.cosmosdb.span import Span as SpanCosmosDB
         from promptflow.azure._storage.cosmosdb.summary import Summary
@@ -92,10 +96,11 @@ def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
 
         get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name)
 
-        # Retrieve created_by info, we already get it in advance as starting the service.
-        # But user may not run `az login` before running pfs service.
-        # So we need to call this function again to get the created_by info.
-        created_by = retrieve_created_by_info_with_cache()
+        # For local scenario, we already get created_by info in advance as starting the service.
+        # But if customer didn't run `az login`, we can't get it.
+        # So, we try to get and cache it again after getting CosmosDB token.
+        # Don't bother to run in new thread because in most cases, it will be cached.
+        created_by = get_created_by_info_with_cache() if get_created_by_info_with_cache else {}
 
         span_thread.join()
 
