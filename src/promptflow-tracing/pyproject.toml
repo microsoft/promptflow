@@ -29,6 +29,7 @@ classifiers = [
 ]
 
 [project.urls]
+"Homepage" = "https://github.com/microsoft/promptflow"
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 "Source" = "https://github.com/microsoft/promptflow"
 
