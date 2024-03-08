@@ -12,10 +12,10 @@ from threading import Lock
 from typing import Callable, List, Optional
 
 import opentelemetry.trace as otel_trace
-from opentelemetry.trace import Link
-from opentelemetry.trace.status import StatusCode
-from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.trace import Link
+from opentelemetry.trace.span import NonRecordingSpan
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.operation_context import OperationContext
@@ -23,7 +23,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 
 from .._utils.utils import default_json_encoder
-from ._tracer import _create_trace_from_function_call, get_node_name_from_context, Tracer
+from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from .contracts.trace import TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -146,6 +146,7 @@ def traced_generator(generator, original_span: ReadableSpan):
         # TODO: Enrich LLM token count for streaming scenario
         if original_span.attributes["span_type"] == "LLM" and not IS_LEGACY_OPENAI:
             from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
             chunks = []
             role = "assistant"
             for item in generator_output:
@@ -179,9 +180,9 @@ def enrich_span_with_openai_tokens(span, trace_type):
     try:
         tokens = token_collector.try_get_openai_tokens(span.get_span_context().span_id)
         if tokens:
-            span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+            span_tokens = {f"__computed__.cumulative_usage.{k}": v for k, v in tokens.items()}
             if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
-                llm_tokens = {f"{trace_type.value.lower()}.token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+                llm_tokens = {f"{trace_type.value.lower()}.usage.{k}": v for k, v in tokens.items()}
                 span_tokens.update(llm_tokens)
             span.set_attributes(span_tokens)
     except Exception as e:
@@ -212,10 +213,10 @@ def enrich_span_with_embedding(span, inputs, output):
 def _is_single_input(embedding_inputs):
     # OpenAI Embedding API accepts a single string/tokenized string or a list of string/tokenized string as input.
     # For the single string/tokenized string case, we should return true, otherwise return false.
-    if (isinstance(embedding_inputs, str)):
+    if isinstance(embedding_inputs, str):
         # input is a string
         return True
-    elif (isinstance(embedding_inputs, list) and all(isinstance(i, int) for i in embedding_inputs)):
+    elif isinstance(embedding_inputs, list) and all(isinstance(i, int) for i in embedding_inputs):
         # input is a token array
         return True
     return False
