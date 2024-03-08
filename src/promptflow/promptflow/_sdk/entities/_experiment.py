@@ -14,8 +14,8 @@ from marshmallow import Schema
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_EXP_DIR_NAME,
     ExperimentNodeType,
     ExperimentStatus,
@@ -295,7 +295,7 @@ class Experiment(ExperimentTemplate):
         self.last_start_time = kwargs.get("last_start_time", None)
         self.last_end_time = kwargs.get("last_end_time", None)
         self.is_archived = kwargs.get("is_archived", False)
-        self._output_dir = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_EXP_DIR_NAME / self.name
+        self._output_dir = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_EXP_DIR_NAME / self.name
         super().__init__(nodes, name=self.name, data=data, inputs=inputs, **kwargs)
 
     @classmethod
