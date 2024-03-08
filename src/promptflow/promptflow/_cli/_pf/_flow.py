@@ -439,6 +439,7 @@ def _test_flow_multi_modal(args):
     flow = load_flow(args.flow)
     flow_dir = os.path.abspath(flow.code)
     chat_page_url = generate_url(flow_dir)
+    print(f"You can begin chat flow on {chat_page_url}")
     webbrowser.open(chat_page_url)
 
 
