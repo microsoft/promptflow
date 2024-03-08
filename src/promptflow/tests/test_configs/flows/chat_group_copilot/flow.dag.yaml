@@ -1,29 +1,35 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
-  text:
+  question:
     type: string
     default: Tell me a joke.
+  model:
+    type: string
+    default: gpt-3.5-turbo
+  conversation_history:
+    type: list
 outputs:
   output:
     type: string
     reference: ${llm.output}
 nodes:
-- name: joke_prompt
+- name: prompt
   type: prompt
   inputs:
-    text: ${inputs.text}
+    question: ${inputs.question}
+    conversation_history: ${inputs.conversation_history}
   source:
     type: code
-    path: joke.jinja2
+    path: prompt.jinja2
 - name: llm
   type: llm
   inputs:
-    prompt: ${joke_prompt.output}
+    prompt: ${prompt.output}
     deployment_name: gpt-35-turbo
-    model: gpt-3.5-turbo
+    model: ${inputs.model}
     max_tokens: '120'
   source:
     type: code
-    path: joke.jinja2
+    path: prompt.jinja2
   connection: azure_open_ai_connection
   api: chat

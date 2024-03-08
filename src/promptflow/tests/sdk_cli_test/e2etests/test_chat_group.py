@@ -15,43 +15,37 @@ FLOWS_DIR = TEST_ROOT / "test_configs/flows"
 @pytest.mark.e2etest
 class TestChatGroup:
     def test_basic_invoke(self):
-        joke_master = ChatRole(flow=FLOWS_DIR / "chat_group_joke_master")
-        criticizer = ChatRole(flow=FLOWS_DIR / "chat_group_criticizer")
+        topic = "Tell me a joke"
+        copilot = ChatRole(
+            flow=FLOWS_DIR / "chat_group_copilot",
+            role="assistant",
+            name="copilot",
+            inputs=dict(
+                question=topic,
+                model="",
+                conversation_history="${parent.conversation_history}",
+            ),
+        )
+        simulation = ChatRole(
+            flow=FLOWS_DIR / "chat_group_criticizer",
+            role="user",
+            name="simulation",
+            inputs=dict(
+                topic=topic,
+                persona="criticizer",
+                conversation_history="${parent.conversation_history}",
+            ),
+        )
 
         chat_group = ChatGroup(
-            agents=[joke_master, criticizer],
-            # entry_agent=joke_master,
+            roles=[copilot, simulation],
             max_turns=4,
             max_tokens=1000,
             max_time=1000,
-            inputs={
-                "request": {
-                    "type": str,
-                    "default": "Please tell me a joke",
-                    "initialize_for": joke_master.inputs.text,
-                },
-                "comments": {
-                    "type": str,
-                    "default": "I like it",
-                },
-            },
-            outputs={
-                "result": {
-                    "type": str,
-                    "reference": criticizer.outputs.result,
-                }
-            },
+            stop_signal="[stop]",
         )
         assert chat_group
-        joke_master.set_inputs(text=criticizer.outputs.result)
-        criticizer.set_inputs(
-            words=joke_master.outputs.output,
-            third_party_comments=chat_group.inputs.comments,
-            chat_history=chat_group.chat_history,
-        )
-
-        group_input_request = "Hi, tell me a joke pls."
-        chat_group.invoke(request=group_input_request)
+        chat_group.invoke()
 
         # Initial group level input plus 4 turns, so 5 in total
         history = chat_group.chat_history.history

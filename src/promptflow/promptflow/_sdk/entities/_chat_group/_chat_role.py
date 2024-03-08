@@ -3,12 +3,11 @@
 # ---------------------------------------------------------
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Dict, Optional, Union
 
 from promptflow import load_flow
 from promptflow._sdk._constants import DAG_FILE_NAME
-from promptflow._sdk._errors import ChatIOError, ChatRoleError
-from promptflow._sdk._utils import is_data_binding_expression
+from promptflow._sdk._errors import ChatRoleError
 from promptflow._sdk.entities._chat_group._chat_group_io import ChatRoleInputs, ChatRoleOutputs
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
@@ -17,14 +16,36 @@ logger = get_cli_sdk_logger()
 
 
 class ChatRole:
-    """Chat role entity"""
+    """Chat role entity, used in a chat group to participate in a multi-turn conversation.
 
-    def __init__(self, flow: Union[str, PathLike], name: str = None, **kwargs):
-        self.flow = self._validate_flow(flow)
-        self.name = name or self.flow.name
-        logger.info(f"Creating chat role {self.name!r} with flow {self.flow.as_posix()!r}")
-        self.inputs, self.outputs = self._build_role_io(flow)
-        self._flow_object = load_flow(self.flow)
+    :param flow: Path to the flow file.
+    :type flow: Union[str, PathLike]
+    :param role: Role of the chat role. e.g. assistant, user, etc.
+    :type role: str
+    :param name: Name of the chat role. If not provided, it will be the flow folder name.
+    :type name: Optional[str]
+    :param inputs: Inputs value for the chat role.
+    :type inputs: Optional[Dict]
+    """
+
+    def __init__(
+        self, flow: Union[str, PathLike], role: str, name: Optional[str] = None, inputs: Optional[Dict] = None, **kwargs
+    ):
+        self._flow, self._flow_object = self._validate_flow(flow)
+        self._role = role
+        self._name = name or self._flow.name
+        self._inputs, self._outputs = self._build_role_io(flow, inputs)
+        logger.info(f"Created chat role {self._name!r} with flow {self._flow.as_posix()!r}")
+
+    @property
+    def name(self):
+        """Name of the chat role"""
+        return self._name
+
+    @property
+    def role(self):
+        """Role of the chat role"""
+        return self._role
 
     def _validate_flow(self, flow: Union[str, PathLike]):
         """Validate flow"""
@@ -33,74 +54,44 @@ class ChatRole:
         dag_file = flow_path / DAG_FILE_NAME
         if not dag_file.exists():
             raise ChatRoleError(f"Flow {flow_path.resolve().as_posix()!r} does not contain {DAG_FILE_NAME}.")
-        return flow_path
+        flow_object = load_flow(flow_path)
+        return flow_path, flow_object
 
-    def _build_role_io(self, flow: Union[str, PathLike]):
+    def _build_role_io(self, flow: Union[str, PathLike], inputs_value: Dict = None):
         """Build role io"""
         logger.debug(f"Building io for chat role {self.name!r}.")
         flow_dict = load_yaml(Path(flow) / DAG_FILE_NAME)
         inputs = flow_dict.get("inputs", {})
         for key in inputs:
-            inputs[key]["referenced_name"] = f"${{{self.name}.inputs.{key}}}"
-            # current reference is an in-flow reference, so we need to remove the value
+            # fill the inputs with the provided values
+            # TODO: Shall we check the value type here or leave it to executor?
+            inputs[key]["value"] = inputs_value.get(key, None)
+            # current reference is an in-flow reference, not needed here
             inputs[key].pop("reference", None)
         outputs = flow_dict.get("outputs", {})
         for key in outputs:
-            outputs[key]["referenced_name"] = f"${{{self.name}.outputs.{key}}}"
-            # current reference is an in-flow reference, so we need to remove the value
+            # current reference is an in-flow reference, not needed here
             outputs[key].pop("reference", None)
-        return ChatRoleInputs(inputs), ChatRoleOutputs(outputs)
-
-    def _update_input(self, key, value) -> None:
-        if not isinstance(value, self.inputs[key]["type"]):
-            raise ChatIOError(
-                f"Failed to update input {key!r} for role {self.name!r}, "
-                f"expected {self.inputs[key]['type']!r}, got {value!r} with type {type(value)!r}."
-            )
-        self.inputs[key]["value"] = value
-
-    def set_inputs(self, **kwargs):
-        """Set inputs"""
-        logger.debug(f"Setting inputs for chat role {self.name!r} with {kwargs!r}.")
-        from promptflow._sdk.entities._chat_group._chat_group import ChatGroupHistory
-
-        # update inputs
-        for key in self.inputs:
-            if key in kwargs:
-                value = kwargs[key]
-                # if value is a dict, it means it's a reference
-                if isinstance(value, dict):
-                    self.inputs[key]["reference"] = value["referenced_name"]
-                # if it's a string and starts with "${", it's a reference
-                elif isinstance(value, str) and is_data_binding_expression(value):
-                    self.inputs[key]["reference"] = value
-                elif isinstance(value, ChatGroupHistory):
-                    self.inputs[key]["value"] = value.history
-                else:
-                    self._update_input(key, value)
 
         # check for ignored inputs
-        ignored_keys = set(kwargs.keys()) - set(self.inputs.keys())
+        ignored_keys = set(inputs_value.keys()) - set(inputs.keys())
         if ignored_keys:
             logger.warning(
-                f"Ignoring inputs {ignored_keys!r} for chat role {self.name!r}, "
-                f"expected one of {list(self.inputs.keys())}."
+                f"Ignoring inputs {ignored_keys!r} for chat role {self._name!r}, "
+                f"expected one of {list(inputs.keys())}."
             )
 
         # check for missing inputs
         missing_keys = []
-        for key in self.inputs:
-            if (
-                self.inputs[key].get("value") is None
-                and self.inputs[key].get("reference") is None
-                and self.inputs[key].get("default") is None
-            ):
+        for key in inputs:
+            if inputs[key].get("value") is None and inputs[key].get("default") is None:
                 missing_keys.append(key)
         if missing_keys:
             logger.warning(
-                f"Missing inputs {missing_keys!r} for chat role {self.name!r}. These inputs does not have provided "
-                f"value, default value or reference."
+                f"Missing inputs {missing_keys!r} for chat role {self._name!r}. These inputs does not have provided "
+                f"value or default value."
             )
+        return ChatRoleInputs(inputs), ChatRoleOutputs(outputs)
 
     def invoke(self, *args, **kwargs):
         """Invoke chat role"""

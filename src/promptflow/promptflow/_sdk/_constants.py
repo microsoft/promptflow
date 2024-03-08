@@ -139,6 +139,7 @@ PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 CHAT_GROUP_NAME = "chat_group"
+STOP_SIGNAL = "[stop]"
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -475,7 +476,6 @@ class LineRunFieldName:
 
 class ChatGroupSpeakOrder(str, Enum):
     SEQUENTIAL = "sequential"
-    AUTO = "auto"
     LLM = "llm"
 
 

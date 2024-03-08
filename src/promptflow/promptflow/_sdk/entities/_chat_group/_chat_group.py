@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 import time
 from itertools import cycle
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
-from promptflow._sdk._constants import CHAT_GROUP_NAME, ChatGroupSpeakOrder
+from promptflow._sdk._constants import CHAT_GROUP_NAME, STOP_SIGNAL, ChatGroupSpeakOrder
 from promptflow._sdk._errors import ChatGroupError
 from promptflow._sdk._utils import parse_chat_group_data_binding
 from promptflow._sdk.entities._chat_group._chat_group_io import ChatGroupInputs, ChatGroupOutputs
@@ -18,28 +18,46 @@ logger = get_cli_sdk_logger()
 
 
 class ChatGroup:
-    """Chat group entity"""
+    """Chat group entity, can invoke a multi-turn conversation with multiple chat roles.
+
+    :param roles: List of chat roles in the chat group.
+    :type roles: List[ChatRole]
+    :param speak_order: Speak order of the chat group. Default to be sequential which is the order of the roles list.
+    :type speak_order: ChatGroupSpeakOrder
+    :param max_turns: Maximum turns of the chat group. Default to be None which means no limit.
+    :type max_turns: Optional[int]
+    :param max_tokens: Maximum tokens of the chat group. Default to be None which means no limit.
+    :type max_tokens: Optional[int]
+    :param max_time: Maximum time of the chat group. Default to be None which means no limit.
+    :type max_time: Optional[int]
+    :param stop_signal: Stop signal of the chat group. Default to be "[STOP]".
+    :type stop_signal: Optional[str]
+    :param entry_role: Entry role of the chat group. Default to be None which means the first role in the roles list.
+    """
 
     def __init__(
         self,
-        roles: List[ChatRole] = None,
-        entry_role: ChatRole = None,
+        roles: List[ChatRole],
         speak_order: ChatGroupSpeakOrder = ChatGroupSpeakOrder.SEQUENTIAL,
-        max_turns: int = None,
-        max_tokens: int = None,
-        max_time: int = None,
-        inputs: Dict[str, Dict[str, Any]] = None,
-        outputs: Dict[str, Dict[str, Any]] = None,
+        max_turns: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        max_time: Optional[int] = None,
+        stop_signal: Optional[str] = STOP_SIGNAL,
+        entry_role: Optional[ChatRole] = None,
     ):
         self._roles = roles
-        self._entry_role = entry_role
         self._speak_order = speak_order
         self._roles_dict, self._speak_order_list = self._prepare_roles(roles, entry_role, speak_order)
         self._max_turns, self._max_tokens, self._max_time = self._validate_int_parameters(
             max_turns, max_tokens, max_time
         )
-        self.inputs, self.outputs = self._prepare_io(inputs, outputs)
-        self.chat_history = ChatGroupHistory(self)
+        self._stop_signal = stop_signal
+        self._entry_role = entry_role
+        self._conversation_history = ChatGroupHistory(self)
+
+    @property
+    def conversation_history(self):
+        return self._conversation_history
 
     def _prepare_roles(self, roles: List[ChatRole], entry_role: ChatRole, speak_order: ChatGroupSpeakOrder):
         """Prepare roles"""
@@ -50,25 +68,25 @@ class ChatGroup:
 
         # check entry_role is in roles
         if entry_role is not None and entry_role not in roles:
-            raise ChatGroupError(f"Entry role {entry_role.name} is not in roles list {roles}.")
+            raise ChatGroupError(f"Entry role {entry_role.name} is not in roles list {roles!r}.")
 
-        speak_order_list = self._calculate_speak_order(roles, entry_role, speak_order)
+        speak_order_list = self._get_speak_order(roles, entry_role, speak_order)
         roles_dict = {role.name: role for role in roles}
         return roles_dict, cycle(speak_order_list)
 
-    def _calculate_speak_order(
-        self, roles: List[ChatRole], entry_role: ChatRole, speak_order: ChatGroupSpeakOrder
+    def _get_speak_order(
+        self, roles: List[ChatRole], entry_role: Optional[ChatRole], speak_order: ChatGroupSpeakOrder
     ) -> List[str]:
         """Calculate speak order"""
-        logger.info(f"Calculating roles speak order for chat group with specified speak order {speak_order.value!r}.")
         if speak_order == ChatGroupSpeakOrder.SEQUENTIAL:
             if entry_role:
                 logger.warn(
                     f"Entry role {entry_role.name!r} is ignored when speak order is sequential. "
                     f"The first role in the list will be the entry role: {roles[0].name!r}."
                 )
+
             speak_order_list = [role.name for role in roles]
-            logger.info(f"Calculated role speak order is {speak_order_list!r}.")
+            logger.info(f"Role speak order is {speak_order_list!r}.")
             return speak_order_list
         else:
             raise NotImplementedError(f"Speak order {speak_order.value} is not supported yet.")
