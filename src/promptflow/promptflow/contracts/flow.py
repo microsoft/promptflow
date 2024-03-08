@@ -687,8 +687,9 @@ class Flow(FlowBase):
     def _parse_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
         if working_dir is None:
             working_dir = Path(flow_file).resolve().parent
+            flow_file = Path(flow_file).name
         working_dir = Path(working_dir).absolute()
-        return working_dir
+        return flow_file, working_dir
 
     @classmethod
     def _update_working_dir(cls, working_dir: Path):
@@ -697,7 +698,7 @@ class Flow(FlowBase):
     @classmethod
     def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
-        working_dir = cls._parse_working_dir(flow_file, working_dir)
+        flow_file, working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
         flow_dag["name"] = flow_dag.get("name", _sanitize_python_variable_name(working_dir.stem))
