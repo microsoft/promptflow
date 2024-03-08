@@ -8,10 +8,11 @@
 # to provide OTLP/HTTP endpoint as OTEL collector
 
 import json
+import logging
 import traceback
 from datetime import datetime
 
-from flask import current_app, request
+from flask import request
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
@@ -27,7 +28,7 @@ from promptflow._sdk.entities._trace import Span
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
-def trace_collector():
+def trace_collector(logger: logging.Logger):
     content_type = request.headers.get("Content-Type")
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
@@ -54,7 +55,7 @@ def trace_collector():
                     all_spans.append(span)
 
         # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
-        ThreadWithContextVars(target=_try_write_trace_to_cosmosdb, args=(all_spans,)).start()
+        ThreadWithContextVars(target=_try_write_trace_to_cosmosdb, args=(all_spans, logger)).start()
         return "Traces received", 200
 
     # JSON protobuf encoding
@@ -62,7 +63,7 @@ def trace_collector():
         raise NotImplementedError
 
 
-def _try_write_trace_to_cosmosdb(all_spans):
+def _try_write_trace_to_cosmosdb(all_spans, logger: logging.Logger):
     if not all_spans:
         return
     try:
@@ -72,10 +73,10 @@ def _try_write_trace_to_cosmosdb(all_spans):
         resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
         workspace_name = resource_attributes.get(SpanResourceAttributesFieldName.WORKSPACE_NAME, None)
         if subscription_id is None or resource_group_name is None or workspace_name is None:
-            current_app.logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
+            logger.debug("Cannot find workspace info in span resource, skip writing trace to cosmosdb.")
             return
 
-        current_app.logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
+        logger.info(f"Start writing trace to cosmosdb, total spans count: {len(all_spans)}.")
         start_time = datetime.now()
         from promptflow._sdk._service.app import CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE
         from promptflow.azure._storage.cosmosdb.client import get_client
@@ -101,8 +102,8 @@ def _try_write_trace_to_cosmosdb(all_spans):
                 line_summary_client = get_client(
                     CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
                 )
-                Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE).persist(line_summary_client)
-        current_app.logger.info(
+                Summary(span, CREATED_BY_FOR_LOCAL_TO_CLOUD_TRACE, logger).persist(line_summary_client)
+        logger.info(
             (
                 f"Finish writing trace to cosmosdb, total spans count: {len(all_spans)}."
                 f" Duration {datetime.now() - start_time}."
@@ -111,5 +112,5 @@ def _try_write_trace_to_cosmosdb(all_spans):
 
     except Exception as e:
         stack_trace = traceback.format_exc()
-        current_app.logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")
+        logger.error(f"Failed to write trace to cosmosdb: {e}, stack trace is {stack_trace}")
         return
