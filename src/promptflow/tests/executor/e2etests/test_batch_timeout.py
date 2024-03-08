@@ -13,7 +13,7 @@ from promptflow.executor._errors import BatchExecutionTimeoutError, LineExecutio
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
-SAMPLE_FLOW = "web_classification_no_variants"
+SAMPLE_FLOW = "hello-world"
 ONE_LINE_OF_BULK_TEST_TIMEOUT = "one_line_of_bulktest_timeout"
 
 
