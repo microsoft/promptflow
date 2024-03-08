@@ -13,9 +13,10 @@ from importlib.metadata import version
 import openai
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.contracts.trace import TraceType
 
-from .tracer import _traced_async, _traced_sync
+from ._trace import _traced_async, _traced_sync
+from .contracts.trace import TraceType
+
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_HEADER = "ms-azure-ai-promptflow"

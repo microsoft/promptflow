@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow.executor._service.app import app
+from promptflow.tracing._openai_injector import inject_openai_api
 
 
 @pytest.fixture(autouse=True, scope="session")

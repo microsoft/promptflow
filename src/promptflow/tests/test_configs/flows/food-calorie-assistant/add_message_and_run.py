@@ -5,12 +5,14 @@ from typing import Union
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.beta.threads import MessageContentImageFile, MessageContentText
 
-from promptflow import tool, trace
+from promptflow import tool
 from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.types import AssistantDefinition
 from promptflow.exceptions import SystemErrorException
 from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
+from promptflow.tracing import trace
+
 from get_assistant_client import get_assistant_client
 
 URL_PREFIX = "https://platform.openai.com/files/"
