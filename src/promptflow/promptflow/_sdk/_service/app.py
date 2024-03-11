@@ -161,9 +161,7 @@ def create_app():
                     hours=PF_SERVICE_HOUR_TIMEOUT
                 ):
                     # Todo: check if we have any not complete work? like persist all traces.
-                    app.logger.warning(
-                        "Last http request time: %s was made 1h ago", request.url, app.config["last_request_time"]
-                    )
+                    app.logger.warning("Last http request time: %s was made 1h ago", app.config["last_request_time"])
                     port = get_port_from_config()
                     if port:
                         app.logger.info(f"Try auto stop pfs service in port {port} since no request to app within 1h")
