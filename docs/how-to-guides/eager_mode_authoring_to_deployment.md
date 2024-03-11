@@ -24,10 +24,10 @@ There are still some issues for loader function:
 
 ### Function + BaseFlow
 
-#### configure via environment variables
+#### Function mode (configure via environment variables)
 If all of customer's settings are via environment variables, they can define the flow with a function, this is what our eager flow example shows now, we still can support that natively and customer don't need to change anything.
 
-#### configura via initialization settings
+#### Class mode (configura via initialization settings)
 The environment variables way does work but it might need customer to configure lots of environment variables to replace the connection usage. For those customer who want to directly depend on the local/workspace connection and have some customized initialization logic, they can inherit from the BaseFlow we provided and define their own flow logic.
 
 ```python
