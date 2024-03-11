@@ -25,6 +25,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -1098,7 +1099,8 @@ class FlowExecutor:
         if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+            #  When calling pf.test in notebook environment, it is actually in a running loop.
+            nodes_outputs, bypassed_nodes = async_run_allowing_running_loop(scheduler.execute, batch_nodes, inputs, context)
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
             nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
