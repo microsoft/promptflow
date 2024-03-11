@@ -5,10 +5,8 @@ import time
 from itertools import cycle
 from typing import Any, Dict, List, Optional
 
-from promptflow._sdk._constants import CHAT_GROUP_NAME, STOP_SIGNAL, ChatGroupSpeakOrder
+from promptflow._sdk._constants import STOP_SIGNAL, ChatGroupSpeakOrder
 from promptflow._sdk._errors import ChatGroupError
-from promptflow._sdk._utils import parse_chat_group_data_binding
-from promptflow._sdk.entities._chat_group._chat_group_io import ChatGroupInputs, ChatGroupOutputs
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -89,51 +87,6 @@ class ChatGroup:
             return speak_order_list
         else:
             raise NotImplementedError(f"Speak order {speak_order.value!r} is not supported yet.")
-
-    def _prepare_io(self, inputs: Dict[str, Dict[str, Any]], outputs: Dict[str, Dict[str, Any]]):
-        """Prepare inputs and outputs"""
-        logger.info("Preparing chat group inputs and outputs.")
-        if not isinstance(inputs, dict):
-            raise ChatGroupError(f"Inputs should be a dictionary. Got {type(inputs)!r} instead.")
-        if not isinstance(outputs, dict):
-            raise ChatGroupError(f"Outputs should be a dictionary. Got {type(outputs)!r} instead.")
-
-        # add referenced name for chat group inputs
-        for key in inputs:
-            inputs[key]["referenced_name"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
-            # TODO: Remove "initialize for" and implement a more elegant way to handle it
-            # initialize_for is a temporary solution to provide the first reference for role's input. In the scenario
-            # that a role's input is bound with another role's output but that role has not run yet and we hope
-            # the first round input can be provided by chat group inputs, we can use "initialize_for" to do the trick.
-            if "initialize_for" in inputs[key]:
-                value = inputs[key]["initialize_for"]
-                if isinstance(value, str):
-                    role_name, io_type, io_name = parse_chat_group_data_binding(value)
-                    role_input = getattr(self._roles_dict[role_name], io_type)[io_name]
-                    role_input["first_reference"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
-                elif isinstance(value, dict):
-                    value["first_reference"] = f"${{{CHAT_GROUP_NAME}.inputs.{key}}}"
-        logger.debug(f"Chat group inputs: {inputs!r}")
-
-        # refine outputs reference and add referenced name for chat group outputs
-        for key in outputs:
-            # refine outputs reference
-            reference = outputs[key].get("reference")
-            if not reference:
-                raise ChatGroupError(f"Output {key!r} should have a reference. Got {reference!r} instead.")
-            if isinstance(reference, dict):
-                outputs[key]["reference"] = reference["referenced_name"]
-            elif isinstance(reference, str):
-                if not reference.startswith("${"):
-                    raise ChatGroupError(
-                        f"Output {key!r} reference should start with '${{'. Got {reference!r} instead."
-                    )
-
-            # add referenced name for chat group outputs
-            outputs[key]["referenced_name"] = f"${{{CHAT_GROUP_NAME}.outputs.{key}}}"
-        logger.debug(f"Chat group outputs: {outputs!r}")
-
-        return ChatGroupInputs(inputs), ChatGroupOutputs(outputs)
 
     @staticmethod
     def _validate_int_parameters(max_turns: int, max_tokens: int, max_time: int):

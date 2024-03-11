@@ -217,12 +217,6 @@ class ChatRoleError(SDKError):
     pass
 
 
-class ChatIOError(SDKError):
-    """Exception raised if chat io operation failed."""
-
-    pass
-
-
 class UnexpectedAttributeError(SDKError):
     """Exception raised if unexpected attribute is found."""
 
