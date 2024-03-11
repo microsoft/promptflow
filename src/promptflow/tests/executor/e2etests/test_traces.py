@@ -37,8 +37,9 @@ LLM_TOKEN_NAMES = [
 ]
 
 EMBEDDING_TOKEN_NAMES = [
-    "embedding.token_count.prompt",
-    "embedding.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 CUMULATIVE_LLM_TOKEN_NAMES = [
