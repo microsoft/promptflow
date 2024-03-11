@@ -195,10 +195,12 @@ class BatchEngine:
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
+                    run_id = run_id or str(uuid.uuid4())
+
                     previous_run_results = None
                     if resume_from_run_storage and resume_from_run_output_dir:
                         previous_run_results = self._copy_previous_run_result(
-                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir
+                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir, run_id
                         )
 
                     # run flow in batch mode
@@ -233,6 +235,7 @@ class BatchEngine:
         resume_from_run_output_dir: Path,
         batch_inputs: List,
         output_dir: Path,
+        run_id: str,
     ) -> List[LineResult]:
         """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
         to the storage of new run,
@@ -253,6 +256,9 @@ class BatchEngine:
                 previous_run_info = resume_from_run_storage.load_flow_run_info(i)
 
                 if previous_run_info and previous_run_info.status == Status.Completed:
+                    # Change the root_run_id and parent_run_id to the new run_id
+                    previous_run_info.root_run_id = run_id
+                    previous_run_info.parent_run_id = run_id
                     # Load previous node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
