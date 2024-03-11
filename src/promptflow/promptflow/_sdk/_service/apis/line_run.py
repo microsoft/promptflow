@@ -8,9 +8,10 @@ from dataclasses import asdict, dataclass
 from flask_restx import fields
 
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT, CumulativeTokenCountFieldName, LineRunFieldName
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
-from promptflow._sdk.entities._trace import LineRun
+from promptflow._sdk.entities._trace import LineRun as LineRunEntity
 
 api = Namespace("LineRuns", description="Line runs management")
 
@@ -79,11 +80,9 @@ class LineRuns(Resource):
     @api.marshal_list_with(line_run_model)
     @api.response(code=200, description="Line runs")
     def get(self):
-        from promptflow import PFClient
-
         client: PFClient = get_client_from_request()
         args = ListLineRunParser.from_request()
-        line_runs: typing.List[LineRun] = client._traces.list_line_runs(
+        line_runs: typing.List[LineRunEntity] = client._traces.list_line_runs(
             session_id=args.session_id,
             runs=args.runs,
             experiments=args.experiments,
@@ -91,3 +90,14 @@ class LineRuns(Resource):
         # order by start_time desc
         line_runs.sort(key=lambda x: x.start_time, reverse=True)
         return [asdict(line_run) for line_run in line_runs]
+
+
+@api.route("/<string:line_run_id>")
+class LineRun(Resource):
+    @api.doc(description="Get line run")
+    @api.marshal_with(line_run_model)
+    @api.response(code=200, description="Line run")
+    def get(self, line_run_id: str):
+        client: PFClient = get_client_from_request()
+        line_run = client._traces.get_line_run(line_run_id=line_run_id)
+        return asdict(line_run)

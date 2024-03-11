@@ -27,6 +27,11 @@ class TraceOperations:
         )
         return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
 
+    def get_line_run(self, line_run_id: str) -> LineRun:
+        orm_spans = ORMLineRun.get_line_run(line_run_id=line_run_id)
+        line_run = LineRun._from_spans([Span._from_orm_object(orm_span) for orm_span in orm_spans])
+        return line_run
+
     def list_line_runs(
         self,
         session_id: typing.Optional[str] = None,

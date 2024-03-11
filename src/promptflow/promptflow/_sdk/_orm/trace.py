@@ -133,3 +133,48 @@ class LineRun:
                 text("json_extract(span.content, '$.start_time') asc"),
             )
             return LineRun._group_by_trace_id(stmt)
+
+    @staticmethod
+    @sqlite_retry
+    def get_line_run(line_run_id: str) -> typing.List[Span]:
+        with trace_mgmt_db_session() as session:
+            sql = f"""
+with trace as
+(
+    select
+        span_id,
+        json_extract(json_extract(span.content, '$.attributes'), '$.line_run_id') as line_run_id,
+        json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') as batch_run_id,
+        json_extract(json_extract(span.content, '$.attributes'), '$.line_number') as line_number
+    from span
+    where trace_id = '{line_run_id}'
+)
+select name, trace_id, s.span_id, parent_span_id, span_type, session_id, content, path, run, experiment
+from span s
+join trace t
+on s.span_id = t.span_id
+where
+    json_extract(json_extract(s.content, '$.attributes'), '$.line_run_id') = t.line_run_id
+    or (
+        json_extract(json_extract(s.content, '$.attributes'), '$.batch_run_id') = t.batch_run_id
+        and json_extract(json_extract(s.content, '$.attributes'), '$.line_number') = t.line_number
+    )
+"""
+            rows = session.execute(text(sql))
+            spans = []
+            for row in rows:
+                name, trace_id, span_id, parent_span_id, span_type, session_id, content, path, run, experiment = row
+                span = Span(
+                    name=name,
+                    trace_id=trace_id,
+                    span_id=span_id,
+                    parent_span_id=parent_span_id,
+                    span_type=span_type,
+                    session_id=session_id,
+                    content=content,
+                    path=path,
+                    run=run,
+                    experiment=experiment,
+                )
+                spans.append(span)
+            return spans
