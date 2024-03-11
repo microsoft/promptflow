@@ -383,22 +383,7 @@ def normalize_connection_config(connection):
     ensuring it is compatible and standardized for use.
     """
     if isinstance(connection, AzureOpenAIConnection):
-        use_key_auth = True
-
-        if not connection.api_key:
-            try:
-                from promptflow._sdk._constants import ConnectionAuthMode
-                if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
-                    use_key_auth = False
-            except ImportError as e:
-                if "cannot import name 'ConnectionAuthMode' from 'promptflow._sdk._constants'" in str(e):
-                    print("Failed to import ConnectionAuthMode, use meid_token auth by default.")
-                    use_key_auth = False
-                    pass
-                else:
-                    raise e
-
-        if use_key_auth:
+        if connection.api_key:
             return {
                 # disable OpenAI's built-in retry mechanism by using our own retry
                 # for better debuggability and real-time status updates.
