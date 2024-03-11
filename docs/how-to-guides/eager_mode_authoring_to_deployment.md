@@ -11,27 +11,26 @@ There are still some issues for loader function:
 - customer needs to define both the encapsulated class and the loader function
 - the flow can only be deployed after pf.save
 
-## other choices
+## Other choices
 
-### function + BaseFlow
+### Function + BaseFlow
 
 #### configure via environment variables
 If all of customer's settings are via environment variables, they can define the flow with a function, this is what our eager flow example shows now, we still can support that natively and customer don't need to change anything.
 
 #### configura via initialization settings
-The environment variables way does work but it might need customer to configure lots of environment variables to replace the connection usage. For those customer who want to directly depend on the local/workspace connection. They need a way to define the initialization and config override.   
-For customer with such requirements, they can inherit from the BaseFlow we provided and define their own flow logic.   
+The environment variables way does work but it might need customer to configure lots of environment variables to replace the connection usage. For those customer who want to directly depend on the local/workspace connection and have some customized initialization logic, they can inherit from the BaseFlow we provided and define their own flow logic.
 
 ```python
 # BaseFlow interface
 class BaseFlow:
-    def init(flow_settings: dict);
-    def execute(*kwargs);
+    def init(self, flow_settings: dict, *kwargs);
+    def execute(self, *kwargs);
 ```
 - `init` function can be used for customized initialization logic; 
 - `execute` function is the entry point of flow execution.
 
-Besides this BaseFlow interface, we will also abstract the connection provider impl to factory mode and allow customer using that directly in their code, here's a sample code for `init`:
+Besides this BaseFlow interface, we can also abstract the connection provider impl to factory mode and allow customer using that directly in their code, here's a sample code for `init`:
 ```python
 class EvaluatorFlow(BaseFlow):
     def init(self, flow_settings: dict, *kwargs):
@@ -69,6 +68,8 @@ class EvaluatorFlow(BaseFlow):
 From system level, it's easier to support such flow inheritance and it can be easily supported by both authoring and deployment.
 
 From infra perspective, we can detect whether the entry is a function with @flow or it's class inherited from BaseFlow. If it's a function, we don't need to help customer do any initialization; if it's a inherited class, we can help customer trigger the flow initalization before running it.
+
+### Any other proposal?
 
 
 
