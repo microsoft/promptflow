@@ -1,3 +1,4 @@
+message_format: OPENAI_VISION
 inputs:
   chat_history:
     type: list
@@ -5,24 +6,36 @@ inputs:
     - inputs:
         question:
         - the first question
-        - data:image/jpg;path: logo.jpg
+        - type: image_file
+          image_file:
+            path: logo.jpg
       outputs:
         answer:
-        - data:image/jpg;path: logo.jpg
+        - type: image_file
+          image_file:
+            path: logo.jpg
     - inputs:
         question:
         - the second question
-        - data:image/png;path: logo_2.png
+        - type: image_file
+          image_file:
+            path: logo_2.png
       outputs:
         answer:
-        - data:image/png;path: logo_2.png
+        - type: image_file
+          image_file:
+            path: logo_2.png
     is_chat_history: true
   question:
     type: list
     default:
     - the third question
-    - data:image/jpg;path: logo.jpg
-    - data:image/png;path: logo_2.png
+    - type: image_file
+      image_file:
+        path: logo.jpg
+    - type: image_file
+      image_file:
+        path: logo_2.png
     is_chat_input: true
 outputs:
   answer:

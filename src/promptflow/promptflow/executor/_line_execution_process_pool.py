@@ -28,7 +28,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.process_utils import get_available_max_worker_count, log_errors_from_file
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
@@ -603,19 +603,19 @@ class LineExecutionProcessPool:
         # Persist multimedia data in the aggregation_inputs of line result to output_dir
         # if _serialize_multimedia_during_execution is True.
         if self._serialize_multimedia_during_execution:
-            result.aggregation_inputs = persist_multimedia_data(
+            result.aggregation_inputs = MultimediaProcessor.get_instance().persist_multimedia_data(
                 result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
             )
         # Persist multimedia data in the outputs of line result to output_dir
-        result.output = persist_multimedia_data(result.output, self._output_dir)
+        result.output = MultimediaProcessor.get_instance().persist_multimedia_data(result.output, self._output_dir)
         return result
 
     def _serialize_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         if run_info.inputs:
-            run_info.inputs = convert_multimedia_data_to_string(run_info.inputs)
+            run_info.inputs = MultimediaProcessor.get_instance().convert_multimedia_data_to_string(run_info.inputs)
 
         if run_info.output:
-            serialized_output = convert_multimedia_data_to_string(run_info.output)
+            serialized_output = MultimediaProcessor.get_instance().convert_multimedia_data_to_string(run_info.output)
             run_info.output = serialized_output
             run_info.result = None
 
@@ -624,7 +624,9 @@ class LineExecutionProcessPool:
         # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
         # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
-            run_info.api_calls = convert_multimedia_data_to_string(run_info.api_calls, inplace=True)
+            run_info.api_calls = MultimediaProcessor.get_instance().convert_multimedia_data_to_string(
+                run_info.api_calls, inplace=True
+            )
 
     def _generate_line_result_for_exception(
         self,

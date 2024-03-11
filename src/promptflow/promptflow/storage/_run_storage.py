@@ -2,12 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from functools import partial
 from pathlib import Path
 from typing import Union
 
-from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
-from promptflow.contracts.multimedia import Image
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 
@@ -138,12 +136,6 @@ class DefaultRunStorage(AbstractRunStorage):
                  the conversions.
         :rtype: Any
         """
-        if self._base_dir:
-            pfbytes_file_reference_encoder = get_file_reference_encoder(
-                folder_path=self._base_dir,
-                relative_path=self._sub_dir,
-            )
-        else:
-            pfbytes_file_reference_encoder = None
-        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
-        return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
+        return MultimediaProcessor.get_instance().persist_multimedia_data(
+            value, base_dir=self._base_dir, sub_dir=self._sub_dir, inplace=inplace
+        )

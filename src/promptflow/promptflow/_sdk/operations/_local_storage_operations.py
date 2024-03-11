@@ -40,11 +40,7 @@ from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
-from promptflow._utils.multimedia_utils import (
-    get_file_reference_encoder,
-    load_multimedia_data_recursively,
-    resolve_multimedia_data_recursively,
-)
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
@@ -407,7 +403,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 new_runs = self._load_info_from_file(node_run_record_file, parse_const_as_str)
                 node_run_infos.extend(new_runs)
                 for new_run in new_runs:
-                    new_run = resolve_multimedia_data_recursively(node_run_record_file, new_run)
+                    new_run = MultimediaProcessor.get_instance().resolve_multimedia_data_recursively(
+                        node_run_record_file, new_run
+                    )
         return node_run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
@@ -422,8 +420,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 runs = self._load_info_from_file(node_run_record_file)
                 if runs:
                     run = runs[0]
-                run = resolve_multimedia_data_recursively(node_run_record_file, run)
-                run = load_multimedia_data_recursively(run)
+                run = MultimediaProcessor.get_instance().resolve_multimedia_data_recursively(node_run_record_file, run)
+                run = MultimediaProcessor.get_instance().load_multimedia_data_recursively(run)
                 run_info = NodeRunInfo.deserialize(run)
                 node_run_infos.append(run_info)
         return node_run_infos
@@ -444,7 +442,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             new_runs = self._load_info_from_file(line_run_record_file, parse_const_as_str)
             flow_run_infos.extend(new_runs)
             for new_run in new_runs:
-                new_run = resolve_multimedia_data_recursively(line_run_record_file, new_run)
+                new_run = MultimediaProcessor.get_instance().resolve_multimedia_data_recursively(
+                    line_run_record_file, new_run
+                )
         return flow_run_infos
 
     def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
@@ -457,8 +457,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         if not run:
             return None
 
-        run = resolve_multimedia_data_recursively(self._run_infos_folder, run)
-        run = load_multimedia_data_recursively(run)
+        run = MultimediaProcessor.get_instance().resolve_multimedia_data_recursively(self._run_infos_folder, run)
+        run = MultimediaProcessor.get_instance().load_multimedia_data_recursively(run)
         run_info = FlowRunInfo.deserialize(run)
         return run_info
 
@@ -479,7 +479,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
 
     def _serialize_multimedia(self, value, folder_path: Path, relative_path: Path = None):
-        pfbytes_file_reference_encoder = get_file_reference_encoder(folder_path, relative_path, use_absolute_path=True)
+        pfbytes_file_reference_encoder = MultimediaProcessor.get_instance().get_file_reference_encoder(
+            folder_path, relative_path, use_absolute_path=True
+        )
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return serialize(value, serialization_funcs=serialization_funcs)
 

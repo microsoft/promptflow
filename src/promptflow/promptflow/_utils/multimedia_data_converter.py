@@ -5,7 +5,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 
-from promptflow._utils.multimedia_utils import is_multimedia_dict
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 
 
 class ResourceType(Enum):
@@ -77,7 +77,7 @@ class MultimediaFormatAdapter20231201(AbstractMultimediaFormatAdapter):
     MIME_PATTERN = re.compile(r"^data:(.*);(path|base64|url)$")
 
     def is_valid_format(self, original_data: Any):
-        return isinstance(original_data, dict) and is_multimedia_dict(original_data)
+        return isinstance(original_data, dict) and BasicMultimediaProcessor.is_multimedia_dict(original_data)
 
     def extract_info(self, original_data: Any) -> MultimediaInfo:
         if not self.is_valid_format(original_data):
@@ -116,9 +116,9 @@ class MultimediaConverter:
         :param flow_file: The path to the YAML file. The YAML content will be used to determine the contract version.
         :type flow_file: Path
         """
-        # TODO: check yaml content to determine the current contract version.
-        # Different contract version will have different multimedia format.
-        # The version exists in the yaml file, so we need to load the yaml to get version and init converter.
+        # TODO: read flow.MessageFormatType from flow yaml file.
+        # Implement the format_adapter class for the openai_vision type.
+        # Then initialize the format_adapter for different MessageFormatType.
         self.format_adapter = MultimediaFormatAdapter20231201()
 
     def convert_content_recursively(self, content: Any, client_converter: AbstractMultimediaInfoConverter):
