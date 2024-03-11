@@ -141,8 +141,7 @@ class ToolResolver:
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
     def _load_tool_as_function(self, node_name: str, tool_def: dict) -> AssistantTool:
-        # We clone the raw tool definition to avoid modifying the original AssistantDefinition object,
-        # ensuring it is picklable as flow inputs
+        # clone the raw tool definition to avoid modifying the original AssistantDefinition object
         updated_tool_def = copy.deepcopy(tool_def)
         # load ToolSource as object from json string
         updated_tool_def["source"] = (
