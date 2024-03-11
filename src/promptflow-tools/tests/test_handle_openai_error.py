@@ -316,7 +316,6 @@ class TestHandleOpenAIError:
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-
     def test_aoai_with_vision_model_extra_fields_error(self, azure_open_ai_connection):
         with (
             patch('promptflow.tools.common.get_workspace_triad') as mock_get,

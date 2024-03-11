@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
-    ParseConnectionError, _parse_resource_id, list_deployment_connections, refine_extra_fields_not_permitted_error, \
+    ParseConnectionError, _parse_resource_id, list_deployment_connections, \
     normalize_connection_config
 from promptflow.tools.exception import ListDeploymentsError
 
