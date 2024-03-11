@@ -34,6 +34,11 @@ def azure_open_ai_connection():
 
 
 @pytest.fixture
+def azure_open_ai_connection_meid():
+    return ConnectionManager().get("azure_open_ai_connection_meid")
+
+
+@pytest.fixture
 def aoai_provider(azure_open_ai_connection) -> AzureOpenAI:
     aoai_provider = AzureOpenAI(azure_open_ai_connection)
     return aoai_provider

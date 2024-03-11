@@ -24,6 +24,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
@@ -603,7 +604,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         from promptflow._sdk.entities._eager_flow import EagerFlow
 
         flow = load_local_flow(code.path)
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, EagerFlow) and flow.language == FlowLanguage.Python:
+            # TODO: support generate meta for CSharp flow
             generate_flow_meta(
                 flow_directory=code.path,
                 source_path=flow.entry_file,
