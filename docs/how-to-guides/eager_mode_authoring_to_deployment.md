@@ -14,7 +14,7 @@ We already have a clear story from authoring to deployment with DAG flow, given 
 
 
 ## Daniel's proposal - loader function
-[loader_function](https://github.com/enterprises/microsoftopensource/saml/initiate?return_to=https%3A%2F%2Fgithub.com%2FAzure%2Fazureml_run_specification%2Fblob%2Fusers%2Fanksing%2Fevaluator_flow_asset%2Fspecs%2Fsimplified-sdk%2Fevaluator%2Fsave_load_promptflow.md)   
+[loader_function](https://github.com/Azure/azureml_run_specification/blob/users/anksing/evaluator_flow_asset/specs/simplified-sdk/evaluator/save_load_promptflow.md)   
 Ignore the details of the pf.save and pf.load_flow (we won't cover the details here), loader function is a way to allow customer customizing their eager flow and it does can mitigate the issue to some extend.   
 There are still some issues for loader function:
 - customer needs to define both the encapsulated class and the loader function
