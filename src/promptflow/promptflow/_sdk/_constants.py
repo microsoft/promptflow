@@ -10,6 +10,8 @@ from pathlib import Path
 LOGGER_NAME = "promptflow"
 
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
+# Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
+# Use HOME_PROMPT_FLOW_DIR instead
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 
 
@@ -79,6 +81,7 @@ PF_SERVICE_HOUR_TIMEOUT = 1
 PF_SERVICE_MONITOR_SECOND = 60
 PF_SERVICE_WORKER_NUM = 16
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
+PF_TRACE_CONTEXT_ATTR = "attributes"
 PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
@@ -133,6 +136,7 @@ FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 # trace
+TRACE_DEFAULT_SESSION_ID = "default"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"

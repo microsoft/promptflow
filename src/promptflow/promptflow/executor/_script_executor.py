@@ -8,7 +8,6 @@ from typing import Any, Callable, Mapping, Optional
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
-from promptflow._core.tracer import Tracer, _traced
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
@@ -17,6 +16,8 @@ from promptflow.contracts.flow import Flow
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._trace import _traced
+from promptflow.tracing._tracer import Tracer
 
 from .flow_executor import FlowExecutor
 

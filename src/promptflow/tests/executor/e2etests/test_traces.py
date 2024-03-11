@@ -6,15 +6,16 @@ from types import GeneratorType
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
+from promptflow.tracing import trace
+from promptflow.tracing.contracts.trace import TraceType
 
 from ..process_utils import execute_function_in_subprocess
-from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter, load_content
+from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, load_content, prepare_memory_exporter
 
 LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -78,7 +79,7 @@ def sub_level_function():
     return "Hello, World!"
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTraces:
     def validate_openai_apicall(self, apicall: dict):
@@ -312,7 +313,7 @@ class TestExecutorTraces:
             )
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestOTelTracer:
     @pytest.mark.parametrize(
@@ -349,7 +350,7 @@ class TestOTelTracer:
             ("llm_tool", {"topic": "Hello", "stream": False}, "joke.jinja2"),
             # Add back this test case after changing the interface of render_template_jinja2
             # ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
-        ]
+        ],
     )
     def test_otel_trace_with_prompt(
         self,
@@ -359,7 +360,11 @@ class TestOTelTracer:
         prompt_tpl_file,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_prompt, dev_connections, flow_file, inputs, prompt_tpl_file
+            self.assert_otel_traces_with_prompt,
+            dev_connections,
+            flow_file,
+            inputs,
+            prompt_tpl_file,
         )
 
     def assert_otel_traces_with_prompt(self, dev_connections, flow_file, inputs, prompt_tpl_file):
@@ -400,7 +405,11 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_llm, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces_with_llm,
+            dev_connections,
+            flow_file,
+            inputs,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, expected_span_length):
@@ -426,7 +435,7 @@ class TestOTelTracer:
             ("openai_embedding_api_flow", {"input": "Hello"}, 3),
             # [9906] is the tokenized version of "Hello"
             ("openai_embedding_api_flow_with_token", {"input": [9906]}, 3),
-        ]
+        ],
     )
     def test_otel_trace_with_embedding(
         self,
@@ -436,7 +445,11 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_embedding, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces_with_embedding,
+            dev_connections,
+            flow_file,
+            inputs,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_embedding(self, dev_connections, flow_file, inputs, expected_span_length):
