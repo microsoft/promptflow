@@ -179,12 +179,12 @@ def log_activity(
             raise exception
 
 
-def extract_telemetry_info(self):
+def extract_telemetry_info(self, *args, **kwargs):
     """Extract pf telemetry info from given telemetry mix-in instance."""
     result = {}
     try:
         if isinstance(self, TelemetryMixin):
-            return self._get_telemetry_values()
+            return self._get_telemetry_values(*args, **kwargs)
     except Exception:
         pass
     return result
@@ -233,7 +233,7 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
-            custom_dimensions.update(extract_telemetry_info(self))
+            custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs, activity_name=activity_name))
             # update activity name according to kwargs.
             _activity_name = update_activity_name(activity_name, kwargs=kwargs)
             with log_activity(logger, _activity_name, activity_type, custom_dimensions):

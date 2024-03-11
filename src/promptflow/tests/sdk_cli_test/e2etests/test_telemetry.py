@@ -371,6 +371,3 @@ class TestTelemetry:
                 mock_logger.side_effect = assert_flow_test
 
                 pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
-
-    def test_yaml_type(self):
-        pass

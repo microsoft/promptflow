@@ -48,6 +48,7 @@ from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, Run
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
@@ -1056,3 +1057,20 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             run._identity[IdentityKeys.RESOURCE_ID] = resource_id
         else:
             raise UserErrorException(f"Identity type {identity_type!r} is not supported.")
+
+    def _get_create_or_update_telemetry_values(self, run: Run, **kwargs):
+        flow_obj = load_flow(source=run.flow)
+        if isinstance(flow_obj, EagerFlow):
+            return {"flow_type": "eager"}
+        return {"flow_type": "yaml"}
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pfazure.runs.create_or_update":
+                telemetry_values.update(self._get_create_or_update_telemetry_values(*args, **kwargs))
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values
