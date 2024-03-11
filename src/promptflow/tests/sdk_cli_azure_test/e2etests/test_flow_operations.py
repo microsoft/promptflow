@@ -14,6 +14,7 @@ from ..recording_utilities import is_live
 
 tests_root_dir = Path(__file__).parent.parent.parent
 flow_test_dir = tests_root_dir / "test_configs/flows"
+eager_flow_test_dir = tests_root_dir / "test_configs/eager_flows"
 data_dir = tests_root_dir / "test_configs/datas"
 
 
@@ -74,3 +75,11 @@ class TestFlow:
         for flow in flows:
             print(json.dumps(flow._to_dict(), indent=4))
         assert len(flows) == 3
+
+    def test_eager_flow_creation(self, pf):
+        flow_source = eager_flow_test_dir / "simple_with_yaml"
+        with pytest.raises(UserErrorException) as e:
+            pf.flows.create_or_update(
+                flow=flow_source,
+            )
+        assert "Creating it to cloud is not supported" in str(e.value)
