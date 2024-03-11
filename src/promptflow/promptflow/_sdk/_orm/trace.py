@@ -142,21 +142,25 @@ class LineRun:
 with trace as
 (
     select
-        span_id,
         json_extract(json_extract(span.content, '$.attributes'), '$.line_run_id') as line_run_id,
         json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') as batch_run_id,
-        json_extract(json_extract(span.content, '$.attributes'), '$.line_number') as line_number
+        json_extract(json_extract(span.content, '$.attributes'), '$.line_number') as line_number,
+        limit 1
     from span
     where trace_id = '{line_run_id}'
 )
-select name, trace_id, s.span_id, parent_span_id, span_type, session_id, content, path, run, experiment
+select name, trace_id, span_id, parent_span_id, span_type, session_id, content, path, run, experiment
 from span s
 join trace t
-on s.span_id = t.span_id
 where
     json_extract(json_extract(s.content, '$.attributes'), '$.line_run_id') = t.line_run_id
+    or json_extract(json_extract(s.content, '$.attributes'), '$.\"referenced.line_run_id\"') = t.line_run_id
     or (
         json_extract(json_extract(s.content, '$.attributes'), '$.batch_run_id') = t.batch_run_id
+        and json_extract(json_extract(s.content, '$.attributes'), '$.line_number') = t.line_number
+    )
+    or (
+        json_extract(json_extract(s.content, '$.attributes'), '$.\"referenced.batch_run_id\"') = t.batch_run_id
         and json_extract(json_extract(s.content, '$.attributes'), '$.line_number') = t.line_number
     )
 """
