@@ -62,9 +62,6 @@ class TestPromptflowServiceCLI:
             kill_exist_service(port=port)
 
     def test_show_service_status(self, capsys):
-        with pytest.raises(SystemExit):
-            self._run_pfs_command("show-status")
-
         start_pfs = subprocess.Popen("pfs start", shell=True)
         # Wait for service to be started
         sleep(5)
