@@ -77,7 +77,13 @@ from promptflow._utils.multimedia_data_converter import (
     MultimediaInfo,
     ResourceType,
 )
-from promptflow._utils.multimedia_utils import MultimediaProcessor
+from promptflow._utils.multimedia_utils import (
+    BasicMultimediaProcessor,
+    MultimediaProcessor,
+    load_multimedia_data_recursively,
+    persist_multimedia_data,
+    resolve_multimedia_data_recursively,
+)
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._utils.utils import (
     AttrDict,

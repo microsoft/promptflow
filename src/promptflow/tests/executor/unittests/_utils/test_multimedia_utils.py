@@ -142,6 +142,20 @@ class TestMultimediaProcessor:
         processor = MultimediaProcessor.create(message_format_type)
         assert isinstance(processor, processor_class)
 
+    @pytest.mark.parametrize(
+        "flow_folder_name, flow_file, processor_class",
+        [
+            ("chat_flow_with_openai_vision_image", "flow.dag.yaml", OpenaiVisionMultimediaProcessor),
+            ("chat_flow_with_image", "flow.dag.yaml", BasicMultimediaProcessor),
+            ("chat_flow_with_openai_vision_image", "mock_chat.py", BasicMultimediaProcessor),
+            (None, None, BasicMultimediaProcessor),
+        ],
+    )
+    def test_create_from_yaml(self, flow_folder_name, flow_file, processor_class):
+        flow_folder = get_flow_folder(flow_folder_name, FLOW_ROOT) if flow_folder_name else None
+        processor = MultimediaProcessor.create_from_yaml(flow_file, working_dir=flow_folder)
+        assert isinstance(processor, processor_class)
+
     def test_process_multimedia_dict_recursively(self):
         def process_func(image_dict):
             return "image_placeholder"
