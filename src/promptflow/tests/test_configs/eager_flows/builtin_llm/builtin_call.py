@@ -3,20 +3,17 @@
 # ---------------------------------------------------------
 
 import os
-from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
 from jinja2 import Template
 
-from promptflow import trace
 from promptflow._sdk.entities import AzureOpenAIConnection
 from promptflow.tools.aoai import chat
 
 BASE_DIR = Path(__file__).absolute().parent
 
 
-@trace
 def load_prompt(jinja2_template: str, question: str, chat_history: list) -> str:
     """Load prompt function."""
     with open(BASE_DIR / jinja2_template, "r", encoding="utf-8") as f:
@@ -25,7 +22,6 @@ def load_prompt(jinja2_template: str, question: str, chat_history: list) -> str:
         return prompt
 
 
-@trace
 def flow_entry(question: str = "What is ChatGPT?", chat_history: list = [], stream: bool = False) -> str:
     """Flow entry function."""
 
