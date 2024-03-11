@@ -5,6 +5,7 @@ import copy
 from pathlib import Path
 from promptflow._sdk._utils import render_jinja_template
 
+
 def extract_requirements(file_path):
     with open(file_path, 'r') as file:
         tree = ast.parse(file.read())
@@ -70,7 +71,6 @@ if __name__ == '__main__':
     hidden_imports.append("azure.storage.fileshare")
     hidden_imports.remove("azure.storage.file.datalake")
     hidden_imports.append("azure.storage.filedatalake")
-
 
     render_context = {
         "hidden_imports": hidden_imports,
