@@ -145,7 +145,7 @@ PFS_MODEL_DATETIME_FORMAT = "iso8601"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 # chat group
-STOP_SIGNAL = "[stop]"
+STOP_SIGNAL = "[STOP]"
 
 
 class CustomStrongTypeConnectionConfigs:

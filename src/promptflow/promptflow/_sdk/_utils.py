@@ -1091,27 +1091,6 @@ def get_all_data_binding_expressions(
     return []
 
 
-def parse_chat_group_data_binding(value: str):
-    """Get all elements from a chat group data-binding expression.
-
-    :param value: Value to extract.
-    :type value: str
-    :return: list of elements.
-    :rtype: List[str]
-    """
-    from promptflow._sdk._errors import ChatGroupError
-
-    try:
-        result = get_all_data_binding_expressions(value)[0].split(".")
-        assert len(result) == 3
-    except Exception:
-        raise ChatGroupError(
-            f"Invalid chat group data-binding expression: {value!r}, should be like '${{owner.inputs.xxx}}'."
-        )
-    else:
-        return result
-
-
 def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
     """
     Get connection operation based on connection provider.

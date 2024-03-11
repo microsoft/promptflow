@@ -13,8 +13,9 @@ FLOWS_DIR = TEST_ROOT / "test_configs/flows"
 
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
+@pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 class TestChatGroup:
-    def test_basic_invoke(self):
+    def test_chat_group_basic_invoke(self):
         topic = "Tell me a joke"
         copilot = ChatRole(
             flow=FLOWS_DIR / "chat_group_copilot",
