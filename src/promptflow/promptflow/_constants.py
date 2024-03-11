@@ -156,3 +156,11 @@ class SpanEventFieldName:
 class SpanLinkFieldName:
     CONTEXT = "context"
     ATTRIBUTES = "attributes"
+
+
+class MessageFormatType:
+    BASIC = "basic"
+    OPENAI_VISION = "openai_vision"
+
+
+DEFAULT_OUTPUT_NAME = "output"

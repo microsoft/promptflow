@@ -1125,7 +1125,7 @@ class TestCli:
             assert prefix in log_msg
             assert expect_dict == log_inputs
 
-        with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
+        with caplog.at_level(level=logging.WARNING, logger=LOGGER_NAME):
             run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/web_classification", *extra_args)
             for log, expected_input, expected_log_prefix in zip(caplog.records, expected_inputs, expected_log_prefixes):
                 validate_log(
@@ -1977,6 +1977,22 @@ class TestCli:
             assert ExperimentStatus.QUEUING in out
             wait_for_experiment_terminated(exp_name)
             exp = local_client._experiments.get(name=exp_name)
+            assert len(exp.node_runs) == 4
+            assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
+            metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+            assert "accuracy" in metrics
+
+    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
+        from promptflow._sdk._load_functions import _load_experiment
+
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
+            run_pf_command("experiment", "start", "--file", experiment_file, "--stream")
+            experiment = _load_experiment(source=experiment_file)
+            exp = local_client._experiments.get(name=experiment.name)
             assert len(exp.node_runs) == 4
             assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])

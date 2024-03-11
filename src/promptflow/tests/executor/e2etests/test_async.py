@@ -1,5 +1,6 @@
 import os
 import pytest
+from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from ..utils import get_flow_folder, get_yaml_file
 
@@ -40,3 +41,18 @@ class TestAsync:
             max_concurrency = calculate_max_concurrency(flow_result)
             assert max_concurrency == expected_concurrency[i]
             assert max_concurrency <= concurrency
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "folder_name, expected_result",
+        [
+            ("async_tools", {'ouput1': 'Hello', 'output2': 'Hello'}),
+            ("async_tools_with_sync_tools", {'ouput1': 'Hello', 'output2': 'Hello'}),
+        ],
+    )
+    async def test_exec_line_async(self, folder_name, expected_result):
+        os.chdir(get_flow_folder(folder_name))
+        executor = FlowExecutor.create(get_yaml_file(folder_name), {})
+        flow_result = await executor.exec_line_async({"input_str": "Hello"})
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.output == expected_result

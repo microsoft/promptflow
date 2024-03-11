@@ -383,13 +383,25 @@ def normalize_connection_config(connection):
     ensuring it is compatible and standardized for use.
     """
     if isinstance(connection, AzureOpenAIConnection):
-        return {
-            "api_key": connection.api_key,
-            "api_version": connection.api_version,
-            "azure_endpoint": connection.api_base
-        }
+        if connection.api_key:
+            return {
+                # disable OpenAI's built-in retry mechanism by using our own retry
+                # for better debuggability and real-time status updates.
+                "max_retries": 0,
+                "api_key": connection.api_key,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+            }
+        else:
+            return {
+                "max_retries": 0,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+                "azure_ad_token_provider": connection.get_token,
+            }
     elif isinstance(connection, OpenAIConnection):
         return {
+            "max_retries": 0,
             "api_key": connection.api_key,
             "organization": connection.organization,
             "base_url": connection.base_url
@@ -398,3 +410,33 @@ def normalize_connection_config(connection):
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
+
+
+def init_openai_client(connection: OpenAIConnection):
+    try:
+        from openai import OpenAI as OpenAIClient
+    except ImportError as e:
+        if "cannot import name 'OpenAI' from 'openai'" in str(e):
+            raise ImportError(
+                "Please upgrade your OpenAI package to version 1.0.0 or later" +
+                "using the command: pip install --upgrade openai.")
+        else:
+            raise e
+
+    conn_dict = normalize_connection_config(connection)
+    return OpenAIClient(**conn_dict)
+
+
+def init_azure_openai_client(connection: AzureOpenAIConnection):
+    try:
+        from openai import AzureOpenAI as AzureOpenAIClient
+    except ImportError as e:
+        if "cannot import name 'AzureOpenAI' from 'openai'" in str(e):
+            raise ImportError(
+                "Please upgrade your OpenAI package to version 1.0.0 or later" +
+                "using the command: pip install --upgrade openai.")
+        else:
+            raise e
+
+    conn_dict = normalize_connection_config(connection)
+    return AzureOpenAIClient(**conn_dict)

@@ -1,6 +1,6 @@
 import asyncio
 
-from promptflow import trace
+from promptflow.tracing import trace
 
 
 @trace
