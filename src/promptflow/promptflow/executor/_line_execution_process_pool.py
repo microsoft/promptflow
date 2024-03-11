@@ -305,6 +305,7 @@ class LineExecutionProcessPool:
                     # Get task from task_queue
                     data = task_queue.get(timeout=1)
                     # Calculate the line timeout for the current line.
+                    # If the line_timeout_sec is None, it means the batch run is timeouted.
                     line_timeout_sec = self._calculate_line_timeout_sec()
                     # If the task is a terminate signal or the batch run is timeouted, exit the loop.
                     if data == TERMINATE_SIGNAL or line_timeout_sec is None:
