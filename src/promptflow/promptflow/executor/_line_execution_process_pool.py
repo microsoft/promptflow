@@ -300,37 +300,30 @@ class LineExecutionProcessPool:
         terminated = False
         while not terminated:
             self._processes_manager.ensure_healthy()
-            while True:
-                try:
-                    # Get task from task_queue
-                    data = task_queue.get(timeout=1)
-                    # Calculate the line timeout for the current line.
-                    # If the line_timeout_sec is None, it means the batch run is timeouted.
-                    line_timeout_sec = self._calculate_line_timeout_sec()
-                    # If the task is a terminate signal or the batch run is timeouted, exit the loop.
-                    if data == TERMINATE_SIGNAL or line_timeout_sec is None:
-                        bulk_logger.info(
-                            f"The thread monitoring the process [{process_id}-{process_name}] will be terminated."
-                        )
-                        # Put the terminate signal into the input queue to notify the sub process to exit.
-                        input_queue.put(TERMINATE_SIGNAL)
-                        # End the process if found the terminate signal.
-                        self._processes_manager.end_process(index)
-                        # In fork mode, the main process and the sub spawn process communicate through _process_info.
-                        # We need to ensure the process has been killed before returning. Otherwise, it may cause
-                        # the main process have exited but the spawn process is still alive.
-                        # At this time, a connection error will be reported.
-                        self._processes_manager.ensure_process_terminated_within_timeout(process_id)
-                        # Set terminated to True to exit the main loop.
-                        terminated = True
-                        break
-                    # If the task is a line execution request, put the request into the input queue.
-                    run_id, line_number, inputs = data
-                    args = (run_id, line_number, inputs, line_timeout_sec)
-                    input_queue.put(args)
-                    break
-                except queue.Empty:
-                    pass
+            # Get task from task_queue
+            data = self._get_task_from_queue(task_queue)
+            # Calculate the line timeout for the current line.
+            # If the line_timeout_sec is None, it means the batch run is timeouted.
+            line_timeout_sec = self._calculate_line_timeout_sec()
+            # If the task is a terminate signal or the batch run is timeouted, exit the loop.
+            if data == TERMINATE_SIGNAL or line_timeout_sec is None:
+                bulk_logger.info(f"The thread monitoring the process [{process_id}-{process_name}] will be terminated.")
+                # Put the terminate signal into the input queue to notify the sub process to exit.
+                input_queue.put(TERMINATE_SIGNAL)
+                # End the process if found the terminate signal.
+                self._processes_manager.end_process(index)
+                # In fork mode, the main process and the sub spawn process communicate through _process_info.
+                # We need to ensure the process has been killed before returning. Otherwise, it may cause
+                # the main process have exited but the spawn process is still alive.
+                # At this time, a connection error will be reported.
+                self._processes_manager.ensure_process_terminated_within_timeout(process_id)
+                # Set terminated to True to exit the main loop.
+                terminated = True
+            else:
+                # If the task is a line execution request, put the request into the input queue.
+                run_id, line_number, inputs = data
+                args = (run_id, line_number, inputs, line_timeout_sec)
+                input_queue.put(args)
 
             if terminated:
                 break
@@ -411,6 +404,13 @@ class LineExecutionProcessPool:
     # endregion
 
     # region private methods
+    def _get_task_from_queue(self, task_queue: Queue):
+        """Get task from the task queue. Ignore the queue being empty and only exit the loop when getting data."""
+        while True:
+            try:
+                return task_queue.get(timeout=1)
+            except queue.Empty:
+                pass
 
     def _all_tasks_ready(self):
         return all(async_task.ready() for async_task in self._async_tasks)
