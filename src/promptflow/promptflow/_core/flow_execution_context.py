@@ -41,7 +41,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_id=None,
         flow_id=None,
         line_number=None,
-        variant_id=None,
     ):
         self._name = name
         self._run_tracker = run_tracker
@@ -49,7 +48,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
-        self._variant_id = variant_id
 
     def copy(self):
         return FlowExecutionContext(
@@ -59,7 +57,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             run_id=self._run_id,
             flow_id=self._flow_id,
             line_number=self._line_number,
-            variant_id=self._variant_id,
         )
 
     def cancel_node_runs(self, msg):
@@ -116,7 +113,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             index=self._line_number,
         )
         run_info.index = self._line_number
-        run_info.variant_id = self._variant_id
         self._run_tracker.set_inputs(node_run_id, {key: value for key, value in kwargs.items() if key != "self"})
         return run_info
 
@@ -211,7 +207,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             parent_run_id=parent_run_id,
             run_id=node_run_id,
             index=self._line_number,
-            variant_id=self._variant_id,
         )
         self._run_tracker.persist_node_run(run_info)
 
