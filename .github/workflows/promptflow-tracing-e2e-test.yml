@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "40 17 * * *" # Every day starting at 1:40 BJT
 
-  pull_request:
+  pull_request_target:
     paths:
       - src/promptflow/**
       - scripts/building/**
@@ -21,7 +21,17 @@ env:
 
 
 jobs:
+  authorize:
+    environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
+      ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
   build:
+    needs: authorize
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
