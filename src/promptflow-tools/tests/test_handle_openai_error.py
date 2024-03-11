@@ -1,5 +1,6 @@
 import httpx
 import pytest
+from unittest.mock import patch
 from jinja2.exceptions import TemplateSyntaxError
 from openai import (
     APIConnectionError,
@@ -17,6 +18,7 @@ from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 from pytest_mock import MockerFixture
 
 from promptflow.exceptions import UserErrorException
+from tests.utils import Deployment
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -302,15 +304,20 @@ class TestHandleOpenAIError:
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    def test_aoai_with_vision_model(self, azure_open_ai_connection, mocker: MockerFixture):
-        dummyEx = BadRequestError("'2 validation errors for Request\nbody -> stop\n none is not an allowed value "
-                                  "(type=type_error.none.not_allowed)\nbody -> "
-                                  "logit_bias\n extra fields not permitted (type=value_error.extra)",
-                                  response=httpx.get('https://www.example.com'), body=None)
-        mock_create = mocker.patch("openai.resources.chat.Completions.create", side_effect=dummyEx)
 
-        with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
+    def test_aoai_with_vision_model_extra_fields_error(self, azure_open_ai_connection):
+        with (
+            patch('promptflow.tools.common.get_workspace_triad') as mock_get,
+            patch('promptflow.tools.common.list_deployment_connections') as mock_list,
+            pytest.raises(LLMError) as exc_info
+        ):
+            mock_get.return_value = ("sub", "rg", "ws")
+            mock_list.return_value = {
+                Deployment("gpt-4v", "model1", "vision-preview"),
+                Deployment("deployment2", "model2", "version2")
+            }
 
-        assert mock_create.call_count == 1
+            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-4v", response_format={"type": "text"})
+
         assert "extra fields not permitted" in exc_info.value.message
+        assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message

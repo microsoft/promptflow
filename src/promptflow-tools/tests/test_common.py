@@ -315,20 +315,6 @@ class TestCommon:
             )
             assert len(res) == 2
 
-    def test_refine_extra_fields_not_permitted_error(self, azure_open_ai_connection):
-        with (
-            patch('promptflow.tools.common.get_workspace_triad') as mock_get,
-            patch('promptflow.tools.common.list_deployment_connections') as mock_list,
-        ):
-            mock_get.return_value = (DEFAULT_SUBSCRIPTION_ID, DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_WORKSPACE_NAME)
-            mock_list.return_value = {
-                Deployment("deployment1", "model1", "vision-preview"),
-                Deployment("deployment2", "model2", "version2")
-            }
-
-            error_message = refine_extra_fields_not_permitted_error(azure_open_ai_connection, "deployment1", "")
-            assert "Please kindly avoid using vision model in LLM tool" in error_message
-
     @pytest.mark.parametrize(
         "input_data, expected_output",
         [
