@@ -30,9 +30,10 @@ EMBEDDING_FUNCTION_NAMES = [
 ]
 
 LLM_TOKEN_NAMES = [
-    "llm.token_count.prompt",
-    "llm.token_count.completion",
-    "llm.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.completion_tokens",
+    "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 EMBEDDING_TOKEN_NAMES = [
@@ -77,7 +78,7 @@ class TestTracing:
         "func, inputs",
         [
             (render_prompt_template, {"prompt": "Hello {{name}}!", "name": "world"}),
-        ]
+        ],
     )
     def test_otel_trace_with_prompt(self, func, inputs):
         execute_function_in_subprocess(self.assert_otel_traces_with_prompt, func, inputs)
@@ -130,7 +131,7 @@ class TestTracing:
             (openai_embedding_async, {"input": "Hello"}, 2),
             # [9906] is the tokenized version of "Hello"
             (openai_embedding_async, {"input": [9906]}, 2),
-        ]
+        ],
     )
     def test_otel_trace_with_embedding(
         self,
