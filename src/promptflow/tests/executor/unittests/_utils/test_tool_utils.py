@@ -17,7 +17,7 @@ from promptflow._utils.tool_utils import (
     validate_tool_func_result,
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
-from promptflow.contracts.tool import ValueType, Tool, ToolFuncCallScenario, ToolType
+from promptflow.contracts.tool import Tool, ToolFuncCallScenario, ToolType, ValueType
 
 
 # mock functions for dynamic list function testing
@@ -331,7 +331,13 @@ class TestToolUtils:
 
     def test_load_function_from_function_path(self, mock_module_with_list_func):
         func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
-        load_function_from_function_path(func_path)
+        tool_func = load_function_from_function_path(func_path)
+        assert callable(tool_func)
+
+    def test_load_function_from_script(self):
+        func_path = f"{__file__}:mock_dynamic_list_func1"
+        tool_func = load_function_from_function_path(func_path)
+        assert callable(tool_func)
 
     def test_load_function_from_function_path_with_error(self, mock_module_with_list_func):
         func_path = "mock_func_path"
@@ -371,13 +377,13 @@ class TestToolUtils:
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "dummy_result",
                 f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. "
-                f"dummy_result is not a dict."
+                f"dummy_result is not a dict.",
             ),
             (
                 "dummy_scenario",
                 "dummy_result",
                 f"Invalid tool func call scenario: dummy_scenario. "
-                f"Available scenarios are {list(ToolFuncCallScenario)}"
+                f"Available scenarios are {list(ToolFuncCallScenario)}",
             ),
         ],
     )
@@ -388,7 +394,7 @@ class TestToolUtils:
         )
         with pytest.raises(RetrieveToolFuncResultValidationError) as e:
             validate_tool_func_result(func_call_scenario, result)
-        assert (error_message == str(e.value))
+        assert error_message == str(e.value)
 
     def test_find_deprecated_tools(self):
         package_tools = {
