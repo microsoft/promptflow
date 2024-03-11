@@ -80,7 +80,7 @@ def sub_level_function():
     return "Hello, World!"
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTraces:
     def validate_openai_apicall(self, apicall: dict):
@@ -314,7 +314,7 @@ class TestExecutorTraces:
             )
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestOTelTracer:
     @pytest.mark.parametrize(
@@ -361,7 +361,11 @@ class TestOTelTracer:
         prompt_tpl_file,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_prompt, dev_connections, flow_file, inputs, prompt_tpl_file
+            self.assert_otel_traces_with_prompt,
+            dev_connections,
+            flow_file,
+            inputs,
+            prompt_tpl_file,
         )
 
     def assert_otel_traces_with_prompt(self, dev_connections, flow_file, inputs, prompt_tpl_file):
@@ -402,7 +406,11 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_llm, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces_with_llm,
+            dev_connections,
+            flow_file,
+            inputs,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, expected_span_length):
@@ -438,7 +446,11 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_embedding, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces_with_embedding,
+            dev_connections,
+            flow_file,
+            inputs,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_embedding(self, dev_connections, flow_file, inputs, expected_span_length):
