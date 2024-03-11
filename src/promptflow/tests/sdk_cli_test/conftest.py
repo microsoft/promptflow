@@ -19,7 +19,7 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 from .recording_utilities import (
     RecordStorage,

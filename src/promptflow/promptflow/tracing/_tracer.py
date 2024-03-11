@@ -7,12 +7,9 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
-from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.tool import ConnectionType
-
-from .._utils.utils import default_json_encoder
+from ._thread_local_singleton import ThreadLocalSingleton
+from ._utils import is_core_installed, serialize
+from .contracts.generator_proxy import GeneratorProxy, generate_from_proxy
 from .contracts.trace import Trace, TraceType
 
 
@@ -67,7 +64,12 @@ class Tracer(ThreadLocalSingleton):
             return obj
         try:
             obj = serialize(obj)
-            json.dumps(obj, default=default_json_encoder)
+            default_dump_func = None
+            if is_core_installed():
+                from promptflow._utils.utils import default_json_encoder
+
+                default_dump_func = default_json_encoder
+            json.dumps(obj, default=default_dump_func)
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
             # so we simply convert it to str if it cannot be serialized.
@@ -156,10 +158,13 @@ def _create_trace_from_function_call(
     sig = inspect.signature(f).parameters
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-    all_kwargs = {
-        k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
-        for k, v in all_kwargs.items()
-    }
+    if is_core_installed():
+        from promptflow.contracts.tool import ConnectionType
+
+        all_kwargs = {
+            k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
+            for k, v in all_kwargs.items()
+        }
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
     for key in args_to_ignore:

@@ -14,7 +14,7 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
-from promptflow.tracing._openai_injector import (
+from promptflow.tracing._integrations._openai_injector import (
     PROMPTFLOW_HEADER,
     USER_AGENT_HEADER,
     _generate_api_and_injector,

@@ -17,13 +17,9 @@ from opentelemetry.trace.status import StatusCode
 from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.sdk.trace import ReadableSpan
 
-from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow._core.operation_context import OperationContext
-from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
-
-from .._utils.utils import default_json_encoder
-from ._tracer import _create_trace_from_function_call, get_node_name_from_context, Tracer
+from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
+from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, is_core_installed, serialize
+from .contracts.generator_proxy import GeneratorProxy
 from .contracts.trace import TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -71,8 +67,11 @@ token_collector = TokenCollector()
 
 def enrich_span_with_context(span):
     try:
-        attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
-        span.set_attributes(attrs_from_context)
+        if is_core_installed():
+            from promptflow._core.operation_context import OperationContext
+
+            attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
+            span.set_attributes(attrs_from_context)
     except Exception as e:
         logging.warning(f"Failed to enrich span with context: {e}")
 
@@ -96,14 +95,17 @@ def enrich_span_with_trace(span, trace):
 
 def enrich_span_with_prompt_info(span, func, kwargs):
     try:
-        # Assume there is only one prompt template parameter in the function,
-        # we use the first one by default if there are multiple.
-        prompt_tpl_param_name = get_prompt_param_name_from_func(func)
-        if prompt_tpl_param_name is not None:
-            prompt_tpl = kwargs.get(prompt_tpl_param_name)
-            prompt_vars = {key: kwargs.get(key) for key in get_inputs_for_prompt_template(prompt_tpl) if key in kwargs}
-            prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
-            span.set_attributes(prompt_info)
+        if is_core_installed():
+            # Assume there is only one prompt template parameter in the function,
+            # we use the first one by default if there are multiple.
+            prompt_tpl_param_name = get_prompt_param_name_from_func(func)
+            if prompt_tpl_param_name is not None:
+                prompt_tpl = kwargs.get(prompt_tpl_param_name)
+                prompt_vars = {
+                    name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
+                }
+                prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
+                span.set_attributes(prompt_info)
     except Exception as e:
         logging.warning(f"Failed to enrich span with prompt info: {e}")
 
@@ -238,7 +240,12 @@ def serialize_attribute(value):
     try:
         serializable = Tracer.to_serializable(value)
         serialized_value = serialize(serializable)
-        return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+        default_dump_func = None
+        if is_core_installed():
+            from promptflow._utils.utils import default_json_encoder
+
+            default_dump_func = default_json_encoder
+        return json.dumps(serialized_value, indent=2, default=default_dump_func)
     except Exception as e:
         logging.warning(f"Failed to serialize attribute: {e}")
         return None
