@@ -116,6 +116,14 @@ class ToolResolver:
         return assistant_def
 
     def _resolve_assistant_tool(self, node_name: str, assistant_definition: AssistantDefinition):
+        """
+        Resolves AssistantTool from the raw assistant definition.
+
+        The assistant definition is initialized with a path to the python scripts. This method loads scripts,
+        parses the structure into AssistantTool instances for future invoking. It supports tools of types
+        'code_interpreter' and 'retrieval' directly and loads 'function' type tools as callable functions.
+        Unsupported tool types raise an UnsupportedAssistantToolType exception.
+        """
         resolved_tools = {}
         for tool in assistant_definition.tools:
             if tool["type"] in ("code_interpreter", "retrieval"):
@@ -129,6 +137,7 @@ class ToolResolver:
                     tool_type=tool["type"],
                     target=ErrorTarget.EXECUTOR,
                 )
+        # Inject the resolved tools into the assistant definition
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
     def _load_tool_as_function(self, node_name: str, tool_def: dict) -> AssistantTool:
@@ -149,7 +158,7 @@ class ToolResolver:
         m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, updated_tool_def)
 
         # construct the resolved inputs dictionary
-        updated_inputs = self._get_assistant_function_input_types(node_name, predefined_inputs, tool, m)
+        updated_inputs = self._convert_assistant_function_literal_input_types(node_name, predefined_inputs, tool, m)
         callable, init_args = BuiltinsManager._load_tool_from_module(
             m, tool.name, tool.module, tool.class_name, tool.function, updated_inputs
         )
@@ -270,32 +279,34 @@ class ToolResolver:
         updated_node.inputs = updated_inputs
         return updated_node
 
-    def _get_assistant_function_input_types(
+    def _convert_assistant_function_literal_input_types(
         self, node_name: str, predefined_inputs: dict, tool: Tool, module: types.ModuleType = None
     ):
-        updated_inputs = {
+        updated_predefined_inputs = {
             k: v
             for k, v in predefined_inputs.items()
             if (v.value is not None and v.value != "") or v.value_type != InputValueType.LITERAL
         }
-        for k, v in updated_inputs.items():
+        for k, v in updated_predefined_inputs.items():
             if v.value_type != InputValueType.LITERAL:
                 continue
             tool_input = tool.inputs.get(k)
             if tool_input is None:  # For kwargs input, tool_input is None.
                 continue
             value_type = tool_input.type[0]
-            updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
+            updated_predefined_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
                 if tool_input.custom_type:
-                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
+                    updated_predefined_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
                         k, v, None, tool, tool_input.custom_type, module=module
                     )
                 else:
-                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
+                    updated_predefined_inputs[k].value = self._convert_to_connection_value(
+                        k, v, node_name, tool_input.type
+                    )
             elif isinstance(value_type, ValueType):
                 try:
-                    updated_inputs[k].value = value_type.parse(v.value)
+                    updated_predefined_inputs[k].value = value_type.parse(v.value)
                 except Exception as e:
                     raise NodeInputValidationError(
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
@@ -307,7 +318,9 @@ class ToolResolver:
                         target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                    updated_predefined_inputs[k].value = load_multimedia_data_recursively(
+                        updated_predefined_inputs[k].value
+                    )
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -322,7 +335,7 @@ class ToolResolver:
                     f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
                     target=ErrorTarget.EXECUTOR,
                 )
-        return updated_inputs
+        return updated_predefined_inputs
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
         try:
