@@ -17,6 +17,7 @@ import psutil
 import requests
 from flask import abort, make_response, request
 
+from promptflow._constants import PF_RUN_AS_BUILT_BINARY
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
@@ -60,7 +61,7 @@ def get_current_env_pfs_file(file_name):
 
 
 def get_port_from_config(create_if_not_exists=False):
-    if sys.executable.endswith("pfcli.exe"):
+    if is_run_from_built_binary():
         port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
@@ -79,7 +80,7 @@ def get_port_from_config(create_if_not_exists=False):
 
 
 def dump_port_to_config(port):
-    if sys.executable.endswith("pfcli.exe"):
+    if is_run_from_built_binary():
         port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
@@ -241,3 +242,12 @@ def get_client_from_request() -> "PFClient":
     from promptflow._sdk._pf_client import PFClient
 
     return PFClient(user_agent=build_pfs_user_agent())
+
+
+def is_run_from_built_binary():
+    """
+    Use this function to trigger behavior difference between calling from promptflow sdk/cli and built binary.
+
+    Allow customer to use environment variable to control the triggering.
+    """
+    return sys.executable.endswith("pfcli.exe") or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"

@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-import sys
 import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
@@ -29,6 +28,7 @@ from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
     get_port_from_config,
+    is_run_from_built_binary,
     kill_exist_service,
 )
 from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
@@ -74,7 +74,7 @@ def create_app():
         # Enable log
         app.logger.setLevel(logging.INFO)
         # each env will have its own log file
-        if sys.executable.endswith("pfcli.exe"):
+        if is_run_from_built_binary():
             log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
             log_file.touch(mode=read_write_by_user(), exist_ok=True)
         else:
@@ -168,7 +168,7 @@ def create_app():
                     break
 
         initialize_created_by_info()
-        if not sys.executable.endswith("pfcli.exe"):
+        if not is_run_from_built_binary():
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
             monitor_thread.start()
     return app, api
