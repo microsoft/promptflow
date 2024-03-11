@@ -545,3 +545,17 @@ def test_eager_flow_stream_output(
     else:
         result = response.json
         print(result)
+
+
+@pytest.mark.e2etest
+def test_eager_flow_multiple_stream_output(multiple_stream_outputs):
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+    }
+    response = multiple_stream_outputs.post("/score", data=json.dumps({"input_val": 1}), headers=headers)
+    assert (
+        response.status_code == 400
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == {"error": {"code": "UserError", "message": "Multiple stream output fields not supported."}}
