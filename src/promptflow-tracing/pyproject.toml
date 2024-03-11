@@ -1,21 +1,20 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-
-[project]
+[tool.poetry]
 name = "promptflow-tracing"
 version = "0.1.0b2"
-dependencies = [
-  "openai",
-  "tiktoken>=0.4.0",
-  "opentelemetry-sdk>=1.22.0,<2.0.0",
-]
 description = "Prompt flow tracing"
+
+license = "MIT"
+
 authors = [
-  {name = "Microsoft Corporation", email = "aml-pt-eng@microsoft.com"}
+  "Microsoft Corporation <aml-pt-eng@microsoft.com>"
 ]
-requires-python = "<4.0,>=3.8,"
-license = {text = "MIT License"}
-readme = "README.md"
+
+repository = "https://github.com/microsoft/promptflow"
+homepage = "https://github.com/microsoft/promptflow"
+
+readme = ["README.md"]
+keywords = ["telemetry"]
+
 classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
@@ -28,10 +27,18 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/microsoft/promptflow"
+[tool.poetry.urls]
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
-"Source" = "https://github.com/microsoft/promptflow"
+
+[tool.poetry.dependencies]
+python = "<4.0,>=3.8"
+openai = "*"
+tiktoken = ">=0.4.0"
+opentelemetry-sdk = ">=1.22.0,<2.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 120
