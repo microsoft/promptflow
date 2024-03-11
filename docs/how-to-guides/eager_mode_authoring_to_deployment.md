@@ -3,7 +3,7 @@ We already have a clear story from authoring to deployment with DAG flow, given 
 - provide smooth experience from authoring to deployment
 - simplify the authoring experience as much as possible
 
-## user experience question
+## User experience question
 - can we totally get rid of flow.yaml for eager flow?
   - signature
   - requirements.txt
