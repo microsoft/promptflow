@@ -7,8 +7,11 @@ from PIL import Image as PIL_Image
 @tool
 def passthrough(input_image: Image, fail_google_before: str) -> Image:
     from datetime import datetime
-    hour = datetime.now().hour
-    minute = datetime.now().minute
+    import pytz
+
+    tz = pytz.timezone('Asia/Shanghai')
+    hour = datetime.now(tz).hour
+    minute = datetime.now(tz).minute
     hour_minute_str = f"{hour}".zfill(2) + f"{minute}".zfill(2)
 
     if "google" in input_image.source_url:
