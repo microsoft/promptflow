@@ -33,7 +33,7 @@ ACTIVATE_FLOW_TEST_CASES = [
 ]
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorActivate:
     @pytest.mark.parametrize("flow_folder", ACTIVATE_FLOW_TEST_CASES)

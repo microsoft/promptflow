@@ -7,6 +7,7 @@ from typing import Dict, Optional, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
+from promptflow._sdk._utils import generate_flow_meta
 from promptflow._sdk.entities._flow import FlowBase
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -95,3 +96,15 @@ class EagerFlow(FlowBase, SchemaValidatableMixin):
             return entry_file.resolve().absolute().as_posix()
         # when entry file not found in working directory, return None since it can come from package
         return None
+
+    def _init_executable(self, **kwargs):
+        from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+
+        # TODO(2991934): support environment variables here
+        meta_dict = generate_flow_meta(
+            flow_directory=self.code,
+            source_path=self.entry_file,
+            entry=self.entry,
+            dump=False,
+        )
+        return ExecutableEagerFlow.deserialize(meta_dict)

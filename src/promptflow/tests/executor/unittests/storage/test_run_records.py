@@ -27,7 +27,6 @@ def test_line_record():
         start_time=start_time,
         end_time=end_time,
         index=0,
-        variant_id=None,
     )
     line_record = LineRunRecord.from_run_info(flow_run_info)
     assert line_record.line_number == 0
@@ -56,7 +55,6 @@ def test_line_serialize():
         start_time=start_time,
         end_time=end_time,
         index=0,
-        variant_id=None,
     )
     line_record = LineRunRecord.from_run_info(flow_run_info)
     result = line_record.serialize()
