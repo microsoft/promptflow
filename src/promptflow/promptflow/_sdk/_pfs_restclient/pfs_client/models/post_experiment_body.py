@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import Unset
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="PostExperimentBody")
 
@@ -12,10 +12,10 @@ T = TypeVar("T", bound="PostExperimentBody")
 class PostExperimentBody:
     """
     Attributes:
-        template (str):
+        template (Union[Unset, str]):
     """
 
-    template: str
+    template: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -23,40 +23,16 @@ class PostExperimentBody:
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "template": template,
-            }
-        )
-
-        return field_dict
-
-    def to_multipart(self) -> Dict[str, Any]:
-        template = (
-            self.template
-            if isinstance(self.template, Unset)
-            else (None, str(self.template).encode(), "text/plain")
-        )
-
-        field_dict: Dict[str, Any] = {}
-        field_dict.update(
-            {
-                key: (None, str(value).encode(), "text/plain")
-                for key, value in self.additional_properties.items()
-            }
-        )
-        field_dict.update(
-            {
-                "template": template,
-            }
-        )
+        field_dict.update({})
+        if template is not UNSET:
+            field_dict["template"] = template
 
         return field_dict
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        template = d.pop("template")
+        template = d.pop("template", UNSET)
 
         post_experiment_body = cls(
             template=template,

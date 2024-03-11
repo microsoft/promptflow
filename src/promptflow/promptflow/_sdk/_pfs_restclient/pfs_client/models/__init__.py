@@ -19,6 +19,7 @@ from .metadata import Metadata
 from .metadata_activity_name import MetadataActivityName
 from .metadata_completion_status import MetadataCompletionStatus
 from .post_experiment_body import PostExperimentBody
+from .post_experiment_start_body import PostExperimentStartBody
 from .put_run_body import PutRunBody
 from .resource import Resource
 from .resource_attributes import ResourceAttributes
@@ -49,6 +50,7 @@ __all__ = (
     "MetadataActivityName",
     "MetadataCompletionStatus",
     "PostExperimentBody",
+    "PostExperimentStartBody",
     "PutRunBody",
     "Resource",
     "ResourceAttributes",

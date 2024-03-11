@@ -24,9 +24,10 @@ def _get_kwargs(
         ),
     }
 
-    _body = body.to_multipart()
+    _body = body.to_dict()
 
-    _kwargs["files"] = _body
+    _kwargs["json"] = _body
+    headers["Content-Type"] = "application/json"
 
     _kwargs["headers"] = headers
     return _kwargs

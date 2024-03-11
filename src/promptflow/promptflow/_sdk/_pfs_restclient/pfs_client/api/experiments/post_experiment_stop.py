@@ -9,14 +9,10 @@ from ...models.experiment_dict import ExperimentDict
 from ...types import Response
 
 
-def _get_kwargs(
-    name: str,
-) -> Dict[str, Any]:
+def _get_kwargs() -> Dict[str, Any]:
     _kwargs: Dict[str, Any] = {
-        "method": "get",
-        "url": "/Experiments/{name}/stop".format(
-            name=name,
-        ),
+        "method": "post",
+        "url": "/Experiments/stop",
     }
 
     return _kwargs
@@ -47,14 +43,10 @@ def _build_response(
 
 
 def sync_detailed(
-    name: str,
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Response[ExperimentDict]:
     """Stop experiment
-
-    Args:
-        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -64,9 +56,7 @@ def sync_detailed(
         Response[ExperimentDict]
     """
 
-    kwargs = _get_kwargs(
-        name=name,
-    )
+    kwargs = _get_kwargs()
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -76,14 +66,10 @@ def sync_detailed(
 
 
 def sync(
-    name: str,
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Optional[ExperimentDict]:
     """Stop experiment
-
-    Args:
-        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -94,20 +80,15 @@ def sync(
     """
 
     return sync_detailed(
-        name=name,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    name: str,
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Response[ExperimentDict]:
     """Stop experiment
-
-    Args:
-        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -117,9 +98,7 @@ async def asyncio_detailed(
         Response[ExperimentDict]
     """
 
-    kwargs = _get_kwargs(
-        name=name,
-    )
+    kwargs = _get_kwargs()
 
     response = await client.get_async_httpx_client().request(**kwargs)
 
@@ -127,14 +106,10 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    name: str,
     *,
     client: Union[AuthenticatedClient, Client],
 ) -> Optional[ExperimentDict]:
     """Stop experiment
-
-    Args:
-        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -146,7 +121,6 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            name=name,
             client=client,
         )
     ).parsed

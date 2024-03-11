@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from functools import wraps
 from os import PathLike
-from typing import List, Union
+from typing import List, Union, Dict
 from pathlib import Path
 from http import HTTPStatus
 
@@ -87,15 +87,18 @@ class PFSCaller:
         return experiments
 
     @_request_wrapper()
-    def start_experiment(self, name: str, executable_path: str, from_nodes: List = None, nodes: List = None):
-        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.post_experiment_start import sync_detailed, PostExperimentStartBody
-        experiment_response = sync_detailed(
+    def start_experiment(self, name: str, template: str, executable_path: str, from_nodes: List = None, nodes: List = None, stream: bool = False, inputs: Dict = None,):
+        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.post_experiment_start import asyncio_detailed, sync_detailed, PostExperimentStartBody
+        experiment_response = asyncio_detailed(
             client=self.client,
-            name=name,
             body=PostExperimentStartBody(
+                name=name,
+                template=template,
                 from_nodes=from_nodes,
                 nodes=nodes,
-                executable_path=executable_path
+                executable_path=executable_path,
+                stream=stream,
+                inputs=inputs,
             )
         )
         return experiment_response

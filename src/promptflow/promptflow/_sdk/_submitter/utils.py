@@ -516,4 +516,20 @@ def _set_up_experiment_log_handler(experiment_path, index=None):
     return file_handler, index
 
 
+def _get_experiment_log_path(experiment_path, index=None):
+    if not Path(experiment_path).exists():
+        raise Exception(f"Cannot find experiment output path {experiment_path}")
+    if not index:
+        log_folder = Path(experiment_path) / "logs"
+        index = 0
+        for filename in os.listdir(log_folder):
+            result = re.match(r"exp\.attempt\_(\d+)\.log", filename)
+            if result:
+                try:
+                    index = max(int(result.groups()[0]), index)
+                except Exception:
+                    # Skip logs that don't comply with naming rules.
+                    pass
+    return Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
+
 # endregion

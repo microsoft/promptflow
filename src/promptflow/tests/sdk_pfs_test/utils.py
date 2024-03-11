@@ -50,6 +50,7 @@ class PFSOperations:
     RUN_URL_PREFIX = "/v1.0/Runs"
     TELEMETRY_PREFIX = "/v1.0/Telemetries"
     LINE_RUNS_PREFIX = "/v1.0/LineRuns"
+    EXPERIMENT_PREFIX = "/v1.0/Experiments"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -232,5 +233,45 @@ class PFSOperations:
             f"{self.LINE_RUNS_PREFIX}/list",
             query_string=query_string,
             headers=self.remote_user_header(),
+        )
+        return response
+
+    # Experiment APIs
+    def experiment_list(self, max_results: int = None):
+        response = self._client.get(
+            f"{self.EXPERIMENT_PREFIX}/",
+            query_string={"max_results": max_results},
+            headers=self.remote_user_header(),
+        )
+        return response
+
+    def experiment_get(self, name: str):
+        response = self._client.get(
+            f"{self.EXPERIMENT_PREFIX}/{name}",
+            headers=self.remote_user_header(),
+        )
+        return response
+
+    def experiment_create(self, name: str, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/{name}",
+            headers=self.remote_user_header(),
+            json=body,
+        )
+        return response
+
+    def experiment_start(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/start",
+            headers=self.remote_user_header(),
+            json=body,
+        )
+        return response
+
+    def experiment_stop(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/stop",
+            headers=self.remote_user_header(),
+            json=body,
         )
         return response

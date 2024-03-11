@@ -236,6 +236,84 @@
                 ]
             }
         },
+        "/Experiments/start": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment execution details."
+                    }
+                },
+                "description": "Start experiment",
+                "operationId": "post_experiment_start",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "template": {
+                                    "type": "string"
+                                },
+                                "stream": {
+                                    "type": "boolean"
+                                },
+                                "from_nodes": {
+                                    "type": "string"
+                                },
+                                "nodes": {
+                                    "type": "string"
+                                },
+                                "inputs": {
+                                    "type": "string"
+                                },
+                                "executable_path": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "produces": [
+                    "application/octet-stream",
+                    "application/json"
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
+        "/Experiments/stop": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Stop experiment",
+                "operationId": "post_experiment_stop",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Experiments"
+                ]
+            }
+        },
         "/Experiments/{name}": {
             "parameters": [
                 {
@@ -300,90 +378,16 @@
                 "operationId": "post_experiment",
                 "parameters": [
                     {
-                        "name": "template",
-                        "in": "formData",
-                        "type": "string",
-                        "required": true
-                    }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
-                ],
-                "tags": [
-                    "Experiments"
-                ]
-            }
-        },
-        "/Experiments/{name}/start": {
-            "parameters": [
-                {
-                    "name": "name",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                }
-            ],
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Experiment details",
-                        "schema": {
-                            "$ref": "#/definitions/ExperimentDict"
-                        }
-                    }
-                },
-                "description": "Start experiment",
-                "operationId": "post_experiment_start",
-                "parameters": [
-                    {
-                        "name": "from_nodes",
-                        "in": "query",
-                        "type": "string"
-                    },
-                    {
-                        "name": "nodes",
-                        "in": "query",
-                        "type": "string"
-                    },
-                    {
-                        "name": "executable_path",
-                        "in": "query",
-                        "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Experiments"
-                ]
-            }
-        },
-        "/Experiments/{name}/stop": {
-            "parameters": [
-                {
-                    "name": "name",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                }
-            ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Experiment details",
-                        "schema": {
-                            "$ref": "#/definitions/ExperimentDict"
-                        }
-                    }
-                },
-                "description": "Stop experiment",
-                "operationId": "get_experiment_stop",
-                "parameters": [
-                    {
                         "name": "payload",
                         "required": true,
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/ExperimentDict"
+                            "type": "object",
+                            "properties": {
+                                "template": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 ],

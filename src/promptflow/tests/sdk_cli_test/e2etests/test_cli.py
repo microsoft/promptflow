@@ -1969,6 +1969,15 @@ class TestCli:
 
             run_pf_command(
                 "experiment",
+                "show",
+                "--name",
+                experiment_name,
+            )
+            out, _ = capfd.readouterr()
+            assert experiment_name in out
+
+            run_pf_command(
+                "experiment",
                 "list",
             )
 
@@ -2023,7 +2032,7 @@ class TestCli:
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
-            run_pf_command("experiment", "start", "--file", experiment_file, "--stream")
+            run_pf_command("experiment", "start", "--template", experiment_file)
             experiment = _load_experiment(source=experiment_file)
             exp = local_client._experiments.get(name=experiment.name)
             assert len(exp.node_runs) == 4
