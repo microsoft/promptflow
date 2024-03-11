@@ -17,6 +17,8 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
+from ..conftest import setup_recording
+from ..process_utils import MockForkServerProcess, MockSpawnProcess, override_process_class
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -63,6 +65,13 @@ def _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inpu
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
     )
+    # The method is used as start method to construct new process in tests.
+    # We need to make sure the necessary setup in place to get pass along in new process
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    override_process_class(process_class_dict)
+
+    # recording injection again since this method is running in a new process
+    setup_recording()
 
     assert isinstance(batch_result, BatchResult)
     nlines = get_batch_inputs_line(flow_folder)
@@ -114,7 +123,7 @@ class MockRun(object):
         self._run_source = None
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestBatch:
     def test_batch_storage(self, dev_connections):

@@ -25,7 +25,6 @@ class TestLineExecutionProcessPool:
             end_time="end_time",
             index="index",
             api_calls="api_calls",
-            variant_id="variant_id",
             cached_run_id="cached_run_id",
             cached_flow_run_id="cached_flow_run_id",
             logs="logs",
@@ -54,7 +53,6 @@ class TestLineExecutionProcessPool:
             end_time="end_time",
             index="index",
             api_calls="api_calls",
-            variant_id="variant_id",
             system_metrics="system_metrics",
             result="result",
         )

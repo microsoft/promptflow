@@ -31,6 +31,10 @@ def is_replay() -> bool:
     return get_test_mode_from_environ() == TestMode.REPLAY
 
 
+def is_recording_enabled() -> bool:
+    return is_record() or is_replay() or is_live()
+
+
 class FakeTokenCredential:
     """Refer from Azure SDK for Python repository.
 
