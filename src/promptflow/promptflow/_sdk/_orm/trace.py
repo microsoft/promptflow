@@ -144,10 +144,10 @@ with trace as
     select
         json_extract(json_extract(span.content, '$.attributes'), '$.line_run_id') as line_run_id,
         json_extract(json_extract(span.content, '$.attributes'), '$.batch_run_id') as batch_run_id,
-        json_extract(json_extract(span.content, '$.attributes'), '$.line_number') as line_number,
-        limit 1
+        json_extract(json_extract(span.content, '$.attributes'), '$.line_number') as line_number
     from span
     where trace_id = '{line_run_id}'
+    limit 1
 )
 select name, trace_id, span_id, parent_span_id, span_type, session_id, content, path, run, experiment
 from span s
