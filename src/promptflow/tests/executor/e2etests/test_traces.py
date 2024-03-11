@@ -33,6 +33,7 @@ LLM_TOKEN_NAMES = [
     "llm.usage.prompt_tokens",
     "llm.usage.completion_tokens",
     "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 EMBEDDING_TOKEN_NAMES = [
