@@ -2,17 +2,29 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from functools import partial
 from pathlib import Path
 from typing import Union
 
-from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
-from promptflow.contracts.multimedia import Image
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 
 
 class AbstractRunStorage:
+    _multimedia_processor = None
+
+    @property
+    def multimedia_processor(self):
+        """Return the multimedia processor."""
+        if not self._multimedia_processor:
+            self._multimedia_processor = BasicMultimediaProcessor()
+        return self._multimedia_processor
+
+    @multimedia_processor.setter
+    def multimedia_processor(self, multimedia_processor: MultimediaProcessor):
+        """Set the multimedia processor."""
+        self._multimedia_processor = multimedia_processor
+
     def persist_node_run(self, run_info: NodeRunInfo):
         """Write the node run info to somewhere immediately after the node is executed.
 
@@ -61,7 +73,7 @@ class DummyRunStorage(AbstractRunStorage):
 
 
 class DefaultRunStorage(AbstractRunStorage):
-    def __init__(self, base_dir: Path = None, sub_dir: Path = None):
+    def __init__(self, base_dir: Path = None, sub_dir: Path = None, multimedia_processor: MultimediaProcessor = None):
         """Initialize the default run storage.
 
         :param base_dir: The base directory to store the multimedia data.
@@ -71,6 +83,7 @@ class DefaultRunStorage(AbstractRunStorage):
         """
         self._base_dir = base_dir
         self._sub_dir = sub_dir
+        self._multimedia_processor = multimedia_processor
 
     def persist_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         """Persist the multimedia data in run info after execution.
@@ -138,12 +151,6 @@ class DefaultRunStorage(AbstractRunStorage):
                  the conversions.
         :rtype: Any
         """
-        if self._base_dir:
-            pfbytes_file_reference_encoder = get_file_reference_encoder(
-                folder_path=self._base_dir,
-                relative_path=self._sub_dir,
-            )
-        else:
-            pfbytes_file_reference_encoder = None
-        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
-        return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
+        return self.multimedia_processor.persist_multimedia_data(
+            value, base_dir=self._base_dir, sub_dir=self._sub_dir, inplace=inplace
+        )

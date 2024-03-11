@@ -10,7 +10,7 @@ from promptflow._core._errors import UnexpectedError
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
-from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
 from promptflow._utils.utils import resolve_dir_to_absolute
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
@@ -22,11 +22,13 @@ class BatchInputsProcessor:
         working_dir: Path,
         flow_inputs: Mapping[str, FlowInputDefinition],
         max_lines_count: Optional[int] = None,
+        multimedia_processor: MultimediaProcessor = None,
     ):
         self._working_dir = working_dir
         self._max_lines_count = max_lines_count
         self._flow_inputs = flow_inputs
         self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}
+        self._multimedia_processor = multimedia_processor or BasicMultimediaProcessor()
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
         input_dicts = self._resolve_input_data(input_dirs)
@@ -53,7 +55,7 @@ class BatchInputsProcessor:
         result = []
         if input_path.is_file():
             result.extend(
-                resolve_multimedia_data_recursively(
+                self._multimedia_processor.resolve_multimedia_data_recursively(
                     input_path.parent, load_data(local_path=input_path, max_rows_count=self._max_lines_count)
                 )
             )
@@ -61,7 +63,7 @@ class BatchInputsProcessor:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(
-                        resolve_multimedia_data_recursively(
+                        self._multimedia_processor.resolve_multimedia_data_recursively(
                             input_file.parent, load_data(local_path=input_file, max_rows_count=self._max_lines_count)
                         )
                     )

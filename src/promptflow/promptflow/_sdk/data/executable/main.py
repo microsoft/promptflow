@@ -13,7 +13,7 @@ from utils import dict_iter_render_message, parse_image_content, parse_list_from
 from promptflow._constants import STREAMING_ANIMATION_TIME
 from promptflow._sdk._submitter.utils import resolve_generator, resolve_generator_output_with_cache
 from promptflow._utils.flow_utils import dump_flow_result
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow.client import load_flow
 
 invoker = None
@@ -46,15 +46,17 @@ def start():
     def post_process_dump_result(response, session_state_history, *, generator_record):
         response = resolve_generator(response, generator_record)
         # Get base64 for multi modal object
+        multimedia_processor = BasicMultimediaProcessor()
         resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in response.output.items()
+            k: multimedia_processor.convert_multimedia_data_to_base64_dict(v, with_type=True, dict_type=True)
+            for k, v in response.output.items()
         }
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
         if is_chat_flow:
             dump_path = Path(flow_path).parent
-            response.output = persist_multimedia_data(
+            response.output = multimedia_processor.persist_multimedia_data(
                 response.output, base_dir=dump_path, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=dump_path, flow_result=response, prefix="chat")

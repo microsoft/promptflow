@@ -907,10 +907,14 @@ class EagerFlow(FlowBase):
     :type program_language: str
     :param environment_variables: The default environment variables of the flow.
     :type environment_variables: Dict[str, object]
+    :param message_format: The message format type of the flow to represent different multimedia contracts.
+    :type message_format: str
     """
 
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    # eager flow does not support multimedia contract currently, it is set to basic by default.
+    message_format: str = MessageFormatType.BASIC
 
     @staticmethod
     def deserialize(data: dict) -> "EagerFlow":

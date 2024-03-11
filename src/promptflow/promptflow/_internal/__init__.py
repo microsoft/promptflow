@@ -77,13 +77,7 @@ from promptflow._utils.multimedia_data_converter import (
     MultimediaInfo,
     ResourceType,
 )
-from promptflow._utils.multimedia_utils import (
-    _create_image_from_file,
-    convert_multimedia_data_to_base64,
-    is_multimedia_dict,
-    persist_multimedia_data,
-    resolve_multimedia_data_recursively,
-)
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._utils.utils import (
     AttrDict,

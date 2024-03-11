@@ -432,12 +432,13 @@ class TestSubmitter:
                 run_id=run_id,
             )
         else:
-            from promptflow._utils.multimedia_utils import persist_multimedia_data
+            from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 
             # TODO: support run_id for non-python
             # TODO: most of below code is duplicate to flow_executor.execute_flow
             line_result: LineResult = self.executor_proxy.exec_line(inputs, index=0)
-            line_result.output = persist_multimedia_data(
+            # csharp flow does not support multimedia contract currently, just use the default multimedia processor
+            line_result.output = BasicMultimediaProcessor().persist_multimedia_data(
                 line_result.output, base_dir=self.output_base, sub_dir=self.relative_flow_output_path
             )
             if line_result.aggregation_inputs:

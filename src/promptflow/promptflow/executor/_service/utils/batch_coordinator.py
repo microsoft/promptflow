@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import OutputsFolderName
-from promptflow._utils.multimedia_utils import process_multimedia_in_run_info
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
@@ -31,6 +31,7 @@ class BatchCoordinator:
         connections: Optional[Mapping[str, Any]] = None,
         worker_count: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
+        multimedia_processor: MultimediaProcessor = None,
     ):
         if self._init:
             return
@@ -55,6 +56,7 @@ class BatchCoordinator:
             line_timeout_sec=line_timeout_sec,
             serialize_multimedia_during_execution=True,
         )
+        self._multimedia_processor = self._flow_executor.multimedia_processor
         self._init = True
 
     @classmethod
@@ -82,7 +84,7 @@ class BatchCoordinator:
             # Serialize the multimedia data of the node run infos under the mode artifacts folder.
             for node_run_info in aggregation_result.node_run_infos.values():
                 base_dir = self._output_dir / OutputsFolderName.NODE_ARTIFACTS / node_run_info.node
-                process_multimedia_in_run_info(node_run_info, base_dir)
+                self._multimedia_processor.process_multimedia_in_run_info(node_run_info, base_dir)
         return aggregation_result
 
     def close(self):
