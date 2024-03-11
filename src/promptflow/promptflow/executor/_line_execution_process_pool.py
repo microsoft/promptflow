@@ -296,9 +296,9 @@ class LineExecutionProcessPool:
 
         # The main loop of the thread, responsible for getting tasks from the task queue and
         # processing them through the input queue, while also monitoring for terminate signals.
-        # Currently, it exits this loop only upon receiving a terminate signal (TERMINATE_SIGNAL).
-        exit_loop = False
-        while not exit_loop:
+        # Currently, it exits this loop only upon receiving a terminate signal or the batch run timeout.
+        terminated = False
+        while not terminated:
             self._processes_manager.ensure_healthy()
             while True:
                 try:
@@ -321,8 +321,8 @@ class LineExecutionProcessPool:
                         # the main process have exited but the spawn process is still alive.
                         # At this time, a connection error will be reported.
                         self._processes_manager.ensure_process_terminated_within_timeout(process_id)
-                        # Set exit_loop to True to exit the main loop.
-                        exit_loop = True
+                        # Set terminated to True to exit the main loop.
+                        terminated = True
                         break
                     # If the task is a line execution request, put the request into the input queue.
                     run_id, line_number, inputs = data
@@ -332,7 +332,7 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     pass
 
-            if exit_loop:
+            if terminated:
                 break
 
             start_time = datetime.utcnow()
