@@ -158,7 +158,7 @@ class TestTracing:
         self.validate_openai_tokens(span_list)
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                assert span.attributes.get("embedding.model", "") == "ada"
+                assert span.attributes.get("llm.response.model", "") == "ada"
                 embeddings = span.attributes.get("embedding.embeddings", "")
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
