@@ -87,7 +87,7 @@
     "type": "CustomConnection",
     "value": {
       "api_key": "<your-key>",
-      "api_base": "This is my first custom connection.",
+      "api_base": "This is my first CustomConnection.",
       "promptflow.connection.custom_type": "MyFirstConnection",
       "promptflow.connection.module": "my_tool_package.connections"
     },
