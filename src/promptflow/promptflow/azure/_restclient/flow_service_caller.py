@@ -19,7 +19,7 @@ from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.azure._utils.gerneral import get_authorization, get_arm_token, get_aml_token
+from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
 
 logger = LoggerFactory.get_logger(__name__)
@@ -672,6 +672,26 @@ class FlowServiceCaller(RequestTelemetryMixin):
             workspace_name=workspace_name,
             flow_run_id=flow_run_id,
             headers=headers,
+            **kwargs,
+        )
+
+    @_request_wrapper()
+    def resume_bulk_run(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        body=None,  # type: Optional["_models.ResumeBulkRunRequest"]
+        **kwargs,  # type: Any
+    ):
+        """Create a flow run by a resume_from run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.resume_bulk_run(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            headers=headers,
+            body=body,
             **kwargs,
         )
 

@@ -6,7 +6,7 @@ import importlib
 import inspect
 import logging
 import re
-from dataclasses import asdict
+from dataclasses import asdict, fields, is_dataclass
 from enum import Enum, EnumMeta
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
@@ -160,11 +160,18 @@ def function_to_interface(
     # Resolve output to definition
     typ = resolve_annotation(sign.return_annotation)
     if typ is inspect.Signature.empty:
-        output_type = [ValueType.OBJECT]
+        outputs = {"output": OutputDefinition(type=[ValueType.OBJECT])}
+    elif is_dataclass(typ):
+        outputs = {}
+        for field in fields(typ):
+            outputs[field.name] = OutputDefinition(type=[ValueType.from_type(field.type)])
     else:
         # If the output annotation is a union type, then it should be a list.
-        output_type = [ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
-    outputs = {"output": OutputDefinition(type=output_type)}
+        outputs = {
+            "output": OutputDefinition(
+                type=[ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
+            )
+        }
 
     return input_defs, outputs, connection_types, enable_kwargs
 
@@ -271,6 +278,11 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
 
 
 def validate_tool_func_result(func_call_scenario: str, result):
+    if func_call_scenario not in list(ToolFuncCallScenario):
+        raise RetrieveToolFuncResultValidationError(
+                f"Invalid tool func call scenario: {func_call_scenario}. "
+                f"Available scenarios are {list(ToolFuncCallScenario)}"
+        )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(
@@ -442,11 +454,11 @@ def _get_function_path(function):
 
 
 class RetrieveToolFuncResultError(UserErrorException):
-    """Base exception raised for retreive tool func result errors."""
+    """Base exception raised for retrieve tool func result errors."""
 
     def __init__(self, message):
         msg = (
-            f"Unable to retreive tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"Unable to retrieve tool func result due to '{message}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)

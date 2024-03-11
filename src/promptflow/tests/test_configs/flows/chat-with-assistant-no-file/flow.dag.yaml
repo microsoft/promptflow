@@ -32,7 +32,7 @@ nodes:
       type: code
       path: get_or_create_thread.py
     inputs:
-      conn: azure_open_ai_connection
+      conn: aoai_assistant_connection
       thread_id: ${inputs.thread_id}
   - name: assistant
     type: python
@@ -40,7 +40,7 @@ nodes:
       type: code
       path: add_message_and_run.py
     inputs:
-      conn: azure_open_ai_connection
+      conn: aoai_assistant_connection
       message: ${inputs.question}
       assistant_id: ${inputs.assistant_id}
       thread_id: ${get_or_create_thread.output}

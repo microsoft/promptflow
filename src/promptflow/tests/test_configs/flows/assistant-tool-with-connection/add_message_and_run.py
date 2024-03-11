@@ -5,12 +5,14 @@ from typing import Union
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.beta.threads import MessageContentImageFile, MessageContentText
 
-from promptflow import tool, trace
-from promptflow.connections import OpenAIConnection, _Connection, AzureOpenAIConnection
+from promptflow import tool
+from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.types import AssistantDefinition
 from promptflow.exceptions import SystemErrorException
 from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
+from promptflow.tracing import trace
+
 from get_assistant_client import get_assistant_client
 
 URL_PREFIX = "https://platform.openai.com/files/"
@@ -19,12 +21,12 @@ RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
 
 @tool
 async def add_message_and_run(
-    conn: Union[AzureOpenAIConnection, OpenAIConnection],
-    assistant_id: str,
-    thread_id: str,
-    message: list,
-    assistant_definition: AssistantDefinition,
-    download_images: bool,
+        conn: Union[AzureOpenAIConnection, OpenAIConnection],
+        assistant_id: str,
+        thread_id: str,
+        message: list,
+        assistant_definition: AssistantDefinition,
+        download_images: bool,
 ):
     cli = await get_assistant_client(conn)
     invoker = assistant_definition._tool_invoker
@@ -46,9 +48,8 @@ async def add_message_and_run(
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
 
-
 @trace
-async def create_assistant(cli: AsyncOpenAI, assistant_definition: AssistantDefinition):
+async def create_assistant(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], assistant_definition: AssistantDefinition):
     assistant = await cli.beta.assistants.create(
         instructions=assistant_definition.instructions, model=assistant_definition.model
     )
@@ -57,7 +58,7 @@ async def create_assistant(cli: AsyncOpenAI, assistant_definition: AssistantDefi
 
 
 @trace
-async def add_message(cli: AsyncOpenAI, message: list, thread_id: str):
+async def add_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], message: list, thread_id: str):
     content = extract_text_from_message(message)
     file_ids = await extract_file_ids_from_message(cli, message)
     msg = await cli.beta.threads.messages.create(thread_id=thread_id, role="user", content=content, file_ids=file_ids)
@@ -67,11 +68,11 @@ async def add_message(cli: AsyncOpenAI, message: list, thread_id: str):
 
 @trace
 async def start_run(
-    cli: AsyncOpenAI,
-    assistant_id: str,
-    thread_id: str,
-    assistant_definition: AssistantDefinition,
-    invoker: AssistantToolInvoker,
+        cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
+        assistant_id: str,
+        thread_id: str,
+        assistant_definition: AssistantDefinition,
+        invoker: AssistantToolInvoker,
 ):
     tools = invoker.to_openai_tools()
     run = await cli.beta.threads.runs.create(
@@ -89,8 +90,7 @@ async def wait_for_status_check():
     await asyncio.sleep(RUN_STATUS_POLLING_INTERVAL_IN_MILSEC / 1000.0)
 
 
-
-async def get_run_status(cli: AsyncOpenAI, thread_id: str, run_id: str):
+async def get_run_status(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str):
     run = await cli.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
     print(f"Run status: {run.status}")
     return run
@@ -117,19 +117,22 @@ async def get_tool_calls_outputs(invoker: AssistantToolInvoker, run):
 
 
 @trace
-async def submit_tool_calls_outputs(cli: AsyncOpenAI, thread_id: str, run_id: str, tool_outputs: list):
+async def submit_tool_calls_outputs(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str,
+                                    tool_outputs: list):
     await cli.beta.threads.runs.submit_tool_outputs(thread_id=thread_id, run_id=run_id, tool_outputs=tool_outputs)
     print(f"Submitted all required resonses for run: {run_id}")
 
 
 @trace
-async def require_actions(cli: AsyncOpenAI, thread_id: str, run, invoker: AssistantToolInvoker):
+async def require_actions(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run,
+                          invoker: AssistantToolInvoker):
     tool_outputs = await get_tool_calls_outputs(invoker, run)
     await submit_tool_calls_outputs(cli, thread_id, run.id, tool_outputs)
 
 
 @trace
-async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: AssistantToolInvoker, run):
+async def wait_for_run_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str,
+                                invoker: AssistantToolInvoker, run):
     while not is_run_terminated(run):
         await wait_for_status_check()
         run = await get_run_status(cli, thread_id, run.id)
@@ -140,14 +143,14 @@ async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: Assis
         elif run.status in {"failed", "cancelled", "expired"}:
             if run.last_error is not None:
                 error_message = f"The assistant tool runs in '{run.status}' status. " \
-                    f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
+                                f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
             else:
                 error_message = f"The assistant tool runs in '{run.status}' status without a specific error message."
             raise Exception(error_message)
 
 
 @trace
-async def get_run_steps(cli: AsyncOpenAI, thread_id: str, run_id: str):
+async def get_run_steps(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str):
     run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
     print("step details: \n")
     for step_data in run_steps.data:
@@ -155,7 +158,7 @@ async def get_run_steps(cli: AsyncOpenAI, thread_id: str, run_id: str):
 
 
 @trace
-async def get_message(cli: AsyncOpenAI, thread_id: str):
+async def get_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str):
     messages = await cli.beta.threads.messages.list(thread_id=thread_id)
     return messages
 
@@ -172,7 +175,7 @@ def extract_text_from_message(message: list):
     return "\n".join(content)
 
 
-async def extract_file_ids_from_message(cli: AsyncOpenAI, message: list):
+async def extract_file_ids_from_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], message: list):
     file_ids = []
     for m in message:
         if isinstance(m, str):
@@ -186,7 +189,8 @@ async def extract_file_ids_from_message(cli: AsyncOpenAI, message: list):
     return file_ids
 
 
-async def get_openai_file_references(content: list, download_image: bool, conn: Union[AzureOpenAIConnection, OpenAIConnection]):
+async def get_openai_file_references(content: list, download_image: bool,
+                                     conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     file_id_references = {}
     file_id = None
     for item in content:
@@ -204,7 +208,7 @@ async def get_openai_file_references(content: list, download_image: bool, conn: 
                     file_id = annotation.file_citation.file_id
         else:
             raise Exception(f"Unsupported content type: '{type(item)}'.")
-        
+
         if file_id:
             if file_id not in file_id_references:
                 file_id_references[file_id] = {}

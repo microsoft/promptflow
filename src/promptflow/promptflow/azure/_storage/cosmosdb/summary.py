@@ -1,9 +1,8 @@
 import datetime
+import logging
 import time
 import typing
 from dataclasses import asdict, dataclass, field
-
-from flask import current_app
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanStatusFieldName
 from promptflow._sdk._utils import json_loads_parse_const_as_str
@@ -29,6 +28,7 @@ class SummaryLine:
     latency: float
     name: str
     kind: str
+    created_by: typing.Dict
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
     evaluations: typing.Dict = field(default_factory=dict)
     # Only for batch run
@@ -49,6 +49,7 @@ class LineEvaluation:
     trace_id: str
     root_span_id: str
     display_name: str
+    created_by: typing.Dict
     flow_id: str = None
     # Only for batch run
     batch_run_id: str = None
@@ -58,8 +59,10 @@ class LineEvaluation:
 
 
 class Summary:
-    def __init__(self, span: Span) -> None:
+    def __init__(self, span: Span, created_by: typing.Dict, logger: logging.Logger) -> None:
         self.span = span
+        self.created_by = created_by
+        self.logger = logger
 
     def persist(self, client):
         if self.span.parent_span_id:
@@ -74,7 +77,7 @@ class Summary:
             SpanAttributeFieldName.LINE_RUN_ID not in attributes
             and SpanAttributeFieldName.BATCH_RUN_ID not in attributes
         ):
-            current_app.logger.info(
+            self.logger.info(
                 "No line run id or batch run id found. Could be aggregate node, eager flow or arbitrary script. "
                 "Ignore for patching evaluations."
             )
@@ -131,6 +134,7 @@ class Summary:
             name=self.span.name,
             kind=attributes[SpanAttributeFieldName.SPAN_TYPE],
             cumulative_token_count=cumulative_token_count,
+            created_by=self.created_by,
         )
         if SpanAttributeFieldName.LINE_RUN_ID in attributes:
             item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
@@ -138,7 +142,7 @@ class Summary:
             item.batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
             item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
 
-        current_app.logger.info(f"Persist main run for LineSummary id: {item.id}")
+        self.logger.info(f"Persist main run for LineSummary id: {item.id}")
         return client.create_item(body=asdict(item))
 
     def _insert_evaluation(self, client):
@@ -150,6 +154,7 @@ class Summary:
             root_span_id=self.span.span_id,
             outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
             display_name=name,
+            created_by=self.created_by,
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
             # Query to get item id from line run id.
@@ -162,7 +167,7 @@ class Summary:
             if items:
                 main_id = items[0]["id"]
             else:
-                current_app.logger.error(f"Cannot find main run for line run id: {line_run_id}")
+                self.logger.error(f"Cannot find main run for line run id: {line_run_id}")
                 return
             line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
             item.line_run_id = line_run_id
@@ -179,7 +184,7 @@ class Summary:
             if items:
                 main_id = items[0]["id"]
             else:
-                current_app.logger.error(
+                self.logger.error(
                     f"Cannot find main run for batch run id: {referenced_batch_run_id} and line number: {line_number}"
                 )
                 return
@@ -187,5 +192,5 @@ class Summary:
             item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
 
         patch_operations = [{"op": "add", "path": f"/evaluations/{name}", "value": asdict(item)}]
-        current_app.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
+        self.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
         return client.patch_item(item=main_id, partition_key=partition_key, patch_operations=patch_operations)

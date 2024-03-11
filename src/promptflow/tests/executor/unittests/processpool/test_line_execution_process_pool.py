@@ -183,6 +183,7 @@ def custom_create_spawned_fork_process_manager(*args, **kwargs):
 
 
 @pytest.mark.unittest
+@pytest.mark.usefixtures("recording_injection")
 class TestLineExecutionProcessPool:
     @pytest.mark.parametrize(
         "flow_folder",

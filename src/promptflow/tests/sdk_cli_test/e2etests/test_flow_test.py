@@ -311,3 +311,60 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs={})
         assert result.run_info.status.value == "Completed", result.run_info.error
         assert result.output == "Hello world! azure"
+
+    @pytest.mark.parametrize(
+        "flow_path, expected_meta",
+        [
+            (
+                "simple_with_yaml",
+                {
+                    "entry": "entry:my_flow",
+                    "function": "my_flow",
+                    "inputs": {"input_val": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+            (
+                "nested_entry",
+                {
+                    "entry": "my_module.entry:my_flow",
+                    "function": "my_flow",
+                    "inputs": {"input_val": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+            (
+                "flow_with_additional_includes",
+                {
+                    "entry": "flow:my_flow_entry",
+                    "function": "my_flow_entry",
+                    "inputs": {"input_val": {"type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+        ],
+    )
+    def test_generate_flow_meta(self, flow_path, expected_meta):
+        clear_module_cache("flow")
+        clear_module_cache("my_module.entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/{flow_path}").absolute()
+        flow_meta = _client._flows._generate_flow_meta(flow_path)
+        assert flow_meta == expected_meta
+
+    def test_generate_flow_meta_exception(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
+        with pytest.raises(ValidationError) as e:
+            _client._flows._generate_flow_meta(flow=flow_path)
+        assert "Entry function my_func is not valid." in str(e.value)
+
+    def test_init_executable(self):
+        from promptflow import load_flow
+        from promptflow.contracts.flow import FlowInputDefinition, FlowOutputDefinition
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml").absolute()
+        flow = load_flow(flow_path)
+        executable = flow._init_executable()
+        # call values in executable.inputs are FlowInputDefinitions
+        assert all([isinstance(value, FlowInputDefinition) for value in executable.inputs.values()])
+        # call values in executable.outputs are FlowOutputDefinitions
+        assert all([isinstance(value, FlowOutputDefinition) for value in executable.outputs.values()])
