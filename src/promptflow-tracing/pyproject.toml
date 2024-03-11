@@ -10,7 +10,7 @@ authors = [
 ]
 
 repository = "https://github.com/microsoft/promptflow"
-homepage = "https://github.com/microsoft/promptflow"
+homepage = "https://microsoft.github.io/promptflow/"
 
 readme = ["README.md"]
 keywords = ["telemetry"]
