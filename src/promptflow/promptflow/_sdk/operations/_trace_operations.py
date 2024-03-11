@@ -130,5 +130,7 @@ class TraceOperations:
                 continue
             for line_number in run_spans:
                 line_spans = run_spans[line_number]
-                line_runs.append(LineRun._from_spans(line_spans, run=run))
+                line_run = LineRun._from_spans(line_spans, run=run)
+                if line_run is not None:
+                    line_runs.append(line_run)
         return line_runs
