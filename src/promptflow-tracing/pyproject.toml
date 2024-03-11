@@ -27,6 +27,10 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
+packages = [
+  { include = "promptflow" }
+]
+
 [tool.poetry.urls]
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
