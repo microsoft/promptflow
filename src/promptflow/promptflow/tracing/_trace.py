@@ -182,7 +182,7 @@ def enrich_span_with_openai_tokens(span, trace_type):
         if tokens:
             span_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
             if trace_type in [TraceType.LLM, TraceType.EMBEDDING]:
-                llm_tokens = {f"{trace_type.value.lower()}.usage.{k}": v for k, v in tokens.items()}
+                llm_tokens = {f"llm.usage.{k}": v for k, v in tokens.items()}
                 span_tokens.update(llm_tokens)
             span.set_attributes(span_tokens)
     except Exception as e:
@@ -194,7 +194,7 @@ def enrich_span_with_embedding(span, inputs, output):
 
     try:
         if isinstance(output, CreateEmbeddingResponse):
-            span.set_attribute("embedding.model", output.model)
+            span.set_attribute("llm.response.model", output.model)
             embeddings = []
             input_list = [emb_input] if _is_single_input(emb_input := inputs["input"]) else emb_input
             for emb in output.data:
