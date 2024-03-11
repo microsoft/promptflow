@@ -1,0 +1,35 @@
+name: promptflow-tracing-test
+
+on:
+  schedule:
+    - cron: "40 18 * * *" # Every day starting at 2:40 BJT
+  pull_request:
+    paths:
+      - src/promptflow-tracing/**
+      - .github/workflows/promptflow-tracing-test.yml
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out repository
+        uses: actions/checkout@v4
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: install poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: install dependencies
+        run: poetry install --no-interaction
+        working-directory: ./src/promptflow-tracing
+      - name: run tests
+        run: |
+          poetry install --with test
+          poetry run pytest
+        working-directory: ./src/promptflow-tracing
