@@ -232,16 +232,32 @@ class FormattedException:
 
 
 def build_pfs_user_agent():
-    extra_agent = f"local_pfs/{VERSION}"
-    if request.user_agent.string:
-        return f"{request.user_agent.string} {extra_agent}"
-    return extra_agent
+    user_agent = request.user_agent.string
+    extra_user_agent = f"local_pfs/{VERSION}"
+    if user_agent:
+        return f"{user_agent} {extra_user_agent}"
+    return extra_user_agent
 
 
-def get_client_from_request() -> "PFClient":
+def get_client_from_request(*, connection_provider=None) -> "PFClient":
+    """
+    Build a PFClient instance based on current request in local PFS.
+
+    User agent may be different for each request.
+    """
     from promptflow._sdk._pf_client import PFClient
 
-    return PFClient(user_agent=build_pfs_user_agent())
+    user_agent = build_pfs_user_agent()
+
+    if connection_provider:
+        pf_client = PFClient(connection_provider=connection_provider)
+    else:
+        pf_client = PFClient()
+    # DO NOT pass in user agent directly to PFClient, as it will impact the global OperationContext.
+    pf_client.connections._bond_user_agent(user_agent)
+    pf_client.runs._bond_user_agent(user_agent)
+    pf_client.flows._bond_user_agent(user_agent)
+    return pf_client
 
 
 def is_run_from_built_binary():
