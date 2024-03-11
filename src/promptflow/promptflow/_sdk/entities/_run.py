@@ -19,8 +19,8 @@ from promptflow._sdk._constants import (
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
+    HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
-    PROMPT_FLOW_DIR_NAME,
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -128,6 +128,7 @@ class Run(YAMLTranslatableMixin):
         source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
+        # !!! Caution !!!: Please update self._copy() if you add new fields to init
         # TODO: remove when RUN CRUD don't depend on this
         self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
@@ -666,7 +667,7 @@ class Run(YAMLTranslatableMixin):
         config = config or Configuration.get_instance()
         path = config.get_run_output_path()
         if path is None:
-            path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+            path = HOME_PROMPT_FLOW_DIR / ".runs"
         else:
             try:
                 flow_posix_path = self.flow.resolve().as_posix()
@@ -677,7 +678,7 @@ class Run(YAMLTranslatableMixin):
                     raise Exception(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
-                path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+                path = HOME_PROMPT_FLOW_DIR / ".runs"
                 warning_message = (
                     "Got unexpected error when parsing specified output path: "
                     f"{config.get_run_output_path()!r}; "

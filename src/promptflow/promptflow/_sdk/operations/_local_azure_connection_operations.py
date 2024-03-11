@@ -9,9 +9,8 @@ from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, MAX_LIST_CL
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.credential_utils import get_default_azure_credential
-from promptflow.azure._utils.general import get_arm_token
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
 
@@ -48,6 +47,8 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     @classmethod
     def _get_credential(cls):
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
+
+        from promptflow.azure._utils.general import get_arm_token
 
         if is_from_cli():
             try:

@@ -47,7 +47,7 @@ When `get` or `list` connections, `PFClient`(or `pf connection` commands) will r
 _Secrets for workspace connection will not be shown by those commands, which means you may see empty dict `{}` for custom connections._
 
 :::{note}
-Command `create`, `update` and `delete` are not supported for workspace connections, please manage it in workspace portal, az ml cli or AzureML SDK.
+Command `create`, `update` and `delete` are not supported for workspace connections, please manage it in workspace portal, [Azure AI Studio](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/connections-add), az ml cli or azure-ai-ml sdk.
 :::
  
 
