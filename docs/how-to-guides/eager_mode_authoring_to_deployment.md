@@ -2,7 +2,16 @@ We already have a clear story from authoring to deployment with DAG flow, given 
 ## Goal
 - provide smooth experience from authoring to deployment
 - simplify the authoring experience as much as possible
-- pf serving support eager mode flow deployment
+
+## user experience question
+- can we totally get rid of flow.yaml for eager flow?
+  - signature
+  - requirements.txt
+  - entry
+  - environment_variables
+  - additional_includes(??)
+- is pf.save a must stage?
+
 
 ## Daniel's proposal - loader function
 [loader_function](https://github.com/enterprises/microsoftopensource/saml/initiate?return_to=https%3A%2F%2Fgithub.com%2FAzure%2Fazureml_run_specification%2Fblob%2Fusers%2Fanksing%2Fevaluator_flow_asset%2Fspecs%2Fsimplified-sdk%2Fevaluator%2Fsave_load_promptflow.md)   
@@ -26,6 +35,7 @@ The environment variables way does work but it might need customer to configure 
 class BaseFlow:
     def init(self, flow_settings: dict, *kwargs);
     def execute(self, *kwargs);
+    #def signature(self);
 ```
 - `init` function can be used for customized initialization logic; 
 - `execute` function is the entry point of flow execution.
