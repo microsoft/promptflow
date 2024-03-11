@@ -24,7 +24,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import EAGER_FLOW_PUBLIC_NAME, FlowLanguage
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
@@ -206,12 +206,22 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
+        from promptflow import load_flow as load_local_flow
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         # validate the source folder
         logger.info("Validating flow source.")
         if not Path(source, DAG_FILE_NAME).exists():
             raise UserErrorException(
                 f"Flow source must be a directory with flow definition yaml '{DAG_FILE_NAME}'. "
                 f"Got {Path(source).resolve().as_posix()!r}."
+            )
+        # eager flow is not supported since eager flow don't have cloud authoring experience
+        flow_entity = load_local_flow(source)
+        if isinstance(flow_entity, EagerFlow):
+            raise UserErrorException(
+                f"Flow source {Path(source).resolve().as_posix()!r}. is {EAGER_FLOW_PUBLIC_NAME} flow. "
+                "Creating it to cloud is not supported."
             )
 
         # validate flow source with flow schema

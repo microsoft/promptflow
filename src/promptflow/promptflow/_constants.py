@@ -164,3 +164,4 @@ class MessageFormatType:
 
 
 DEFAULT_OUTPUT_NAME = "output"
+EAGER_FLOW_PUBLIC_NAME = "eager"
