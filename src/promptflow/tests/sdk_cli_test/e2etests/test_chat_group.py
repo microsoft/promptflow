@@ -22,12 +22,12 @@ class TestChatGroup:
             name="copilot",
             inputs=dict(
                 question=topic,
-                model="",
+                model="gpt-3.5-turbo",
                 conversation_history="${parent.conversation_history}",
             ),
         )
         simulation = ChatRole(
-            flow=FLOWS_DIR / "chat_group_criticizer",
+            flow=FLOWS_DIR / "chat_group_simulation",
             role="user",
             name="simulation",
             inputs=dict(
@@ -48,7 +48,7 @@ class TestChatGroup:
         chat_group.invoke()
 
         # Initial group level input plus 4 turns, so 5 in total
-        history = chat_group.chat_history.history
-        assert len(history) == 5
-        assert history[0][1]["request"] == group_input_request
-        assert history[0][1]["comments"] == "I like it"
+        history = chat_group.conversation_history
+        assert len(history) == 4
+        assert history[0][0] == history[2][0] == copilot.role
+        assert history[1][0] == history[3][0] == simulation.role

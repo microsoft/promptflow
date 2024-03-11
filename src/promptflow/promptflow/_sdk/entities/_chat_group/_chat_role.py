@@ -47,6 +47,16 @@ class ChatRole:
         """Role of the chat role"""
         return self._role
 
+    @property
+    def inputs(self):
+        """Inputs of the chat role"""
+        return self._inputs
+
+    @property
+    def outputs(self):
+        """Outputs of the chat role"""
+        return self._outputs
+
     def _validate_flow(self, flow: Union[str, PathLike]):
         """Validate flow"""
         logger.debug(f"Validating chat role flow source {flow!r}")
@@ -78,7 +88,7 @@ class ChatRole:
         if ignored_keys:
             logger.warning(
                 f"Ignoring inputs {ignored_keys!r} for chat role {self._name!r}, "
-                f"expected one of {list(inputs.keys())}."
+                f"expected one of {list(inputs.keys())!r}."
             )
 
         # check for missing inputs
@@ -97,4 +107,5 @@ class ChatRole:
         """Invoke chat role"""
         if args:
             raise ChatRoleError(f"Chat role invoke does not accept positional arguments, got {args!r} instead.")
-        return self._flow_object(**kwargs)
+        result = self._flow_object(**kwargs) or {}
+        return result

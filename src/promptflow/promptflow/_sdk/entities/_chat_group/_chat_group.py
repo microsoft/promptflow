@@ -3,15 +3,13 @@
 # ---------------------------------------------------------
 import time
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from promptflow._sdk._constants import CHAT_GROUP_NAME, STOP_SIGNAL, ChatGroupSpeakOrder
 from promptflow._sdk._errors import ChatGroupError
 from promptflow._sdk._utils import parse_chat_group_data_binding
 from promptflow._sdk.entities._chat_group._chat_group_io import ChatGroupInputs, ChatGroupOutputs
 from promptflow._sdk.entities._chat_group._chat_role import ChatRole
-
-# from promptflow._sdk.entities._chat_group._chat_group_io import ChatRoleOutputs
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 logger = get_cli_sdk_logger()
@@ -33,6 +31,7 @@ class ChatGroup:
     :param stop_signal: Stop signal of the chat group. Default to be "[STOP]".
     :type stop_signal: Optional[str]
     :param entry_role: Entry role of the chat group. Default to be None which means the first role in the roles list.
+        Only meaningful when speak order is not sequential.
     """
 
     def __init__(
@@ -53,7 +52,7 @@ class ChatGroup:
         )
         self._stop_signal = stop_signal
         self._entry_role = entry_role
-        self._conversation_history = ChatGroupHistory(self)
+        self._conversation_history = []
 
     @property
     def conversation_history(self):
@@ -89,7 +88,7 @@ class ChatGroup:
             logger.info(f"Role speak order is {speak_order_list!r}.")
             return speak_order_list
         else:
-            raise NotImplementedError(f"Speak order {speak_order.value} is not supported yet.")
+            raise NotImplementedError(f"Speak order {speak_order.value!r} is not supported yet.")
 
     def _prepare_io(self, inputs: Dict[str, Dict[str, Any]], outputs: Dict[str, Dict[str, Any]]):
         """Prepare inputs and outputs"""
@@ -136,7 +135,8 @@ class ChatGroup:
 
         return ChatGroupInputs(inputs), ChatGroupOutputs(outputs)
 
-    def _validate_int_parameters(self, max_turns: int, max_tokens: int, max_time: int):
+    @staticmethod
+    def _validate_int_parameters(max_turns: int, max_tokens: int, max_time: int):
         """Validate int parameters"""
         logger.debug("Validating integer parameters for chat group.")
         if max_turns is not None and not isinstance(max_turns, int):
@@ -153,12 +153,12 @@ class ChatGroup:
 
     def invoke(self, *args, **kwargs):
         """Invoke the chat group"""
-        if args:
-            raise ChatGroupError(f"Chat group invoke does not accept positional arguments. Got {args!r} instead.")
+        if args or kwargs:
+            logger.warn(
+                f"Chat group invoke does not accept arguments, got {args!r} and {kwargs!r} instead and ignored them."
+            )
 
         logger.info("Invoking chat group.")
-        # ensure inputs are provided
-        self._process_execution_parameters(**kwargs)
 
         chat_round = 0
         chat_token = 0
@@ -170,7 +170,9 @@ class ChatGroup:
             current_role = self._select_role()
             logger.info(f"[Round {chat_round}] Chat role {current_role.name!r} is speaking.")
             role_input_values = self._get_role_input_values(current_role)
+            # TODO: Hide flow-invoker and executor log for execution
             result = current_role.invoke(**role_input_values)
+            logger.info(f"[Round {chat_round}] Chat role {current_role.name!r} result: {result!r}.")
 
             # post process after role's invocation
             self._update_information_with_result(current_role, result)
@@ -185,42 +187,6 @@ class ChatGroup:
                 )
                 break
 
-    def _process_execution_parameters(self, **kwargs) -> None:
-        """Process execution parameters"""
-        # enrich the actual value for chat group inputs
-        logger.info(f"Processing execution parameters for chat group with inputs {kwargs!r}.")
-        for key in self.inputs:
-            group_input = self.inputs[key]
-            if key in kwargs:
-                value = kwargs.get(key)
-                if not isinstance(value, group_input["type"]):
-                    raise ChatGroupError(
-                        f"Input {key!r} should be of type {group_input['type']!r}. Got {type(value)!r} instead."
-                    )
-                group_input["value"] = value
-            elif "default" in group_input:
-                group_input["value"] = group_input["default"]
-        logger.debug(f"Chat group inputs with enriched actual values: {self.inputs!r}")
-
-        # check if all inputs have actual values
-        missed_inputs = []
-        for key in self.inputs:
-            if "value" not in self.inputs[key]:
-                missed_inputs.append(key)
-        if missed_inputs:
-            raise ChatGroupError(f"Chat group inputs are not provided: {missed_inputs}.")
-
-        # update chat history with initial group level inputs
-        contents = {key: self.inputs[key]["value"] for key in self.inputs}
-        self.chat_history._update_history(self, contents)
-
-        # check for ignored inputs
-        ignored_keys = set(kwargs.keys()) - set(self.inputs.keys())
-        if ignored_keys:
-            logger.warning(
-                f"Ignoring inputs {ignored_keys!r} for the chat group, " f"expected one of {list(self.inputs.keys())}."
-            )
-
     def _select_role(self) -> ChatRole:
         """Select next role"""
         if self._speak_order == ChatGroupSpeakOrder.LLM:
@@ -233,23 +199,11 @@ class ChatGroup:
         input_values = {}
         for key in role.inputs:
             role_input = role.inputs[key]
-            value = None
-            # first reference works as the initial value for role's input, so it should be removed after the first use
-            if "first_reference" in role_input:
-                reference = role_input["first_reference"]
-                owner, io_type, io_name = parse_chat_group_data_binding(reference)
-                owner = self if owner == CHAT_GROUP_NAME else self._roles_dict[owner]
-                value = getattr(owner, io_type)[io_name]["value"]
-                role_input.pop("first_reference", None)
-            elif "reference" in role_input:
-                reference = role_input["reference"]
-                owner, io_type, io_name = parse_chat_group_data_binding(reference)
-                owner = self if owner == CHAT_GROUP_NAME else self._roles_dict[owner]
-                value = getattr(owner, io_type)[io_name]["value"]
-            elif "value" in role_input:
-                value = role_input["value"]
-            elif "default" in role_input:
-                value = role_input["default"]
+            value = role_input.get("value", None)
+            # only conversation history binding needs to be processed here, other values are specified when
+            # initializing the chat role.
+            if value == "${parent.conversation_history}":
+                value = self._conversation_history
             input_values[key] = value
         logger.debug(f"Input values for role {role.name!r}: {input_values!r}")
         return input_values
@@ -259,12 +213,16 @@ class ChatGroup:
         logger.debug(f"Updating chat group information with result from role {role.name!r}: {result!r}.")
 
         # 1. update group chat history
-        self.chat_history._update_history(role, result)
+        self._update_conversation_history(role, result)
 
         # 2. Update the role output value
         for key, value in result.items():
             if key in role.outputs:
                 role.outputs[key]["value"] = value
+
+    def _update_conversation_history(self, role: ChatRole, result: dict) -> None:
+        """Update conversation history"""
+        self._conversation_history.append((role.role, result))
 
     def _check_continue_condition(self, chat_round: int, chat_token: int, chat_start_time: float) -> bool:
         continue_chat = True
@@ -295,28 +253,3 @@ class ChatGroup:
     def _predict_next_role_with_llm(self) -> ChatRole:
         """Predict next role for non-deterministic speak order."""
         raise NotImplementedError(f"Speak order {self._speak_order} is not supported yet.")
-
-
-class ChatGroupHistory:
-    """Chat group history entity"""
-
-    def __init__(self, chat_group: ChatGroup):
-        self._history = []
-        self._chat_group = chat_group
-
-    def _update_history(self, role: Union[ChatRole, ChatGroup], result: Any):
-        """Update chat history"""
-        is_role = isinstance(role, ChatRole)
-        speaker = role.name if is_role else CHAT_GROUP_NAME
-        message = None
-        # Normally we assume every role only has 1 output so we take the first one.
-        # For the initial chat group level input, we put all inputs into the history.
-        if isinstance(result, dict) and len(result) > 0:
-            message = list(result.values())[0] if is_role else result
-        elif isinstance(result, str):
-            message = result
-        self._history.append((speaker, message))
-
-    @property
-    def history(self):
-        return self._history

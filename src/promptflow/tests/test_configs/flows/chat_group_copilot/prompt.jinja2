@@ -4,11 +4,12 @@ You are an assistant that can tell good jokes.
 Here is the initial message from user:
 {{question}}
 
+{% if conversation_history %}
 Here is a chat history you had with the user:
 {% for item in conversation_history %}
 {{item}}
-{% end for %}
+{% endfor %}
+{% endif %}
 
 Now please continue the conversation with the user:
-{{response}}
 ```

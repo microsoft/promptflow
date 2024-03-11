@@ -138,8 +138,11 @@ SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
+
+# region: chat group
 CHAT_GROUP_NAME = "chat_group"
 STOP_SIGNAL = "[stop]"
+# endregion: chat group
 
 
 class CustomStrongTypeConnectionConfigs:
