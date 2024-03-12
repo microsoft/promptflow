@@ -216,8 +216,10 @@ def setup_exporter_to_pfs() -> None:
     tracer_provider = TracerProvider(resource=res)
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+    if endpoint is not None:
+        # create OTLP span exporter if endpoint is set
+        otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     # set tracer provider
     if _is_tracer_provider_set():
         _force_set_tracer_provider(tracer_provider)
