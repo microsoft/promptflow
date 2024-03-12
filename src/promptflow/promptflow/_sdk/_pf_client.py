@@ -278,11 +278,10 @@ class PFClient:
             logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
             connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential, **kwargs)
         else:
-            error = ValueError(f"Unsupported connection provider: {connection_provider}")
             raise UserErrorException(
                 target=ErrorTarget.CONTROL_PLANE_SDK,
-                message=str(error),
-                error=error,
+                message_format="Unsupported connection provider: {connection_provider}",
+                connection_provider=connection_provider,
             )
         return connection_operation
 

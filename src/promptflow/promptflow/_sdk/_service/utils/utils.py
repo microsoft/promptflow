@@ -252,7 +252,7 @@ def get_client_from_request(*, connection_provider=None) -> "PFClient":
     if connection_provider:
         pf_client = PFClient(connection_provider=connection_provider, user_agent_override=user_agent)
     else:
-        pf_client = PFClient(bonded_user_agent=user_agent)
+        pf_client = PFClient(user_agent_override=user_agent)
     return pf_client
 
 
