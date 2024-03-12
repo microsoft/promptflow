@@ -194,6 +194,7 @@ try:
     from ._models_py3 import BatchGetComponentRequest
     from ._models_py3 import Binding
     from ._models_py3 import BulkTestDto
+    from ._models_py3 import ChatGroupRole
     from ._models_py3 import CloudError
     from ._models_py3 import CloudPrioritySetting
     from ._models_py3 import CloudSettings
@@ -239,6 +240,7 @@ try:
     from ._models_py3 import ControlInput
     from ._models_py3 import ControlOutput
     from ._models_py3 import CopyDataTask
+    from ._models_py3 import CreateExperimentTemplateRequest
     from ._models_py3 import CreateFlowRequest
     from ._models_py3 import CreateFlowRuntimeRequest
     from ._models_py3 import CreateFlowSessionRequest
@@ -320,7 +322,12 @@ try:
     from ._models_py3 import ExecutionDataPath
     from ._models_py3 import ExecutionGlobsOptions
     from ._models_py3 import ExperimentComputeMetaInfo
+    from ._models_py3 import ExperimentData
+    from ._models_py3 import ExperimentDefinition
+    from ._models_py3 import ExperimentDefinitionSource
     from ._models_py3 import ExperimentInfo
+    from ._models_py3 import ExperimentNode
+    from ._models_py3 import ExperimentTemplateDto
     from ._models_py3 import ExportComponentMetaInfo
     from ._models_py3 import ExportDataTask
     from ._models_py3 import FeaturizationSettings
@@ -330,6 +337,7 @@ try:
     from ._models_py3 import Flow
     from ._models_py3 import FlowAnnotations
     from ._models_py3 import FlowBaseDto
+    from ._models_py3 import FlowDiagnostics
     from ._models_py3 import FlowDto
     from ._models_py3 import FlowEnvironment
     from ._models_py3 import FlowFeature
@@ -593,6 +601,7 @@ try:
     from ._models_py3 import SessionApplication
     from ._models_py3 import SessionApplicationRunCommandResult
     from ._models_py3 import SessionProperties
+    from ._models_py3 import SessionRuntimeResources
     from ._models_py3 import SetupFlowSessionRequest
     from ._models_py3 import SharingScope
     from ._models_py3 import Snapshot
@@ -634,6 +643,7 @@ try:
     from ._models_py3 import SubStatusPeriod
     from ._models_py3 import SubmitBulkRunRequest
     from ._models_py3 import SubmitBulkRunResponse
+    from ._models_py3 import SubmitExperimentRequest
     from ._models_py3 import SubmitFlowRequest
     from ._models_py3 import SubmitPipelineRunRequest
     from ._models_py3 import SweepEarlyTerminationPolicy
@@ -890,6 +900,7 @@ except (SyntaxError, ImportError):
     from ._models import BatchGetComponentRequest  # type: ignore
     from ._models import Binding  # type: ignore
     from ._models import BulkTestDto  # type: ignore
+    from ._models import ChatGroupRole  # type: ignore
     from ._models import CloudError  # type: ignore
     from ._models import CloudPrioritySetting  # type: ignore
     from ._models import CloudSettings  # type: ignore
@@ -935,6 +946,7 @@ except (SyntaxError, ImportError):
     from ._models import ControlInput  # type: ignore
     from ._models import ControlOutput  # type: ignore
     from ._models import CopyDataTask  # type: ignore
+    from ._models import CreateExperimentTemplateRequest  # type: ignore
     from ._models import CreateFlowRequest  # type: ignore
     from ._models import CreateFlowRuntimeRequest  # type: ignore
     from ._models import CreateFlowSessionRequest  # type: ignore
@@ -1016,7 +1028,12 @@ except (SyntaxError, ImportError):
     from ._models import ExecutionDataPath  # type: ignore
     from ._models import ExecutionGlobsOptions  # type: ignore
     from ._models import ExperimentComputeMetaInfo  # type: ignore
+    from ._models import ExperimentData  # type: ignore
+    from ._models import ExperimentDefinition  # type: ignore
+    from ._models import ExperimentDefinitionSource  # type: ignore
     from ._models import ExperimentInfo  # type: ignore
+    from ._models import ExperimentNode  # type: ignore
+    from ._models import ExperimentTemplateDto  # type: ignore
     from ._models import ExportComponentMetaInfo  # type: ignore
     from ._models import ExportDataTask  # type: ignore
     from ._models import FeaturizationSettings  # type: ignore
@@ -1026,6 +1043,7 @@ except (SyntaxError, ImportError):
     from ._models import Flow  # type: ignore
     from ._models import FlowAnnotations  # type: ignore
     from ._models import FlowBaseDto  # type: ignore
+    from ._models import FlowDiagnostics  # type: ignore
     from ._models import FlowDto  # type: ignore
     from ._models import FlowEnvironment  # type: ignore
     from ._models import FlowFeature  # type: ignore
@@ -1289,6 +1307,7 @@ except (SyntaxError, ImportError):
     from ._models import SessionApplication  # type: ignore
     from ._models import SessionApplicationRunCommandResult  # type: ignore
     from ._models import SessionProperties  # type: ignore
+    from ._models import SessionRuntimeResources  # type: ignore
     from ._models import SetupFlowSessionRequest  # type: ignore
     from ._models import SharingScope  # type: ignore
     from ._models import Snapshot  # type: ignore
@@ -1330,6 +1349,7 @@ except (SyntaxError, ImportError):
     from ._models import SubStatusPeriod  # type: ignore
     from ._models import SubmitBulkRunRequest  # type: ignore
     from ._models import SubmitBulkRunResponse  # type: ignore
+    from ._models import SubmitExperimentRequest  # type: ignore
     from ._models import SubmitFlowRequest  # type: ignore
     from ._models import SubmitPipelineRunRequest  # type: ignore
     from ._models import SweepEarlyTerminationPolicy  # type: ignore
@@ -1497,6 +1517,8 @@ from ._azure_machine_learning_designer_service_client_enums import (
     EntityStatus,
     ErrorHandlingMode,
     ExecutionPhase,
+    ExperimentDefinitionSourceType,
+    ExperimentNodeType,
     FeaturizationMode,
     FlowFeatureStateEnum,
     FlowLanguage,
@@ -1803,6 +1825,7 @@ __all__ = [
     'BatchGetComponentRequest',
     'Binding',
     'BulkTestDto',
+    'ChatGroupRole',
     'CloudError',
     'CloudPrioritySetting',
     'CloudSettings',
@@ -1848,6 +1871,7 @@ __all__ = [
     'ControlInput',
     'ControlOutput',
     'CopyDataTask',
+    'CreateExperimentTemplateRequest',
     'CreateFlowRequest',
     'CreateFlowRuntimeRequest',
     'CreateFlowSessionRequest',
@@ -1929,7 +1953,12 @@ __all__ = [
     'ExecutionDataPath',
     'ExecutionGlobsOptions',
     'ExperimentComputeMetaInfo',
+    'ExperimentData',
+    'ExperimentDefinition',
+    'ExperimentDefinitionSource',
     'ExperimentInfo',
+    'ExperimentNode',
+    'ExperimentTemplateDto',
     'ExportComponentMetaInfo',
     'ExportDataTask',
     'FeaturizationSettings',
@@ -1939,6 +1968,7 @@ __all__ = [
     'Flow',
     'FlowAnnotations',
     'FlowBaseDto',
+    'FlowDiagnostics',
     'FlowDto',
     'FlowEnvironment',
     'FlowFeature',
@@ -2202,6 +2232,7 @@ __all__ = [
     'SessionApplication',
     'SessionApplicationRunCommandResult',
     'SessionProperties',
+    'SessionRuntimeResources',
     'SetupFlowSessionRequest',
     'SharingScope',
     'Snapshot',
@@ -2243,6 +2274,7 @@ __all__ = [
     'SubStatusPeriod',
     'SubmitBulkRunRequest',
     'SubmitBulkRunResponse',
+    'SubmitExperimentRequest',
     'SubmitFlowRequest',
     'SubmitPipelineRunRequest',
     'SweepEarlyTerminationPolicy',
@@ -2408,6 +2440,8 @@ __all__ = [
     'EntityStatus',
     'ErrorHandlingMode',
     'ExecutionPhase',
+    'ExperimentDefinitionSourceType',
+    'ExperimentNodeType',
     'FeaturizationMode',
     'FlowFeatureStateEnum',
     'FlowLanguage',
