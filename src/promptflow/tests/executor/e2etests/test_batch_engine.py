@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._devkit_constants import OUTPUT_FILE_NAME
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl

@@ -14,7 +14,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow._devkit_constants import OUTPUT_FILE_NAME, OutputsFolderName
+from promptflow._constants import OUTPUT_FILE_NAME, OutputsFolderName
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
