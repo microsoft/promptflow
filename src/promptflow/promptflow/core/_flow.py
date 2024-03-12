@@ -267,7 +267,7 @@ class Flow(FlowBase):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._core._flow_context_resolver import FlowContextResolver
+        from promptflow.core._flow_context_resolver import FlowContextResolver
 
         invoker = FlowContextResolver.resolve(flow=self)
         result = invoker._invoke(
@@ -358,7 +358,7 @@ class AsyncFlow(Flow):
 
     async def invoke_async(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._core._flow_context_resolver import FlowContextResolver
+        from promptflow.core._flow_context_resolver import FlowContextResolver
 
         invoker = FlowContextResolver.resolve_async_invoker(flow=self)
         result = await invoker._invoke_async(
