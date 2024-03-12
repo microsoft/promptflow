@@ -1,24 +1,12 @@
-name: promptflow-executor-e2e-test
+name: promptflow-tracing-e2e-test
 on:
   schedule:
-    - cron: "40 20 * * *" # Every day starting at 4:40 BJT
+    - cron: "40 17 * * *" # Every day starting at 1:40 BJT
   pull_request_target:
     paths:
-      - src/promptflow/*
-      - src/promptflow/promptflow/*
-      - src/promptflow/promptflow/_core/**
-      - src/promptflow/promptflow/_internal/**
-      - src/promptflow/promptflow/_utils/**
-      - src/promptflow/promptflow/batch/**
-      - src/promptflow/promptflow/contracts/**
-      - src/promptflow/promptflow/entities/**
-      - src/promptflow/promptflow/executor/**
-      - src/promptflow/promptflow/integrations/**
-      - src/promptflow/promptflow/storage/**
-      - src/promptflow/tests/*
-      - src/promptflow/tests/executor/**
+      - src/promptflow/**
       - scripts/building/**
-      - .github/workflows/promptflow-executor-e2e-test.yml
+      - .github/workflows/promptflow-tracing-e2e-test.yml
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
@@ -70,16 +58,15 @@ jobs:
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
-  executor_e2e_tests:
+  tracing_tests:
     needs: build
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Set test mode
-      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
     - name: checkout
       uses: actions/checkout@v4
       with:
@@ -87,10 +74,15 @@ jobs:
         fetch-depth: 0
     - name: merge main to current branch
       uses: "./.github/actions/step_merge_main"
-    - name: Python Setup - ${{ matrix.os }} - Python Version 3.9
+    - name: Display and Set Environment Variables
+      run: |
+        env | sort >> $GITHUB_OUTPUT
+      id: display_env
+      shell: bash -el {0}
+    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
       uses: "./.github/actions/step_create_python_environment"
       with:
-        pythonVersion: 3.9
+        pythonVersion: ${{ matrix.pythonVersion }}
     - name: Download Artifacts
       uses: actions/download-artifact@v3
       with:
@@ -102,7 +94,7 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Azure Login
@@ -116,41 +108,36 @@ jobs:
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
-    - name: Run Coverage Test
+    - name: run promptflow-tracing test
       shell: pwsh
-      working-directory: ${{ github.workspace }}
+      working-directory: ${{ env.testWorkingDirectory }}
       run: |
-        gci env:* | sort-object name
-        az account show
-        pip install langchain
-        # numexpr is required by langchain in e2e tests.
-        pip install numexpr
-        python scripts/building/run_coverage_tests.py `
-          -p ${{ env.testWorkingDirectory }}/promptflow `
-          -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
+        python "../../scripts/building/run_coverage_tests.py" `
+          -p promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/tracing_test/e2etests `
           -l eastus `
-          -m "all" `
-          -n ${{ steps.cpu-cores.outputs.count }}`
-          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
-          --disable-cov-branch
+          -m "e2etest" `
+          -n ${{ steps.cpu-cores.outputs.count }} `
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/tracing_test/.coveragerc `
+          -o "${{ env.testWorkingDirectory }}/test-results-tracing.xml"
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python 3.9) (OS ${{ matrix.os }})
+        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: |
-          ${{ github.workspace }}/*.xml
-          ${{ github.workspace }}/htmlcov/
-  publish-test-results:
+          ${{ env.testWorkingDirectory }}/*.xml
+          ${{ env.testWorkingDirectory }}/htmlcov/
+  publish-test-results-tracing-test:
     name: "Publish Tests Results"
-    needs: executor_e2e_tests
+    needs: tracing_tests
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       checks: write
       pull-requests: write
       contents: read
       issues: read
-    if: always()
     steps:
     - name: checkout
       uses: actions/checkout@v4
@@ -162,9 +149,9 @@ jobs:
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
-        testActionFileName: promptflow-executor-e2e-test.yml
-        testResultTitle: Executor E2E Test Result
+        testActionFileName: promptflow-tracing-e2e-test.yml
+        testResultTitle: promptflow-tracing e2e test result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 70
-        context: test/executor_e2e
+        coverageThreshold: 40
+        context: test/tracing
