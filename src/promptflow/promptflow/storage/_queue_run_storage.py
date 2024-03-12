@@ -16,15 +16,17 @@ from promptflow.storage import AbstractRunStorage
 
 
 class QueueRunStorage(AbstractRunStorage):
-    """This storage persists run info by putting it into a queue."""
+    """This storage is used in line_execution_process_pool, where the run infos are put into the
+    output queue when the flow is executed, and waiting for the monitoring thread to process it.
+    """
 
     def __init__(self, queue: Queue):
         self.queue = queue
 
-    def persist_flow_run(self, run_info: FlowRunInfo):
+    def persist_node_run(self, run_info: NodeRunInfo):
         self.queue.put(run_info)
 
-    def persist_node_run(self, run_info: NodeRunInfo):
+    def persist_flow_run(self, run_info: FlowRunInfo):
         self.queue.put(run_info)
 
 
@@ -37,15 +39,15 @@ class ServiceQueueRunStorage(QueueRunStorage):
         self._flow_artifacts_path = output_dir / OutputsFolderName.FLOW_ARTIFACTS
         self._node_artifacts_path = output_dir / OutputsFolderName.NODE_ARTIFACTS
 
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        super().persist_flow_run(run_info)
-        flow_folder = self._flow_artifacts_path / str(run_info.index)
-        self._process_multimedia_in_run_info(run_info, flow_folder)
-
     def persist_node_run(self, run_info: NodeRunInfo):
         super().persist_node_run(run_info)
         node_folder = self._node_artifacts_path / str(run_info.index) / run_info.node
         self._process_multimedia_in_run_info(run_info, node_folder)
+
+    def persist_flow_run(self, run_info: FlowRunInfo):
+        super().persist_flow_run(run_info)
+        flow_folder = self._flow_artifacts_path / str(run_info.index)
+        self._process_multimedia_in_run_info(run_info, flow_folder)
 
     def _process_multimedia_in_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path):
         if run_info.inputs:
