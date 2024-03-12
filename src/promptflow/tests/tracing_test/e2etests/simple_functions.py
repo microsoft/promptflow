@@ -68,13 +68,27 @@ def openai_chat(connection: dict, prompt: str, stream: bool = False):
         {"role": "user", "content": prompt}
     ]
     response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
+
+    if stream:
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].delta.content or ""
+        return "".join(generator())
     return response.choices[0].message.content or ""
 
 
 @trace
-def openai_completion(connection: dict, prompt: str):
+def openai_completion(connection: dict, prompt: str, stream: bool = False):
     client = AzureOpenAI(**connection)
-    response = client.completions.create(model="text-ada-001", prompt=prompt)
+    response = client.completions.create(model="text-ada-001", prompt=prompt, stream=stream)
+
+    if stream:
+        def generator():
+            for chunk in response:
+                if chunk.choices:
+                    yield chunk.choices[0].text or ""
+        return "".join(generator())
     return response.choices[0].text or ""
 
 

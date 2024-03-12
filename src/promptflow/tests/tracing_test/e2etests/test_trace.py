@@ -108,6 +108,8 @@ class TestTracing:
         [
             (openai_chat, {"prompt": "Hello"}, 2),
             (openai_completion, {"prompt": "Hello"}, 2),
+            (openai_chat, {"prompt": "Hello", "stream": True}, 3),
+            (openai_completion, {"prompt": "Hello", "stream": True}, 3),
         ],
     )
     def test_otel_trace_with_llm(self, dev_connections, func, inputs, expected_span_length):
@@ -120,11 +122,18 @@ class TestTracing:
         exporter = prepare_memory_exporter()
 
         inputs = self.add_azure_connection_to_inputs(inputs, dev_connections)
+        is_stream = inputs.get("stream", False)
         result = self.run_func(func, inputs)
         assert isinstance(result, str)
         span_list = exporter.get_finished_spans()
         self.validate_span_list(span_list, expected_span_length)
-        self.validate_openai_tokens(span_list)
+        # We updated the OpenAI tokens (prompt_token/completion_token/total_token) to the span attributes
+        # for llm and embedding traces, and aggregate them to the parent span. Use this function to validate
+        # the openai tokens are correctly set.
+        self.validate_openai_tokens(span_list, is_stream)
+        for span in span_list:
+            if self._is_llm_span_with_tokens(span, is_stream):
+                assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
         "func, inputs, expected_span_length",
@@ -242,13 +251,13 @@ class TestTracing:
             assert isinstance(inputs, dict)
             assert output is not None
 
-    def validate_openai_tokens(self, span_list):
+    def validate_openai_tokens(self, span_list, is_stream=False):
         span_dict = {span.context.span_id: span for span in span_list}
         expected_tokens = {}
         for span in span_list:
             tokens = None
             # Validate the openai tokens are correctly set in the llm trace.
-            if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+            if self._is_llm_span_with_tokens(span, is_stream):
                 for token_name in LLM_TOKEN_NAMES + CUMULATIVE_LLM_TOKEN_NAMES:
                     assert token_name in span.attributes
                 tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_LLM_TOKEN_NAMES}
@@ -277,3 +286,12 @@ class TestTracing:
             if span_id in expected_tokens:
                 for token_name in expected_tokens[span_id]:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
+
+    def _is_llm_span_with_tokens(self, span, is_stream):
+        # For streaming mode, there are two spans for openai api call, one is the original span, and the other
+        # is the iterated span, which name is "Iterated(<original_trace_name>)", we should check the iterated span
+        # in streaming mode.
+        if is_stream:
+            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES and span.name.startswith("Iterated(")
+        else:
+            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES

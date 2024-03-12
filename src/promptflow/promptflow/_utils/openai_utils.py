@@ -1,4 +1,5 @@
 import tiktoken
+from abc import ABC, abstractmethod
 from importlib.metadata import version
 
 from promptflow._utils._errors import CalculatingMetricsError
@@ -202,9 +203,44 @@ class OpenAIMetricsCalculator:
             self._logger.warning(msg)
 
 
-class OpenAIResponseParser:
-    def __init__(self, response):
+class OpenAIResponseParser(ABC):
+    def __init__(self, response, is_chat):
         self._response = response
+        self._is_chat = is_chat
+
+    @staticmethod
+    def init_parser(response):
+        if IS_LEGACY_OPENAI:
+            return None
+
+        from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+        from openai.types.completion import Completion
+
+        if response and isinstance(response[0], ChatCompletionChunk):
+            return OpenAIChatResponseParser(response, True)
+        elif response and isinstance(response[0], Completion):
+            return OpenAICompletionResponseParser(response, False)
+        else:
+            raise NotImplementedError("Only support 'ChatCompletionChunk' and 'Completion' response.")
+
+    @property
+    @abstractmethod
+    def model(self):
+        pass
+
+    @property
+    @abstractmethod
+    def is_chat(self):
+        pass
+
+    @abstractmethod
+    def get_generated_message(self):
+        pass
+
+
+class OpenAIChatResponseParser(OpenAIResponseParser):
+    def __init__(self, response, is_chat):
+        super().__init__(response, is_chat)
 
     @property
     def model(self):
@@ -215,25 +251,9 @@ class OpenAIResponseParser:
 
     @property
     def is_chat(self):
-        from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
-
-        return self._response and isinstance(self._response[0], ChatCompletionChunk)
-
-    @property
-    def is_completion(self):
-        from openai.types.completion import Completion
-
-        return self._response and isinstance(self._response[0], Completion)
+        return self._is_chat
 
     def get_generated_message(self):
-        if self.is_chat:
-            return self._get_generated_message_for_chat_api()
-        elif self.is_completion:
-            return self._get_generated_message_for_completion_api()
-        else:
-            return None
-
-    def _get_generated_message_for_chat_api(self):
         chunks = []
         role = "assistant"
         for item in self._response:
@@ -242,7 +262,23 @@ class OpenAIResponseParser:
                 role = item.choices[0].delta.role or role
         return {"content": "".join(chunks), "role": role} if chunks else None
 
-    def _get_generated_message_for_completion_api(self):
+
+class OpenAICompletionResponseParser(OpenAIResponseParser):
+    def __init__(self, response, is_chat):
+        super().__init__(response, is_chat)
+
+    @property
+    def model(self):
+        for item in self._response:
+            if hasattr(item, "model"):
+                return item.model
+        return None
+
+    @property
+    def is_chat(self):
+        return self._is_chat
+
+    def get_generated_message(self):
         chunks = []
         for item in self._response:
             if item.choices and item.choices[0].text:

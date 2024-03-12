@@ -427,7 +427,7 @@ class TestOTelTracer:
         # the openai tokens are correctly set.
         self.validate_openai_tokens(span_list, is_stream)
         for span in span_list:
-            if self._is_llm_function_name(span.attributes.get("function", ""), is_stream):
+            if self._is_llm_span_with_tokens(span, is_stream):
                 assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
@@ -551,7 +551,7 @@ class TestOTelTracer:
         for span in span_list:
             tokens = None
             # Validate the openai tokens are correctly set in the llm trace.
-            if self._is_llm_function_name(span.attributes.get("function", ""), is_stream):
+            if self._is_llm_span_with_tokens(span, is_stream):
                 for token_name in LLM_TOKEN_NAMES + CUMULATIVE_LLM_TOKEN_NAMES:
                     assert token_name in span.attributes
                 tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_LLM_TOKEN_NAMES}
@@ -581,11 +581,11 @@ class TestOTelTracer:
                 for token_name in expected_tokens[span_id]:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
 
-    def _is_llm_function_name(self, func_name, is_stream):
+    def _is_llm_span_with_tokens(self, span, is_stream):
         # For streaming mode, there are two spans for openai api call, one is the original span, and the other
         # is the iterated span, which name is "Iterated(<original_trace_name>)", we should check the iterated span
         # in streaming mode.
         if is_stream:
-            return func_name in [f"Iterated({name})" for name in LLM_FUNCTION_NAMES]
+            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES and span.name.startswith("Iterated(")
         else:
-            return func_name in LLM_FUNCTION_NAMES
+            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES

@@ -164,7 +164,7 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
             from openai.types.completion import Completion
 
             if generator_output and isinstance(generator_output[0], (ChatCompletionChunk, Completion)):
-                parser = OpenAIResponseParser(generator_output)
+                parser = OpenAIResponseParser.init_parser(generator_output)
                 enrich_span_with_llm(span, parser.model, parser.get_generated_message())
                 token_collector.collect_openai_tokens_for_streaming(span, inputs, generator_output, parser.is_chat)
         enrich_span_with_openai_tokens(span, TraceType(original_span.attributes["span_type"]))
