@@ -267,6 +267,8 @@ class ForkProcessManager(AbstractProcessManager):
 
     def __init__(self, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Use _kwargs to temporarily store all common kwargs and pass them to SpawnedForkProcessManager
+        self._kwargs = kwargs
         self._control_signal_queue = control_signal_queue
         self._flow_create_kwargs = flow_create_kwargs
 
@@ -280,15 +282,10 @@ class ForkProcessManager(AbstractProcessManager):
             args=(
                 self._log_context_initialization_func,
                 self._current_operation_context,
-                self._input_queues,
-                self._output_queues,
                 self._control_signal_queue,
                 self._flow_create_kwargs,
-                self._process_info,
-                self._process_target_func,
-                self._output_dir,
-                self._serialize_multimedia,
             ),
+            kwargs=self._kwargs,
         )
         process.start()
         self._spawned_fork_process_manager_pid = process.pid
@@ -419,14 +416,9 @@ class SpawnedForkProcessManager(AbstractProcessManager):
 def create_spawned_fork_process_manager(
     log_context_initialization_func,
     current_operation_context,
-    input_queues,
-    output_queues,
     control_signal_queue,
     flow_create_kwargs,
-    process_info,
-    process_target_func,
-    output_dir,
-    serialize_multimedia,
+    **kwargs,
 ):
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
@@ -449,16 +441,11 @@ def create_spawned_fork_process_manager(
         current_operation_context,
         control_signal_queue,
         executor_creation_func,
-        input_queues,
-        output_queues,
-        process_info,
-        process_target_func,
-        output_dir,
-        serialize_multimedia,
+        **kwargs,
     )
 
     # Initialize processes.
-    for i in range(len(input_queues)):
+    for i in range(len(manager._input_queues)):
         manager.new_process(i)
 
     # Main loop to handle control signals and manage process lifecycle.
@@ -466,7 +453,7 @@ def create_spawned_fork_process_manager(
         all_processes_stopped = True
 
         try:
-            process_info_list = process_info.items()
+            process_info_list = manager._process_info.items()
         except Exception as e:
             bulk_logger.warning(f"Unexpected error occurred while get process info list. Exception: {e}")
             break
