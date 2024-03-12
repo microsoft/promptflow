@@ -5,28 +5,32 @@ import uuid
 from pathlib import Path
 
 import pytest
+from sdk_cli_azure_test.recording_utilities import is_replay
 
+from promptflow._sdk._constants import ExperimentStatus
 from promptflow._sdk._pf_client import PFClient
 
 from ..utils import PFSOperations, check_activity_end_telemetry
 
-EXPERIMENT_PATH = Path(__file__).parent.parent.parent / "test_configs/experiments/basic-script-template/basic-script.exp.yaml"
+EXPERIMENT_PATH = (
+    Path(__file__).parent.parent.parent / "test_configs/experiments/basic-script-template/basic-script.exp.yaml"
+)
 
 
 @pytest.mark.e2etest
 class TestExperimentAPIs:
-
     def test_experiment_create_and_list(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         name = str(uuid.uuid4())
 
         # Create experiment
-        with check_activity_end_telemetry(expected_activities=[{"activity_name": "pf.experiment.get", "first_call": False},
-                                                               {"activity_name":"pf.experiment.create_or_update"}]):
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.experiment.get", "first_call": False},
+                {"activity_name": "pf.experiment.create_or_update"},
+            ]
+        ):
             experiment = pfs_op.experiment_create(
-                name=name,
-                body={
-                    "template": EXPERIMENT_PATH.absolute().as_posix()
-                }
+                name=name, body={"template": EXPERIMENT_PATH.absolute().as_posix()}
             ).json
             assert name == experiment["name"]
 
@@ -40,52 +44,27 @@ class TestExperimentAPIs:
             experiments = pfs_op.experiment_list(max_results=10)
             assert any([exp["name"] == name for exp in experiments])
 
+    @pytest.mark.skipif(is_replay(), reason="connection provider test, skip in non-live mode.")
     def test_experiment_start(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         name = str(uuid.uuid4())
 
         # Create experiment
-        with check_activity_end_telemetry(
-                expected_activities=[{"activity_name": "pf.experiment.start"}]):
+        with check_activity_end_telemetry(expected_activities=[{"activity_name": "pf.experiment.start"}]):
             # start anonymous experiment
-            experiment = pfs_op.experiment_start(
-                body={
-                    "template": EXPERIMENT_PATH.absolute().as_posix()
-                }
-            ).json
+            experiment = pfs_op.experiment_start(body={"template": EXPERIMENT_PATH.absolute().as_posix()}).json
             assert name == experiment["name"]
 
             # start named experiment
-            pfs_op.experiment_create(
-                name=name,
-                body={
-                    "template": EXPERIMENT_PATH.absolute().as_posix()
-                }
-            ).json
-            experiment = pfs_op.experiment_start(
-                body={
-                    "name": name
-                }
-            ).json
+            pfs_op.experiment_create(name=name, body={"template": EXPERIMENT_PATH.absolute().as_posix()}).json
+            experiment = pfs_op.experiment_start(body={"name": name}).json
             assert name == experiment["name"]
 
             # stream experiment
-            experiment = pfs_op.experiment_start(
-                body={
-                    "template": EXPERIMENT_PATH.absolute().as_posix()
-                }
-            ).json
+            pfs_op.experiment_start(body={"template": EXPERIMENT_PATH.absolute().as_posix(), "stream": True})
 
     def test_experiment_stop(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         # Create experiment
-        with check_activity_end_telemetry(
-                expected_activities=[{"activity_name": "pf.experiment.start"}]):
-            experiment = pfs_op.experiment_start(
-                body={
-                    "template": EXPERIMENT_PATH.absolute().as_posix()
-                }
-            ).json
-            experiment = pfs_op.experiment_stop(
-                body={
-                    "name": experiment["name"]
-                }
-            ).json
+        with check_activity_end_telemetry(expected_activities=[{"activity_name": "pf.experiment.start"}]):
+            experiment = pfs_op.experiment_start(body={"template": EXPERIMENT_PATH.absolute().as_posix()}).json
+            experiment = pfs_op.experiment_stop(body={"name": experiment["name"]}).json
+            assert experiment["status"] == ExperimentStatus.TERMINATED

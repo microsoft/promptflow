@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Union, cast
 
 import httpx
 
+from ....utils import _request_wrapper
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.connection_dict import ConnectionDict
@@ -49,10 +50,12 @@ def _build_response(
     )
 
 
+@_request_wrapper()
 def sync_detailed(
     name: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[Union[Any, ConnectionDict]]:
     """Delete connection
 
@@ -71,13 +74,16 @@ def sync_detailed(
         name=name,
     )
 
-    response = client.get_httpx_client().request(
-        **kwargs,
-    )
+    if stream:
+        return client.get_httpx_client().stream(**kwargs)
+    else:
+        response = client.get_httpx_client().request(
+            **kwargs,
+        )
+        return _build_response(client=client, response=response)
 
-    return _build_response(client=client, response=response)
 
-
+@_request_wrapper()
 def sync(
     name: str,
     *,
@@ -102,10 +108,12 @@ def sync(
     ).parsed
 
 
+@_request_wrapper()
 async def asyncio_detailed(
     name: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[Union[Any, ConnectionDict]]:
     """Delete connection
 
@@ -123,12 +131,16 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         name=name,
     )
+    if stream:
+        with await client.get_httpx_client().stream(**kwargs) as response:
+            return _build_response(client=client, response=response)
+    else:
+        response = await client.get_async_httpx_client().request(**kwargs)
 
-    response = await client.get_async_httpx_client().request(**kwargs)
-
-    return _build_response(client=client, response=response)
+        return _build_response(client=client, response=response)
 
 
+@_request_wrapper()
 async def asyncio(
     name: str,
     *,

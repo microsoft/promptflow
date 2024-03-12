@@ -44,7 +44,7 @@ paths:
         required: true
         schema:
           type: string
-    put:
+    post:
       responses:
         "200":
           description: Connection details
@@ -55,25 +55,10 @@ paths:
         "403":
           description: This service is available for local user only, please specify
             X-Remote-User in headers.
-      description: Update connection
-      operationId: put_connection
+      description: Create connection
+      operationId: post_connection
       requestBody:
         $ref: "#/components/requestBodies/ConnectionDict"
-      tags:
-        - Connections
-    delete:
-      responses:
-        "204":
-          description: Delete connection
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ConnectionDict"
-        "403":
-          description: This service is available for local user only, please specify
-            X-Remote-User in headers.
-      description: Delete connection
-      operationId: delete_connection
       tags:
         - Connections
     get:
@@ -96,7 +81,22 @@ paths:
             type: string
       tags:
         - Connections
-    post:
+    delete:
+      responses:
+        "204":
+          description: Delete connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDict"
+        "403":
+          description: This service is available for local user only, please specify
+            X-Remote-User in headers.
+      description: Delete connection
+      operationId: delete_connection
+      tags:
+        - Connections
+    put:
       responses:
         "200":
           description: Connection details
@@ -107,8 +107,8 @@ paths:
         "403":
           description: This service is available for local user only, please specify
             X-Remote-User in headers.
-      description: Create connection
-      operationId: post_connection
+      description: Update connection
+      operationId: put_connection
       requestBody:
         $ref: "#/components/requestBodies/ConnectionDict"
       tags:
@@ -225,38 +225,6 @@ paths:
         required: true
         schema:
           type: string
-    put:
-      responses:
-        "200":
-          description: Experiment details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExperimentDict"
-      description: Update experiment
-      operationId: put_experiment
-      tags:
-        - Experiments
-    delete:
-      responses:
-        "200":
-          description: Success
-      description: Delete experiment
-      operationId: delete_experiment
-      tags:
-        - Experiments
-    get:
-      responses:
-        "200":
-          description: Experiment details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExperimentDict"
-      description: Get experiment
-      operationId: get_experiment
-      tags:
-        - Experiments
     post:
       responses:
         "200":
@@ -276,6 +244,42 @@ paths:
                 template:
                   type: string
         required: true
+      tags:
+        - Experiments
+    get:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Get experiment
+      operationId: get_experiment
+      tags:
+        - Experiments
+    delete:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Delete experiment
+      operationId: delete_experiment
+      tags:
+        - Experiments
+    put:
+      responses:
+        "200":
+          description: Experiment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentDict"
+      description: Update experiment
+      operationId: put_experiment
       tags:
         - Experiments
   "/Experiments/{name}/test":
@@ -353,30 +357,6 @@ paths:
         required: true
         schema:
           type: string
-    put:
-      responses:
-        "200":
-          description: Update run info
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RunDict"
-      description: Update run
-      operationId: put_run
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                display_name:
-                  type: string
-                description:
-                  type: string
-                tags:
-                  type: string
-      tags:
-        - Runs
     delete:
       responses:
         "204":
@@ -399,6 +379,30 @@ paths:
                 $ref: "#/components/schemas/RunDict"
       description: Get run
       operationId: get_run
+      tags:
+        - Runs
+    put:
+      responses:
+        "200":
+          description: Update run info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDict"
+      description: Update run
+      operationId: put_run
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                description:
+                  type: string
+                tags:
+                  type: string
       tags:
         - Runs
   "/Runs/{name}/archive":

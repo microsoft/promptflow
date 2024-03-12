@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import httpx
 
+from ....utils import _request_wrapper
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.run_dict import RunDict
@@ -29,9 +30,7 @@ def _parse_response(
         response_200 = []
         _response_200 = response.json()
         for componentsschemas_run_list_item_data in _response_200:
-            componentsschemas_run_list_item = RunDict.from_dict(
-                componentsschemas_run_list_item_data
-            )
+            componentsschemas_run_list_item = RunDict.from_dict(componentsschemas_run_list_item_data)
 
             response_200.append(componentsschemas_run_list_item)
 
@@ -53,10 +52,12 @@ def _build_response(
     )
 
 
+@_request_wrapper()
 def sync_detailed(
     name: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[List["RunDict"]]:
     """Get child runs
 
@@ -75,13 +76,16 @@ def sync_detailed(
         name=name,
     )
 
-    response = client.get_httpx_client().request(
-        **kwargs,
-    )
+    if stream:
+        return client.get_httpx_client().stream(**kwargs)
+    else:
+        response = client.get_httpx_client().request(
+            **kwargs,
+        )
+        return _build_response(client=client, response=response)
 
-    return _build_response(client=client, response=response)
 
-
+@_request_wrapper()
 def sync(
     name: str,
     *,
@@ -106,10 +110,12 @@ def sync(
     ).parsed
 
 
+@_request_wrapper()
 async def asyncio_detailed(
     name: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[List["RunDict"]]:
     """Get child runs
 
@@ -127,12 +133,16 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         name=name,
     )
+    if stream:
+        with await client.get_httpx_client().stream(**kwargs) as response:
+            return _build_response(client=client, response=response)
+    else:
+        response = await client.get_async_httpx_client().request(**kwargs)
 
-    response = await client.get_async_httpx_client().request(**kwargs)
-
-    return _build_response(client=client, response=response)
+        return _build_response(client=client, response=response)
 
 
+@_request_wrapper()
 async def asyncio(
     name: str,
     *,

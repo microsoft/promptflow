@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Union
 
 import httpx
 
+from ....utils import _request_wrapper
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...types import Response
@@ -17,9 +18,7 @@ def _get_kwargs() -> Dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Any]:
+def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
     if response.status_code == HTTPStatus.OK:
         return None
     if client.raise_on_unexpected_status:
@@ -28,9 +27,7 @@ def _parse_response(
         return None
 
 
-def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Any]:
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Any]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -39,9 +36,11 @@ def _build_response(
     )
 
 
+@_request_wrapper()
 def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[Any]:
     """
     Raises:
@@ -54,16 +53,20 @@ def sync_detailed(
 
     kwargs = _get_kwargs()
 
-    response = client.get_httpx_client().request(
-        **kwargs,
-    )
+    if stream:
+        return client.get_httpx_client().stream(**kwargs)
+    else:
+        response = client.get_httpx_client().request(
+            **kwargs,
+        )
+        return _build_response(client=client, response=response)
 
-    return _build_response(client=client, response=response)
 
-
+@_request_wrapper()
 async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[Any]:
     """
     Raises:
@@ -75,7 +78,10 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs()
+    if stream:
+        with await client.get_httpx_client().stream(**kwargs) as response:
+            return _build_response(client=client, response=response)
+    else:
+        response = await client.get_async_httpx_client().request(**kwargs)
 
-    response = await client.get_async_httpx_client().request(**kwargs)
-
-    return _build_response(client=client, response=response)
+        return _build_response(client=client, response=response)

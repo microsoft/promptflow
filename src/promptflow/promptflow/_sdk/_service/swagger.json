@@ -59,7 +59,7 @@
                     "type": "string"
                 }
             ],
-            "put": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -71,8 +71,8 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Update connection",
-                "operationId": "put_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
                         "name": "payload",
@@ -83,24 +83,6 @@
                         }
                     }
                 ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete connection",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -130,7 +112,25 @@
                     "Connections"
                 ]
             },
-            "post": {
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete connection",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "put": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -142,8 +142,8 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
+                "description": "Update connection",
+                "operationId": "put_connection",
                 "parameters": [
                     {
                         "name": "payload",
@@ -279,7 +279,7 @@
                     }
                 ],
                 "produces": [
-                    "application/octet-stream",
+                    "text/plain",
                     "application/json"
                 ],
                 "tags": [
@@ -323,48 +323,6 @@
                     "type": "string"
                 }
             ],
-            "put": {
-                "responses": {
-                    "200": {
-                        "description": "Experiment details",
-                        "schema": {
-                            "$ref": "#/definitions/ExperimentDict"
-                        }
-                    }
-                },
-                "description": "Update experiment",
-                "operationId": "put_experiment",
-                "tags": [
-                    "Experiments"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete experiment",
-                "operationId": "delete_experiment",
-                "tags": [
-                    "Experiments"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Experiment details",
-                        "schema": {
-                            "$ref": "#/definitions/ExperimentDict"
-                        }
-                    }
-                },
-                "description": "Get experiment",
-                "operationId": "get_experiment",
-                "tags": [
-                    "Experiments"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -391,6 +349,51 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Experiments"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Get experiment",
+                "operationId": "get_experiment",
+                "tags": [
+                    "Experiments"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Delete experiment",
+                "operationId": "delete_experiment",
+                "tags": [
+                    "Experiments"
+                ]
+            },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Experiment details",
+                        "schema": {
+                            "$ref": "#/definitions/ExperimentDict"
+                        }
+                    }
+                },
+                "description": "Update experiment",
+                "operationId": "put_experiment",
                 "tags": [
                     "Experiments"
                 ]
@@ -504,6 +507,36 @@
                     "type": "string"
                 }
             ],
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -536,36 +569,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete run",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Delete run",
-                "operationId": "delete_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]

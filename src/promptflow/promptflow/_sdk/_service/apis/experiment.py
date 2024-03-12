@@ -2,9 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from pathlib import Path
 import json
-from flask import jsonify, stream_with_context, Response
+from pathlib import Path
+
+from flask import Response, jsonify
+
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._load_functions import _load_experiment_template
 from promptflow._sdk._service import Namespace, Resource
@@ -99,14 +101,13 @@ class Experiment(Resource):
 class ExperimentStart(Resource):
     @api.doc(description="Start experiment")
     @api.response(code=200, description="Experiment execution details.")
-    @api.produces(['application/octet-stream', "application/json"])
+    @api.produces(["text/plain", "application/json"])
     @api.expect(start_experiment)
     def post(self):
         def stream_experiment_run(experiment_obj):
-            from promptflow._sdk._submitter.utils import _get_experiment_log_path
-            from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
             from promptflow._sdk._constants import ExperimentStatus
-            import time
+            from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+            from promptflow._sdk._submitter.utils import _get_experiment_log_path
 
             yield json.dumps(experiment_obj._to_dict(), indent=4) + "\r\n"
             experiment_log_path = _get_experiment_log_path(experiment_obj._output_dir)
@@ -127,10 +128,15 @@ class ExperimentStart(Resource):
             experiment = _load_experiment(source=args.template)
         else:
             raise UserErrorException("To start an experiment, one of [name, template] must be specified.")
-        result = client._experiments.start(experiment=experiment, inputs=inputs, nodes=args.nodes,
-                                           from_nodes=args.from_nodes, executable_path=args.executable_path)
+        result = client._experiments.start(
+            experiment=experiment,
+            inputs=inputs,
+            nodes=args.nodes,
+            from_nodes=args.from_nodes,
+            executable_path=args.executable_path,
+        )
         if args.stream:
-            return Response(stream_experiment_run(result), content_type='application/octet-stream')
+            return Response(stream_experiment_run(result), content_type="text/plain")
         else:
             return jsonify(result._to_dict())
 

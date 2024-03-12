@@ -2,10 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import argparse
-import json
-from pathlib import Path
 import datetime
+import json
 import sys
+from pathlib import Path
 
 from promptflow._cli._params import (
     AppendToDictAction,
@@ -214,7 +214,11 @@ def create_experiment(args: argparse.Namespace):
 
 def list_experiment(args: argparse.Namespace):
     results = _get_pf_client()._pfs_client.list_experiment(
-        max_results=args.max_results, all_results=args.all_results, archived_only=args.archived_only, include_archived=args.include_archived)
+        max_results=args.max_results,
+        all_results=args.all_results,
+        archived_only=args.archived_only,
+        include_archived=args.include_archived,
+    )
     print(json.dumps([result.to_dict() for result in results], indent=4))
 
 
@@ -240,9 +244,17 @@ def start_experiment(args: argparse.Namespace):
     else:
         raise UserErrorException("To start an experiment, one of [name, template] must be specified.")
     client = _get_pf_client()
-    result = client._pfs_client.start_experiment(
-        name=args.name, template=args.template, executable_path=sys.executable, inputs=inputs, stream=args.stream)
-    print(json.dumps(result.to_dict(), indent=4))
+    if args.stream:
+        with client._pfs_client.start_experiment(
+            name=args.name, template=args.template, executable_path=sys.executable, inputs=inputs, stream=args.stream
+        ) as response:
+            for chunk in response.iter_text():
+                print(chunk)
+    else:
+        result = client._pfs_client.start_experiment(
+            name=args.name, template=args.template, executable_path=sys.executable, inputs=inputs, stream=args.stream
+        )
+        print(json.dumps(result.to_dict(), indent=4))
 
 
 def stop_experiment(args: argparse.Namespace):

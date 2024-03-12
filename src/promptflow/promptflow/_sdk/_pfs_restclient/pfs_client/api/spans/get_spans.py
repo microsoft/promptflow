@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import httpx
 
+from ....utils import _request_wrapper
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.span import Span
@@ -18,9 +19,7 @@ def _get_kwargs() -> Dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[List["Span"]]:
+def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[List["Span"]]:
     if response.status_code == HTTPStatus.OK:
         response_200 = []
         _response_200 = response.json()
@@ -36,9 +35,7 @@ def _parse_response(
         return None
 
 
-def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[List["Span"]]:
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[List["Span"]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -47,9 +44,11 @@ def _build_response(
     )
 
 
+@_request_wrapper()
 def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[List["Span"]]:
     """List spans
 
@@ -63,13 +62,16 @@ def sync_detailed(
 
     kwargs = _get_kwargs()
 
-    response = client.get_httpx_client().request(
-        **kwargs,
-    )
+    if stream:
+        return client.get_httpx_client().stream(**kwargs)
+    else:
+        response = client.get_httpx_client().request(
+            **kwargs,
+        )
+        return _build_response(client=client, response=response)
 
-    return _build_response(client=client, response=response)
 
-
+@_request_wrapper()
 def sync(
     *,
     client: Union[AuthenticatedClient, Client],
@@ -89,9 +91,11 @@ def sync(
     ).parsed
 
 
+@_request_wrapper()
 async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[List["Span"]]:
     """List spans
 
@@ -104,12 +108,16 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs()
+    if stream:
+        with await client.get_httpx_client().stream(**kwargs) as response:
+            return _build_response(client=client, response=response)
+    else:
+        response = await client.get_async_httpx_client().request(**kwargs)
 
-    response = await client.get_async_httpx_client().request(**kwargs)
-
-    return _build_response(client=client, response=response)
+        return _build_response(client=client, response=response)
 
 
+@_request_wrapper()
 async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],

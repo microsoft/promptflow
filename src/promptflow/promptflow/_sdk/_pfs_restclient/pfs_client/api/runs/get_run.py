@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Union
 
 import httpx
 
+from ....utils import _request_wrapper
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.run_dict import RunDict
@@ -22,9 +23,7 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[RunDict]:
+def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[RunDict]:
     if response.status_code == HTTPStatus.OK:
         response_200 = RunDict.from_dict(response.json())
 
@@ -35,9 +34,7 @@ def _parse_response(
         return None
 
 
-def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[RunDict]:
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[RunDict]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -46,10 +43,12 @@ def _build_response(
     )
 
 
+@_request_wrapper()
 def sync_detailed(
     name: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[RunDict]:
     """Get run
 
@@ -68,13 +67,16 @@ def sync_detailed(
         name=name,
     )
 
-    response = client.get_httpx_client().request(
-        **kwargs,
-    )
+    if stream:
+        return client.get_httpx_client().stream(**kwargs)
+    else:
+        response = client.get_httpx_client().request(
+            **kwargs,
+        )
+        return _build_response(client=client, response=response)
 
-    return _build_response(client=client, response=response)
 
-
+@_request_wrapper()
 def sync(
     name: str,
     *,
@@ -99,10 +101,12 @@ def sync(
     ).parsed
 
 
+@_request_wrapper()
 async def asyncio_detailed(
     name: str,
     *,
     client: Union[AuthenticatedClient, Client],
+    stream: bool = False,
 ) -> Response[RunDict]:
     """Get run
 
@@ -120,12 +124,16 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         name=name,
     )
+    if stream:
+        with await client.get_httpx_client().stream(**kwargs) as response:
+            return _build_response(client=client, response=response)
+    else:
+        response = await client.get_async_httpx_client().request(**kwargs)
 
-    response = await client.get_async_httpx_client().request(**kwargs)
-
-    return _build_response(client=client, response=response)
+        return _build_response(client=client, response=response)
 
 
+@_request_wrapper()
 async def asyncio(
     name: str,
     *,
