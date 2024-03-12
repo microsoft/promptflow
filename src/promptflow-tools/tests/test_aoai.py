@@ -257,3 +257,15 @@ class TestAOAI:
             response_format={"type": "text"}
         )
         assert "Product X".lower() in result.lower()
+
+    def test_aoai_with_vision_model(self, azure_open_ai_connection):
+        # The issue https://github.com/microsoft/promptflow/issues/1683 is fixed
+        result = chat(
+            connection=azure_open_ai_connection,
+            prompt="user:\nhello",
+            deployment_name="gpt-4v",
+            stop=None,
+            logit_bias={}
+        )
+
+        assert "Hello".lower() in result.lower()
