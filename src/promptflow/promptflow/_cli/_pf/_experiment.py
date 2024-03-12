@@ -235,14 +235,11 @@ def test_experiment(args: argparse.Namespace):
 def start_experiment(args: argparse.Namespace):
     if args.name:
         logger.debug(f"Starting a named experiment {args.name}.")
-        if args.inputs:
-            inputs = None
-            logger.warning("The inputs of named experiment cannot be modified.")
     elif args.template:
         logger.debug(f"Starting an anonymous experiment {args.template}.")
-        inputs = list_of_dict_to_dict(args.inputs)
     else:
         raise UserErrorException("To start an experiment, one of [name, template] must be specified.")
+    inputs = list_of_dict_to_dict(args.inputs)
     client = _get_pf_client()
     if args.stream:
         with client._pfs_client.start_experiment(
