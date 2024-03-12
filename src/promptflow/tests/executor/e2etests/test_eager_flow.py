@@ -4,7 +4,8 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow._devkit_constants import OUTPUT_FILE_NAME
+from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult, LineResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._script_executor import ScriptExecutor
