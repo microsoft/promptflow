@@ -41,8 +41,8 @@ def setup_recording():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
         inject_openai_api()
@@ -50,8 +50,8 @@ def setup_recording():
     if is_live():
         # For live mode, we setup openai_injector mock for token collection purpose
         patch_targets = {
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
         inject_openai_api()
