@@ -9,6 +9,7 @@ import os
 import queue
 import signal
 import sys
+from tempfile import mkdtemp
 import threading
 from datetime import datetime
 from functools import partial
@@ -58,13 +59,14 @@ class LineExecutionProcessPool:
 
     def __init__(
         self,
-        flow_executor: FlowExecutor,
-        nlines: int,
-        run_id: int,
         output_dir: Path,
-        batch_timeout_sec: Optional[int] = None,
-        line_timeout_sec: Optional[int] = None,
+        flow_executor: FlowExecutor,
         worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
+        batch_timeout_sec: Optional[int] = None,
+        run_id: Optional[str] = None,
+        nlines: Optional[int] = None,
+        serialize_multimedia_during_execution: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -85,6 +87,7 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
+        self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Initialize the results dictionary that stores line results.
         self._result_dict: Dict[int, LineResult] = {}
@@ -146,6 +149,8 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
+            "output_dir": self._output_dir,
+            "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -550,6 +555,11 @@ class LineExecutionProcessPool:
         # Serialize multimedia data in node run infos to string
         for node_run_info in result.node_run_infos.values():
             self._serialize_multimedia(node_run_info)
+        # TODO: refine?????????????
+        if self._serialize_multimedia_during_execution:
+            result.aggregation_inputs = persist_multimedia_data(
+                result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
+            )
         # Persist multimedia data in the outputs of line result to output_dir
         result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
