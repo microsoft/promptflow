@@ -978,7 +978,9 @@ def is_from_cli():
 
 
 def is_multi_container_enabled():
-    return os.environ.get(ENABLE_MULTI_CONTAINER_KEY, "false").lower() == "true"
+    if ENABLE_MULTI_CONTAINER_KEY in os.environ:
+        return os.environ[ENABLE_MULTI_CONTAINER_KEY].lower() == "true"
+    return None
 
 
 def is_url(value: Union[PathLike, str]) -> bool:
