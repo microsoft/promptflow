@@ -253,22 +253,18 @@ def get_workspace_triad():
 
 
 def list_deployment_connections(
-    subscription_id,
-    resource_group_name,
-    workspace_name,
+    subscription_id="",
+    resource_group_name="",
+    workspace_name="",
     connection="",
 ):
-    try:
-        # Do not support dynamic list for local.
-        from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-        from promptflow.azure.operations._arm_connection_operations import \
-            ArmConnectionOperations, OpenURLFailedUserError
-    except ImportError:
+    # For local, subscription_id is None. Does not support dynamic list for local.
+    if not subscription_id or (not is_on_runtime()):
         return None
 
-    # For local, subscription_id is None. Does not support dynamic list for local.
-    if not subscription_id:
-        return None
+    from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+    from promptflow.azure.operations._arm_connection_operations import \
+        ArmConnectionOperations, OpenURLFailedUserError
 
     try:
         credential = _get_credential()
@@ -599,3 +595,7 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 
     conn_dict = normalize_connection_config(connection)
     return AzureOpenAIClient(**conn_dict)
+
+
+def is_on_runtime() -> bool:
+    return os.getenv('AZUREML_ARM_WORKSPACE_NAME') is not None
