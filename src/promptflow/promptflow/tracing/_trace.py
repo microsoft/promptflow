@@ -25,6 +25,8 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_pro
 from .._utils.utils import default_json_encoder
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from .contracts.trace import TraceType
+from ..exp_poc.exp import Exp
+
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -234,6 +236,16 @@ def enrich_span_with_llm_model(span, output):
         logging.warning(f"Failed to enrich span with llm model: {e}")
 
 
+def enrich_span_with_exp_info(span):
+    variant = Exp.get_variants()
+    if variant:
+        span.set_attribute("exp.variant", variant)
+
+    ruid = Exp.get_ruid()
+    if ruid:
+        span.set_attribute("exp.ruid", ruid)
+
+
 def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
     try:
@@ -351,6 +363,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
                 enrich_span_with_input(span, trace.inputs)
                 output = func(*args, **kwargs)
                 output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                enrich_span_with_exp_info(span)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:
