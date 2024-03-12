@@ -112,13 +112,8 @@ class ChatGroup:
         )
         return max_turns, max_tokens, max_time
 
-    def invoke(self, *args, **kwargs):
+    def invoke(self):
         """Invoke the chat group"""
-        if args or kwargs:
-            logger.warn(
-                f"Chat group invoke does not accept arguments, got {args!r} and {kwargs!r} instead and ignored them."
-            )
-
         logger.info("Invoking chat group.")
 
         chat_round = 0
@@ -144,7 +139,7 @@ class ChatGroup:
             if not continue_chat:
                 logger.info(
                     f"Chat group stops at round {chat_round!r}, token cost {chat_token!r}, "
-                    f"time cost {time.time() - chat_start_time} seconds."
+                    f"time cost {round(time.time() - chat_start_time, 2)} seconds."
                 )
                 break
 

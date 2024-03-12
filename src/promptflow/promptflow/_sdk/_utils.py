@@ -1045,52 +1045,6 @@ def parse_remote_flow_pattern(flow: object) -> str:
     return flow_name
 
 
-def is_data_binding_expression(
-    value: str, binding_prefix: Union[str, List[str]] = "", is_singular: bool = True
-) -> bool:
-    """Check if a value is a data-binding expression with specific binding target(prefix). Note that the function will
-    return False if the value is not a str. For example, if binding_prefix is ["parent", "jobs"], then input_value is a
-    data-binding expression only if the binding target starts with "parent.jobs", like "${{parent.jobs.xxx}}" if
-    is_singular is False, return True even if input_value includes non-binding part or multiple binding targets, like
-    "${{parent.jobs.xxx}}_extra" and "${{parent.jobs.xxx}}_{{parent.jobs.xxx}}".
-
-    :param value: Value to check.
-    :type value: str
-    :param binding_prefix: Prefix to check for.
-    :type binding_prefix: Union[str, List[str]]
-    :param is_singular: should the value be a singular data-binding expression, like "${{parent.jobs.xxx}}".
-    :type is_singular: bool
-    :return: True if the value is a data-binding expression, False otherwise.
-    :rtype: bool
-    """
-    return len(get_all_data_binding_expressions(value, binding_prefix, is_singular)) > 0
-
-
-def get_all_data_binding_expressions(
-    value: str, binding_prefix: Union[str, List[str]] = "", is_singular: bool = True
-) -> List[str]:
-    """Get all data-binding expressions in a value with specific binding target(prefix). Note that the function will
-    return an empty list if the value is not a str.
-
-    :param value: Value to extract.
-    :type value: str
-    :param binding_prefix: Prefix to filter.
-    :type binding_prefix: Union[str, List[str]]
-    :param is_singular: should the value be a singular data-binding expression, like "${{parent.jobs.xxx}}".
-    :type is_singular: bool
-    :return: list of data-binding expressions.
-    :rtype: List[str]
-    """
-    if isinstance(binding_prefix, str):
-        binding_prefix = [binding_prefix]
-    if isinstance(value, str):
-        target_regex = r"\$\{\s*(" + "\\.".join(binding_prefix) + r"\S*?)\s*\}"
-        if is_singular:
-            target_regex = "^" + target_regex + "$"
-        return re.findall(target_regex, value)
-    return []
-
-
 def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
     """
     Get connection operation based on connection provider.
