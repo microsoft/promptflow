@@ -46,7 +46,7 @@ from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.storage._queue_run_storage import QueueRunStorage
+from promptflow.storage._queue_run_storage import QueueRunStorage, ServiceQueueRunStorage
 
 TERMINATE_SIGNAL = "terminate"
 
@@ -627,6 +627,8 @@ class LineExecutionProcessPool:
 
 def _process_wrapper(
     executor_creation_func,
+    output_dir: Path,
+    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -645,9 +647,9 @@ def _process_wrapper(
 
     if log_context_initialization_func:
         with log_context_initialization_func():
-            _exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+            _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
     else:
-        _exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
 
 
 def signal_handler(signum, frame):
@@ -663,8 +665,12 @@ def signal_handler(signum, frame):
         sys.exit(1)
 
 
-def _exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
-    run_storage = QueueRunStorage(output_queue)
+def _exec_line_for_queue(
+    executor_creation_func, output_dir: Path, serialize_multimedia: bool, input_queue: Queue, output_queue: Queue
+):
+    run_storage = (
+        ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
+    )
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     while True:
