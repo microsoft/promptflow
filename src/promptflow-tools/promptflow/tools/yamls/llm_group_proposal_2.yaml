@@ -18,9 +18,8 @@ promptflow.tools.llm.llm:
     {{question}}
   # proposal 2
   groups:  
-  - name: Funtion calling  
-    sub_groups:
-    - Tools
+  - name: Funtion calling
+    description: This is a group about function calling
     inputs:  
     - functions  
     - function_call
