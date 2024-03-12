@@ -7,8 +7,6 @@ import openai
 import pytest
 
 from promptflow.tracing._integrations._openai_injector import (
-    PROMPTFLOW_HEADER,
-    USER_AGENT_HEADER,
     _generate_api_and_injector,
     _openai_api_list,
     inject_async,
