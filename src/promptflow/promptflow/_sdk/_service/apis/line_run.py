@@ -20,6 +20,7 @@ list_line_run_parser = api.parser()
 list_line_run_parser.add_argument("session", type=str, required=False)
 list_line_run_parser.add_argument("run", type=str, required=False)
 list_line_run_parser.add_argument("experiment", type=str, required=False)
+list_line_run_parser.add_argument("trace_ids", type=str, required=False)
 
 
 # use @dataclass for strong type
@@ -28,6 +29,7 @@ class ListLineRunParser:
     session_id: typing.Optional[str] = None
     runs: typing.Optional[typing.List[str]] = None
     experiments: typing.Optional[typing.List[str]] = None
+    trace_ids: typing.Optional[typing.List[str]] = None
 
     @staticmethod
     def _parse_string_list(value: typing.Optional[str]) -> typing.Optional[typing.List[str]]:
@@ -42,6 +44,7 @@ class ListLineRunParser:
             session_id=args.session,
             runs=ListLineRunParser._parse_string_list(args.run),
             experiments=ListLineRunParser._parse_string_list(args.experiment),
+            trace_ids=ListLineRunParser._parse_string_list(args.trace_ids),
         )
 
 
@@ -90,14 +93,3 @@ class LineRuns(Resource):
         # order by start_time desc
         line_runs.sort(key=lambda x: x.start_time, reverse=True)
         return [asdict(line_run) for line_run in line_runs]
-
-
-@api.route("/<string:line_run_id>")
-class LineRun(Resource):
-    @api.doc(description="Get line run")
-    @api.marshal_with(line_run_model)
-    @api.response(code=200, description="Line run")
-    def get(self, line_run_id: str):
-        client: PFClient = get_client_from_request()
-        line_run = client._traces.get_line_run(line_run_id=line_run_id)
-        return asdict(line_run)

@@ -37,10 +37,17 @@ class TraceOperations:
         session_id: typing.Optional[str] = None,
         runs: typing.Optional[typing.List[str]] = None,
         experiments: typing.Optional[typing.List[str]] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
     ) -> typing.List[LineRun]:
-        # separate query with runs
         if runs is not None:
             return self._list_line_runs_with_runs(runs)
+        if trace_ids is not None:
+            line_runs = list()
+            for trace_id in trace_ids:
+                line_run = self.get_line_run(trace_id)
+                if line_run is not None:
+                    line_runs.append(line_run)
+            return line_runs
 
         orm_spans_group_by_trace_id = ORMLineRun.list(
             session_id=session_id,
