@@ -11,8 +11,7 @@ from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConne
 from promptflow._sdk._serving.extension.default_extension import AppExtension
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
-from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
-from promptflow._sdk._serving.monitor.mdc_exporter import MdcExporter
+from promptflow._sdk._serving.extension.extension_type import ExtensionType
 from promptflow._sdk._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
 from promptflow._utils.retry_utils import retry
 from promptflow._version import VERSION
@@ -27,8 +26,7 @@ class AzureMLExtension(AppExtension):
     """AzureMLExtension is used to create extension for azureml serving."""
 
     def __init__(self, logger, **kwargs):
-        super().__init__(logger=logger, **kwargs)
-        self.logger = logger
+        super().__init__(logger=logger, extension_type=ExtensionType.AzureML, collector=FlowDataCollector(logger), **kwargs)  # noqa: E501
         # parse promptflow project path
         project_path: str = get_pf_serving_env("PROMPTFLOW_PROJECT_PATH")
         if not project_path:
@@ -56,18 +54,6 @@ class AzureMLExtension(AppExtension):
             self.common_dimensions["deployment"] = self.deployment_name
         env_dimensions = self._get_common_dimensions_from_env()
         self.common_dimensions.update(env_dimensions)
-        # initialize flow monitor
-        data_collector = FlowDataCollector(self.logger)
-        metrics_recorder = self._get_metrics_recorder()
-        self.flow_monitor = FlowMonitor(
-            self.logger, self.get_flow_name(), data_collector, metrics_recorder=metrics_recorder
-        )
-        # initialize MDC trace exporter by default for azureml-serving
-        mdc_exporter = MdcExporter(self.logger)
-        self.trace_exporters = [mdc_exporter]
-        customized_exporters = super().get_trace_exporters(self.project_path)
-        if customized_exporters:
-            self.trace_exporters.extend(customized_exporters)
 
     def get_flow_project_path(self) -> str:
         return self.project_path
@@ -80,12 +66,6 @@ class AzureMLExtension(AppExtension):
 
     def get_blueprints(self):
         return self._get_default_blueprints()
-
-    def get_flow_monitor(self) -> FlowMonitor:
-        return self.flow_monitor
-
-    def get_trace_exporters(self, flow_dir: str):
-        return self.trace_exporters
 
     def get_override_connections(self, flow: Flow) -> Tuple[dict, dict]:
         connection_names = flow.get_connection_names()
@@ -145,27 +125,6 @@ class AzureMLExtension(AppExtension):
         if env_connections:
             connections = decode_dict(env_connections)
         return connections
-
-    def _get_metrics_recorder(self):
-        # currently only support exporting it to azure monitor(application insights)
-        # TODO: add support for dynamic loading thus user can customize their own exporter.
-        custom_dimensions = self.get_metrics_common_dimensions()
-        try:
-            from azure.monitor.opentelemetry.exporter import AzureMonitorMetricExporter
-            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-
-            # check whether azure monitor instrumentation key is set
-            instrumentation_key = os.getenv("AML_APP_INSIGHTS_KEY") or os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
-            if instrumentation_key:
-                self.logger.info("Initialize metrics recorder with azure monitor metrics exporter...")
-                exporter = AzureMonitorMetricExporter(connection_string=f"InstrumentationKey={instrumentation_key}")
-                reader = PeriodicExportingMetricReader(exporter=exporter, export_interval_millis=60000)
-                return MetricsRecorder(self.logger, reader=reader, common_dimensions=custom_dimensions)
-            else:
-                self.logger.info("Azure monitor metrics exporter is not enabled, metrics will not be collected.")
-        except ImportError:
-            self.logger.warning("No metrics exporter module found, metrics will not be collected.")
-        return None
 
     def _initialize_connection_provider(self):
         # parse connection provider

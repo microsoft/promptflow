@@ -37,7 +37,7 @@ from opentelemetry import context, baggage
 from .swagger import generate_swagger
 
 logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
-DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
+DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
 
@@ -59,25 +59,6 @@ class PromptflowServingApp(Flask):
             os.environ.update(environment_variables)
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)
-
-            # load trace exporters
-            trace_exporters = self.extension.get_trace_exporters(self.project_path)
-            if trace_exporters:
-                logger.info(f"Enable {len(trace_exporters)} trace exporters.")
-                from opentelemetry import trace
-                from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-                from opentelemetry.sdk.trace import TracerProvider
-                from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-                resource = Resource(
-                    attributes={
-                        SERVICE_NAME: "promptflow",
-                    }
-                )
-                trace.set_tracer_provider(TracerProvider(resource=resource))
-                provider = trace.get_tracer_provider()
-                for exporter in trace_exporters:
-                    provider.add_span_processor(BatchSpanProcessor(exporter))
 
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
@@ -132,6 +113,12 @@ class PromptflowServingApp(Flask):
     def init_swagger(self):
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
         self.swagger = generate_swagger(self.flow, self.sample, self.response_fields_to_remove)
+        feedback_swagger_path = DEFAULT_RESOURCE_PATH / "feedback_swagger.json"
+        # Open the JSON file
+        with open(feedback_swagger_path, 'r') as file:
+            # Load JSON data from the file
+            data = json.load(file)
+        self.swagger['paths']['/feedback'] = data
 
     def set_default_environment_variables(self, default_environment_variables: Dict[str, str] = None):
         if default_environment_variables is None:
@@ -226,9 +213,11 @@ def add_default_routes(app: PromptflowServingApp):
     def feedback():
         ctx = try_extract_trace_context(logger)
         from promptflow.tracing._trace import open_telemetry_tracer
+        from promptflow.tracing.contracts.trace import TraceType
         token = context.attach(ctx) if ctx else None
         try:
             with open_telemetry_tracer.start_as_current_span('promptflow-feedback') as span:
+                span.set_attribute("span_type", TraceType.FEEDBACK.value)
                 data = request.get_data()
                 should_flattern = request.args.get('flatten', 'false').lower() == 'true'
                 if should_flattern:

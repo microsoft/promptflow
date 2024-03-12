@@ -13,6 +13,8 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
 from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
+from promptflow._sdk._serving.extension.extension_type import ExtensionType
+from promptflow._sdk._serving.extension.otel_exporter_provider_factory import OTelExporterProviderFactory
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
@@ -22,8 +24,11 @@ DEFAULT_STATIC_PATH = Path(__file__).parent.parent / "static"
 
 
 class AppExtension(ABC):
-    def __init__(self, logger, **kwargs):
+    def __init__(self, logger, extension_type: ExtensionType, collector=None, **kwargs):
         self.logger = logger
+        self.extension_type = extension_type
+        self.data_collector = collector
+        self.flow_monitor = None
 
     @abstractmethod
     def get_flow_project_path(self) -> str:
@@ -44,10 +49,6 @@ class AppExtension(ABC):
     def get_blueprints(self):
         """Get blueprints for current extension."""
         pass
-
-    def get_trace_exporters(self, flow_dir: str):
-        """Get customized trace exporters for current extension."""
-        return None
 
     def get_override_connections(self, flow: Flow) -> Tuple[dict, dict]:
         """
@@ -84,8 +85,13 @@ class AppExtension(ABC):
 
     def get_flow_monitor(self) -> FlowMonitor:
         """Get flow monitor for current extension."""
-        # default no data collector, no app insights metric exporter
-        return FlowMonitor(self.logger, self.get_flow_name(), None, metrics_recorder=None)
+        if self.flow_monitor:
+            return self.flow_monitor
+        custom_dimensions = self.get_metrics_common_dimensions()
+        metric_exporters = OTelExporterProviderFactory.get_metrics_exporters(self.logger, self.extension_type)
+        trace_exporters = OTelExporterProviderFactory.get_trace_exporters(self.logger, self.extension_type)
+        self.flow_monitor = FlowMonitor(self.logger, self.get_flow_name(), self.data_collector, custom_dimensions, metric_exporters, trace_exporters)  # noqa: E501
+        return self.flow_monitor
 
     def _get_mlflow_project_path(self, project_path: str):
         # check whether it's mlflow model
@@ -119,7 +125,7 @@ class DefaultAppExtension(AppExtension):
     """default app extension for local serve."""
 
     def __init__(self, logger, **kwargs):
-        self.logger = logger
+        super().__init__(logger=logger, extension_type=ExtensionType.Default, **kwargs)
         static_folder = kwargs.get("static_folder", None)
         self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
         logger.info(f"Static_folder: {self.static_folder}")

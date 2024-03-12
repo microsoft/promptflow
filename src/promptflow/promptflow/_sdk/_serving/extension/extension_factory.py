@@ -2,15 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from enum import Enum
 from promptflow._sdk._serving.extension.default_extension import AppExtension
-
-
-class ExtensionType(Enum):
-    """Extension type used to identify which extension to load in serving app."""
-
-    Default = "local"
-    AzureML = "azureml"
+from promptflow._sdk._serving.extension.extension_type import ExtensionType
 
 
 class ExtensionFactory:
@@ -19,7 +12,7 @@ class ExtensionFactory:
     @staticmethod
     def create_extension(logger, **kwargs) -> AppExtension:
         """Create extension based on extension type."""
-        extension_type_str = kwargs.get("extension_type", ExtensionType.Default.value)
+        extension_type_str = kwargs.pop("extension_type", ExtensionType.Default.value)
         if not extension_type_str:
             extension_type_str = ExtensionType.Default.value
         extension_type = ExtensionType(extension_type_str.lower())
