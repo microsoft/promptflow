@@ -25,7 +25,7 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_pro
 from .._utils.utils import default_json_encoder
 from ._tracer import _create_trace_from_function_call, get_node_name_from_context, Tracer
 from .contracts.trace import TraceType
-from ..exp_poc.exp import exp_variant, exp_ruid
+from ..exp_poc.exp import Exp
 
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -236,11 +236,11 @@ def enrich_span_with_llm_model(span, output):
 
 
 def enrich_span_with_exp_info(span):
-    variant = exp_variant.get()
+    variant = Exp.get_variants()
     if variant:
         span.set_attribute("exp.variant", variant)
 
-    ruid = exp_ruid.get()
+    ruid = Exp.get_ruid()
     if ruid:
         span.set_attribute("exp.ruid", ruid)
 

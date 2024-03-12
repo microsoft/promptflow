@@ -1,18 +1,52 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 import os
 import re
 from urllib.parse import urlparse
 
 
 BLOB_URL_REGEX_FORMAT = r"https://([^/]+)\.blob\.core\.windows\.net/.+"
+LONG_DATASTORE_URI_REGEX_FORMAT = (
+    r"subscriptions/([^/]+)/resource[gG]roups/([^/]+)/workspaces/([^/]+)/datastores/([^/]+)/paths/(.+)"
+)
 
 
 @dataclass
-class AzureBlobInfo():
+class AzureBlobInfo:
     account_name: str
     account_url: str
     container_name: str
     folder_path: str
+
+
+@dataclass
+class HashableDataclass:
+
+    def to_tuple(self):
+        data_tuple = tuple(getattr(self, field.name) for field in fields(self))
+        return data_tuple
+
+
+@dataclass
+class WorkspaceInfo(HashableDataclass):
+    subscription_id: str
+    resource_group: str
+    workspace_name: str
+
+    def is_valid(self):
+        return (
+            self.subscription_id
+            and self.resource_group
+            and self.workspace_name
+        )
+
+
+@dataclass
+class DataStoreInfo(WorkspaceInfo):
+    datastore_name: str
+    data_path: str = None
+
+    def is_valid(self):
+        return super().is_valid() and self.datastore_name
 
 
 class PathUtils:
@@ -45,3 +79,37 @@ class PathUtils:
             container_name=container_name,
             folder_path=folder_path
         )
+
+    @staticmethod
+    def is_data_store_url(url: str) -> bool:
+        match = re.search(
+            LONG_DATASTORE_URI_REGEX_FORMAT,
+            url
+        )
+        return match is not None
+
+    @staticmethod
+    def parse_data_store_url(url: str) -> DataStoreInfo:
+
+        match = re.search(
+            LONG_DATASTORE_URI_REGEX_FORMAT,
+            url
+        )
+        if not match:
+            raise Exception(
+                f"Invalid datastore url: {url}"
+            )
+
+        datastore_info = DataStoreInfo(
+            subscription_id=match.group(1),
+            resource_group=match.group(2),
+            workspace_name=match.group(3),
+            datastore_name=match.group(4),
+            data_path=match.group(5)
+        )
+
+        return datastore_info
+
+    @staticmethod
+    def url_join(url_prefix: str, relative_path: str) -> str:
+        return f"{url_prefix.rstrip('/')}/{relative_path.lstrip('/')}"
