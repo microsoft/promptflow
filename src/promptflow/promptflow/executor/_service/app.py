@@ -11,18 +11,6 @@ from promptflow.executor._service.apis.execution import router as execution_rout
 from promptflow.executor._service.apis.tool import router as tool_router
 from promptflow.executor._service.utils.service_utils import generate_error_response
 
-
-class Mode:
-    """The mode of the executor service
-
-    normal mode: The main scenarios are flow test, single node run, tools and other functional APIs
-    batch mode: Mainly prepared for the batch run
-    """
-
-    NORMAL = "normal"
-    BATCH = "batch"
-
-
 app = FastAPI()
 
 app.include_router(common_router)
