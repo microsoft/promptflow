@@ -1,5 +1,4 @@
 import multiprocessing
-from pathlib import Path
 import queue
 import signal
 import time
@@ -7,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Process, Queue
+from pathlib import Path
 from typing import Dict, List
 
 import psutil
@@ -286,7 +286,7 @@ class ForkProcessManager(AbstractProcessManager):
                 self._flow_create_kwargs,
                 self._process_info,
                 self._process_target_func,
-                self._output_dir, 
+                self._output_dir,
                 self._serialize_multimedia,
             ),
         )
