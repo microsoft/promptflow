@@ -8,8 +8,9 @@ from unittest.mock import patch
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._core.operation_context import OperationContext
-from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
