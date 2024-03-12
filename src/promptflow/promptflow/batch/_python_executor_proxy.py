@@ -70,13 +70,13 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 bulk_logger.info(f"The timeout for the batch run is {batch_timeout_sec} seconds.")
 
             with LineExecutionProcessPool(
-                self._flow_executor,
-                len(batch_inputs),
-                run_id,
                 output_dir,
-                batch_timeout_sec=batch_timeout_sec,
-                line_timeout_sec=line_timeout_sec,
+                self._flow_executor,
                 worker_count=worker_count,
+                line_timeout_sec=line_timeout_sec,
+                batch_timeout_sec=batch_timeout_sec,
+                run_id=run_id,
+                nlines=len(batch_inputs),
             ) as pool:
                 line_number = [batch_input["line_number"] for batch_input in batch_inputs]
                 line_results = await pool.run(zip(line_number, batch_inputs))

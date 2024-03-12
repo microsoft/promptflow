@@ -64,10 +64,10 @@ def execute_in_fork_mode_subprocess(dev_connections, flow_folder, has_passed_wor
 
     with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
         with LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
             None,
+            executor,
+            nlines=nlines,
+            run_id=run_id,
             worker_count=pf_worker_count if has_passed_worker_count else None,
         ) as pool:
             assert pool._n_process == n_process
@@ -107,10 +107,10 @@ def execute_in_spawn_mode_subprocess(
             mock_process.return_value.memory_info.return_value.rss = 64 * 1024 * 1024
             with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
                 with LineExecutionProcessPool(
-                    executor,
-                    nlines,
-                    run_id,
                     None,
+                    executor,
+                    nlines=nlines,
+                    run_id=run_id,
                     worker_count=pf_worker_count if has_passed_worker_count else None,
                 ) as pool:
                     assert pool._n_process == n_process
@@ -141,10 +141,10 @@ def create_line_execution_process_pool(dev_connections):
     bulk_inputs = get_bulk_inputs()
     nlines = len(bulk_inputs)
     line_execution_process_pool = LineExecutionProcessPool(
-        executor,
-        nlines,
-        run_id,
         None,
+        executor,
+        nlines=nlines,
+        run_id=run_id,
         line_timeout_sec=1,
     )
     return line_execution_process_pool
@@ -203,10 +203,10 @@ class TestLineExecutionProcessPool:
             nlines = len(bulk_inputs)
             run_id = run_id or str(uuid.uuid4())
             with LineExecutionProcessPool(
-                executor,
-                nlines,
-                run_id,
                 None,
+                executor,
+                nlines=nlines,
+                run_id=run_id,
             ) as pool:
                 result_list = await pool.run(zip(range(nlines), bulk_inputs))
             assert len(result_list) == nlines
@@ -227,10 +227,10 @@ class TestLineExecutionProcessPool:
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
         with LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
             None,
+            executor,
+            nlines=nlines,
+            run_id=run_id,
             line_timeout_sec=1,
         ) as pool:
             result_list = await pool.run(zip(range(nlines), bulk_inputs))
@@ -311,10 +311,10 @@ class TestLineExecutionProcessPool:
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
         with LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
             None,
+            executor,
+            nlines=nlines,
+            run_id=run_id,
         ) as pool:
             with pytest.raises(UserErrorException) as e:
                 await pool.run(zip(range(nlines), bulk_inputs))
@@ -426,10 +426,10 @@ class TestLineExecutionProcessPool:
         run_id = run_id or str(uuid.uuid4())
         with pytest.raises(SpawnedForkProcessManagerStartFailure) as e:
             with LineExecutionProcessPool(
-                executor,
-                nlines,
-                run_id,
                 None,
+                executor,
+                nlines=nlines,
+                run_id=run_id,
             ) as pool:
                 await pool.run(zip(range(nlines), bulk_inputs))
         assert "Failed to start spawned fork process manager" in str(e.value)
