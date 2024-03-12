@@ -19,6 +19,7 @@ Manage flows.
 | Command | Description |
 | --- | --- |
 | [pfazure flow create](#pfazure-flow-create) | Create a flow. |
+| [pfazure flow update](#pfazure-flow-update) | Update a flow. |
 | [pfazure flow list](#pfazure-flow-list) | List flows in a workspace. |
 
 
@@ -43,8 +44,50 @@ Local path to the flow directory.
 `--set`
 
 Update an object by specifying a property path and value to set.
-- `display_name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
-- `type`: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
+- `display_name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified. e.g. "--set display_name=\<display_name\>".
+- `type`: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat". e.g. "--set type=\<type\>".
+- `description`: Flow description. e.g. "--set description=\<description\>."
+- `tags`: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
+
+
+
+### pfazure flow update
+
+Update a flow's metadata, such as `display name`, `description` and `tags`.
+
+```bash
+pfazure flow update --flow
+                    [--set]
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Parameters
+
+`--flow`
+
+The flow name on azure. It's a guid that can be found from 2 ways:
+- After creating a flow to azure, it can be found in the printed message in "name" attribute.
+- Open a flow in azure portal, the guid is in the url. e.g. https://ml.azure.com/prompts/flow/{workspace-id}/{flow-name}/xxx
+
+
+`--set`
+
+Update an object by specifying a property path and value to set.
+- `display_name`: Flow display name. e.g. "--set display_name=\<display_name\>".
 - `description`: Flow description. e.g. "--set description=\<description\>."
 - `tags`: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
@@ -149,6 +192,7 @@ pfazure run create [--file]
                    [--stream]
                    [--environment-variables]
                    [--connections]
+                   [--resume-from] # require promptflow>=1.7.0, and original run created with promptflow>=1.7.0
                    [--set]
                    [--subscription]
                    [--resource-group]
@@ -163,7 +207,17 @@ Local path to the YAML file containing the prompt flow run specification; can be
 
 `--flow`
 
-Local path to the flow directory.
+The flow source to create the run. It could be:
+- Local path to the flow directory.
+  ```bash
+  pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping <key-value-pair>
+  ```
+- The flow name on azure with a prefix `azureml:`. Flow name is a guid that can be found from 2 ways:
+  - After creating a flow to azure, it can be found in the printed message in "name" attribute.
+  - Open a flow in azure portal, the guid is in the url. e.g. https://ml.azure.com/prompts/flow/{workspace-id}/{flow-name}/xxx
+  ```bash
+  pfazure run create --flow azureml:<flow-name> --data <path-to-data-file> --column-mapping <key-value-pair>
+  ```
 
 `--data`
 
@@ -197,6 +251,11 @@ specified will be set into os.environ.
 
 Overwrite node level connections with provided value.
 Example: `--connections node1.connection=test_llm_connection node1.deployment_name=gpt-35-turbo`
+
+`--resume-from`
+
+Create a run resume from an existing run. (Require promptflow>=1.7.0, and original run created with promptflow>=1.7.0)
+Example: `--resume-from <run_name>`
 
 `--set`
 

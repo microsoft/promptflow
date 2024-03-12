@@ -234,7 +234,7 @@ class TestSubmitter:
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        from promptflow._trace._start_trace import start_trace
+        from promptflow.tracing._start_trace import start_trace
 
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context

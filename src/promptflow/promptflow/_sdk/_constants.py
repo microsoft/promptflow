@@ -1,13 +1,17 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import os
+from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
 LOGGER_NAME = "promptflow"
 
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
+# Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
+# Use HOME_PROMPT_FLOW_DIR instead
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 
 
@@ -66,12 +70,18 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_META_JSON = "flow.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
+FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
 PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
+PF_SERVICE_PORT_DIT_NAME = "pfs"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
+PF_SERVICE_HOUR_TIMEOUT = 1
+PF_SERVICE_MONITOR_SECOND = 60
+PF_SERVICE_WORKER_NUM = 16
 PF_TRACE_CONTEXT = "PF_TRACE_CONTEXT"
+PF_TRACE_CONTEXT_ATTR = "attributes"
 PF_SERVICE_DEBUG = "PF_SERVICE_DEBUG"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
@@ -125,19 +135,14 @@ REGISTRY_URI_PREFIX = "azureml://registries/"
 FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
-# Tool meta info
-UIONLY_HIDDEN = "uionly_hidden"
-SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
-ICON_DARK = "icon_dark"
-ICON_LIGHT = "icon_light"
-ICON = "icon"
-TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
-
 # trace
+TRACE_DEFAULT_SESSION_ID = "default"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
+
+AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -255,6 +260,8 @@ class FlowRunProperties:
     # Experiment command node fields only
     COMMAND = "command"
     OUTPUTS = "outputs"
+    RESUME_FROM = "resume_from"
+    COLUMN_MAPPING = "column_mapping"
 
 
 class CommonYamlFields:
@@ -337,7 +344,13 @@ class ConnectionType(str, Enum):
     AZURE_CONTENT_SAFETY = "AzureContentSafety"
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
     CUSTOM = "Custom"
+
+
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
 
 
 ALL_CONNECTION_TYPES = set(
@@ -459,7 +472,19 @@ class LineRunFieldName:
     END_TIME = "end_time"
     STATUS = "status"
     LATENCY = "latency"
-    DISPLAY_NAME = "display_name"
+    NAME = "name"
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+TRACE_LIST_DEFAULT_LIMIT = 1000
+
+
+class IdentityKeys(str, Enum):
+    """Enum for identity keys."""
+
+    MANAGED = "managed"
+    USER_IDENTITY = "user_identity"
+    RESOURCE_ID = "resource_id"
+    CLIENT_ID = "client_id"

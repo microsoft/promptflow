@@ -9,14 +9,14 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.executor._line_execution_process_pool import _process_wrapper
-from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
+from promptflow.executor._line_execution_process_pool import _process_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from ..process_utils import enable_mock_in_process
+from ..process_utils import override_process_pool_targets
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -89,10 +89,11 @@ class TestExecutorTelemetry:
             headers = json.loads(flow_result.output.get("answer", ""))
             assert "promptflow/" in headers.get("x-ms-useragent")
             # User-defined properties `scenario` is not set in headers
-            assert "ms-azure-ai-promptflow-scenario" not in headers
-            assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Test.name
-            assert headers.get("ms-azure-ai-promptflow-flow-id") == flow_result.run_info.flow_id
-            assert headers.get("ms-azure-ai-promptflow-root-run-id") == flow_result.run_info.run_id
+            promptflow_headers = json.loads(headers.get("ms-azure-ai-promptflow"))
+            assert "ms-azure-ai-promptflow-scenario" not in promptflow_headers
+            assert promptflow_headers.get("run_mode") == RunMode.Test.name
+            assert promptflow_headers.get("flow_id") == flow_result.run_info.flow_id
+            assert promptflow_headers.get("root_run_id") == flow_result.run_info.run_id
 
             # single_node case
             operation_context = OperationContext.get_instance()
@@ -111,10 +112,11 @@ class TestExecutorTelemetry:
             assert run_info.output is not None
             headers = json.loads(run_info.output)
             assert "promptflow/" in headers.get("x-ms-useragent")
-            assert "ms-azure-ai-promptflow-scenario" not in headers
-            assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name
+            promptflow_headers = json.loads(headers.get("ms-azure-ai-promptflow"))
+            assert "ms-azure-ai-promptflow-scenario" not in promptflow_headers
+            assert promptflow_headers.get("run_mode") == RunMode.SingleNode.name
 
-    def test_executor_openai_telemetry_with_batch_run(self, dev_connections):
+    def test_executor_openai_telemetry_with_batch_run(self, dev_connections, recording_injection):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
@@ -129,7 +131,7 @@ class TestExecutorTelemetry:
         operation_context._tracking_keys = OperationContext._DEFAULT_TRACKING_KEYS
         operation_context._tracking_keys.add("dummy_key")
 
-        with enable_mock_in_process(mock_process_wrapper, mock_process_manager):
+        with override_process_pool_targets(mock_process_wrapper, mock_process_manager):
             run_id = str(uuid.uuid4())
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
@@ -145,9 +147,10 @@ class TestExecutorTelemetry:
             for line in outputs:
                 headers = json.loads(line.get("answer", ""))
                 assert "promptflow/" in headers.get("x-ms-useragent")
-                assert "ms-azure-ai-promptflow-scenario" not in headers
-                assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
-                assert headers.get("ms-azure-ai-promptflow-flow-id") == "default_flow_id"
-                assert headers.get("ms-azure-ai-promptflow-root-run-id") == run_id
-                assert headers.get("ms-azure-ai-promptflow-batch-input-source") == "Data"
-                assert headers.get("ms-azure-ai-promptflow-dummy-key") == "dummy_value"
+                promptflow_headers = json.loads(headers.get("ms-azure-ai-promptflow"))
+                assert "ms-azure-ai-promptflow-scenario" not in promptflow_headers
+                assert promptflow_headers.get("run_mode") == RunMode.Batch.name
+                assert promptflow_headers.get("flow_id") == "default_flow_id"
+                assert promptflow_headers.get("root_run_id") == run_id
+                assert promptflow_headers.get("batch_input_source") == "Data"
+                assert promptflow_headers.get("dummy_key") == "dummy_value"

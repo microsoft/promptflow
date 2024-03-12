@@ -9,7 +9,6 @@ import os
 import shutil
 import sys
 import traceback
-from collections import namedtuple
 from configparser import ConfigParser
 from functools import wraps
 from pathlib import Path
@@ -19,15 +18,13 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._constants import CLIListOutputFormat, EnvironmentVariables
-from promptflow._sdk._telemetry import log_activity, ActivityType, get_telemetry_logger
-from promptflow._sdk._utils import print_yellow_warning, print_red_error
+from promptflow._sdk._constants import AzureMLWorkspaceTriad, CLIListOutputFormat, EnvironmentVariables
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
-from promptflow.exceptions import ErrorTarget, UserErrorException, PromptflowException
-
-AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
+from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -362,10 +359,10 @@ def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=N
         try:
             telemetry_logger = get_telemetry_logger()
             with log_activity(
-                    telemetry_logger,
-                    activity_name,
-                    activity_type=ActivityType.PUBLICAPI,
-                    custom_dimensions=custom_dimensions,
+                telemetry_logger,
+                activity_name,
+                activity_type=ActivityType.PUBLICAPI,
+                custom_dimensions=custom_dimensions,
             ):
                 return func(*args, **kwargs)
         except Exception as e:
@@ -377,7 +374,7 @@ def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=N
                 sys.stderr.write(json.dumps(error_msg))
             if isinstance(e, PromptflowException):
                 print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
-                exit(1)
+                sys.exit(1)
             else:
                 raise e
 

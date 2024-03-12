@@ -8,6 +8,8 @@ from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._sdk.entities._run import Run
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._errors import EmptyInputsData
@@ -15,6 +17,8 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
+from ..conftest import setup_recording
+from ..process_utils import MockForkServerProcess, MockSpawnProcess, override_process_class
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -29,6 +33,9 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+
+TEST_ROOT = Path(__file__).parent.parent.parent
+RUNS_ROOT = TEST_ROOT / "test_configs/runs"
 
 
 async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
@@ -58,6 +65,13 @@ def _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inpu
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
     )
+    # The method is used as start method to construct new process in tests.
+    # We need to make sure the necessary setup in place to get pass along in new process
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    override_process_class(process_class_dict)
+
+    # recording injection again since this method is running in a new process
+    setup_recording()
 
     assert isinstance(batch_result, BatchResult)
     nlines = get_batch_inputs_line(flow_folder)
@@ -101,7 +115,15 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
     return len(inputs)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+class MockRun(object):
+    def __init__(self, name: str, output_path: Path):
+        self.name = name
+        self._output_path = output_path
+        self.data = None
+        self._run_source = None
+
+
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestBatch:
     def test_batch_storage(self, dev_connections):
@@ -186,7 +208,7 @@ class TestBatch:
         exception_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=run_batch_with_start_method,
-            args=("spawn", flow_folder, inputs_mapping, dev_connections, exception_queue)
+            args=("spawn", flow_folder, inputs_mapping, dev_connections, exception_queue),
         )
         p.start()
         p.join()
@@ -221,7 +243,7 @@ class TestBatch:
         exception_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=run_batch_with_start_method,
-            args=("forkserver", flow_folder, inputs_mapping, dev_connections, exception_queue)
+            args=("forkserver", flow_folder, inputs_mapping, dev_connections, exception_queue),
         )
         p.start()
         p.join()
@@ -379,3 +401,103 @@ class TestBatch:
         assert aggre_node_error["message"] == "Execution failure in 'aggregate': (ZeroDivisionError) division by zero"
         assert aggre_node_error["code"] == "UserError"
         assert aggre_node_error["innerError"] == {"code": "ToolExecutionError", "innerError": None}
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name",
+        [("web_classification", "web_classification_default_20240207_165606_643000")],
+    )
+    def test_batch_resume(self, flow_folder, resume_from_run_name, dev_connections):
+        run_storage = LocalStorageOperations(Run(flow="web_classification"))
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="data.jsonl")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"url": "${data.url}"}
+
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name",
+        [("classification_accuracy_evaluation", "classification_accuracy_evaluation_default_20240208_152402_694000")],
+    )
+    def test_batch_resume_aggregation(self, flow_folder, resume_from_run_name, dev_connections):
+        run_storage = LocalStorageOperations(Run(flow="classification_accuracy_evaluation"))
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {
+            "variant_id": "${data.variant_id}",
+            "groundtruth": "${data.groundtruth}",
+            "prediction": "${data.prediction}",
+        }
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert resume_run_batch_results.metrics == {"accuracy": 0.67}
+
+    @pytest.mark.parametrize(
+        "flow_folder, resume_from_run_name",
+        [("eval_flow_with_image_resume", "eval_flow_with_image_resume_default_20240305_111258_103000")],
+    )
+    def test_batch_resume_aggregation_with_image(self, flow_folder, resume_from_run_name, dev_connections):
+        run_storage = LocalStorageOperations(Run(flow="eval_flow_with_image_resume"))
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=run_storage,
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="data.jsonl")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"input_image": "${data.input_image}"}
+        run_folder = RUNS_ROOT / resume_from_run_name
+        mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
+        resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
+        resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_batch_results = batch_engine.run(
+            input_dirs,
+            inputs_mapping,
+            output_dir,
+            resume_from_run_storage=resume_from_run_storage,
+            resume_from_run_output_dir=resume_from_run_output_dir,
+        )
+
+        nlines = 3
+        assert resume_run_batch_results.total_lines == nlines
+        assert resume_run_batch_results.completed_lines == nlines
+        assert resume_run_batch_results.metrics == {"image_count": 3}

@@ -4,12 +4,15 @@
 import abc
 import importlib
 import json
+import os
 import types
 from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
-from promptflow._core.token_provider import AzureTokenProvider, TokenProviderABC
+from marshmallow import INCLUDE
+
+from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
@@ -19,10 +22,11 @@ from promptflow._sdk._constants import (
     SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
+    ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
-from promptflow._sdk._errors import UnsecureConnectionError, SDKError
+from promptflow._sdk._errors import RequiredEnvironmentVariablesNotSetError, SDKError, UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -43,11 +47,12 @@ from promptflow._sdk.schemas._connection import (
     OpenAIConnectionSchema,
     QdrantConnectionSchema,
     SerpConnectionSchema,
+    ServerlessConnectionSchema,
     WeaviateConnectionSchema,
 )
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
-from promptflow.exceptions import ValidationException, UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -72,7 +77,7 @@ class _Connection(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        name: str = "default_connection",
+        name: str = None,
         module: str = "promptflow.connections",
         configs: Dict[str, str] = None,
         secrets: Dict[str, str] = None,
@@ -250,6 +255,7 @@ class _Connection(YAMLTranslatableMixin):
         connection = connection_type._load_from_dict(
             data=data,
             context=context,
+            unknown=INCLUDE,
             additional_message=f"If you are trying to configure a job that is not of type {type_str}, please specify "
             f"the correct connection type in the 'type' property.",
             **kwargs,
@@ -328,9 +334,14 @@ class _StrongTypeConnection(_Connection):
         return obj
 
     @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return True
+
+    @property
     def api_key(self):
         """Return the api key."""
-        return self.secrets.get("api_key", SCRUBBED_VALUE)
+        return self.secrets.get("api_key", SCRUBBED_VALUE) if self._has_api_key else None
 
     @api_key.setter
     def api_key(self, value):
@@ -349,8 +360,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
     :type api_version: str
-    :param token_provider: The token provider.
-    :type token_provider: promptflow._core.token_provider.TokenProviderABC
+    :param auth_type: The auth type, supported value ["key", "meid_token"].
+    :type api_version: str
     :param name: Connection name.
     :type name: str
     """
@@ -359,16 +370,16 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     def __init__(
         self,
-        api_key: str,
         api_base: str,
+        api_key: str = None,
         api_type: str = "azure",
         api_version: str = "2023-07-01-preview",
-        token_provider: TokenProviderABC = None,
+        auth_mode: str = ConnectionAuthMode.KEY,
         **kwargs,
     ):
-        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
-        secrets = {"api_key": api_key}
-        self._token_provider = token_provider
+        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version, "auth_mode": auth_mode}
+        secrets = {"api_key": api_key} if auth_mode == ConnectionAuthMode.KEY else {}
+        self._token_provider = kwargs.get("token_provider")
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
     @classmethod
@@ -405,12 +416,50 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         """Set the connection api version."""
         self.configs["api_version"] = value
 
+    @property
+    def auth_mode(self):
+        """Return the connection auth mode."""
+        return self.configs.get("auth_mode", ConnectionAuthMode.KEY)
+
+    @auth_mode.setter
+    def auth_mode(self, value):
+        """Set the connection auth mode."""
+        self.configs["auth_mode"] = value
+
+    @property
+    def _has_api_key(self):
+        """Return if the connection has api key."""
+        return self.auth_mode == ConnectionAuthMode.KEY
+
     def get_token(self):
         """Return the connection token."""
         if not self._token_provider:
             self._token_provider = AzureTokenProvider()
 
         return self._token_provider.get_token()
+
+    @classmethod
+    def from_env(cls, name=None):
+        """
+        Build connection from environment variables.
+
+        Relevant environment variables:
+        - AZURE_OPENAI_ENDPOINT: The api base.
+        - AZURE_OPENAI_API_KEY: The api key.
+        - OPENAI_API_VERSION: Optional. The api version, default "2023-07-01-preview".
+        """
+        # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/lib/azure.py#L160
+        api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+        api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        # Note: Name OPENAI_API_VERSION from OpenAI.
+        api_version = os.getenv("OPENAI_API_VERSION")
+        if api_base is None or api_key is None:
+            raise RequiredEnvironmentVariablesNotSetError(
+                env_vars=["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"], cls_name=cls.__name__
+            )
+        # Note: Do not pass api_version None when init class object as we have default version.
+        optional_args = {"api_version": api_version} if api_version else {}
+        return cls(api_base=api_base, api_key=api_key, name=name, **optional_args)
 
 
 class OpenAIConnection(_StrongTypeConnection):
@@ -459,6 +508,57 @@ class OpenAIConnection(_StrongTypeConnection):
     def base_url(self, value):
         """Set the connection api base."""
         self.configs["base_url"] = value
+
+    @classmethod
+    def from_env(cls, name=None):
+        """
+        Build connection from environment variables.
+
+        Relevant environment variables:
+        - OPENAI_API_KEY: The api key.
+        - OPENAI_ORG_ID: Optional. The unique identifier for your organization which can be used in API requests.
+        - OPENAI_BASE_URL: Optional. Specify when use customized api base, leave None to use OpenAI default api base.
+        """
+        # Env var name reference: https://github.com/openai/openai-python/blob/main/src/openai/_client.py#L92
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_BASE_URL")
+        organization = os.getenv("OPENAI_ORG_ID")
+        if api_key is None:
+            raise RequiredEnvironmentVariablesNotSetError(env_vars=["OPENAI_API_KEY"], cls_name=cls.__name__)
+        return cls(api_key=api_key, organization=organization, base_url=base_url, name=name)
+
+
+class ServerlessConnection(_StrongTypeConnection):
+    """Serverless connection.
+
+    :param api_key: The api key.
+    :type api_key: str
+    :param api_base: The api base.
+    :type api_base: str
+    :param name: Connection name.
+    :type name: str
+    """
+
+    TYPE = ConnectionType.SERVERLESS
+
+    def __init__(self, api_key: str, api_base: str, **kwargs):
+        secrets = {"api_key": api_key}
+        configs = {"api_base": api_base}
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ServerlessConnectionSchema
+
+    @property
+    def api_base(self):
+        """Return the connection api base."""
+        return self.configs.get("api_base")
+
+    @api_base.setter
+    def api_base(self, value):
+        """Set the connection api base."""
+        self.configs["api_base"] = value
 
 
 class SerpConnection(_StrongTypeConnection):

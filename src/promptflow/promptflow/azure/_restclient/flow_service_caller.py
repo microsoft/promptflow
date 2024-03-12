@@ -19,7 +19,7 @@ from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.azure._utils.gerneral import get_authorization, get_arm_token, get_aml_token
+from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
 
 logger = LoggerFactory.get_logger(__name__)
@@ -165,6 +165,31 @@ class FlowServiceCaller(RequestTelemetryMixin):
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             experiment_id=experiment_id,
+            body=body,
+            headers=headers,
+            **kwargs,
+        )
+
+    @_request_wrapper()
+    def update_flow(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        experiment_id=None,  # type: str
+        body=None,  # type: Optional["_models.UpdateFlowRequest"]
+        **kwargs,  # type: Any
+    ):
+        headers = self._get_headers()
+        return self.caller.flows.update_flow(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_id=flow_id,
+            # experiment id equals to the workspace id, this is a hard code logic whether to be done at sdk side
+            # or PFS side, and won't be changed in the foreseeable future. So we hard code it here.
+            experiment_id=self._workspace._workspace_id,
             body=body,
             headers=headers,
             **kwargs,
@@ -647,6 +672,26 @@ class FlowServiceCaller(RequestTelemetryMixin):
             workspace_name=workspace_name,
             flow_run_id=flow_run_id,
             headers=headers,
+            **kwargs,
+        )
+
+    @_request_wrapper()
+    def resume_bulk_run(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        body=None,  # type: Optional["_models.ResumeBulkRunRequest"]
+        **kwargs,  # type: Any
+    ):
+        """Create a flow run by a resume_from run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.resume_bulk_run(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            headers=headers,
+            body=body,
             **kwargs,
         )
 

@@ -172,6 +172,7 @@ class Flow(FlowBase):
         cls,
         source: Union[str, PathLike],
         entry: str = None,
+        raise_error=True,
         **kwargs,
     ):
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -189,23 +190,31 @@ class Flow(FlowBase):
                 data = load_yaml_string(flow_content)
                 content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
+            is_async_call = kwargs.pop("is_async_call", False)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, data=data, **kwargs)
+                return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
-                return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                if is_async_call:
+                    return AsyncProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                else:
+                    return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
         # if non-YAML file is provided, raise user error exception
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
+        from promptflow.contracts.flow import Flow as ExecutableFlow
+
+        if not tuning_node and not variant:
+            # for DAG flow, use data to init executable to improve performance
+            return ExecutableFlow._from_dict(flow_dag=self._data, working_dir=self.code)
 
         # TODO: check if there is potential bug here
         # this is a little wired:
         # 1. the executable is created from a temp folder when there is additional includes
         # 2. after the executable is returned, the temp folder is deleted
         with variant_overwrite_context(self, tuning_node, variant) as flow:
-            from promptflow.contracts.flow import Flow as ExecutableFlow
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
 
@@ -353,6 +362,37 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         else:
             invoker = FlowContextResolver.resolve(flow=self)
             result = invoker._invoke(
+                data=inputs,
+            )
+            return result
+
+
+class AsyncProtectedFlow(ProtectedFlow):
+    """This class is used to represent an async flow."""
+
+    async def __call__(self, *args, **kwargs):
+        if args:
+            raise UserErrorException("Flow can only be called with keyword arguments.")
+
+        result = await self.invoke_async(inputs=kwargs)
+        return result.output
+
+    async def invoke_async(self, inputs: dict) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+        from promptflow._sdk._submitter import TestSubmitter
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+
+        if self.language == FlowLanguage.CSharp:
+            # Sync C# calling
+            # TODO: Async C# support: Task(3002242)
+            with TestSubmitter(flow=self, flow_context=self.context).init(
+                stream_output=self.context.streaming
+            ) as submitter:
+                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
+                return result
+        else:
+            invoker = FlowContextResolver.resolve_async_invoker(flow=self)
+            result = await invoker._invoke_async(
                 data=inputs,
             )
             return result

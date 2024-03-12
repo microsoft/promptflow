@@ -13,6 +13,7 @@ from promptflow._internal import ConnectionManager
 from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.aoai import AzureOpenAI
+from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 
 PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
@@ -33,8 +34,19 @@ def azure_open_ai_connection():
 
 
 @pytest.fixture
+def azure_open_ai_connection_meid():
+    return ConnectionManager().get("azure_open_ai_connection_meid")
+
+
+@pytest.fixture
 def aoai_provider(azure_open_ai_connection) -> AzureOpenAI:
     aoai_provider = AzureOpenAI(azure_open_ai_connection)
+    return aoai_provider
+
+
+@pytest.fixture
+def aoai_vision_provider(azure_open_ai_connection) -> AzureOpenAIVision:
+    aoai_provider = AzureOpenAIVision(azure_open_ai_connection)
     return aoai_provider
 
 

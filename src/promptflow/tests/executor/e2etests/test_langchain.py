@@ -9,7 +9,7 @@ from promptflow.batch._result import BatchResult
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestLangchain:
     @pytest.mark.parametrize(

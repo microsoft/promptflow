@@ -6,22 +6,36 @@ import importlib
 import inspect
 import logging
 import re
+from dataclasses import asdict, fields, is_dataclass
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ToolType, ValueType
+from ..contracts.tool import (
+    ConnectionType,
+    InputDefinition,
+    OutputDefinition,
+    Tool,
+    ToolFuncCallScenario,
+    ToolType,
+    ValueType,
+)
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
 
 _DEPRECATED_TOOLS = "deprecated_tools"
 UI_HINTS = "ui_hints"
+
+
+def asdict_without_none(obj):
+    return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
 def value_to_str(val):
@@ -142,8 +156,22 @@ def function_to_interface(
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
-    outputs = {}
-    # Note: We don't have output definition now
+    # Resolve output to definition
+    typ = resolve_annotation(sign.return_annotation)
+    if typ is inspect.Signature.empty:
+        outputs = {"output": OutputDefinition(type=[ValueType.OBJECT])}
+    elif is_dataclass(typ):
+        outputs = {}
+        for field in fields(typ):
+            outputs[field.name] = OutputDefinition(type=[ValueType.from_type(field.type)])
+    else:
+        # If the output annotation is a union type, then it should be a list.
+        outputs = {
+            "output": OutputDefinition(
+                type=[ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
+            )
+        }
+
     return input_defs, outputs, connection_types, enable_kwargs
 
 
@@ -249,6 +277,11 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
 
 
 def validate_tool_func_result(func_call_scenario: str, result):
+    if func_call_scenario not in list(ToolFuncCallScenario):
+        raise RetrieveToolFuncResultValidationError(
+                f"Invalid tool func call scenario: {func_call_scenario}. "
+                f"Available scenarios are {list(ToolFuncCallScenario)}"
+        )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(
@@ -403,18 +436,21 @@ def _get_function_path(function):
         func_path = function
     elif isinstance(function, Callable):
         func = function
-        func_path = f"{function.__module__}.{function.__name__}"
+        if function.__module__ == PF_MAIN_MODULE_NAME:
+            func_path = function.__name__
+        else:
+            func_path = f"{function.__module__}.{function.__name__}"
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
 
 
 class RetrieveToolFuncResultError(UserErrorException):
-    """Base exception raised for retreive tool func result errors."""
+    """Base exception raised for retrieve tool func result errors."""
 
     def __init__(self, message):
         msg = (
-            f"Unable to retreive tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"Unable to retrieve tool func result due to '{message}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)

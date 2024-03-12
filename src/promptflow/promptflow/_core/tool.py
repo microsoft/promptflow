@@ -9,8 +9,8 @@ from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
 
-from promptflow._core.tracer import _traced
-from promptflow.contracts.trace import TraceType
+from promptflow.tracing._trace import _traced
+from promptflow.tracing.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -153,7 +153,7 @@ class DynamicList:
     func_kwargs: List = field(init=False)
 
     def __post_init__(self, function, input_mapping):
-        from promptflow._sdk._constants import SKIP_FUNC_PARAMS
+        from promptflow._constants import SKIP_FUNC_PARAMS
         from promptflow._utils.tool_utils import _get_function_path, function_to_interface
 
         self._func_obj, self.func_path = _get_function_path(function)
@@ -195,7 +195,7 @@ class GeneratedBy:
     reverse_func_path: str = field(init=False)
 
     def __post_init__(self, function, reverse_function, input_settings):
-        from promptflow._sdk._constants import SKIP_FUNC_PARAMS, UIONLY_HIDDEN
+        from promptflow._constants import SKIP_FUNC_PARAMS, UIONLY_HIDDEN
         from promptflow._utils.tool_utils import _get_function_path, function_to_interface
 
         self._func_obj, self.func_path = _get_function_path(function=function)
