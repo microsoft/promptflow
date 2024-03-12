@@ -133,9 +133,7 @@ def _inject_res_attrs_to_environ(
         os.environ[TraceEnvironmentVariableName.SUBSCRIPTION_ID] = ws_triad.subscription_id
         os.environ[TraceEnvironmentVariableName.RESOURCE_GROUP_NAME] = ws_triad.resource_group_name
         os.environ[TraceEnvironmentVariableName.WORKSPACE_NAME] = ws_triad.workspace_name
-    # we will not overwrite the value if it is already set
-    if OTEL_EXPORTER_OTLP_ENDPOINT not in os.environ:
-        os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = f"http://localhost:{pfs_port}/v1/traces"
+    os.environ[OTEL_EXPORTER_OTLP_ENDPOINT] = f"http://localhost:{pfs_port}/v1/traces"
 
 
 def _create_or_merge_res(
