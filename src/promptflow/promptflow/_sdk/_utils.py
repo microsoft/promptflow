@@ -76,10 +76,6 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 logger = get_cli_sdk_logger()
 
 
-def snake_to_camel(name):
-    return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
-
-
 def find_type_in_override(params_override: Optional[list] = None) -> Optional[str]:
     params_override = params_override or []
     for override in params_override:
@@ -312,25 +308,6 @@ def update_dict_value_with_connections(built_connections, connection_dict: dict)
         if connection_key not in built_connections[connection_name]["value"]:
             continue
         connection_dict[key] = built_connections[connection_name]["value"][connection_key]
-
-
-def in_jupyter_notebook() -> bool:
-    """
-    Checks if user is using a Jupyter Notebook. This is necessary because logging is not allowed in
-    non-Jupyter contexts.
-
-    Adapted from https://stackoverflow.com/a/22424821
-    """
-    try:  # cspell:ignore ipython
-        from IPython import get_ipython
-
-        if "IPKernelApp" not in get_ipython().config:
-            return False
-    except ImportError:
-        return False
-    except AttributeError:
-        return False
-    return True
 
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
