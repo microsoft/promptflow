@@ -66,12 +66,15 @@ class BatchCoordinator:
         return cls._instance
 
     def start(self):
+        """Start the process pool."""
         self._process_pool.start()
 
     async def exec_line(self, request: LineExecutionRequest):
+        """Execute a line in the process pool."""
         return await self._process_pool.submit(request.run_id, request.line_number, request.inputs)
 
     def exec_aggregation(self, request: AggregationRequest):
+        """Execute aggregation nodes for the batch run."""
         with self._flow_executor._run_tracker.node_log_manager:
             aggregation_result = self._flow_executor._exec_aggregation(
                 request.batch_inputs, request.aggregation_inputs, request.run_id
@@ -83,6 +86,7 @@ class BatchCoordinator:
         return aggregation_result
 
     def close(self):
+        """Close the process pool."""
         self._process_pool.close()
         self._init = False
         self._instance = None
