@@ -122,20 +122,28 @@ class OpenAI(ToolProvider):
             "top_p": float(top_p),
             "n": int(n),
             "stream": stream,
-            "stop": stop if stop else None,
             "max_tokens": int(max_tokens) if max_tokens is not None and str(max_tokens).lower() != "inf" else None,
             "presence_penalty": float(presence_penalty),
             "frequency_penalty": float(frequency_penalty),
-            "logit_bias": logit_bias,
             "user": user,
-            "response_format": response_format,
-            "seed": seed,
         }
 
         if functions is not None:
             validate_functions(functions)
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
+
+        # to avoid vision model validation error for empty param values.
+        if stop:
+            params["stop"] = stop
+        if max_tokens is not None and str(max_tokens).lower() != "inf":
+            params["max_tokens"] = int(max_tokens)
+        if logit_bias:
+            params["logit_bias"] = logit_bias
+        if response_format:
+            params["response_format"] = response_format
+        if seed is not None:
+            params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions)
