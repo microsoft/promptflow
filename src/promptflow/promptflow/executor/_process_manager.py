@@ -260,9 +260,10 @@ class ForkProcessManager(AbstractProcessManager):
 
     def __init__(self, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._kwargs = kwargs
         self._control_signal_queue = control_signal_queue
         self._flow_create_kwargs = flow_create_kwargs
+        # Use _kwargs to temporarily store all common kwargs and pass them to SpawnedForkProcessManager
+        self._kwargs = kwargs
 
     def start_processes(self):
         """
