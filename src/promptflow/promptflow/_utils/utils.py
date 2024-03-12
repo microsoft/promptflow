@@ -369,6 +369,7 @@ def copy_file_except(src_dir, dst_dir, exclude_file):
 
 
 def prepare_folder(path: Union[str, Path]) -> Path:
+    """Create folder if not exists and return the folder path."""
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     return path

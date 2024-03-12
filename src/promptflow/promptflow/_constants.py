@@ -29,8 +29,6 @@ PF_MAIN_MODULE_NAME = "__pf_main__"
 
 DEFAULT_ENCODING = "utf-8"
 
-OUTPUT_FILE_NAME = "output.jsonl"
-
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -166,6 +164,8 @@ class MessageFormatType:
 
 
 DEFAULT_OUTPUT_NAME = "output"
+
+OUTPUT_FILE_NAME = "output.jsonl"
 
 
 class OutputsFolderName:
