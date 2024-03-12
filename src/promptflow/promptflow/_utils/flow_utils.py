@@ -47,7 +47,7 @@ def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
 
 
 def resolve_flow_path(
-    flow_path: Union[str, Path, PathLike], base_path: Union[str, Path, PathLike, None] = None
+    flow_path: Union[str, Path, PathLike], base_path: Union[str, Path, PathLike, None] = None, new: bool = False
 ) -> Tuple[Path, str]:
     """Resolve flow path and return the flow directory path and the file name of the target yaml.
 
@@ -57,6 +57,9 @@ def resolve_flow_path(
     :param base_path: The base path to resolve the flow path. If not specified, the flow path will be
       resolved based on the current working directory.
     :type base_path: Union[str, Path, PathLike]
+    :param new: If True, the function will return the flow directory path and the file name of the
+        target yaml that should be created. If False, the function will try to find the existing
+        target yaml and raise FileNotFoundError if not found.
     :return: The flow directory path and the file name of the target yaml.
     :rtype: Tuple[Path, str]
     """
@@ -64,6 +67,11 @@ def resolve_flow_path(
         flow_path = Path(base_path) / flow_path
     else:
         flow_path = Path(flow_path)
+
+    if new:
+        if flow_path.is_dir():
+            return flow_path, DAG_FILE_NAME
+        return flow_path.parent, flow_path.name
 
     if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
         return flow_path, DAG_FILE_NAME
@@ -76,7 +84,7 @@ def resolve_flow_path(
 def load_flow_dag(flow_path: Path):
     """Load flow dag from given flow path."""
     flow_dir, file_name = resolve_flow_path(flow_path)
-    flow_path = flow_path / file_name
+    flow_path = flow_dir / file_name
     if not flow_path.exists():
         raise FileNotFoundError(f"Flow file {flow_path} not found")
     with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
@@ -86,7 +94,8 @@ def load_flow_dag(flow_path: Path):
 
 def dump_flow_dag(flow_dag: dict, flow_path: Path):
     """Dump flow dag to given flow path."""
-    flow_dir, flow_filename = resolve_flow_path(flow_path)
-    with open(flow_dir / flow_filename, "w", encoding=DEFAULT_ENCODING) as f:
+    flow_dir, flow_filename = resolve_flow_path(flow_path, new=True)
+    flow_path = flow_dir / flow_filename
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml(flow_dag, f)
     return flow_path

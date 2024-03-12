@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
-from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
+from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON_GEN_TIMEOUT
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
@@ -24,7 +24,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         self._flow_executor = flow_executor
 
     @classmethod
-    def generate_flow_json(
+    def _generate_flow_json(
         cls,
         flow_file: Path,
         working_dir: Path,
@@ -118,11 +118,12 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         return self._flow_executor.get_inputs_definition()
 
     @classmethod
-    def generate_flow_tools_json(
+    def _generate_flow_tools_json(
         cls,
         flow_file: Path,
         working_dir: Path,
         dump: bool = True,
+        timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> dict:
         from promptflow._sdk._utils import generate_flow_tools_json
@@ -130,5 +131,6 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         return generate_flow_tools_json(
             flow_directory=working_dir,
             dump=dump,
+            timeout=timeout,
             used_packages_only=True,
         )

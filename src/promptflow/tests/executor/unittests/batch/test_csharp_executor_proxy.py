@@ -22,6 +22,9 @@ async def get_executor_proxy():
         return await CSharpExecutorProxy.create(flow_file, working_dir)
 
 
+DUMMY_FLOW_FILE = get_yaml_file("csharp_flow")
+
+
 @pytest.mark.unittest
 class TestCSharpExecutorProxy:
     @pytest.mark.asyncio
@@ -105,13 +108,13 @@ class TestCSharpExecutorProxy:
         with open(tool_meta_file, "w") as file:
             json.dump(expected_tool_meta, file, indent=4)
 
-        tool_meta = CSharpExecutorProxy.generate_flow_tools_json("", working_dir)
+        tool_meta = CSharpExecutorProxy.generate_flow_tools_json(DUMMY_FLOW_FILE, working_dir)
         assert tool_meta == expected_tool_meta
 
     def test_get_tool_metadata_failed_with_file_not_found(self):
         working_dir = Path(mkdtemp())
         with pytest.raises(MetaFileNotFound):
-            CSharpExecutorProxy.generate_flow_tools_json("", working_dir)
+            CSharpExecutorProxy.generate_flow_tools_json(DUMMY_FLOW_FILE, working_dir)
 
     def test_get_tool_metadata_failed_with_content_not_json(self):
         working_dir = Path(mkdtemp())
@@ -120,7 +123,7 @@ class TestCSharpExecutorProxy:
         tool_meta_file.touch()
 
         with pytest.raises(MetaFileReadError):
-            CSharpExecutorProxy.generate_flow_tools_json("", working_dir)
+            CSharpExecutorProxy.generate_flow_tools_json(DUMMY_FLOW_FILE, working_dir)
 
     def test_find_available_port(self):
         port = CSharpExecutorProxy.find_available_port()

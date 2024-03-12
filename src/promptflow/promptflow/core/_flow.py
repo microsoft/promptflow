@@ -176,12 +176,13 @@ class Flow(FlowBase):
         source_path = Path(source)
         if not source_path.exists():
             raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
-        try:
-            flow_dir, flow_filename = resolve_flow_path(source_path)
-        except FileNotFoundError:
-            raise UserErrorException(f"Flow file {source_path.absolute().as_posix()} does not exist")
 
+        flow_dir, flow_filename = resolve_flow_path(source_path, new=True)
         flow_path = flow_dir / flow_filename
+
+        if not flow_path.exists():
+            raise UserErrorException(f"Flow file {flow_path.absolute().as_posix()} does not exist")
+
         if flow_path.suffix not in [".yaml", ".yml"]:
             raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
         return source_path, flow_path

@@ -13,7 +13,13 @@ import httpx
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported, UnexpectedError
-from promptflow._sdk._constants import FLOW_META_JSON, FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import (
+    FLOW_META_JSON,
+    FLOW_META_JSON_GEN_TIMEOUT,
+    FLOW_TOOLS_JSON,
+    FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    PROMPT_FLOW_DIR_NAME,
+)
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
@@ -40,9 +46,28 @@ class AbstractExecutorProxy:
         flow_file: Path,
         working_dir: Path,
         dump: bool = True,
+        timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> dict:
         """Generate flow.tools.json for the specified flow."""
+        from promptflow import load_flow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
+
+        flow = load_flow(flow_file)
+        if isinstance(flow, FlexFlow):
+            return {}
+        else:
+            return cls._generate_flow_tools_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
+
+    @classmethod
+    def _generate_flow_tools_json(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> dict:
         raise NotImplementedError()
 
     @classmethod
@@ -70,22 +95,29 @@ class AbstractExecutorProxy:
         :return: The metadata of the flow.
         :rtype: Dict[str, Any]
         """
+        from promptflow import load_flow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
+
+        flow = load_flow(flow_file)
+        if isinstance(flow, FlexFlow):
+            return cls._generate_flow_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
+        else:
+            return {}
+
+    @classmethod
+    def _generate_flow_json(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
         raise NotImplementedError()
 
     def get_inputs_definition(self):
         """Get the inputs definition of an eager flow"""
-        from promptflow.contracts.flow import FlowInputDefinition
-
-        flow_meta = self._get_flow_meta()
-        inputs = {}
-        for key, value in flow_meta.get("inputs", {}).items():
-            # TODO: update this after we determine whether to accept list here or now
-            _type = value.get("type")
-            if isinstance(_type, list):
-                _type = _type[0]
-            value["type"] = _type
-            inputs[key] = FlowInputDefinition.deserialize(value)
-        return inputs
+        raise NotImplementedError()
 
     @classmethod
     async def create(
@@ -217,26 +249,35 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # for cloud, they will assume that metadata has already been dumped into the flow directory so do nothing here
         return
 
+    def get_inputs_definition(self):
+        """Get the inputs definition of an eager flow"""
+        from promptflow.contracts.flow import FlowInputDefinition
+
+        flow_meta = self._get_flow_meta()
+        inputs = {}
+        for key, value in flow_meta.get("inputs", {}).items():
+            # TODO: update this after we determine whether to accept list here or now
+            _type = value.get("type")
+            if isinstance(_type, list):
+                _type = _type[0]
+            value["type"] = _type
+            inputs[key] = FlowInputDefinition.deserialize(value)
+        return inputs
+
     @classmethod
-    def generate_flow_tools_json(
+    def _generate_flow_tools_json(
         cls,
         flow_file: Path,
         working_dir: Path,
         dump: bool = True,
+        timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> dict:
-        from promptflow import load_flow
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-
-        flow = load_flow(flow_file)
-        if isinstance(flow, FlexFlow):
-            return {}
-        else:
-            flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-            return cls._read_json_content(flow_tools_json_path, "meta of tools")
+        flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        return cls._read_json_content(flow_tools_json_path, "meta of tools")
 
     @classmethod
-    def generate_flow_json(
+    def _generate_flow_json(
         cls,
         flow_file: Path,
         working_dir: Path,
@@ -244,15 +285,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> Dict[str, Any]:
-        from promptflow import load_flow
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-
-        flow = load_flow(flow_file)
-        if isinstance(flow, FlexFlow):
-            flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
-            return cls._read_json_content(flow_tools_json_path, "meta of tools")
-        else:
-            return {}
+        flow_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
+        return cls._read_json_content(flow_json_path, "meta of tools")
 
     @classmethod
     def _read_json_content(cls, file_path: Path, target: str) -> dict:
