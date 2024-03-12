@@ -25,7 +25,6 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml_string
@@ -439,10 +438,13 @@ class RunOperations(TelemetryMixin):
         return LocalStorageOperations(run)
 
     def _get_create_or_update_telemetry_values(self, run: Run, **kwargs):
+        from promptflow._constants import FlowType
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         flow_obj = load_flow(source=run.flow)
         if isinstance(flow_obj, EagerFlow):
-            return {"flow_type": "eager"}
-        return {"flow_type": "yaml"}
+            return {"flow_type": FlowType.EAGER_FLOW}
+        return {"flow_type": FlowType.YAML_FLOW}
 
     def _get_telemetry_values(self, *args, **kwargs):
         activity_name = kwargs.get("activity_name", None)

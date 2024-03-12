@@ -37,7 +37,6 @@ from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_meta
 from promptflow._sdk._vendor._asset_utils import traverse_directory
-from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
@@ -613,20 +612,3 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 entry=flow.entry,
                 dump=True,
             )
-
-    def _get_create_or_update_telemetry_values(self, flow: Union[str, Path, Flow], **kwargs):
-        flow_obj = load_flow(source=flow)
-        if isinstance(flow_obj, EagerFlow):
-            return {"flow_type": "eager"}
-        return {"flow_type": "yaml"}
-
-    def _get_telemetry_values(self, *args, **kwargs):
-        activity_name = kwargs.get("activity_name", None)
-        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
-        try:
-            if activity_name == "pfazure.flows.create_or_update":
-                telemetry_values.update(self._get_create_or_update_telemetry_values(*args, **kwargs))
-        except Exception as e:
-            logger.error(f"Failed to get telemetry values: {str(e)}")
-
-        return telemetry_values

@@ -41,6 +41,13 @@ class FlowLanguage:
     CSharp = "csharp"
 
 
+class FlowType:
+    """The enum of flow type."""
+
+    YAML_FLOW = "dag"
+    EAGER_FLOW = "flex"
+
+
 class AvailableIDE:
     VS = "vs"
     VS_CODE = "vsc"
