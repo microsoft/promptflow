@@ -122,22 +122,27 @@ class TestStartTrace:
         assert isinstance(attributes, dict)
         assert len(attributes) == 0
 
-    def test_experiment_test_lineage(self, mock_promptflow_service_invocation) -> None:
+    def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation) -> None:
         # experiment orchestrator will help set this context in environment
         referenced_line_run_id = str(uuid.uuid4())
         ctx = {PF_TRACE_CONTEXT_ATTR: {ContextAttributeKey.REFERENCED_LINE_RUN_ID: referenced_line_run_id}}
-        os.environ[PF_TRACE_CONTEXT] = json.dumps(ctx)
-        start_trace_with_devkit(session_id=None)
-        # lineage is stored in context
-        op_ctx = OperationContext.get_instance()
-        otel_attrs = op_ctx._get_otel_attributes()
-        assert otel_attrs[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID] == referenced_line_run_id
+        with monkeypatch.context() as m:
+            m.setenv(PF_TRACE_CONTEXT, json.dumps(ctx))
+            start_trace_with_devkit(session_id=None)
+            # lineage is stored in context
+            op_ctx = OperationContext.get_instance()
+            otel_attrs = op_ctx._get_otel_attributes()
+            assert otel_attrs[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID] == referenced_line_run_id
 
-    def test_experiment_test_lineage_cleanup(self, mock_promptflow_service_invocation) -> None:
+    def test_experiment_test_lineage_cleanup(
+        self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation
+    ) -> None:
         # in previous code, context may be set with lineage
         op_ctx = OperationContext.get_instance()
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, str(uuid.uuid4()))
-        start_trace_with_devkit(session_id=None)
-        # lineage will be reset
-        otel_attrs = op_ctx._get_otel_attributes()
-        assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs
+        with monkeypatch.context() as m:
+            m.setenv(PF_TRACE_CONTEXT, json.dumps({PF_TRACE_CONTEXT_ATTR: dict()}))
+            start_trace_with_devkit(session_id=None)
+            # lineage will be reset
+            otel_attrs = op_ctx._get_otel_attributes()
+            assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs
