@@ -3,6 +3,7 @@ from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult
@@ -21,7 +22,6 @@ from ..utils import (
 
 TEST_LOGS_FLOW = ["print_input_flow"]
 SAMPLE_FLOW_WITH_TEN_INPUTS = "simple_flow_with_ten_inputs"
-OUTPUT_FILE_NAME = "output.jsonl"
 
 
 def submit_batch_run(
