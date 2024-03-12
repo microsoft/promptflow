@@ -184,21 +184,6 @@ def log_activity(
             raise exception
 
 
-def extract_telemetry_info(telemetry_mixin):
-    """Extract pf telemetry info from given telemetry mix-in instance.
-    :param telemetry_mixin: telemetry mix-in instance.
-    :type telemetry_mixin: TelemetryMixin
-    :return: custom dimensions and user agent in telemetry.
-    :rtype: Tuple[Dict, Optional[str]]
-    """
-    try:
-        if isinstance(telemetry_mixin, TelemetryMixin):
-            return telemetry_mixin._get_telemetry_values(), telemetry_mixin._get_bonded_user_agent()
-    except Exception:
-        pass
-    return {}, None
-
-
 def update_activity_name(activity_name, kwargs=None, args=None):
     """Update activity name according to kwargs. For flow test, we want to know if it's node test."""
     if activity_name == "pf.flows.test":
@@ -242,8 +227,12 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
-            extra_custom_dimensions, bonded_user_agent = extract_telemetry_info(self)
-            custom_dimensions.update(extra_custom_dimensions)
+            if isinstance(self, TelemetryMixin):
+                custom_dimensions.update(self._get_telemetry_values())
+                user_agent = self._get_user_agent_override()
+            else:
+                user_agent = None
+
             # update activity name according to kwargs.
             _activity_name = update_activity_name(activity_name, kwargs=kwargs)
             with log_activity(
@@ -251,7 +240,7 @@ def monitor_operation(
                 activity_name=_activity_name,
                 activity_type=activity_type,
                 custom_dimensions=custom_dimensions,
-                user_agent=bonded_user_agent,
+                user_agent=user_agent,
             ):
                 if _activity_name in HINT_ACTIVITY_NAME:
                     hint_for_update()

@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .._constants import BONDED_USER_AGENT_KEY
+from .._constants import USER_AGENT_OVERRIDE_KEY
 from .._utils.logger_utils import get_cli_sdk_logger
 from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
@@ -36,19 +36,19 @@ class PFClient:
 
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
-        # when this is set, telemetry from this client will use this user agent instead of the one from OperationContext
-        self._bonded_user_agent = kwargs.pop(BONDED_USER_AGENT_KEY, None)
+        # when this is set, telemetry from this client will use this user agent and ignore the one from OperationContext
+        self._user_agent_override = kwargs.pop(USER_AGENT_OVERRIDE_KEY, None)
         self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
         # The credential is used as an option to override
         # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
 
-        # bonded_user_agent will be applied to all TelemetryMixin operations
-        self._runs = RunOperations(self, bonded_user_agent=self._bonded_user_agent)
-        self._flows = FlowOperations(client=self, bonded_user_agent=self._bonded_user_agent)
-        self._experiments = ExperimentOperations(self, bonded_user_agent=self._bonded_user_agent)
-        # Lazy init to avoid azure credential requires too early; also need to apply bonded_user_agent
+        # user_agent_override will be applied to all TelemetryMixin operations
+        self._runs = RunOperations(self, user_agent_override=self._user_agent_override)
+        self._flows = FlowOperations(client=self, user_agent_override=self._user_agent_override)
+        self._experiments = ExperimentOperations(self, user_agent_override=self._user_agent_override)
+        # Lazy init to avoid azure credential requires too early
         self._connections = None
 
         self._tools = ToolOperations()
@@ -253,12 +253,12 @@ class PFClient:
             self._connections = PFClient._build_connection_operation(
                 self._connection_provider,
                 self._credential,
-                bonded_user_agent=self._bonded_user_agent,
+                user_agent_override=self._user_agent_override,
             )
         return self._connections
 
     @staticmethod
-    def _build_connection_operation(connection_provider: str, credential=None, user_agent: str = None, **kwargs):
+    def _build_connection_operation(connection_provider: str, credential=None, **kwargs):
         """
         Build a ConnectionOperation object based on connection provider.
 
@@ -266,8 +266,6 @@ class PFClient:
         :type connection_provider: str
         :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
         :type credential: object
-        :param user_agent: User Agent
-        :type user_agent: str
         """
         if connection_provider == ConnectionProvider.LOCAL.value:
             from promptflow._sdk.operations._connection_operations import ConnectionOperations
@@ -278,10 +276,7 @@ class PFClient:
             from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
             logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
-            if user_agent is None:
-                connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
-            else:
-                connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential, **kwargs)
         else:
             error = ValueError(f"Unsupported connection provider: {connection_provider}")
             raise UserErrorException(

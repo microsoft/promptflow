@@ -233,10 +233,10 @@ class FormattedException:
 
 def build_pfs_user_agent():
     user_agent = request.user_agent.string
-    extra_user_agent = f"local_pfs/{VERSION}"
+    user_agent_for_local_pfs = f"local_pfs/{VERSION}"
     if user_agent:
-        return f"{user_agent} {extra_user_agent}"
-    return extra_user_agent
+        return f"{user_agent} {user_agent_for_local_pfs}"
+    return user_agent_for_local_pfs
 
 
 def get_client_from_request(*, connection_provider=None) -> "PFClient":
@@ -250,7 +250,7 @@ def get_client_from_request(*, connection_provider=None) -> "PFClient":
     user_agent = build_pfs_user_agent()
 
     if connection_provider:
-        pf_client = PFClient(connection_provider=connection_provider, bonded_user_agent=user_agent)
+        pf_client = PFClient(connection_provider=connection_provider, user_agent_override=user_agent)
     else:
         pf_client = PFClient(bonded_user_agent=user_agent)
     return pf_client
