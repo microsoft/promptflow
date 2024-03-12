@@ -1,0 +1,10 @@
+# metric definition in analysis.yaml
+randamization_unit_column: user_id
+metrics:
+  (by request) p90-response-time
+  (by request) avg-total-tokens
+  (by request) avg-prompt-tokens
+  (by request) avg-completion-tokens
+  (by user) blocked-prompts-ratio
+  (by user) negative-feedback-ratio
+  (by request) gsq-metrics
