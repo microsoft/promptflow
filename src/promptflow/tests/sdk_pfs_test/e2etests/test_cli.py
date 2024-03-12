@@ -4,7 +4,6 @@
 
 import subprocess
 import sys
-from time import sleep
 
 import pytest
 import requests
@@ -64,9 +63,10 @@ class TestPromptflowServiceCLI:
     def test_show_service_status(self, capsys):
         start_pfs = subprocess.Popen("pfs start", shell=True)
         # Wait for service to be started
-        sleep(5)
+        start_pfs.wait()
         self._run_pfs_command("show-status")
         output, _ = capsys.readouterr()
         assert str(get_port_from_config()) in output
-        start_pfs.terminate()
-        start_pfs.wait(10)
+        self._run_pfs_command("stop")
+        output, _ = capsys.readouterr()
+        assert str(get_port_from_config()) in output
