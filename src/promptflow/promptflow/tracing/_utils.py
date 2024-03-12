@@ -25,7 +25,7 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: Dic
         # to_serializable to better reflect its purpose.
         return value.items
     try:
-        from promptflow.contracts.tool import ConnectionType 
+        from promptflow.contracts.tool import ConnectionType
 
         #  Note that custom connection check should before dict check
         if ConnectionType.is_connection_value(value):
@@ -83,11 +83,11 @@ def get_prompt_param_name_from_func(f):
 
 def is_core_installed():
     try:
-        from promptflow._core.operation_context import OperationContext
-        from promptflow._utils.utils import default_json_encoder
-        from promptflow.contracts.tool import ConnectionType
-        from promptflow.contracts.types import PromptTemplate
+        from promptflow._core.operation_context import OperationContext  # noqa: F401
+        from promptflow._utils.utils import default_json_encoder  # noqa: F401
+        from promptflow.contracts.tool import ConnectionType  # noqa: F401
+        from promptflow.contracts.types import PromptTemplate  # noqa: F401
 
         return True
-    except:
+    except Exception:
         return False
