@@ -9,7 +9,6 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-from promptflow import load_flow
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     MAX_RUN_LIST_RESULTS,
@@ -437,21 +436,13 @@ class RunOperations(TelemetryMixin):
             run = self.get(name=run)
         return LocalStorageOperations(run)
 
-    def _get_create_or_update_telemetry_values(self, run: Run, **kwargs):
-        from promptflow._constants import FlowType
-        from promptflow._sdk.entities._eager_flow import EagerFlow
-
-        flow_obj = load_flow(source=run.flow)
-        if isinstance(flow_obj, EagerFlow):
-            return {"flow_type": FlowType.EAGER_FLOW}
-        return {"flow_type": FlowType.YAML_FLOW}
-
     def _get_telemetry_values(self, *args, **kwargs):
         activity_name = kwargs.get("activity_name", None)
         telemetry_values = super()._get_telemetry_values(*args, **kwargs)
         try:
             if activity_name == "pf.runs.create_or_update":
-                telemetry_values.update(self._get_create_or_update_telemetry_values(*args, **kwargs))
+                run: Run = kwargs.get("run", None) or args[0]
+                telemetry_values["flow_type"] = run.flow_type
         except Exception as e:
             logger.error(f"Failed to get telemetry values: {str(e)}")
 

@@ -1057,22 +1057,13 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         else:
             raise UserErrorException(f"Identity type {identity_type!r} is not supported.")
 
-    def _get_create_or_update_telemetry_values(self, run: Run, **kwargs):
-        from promptflow import load_flow as load_local_flow
-        from promptflow._constants import FlowType
-        from promptflow._sdk.entities._eager_flow import EagerFlow
-
-        flow_obj = load_local_flow(source=run.flow)
-        if isinstance(flow_obj, EagerFlow):
-            return {"flow_type": FlowType.EAGER_FLOW}
-        return {"flow_type": FlowType.YAML_FLOW}
-
     def _get_telemetry_values(self, *args, **kwargs):
         activity_name = kwargs.get("activity_name", None)
         telemetry_values = super()._get_telemetry_values(*args, **kwargs)
         try:
             if activity_name == "pfazure.runs.create_or_update":
-                telemetry_values.update(self._get_create_or_update_telemetry_values(*args, **kwargs))
+                run: Run = kwargs.get("run", None) or args[0]
+                telemetry_values["flow_type"] = run.flow_type
         except Exception as e:
             logger.error(f"Failed to get telemetry values: {str(e)}")
 

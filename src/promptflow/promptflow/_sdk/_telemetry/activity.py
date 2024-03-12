@@ -233,7 +233,10 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
-            custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs, activity_name=activity_name))
+            if "activity_name" not in kwargs:
+                custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs, activity_name=activity_name))
+            else:
+                custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs))
             # update activity name according to kwargs.
             _activity_name = update_activity_name(activity_name, kwargs=kwargs)
             with log_activity(logger, _activity_name, activity_type, custom_dimensions):
