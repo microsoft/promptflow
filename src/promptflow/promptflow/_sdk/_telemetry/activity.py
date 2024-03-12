@@ -129,7 +129,9 @@ def log_activity(
     if not custom_dimensions:
         custom_dimensions = {}
 
-    user_agent = user_agent or ClientUserAgentUtil.get_user_agent()
+    # provided user agent will be respected even if it's ""
+    if user_agent is None:
+        user_agent = ClientUserAgentUtil.get_user_agent()
     request_id = request_id_context.get()
     if not request_id:
         # public function call
@@ -240,7 +242,7 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
-            extra_custom_dimensions, user_agent = extract_telemetry_info(self)
+            extra_custom_dimensions, bonded_user_agent = extract_telemetry_info(self)
             custom_dimensions.update(extra_custom_dimensions)
             # update activity name according to kwargs.
             _activity_name = update_activity_name(activity_name, kwargs=kwargs)
@@ -249,7 +251,7 @@ def monitor_operation(
                 activity_name=_activity_name,
                 activity_type=activity_type,
                 custom_dimensions=custom_dimensions,
-                user_agent=user_agent,
+                user_agent=bonded_user_agent,
             ):
                 if _activity_name in HINT_ACTIVITY_NAME:
                     hint_for_update()

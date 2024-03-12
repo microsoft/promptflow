@@ -6,12 +6,14 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from .._constants import BONDED_USER_AGENT_KEY
 from .._utils.logger_utils import get_cli_sdk_logger
+from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
-from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
+from ._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from .entities import Run
 from .entities._eager_flow import EagerFlow
 from .operations import RunOperations
@@ -34,20 +36,25 @@ class PFClient:
 
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
-        self._runs = RunOperations(self)
+        # when this is set, telemetry from this client will use this user agent instead of the one from OperationContext
+        self._bonded_user_agent = kwargs.pop(BONDED_USER_AGENT_KEY, None)
         self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
         # The credential is used as an option to override
         # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
-        # Lazy init to avoid azure credential requires too early
+
+        # bonded_user_agent will be applied to all TelemetryMixin operations
+        self._runs = RunOperations(self, bonded_user_agent=self._bonded_user_agent)
+        self._flows = FlowOperations(client=self, bonded_user_agent=self._bonded_user_agent)
+        self._experiments = ExperimentOperations(self, bonded_user_agent=self._bonded_user_agent)
+        # Lazy init to avoid azure credential requires too early; also need to apply bonded_user_agent
         self._connections = None
-        self._flows = FlowOperations(client=self)
+
         self._tools = ToolOperations()
         # add user agent from kwargs if any
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
-        self._experiments = ExperimentOperations(self)
         self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
@@ -243,8 +250,46 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            self._connections = get_connection_operation(self._connection_provider, self._credential)
+            self._connections = PFClient._build_connection_operation(
+                self._connection_provider,
+                self._credential,
+                bonded_user_agent=self._bonded_user_agent,
+            )
         return self._connections
+
+    @staticmethod
+    def _build_connection_operation(connection_provider: str, credential=None, user_agent: str = None, **kwargs):
+        """
+        Build a ConnectionOperation object based on connection provider.
+
+        :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+        :type connection_provider: str
+        :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+        :type credential: object
+        :param user_agent: User Agent
+        :type user_agent: str
+        """
+        if connection_provider == ConnectionProvider.LOCAL.value:
+            from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+            logger.debug("PFClient using local connection operations.")
+            connection_operation = ConnectionOperations(**kwargs)
+        elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+            from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+            logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
+            if user_agent is None:
+                connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
+            else:
+                connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
+        else:
+            error = ValueError(f"Unsupported connection provider: {connection_provider}")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
+        return connection_operation
 
     @property
     def flows(self) -> FlowOperations:

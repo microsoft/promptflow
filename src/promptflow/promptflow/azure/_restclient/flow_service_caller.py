@@ -39,7 +39,7 @@ class RequestTelemetryMixin(TelemetryMixin):
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
-        return {**super()._get_telemetry_values(), "request_id": self._request_id, "from_cli": self._from_cli}
+        return {"request_id": self._request_id, "from_cli": self._from_cli}
 
     def _set_from_cli_for_telemetry(self):
         self._from_cli = True

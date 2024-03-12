@@ -250,13 +250,9 @@ def get_client_from_request(*, connection_provider=None) -> "PFClient":
     user_agent = build_pfs_user_agent()
 
     if connection_provider:
-        pf_client = PFClient(connection_provider=connection_provider)
+        pf_client = PFClient(connection_provider=connection_provider, bonded_user_agent=user_agent)
     else:
-        pf_client = PFClient()
-    # DO NOT pass in user agent directly to PFClient, as it will impact the global OperationContext.
-    pf_client.connections._bond_user_agent(user_agent)
-    pf_client.runs._bond_user_agent(user_agent)
-    pf_client.flows._bond_user_agent(user_agent)
+        pf_client = PFClient(bonded_user_agent=user_agent)
     return pf_client
 
 

@@ -18,6 +18,7 @@ CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
+BONDED_USER_AGENT_KEY = "bonded_user_agent"
 
 # Tool meta info
 ICON_DARK = "icon_dark"

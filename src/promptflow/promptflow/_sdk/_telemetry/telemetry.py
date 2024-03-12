@@ -4,6 +4,7 @@
 import logging
 from typing import Optional
 
+from promptflow._constants import BONDED_USER_AGENT_KEY
 from promptflow._sdk._configuration import Configuration
 
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._sdk._telemetry"
@@ -11,10 +12,12 @@ PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._sdk._telemetry"
 
 class TelemetryMixin(object):
     def __init__(self, **kwargs):
-        # Need to call init for potential parent, otherwise it won't be initialized.
-        super().__init__(**kwargs)
+        self._bonded_user_agent = kwargs.pop(BONDED_USER_AGENT_KEY, None)
 
-        self._user_agent = kwargs.get("user_agent", None)
+        # Need to call init for potential parent, otherwise it won't be initialized.
+        # TODO: however, object.__init__() takes exactly one argument (the instance to initialize), so this will fail
+        #   if there are any kwargs left.
+        super().__init__(**kwargs)
 
     def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
         """Return the telemetry values of object.
@@ -29,15 +32,7 @@ class TelemetryMixin(object):
 
         This user agent will be used in telemetry if specified instead of user agent from OperationContext.
         """
-        return self._user_agent
-
-    def _bond_user_agent(self, user_agent: str):
-        """Bond a user agent to the object.
-
-        :param user_agent: The user agent to bond.
-        :type user_agent: str
-        """
-        self._user_agent = user_agent
+        return self._bonded_user_agent
 
 
 class WorkspaceTelemetryMixin(TelemetryMixin):
@@ -55,7 +50,6 @@ class WorkspaceTelemetryMixin(TelemetryMixin):
         :rtype: Dict
         """
         return {
-            **super()._get_telemetry_values(),
             "subscription_id": self._telemetry_subscription_id,
             "resource_group_name": self._telemetry_resource_group_name,
             "workspace_name": self._telemetry_workspace_name,
