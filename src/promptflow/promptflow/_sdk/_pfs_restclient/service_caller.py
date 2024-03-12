@@ -36,7 +36,7 @@ def _request_wrapper():
 
 class PFSCaller:
     def __init__(self):
-        self._port = get_port_from_config()
+        self._port = get_port_from_config(create_if_not_exists=True)
         self.client = Client(base_url=f"http://localhost:{self._port}/v1.0")
 
     # region Experiment
