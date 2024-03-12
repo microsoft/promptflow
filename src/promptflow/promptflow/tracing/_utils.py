@@ -84,6 +84,7 @@ def get_prompt_param_name_from_func(f):
 def is_core_installed():
     try:
         from promptflow._core.operation_context import OperationContext
+        from promptflow._utils.utils import default_json_encoder
         from promptflow.contracts.tool import ConnectionType
         from promptflow.contracts.types import PromptTemplate
 
