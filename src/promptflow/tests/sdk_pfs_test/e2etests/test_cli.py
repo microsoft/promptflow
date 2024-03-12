@@ -64,6 +64,7 @@ class TestPromptflowServiceCLI:
         start_pfs = subprocess.Popen("pfs start", shell=True)
         # Wait for service to be started
         start_pfs.wait()
+        assert self._is_service_healthy()
         self._run_pfs_command("show-status")
         output, _ = capsys.readouterr()
         assert str(get_port_from_config()) in output
