@@ -51,14 +51,14 @@ class PFSCaller:
         experiment_response = sync_detailed(
             client=self.client, name=name, body=PostExperimentBody(template=Path(template).absolute().as_posix())
         )
-        return experiment_response
+        return experiment_response.parsed
 
     @_request_wrapper()
     def show_experiment(self, name: str):
         from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.get_experiment import sync_detailed
 
         experiment_response = sync_detailed(client=self.client, name=name)
-        return experiment_response
+        return experiment_response.parsed
 
     @_request_wrapper()
     def list_experiment(
@@ -77,7 +77,7 @@ class PFSCaller:
             archived_only=archived_only,
             include_archived=include_archived,
         )
-        return experiments
+        return experiments.parsed
 
     @_request_wrapper()
     def start_experiment(
@@ -104,13 +104,17 @@ class PFSCaller:
             inputs=inputs,
             stream=stream,
         )
-        return sync_detailed(client=self.client, body=request_body, stream=stream)
+        response = sync_detailed(client=self.client, body=request_body, stream=stream)
+        if stream:
+            return response
+        else:
+            return response.parsed
 
     @_request_wrapper()
     def stop_experiment(self, name: str):
         from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.post_experiment_stop import sync_detailed
 
         experiment_response = sync_detailed(client=self.client, name=name)
-        return experiment_response
+        return experiment_response.parsed
 
     # endregion
