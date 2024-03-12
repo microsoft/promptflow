@@ -22,6 +22,7 @@ import psutil
 
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
+    PF_TRACE_CONTEXT_ATTR,
     PROMPT_FLOW_DIR_NAME,
     ContextAttributeKey,
     ExperimentNodeRunStatus,
@@ -714,9 +715,9 @@ class ExperimentTemplateContext:
             return node_context
         # Return the full json context for test
         global_context = os.environ.get(PF_TRACE_CONTEXT)
-        # Expected global context: {"endpoint": "..", "attributes": {..}}
-        global_context = json.loads(global_context) if global_context else {"endpoint": "", "attributes": {}}
-        global_context["attributes"].update(node_context)
+        # Expected global context: {"endpoint": "..", PF_TRACE_CONTEXT_ATTR: {..}}
+        global_context = json.loads(global_context) if global_context else {"endpoint": "", PF_TRACE_CONTEXT_ATTR: {}}
+        global_context[PF_TRACE_CONTEXT_ATTR].update(node_context)
         return {PF_TRACE_CONTEXT: json.dumps(global_context)}
 
 

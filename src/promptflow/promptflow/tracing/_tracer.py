@@ -31,8 +31,6 @@ class Tracer(ThreadLocalSingleton):
     def start_tracing(cls, run_id, node_name: Optional[str] = None):
         current_run_id = cls.current_run_id()
         if current_run_id is not None:
-            msg = f"Try to start tracing for run {run_id} but {current_run_id} is already active."
-            logging.warning(msg)
             return
         tracer = cls(run_id, node_name)
         tracer._activate_in_context()
