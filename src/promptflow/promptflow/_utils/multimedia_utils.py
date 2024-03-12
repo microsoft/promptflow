@@ -4,7 +4,7 @@ import re
 import uuid
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union
 from urllib.parse import urlparse
 
 import requests
@@ -12,6 +12,8 @@ import requests
 from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
@@ -258,3 +260,20 @@ def resolve_image_path(input_dir: Path, image_dict: dict):
             if resource == "path":
                 image_dict[key] = str(input_dir / image_dict[key])
     return image_dict
+
+
+def process_multimedia_in_run_info(
+    run_info: Union[FlowRunInfo, NodeRunInfo], base_dir: Path, sub_dir: Path = None, use_absolute_path=False
+):
+    """Persist multimedia data in run info to file and update the run info with the file path.
+
+    If sub_dir is not None, the multimedia file path will be sub_dir/file_name, otherwise file_name.
+    If use_absolute_path is True, the multimedia file path will be absolute path.
+    """
+    if run_info.inputs:
+        run_info.inputs = persist_multimedia_data(run_info.inputs, base_dir, sub_dir, use_absolute_path)
+    if run_info.output:
+        run_info.output = persist_multimedia_data(run_info.output, base_dir, sub_dir, use_absolute_path)
+        run_info.result = None
+    if run_info.api_calls:
+        run_info.api_calls = persist_multimedia_data(run_info.api_calls, base_dir, sub_dir, use_absolute_path)

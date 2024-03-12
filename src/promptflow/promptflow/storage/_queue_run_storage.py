@@ -4,10 +4,9 @@
 
 from multiprocessing import Queue
 from pathlib import Path
-from typing import Union
 
 from promptflow._constants import OutputsFolderName
-from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow._utils.multimedia_utils import process_multimedia_in_run_info
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.storage import AbstractRunStorage
@@ -40,18 +39,9 @@ class ServiceQueueRunStorage(QueueRunStorage):
     def persist_node_run(self, run_info: NodeRunInfo):
         super().persist_node_run(run_info)
         node_folder = self._node_artifacts_path / str(run_info.index) / run_info.node
-        self._process_multimedia_in_run_info(run_info, node_folder)
+        process_multimedia_in_run_info(run_info, node_folder)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         super().persist_flow_run(run_info)
         flow_folder = self._flow_artifacts_path / str(run_info.index)
-        self._process_multimedia_in_run_info(run_info, flow_folder)
-
-    def _process_multimedia_in_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path):
-        if run_info.inputs:
-            run_info.inputs = persist_multimedia_data(run_info.inputs, folder_path)
-        if run_info.output:
-            run_info.output = persist_multimedia_data(run_info.output, folder_path)
-            run_info.result = None
-        if run_info.api_calls:
-            run_info.api_calls = persist_multimedia_data(run_info.api_calls, folder_path)
+        process_multimedia_in_run_info(run_info, flow_folder)
