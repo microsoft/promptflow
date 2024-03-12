@@ -25,6 +25,11 @@ class OperationContext(Dict):
     _DEFAULT_TRACKING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source"}
     _TRACKING_KEYS = "_tracking_keys"
 
+    def copy(self):
+        ctx = OperationContext(self)
+        ctx[OperationContext._OTEL_ATTRIBUTES] = copy.copy(self._get_otel_attributes())
+        return ctx
+
     def _add_otel_attributes(self, key, value):
         attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
         attributes[key] = value
@@ -63,6 +68,10 @@ class OperationContext(Dict):
         if cls._TRACKING_KEYS not in instance:
             instance[cls._TRACKING_KEYS] = copy.copy(cls._DEFAULT_TRACKING_KEYS)
         return instance
+
+    @classmethod
+    def set_instance(cls, instance):
+        cls._current_context.set(instance)
 
     def __setattr__(self, name, value):
         """Set the attribute.

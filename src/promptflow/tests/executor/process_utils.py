@@ -1,7 +1,10 @@
 import contextlib
+import contextvars
 import multiprocessing
 import traceback
 from multiprocessing import Queue, get_context
+
+from executor.record_utils import setup_recording
 
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
@@ -14,6 +17,15 @@ def _run_in_subprocess(error_queue: Queue, func, args, kwargs):
         error_queue.put((repr(e), traceback.format_exc()))
 
 
+def _run_in_subprocess_with_recording(*args, **kwargs):
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    override_process_class(process_class_dict)
+
+    # recording injection again since this method is running in a new process
+    setup_recording()
+    _run_in_subprocess(*args, **kwargs)
+
+
 def execute_function_in_subprocess(func, *args, **kwargs):
     """
     Execute a function in a new process and return any exception that occurs.
@@ -21,7 +33,7 @@ def execute_function_in_subprocess(func, *args, **kwargs):
     """
     ctx = get_context("spawn")
     error_queue = ctx.Queue()
-    process = ctx.Process(target=_run_in_subprocess, args=(error_queue, func, args, kwargs))
+    process = ctx.Process(target=_run_in_subprocess_with_recording, args=(error_queue, func, args, kwargs))
     process.start()
     process.join()  # Wait for the process to finish
 
@@ -41,8 +53,11 @@ if "forkserver" in multiprocessing.get_all_start_methods():
     ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
 
-current_process_wrapper = _process_wrapper
-current_process_manager = create_spawned_fork_process_manager
+# Define context variables with default values
+current_process_wrapper_var = contextvars.ContextVar("current_process_wrapper", default=_process_wrapper)
+current_process_manager_var = contextvars.ContextVar(
+    "current_process_manager", default=create_spawned_fork_process_manager
+)
 
 
 class BaseMockProcess:
@@ -51,9 +66,9 @@ class BaseMockProcess:
         # Method to modify the target of the mock process
         # This shall be the place to hold the target mocking logic
         if target == _process_wrapper:
-            return current_process_wrapper
+            return current_process_wrapper_var.get()
         if target == create_spawned_fork_process_manager:
-            return current_process_manager
+            return current_process_manager_var.get()
         return target
 
 
@@ -69,28 +84,34 @@ class MockForkServerProcess(ForkServerProcess, BaseMockProcess):
         super().__init__(group, modified_target, *args, **kwargs)
 
 
-@contextlib.contextmanager
-def enable_mock_in_process(process_wrapper=None, process_manager=None):
-    global current_process_wrapper, current_process_manager
-
-    if process_wrapper is not None:
-        current_process_wrapper = process_wrapper
-    if process_manager is not None:
-        current_process_manager = process_manager
-
-    start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+def override_process_class(process_class_dict: dict):
     original_process_class = {}
-    for start_method, MockProcessClass in start_methods_mocks.items():
+    for start_method, MockProcessClass in process_class_dict.items():
         if start_method in multiprocessing.get_all_start_methods():
             original_process_class[start_method] = multiprocessing.get_context(start_method).Process
             multiprocessing.get_context(start_method).Process = MockProcessClass
             if start_method == multiprocessing.get_start_method():
                 multiprocessing.Process = MockProcessClass
+    return original_process_class
+
+
+@contextlib.contextmanager
+def override_process_pool_targets(process_wrapper=None, process_manager=None):
+    """
+    Context manager to override the process pool targets for the current context
+
+    """
+    original_process_wrapper = current_process_wrapper_var.get()
+    original_process_manager = current_process_manager_var.get()
+
+    if process_wrapper is not None:
+        current_process_wrapper_var.set(process_wrapper)
+    if process_manager is not None:
+        current_process_manager_var.set(process_manager)
+
     try:
         yield
     finally:
-        for start_method, MockProcessClass in start_methods_mocks.items():
-            if start_method in multiprocessing.get_all_start_methods():
-                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
-                if start_method == multiprocessing.get_start_method():
-                    multiprocessing.Process = original_process_class[start_method]
+        # Revert back to the original states
+        current_process_wrapper_var.set(original_process_wrapper)
+        current_process_manager_var.set(original_process_manager)

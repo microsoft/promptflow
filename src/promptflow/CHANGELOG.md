@@ -10,9 +10,12 @@
 - [SDK/CLI][azure] Create a run with `resume_from`.
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
-- [SDK] Support flow exectue as async function: `load_flow(<flow>, is_async_call=True)` will return an async callable flow object.
 
 - [SDK/CLI] Support `AzureOpenAIConnection.from_env` and `OpenAIConnection.from_env`. Reach more details [here](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#load-from-environment-variables).
+
+### Bugs Fixed
+
+- [SDK/CLI] environment variable `PF_HOME_DIRECTORY` doesn't work for run details & logs.
 
 ## 1.6.0 (2024.03.01)
 
