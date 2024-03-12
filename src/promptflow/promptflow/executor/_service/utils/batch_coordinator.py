@@ -7,7 +7,7 @@ from typing import Any, Mapping, Optional
 
 from promptflow._constants import OutputsFolderName
 from promptflow.executor import FlowExecutor
-from promptflow.executor._line_execution_process_pool_copy import LineExecutionProcessPool
+from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
 from promptflow.executor._service.contracts.batch_request import AggregationRequest, LineExecutionRequest
 from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
