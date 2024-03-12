@@ -10,7 +10,7 @@ authors = [
 ]
 
 repository = "https://github.com/microsoft/promptflow"
-homepage = "https://github.com/microsoft/promptflow"
+homepage = "https://microsoft.github.io/promptflow/"
 
 readme = ["README.md"]
 keywords = ["telemetry"]
@@ -27,6 +27,10 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
+packages = [
+  { include = "promptflow" }
+]
+
 [tool.poetry.urls]
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
@@ -36,9 +40,18 @@ openai = "*"
 tiktoken = ">=0.4.0"
 opentelemetry-sdk = ">=1.22.0,<2.0.0"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "*"
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+
 [build-system]
 requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.black]
 line-length = 120
