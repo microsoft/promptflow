@@ -450,13 +450,13 @@ class ToolLoader:
 
     def load_tool_for_assistant_node(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
         # Generate Tool from the assistant tool definition
-        if tool["source"].path is None:
+        path = tool.get("source", {}).get("path")
+        if path is None:
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
                 message_format="Load assistant tool failed for node '{node_name}'. The source path is 'None'.",
                 node_name=node_name,
             )
-        path = tool["source"].path
         if not (self._working_dir / path).is_file():
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,

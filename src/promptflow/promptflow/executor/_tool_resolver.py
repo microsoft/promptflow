@@ -17,7 +17,7 @@ from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connecti
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -112,10 +112,10 @@ class ToolResolver:
         with open(file, "r", encoding="utf-8") as file:
             assistant_definition = load_yaml(file)
         assistant_def = AssistantDefinition.deserialize(assistant_definition)
-        self._resolve_assistant_tool(node_name, assistant_def)
+        self._resolve_assistant_tools(node_name, assistant_def)
         return assistant_def
 
-    def _resolve_assistant_tool(self, node_name: str, assistant_definition: AssistantDefinition):
+    def _resolve_assistant_tools(self, node_name: str, assistant_definition: AssistantDefinition):
         """
         Resolves AssistantTool from the raw assistant definition.
 
@@ -129,7 +129,7 @@ class ToolResolver:
             if tool["type"] in ("code_interpreter", "retrieval"):
                 resolved_tools[tool["type"]] = AssistantTool(name=tool["type"], openai_definition=tool, func=None)
             elif tool["type"] == "function":
-                function_tool = self._load_tool_as_function(node_name, tool)
+                function_tool = self.resolve_function_by_definition(node_name, tool)
                 resolved_tools[function_tool.name] = function_tool
             else:
                 raise UnsupportedAssistantToolType(
@@ -140,34 +140,41 @@ class ToolResolver:
         # Inject the resolved tools into the assistant definition
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
-    def _load_tool_as_function(self, node_name: str, tool_def: dict) -> AssistantTool:
-        # clone the raw tool definition to avoid modifying the original AssistantDefinition object
-        updated_tool_def = copy.deepcopy(tool_def)
-        # load ToolSource as object from json string
-        updated_tool_def["source"] = (
-            ToolSource.deserialize(updated_tool_def["source"]) if "source" in updated_tool_def else None
-        )
+    def _load_script_tool_as_function(
+        self, node_name: str, tool_definition: dict, convert_input_types=False
+    ) -> AssistantTool:
+        # # clone the raw tool definition to avoid modifying the original AssistantDefinition object
+        # updated_tool_def = copy.deepcopy(tool_def)
+        # # load ToolSource as object from json string
+        # updated_tool_def["source"] = (
+        #     ToolSource.deserialize(updated_tool_def["source"]) if "source" in updated_tool_def else None
+        # )
 
         # load predefined_inputs as dictionary
         predefined_inputs = {}
-        for input_name, value in updated_tool_def.get("predefined_inputs", {}).items():
-            predefined_inputs[input_name] = InputAssignment.deserialize(value)
+        if tool_definition.get("predefined_inputs") is not None:
+            for input_name, value in tool_definition.get("predefined_inputs").items():
+                predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, updated_tool_def)
+        m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, tool_definition)
 
         # construct the resolved inputs dictionary
-        updated_inputs = self._convert_assistant_function_literal_input_types(node_name, predefined_inputs, tool, m)
+        updated_predefined_inputs = predefined_inputs
+        if convert_input_types:
+            updated_predefined_inputs = self._convert_assistant_function_literal_input_types(
+                node_name, predefined_inputs, tool, m
+            )
         callable, init_args = BuiltinsManager._load_tool_from_module(
-            m, tool.name, tool.module, tool.class_name, tool.function, updated_inputs
+            m, tool.name, tool.module, tool.class_name, tool.function, updated_predefined_inputs
         )
-        self._remove_init_args(updated_inputs, init_args)
+        self._remove_init_args(updated_predefined_inputs, init_args)
 
         # construct the AssistantTool object from the updated inputs + Tool object
         func_name = tool.function
         definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
-        if updated_inputs:
-            inputs = {name: value.value for name, value in updated_inputs.items()}
+        if updated_predefined_inputs:
+            inputs = {name: value.value for name, value in updated_predefined_inputs.items()}
             func = partial(callable, **inputs)
         else:
             func = callable
@@ -364,6 +371,31 @@ class ToolResolver:
             if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
                 raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
             raise ResolveToolError(node_name=node.name) from e
+
+    def resolve_function_by_definition(self, node_name: str, tool: dict, convert_input_types=True) -> AssistantTool:
+        try:
+            if tool.get("source") is None:
+                raise UserErrorException(f"Node {node_name} does not have source defined in assistant definition.")
+            tool_type = tool.get("tool_type")
+            if tool_type == ToolType.PYTHON:
+                source_type = tool["source"].get("type")
+                if source_type == ToolSourceType.Package:
+                    return self._load_package_tool_as_function(node_name, convert_input_types=convert_input_types)
+                elif source_type == ToolSourceType.Code:
+                    return self._load_script_tool_as_function(node_name, tool, convert_input_types=convert_input_types)
+                raise NotImplementedError(
+                    f"Tool source type {source_type} for python tool is not supported yet in assistant definition."
+                )
+
+            else:
+                raise NotImplementedError(f"Tool type {tool_type} is not supported yet in assistant definition.")
+        except Exception as e:
+            if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
+                raise ResolveToolError(node_name=node_name, target=e.target, module=e.module) from e
+            raise ResolveToolError(node_name=node_name) from e
+
+    def _load_package_tool_as_function(self, node_name: str, convert_input_types=False) -> AssistantTool:
+        return AssistantTool()
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
