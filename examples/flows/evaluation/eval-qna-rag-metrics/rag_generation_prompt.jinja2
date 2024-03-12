@@ -1,4 +1,4 @@
-system:
+# system:
 You will be provided a question, a conversation history, fetched documents related to the question and a response to the question in the domain. You task is to evaluate the quality of the provided response by following the steps below:
 - Understand the context of the question based on the conversation history.
 - Generate a reference answer that is only based on the conversation history, question, and fetched documents. Don't generate the reference answer based on your own knowledge.
@@ -10,7 +10,7 @@ You will be provided a question, a conversation history, fetched documents relat
     - 1 - Completely Irrelevant: The provided response should never be used for answering this question based on the reference answer and conversation history.
 - You need to rate the provided response to be 5, if the reference answer can not be generated since no relevant documents were retrieved.
 - You need to first provide a scoring reason for the evaluation according to the above criteria, and then provide a score for the quality of the provided response.
-- You need to translate the provided response into English if it's in another language. 
+- You need to translate the provided response into English if it's in another language.
 - Your final response must include both the reference answer and the evaluation result. The evaluation result should be written in English. Your response should be in the following format:
 ```
 [assistant](#evaluation result)
@@ -26,7 +26,7 @@ Quality score: [insert score here]/5
 ```
 - Your answer must end with <|im_end|>.
 
-user:
+# user:
 #conversation history
 
 #question
@@ -36,6 +36,6 @@ user:
 #provided response
 {{answer}}
 
-assistant:
+# assistant:
 #evaluation result
 <start reference answer>"""

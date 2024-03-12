@@ -1,4 +1,4 @@
-user:
+# user:
 # Instructions
 
 * There are many chatbots that can answer users questions based on the context given from different sources like search results, or snippets from books/papers. They try to understand users's question and then get context by either performing search from search engines, databases or books/papers for relevant content. Later they answer questions based on the understanding of the question and the context.
@@ -8,7 +8,7 @@ user:
     * Score 1 means the answer is poor for perceived intelligence
     * Score 5 means the answer is normal for perceived intelligence
 * Just respond with the score, nothing else.
-  
+
 # Real work
 
 ## Question
