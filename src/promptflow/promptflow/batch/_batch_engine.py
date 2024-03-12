@@ -238,13 +238,13 @@ class BatchEngine:
         return the list of previous line results for the usage of aggregation and summarization.
         """
         # Load the previous flow run output from output.jsonl
-        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl")
+        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / OUTPUT_FILE_NAME)
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
 
         # Copy other files from resume_from_run_output_dir to output_dir in case there are images
-        copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
+        copy_file_except(resume_from_run_output_dir, output_dir, OUTPUT_FILE_NAME)
 
         try:
             previous_run_results = []
