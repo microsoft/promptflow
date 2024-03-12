@@ -12,8 +12,8 @@ TOOL_ROOT = TEST_ROOT / "test_configs" / "tools"
 @pytest.mark.e2etest
 class TestScriptToolGenerator:
     def test_generate_script_tool_meta_with_dynamic_list(self):
-        tool_path = (TOOL_ROOT / "tool_with_dynamic_list_input.py").as_posix()
-        tool_meta = generate_tool_meta_dict_by_file(tool_path, "python")
+        tool_path = TOOL_ROOT / "tool_with_dynamic_list_input.py"
+        tool_meta = generate_tool_meta_dict_by_file(tool_path.as_posix(), "python")
         expect_tool_meta = {
             "name": "tool_with_dynamic_list_input",
             "type": "python",
@@ -24,7 +24,7 @@ class TestScriptToolGenerator:
                     "is_multi_select": True,
                     "allow_manual_entry": True,
                     "dynamic_list": {
-                        "func_path": "my_list_func",
+                        "func_path": f"{tool_path.absolute()}:my_list_func",
                         "func_kwargs": [
                             {
                                 "name": "prefix",
@@ -40,7 +40,7 @@ class TestScriptToolGenerator:
                 "endpoint_name": {
                     "type": ["string"],
                     "dynamic_list": {
-                        "func_path": "list_endpoint_names",
+                        "func_path": f"{tool_path.absolute()}:list_endpoint_names",
                         "func_kwargs": [
                             {
                                 "name": "prefix",
@@ -54,7 +54,7 @@ class TestScriptToolGenerator:
                 },
             },
             "description": "This is my tool with dynamic list input",
-            "source": tool_path,
+            "source": tool_path.as_posix(),
             "function": "my_tool",
         }
         assert expect_tool_meta == tool_meta
@@ -77,8 +77,8 @@ class TestScriptToolGenerator:
         assert expect_tool_meta == tool_meta
 
     def test_generate_script_tool_meta_with_generated_by(self):
-        tool_path = (TOOL_ROOT / "tool_with_generated_by_input.py").as_posix()
-        tool_meta = generate_tool_meta_dict_by_file(tool_path, "python")
+        tool_path = TOOL_ROOT / "tool_with_generated_by_input.py"
+        tool_meta = generate_tool_meta_dict_by_file((tool_path).as_posix(), "python")
         expect_tool_meta = {
             "name": "tool_with_generated_by_input",
             "type": "python",
@@ -86,7 +86,7 @@ class TestScriptToolGenerator:
                 "index_json": {
                     "type": ["string"],
                     "generated_by": {
-                        "func_path": "generate_index_json",
+                        "func_path": f"{tool_path.absolute()}:generate_index_json",
                         "func_kwargs": [
                             {
                                 "name": "index_type",
@@ -144,20 +144,20 @@ class TestScriptToolGenerator:
                                 "optional": True,
                             },
                         ],
-                        "reverse_func_path": "reverse_generate_index_json",
+                        "reverse_func_path": f"{tool_path.absolute()}:reverse_generate_index_json",
                     },
                 },
                 "queries": {"type": ["string"]},
                 "top_k": {"type": ["int"]},
                 "index_type": {
-                    "dynamic_list": {"func_path": "list_index_types"},
+                    "dynamic_list": {"func_path": f"{tool_path.absolute()}:list_index_types"},
                     "type": ["string"],
                     "input_type": "uionly_hidden",
                 },
                 "index": {
                     "enabled_by": "index_type",
                     "enabled_by_value": ["Workspace MLIndex"],
-                    "dynamic_list": {"func_path": "list_indexes"},
+                    "dynamic_list": {"func_path": f"{tool_path.absolute()}:list_indexes"},
                     "type": ["string"],
                     "input_type": "uionly_hidden",
                 },
@@ -176,28 +176,28 @@ class TestScriptToolGenerator:
                 "content_field": {
                     "enabled_by": "index_type",
                     "enabled_by_value": ["Azure Cognitive Search"],
-                    "dynamic_list": {"func_path": "list_fields"},
+                    "dynamic_list": {"func_path": f"{tool_path.absolute()}:list_fields"},
                     "type": ["string"],
                     "input_type": "uionly_hidden",
                 },
                 "embedding_field": {
                     "enabled_by": "index_type",
                     "enabled_by_value": ["Azure Cognitive Search"],
-                    "dynamic_list": {"func_path": "list_fields"},
+                    "dynamic_list": {"func_path": f"{tool_path.absolute()}:list_fields"},
                     "type": ["string"],
                     "input_type": "uionly_hidden",
                 },
                 "metadata_field": {
                     "enabled_by": "index_type",
                     "enabled_by_value": ["Azure Cognitive Search"],
-                    "dynamic_list": {"func_path": "list_fields"},
+                    "dynamic_list": {"func_path": f"{tool_path.absolute()}:list_fields"},
                     "type": ["string"],
                     "input_type": "uionly_hidden",
                 },
                 "semantic_configuration": {
                     "enabled_by": "index_type",
                     "enabled_by_value": ["Azure Cognitive Search"],
-                    "dynamic_list": {"func_path": "list_semantic_configuration"},
+                    "dynamic_list": {"func_path": f"{tool_path.absolute()}:list_semantic_configuration"},
                     "type": ["string"],
                     "input_type": "uionly_hidden",
                 },
@@ -211,7 +211,7 @@ class TestScriptToolGenerator:
                     "enabled_by": "index_type",
                     "enabled_by_value": ["Azure Cognitive Search"],
                     "dynamic_list": {
-                        "func_path": "list_embedding_deployment",
+                        "func_path": f"{tool_path.absolute()}:list_embedding_deployment",
                         "func_kwargs": [
                             {
                                 "name": "embedding_connection",
@@ -226,7 +226,7 @@ class TestScriptToolGenerator:
                 },
             },
             "description": "This is a tool with generated by input",
-            "source": tool_path,
+            "source": tool_path.as_posix(),
             "function": "my_tool",
         }
         assert expect_tool_meta == tool_meta
@@ -245,12 +245,15 @@ class TestScriptToolGenerator:
         assert 'Cannot find the input "invalid_input" for the enabled_by of student_id.' in ex.value.message
 
     def test_generate_script_tool_meta_with_invalid_dynamic_list(self):
-        tool_path = (TOOL_ROOT / "tool_with_invalid_dynamic_list.py").as_posix()
+        tool_path = TOOL_ROOT / "tool_with_invalid_dynamic_list.py"
         with pytest.raises(UserErrorException) as ex:
-            generate_tool_meta_dict_by_file(tool_path, "python")
+            generate_tool_meta_dict_by_file(tool_path.as_posix(), "python")
         assert "Cannot find invalid_tool_input in tool inputs." in ex.value.message
         assert "Missing required input(s) of dynamic_list function: ['prefix']" in ex.value.message
-        assert "Cannot find invalid_func_input in the inputs of dynamic_list func my_list_func" in ex.value.message
+        assert (
+            f"Cannot find invalid_func_input in the inputs of dynamic_list func {tool_path.absolute()}:my_list_func"
+            in ex.value.message
+        )
 
     def test_generate_script_tool_meta_with_invalid_schema(self):
         tool_path = (TOOL_ROOT / "tool_with_invalid_schema.py").as_posix()
