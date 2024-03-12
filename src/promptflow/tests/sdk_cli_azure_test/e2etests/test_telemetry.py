@@ -406,6 +406,7 @@ class TestTelemetry:
 
                 pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
 
+    @pytest.mark.skip(reason="Live mode can run successfully, but an error will be reported when recording.")
     def test_run_yaml_type(self, pf, randstr: Callable[[str], str]):
         from promptflow._constants import FlowType
         from promptflow._sdk._configuration import Configuration

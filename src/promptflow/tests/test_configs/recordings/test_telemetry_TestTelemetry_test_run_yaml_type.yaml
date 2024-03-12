@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.014'
+      - '0.043'
     status:
       code: 200
       message: OK
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.113'
+      - '0.611'
     status:
       code: 200
       message: OK
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.547'
+      - '0.062'
     status:
       code: 200
       message: OK
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.281'
+      - '0.170'
     status:
       code: 200
       message: OK
@@ -200,7 +200,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 12 Mar 2024 03:24:30 GMT
+      - Tue, 12 Mar 2024 07:38:17 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -250,7 +250,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 12 Mar 2024 03:24:32 GMT
+      - Tue, 12 Mar 2024 07:38:18 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -320,7 +320,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.107'
+      - '0.068'
     status:
       code: 200
       message: OK
@@ -361,7 +361,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.104'
+      - '0.065'
     status:
       code: 200
       message: OK
