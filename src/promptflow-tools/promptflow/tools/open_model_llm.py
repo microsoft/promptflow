@@ -526,7 +526,7 @@ def list_endpoint_names(subscription_id: str = None,
                         workspace_name: str = None,
                         return_endpoint_url: bool = False,
                         force_refresh: bool = False) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    # return an empty list if workspace triad is ready.
+    # return an empty list if workspace triad is not available.
     if not subscription_id or not resource_group_name or not workspace_name:
         return []
 
@@ -606,7 +606,7 @@ def list_deployment_names(subscription_id: str = None,
                           resource_group_name: str = None,
                           workspace_name: str = None,
                           endpoint: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    # return an empty list if workspace triad is ready.
+    # return an empty list if workspace triad is not available.
     if not subscription_id or not resource_group_name or not workspace_name:
         return []
 

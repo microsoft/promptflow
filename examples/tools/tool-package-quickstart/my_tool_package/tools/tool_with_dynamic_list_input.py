@@ -42,7 +42,7 @@ def list_endpoint_names(subscription_id: str = None,
     :param workspace_name: Azure ML workspace name.
     :param prefix: prefix to add to each item.
     """
-    # return an empty list if workspace triad is ready.
+    # return an empty list if workspace triad is not available.
     if not subscription_id or not resource_group_name or not workspace_name:
         return []
 
