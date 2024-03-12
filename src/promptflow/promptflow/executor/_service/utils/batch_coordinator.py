@@ -82,7 +82,7 @@ class BatchCoordinator:
                 process_multimedia_in_run_info(node_run_info, base_dir)
         return aggregation_result
 
-    def stop(self):
+    def close(self):
         self._process_pool.close()
         self._init = False
         self._instance = None
