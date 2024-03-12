@@ -69,12 +69,6 @@ class TokenCollector:
 token_collector = TokenCollector()
 
 
-def get_node_name_for_node_span():
-    # Since only the name of direct children of flow span should be set to node name, we need to check if
-    # the node name is consumed, if consumed, the span name should set to the function name.
-    return get_node_name_from_context(consume_once=True)
-
-
 def enrich_span_with_context(span):
     try:
         attrs_from_context = OperationContext.get_instance()._get_otel_attributes()
@@ -294,7 +288,7 @@ def _traced_async(
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
-        span_name = get_node_name_for_node_span() or trace.name
+        span_name = get_node_name_from_context(used_for_node_span=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
@@ -343,7 +337,7 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
         # For node span we set the span name to node name, otherwise we use the function name.
-        span_name = get_node_name_for_node_span() or trace.name
+        span_name = get_node_name_from_context(used_for_node_span=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
