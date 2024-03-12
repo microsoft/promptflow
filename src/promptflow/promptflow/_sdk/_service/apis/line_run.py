@@ -89,6 +89,7 @@ class LineRuns(Resource):
             session_id=args.session_id,
             runs=args.runs,
             experiments=args.experiments,
+            trace_ids=args.trace_ids,
         )
         # order by start_time desc
         line_runs.sort(key=lambda x: x.start_time, reverse=True)
