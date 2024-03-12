@@ -29,9 +29,15 @@ from promptflow._sdk.entities._trace import Span
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
-# Pass in the get_created_by_info_with_cache and logger to avoid app related dependency.
-# To guarantee we can reuse this function in other places.
 def trace_collector(get_created_by_info_with_cache: Callable, logger: logging.Logger):
+    """
+    This function is target to be reused in other places, so pass in get_created_by_info_with_cache and logger to avoid
+    app related dependencies.
+
+    Args:
+        get_created_by_info_with_cache (Callable): A function that retrieves information about the creator of the trace.
+        logger (logging.Logger): The logger object used for logging.
+    """
     content_type = request.headers.get("Content-Type")
     # binary protobuf encoding
     if "application/x-protobuf" in content_type:
@@ -89,20 +95,21 @@ def _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache: Call
 
         # Load span and summary clients first time may slow.
         # So, we load 2 client in parallel for warm up.
-        span_thread = ThreadWithContextVars(
+        span_client_thread = ThreadWithContextVars(
             target=get_client, args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
         )
-        span_thread.start()
+        span_client_thread.start()
+
+        # Load created_by info first time may slow. So, we load it in parallel for warm up.
+        created_by_thread = ThreadWithContextVars(target=get_created_by_info_with_cache)
+        created_by_thread.start()
 
         get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name)
 
-        # For local scenario, we already get created_by info in advance as starting the service.
-        # But if customer didn't run `az login`, we can't get it.
-        # So, we try to get and cache it again after getting CosmosDB token.
-        # Don't bother to run in new thread because in most cases, it will be cached.
-        created_by = get_created_by_info_with_cache() if get_created_by_info_with_cache else {}
+        span_client_thread.join()
+        created_by_thread.join()
 
-        span_thread.join()
+        created_by = get_created_by_info_with_cache()
 
         for span in all_spans:
             span_client = get_client(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)

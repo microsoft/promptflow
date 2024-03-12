@@ -12,7 +12,6 @@ from flask import Blueprint, Flask, current_app, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
-from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     PF_SERVICE_HOUR_TIMEOUT,
@@ -33,12 +32,7 @@ from promptflow._sdk._service.utils.utils import (
     get_port_from_config,
     kill_exist_service,
 )
-from promptflow._sdk._utils import (
-    extract_workspace_triad_from_trace_provider,
-    get_promptflow_sdk_version,
-    overwrite_null_std_logger,
-    read_write_by_user,
-)
+from promptflow._sdk._utils import get_promptflow_sdk_version, overwrite_null_std_logger, read_write_by_user
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 overwrite_null_std_logger()
@@ -146,8 +140,6 @@ def create_app():
                         kill_exist_service(port)
                     break
 
-        # Retrieve created_by info and cache it in advance to avoid blocking the first request.
-        get_created_by_info_with_cache()
         if not sys.executable.endswith("pfcli.exe"):
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
             monitor_thread.start()
@@ -161,16 +153,11 @@ created_by_for_local_to_cloud_trace_lock = threading.Lock()
 def get_created_by_info_with_cache():
     if len(created_by_for_local_to_cloud_trace) > 0:
         return created_by_for_local_to_cloud_trace
-    trace_provider = Configuration.get_instance().get_trace_provider()
-    if trace_provider is None or extract_workspace_triad_from_trace_provider(trace_provider) is None:
-        return
     with created_by_for_local_to_cloud_trace_lock:
         if len(created_by_for_local_to_cloud_trace) > 0:
             return created_by_for_local_to_cloud_trace
         try:
             # The total time of collecting info is about 3s.
-            # We may need to run below code more than once
-            # because user may not run `az login` before running pfs service.
             import jwt
             from azure.identity import DefaultAzureCredential
 
