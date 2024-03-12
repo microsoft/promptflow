@@ -181,11 +181,11 @@ def _create_trace_from_function_call(
     )
 
 
-def get_node_name_from_context(used_for_node_span=False):
+def get_node_name_from_context(used_for_span_name=False):
     tracer = Tracer.active_instance()
     if tracer is not None:
-        if used_for_node_span:
-            # Since only the name of direct children of flow span should be set to node name, we need to check if
+        if used_for_span_name:
+            # Since only the direct children of flow span should have the node name as span name, we need to check if
             # the node span is created, if created, the current span is not a node span, its name should bet set to
             # function name.
             if not tracer._is_node_span_created:
