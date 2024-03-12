@@ -65,7 +65,7 @@ def get_aoai_telemetry_headers() -> dict:
         headers[PROMPTFLOW_HEADER] = json.dumps(tracking_info)
 
         return headers
-    return None
+    return {}
 
 
 def inject_operation_headers(f):
