@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import time
+from collections import Counter
 from itertools import cycle
 from typing import Any, Dict, List, Optional
 
@@ -65,10 +66,17 @@ class ChatGroup:
 
         # check entry_role is in roles
         if entry_role is not None and entry_role not in roles:
-            raise ChatGroupError(f"Entry role {entry_role.name} is not in roles list {roles!r}.")
+            raise ChatGroupError(f"Entry role {entry_role.role} is not in roles list {roles!r}.")
+
+        # check if there is duplicate role name
+        role_names = [role.role for role in roles]
+        if len(role_names) != len(set(role_names)):
+            counter = Counter(role_names)
+            duplicate_roles = [role for role in counter if counter[role] > 1]
+            raise ChatGroupError(f"Duplicate roles are not allowed: {duplicate_roles!r}.")
 
         speak_order_list = self._get_speak_order(roles, entry_role, speak_order)
-        roles_dict = {role.name: role for role in roles}
+        roles_dict = {role.role: role for role in roles}
         return roles_dict, cycle(speak_order_list)
 
     def _get_speak_order(
@@ -78,11 +86,11 @@ class ChatGroup:
         if speak_order == ChatGroupSpeakOrder.SEQUENTIAL:
             if entry_role:
                 logger.warn(
-                    f"Entry role {entry_role.name!r} is ignored when speak order is sequential. "
-                    f"The first role in the list will be the entry role: {roles[0].name!r}."
+                    f"Entry role {entry_role.role!r} is ignored when speak order is sequential. "
+                    f"The first role in the list will be the entry role: {roles[0].role!r}."
                 )
 
-            speak_order_list = [role.name for role in roles]
+            speak_order_list = [role.role for role in roles]
             logger.info(f"Role speak order is {speak_order_list!r}.")
             return speak_order_list
         else:
@@ -121,11 +129,11 @@ class ChatGroup:
 
             # select current role and run
             current_role = self._select_role()
-            logger.info(f"[Round {chat_round}] Chat role {current_role.name!r} is speaking.")
+            logger.info(f"[Round {chat_round}] Chat role {current_role.role!r} is speaking.")
             role_input_values = self._get_role_input_values(current_role)
             # TODO: Hide flow-invoker and executor log for execution
             result = current_role.invoke(**role_input_values)
-            logger.info(f"[Round {chat_round}] Chat role {current_role.name!r} result: {result!r}.")
+            logger.info(f"[Round {chat_round}] Chat role {current_role.role!r} result: {result!r}.")
 
             # post process after role's invocation
             self._update_information_with_result(current_role, result)
@@ -158,12 +166,12 @@ class ChatGroup:
             if value == "${parent.conversation_history}":
                 value = self._conversation_history
             input_values[key] = value
-        logger.debug(f"Input values for role {role.name!r}: {input_values!r}")
+        logger.debug(f"Input values for role {role.role!r}: {input_values!r}")
         return input_values
 
     def _update_information_with_result(self, role: ChatRole, result: dict) -> None:
         """Update information with result"""
-        logger.debug(f"Updating chat group information with result from role {role.name!r}: {result!r}.")
+        logger.debug(f"Updating chat group information with result from role {role.role!r}: {result!r}.")
 
         # 1. update group chat history
         self._update_conversation_history(role, result)
@@ -196,6 +204,7 @@ class ChatGroup:
             logger.warn(f"Chat time reaches the maximum {self._max_time!r} seconds.")
             continue_chat = False
 
+        # TODO: How to apply stop signal since a role can have multiple outputs?
         if continue_chat:
             logger.info(
                 f"Chat group continues at round {chat_round!r}, "
