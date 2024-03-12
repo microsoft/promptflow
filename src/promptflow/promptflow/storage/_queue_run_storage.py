@@ -30,6 +30,7 @@ class QueueRunStorage(AbstractRunStorage):
 
 class ServiceQueueRunStorage(QueueRunStorage):
     """This storage persist multimedia data after run info is put into the output queue."""
+
     def __init__(self, queue: Queue, output_dir: Path):
         super().__init__(queue)
         self._flow_outputs_path = output_dir / OutputsFolderName.FLOW_OUTPUTS

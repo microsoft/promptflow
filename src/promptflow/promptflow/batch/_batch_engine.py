@@ -345,7 +345,7 @@ class BatchEngine:
         # execute lines
         is_timeout = False
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            results, is_timeout = self._executor_proxy._exec_batch(
+            results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,
                 run_id,

@@ -9,7 +9,6 @@ import os
 import queue
 import signal
 import sys
-from tempfile import mkdtemp
 import threading
 from datetime import datetime
 from functools import partial
@@ -17,6 +16,7 @@ from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
 
 import psutil
