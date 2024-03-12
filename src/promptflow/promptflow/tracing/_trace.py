@@ -247,16 +247,15 @@ def enrich_span_with_llm_output(span, output):
         from openai.types.chat.chat_completion import ChatCompletion
         from openai.types.completion import Completion
 
-        model = output.model if isinstance(output, (ChatCompletion, Completion)) else None
-
-        if isinstance(output, ChatCompletion):
-            generated_message = output.choices[0].message
-        elif isinstance(output, Completion):
-            generated_message = output.choices[0].text
-        else:
-            generated_message = None
-
-        enrich_span_with_llm(span, model, generated_message)
+        if isinstance(output, (ChatCompletion, Completion)):
+            model = output.model if isinstance(output, (ChatCompletion, Completion)) else None
+            if isinstance(output, ChatCompletion):
+                generated_message = output.choices[0].message
+            elif isinstance(output, Completion):
+                generated_message = output.choices[0].text
+            else:
+                generated_message = None
+            enrich_span_with_llm(span, model, generated_message)
 
 
 def serialize_attribute(value):

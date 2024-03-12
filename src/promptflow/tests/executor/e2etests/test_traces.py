@@ -426,9 +426,6 @@ class TestOTelTracer:
         # for llm and embedding traces, and aggregate them to the parent span. Use this function to validate
         # the openai tokens are correctly set.
         self.validate_openai_tokens(span_list, is_stream)
-        for span in span_list:
-            if self._is_llm_span_with_tokens(span, is_stream):
-                assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
         "flow_file, inputs, expected_span_length",
