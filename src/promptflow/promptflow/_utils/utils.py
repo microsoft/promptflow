@@ -389,3 +389,10 @@ def in_jupyter_notebook() -> bool:
 
 def snake_to_camel(name):
     return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
+
+
+def prepare_folder(path: Union[str, Path]) -> Path:
+    """Create folder if not exists and return the folder path."""
+    path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
+    return path

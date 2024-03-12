@@ -10,6 +10,7 @@ CONNECTION_SCRUBBED_VALUE = "********"
 PROMPTFLOW_CONNECTIONS = "PROMPTFLOW_CONNECTIONS"
 PROMPTFLOW_SECRETS_FILE = "PROMPTFLOW_SECRETS_FILE"
 PF_NO_INTERACTIVE_LOGIN = "PF_NO_INTERACTIVE_LOGIN"
+PF_RUN_AS_BUILT_BINARY = "PF_RUN_AS_BUILT_BINARY"
 PF_LOGGING_LEVEL = "PF_LOGGING_LEVEL"
 OPENAI_API_KEY = "openai-api-key"
 BING_API_KEY = "bing-api-key"
@@ -19,6 +20,7 @@ CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
+USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
 # Tool meta info
 ICON_DARK = "icon_dark"
@@ -166,6 +168,13 @@ class MessageFormatType:
 
 
 DEFAULT_OUTPUT_NAME = "output"
+OUTPUT_FILE_NAME = "output.jsonl"
+
+
+class OutputsFolderName:
+    FLOW_OUTPUTS = "flow_outputs"
+    FLOW_ARTIFACTS = "flow_artifacts"
+    NODE_ARTIFACTS = "node_artifacts"
 
 
 class ConnectionType(str, Enum):
