@@ -19,17 +19,19 @@ promptflow.tools.llm.llm:
   # proposal 2
   groups:  
   - name: Funtion calling  
-    display_style :  table
     sub_groups:
     - Tools
     inputs:  
     - functions  
-    - function_call  
+    - function_call
+    ui_hints:
+      display_style :  table
   - name: Tools
-    display_style : tile
     inputs:  
     - tools  
     - tool_choice
+    ui_hints:
+      display_style :  table
   inputs:
     functions:
       type:
