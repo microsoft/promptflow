@@ -6,10 +6,10 @@ import abc
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._sdk._constants import DEFAULT_ENCODING
+from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import generate_flow_meta
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.flow_utils import resolve_flow_path
@@ -149,10 +149,43 @@ class Flow(FlowBase):
     ):
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(data=dag, code=code, path=path, **kwargs)
+        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
+
+    @property
+    def name(self) -> str:
+        return self._flow_dir.name
+
+    @property
+    def flow_dag_path(self) -> Path:
+        return self._flow_dir / self._dag_file_name
+
+    @property
+    def display_name(self) -> str:
+        return self._data.get("display_name", self.name)
+
+    @property
+    def tools_meta_path(self) -> Path:
+        target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        return target_path
 
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
         return cls(code=path.parent, path=path, dag=dag, **kwargs)
+
+    @classmethod
+    def _get_flow_definition(cls, flow, base_path=None) -> Tuple[Path, str]:
+        if base_path:
+            flow_path = Path(base_path) / flow
+        else:
+            flow_path = Path(flow)
+
+        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
+            return flow_path, DAG_FILE_NAME
+        elif flow_path.is_file():
+            return flow_path.parent, flow_path.name
+
+        raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
@@ -162,7 +195,7 @@ class Flow(FlowBase):
 
     @classmethod
     def _dispatch_flow_creation(
-        is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
+        cls, is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
     ):
         """Dispatch flow load to eager flow or async flow."""
         if is_eager_flow:

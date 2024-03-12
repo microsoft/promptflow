@@ -58,9 +58,9 @@ class TestFlowAsFunc:
 
     @pytest.mark.asyncio
     async def test_flow_as_a_func_real_async(self):
-        from promptflow._sdk.entities._flow import AsyncProtectedFlow
+        from promptflow._core._flow import AsyncFlow
 
-        original_async_func = AsyncProtectedFlow.invoke_async
+        original_async_func = AsyncFlow.invoke_async
 
         # Modify the original function and retrieve the time info.
         run_info_group = []
@@ -73,7 +73,7 @@ class TestFlowAsFunc:
             node_run_infos_group.append(obj.node_run_infos)
             return obj
 
-        with mock.patch("promptflow._sdk.entities._flow.AsyncProtectedFlow.invoke_async", parse_invoke_async):
+        with mock.patch("promptflow._core._flow.AsyncFlow.invoke_async", parse_invoke_async):
             f_async_tools = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
             f_env_var_async = load_flow(f"{FLOWS_DIR}/print_env_var_async", is_async_call=True)
 

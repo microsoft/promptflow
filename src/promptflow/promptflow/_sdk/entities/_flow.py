@@ -3,18 +3,25 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 from promptflow._constants import FlowLanguage
 from promptflow._core._flow import AsyncFlow as AsyncFlowCore
 from promptflow._core._flow import Flow as FlowCore
-from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, DAG_FILE_NAME, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._core._flow import FlowBase as FlowBaseCore
+from promptflow._core._flow import FlowContext as FlowContextCore
+from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
+
+Flow = FlowCore
+FlowBase = FlowBaseCore
+FlowContext = FlowContextCore
+AsyncFlow = AsyncFlowCore
 
 
 class ProtectedFlow(FlowCore, SchemaValidatableMixin):
@@ -37,45 +44,12 @@ class ProtectedFlow(FlowCore, SchemaValidatableMixin):
     ):
         super().__init__(path=path, code=code, dag=dag, **kwargs)
 
-        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
         self._params_override = params_override
 
-    @property
-    def flow_dag_path(self) -> Path:
-        return self._flow_dir / self._dag_file_name
-
-    @property
-    def name(self) -> str:
-        return self._flow_dir.name
-
-    @property
-    def display_name(self) -> str:
-        return self._data.get("display_name", self.name)
-
-    @property
-    def tools_meta_path(self) -> Path:
-        target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        return target_path
-
-    @classmethod
-    def _get_flow_definition(cls, flow, base_path=None) -> Tuple[Path, str]:
-        if base_path:
-            flow_path = Path(base_path) / flow
-        else:
-            flow_path = Path(flow)
-
-        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-            return flow_path, DAG_FILE_NAME
-        elif flow_path.is_file():
-            return flow_path.parent, flow_path.name
-
-        raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
-
     # region SchemaValidatableMixin
     @classmethod
-    def _create_schema_for_validation(cls, context) -> Schema:
+    def _create_schema_for_validation(cls, context) -> "Schema":
         # import here to avoid circular import
         from ..schemas._flow import FlowSchema
 
@@ -136,7 +110,7 @@ class ProtectedFlow(FlowCore, SchemaValidatableMixin):
 
     @classmethod
     def _dispatch_flow_creation(
-        is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
+        cls, is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
     ):
         """Dispatch flow load to eager flow or async flow."""
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -167,14 +141,7 @@ class ProtectedFlow(FlowCore, SchemaValidatableMixin):
 
 
 class AsyncProtectedFlow(ProtectedFlow, AsyncFlowCore):
-    """This class is used to represent an async flow."""
-
-    async def __call__(self, *args, **kwargs):
-        if args:
-            raise UserErrorException("Flow can only be called with keyword arguments.")
-
-        result = await self.invoke_async(inputs=kwargs)
-        return result.output
+    """This class is used to represent an async protected flow."""
 
     async def invoke_async(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""

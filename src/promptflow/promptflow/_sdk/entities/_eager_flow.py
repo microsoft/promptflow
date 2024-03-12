@@ -17,7 +17,7 @@ class EagerFlow(EagerFlowCore, SchemaValidatableMixin):
         if raise_error:
             # Abstract here. The actual validation is done in subclass.
             data = cls._create_schema_for_validation(context={BASE_PATH_CONTEXT_KEY: path.parent}).load(data)
-        return super()._load(path=path, data=path.parent, **kwargs)
+        return super()._load(path=path, data=data, **kwargs)
 
     @classmethod
     def _create_schema_for_validation(cls, context):

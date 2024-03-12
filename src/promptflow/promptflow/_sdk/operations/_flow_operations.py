@@ -155,8 +155,6 @@ class FlowOperations(TelemetryMixin):
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
         :return: Executor result
         """
-        from promptflow._sdk._load_functions import load_flow
-
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
