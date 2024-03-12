@@ -83,6 +83,6 @@ class BatchCoordinator:
         return aggregation_result
 
     def stop(self):
-        self._process_pool.end()
+        self._process_pool.close()
         self._init = False
         self._instance = None
