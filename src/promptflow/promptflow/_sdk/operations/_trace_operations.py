@@ -51,7 +51,11 @@ class TraceOperations:
         for orm_spans in orm_spans_group_by_trace_id:
             spans_group_by_trace_id.append([Span._from_orm_object(orm_span) for orm_span in orm_spans])
         aggregated_spans = self._aggregate_spans(spans_group_by_trace_id)
-        line_runs = [LineRun._from_spans(line_run_spans) for line_run_spans in aggregated_spans]
+        line_runs = list()
+        for line_run_spans in aggregated_spans:
+            line_run = LineRun._from_spans(line_run_spans)
+            if line_run is not None:
+                line_runs.append(line_run)
         return line_runs
 
     @staticmethod
