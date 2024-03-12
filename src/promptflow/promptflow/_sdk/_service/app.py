@@ -55,7 +55,7 @@ def create_app():
     CORS(app)
 
     app.add_url_rule("/heartbeat", view_func=heartbeat)
-    app.add_url_rule("/v1/traces", view_func=trace_collector, methods=["POST"])
+    app.add_url_rule("/v1/traces", view_func=lambda: trace_collector(app.logger), methods=["POST"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
 

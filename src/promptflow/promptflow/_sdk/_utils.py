@@ -33,12 +33,6 @@ from marshmallow import ValidationError
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
-from promptflow._core.tool_meta_generator import (
-    generate_flow_meta_dict_by_file,
-    generate_tool_meta,
-    generate_tool_meta_in_subprocess,
-)
-from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -553,6 +547,8 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
+    from promptflow._core.tool_meta_generator import generate_tool_meta, generate_tool_meta_in_subprocess
+
     tools = _construct_tool_dict(tools)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
@@ -603,6 +599,8 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: func call result according to func_call_scenario.
     """
+    from promptflow._core.tools_manager import retrieve_tool_func_result
+
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
     # May call azure control plane api in the custom function to list Azure resources.
@@ -627,6 +625,8 @@ def _gen_dynamic_list(function_config: Dict) -> List:
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: a list of tool input dynamic enums.
     """
+    from promptflow._core.tools_manager import gen_dynamic_list
+
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
     # May call azure control plane api in the custom function to list Azure resources.
@@ -1189,6 +1189,8 @@ def parse_otel_span_status_code(value: int) -> str:
 
 
 def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
+    from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
+
     with _change_working_dir(working_dir), inject_sys_path(working_dir):
         try:
             result = generate_flow_meta_dict_by_file(
