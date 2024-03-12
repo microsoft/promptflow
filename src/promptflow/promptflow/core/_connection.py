@@ -10,7 +10,7 @@ from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
 from promptflow._constants import ConnectionAuthMode, ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow._utils.utils import in_jupyter_notebook, snake_to_camel
+from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.contracts.types import Secret
 from promptflow.exceptions import UserErrorException
 
@@ -65,17 +65,6 @@ class _Connection:
         print_as_yaml = kwargs.pop("print_as_yaml", in_jupyter_notebook())
         if print_as_yaml:
             self.print_as_yaml = True
-
-    @classmethod
-    def _casting_type(cls, typ):
-        type_dict = {
-            "azure_open_ai": ConnectionType.AZURE_OPEN_AI.value,
-            "open_ai": ConnectionType.OPEN_AI.value,
-        }
-
-        if typ in type_dict:
-            return type_dict.get(typ)
-        return snake_to_camel(typ)
 
     def keys(self) -> List:
         """Return keys of the connection properties."""
