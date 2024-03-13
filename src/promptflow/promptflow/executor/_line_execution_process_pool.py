@@ -47,13 +47,8 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage._queue_run_storage import QueueRunStorage
 
-from ._process_manager import (
-    SPANED_FORK_PROCESS_MANAGER_LOG_NAME,
-    SPANED_FORK_PROCESS_MANAGER_LOG_PATH,
-    ProcessControlSignal,
-)
+from ._process_manager import PROCESS_LOG_PATH, SPANED_FORK_PROCESS_MANAGER_LOG_NAME, ProcessControlSignal
 
-PROCESS_LOG_PATH = Path("process_log")
 PROCESS_LOG_NAME = "process_stderr"
 TERMINATE_SIGNAL = "terminate"
 
@@ -130,14 +125,14 @@ class LineExecutionProcessPool:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Delete log files to prevent interference from the previous run on the current execution.
-        log_path = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+        log_path = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
         if log_path.exists():
             log_path.unlink()
         for file in PROCESS_LOG_PATH.glob(f"{PROCESS_LOG_NAME}*"):
             file.unlink()
-        # Delete the SPANED_FORK_PROCESS_MANAGER_LOG_PATH directory
-        if SPANED_FORK_PROCESS_MANAGER_LOG_PATH.exists() and SPANED_FORK_PROCESS_MANAGER_LOG_PATH.is_dir():
-            SPANED_FORK_PROCESS_MANAGER_LOG_PATH.rmdir()
+        # Delete the PROCESS_LOG_PATH directory
+        if PROCESS_LOG_PATH.exists() and PROCESS_LOG_PATH.is_dir():
+            PROCESS_LOG_PATH.rmdir()
         self.close()
 
     @property
