@@ -255,7 +255,8 @@ class BatchEngine:
                 previous_run_info = resume_from_run_storage.load_flow_run_info(i)
 
                 if previous_run_info and previous_run_info.status == Status.Completed:
-                    # Change the root_run_id and parent_run_id to the new run_id
+                    # UI uses root_run_id  to link the base path in datastore with the run_info of line.
+                    # Thus the root_run_id needs to be the current batch run id.
                     previous_run_info.root_run_id = run_id
                     previous_run_info.parent_run_id = run_id
                     # Load previous node run info
