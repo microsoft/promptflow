@@ -133,11 +133,11 @@ class Flow(FlowBase):
     Flows can be used to build complex applications with language models.
 
     Simple Example:
-    ```python
+    .. code-block:: python
     from promptflow.core import Flow
     flow = Flow.load(source="path/to/flow.dag.yaml")
     result = flow(input_a=1, input_b=2)
-    ```
+
     """
 
     def __init__(
@@ -356,11 +356,11 @@ class AsyncFlow(Flow):
     """Async flow is based on Flow, which is used to invoke flow in async mode.
 
     Simple Example:
-    ```python
+    .. code-block:: python
     from promptflow.core import class AsyncFlow
     flow = AsyncFlow.load(source="path/to/flow.dag.yaml")
     result = await flow(input_a=1, input_b=2)
-    ```
+
     """
 
     # region overrides
