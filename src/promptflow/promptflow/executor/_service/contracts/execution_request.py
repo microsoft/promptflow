@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -24,13 +25,28 @@ class BaseExecutionRequest(BaseRequest):
         raise NotImplementedError(f"Request type {self.__class__.__name__} is not implemented.")
 
     def validate_request(self):
-        if self.flow_file.is_absolute():
+        if not self.working_dir.is_absolute() or self.flow_file.is_absolute():
             raise FlowFilePathInvalid(
                 message_format=(
-                    "The flow file path ({flow_file}) is invalid. The path should be relative to the working directory."
+                    "The working directory path ({working_dir}) or flow file path ({flow_file}) is invalid. "
+                    "The working directory should be a absolute path and the flow file path should be "
+                    "relative to the working directory."
                 ),
+                working_dir=self.working_dir.as_posix(),
                 flow_file=self.flow_file.as_posix(),
             )
+        else:
+            # Ensure that the flow file path is within the working directory
+            working_dir = os.path.normpath(working_dir)
+            flow_file = os.path.normpath(flow_file)
+            full_path = os.path.normpath(os.path.join(working_dir, flow_file))
+            if not full_path.startswith(working_dir):
+                raise FlowFilePathInvalid(
+                    message_format=(
+                        "The flow file path ({flow_file}) is invalid. The path should be in the working directory."
+                    ),
+                    flow_file=self.flow_file.as_posix(),
+                )
 
 
 class FlowExecutionRequest(BaseExecutionRequest):
