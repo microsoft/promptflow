@@ -12,13 +12,12 @@ We already have a clear story from authoring to deployment with DAG flow, given 
   - additional_includes(??)
 - is pf.save a must stage?
 
+For cloud run, we need the yaml and pf.save is the way to help customer generate the flow project with yaml.
 
 ## Daniel's proposal - loader function
 [loader_function](https://github.com/Azure/azureml_run_specification/blob/users/anksing/evaluator_flow_asset/specs/simplified-sdk/evaluator/save_load_promptflow.md)   
 Ignore the details of the pf.save and pf.load_flow (we won't cover the details here), loader function is a way to allow customer customizing their eager flow and it does can mitigate the issue to some extend.   
-There are still some issues for loader function:
-- customer needs to define both the encapsulated class and the loader function
-- the flow can only be deployed after pf.save
+The issue for loader function is that customer needs to define both the encapsulated class and the loader function, it's not straightforward for customer and also it's not a common practice for developers.
 
 ## Other choices
 
