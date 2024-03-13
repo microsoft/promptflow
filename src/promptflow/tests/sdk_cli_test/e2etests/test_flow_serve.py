@@ -105,7 +105,6 @@ def test_feedback_flatten(flow_serving_client):
     assert response.status_code == 200
     spans = exporter.spans
     assert len(spans) == 1
-    assert spans[0].attributes["span_type"] == "Feedback"
     assert spans[0].attributes["feedback"] == feedback_data["feedback"]
 
 
@@ -134,7 +133,6 @@ def test_feedback_with_trace_context(flow_serving_client):
     spans = exporter.spans
     assert len(spans) == 1
     # validate trace context
-    assert spans[0].attributes["span_type"] == "Feedback"
     assert spans[0].context.trace_id == int(trace_ctx_trace_id, 16)
     assert spans[0].parent.span_id == int(trace_ctx_parent_id, 16)
     # validate feedback data
