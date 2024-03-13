@@ -745,7 +745,7 @@ class Run(YAMLTranslatableMixin):
         return Run(**init_params)
 
     @functools.cached_property
-    def flow_type(self) -> str:
+    def _flow_type(self) -> str:
         """Get flow type of run."""
 
         from promptflow import load_flow

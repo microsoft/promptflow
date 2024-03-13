@@ -1064,7 +1064,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         try:
             if activity_name == "pfazure.runs.create_or_update":
                 run: Run = kwargs.get("run", None) or args[0]
-                telemetry_values["flow_type"] = run.flow_type
+                telemetry_values["flow_type"] = run._flow_type
         except Exception as e:
             logger.error(f"Failed to get telemetry values: {str(e)}")
 
