@@ -151,6 +151,9 @@ PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
+# chat group
+STOP_SIGNAL = "[STOP]"
+
 
 class RunTypes:
     BATCH = "batch"
@@ -443,6 +446,11 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class ChatGroupSpeakOrder(str, Enum):
+    SEQUENTIAL = "sequential"
+    LLM = "llm"
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
