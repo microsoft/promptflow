@@ -120,6 +120,13 @@ class BatchEngine:
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
+        # update kwargs with worker_count and line_timeout_sec
+        self._kwargs.update(
+            {
+                "worker_count": self._worker_count,
+                "line_timeout_sec": self._line_timeout_sec,
+            }
+        )
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -169,6 +176,8 @@ class BatchEngine:
                     self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
+                    worker_count=self._worker_count,
+                    line_timeout_sec=self._line_timeout_sec,
                     **self._kwargs,
                 )
                 try:
