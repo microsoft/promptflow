@@ -28,7 +28,7 @@ def initialize(request: InitializationRequest):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(f"Received batch init request, executor version: {operation_context.get_user_agent()}.")
         # resolve environment variables
-        set_environment_variables(request.environment_variables)
+        set_environment_variables(request)
         # init batch coordinator to validate flow and create process pool
         batch_coordinator = BatchCoordinator(
             request.working_dir,
@@ -39,7 +39,6 @@ def initialize(request: InitializationRequest):
             line_timeout_sec=request.line_timeout_sec,
         )
         batch_coordinator.start()
-
         # return json response
         return {"status": "initialized"}
 

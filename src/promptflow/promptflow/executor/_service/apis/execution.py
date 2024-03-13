@@ -80,7 +80,7 @@ def flow_test(request: FlowExecutionRequest):
     # validate request
     request.validate_request()
     # resolve environment variables
-    set_environment_variables(request.environment_variables)
+    set_environment_variables(request)
     # execute flow
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
     with get_log_context(request):
@@ -99,7 +99,7 @@ def single_node_run(request: NodeExecutionRequest):
     # validate request
     request.validate_request()
     # resolve environment variables
-    set_environment_variables(request.environment_variables)
+    set_environment_variables(request)
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
     with _change_working_dir(request.working_dir), get_log_context(request):
         return FlowExecutor.load_and_exec_node(
