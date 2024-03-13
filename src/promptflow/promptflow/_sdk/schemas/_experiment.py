@@ -44,6 +44,26 @@ class FlowNodeSchema(RunSchema):
         return data
 
 
+class ChatRoleSchema(YamlFileSchema):
+    """Schema for chat role."""
+
+    role = fields.Str(required=True)
+    path = UnionField([LocalPathField(required=True), fields.Str(required=True)])
+    inputs = fields.Dict(keys=fields.Str)
+
+
+class ChatGroupSchema(YamlFileSchema):
+    """Schema for chat group."""
+
+    name = fields.Str(required=True)
+    type = StringTransformedEnum(allowed_values=ExperimentNodeType.CHAT_GROUP, required=True)
+    max_turns = fields.Int()
+    max_tokens = fields.Int()
+    max_time = fields.Int()
+    stop_signal = fields.Str()
+    roles = fields.List(NestedField(ChatRoleSchema))
+
+
 class ExperimentDataSchema(metaclass=PatchedSchemaMeta):
     name = fields.Str(required=True)
     path = LocalPathField(required=True)
@@ -64,6 +84,7 @@ class ExperimentTemplateSchema(YamlFileSchema):
             [
                 NestedField(CommandNodeSchema),
                 NestedField(FlowNodeSchema),
+                NestedField(ChatGroupSchema),
             ]
         ),
         required=True,
