@@ -34,6 +34,7 @@ from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -406,7 +407,9 @@ class TestTelemetry:
 
                 pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
 
-    @pytest.mark.skip(reason="Live mode can run successfully, but an error will be reported when recording.")
+    @pytest.mark.skipif(
+        condition=not is_live(), reason="Live mode can run successfully, but an error will be reported when recording."
+    )
     def test_run_yaml_type(self, pf, randstr: Callable[[str], str]):
         from promptflow._constants import FlowType
         from promptflow._sdk._configuration import Configuration
