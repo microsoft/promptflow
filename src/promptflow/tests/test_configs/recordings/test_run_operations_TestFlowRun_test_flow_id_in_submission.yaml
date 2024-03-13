@@ -381,7 +381,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_env_var/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure_for_sdk_cli_azure/flow.dag.yaml
   response:
     body:
       string: ''
@@ -431,7 +431,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_env_var/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure_for_sdk_cli_azure/flow.dag.yaml
   response:
     body:
       string: ''
@@ -735,7 +735,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_env_var/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure/flow.dag.yaml
   response:
     body:
       string: ''
@@ -785,7 +785,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_env_var/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure/flow.dag.yaml
   response:
     body:
       string: ''

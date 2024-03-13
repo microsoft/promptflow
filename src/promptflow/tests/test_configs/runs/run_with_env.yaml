@@ -1,4 +1,4 @@
-flow: ../flows/print_env_var
+flow: ../flows/print_env_var_for_sdk_cli_azure
 data: ../datas/env_var_names.jsonl
 
 # run config: env related
