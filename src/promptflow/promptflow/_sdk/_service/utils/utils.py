@@ -120,7 +120,7 @@ def _get_process_by_port(port):
             for line in lines:
                 if "LISTENING" in line:
                     pid = line.split()[-1]  # get the PID
-                    return psutil.Process(pid)
+                    return psutil.Process(int(pid))
     else:  # Linux and macOS
         command = f"lsof -i :{port} -sTCP:LISTEN | awk 'NR>1 {{print $2}}'"
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -128,7 +128,7 @@ def _get_process_by_port(port):
             output = result.stdout.strip()
             pid = output.split("\n")[0]  # get the first PID
             if pid != "":
-                return psutil.Process(pid)
+                return psutil.Process(int(pid))
 
 
 def kill_exist_service(port):
