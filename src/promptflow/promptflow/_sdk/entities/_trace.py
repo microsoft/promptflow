@@ -4,6 +4,7 @@
 
 import copy
 import datetime
+import heapq
 import json
 import typing
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
     DEFAULT_SPAN_TYPE,
+    RUNNING_LINE_RUN_STATUS,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanEventFieldName,
@@ -223,7 +225,8 @@ class _LineRunData:
     end_time: str
     status: str
     latency: float
-    display_name: str
+    name: str
+    display_name: str  # rename to `name`, keep this to avoid breaking before UX update
     kind: str
     cumulative_token_count: typing.Optional[typing.Dict[str, int]]
 
@@ -256,6 +259,7 @@ class _LineRunData:
             end_time=end_time.isoformat(),
             status=span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
             latency=(end_time - start_time).total_seconds(),
+            name=span.name,
             display_name=span.name,
             kind=attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.span_type),
             cumulative_token_count=cumulative_token_count,
@@ -281,27 +285,63 @@ class LineRun:
     evaluations: typing.Optional[typing.Dict[str, _LineRunData]] = None
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span]) -> typing.Optional["LineRun"]:
+    def _generate_line_run_placeholder(spans: typing.List[Span]) -> "LineRun":
+        # placeholder for traces whose root spans are absent
+        # this placeholder will have trace id collected from other children spans
+        # so that we can know more querying spans with trace id
+        trace_id = spans[0].trace_id
+        # leverage heap sort to get the earliest start time
+        start_times = [datetime.datetime.fromisoformat(span._content[SpanFieldName.START_TIME]) for span in spans]
+        earliest_start_time = heapq.nsmallest(1, start_times)[0]
+        return LineRun(
+            line_run_id=trace_id,
+            trace_id=trace_id,
+            root_span_id=None,
+            inputs=None,
+            outputs=None,
+            start_time=earliest_start_time.isoformat(),
+            end_time=None,
+            status=RUNNING_LINE_RUN_STATUS,
+            latency=None,
+            name=None,
+            kind=None,
+            cumulative_token_count=None,
+            evaluations=None,
+        )
+
+    @staticmethod
+    def _from_spans(spans: typing.List[Span], run: typing.Optional[str] = None) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
         evaluations = dict()
         for span in spans:
             if span.parent_span_id:
                 continue
             attributes = span._content[SpanFieldName.ATTRIBUTES]
-            if (
-                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes  # test scenario
-                or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes  # batch run scenario
-            ):
-                evaluations[span.name] = _LineRunData._from_root_span(span)
-            elif SpanAttributeFieldName.LINE_RUN_ID in attributes:
-                main_line_run_data = _LineRunData._from_root_span(span)
+            line_run_data = _LineRunData._from_root_span(span)
+            # determine this line run data is the main or the eval
+            if run is not None:
+                # `run` is specified, this line run comes from a batch run
+                batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+                if batch_run_id == run:
+                    main_line_run_data = line_run_data
+                else:
+                    evaluations[span.name] = line_run_data
             else:
-                # eager flow/arbitrary script
-                main_line_run_data = _LineRunData._from_root_span(span)
-        # main line run span is absent, ignore this line run
-        # this may happen when the line is still executing, or terminated;
-        # or the line run is killed before the traces exported
+                if (
+                    SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes
+                    or SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes
+                ):
+                    evaluations[span.name] = line_run_data
+                else:
+                    main_line_run_data = line_run_data
+
+        # main line run span is absent
         if main_line_run_data is None:
+            if len(evaluations) == 0:
+                # no eval traces, indicates the line is still executing
+                # generate a placeholder line run for this WIP line
+                return LineRun._generate_line_run_placeholder(spans)
+            # otherwise, silently ignore
             return None
 
         return LineRun(
@@ -314,34 +354,7 @@ class LineRun:
             end_time=main_line_run_data.end_time,
             status=main_line_run_data.status,
             latency=main_line_run_data.latency,
-            name=main_line_run_data.display_name,
-            kind=main_line_run_data.kind,
-            cumulative_token_count=main_line_run_data.cumulative_token_count,
-            evaluations=evaluations,
-        )
-
-    @staticmethod
-    def _from_run_and_spans(run: str, spans: typing.List[Span]) -> typing.Optional["LineRun"]:
-        main_line_run_data: _LineRunData = None
-        evaluations = dict()
-        for span in spans:
-            attributes = span._content[SpanFieldName.ATTRIBUTES]
-            batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
-            if batch_run_id == run:
-                main_line_run_data = _LineRunData._from_root_span(span)
-            else:
-                evaluations[span.name] = _LineRunData._from_root_span(span)
-        return LineRun(
-            line_run_id=main_line_run_data.line_run_id,
-            trace_id=main_line_run_data.trace_id,
-            root_span_id=main_line_run_data.root_span_id,
-            inputs=main_line_run_data.inputs,
-            outputs=main_line_run_data.outputs,
-            start_time=main_line_run_data.start_time,
-            end_time=main_line_run_data.end_time,
-            status=main_line_run_data.status,
-            latency=main_line_run_data.latency,
-            name=main_line_run_data.display_name,
+            name=main_line_run_data.name,
             kind=main_line_run_data.kind,
             cumulative_token_count=main_line_run_data.cumulative_token_count,
             evaluations=evaluations,
