@@ -589,7 +589,7 @@ class TestFlowRun:
             mock_create_or_update.side_effect = create_or_update
             env_var = {"API_BASE": "${azure_open_ai_connection.api_base}"}
             run = pf.run(
-                flow=f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure",
+                flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 environment_variables=env_var,
                 name=randstr("name"),
@@ -611,7 +611,7 @@ class TestFlowRun:
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(
-                flow=f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure",
+                flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 name=randstr("name1"),
             )
@@ -620,7 +620,7 @@ class TestFlowRun:
             mock_submit.side_effect = submit
             # automatic is a reserved runtime name, will use automatic runtime if specified.
             pf.run(
-                flow=f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure",
+                flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 runtime="automatic",
                 name=randstr("name2"),
@@ -743,7 +743,7 @@ class TestFlowRun:
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
         from promptflow.azure.operations import RunOperations
 
-        flow_path = f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure"
+        flow_path = f"{FLOWS_DIR}/print_env_var"
         flow_lineage_id = get_flow_lineage_id(flow_path)
         flow = load_flow(flow_path)
         flow_session_id = pf._runs._get_session_id(flow, flow_lineage_id)
@@ -874,7 +874,7 @@ class TestFlowRun:
             mock_request.side_effect = fake_submit
             with pytest.raises(FlowRequestException) as e:
                 pf.run(
-                    flow=f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure",
+                    flow=f"{FLOWS_DIR}/print_env_var",
                     data=f"{DATAS_DIR}/env_var_names.jsonl",
                     runtime=runtime,
                     name=randstr("name1"),
@@ -889,7 +889,7 @@ class TestFlowRun:
             old_request_id = request_ids.pop()
             with pytest.raises(FlowRequestException) as e:
                 pf.run(
-                    flow=f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure",
+                    flow=f"{FLOWS_DIR}/print_env_var",
                     data=f"{DATAS_DIR}/env_var_names.jsonl",
                     runtime=runtime,
                     name=randstr("name1"),
@@ -1040,7 +1040,7 @@ class TestFlowRun:
         self, pf: PFClient, compute_instance_name: str, randstr: Callable[[str], str]
     ):
         run = Run(
-            flow=Path(f"{FLOWS_DIR}/print_env_var_for_sdk_cli_azure"),
+            flow=Path(f"{FLOWS_DIR}/print_env_var"),
             data=f"{DATAS_DIR}/env_var_names.jsonl",
             name=randstr("name"),
             resources={"compute": compute_instance_name},
