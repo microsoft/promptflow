@@ -132,10 +132,6 @@ class Flow(FlowBase):
     and the output of one step can be used as the input to the next.
     Flows can be used to build complex applications with language models.
 
-    The Flow class provides two basic functionalities:
-    1. Load flow from YAML file: `flow = Flow.load(source=src, ...)`
-    2. Invoke loaded flow with inputs. `flow() or flow.invoke(inputs=...)`
-
     Simple Example:
     ```python
     from promptflow.core import Flow
