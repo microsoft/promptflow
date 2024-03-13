@@ -19,7 +19,7 @@ class CoreError(UserErrorException):
 
 
 class CoreInternalError(SystemErrorException):
-    """SDK internal error."""
+    """Core internal error."""
 
     def __init__(
         self,
