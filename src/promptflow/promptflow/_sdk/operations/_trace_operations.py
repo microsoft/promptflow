@@ -125,6 +125,8 @@ class TraceOperations:
         # so will not call `_aggregate_spans` here
         grouped_spans = {run: defaultdict(list) for run in runs}
         for trace_id_spans in spans_group_by_trace_id:
+            # as spans with same trace id also have same key attributes to group
+            # select the first span on behalf of the list
             obo_span: Span = trace_id_spans[0]
             obo_attrs = obo_span._content[SpanFieldName.ATTRIBUTES]
             # aggregation node will not have `batch_run_id`, ignore
