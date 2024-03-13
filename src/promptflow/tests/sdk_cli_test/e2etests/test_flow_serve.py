@@ -3,7 +3,6 @@ import os
 import re
 
 import pytest
-from typing import Sequence
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._serving.utils import load_feedback_swagger
@@ -11,26 +10,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.sdk.trace.export import SpanExporter
-
-
-class MemoryExporter(SpanExporter):
-    """An memory open telemetry span exporter only target for test."""
-
-    def __init__(self):
-        self.spans = []
-
-    def export(self, spans: Sequence[ReadableSpan]):
-        """export open telemetry spans to MDC."""
-        self.spans.extend(spans)
-
-    def force_flush(self, timeout_millis: int = 30000) -> bool:
-        """Hint to ensure that the export of any spans the exporter has received
-        prior to the call to ForceFlush SHOULD be completed as soon as possible, preferably
-        before returning from this method.
-        """
-        return True
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -95,12 +75,12 @@ def test_feedback_flatten(flow_serving_client):
     )
     trace.set_tracer_provider(TracerProvider(resource=resource))
     provider = trace.get_tracer_provider()
-    exporter = MemoryExporter()
+    exporter = InMemorySpanExporter()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     feedback_data = {"feedback": "positive"}
     response = flow_serving_client.post("/feedback?flatten=true", data=json.dumps(feedback_data))
     assert response.status_code == 200
-    spans = exporter.spans
+    spans = exporter.get_finished_spans()
     assert len(spans) == 1
     assert spans[0].attributes["feedback"] == feedback_data["feedback"]
 
@@ -115,7 +95,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     )
     trace.set_tracer_provider(TracerProvider(resource=resource))
     provider = trace.get_tracer_provider()
-    exporter = MemoryExporter()
+    exporter = InMemorySpanExporter()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     feedback_data = json.dumps({"feedback": "positive"})
     trace_ctx_version = "00"
@@ -127,7 +107,7 @@ def test_feedback_with_trace_context(flow_serving_client):
                                         headers={"traceparent": trace_parent, "baggage": "userId=alice"},
                                         data=feedback_data)
     assert response.status_code == 200
-    spans = exporter.spans
+    spans = exporter.get_finished_spans()
     assert len(spans) == 1
     # validate trace context
     assert spans[0].context.trace_id == int(trace_ctx_trace_id, 16)
