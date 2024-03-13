@@ -53,7 +53,7 @@ from ._process_manager import (
     ProcessControlSignal,
 )
 
-PROCESS_LOG_PATH = Path(".promptflow")
+PROCESS_LOG_PATH = Path("process_log")
 PROCESS_LOG_NAME = "process_stderr"
 TERMINATE_SIGNAL = "terminate"
 
@@ -129,12 +129,15 @@ class LineExecutionProcessPool:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Remove log files to prevent interference from the previous run on the current execution.
+        # Delete log files to prevent interference from the previous run on the current execution.
         log_path = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
         if log_path.exists():
             log_path.unlink()
         for file in PROCESS_LOG_PATH.glob(f"{PROCESS_LOG_NAME}*"):
             file.unlink()
+        # Delete the SPANED_FORK_PROCESS_MANAGER_LOG_PATH directory
+        if SPANED_FORK_PROCESS_MANAGER_LOG_PATH.exists() and SPANED_FORK_PROCESS_MANAGER_LOG_PATH.is_dir():
+            SPANED_FORK_PROCESS_MANAGER_LOG_PATH.rmdir()
         self.close()
 
     @property

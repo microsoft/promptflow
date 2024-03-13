@@ -24,7 +24,7 @@ from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-SPANED_FORK_PROCESS_MANAGER_LOG_PATH = Path(".promptflow")
+SPANED_FORK_PROCESS_MANAGER_LOG_PATH = Path("process_log")
 SPANED_FORK_PROCESS_MANAGER_LOG_NAME = "spawned_fork_process_manager_stderr.log"
 
 
