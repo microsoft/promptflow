@@ -3,9 +3,37 @@ import os
 import re
 
 import pytest
+from typing import Sequence
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._serving.utils import load_feedback_swagger
+from opentelemetry import trace
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace.export import SpanExporter
+
+
+class MemoryExporter(SpanExporter):
+    """An memory open telemetry span exporter only target for test."""
+
+    def __init__(self):
+        self.spans = []
+
+    def export(self, spans: Sequence[ReadableSpan]):
+        """export open telemetry spans to MDC."""
+        self.spans.extend(spans)
+
+    def shutdown(self) -> None:
+        self.spans.clear()
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        """Hint to ensure that the export of any spans the exporter has received
+        prior to the call to ForceFlush SHOULD be completed as soon as possible, preferably
+        before returning from this method.
+        """
+        return True
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -63,12 +91,6 @@ def test_swagger(flow_serving_client):
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_feedback_flatten(flow_serving_client):
-    from opentelemetry import trace
-    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-    from promptflow._sdk._serving.monitor.memory_exporter import MemoryExporter
-
     resource = Resource(
         attributes={
             SERVICE_NAME: "promptflow",
@@ -90,12 +112,6 @@ def test_feedback_flatten(flow_serving_client):
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_feedback_with_trace_context(flow_serving_client):
-    from opentelemetry import trace
-    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-    from promptflow._sdk._serving.monitor.memory_exporter import MemoryExporter
-
     resource = Resource(
         attributes={
             SERVICE_NAME: "promptflow",
