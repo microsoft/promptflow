@@ -8,12 +8,11 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._sdk._utils import generate_flow_meta
-from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
+from promptflow.core._connection import _Connection
 from promptflow.exceptions import UserErrorException
 
 
@@ -113,16 +112,6 @@ class FlowBase(abc.ABC):
         """Flow file path. Can be script file or flow definition YAML file."""
         return self._path
 
-    @property
-    def language(self) -> str:
-        """Language of the flow."""
-        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
-
-    @property
-    def additional_includes(self) -> list:
-        """Additional includes of the flow."""
-        return self._data.get("additional_includes", [])
-
     @classmethod
     # pylint: disable=unused-argument
     def _resolve_cls_and_type(cls, data, params_override):
@@ -138,7 +127,14 @@ class FlowBase(abc.ABC):
 
 
 class Flow(FlowBase):
-    """This class is used to represent a flow."""
+    """This class is used to hide internal interfaces from user.
+
+    User interface should be carefully designed to avoid breaking changes, while developers may need to change internal
+    interfaces to improve the code quality. On the other hand, making all internal interfaces private will make it
+    strange to use them everywhere inside this package.
+
+    Ideally, developers should always initialize ProtectedFlow object instead of Flow object.
+    """
 
     def __init__(
         self,
@@ -149,25 +145,6 @@ class Flow(FlowBase):
     ):
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(data=dag, code=code, path=path, **kwargs)
-        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
-
-    @property
-    def name(self) -> str:
-        return self._flow_dir.name
-
-    @property
-    def flow_dag_path(self) -> Path:
-        return self._flow_dir / self._dag_file_name
-
-    @property
-    def display_name(self) -> str:
-        return self._data.get("display_name", self.name)
-
-    @property
-    def tools_meta_path(self) -> Path:
-        target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        return target_path
 
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
@@ -297,14 +274,6 @@ class EagerFlow(FlowBase):
         self.entry_file = self._resolve_entry_file(entry=entry, working_dir=code)
         # TODO(2910062): support eager flow execution cache
         super().__init__(data=data, path=path, code=code, content_hash=None, **kwargs)
-
-    @property
-    def language(self) -> str:
-        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
-
-    @property
-    def additional_includes(self) -> list:
-        return self._data.get("additional_includes", [])
 
     @classmethod
     def _load(cls, path: Path, data: dict, **kwargs):

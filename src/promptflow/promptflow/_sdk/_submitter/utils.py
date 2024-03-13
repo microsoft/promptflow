@@ -46,7 +46,7 @@ from promptflow._sdk._utils import (
     update_dict_value_with_connections,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, ProtectedFlow
+from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
@@ -192,7 +192,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = ProtectedFlow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
@@ -226,7 +226,7 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
+    def resolve_used_connections(flow: Flow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()

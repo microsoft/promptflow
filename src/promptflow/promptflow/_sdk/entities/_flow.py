@@ -5,34 +5,51 @@
 from pathlib import Path
 from typing import Dict, Optional
 
-from promptflow._constants import FlowLanguage
-from promptflow._core._flow import AsyncFlow as AsyncFlowCore
-from promptflow._core._flow import Flow as FlowCore
-from promptflow._core._flow import FlowBase as FlowBaseCore
-from promptflow._core._flow import FlowContext as FlowContextCore
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.core._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow.core._flow import AsyncFlow as AsyncFlowCore
+from promptflow.core._flow import Flow as FlowCore
+from promptflow.core._flow import FlowBase as FlowBaseCore
+from promptflow.core._flow import FlowContext as FlowContextCore
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
-Flow = FlowCore
-FlowBase = FlowBaseCore
-FlowContext = FlowContextCore
-AsyncFlow = AsyncFlowCore
+
+class FlowBase(FlowBaseCore):
+    @property
+    def name(self) -> str:
+        return self._flow_dir.name
+
+    @property
+    def flow_dag_path(self) -> Path:
+        return self._flow_dir / self._dag_file_name
+
+    @property
+    def tools_meta_path(self) -> Path:
+        target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        return target_path
+
+    @property
+    def language(self) -> str:
+        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+    @property
+    def additional_includes(self) -> list:
+        return self._data.get("additional_includes", [])
+
+    @property
+    def display_name(self) -> str:
+        return self._data.get("display_name", self._flow_dir.name)
 
 
-class ProtectedFlow(FlowCore, SchemaValidatableMixin):
-    """This class is used to hide internal interfaces from user.
-
-    User interface should be carefully designed to avoid breaking changes, while developers may need to change internal
-    interfaces to improve the code quality. On the other hand, making all internal interfaces private will make it
-    strange to use them everywhere inside this package.
-
-    Ideally, developers should always initialize ProtectedFlow object instead of Flow object.
-    """
+class Flow(FlowBase, FlowCore, SchemaValidatableMixin):
+    __doc__ = FlowCore.__doc__
 
     def __init__(
         self,
@@ -46,6 +63,8 @@ class ProtectedFlow(FlowCore, SchemaValidatableMixin):
 
         self._executable = None
         self._params_override = params_override
+        self.variant = kwargs.pop("variant", None) or {}
+        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
 
     # region SchemaValidatableMixin
     @classmethod
@@ -120,9 +139,9 @@ class ProtectedFlow(FlowCore, SchemaValidatableMixin):
         else:
             # TODO: schema validation and warning on unknown fields
             if is_async_call:
-                return AsyncProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                return AsyncFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
             else:
-                return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
@@ -140,7 +159,7 @@ class ProtectedFlow(FlowCore, SchemaValidatableMixin):
     # endregion
 
 
-class AsyncProtectedFlow(ProtectedFlow, AsyncFlowCore):
+class AsyncFlow(Flow, AsyncFlowCore):
     """This class is used to represent an async protected flow."""
 
     async def invoke_async(self, inputs: dict) -> "LineResult":
@@ -157,3 +176,6 @@ class AsyncProtectedFlow(ProtectedFlow, AsyncFlowCore):
                 return result
         else:
             return await super().invoke_async(inputs=inputs)
+
+
+FlowContext = FlowContextCore

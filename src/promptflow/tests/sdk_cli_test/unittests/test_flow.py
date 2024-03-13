@@ -8,7 +8,7 @@ from marshmallow import ValidationError
 
 from promptflow import load_flow
 from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._flow import Flow
 
 FLOWS_DIR = Path("./tests/test_configs/flows")
 EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
@@ -37,7 +37,7 @@ class TestRun:
     )
     def test_dag_flow_load(self, kwargs):
         flow = load_flow(**kwargs)
-        assert isinstance(flow, ProtectedFlow)
+        assert isinstance(flow, Flow)
 
     def test_flow_load_advanced(self):
         flow = load_flow(source=EAGER_FLOWS_DIR / "flow_with_environment")

@@ -13,7 +13,7 @@ from colorama import Fore, init
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
-from promptflow._sdk.entities._flow import FlowBase, FlowContext, ProtectedFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
@@ -61,7 +61,7 @@ class TestSubmitter:
 
     def __init__(
         self,
-        flow: Union[ProtectedFlow, EagerFlow],
+        flow: Union[Flow, EagerFlow],
         flow_context: FlowContext,
         client=None,
     ):
@@ -182,7 +182,7 @@ class TestSubmitter:
         raise UserErrorException(f"Unsupported flow language {flow.language}")
 
     @classmethod
-    def _resolve_environment_variables(cls, environment_variable_overrides, flow: ProtectedFlow, client):
+    def _resolve_environment_variables(cls, environment_variable_overrides, flow: Flow, client):
         return SubmitterHelper.load_and_resolve_environment_variables(
             flow=flow, environment_variable_overrides=environment_variable_overrides, client=client
         )

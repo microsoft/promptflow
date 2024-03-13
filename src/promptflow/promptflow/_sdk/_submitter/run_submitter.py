@@ -11,7 +11,7 @@ from promptflow._constants import FlowLanguage
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk._utils import parse_variant
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -102,9 +102,7 @@ class RunSubmitter:
             error = ValidationException("Either run or data or resume from run must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
-    def _submit_bulk_run(
-        self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
-    ) -> dict:
+    def _submit_bulk_run(self, flow: Union[Flow, EagerFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
