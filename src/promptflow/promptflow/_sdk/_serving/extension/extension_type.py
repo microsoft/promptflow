@@ -8,5 +8,5 @@ from enum import Enum
 class ExtensionType(Enum):
     """Extension type used to identify which extension to load in serving app."""
 
-    Default = "local"
-    AzureML = "azureml"
+    DEFAULT = "local"
+    AZUREML = "azureml"

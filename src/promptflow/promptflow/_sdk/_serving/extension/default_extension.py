@@ -125,7 +125,7 @@ class DefaultAppExtension(AppExtension):
     """default app extension for local serve."""
 
     def __init__(self, logger, **kwargs):
-        super().__init__(logger=logger, extension_type=ExtensionType.Default, **kwargs)
+        super().__init__(logger=logger, extension_type=ExtensionType.DEFAULT, **kwargs)
         static_folder = kwargs.get("static_folder", None)
         self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
         logger.info(f"Static_folder: {self.static_folder}")

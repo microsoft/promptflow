@@ -10,7 +10,6 @@ from typing import Any, Tuple
 from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow._sdk._serving.extension.default_extension import AppExtension
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
-from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
 from promptflow._sdk._serving.extension.extension_type import ExtensionType
 from promptflow._sdk._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
 from promptflow._utils.retry_utils import retry
@@ -26,7 +25,7 @@ class AzureMLExtension(AppExtension):
     """AzureMLExtension is used to create extension for azureml serving."""
 
     def __init__(self, logger, **kwargs):
-        super().__init__(logger=logger, extension_type=ExtensionType.AzureML, collector=FlowDataCollector(logger), **kwargs)  # noqa: E501
+        super().__init__(logger=logger, extension_type=ExtensionType.AZUREML, collector=FlowDataCollector(logger), **kwargs)  # noqa: E501
         # parse promptflow project path
         project_path: str = get_pf_serving_env("PROMPTFLOW_PROJECT_PATH")
         if not project_path:

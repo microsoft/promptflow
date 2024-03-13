@@ -62,7 +62,7 @@ class MdcTraceExporterProvider(OTelExporterProvider):
         super().__init__(logger, ExporterType.TRACE)
 
     def is_enabled(self, extension: ExtensionType):
-        return extension == ExtensionType.AzureML
+        return extension == ExtensionType.AZUREML
 
     def get_exporter(self, **kwargs):
         return MdcExporter(self.logger)
