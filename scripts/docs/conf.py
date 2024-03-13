@@ -86,11 +86,6 @@ html_theme_options = {
             "url": "https://pypi.org/project/promptflow/",
             "icon": "fa-solid fa-box",
         },
-        {
-            "name": "Chat with copilot",
-            "url": "https://pfcopilot.azurewebsites.net/chat",
-            "icon": "fa-solid fa-message",
-        },
     ],
     "logo": {
         "text": "Prompt flow",
