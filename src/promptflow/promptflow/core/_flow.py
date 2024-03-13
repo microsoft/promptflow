@@ -268,7 +268,7 @@ class Flow(FlowBase):
 class FlexFlow(Flow):
     """A FlexFlow represents an non-dag flow, which uses codes to define the flow.
     FlexFlow basically behave like a Flow, but its entry function should be provided in the flow.dag.yaml file.
-    Load of this non-dag flow is provided, but direct call of non-dag flow will cause exceptions.
+    Load of this non-dag flow is provided, but direct call of it will cause exceptions.
     """
 
     def __init__(
