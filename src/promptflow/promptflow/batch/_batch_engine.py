@@ -5,6 +5,7 @@ import asyncio
 import signal
 import threading
 import uuid
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
@@ -22,11 +23,10 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow._utils.utils import (
-    copy_file_except,
     dump_list_to_jsonl,
     get_int_env_var,
-    load_list_from_jsonl,
     log_progress,
     resolve_dir_to_absolute,
     transpose,
@@ -39,7 +39,7 @@ from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
@@ -237,19 +237,10 @@ class BatchEngine:
         to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
-        # Load the previous flow run output from output.jsonl
-        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / OUTPUT_FILE_NAME)
-        previous_run_output_dict = {
-            each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
-        }
-
-        # Copy other files from resume_from_run_output_dir to output_dir in case there are images
-        copy_file_except(resume_from_run_output_dir, output_dir, OUTPUT_FILE_NAME)
-
         try:
             previous_run_results = []
             for i in range(len(batch_inputs)):
-                previous_run_info = resume_from_run_storage.load_flow_run_info(i)
+                previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
                 if previous_run_info and previous_run_info.status == Status.Completed:
                     # Load previous node run info
@@ -262,6 +253,10 @@ class BatchEngine:
                     # Extract aggregation inputs for flow with aggregation node
                     aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
+                    # Deepcopy to avoid modifying the original object when serializing image
+                    previous_run_output = deepcopy(previous_run_info.output)
+                    previous_run_output_in_line_result = persist_multimedia_data(previous_run_output, output_dir)
+
                     # Persist previous run info and node run info
                     self._storage.persist_flow_run(previous_run_info)
                     for node_run_info in previous_node_run_infos:
@@ -269,7 +264,7 @@ class BatchEngine:
 
                     # Create LineResult object for previous line result
                     previous_line_result = LineResult(
-                        output=previous_run_output_dict[i],
+                        output=previous_run_output_in_line_result,
                         aggregation_inputs=aggregation_inputs,
                         run_info=previous_run_info,
                         node_run_infos=previous_node_run_infos_dict,

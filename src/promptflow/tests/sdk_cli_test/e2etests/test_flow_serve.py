@@ -450,7 +450,7 @@ def test_eager_flow_swagger(simple_eager_flow):
                             "application/json": {
                                 "example": {},
                                 "schema": {
-                                    "properties": {"input_val": {"type": "string"}},
+                                    "properties": {"input_val": {"default": "gpt", "type": "string"}},
                                     "required": ["input_val"],
                                     "type": "object",
                                 },
@@ -511,7 +511,7 @@ def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output)
                             "application/json": {
                                 "example": {},
                                 "schema": {
-                                    "properties": {"input_val": {"type": "string"}},
+                                    "properties": {"input_val": {"default": "gpt", "type": "string"}},
                                     "required": ["input_val"],
                                     "type": "object",
                                 },
