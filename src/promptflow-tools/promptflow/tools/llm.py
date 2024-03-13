@@ -41,7 +41,7 @@ def get_local_connection(connection_name):
         return None
 
 
-def list_apis(subscription_id, resource_group_name, workspace_name, connection_name: str="") -> List[Dict[str, str]]:
+def list_apis(subscription_id: str="", resource_group_name: str="", workspace_name: str="", connection_name: str="") -> List[Dict[str, str]]:
     if not connection_name:
         return []
 
@@ -65,9 +65,9 @@ def list_apis(subscription_id, resource_group_name, workspace_name, connection_n
 
 
 def list_deployment_names(
-    subscription_id,
-    resource_group_name,
-    workspace_name,
+    subscription_id: str="",
+    resource_group_name: str="",
+    workspace_name: str="",
     connection: str="",
     api_name: str="",
 ) -> List[Dict[str, str]]:
@@ -145,7 +145,7 @@ def list_deployment_names(
     return res
 
 
-def list_models(subscription_id, resource_group_name, workspace_name, connection_name: str="", api_name: str="") -> List[Dict[str, str]]:
+def list_models(subscription_id: str="", resource_group_name: str="", workspace_name: str="", connection_name: str="", api_name: str="") -> List[Dict[str, str]]:
     if not connection_name:
         return []
 
