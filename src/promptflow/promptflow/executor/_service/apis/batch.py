@@ -41,8 +41,8 @@ def initialize(request: InitializationRequest):
                 ),
                 flow_file=request.flow_file.as_posix(),
             )
-        request.working_dir = Path(working_dir)
-        request.flow_file = Path(flow_file)
+        working_dir = Path(working_dir)
+        flow_file = Path(flow_file)
 
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(f"Received batch init request, executor version: {operation_context.get_user_agent()}.")
@@ -50,8 +50,8 @@ def initialize(request: InitializationRequest):
         set_environment_variables(request)
         # init batch coordinator to validate flow and create process pool
         batch_coordinator = BatchCoordinator(
-            Path(working_dir),
-            Path(flow_file),
+            working_dir,
+            flow_file,
             request.output_dir,
             request.connections,
             worker_count=request.worker_count,
