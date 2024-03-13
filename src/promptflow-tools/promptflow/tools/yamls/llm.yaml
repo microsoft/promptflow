@@ -15,6 +15,22 @@ promptflow.tools.llm.llm:
 
     # user:
     {{question}}
+  groups:  
+  - name: Funtion calling
+    description: This is a group about function calling
+    inputs:  
+    - functions  
+    - function_call
+    ui_hints:
+      display_style :  table
+  inputs:
+    functions:
+      type:
+      - list
+    function_call:
+      type:
+      - string
+      - object
   inputs:
     connection:
       type:
