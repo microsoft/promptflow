@@ -25,9 +25,6 @@ class MemoryExporter(SpanExporter):
         """export open telemetry spans to MDC."""
         self.spans.extend(spans)
 
-    def shutdown(self) -> None:
-        self.spans.clear()
-
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Hint to ensure that the export of any spans the exporter has received
         prior to the call to ForceFlush SHOULD be completed as soon as possible, preferably
