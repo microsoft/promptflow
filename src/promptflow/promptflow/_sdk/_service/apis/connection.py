@@ -10,7 +10,7 @@ from flask import jsonify, request
 import promptflow._sdk.schemas._connection as connection
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only, make_response_no_content
+from promptflow._sdk._service.utils.utils import get_client_from_request, local_user_only, make_response_no_content
 from promptflow._sdk.entities._connection import _Connection
 
 api = Namespace("Connections", description="Connections Management")
@@ -66,14 +66,10 @@ connection_spec_model = api.model(
 
 
 def _get_connection_operation(working_directory=None):
-    from promptflow._sdk._pf_client import PFClient
-
     connection_provider = Configuration().get_connection_provider(path=working_directory)
     # get_connection_operation is a shared function, so we build user agent based on request first and
     # then pass it to the function
-    connection_operation = PFClient(
-        connection_provider=connection_provider, user_agent=build_pfs_user_agent()
-    ).connections
+    connection_operation = get_client_from_request(connection_provider=connection_provider).connections
     return connection_operation
 
 
