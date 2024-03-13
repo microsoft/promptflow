@@ -98,7 +98,7 @@ def is_port_in_use(port: int):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         # OS will wait for timeout when connecting to an unused port, so it will take about 2s. Set timeout here to
         # avoid long waiting time
-        # s.settimeout(0.1)
+        s.settimeout(0.1)
         return s.connect_ex(("localhost", port)) == 0
 
 
