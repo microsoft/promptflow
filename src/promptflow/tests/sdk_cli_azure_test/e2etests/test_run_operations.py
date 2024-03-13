@@ -1208,7 +1208,8 @@ class TestFlowRun:
                 user_assigned_identities=[
                     ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
                 ],
-            )
+            ),
+            _kind="default",
         )
 
         def submit(*args, **kwargs):
