@@ -4,8 +4,10 @@
 import getpass
 import hashlib
 import os
+import platform
 import re
 import socket
+import subprocess
 import sys
 import time
 from dataclasses import InitVar, dataclass, field
@@ -13,7 +15,6 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
-import psutil
 import requests
 from flask import abort, make_response, request
 
@@ -108,34 +109,25 @@ def get_random_port():
         return s.getsockname()[1]
 
 
-# def _get_process_by_port(port):
-#     for proc in psutil.process_iter(["pid", "connections", "create_time"]):
-#         try:
-#             for connection in proc.connections():
-#                 if connection.laddr.port == port:
-#                     return proc
-#         except psutil.AccessDenied:
-#             pass
-
-
 def _get_process_by_port(port):
-    # use net_connections api to accelerate the process, but require root privileges on macOS and AIX. So use original
-    # way to get process on these platforms. Note: (Solaris) UNIX sockets are not supported, (OpenBSD) laddr and raddr
-    # fields for UNIX sockets are always set to “”. This is a limitation of the OS.
-    # Refer here for more details: https://psutil.readthedocs.io/en/latest/#psutil.AccessDenied
-    try:
-        for conn in psutil.net_connections(kind="tcp"):
-            if conn.laddr.port == port:
-                return psutil.Process(conn.pid)
-    except (psutil.AccessDenied, NotImplementedError) as e:
-        logger.debug(f"Failed to get process by port {port} using net_connections: {e}")
-        for proc in psutil.process_iter(["pid", "connections", "create_time"]):
-            try:
-                for connection in proc.connections():
-                    if connection.laddr.port == port:
-                        return proc
-            except (psutil.AccessDenied, NotImplementedError) as ex:
-                logger.debug(f"Failed to get process by port {port} using process_iter: {ex}")
+    if platform.system() == "Windows":
+        command = f"netstat -ano | findstr :{port}"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            output = result.stdout.strip()
+            lines = output.split("\n")
+            for line in lines:
+                if "LISTENING" in line:
+                    pid = line.split()[-1]  # get the PID
+                    return pid
+    else:  # Linux and macOS
+        command = f"lsof -i :{port} -sTCP:LISTEN | awk 'NR>1 {{print $2}}'"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            output = result.stdout.strip()
+            pid = output.split("\n")[0]  # get the first PID
+            if pid != "":
+                return pid
 
 
 def kill_exist_service(port):
