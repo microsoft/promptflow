@@ -20,8 +20,12 @@ from promptflow.exceptions import ErrorTarget
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context import Context
+from opentelemetry.propagate import set_global_textmap, extract
+from opentelemetry.propagators.composite import CompositePropagator
 
 DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
+# configur global propagator
+set_global_textmap(CompositePropagator([TraceContextTextMapPropagator(), W3CBaggagePropagator()]))
 
 
 def load_request_data(flow, raw_data, logger):
@@ -147,24 +151,10 @@ def encode_dict(data: dict) -> str:
 def try_extract_trace_context(logger) -> Context:
     """Try to extract trace context from request headers."""
     # reference: https://www.w3.org/TR/trace-context/
-    trace_parent = request.headers.get('Traceparent')
-    if trace_parent:
-        carrier = {'traceparent': trace_parent}
-        trace_state = request.headers.get('Tracestate')
-        if trace_state:
-            carrier['tracestate'] = trace_state
-        ctx = TraceContextTextMapPropagator().extract(carrier=carrier)
-    else:
-        ctx = None
-    baggage = request.headers.get('Baggage')
-    if baggage:
-        b2 = {'baggage': baggage}
-        baggage_ctx = W3CBaggagePropagator().extract(b2, context=ctx)
-    else:
-        baggage_ctx = ctx
-    if baggage_ctx:
-        logger.info(f"Received trace context: {baggage_ctx}")
-    return baggage_ctx
+    context = extract(request.headers)
+    if context:
+        logger.info(f"Received trace context: {context}")
+    return context
 
 
 def serialize_attribute_value(v):

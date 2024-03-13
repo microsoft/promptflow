@@ -139,6 +139,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     assert spans[0].parent.span_id == int(trace_ctx_parent_id, 16)
     # validate feedback data
     assert feedback_data == spans[0].attributes["feedback"]
+    assert spans[0].attributes["userId"] == "alice"
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
