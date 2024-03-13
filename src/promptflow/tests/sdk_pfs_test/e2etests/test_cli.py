@@ -60,19 +60,19 @@ class TestPromptflowServiceCLI:
             port = get_port_from_config()
             kill_exist_service(port=port)
 
-    # def test_show_service_status(self, capsys):
-    #     try:
-    #         self._is_service_healthy()
-    #     except:  # noqa: E722
-    #         # with pytest.raises(SystemExit):
-    #         #     self._run_pfs_command("show-status")
-    #         start_pfs = subprocess.Popen("pfs start --force", shell=True)
-    #         # Wait for service to be started
-    #         start_pfs.wait()
-    #         assert self._is_service_healthy()
-    #     self._run_pfs_command("show-status")
-    #     output, _ = capsys.readouterr()
-    #     assert str(get_port_from_config()) in output
-    #     self._run_pfs_command("stop")
-    #     output, _ = capsys.readouterr()
-    #     assert str(get_port_from_config()) in output
+    def test_show_service_status(self, capsys):
+        try:
+            self._is_service_healthy()
+        except:  # noqa: E722
+            # with pytest.raises(SystemExit):
+            #     self._run_pfs_command("show-status")
+            start_pfs = subprocess.Popen("pfs start --force", shell=True)
+            # Wait for service to be started
+            start_pfs.wait()
+            assert self._is_service_healthy()
+        self._run_pfs_command("show-status")
+        output, _ = capsys.readouterr()
+        assert str(get_port_from_config()) in output
+        self._run_pfs_command("stop")
+        output, _ = capsys.readouterr()
+        assert str(get_port_from_config()) in output

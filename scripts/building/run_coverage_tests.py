@@ -90,7 +90,7 @@ if __name__ == "__main__":
         args.n,
         "--dist",
         "loadfile",
-        "--log-level=info",
+        "--log-level=debug",
         "--log-format=%(asctime)s %(levelname)s %(message)s",
         "--log-date-format=[%Y-%m-%d %H:%M:%S]",
         "--durations=5",
