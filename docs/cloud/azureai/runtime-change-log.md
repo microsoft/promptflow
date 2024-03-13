@@ -22,9 +22,8 @@ Default runtime image is continuously updated, and here we record the new featur
 - Support "seed" parameter for built-in LLM tools and GPT-4V tools.
 
 #### Bugs fixed
-- Fix and handle ClientAuthenticationError properly.
-- Fix appending blob exceeded size limit by truncating debug info.
-- Improve error message for batch run timeout.
+- Handle ClientAuthenticationError properly.
+- Fix appending blob exceeded size limit error by truncating debug info.
 
 
 ### 20240228.v3
