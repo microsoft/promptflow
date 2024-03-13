@@ -125,17 +125,16 @@ class LineExecutionProcessPool:
         self._is_timeout = False
 
     def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
         # Remove log files to prevent interference from the previous run on the current execution.
         log_path = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
         if log_path.exists():
             log_path.unlink()
         for file in PROCESS_LOG_PATH.glob(f"{PROCESS_LOG_NAME}*"):
             file.unlink()
-
-        self.start()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
     @property
