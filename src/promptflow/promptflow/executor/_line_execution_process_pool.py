@@ -52,6 +52,18 @@ TERMINATE_SIGNAL = "terminate"
 
 
 class LineExecutionProcessPool:
+    """A process pool for executing lines in batch mode.
+
+    :param output_dir: The output directory for the batch run.
+    :param flow_executor: The flow executor used to provide flow_create_kwargs to execute the lines.
+    :param worker_count: The number of worker processes in the pool.
+    :param line_timeout_sec: The timeout for each line execution in seconds.
+    :param batch_timeout_sec: The timeout for the entire batch run in seconds.
+    :param run_id: The run id of the batch run.
+    :param nlines: The number of lines in the batch run.
+    :param serialize_multimedia_during_execution: Whether to serialize multimedia data during line execution.
+    """
+
     _DEFAULT_WORKER_COUNT = 4
     _THREAD_TERMINATED_TIMEOUT = 10
     _PROCESS_TERMINATED_TIMEOUT = 60
@@ -87,6 +99,12 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
+
+        # - If it is False, we will use QueueRunStorage as the storage during execution.
+        # It will only put the original run info into the output queue to wait for processing.
+        # - If it is True, we will use ServiceQueueRunStorage as the storage during execution.
+        # It will persist multimedia data in the run infos and aggregation_inputs to output_dir
+        # and convert Image object to path dict.
         self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Initialize the results dictionary that stores line results.
@@ -555,7 +573,8 @@ class LineExecutionProcessPool:
         # Serialize multimedia data in node run infos to string
         for node_run_info in result.node_run_infos.values():
             self._serialize_multimedia(node_run_info)
-        # TODO: refine?????????????
+        # Persist multimedia data in the aggregation_inputs of line result to output_dir
+        # if _serialize_multimedia_during_execution is True.
         if self._serialize_multimedia_during_execution:
             result.aggregation_inputs = persist_multimedia_data(
                 result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
