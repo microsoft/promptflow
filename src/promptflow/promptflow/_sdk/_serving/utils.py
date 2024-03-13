@@ -24,7 +24,7 @@ from opentelemetry.propagate import set_global_textmap, extract
 from opentelemetry.propagators.composite import CompositePropagator
 
 DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
-# configur global propagator
+# configure global propagator
 set_global_textmap(CompositePropagator([TraceContextTextMapPropagator(), W3CBaggagePropagator()]))
 
 
