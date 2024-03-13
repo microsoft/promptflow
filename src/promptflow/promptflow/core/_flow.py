@@ -278,7 +278,7 @@ class EagerFlow(Flow):
         # entry file name
         self.entry_file = self._resolve_entry_file(entry=entry, working_dir=code)
         # TODO(2910062): support eager flow execution cache
-        super().__init__(data=data, path=path, code=code, content_hash=None, **kwargs)
+        super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
     @classmethod
     def _load(cls, path: Path, data: dict, **kwargs):
