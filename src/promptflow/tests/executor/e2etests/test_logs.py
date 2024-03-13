@@ -12,43 +12,17 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
 from ..utils import (
+    get_batch_inputs_line,
     get_flow_folder,
     get_flow_inputs_file,
-    get_flow_sample_inputs,
     get_yaml_file,
     load_content,
     load_jsonl,
+    submit_batch_run,
 )
 
 TEST_LOGS_FLOW = ["print_input_flow"]
 SAMPLE_FLOW_WITH_TEN_INPUTS = "simple_flow_with_ten_inputs"
-
-
-def submit_batch_run(
-    flow_folder,
-    inputs_mapping,
-    *,
-    input_dirs={},
-    input_file_name="samples.json",
-    run_id=None,
-    connections={},
-    storage=None,
-    return_output_dir=False,
-):
-    batch_engine = BatchEngine(
-        get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
-    )
-    if not input_dirs and inputs_mapping:
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
-    output_dir = Path(mkdtemp())
-    if return_output_dir:
-        return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
-    return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
-
-
-def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
-    inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
-    return len(inputs)
 
 
 @pytest.mark.usefixtures("dev_connections")
