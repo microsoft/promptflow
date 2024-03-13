@@ -320,7 +320,7 @@ class TestFlowTest:
                 {
                     "entry": "entry:my_flow",
                     "function": "my_flow",
-                    "inputs": {"input_val": {"type": "string"}},
+                    "inputs": {"input_val": {"default": "gpt", "type": "string"}},
                     "outputs": {"output": {"type": "string"}},
                 },
             ),
@@ -329,7 +329,7 @@ class TestFlowTest:
                 {
                     "entry": "my_module.entry:my_flow",
                     "function": "my_flow",
-                    "inputs": {"input_val": {"type": "string"}},
+                    "inputs": {"input_val": {"default": "gpt", "type": "string"}},
                     "outputs": {"output": {"type": "string"}},
                 },
             ),
@@ -338,7 +338,7 @@ class TestFlowTest:
                 {
                     "entry": "flow:my_flow_entry",
                     "function": "my_flow_entry",
-                    "inputs": {"input_val": {"type": "string"}},
+                    "inputs": {"input_val": {"default": "gpt", "type": "string"}},
                     "outputs": {"output": {"type": "string"}},
                 },
             ),
