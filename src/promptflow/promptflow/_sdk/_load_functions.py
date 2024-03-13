@@ -68,7 +68,6 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-    is_async_call: Optional[bool] = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.

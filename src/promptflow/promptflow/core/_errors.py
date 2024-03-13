@@ -5,13 +5,13 @@ from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorEx
 
 
 class CoreError(UserErrorException):
-    """SDK base class, target default is CONTROL_PLANE_SDK."""
+    """Core base class, target default is CORE."""
 
     def __init__(
         self,
         message="",
         message_format="",
-        target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
+        target: ErrorTarget = ErrorTarget.CORE,
         module=None,
         **kwargs,
     ):
@@ -25,7 +25,7 @@ class CoreInternalError(SystemErrorException):
         self,
         message="",
         message_format="",
-        target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
+        target: ErrorTarget = ErrorTarget.CORE,
         module=None,
         **kwargs,
     ):

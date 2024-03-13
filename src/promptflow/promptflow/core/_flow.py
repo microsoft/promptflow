@@ -127,13 +127,11 @@ class FlowBase(abc.ABC):
 
 
 class Flow(FlowBase):
-    """This class is used to hide internal interfaces from user.
+    """This class is public Flow interface.
 
-    User interface should be carefully designed to avoid breaking changes, while developers may need to change internal
-    interfaces to improve the code quality. On the other hand, making all internal interfaces private will make it
-    strange to use them everywhere inside this package.
-
-    Ideally, developers should always initialize Flow object instead of Flow object.
+    Provides two basic functionalities:
+    1. Load flow from YAML file: flow = Flow.load(source=src, ...)
+    2. Invoke loaded flow with inputs. flow() or flow.invoke(inputs=...)
     """
 
     def __init__(
@@ -171,31 +169,49 @@ class Flow(FlowBase):
                 return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
 
     @classmethod
-    def load(
-        cls,
-        source: Union[str, PathLike],
-        raise_error=True,
-        **kwargs,
-    ):
+    def _load_prepare(cls, source: Union[str, PathLike]):
         source_path = Path(source)
         if not source_path.exists():
             raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
         flow_path = resolve_flow_path(source_path)
         if not flow_path.exists():
             raise UserErrorException(f"Flow file {flow_path.absolute().as_posix()} does not exist")
-        if flow_path.suffix in [".yaml", ".yml"]:
-            # read flow file to get hash
-            with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-                flow_content = f.read()
-                data = load_yaml_string(flow_content)
-                content_hash = hash(flow_content)
-            is_eager_flow = cls._is_eager_flow(data)
-            is_async_call = kwargs.pop("is_async_call", False)
-            return cls._dispatch_flow_creation(
-                is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=raise_error, **kwargs
-            )
-        # if non-YAML file is provided, raise user error exception
-        raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
+        if flow_path.suffix not in [".yaml", ".yml"]:
+            raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
+        return source_path, flow_path
+
+    @classmethod
+    def load(
+        cls,
+        source: Union[str, PathLike],
+        raise_error=True,
+        **kwargs,
+    ) -> "Flow":
+        """
+        Load flow from YAML file.
+
+        :param source: The local yaml source of a flow. Must be a path to a local file.
+            If the source is a path, it will be open and read.
+            An exception is raised if the file does not exist.
+        :type source: Union[PathLike, str]
+        :param is_async_call: Optional argument to indicate the return value is an async function.
+            If True, the return value is an async function, otherwise, it is a sync function.
+        :type is_async_call: bool
+        :param raise_error: Argument for eager flow raise validation error on unknown fields.
+        :type raise_error: bool
+        :return: A Flow object
+        :rtype: Flow
+        """
+        _, flow_path = cls._load_prepare(source)
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+            content_hash = hash(flow_content)
+        is_eager_flow = cls._is_eager_flow(data)
+        is_async_call = kwargs.pop("is_async_call", False)
+        return cls._dispatch_flow_creation(
+            is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=raise_error, **kwargs
+        )
 
     def _init_executable(self):
         from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -239,8 +255,11 @@ class Flow(FlowBase):
         return result
 
 
-class EagerFlow(FlowBase):
-    """This class is used to represent an eager flow."""
+class EagerFlow(Flow):
+    """This class is used to represent an eager flow.
+    Load of eager flow is provided.
+    Direct call eager flow with cause exceptions.
+    """
 
     def __init__(
         self,
@@ -270,6 +289,53 @@ class EagerFlow(FlowBase):
             raise UserErrorException(f"Entry function is not specified for flow {path}")
         return cls(path=path, code=code, entry=entry, data=data, **kwargs)
 
+    # region overrides
+    @classmethod
+    def load(
+        cls,
+        source: Union[str, PathLike],
+        raise_error=True,
+        **kwargs,
+    ) -> "EagerFlow":
+        """
+        Direct load eager flow from YAML file.
+
+        :param source: The local yaml source of a flow. Must be a path to a local file.
+            If the source is a path, it will be open and read.
+            An exception is raised if the file does not exist.
+        :type source: Union[PathLike, str]
+        :param raise_error: Argument for eager flow raise validation error on unknown fields.
+        :type raise_error: bool
+        :return: A EagerFlow object
+        :rtype: EagerFlow
+        """
+        _, flow_path = cls._load_prepare(source)
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+        is_eager_flow = cls._is_eager_flow(data)
+        if not is_eager_flow:
+            raise UserErrorException("Please load an eager flow with EagerFlow.load method.")
+        return cls._load(path=flow_path, data=data, **kwargs)
+
+    def _init_executable(self):
+        from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
+
+        # TODO(2991934): support environment variables here
+        meta_dict = generate_flow_meta(
+            flow_directory=self.code,
+            source_path=self.entry_file,
+            entry=self.entry,
+            dump=False,
+        )
+        return ExecutableEagerFlow.deserialize(meta_dict)
+
+    def __call__(self, *args, **kwargs):
+        """Direct call of eager flow WILL cause exceptions."""
+        raise UserErrorException("Eager flow can not be called as a function.")
+
+    # endregion
+
     @classmethod
     def _resolve_entry_file(cls, entry: str, working_dir: Path) -> Optional[str]:
         """Resolve entry file from entry.
@@ -288,23 +354,49 @@ class EagerFlow(FlowBase):
         # when entry file not found in working directory, return None since it can come from package
         return None
 
-    def _init_executable(self, **kwargs):
-        from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
-
-        # TODO(2991934): support environment variables here
-        meta_dict = generate_flow_meta(
-            flow_directory=self.code,
-            source_path=self.entry_file,
-            entry=self.entry,
-            dump=False,
-        )
-        return ExecutableEagerFlow.deserialize(meta_dict)
-
 
 class AsyncFlow(Flow):
     """This class is used to represent an async flow."""
 
+    # region overrides
+    @classmethod
+    def load(
+        cls,
+        source: Union[str, PathLike],
+        raise_error=True,
+        **kwargs,
+    ) -> "AsyncFlow":
+        """
+        Direct load flow from YAML file.
+
+        :param source: The local yaml source of a flow. Must be a path to a local file.
+            If the source is a path, it will be open and read.
+            An exception is raised if the file does not exist.
+        :type source: Union[PathLike, str]
+        :param raise_error: Argument for eager flow raise validation error on unknown fields.
+        :type raise_error: bool
+        :return: An AsyncFlow object
+        :rtype: AsyncFlow
+        """
+        _, flow_path = cls._load_prepare(source)
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+            content_hash = hash(flow_content)
+        return cls._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+
+    # endregion
+
     async def __call__(self, *args, **kwargs):
+        """Calling flow as a function in async, the inputs should be provided with key word arguments.
+        Returns the output of the flow.
+        The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
+        SystemErrorException: if the flow execution failed due to unexpected executor error.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: flow inputs with key word arguments.
+        :return:
+        """
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 

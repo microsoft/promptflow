@@ -40,8 +40,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
 
         self._executable = None
         self._params_override = params_override
-        self.variant = kwargs.pop("variant", None) or {}
-        self.flow_dir, self.dag_file_name = self._get_flow_definition(self.code)
+        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
 
     # region properties
     @property
@@ -130,7 +129,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
 
     # endregion
 
-    # region method overrides:
+    # region overrides:
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
         from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -155,13 +154,13 @@ class Flow(FlowCore, SchemaValidatableMixin):
         from promptflow._sdk.entities._eager_flow import EagerFlow
 
         if is_eager_flow:
-            return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
+            return EagerFlow.load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
             if is_async_call:
-                return AsyncFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                return AsyncFlow.load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
             else:
-                return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                return Flow.load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""

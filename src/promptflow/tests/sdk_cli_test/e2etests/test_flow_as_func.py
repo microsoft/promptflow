@@ -15,6 +15,7 @@ from promptflow import load_flow
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow.core import AsyncFlow
 from promptflow.core._flow_context_resolver import FlowContextResolver
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
@@ -52,13 +53,13 @@ class TestFlowAsFunc:
         ],
     )
     async def test_flow_as_a_func_asynckw(self, async_call_folder):
-        f = load_flow(async_call_folder, is_async_call=True)
+        f = AsyncFlow.load(async_call_folder)
         result = await f(key="PATH")
         assert result["output"] is not None
 
     @pytest.mark.asyncio
     async def test_flow_as_a_func_real_async(self):
-        from promptflow._core._flow import AsyncFlow
+        from promptflow.core._flow import AsyncFlow
 
         original_async_func = AsyncFlow.invoke_async
 
@@ -73,9 +74,9 @@ class TestFlowAsFunc:
             node_run_infos_group.append(obj.node_run_infos)
             return obj
 
-        with mock.patch("promptflow._core._flow.AsyncFlow.invoke_async", parse_invoke_async):
-            f_async_tools = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
-            f_env_var_async = load_flow(f"{FLOWS_DIR}/print_env_var_async", is_async_call=True)
+        with mock.patch("promptflow.core._flow.AsyncFlow.invoke_async", parse_invoke_async):
+            f_async_tools = AsyncFlow.load(f"{FLOWS_DIR}/async_tools")
+            f_env_var_async = AsyncFlow.load(f"{FLOWS_DIR}/print_env_var_async")
 
             time_start = datetime.now()
             results = await asyncio.gather(
