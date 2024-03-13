@@ -68,6 +68,7 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
+    is_async_call: Optional[bool] = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
@@ -82,7 +83,7 @@ def load_flow(
     :return: A Flow object
     :rtype: Flow
     """
-    return Flow.load(source, **kwargs)
+    return Flow.load(source, is_async_call=is_async_call, **kwargs)
 
 
 def load_run(
