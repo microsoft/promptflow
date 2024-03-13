@@ -81,9 +81,9 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
-    def test_run_resume(self, pf, runtime: str, randstr: Callable[[str], str]):
+    def test_run_resume(self, pf: PFClient, randstr: Callable[[str], str]):
         # Note: Use fixed run name here to ensure resume call has same body then can be recorded.
-        name = "resume_from_run0"
+        name = "resume_from_run_using_automatic_runtime"
         try:
             run = pf.runs.get(run=name)
         except RunNotFoundError:
@@ -92,14 +92,13 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/webClassification1.jsonl",
                 column_mapping={"url": "${data.url}"},
                 variant="${summarize_text_content.variant_0}",
-                runtime=runtime,
                 name=name,
             )
         assert isinstance(run, Run)
         assert run.name == name
 
-        # name2 = randstr("name")
-        run2 = pf.run(resume_from=run, name=name)
+        name2 = randstr("name")
+        run2 = pf.run(resume_from=run, name=name2)
         assert isinstance(run2, Run)
         # Enable name assert after PFS released
         # assert run2.name == name2
@@ -507,6 +506,14 @@ class TestFlowRun:
         from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
         from promptflow.azure.operations import RunOperations
 
+        def collect_submit_call_count(_call_args_list):
+            # collect submit call count since new telemetry API will also call RequestsTransport.send
+            _submit_count = 0
+            for call_arg in _call_args_list:
+                if call_arg[0][0].url.endswith("submit"):
+                    _submit_count += 1
+            return _submit_count
+
         mock_run = MagicMock()
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
@@ -527,7 +534,8 @@ class TestFlowRun:
                     remote_client.runs.create_or_update(run=mock_run)
                 # won't retry connection error since POST without response code is not retryable according to
                 # retry policy
-                assert mock_request.call_count == 1
+                submit_count = collect_submit_call_count(mock_request.call_args_list)
+                assert submit_count == 1
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
@@ -546,7 +554,8 @@ class TestFlowRun:
                 )
                 with pytest.raises(FlowRequestException):
                     remote_client.runs.create_or_update(run=mock_run)
-                assert mock_request.call_count == 1
+                submit_count = collect_submit_call_count(mock_request.call_args_list)
+                assert submit_count == 1
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
             RunOperations, "_resolve_flow_and_session_id", return_value=("fake_flow_id", "fake_session_id")
@@ -565,7 +574,8 @@ class TestFlowRun:
                 )
                 with pytest.raises(FlowRequestException):
                     remote_client.runs.create_or_update(run=mock_run)
-                assert mock_request.call_count == 4
+                submit_count = collect_submit_call_count(mock_request.call_args_list)
+                assert submit_count == 4
 
     def test_pf_run_with_env_var(self, pf, randstr: Callable[[str], str]):
         from promptflow.azure.operations import RunOperations

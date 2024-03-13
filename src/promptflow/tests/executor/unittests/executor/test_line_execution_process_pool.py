@@ -21,7 +21,6 @@ from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
     format_current_process_info,
-    get_available_max_worker_count,
     log_process_status,
 )
 from promptflow.executor._process_manager import (
@@ -189,14 +188,16 @@ def custom_create_spawned_fork_process_manager(*args, **kwargs):
 
 
 @pytest.mark.unittest
+@pytest.mark.usefixtures("recording_injection")
 class TestLineExecutionProcessPool:
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_line_execution_process_pool(self, flow_folder, dev_connections):
+    async def test_line_execution_process_pool(self, flow_folder, dev_connections):
         log_path = str(Path(mkdtemp()) / "test.log")
         log_context_initializer = LogContext(log_path).get_initializer()
         log_context = log_context_initializer()
@@ -213,12 +214,13 @@ class TestLineExecutionProcessPool:
                 run_id,
                 None,
             ) as pool:
-                result_list = pool.run(zip(range(nlines), bulk_inputs))
-                # 检查 'spawned_fork_process_manager_stderr.log' 文件是否存在
+                result_list = await pool.run(zip(range(nlines), bulk_inputs))
+                # Check 'spawned_fork_process_manager_stderr.log' exits.
                 log_file = SPANED_FORK_PROCESS_MANAGER_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
                 assert log_file.exists() is True
                 child_process_log_exit = False
                 for file in PROCESS_LOG_PATH.iterdir():
+                    # Check 'process_stderr.log' exits.
                     if file.name.startswith(PROCESS_LOG_NAME):
                         child_process_log_exit = True
                 assert child_process_log_exit is True
@@ -227,13 +229,14 @@ class TestLineExecutionProcessPool:
                 assert isinstance(line_result, LineResult)
                 assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_line_execution_not_completed(self, flow_folder, dev_connections):
+    async def test_line_execution_not_completed(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
@@ -245,8 +248,7 @@ class TestLineExecutionProcessPool:
             None,
             line_timeout_sec=1,
         ) as pool:
-            result_list = pool.run(zip(range(nlines), bulk_inputs))
-            result_list = sorted(result_list, key=lambda r: r.run_info.index)
+            result_list = await pool.run(zip(range(nlines), bulk_inputs))
         assert len(result_list) == nlines
         for i, line_result in enumerate(result_list):
             assert isinstance(line_result, LineResult)
@@ -304,13 +306,14 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_process_pool_run_with_exception(self, flow_folder, dev_connections, mocker: MockFixture):
+    async def test_process_pool_run_with_exception(self, flow_folder, dev_connections, mocker: MockFixture):
         # mock process pool run execution raise error
         test_error_msg = "Test user error"
         mocker.patch(
@@ -329,7 +332,7 @@ class TestLineExecutionProcessPool:
             None,
         ) as pool:
             with pytest.raises(UserErrorException) as e:
-                pool.run(zip(range(nlines), bulk_inputs))
+                await pool.run(zip(range(nlines), bulk_inputs))
             assert e.value.message == test_error_msg
             assert e.value.target == ErrorTarget.AZURE_RUN_STORAGE
             assert e.value.error_codes[0] == "UserError"
@@ -419,6 +422,7 @@ class TestLineExecutionProcessPool:
         assert p.exitcode == 0
 
     @pytest.mark.skipif(sys.platform == "win32" or sys.platform == "darwin", reason="Only test on linux")
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "flow_folder",
         [
@@ -429,7 +433,7 @@ class TestLineExecutionProcessPool:
         "promptflow.executor._process_manager.create_spawned_fork_process_manager",
         custom_create_spawned_fork_process_manager,
     )
-    def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
+    async def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
@@ -442,41 +446,8 @@ class TestLineExecutionProcessPool:
                 run_id,
                 None,
             ) as pool:
-                pool.run(zip(range(nlines), bulk_inputs))
+                await pool.run(zip(range(nlines), bulk_inputs))
         assert "Failed to start spawned fork process manager" in str(e.value)
-
-
-class TestGetAvailableMaxWorkerCount:
-    @pytest.mark.parametrize(
-        "available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
-        [
-            (128.0, 64.0, 2, 2),  # available_memory/process_memory > 1
-            (63.0, 64.0, 1, 0),  # available_memory/process_memory < 1
-        ],
-    )
-    def test_get_available_max_worker_count(
-        self, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count
-    ):
-        with patch("psutil.virtual_memory") as mock_mem:
-            mock_mem.return_value.available = available_memory * 1024 * 1024
-            with patch("psutil.Process") as mock_process:
-                mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
-                with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
-                    mock_logger.warning.return_value = None
-                    estimated_available_worker_count = get_available_max_worker_count()
-                    assert estimated_available_worker_count == expected_max_worker_count
-                    if actual_calculate_worker_count < 1:
-                        mock_logger.warning.assert_called_with(
-                            f"Current system's available memory is {available_memory}MB, less than the memory "
-                            f"{process_memory}MB required by the process. The maximum available worker count is 1."
-                        )
-                    else:
-                        mock_logger.info.assert_called_with(
-                            f"Current system's available memory is {available_memory}MB, "
-                            f"memory consumption of current process is {process_memory}MB, "
-                            f"estimated available worker count is {available_memory}/{process_memory} "
-                            f"= {actual_calculate_worker_count}"
-                        )
 
 
 @pytest.mark.unittest

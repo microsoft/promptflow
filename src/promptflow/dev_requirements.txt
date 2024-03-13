@@ -1,4 +1,5 @@
 azure-identity
+azure-ai-ml
 azure-keyvault
 beautifulsoup4==4.12.2
 coverage

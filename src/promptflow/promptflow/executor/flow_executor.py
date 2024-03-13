@@ -21,17 +21,10 @@ from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._core.tracer import (
-    enrich_span_with_context,
-    enrich_span_with_input,
-    enrich_span_with_trace_type,
-    open_telemetry_tracer,
-)
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -50,7 +43,6 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -65,6 +57,14 @@ from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._trace import (
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_trace_type,
+    open_telemetry_tracer,
+)
+from promptflow.tracing.contracts.trace import TraceType
 
 
 class FlowExecutor:
@@ -244,7 +244,12 @@ class FlowExecutor:
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
-            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            id=flow.id,
+            name=flow.name,
+            nodes=[r.node for r in resolved_tools],
+            inputs=flow.inputs,
+            outputs=flow.outputs,
+            tools=[],
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
@@ -649,12 +654,12 @@ class FlowExecutor:
         return result.output or {}
 
     def _exec_in_thread(self, args) -> LineResult:
-        inputs, run_id, line_number, variant_id, validate_inputs = args
+        inputs, run_id, line_number, validate_inputs = args
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
         results = self._exec(
-            inputs, run_id=run_id, line_number=line_number, variant_id=variant_id, validate_inputs=validate_inputs
+            inputs, run_id=run_id, line_number=line_number, validate_inputs=validate_inputs
         )
         self._run_tracker._deactivate_in_context()
         self._processing_idx.pop(line_number)
@@ -666,7 +671,6 @@ class FlowExecutor:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        variant_id: str = "",
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
@@ -680,8 +684,6 @@ class FlowExecutor:
         :type index: Optional[int]
         :param run_id: The ID of the flow run.
         :type run_id: Optional[str]
-        :param variant_id: The ID of the variant to execute.
-        :type variant_id: str
         :param validate_inputs: Whether to validate the input values.
         :type validate_inputs: bool
         :param node_concurrency: The maximum number of nodes that can be executed concurrently.
@@ -693,6 +695,7 @@ class FlowExecutor:
         :return: The result of executing the line.
         :rtype: ~promptflow.executor._result.LineResult
         """
+        # TODO: Call exec_line_async in exec_line when async is mature.
         self._node_concurrency = node_concurrency
         # TODO: Pass line_timeout_sec to flow node scheduler instead of updating self._line_timeout_sec
         self._line_timeout_sec = line_timeout_sec or self._line_timeout_sec
@@ -707,7 +710,6 @@ class FlowExecutor:
                     inputs,
                     run_id=run_id,
                     line_number=index,
-                    variant_id=variant_id,
                     validate_inputs=validate_inputs,
                     allow_generator_output=allow_generator_output,
                 )
@@ -716,9 +718,56 @@ class FlowExecutor:
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        validate_inputs: bool = True,
+        node_concurrency=DEFAULT_CONCURRENCY_FLOW,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        """Execute a single line of the flow.
+
+        :param inputs: The input values for the line.
+        :type inputs: Mapping[str, Any]
+        :param index: The index of the line to execute.
+        :type index: Optional[int]
+        :param run_id: The ID of the flow run.
+        :type run_id: Optional[str]
+        :param validate_inputs: Whether to validate the input values.
+        :type validate_inputs: bool
+        :param node_concurrency: The maximum number of nodes that can be executed concurrently.
+        :type node_concurrency: int
+        :param allow_generator_output: Whether to allow generator output.
+        :type allow_generator_output: bool
+        :return: The result of executing the line.
+        :rtype: ~promptflow.executor._result.LineResult
+        """
+        self._node_concurrency = node_concurrency
+        inputs = apply_default_value_for_input(self._flow.inputs, inputs)
+        # For flow run, validate inputs as default
+        with self._run_tracker.node_log_manager:
+            # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
+            # it is not set.
+            operation_context = OperationContext.get_instance()
+            operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
+            line_result = await self._exec_async(
+                inputs,
+                run_id=run_id,
+                line_number=index,
+                validate_inputs=validate_inputs,
+                allow_generator_output=allow_generator_output,
+            )
+        #  Return line result with index
+        if index is not None and isinstance(line_result.output, dict):
+            line_result.output[LINE_NUMBER_KEY] = index
+        return line_result
+
     @contextlib.contextmanager
     def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
+        original_context = operation_context.copy()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
         if original_mode == RunMode.Batch.name:
@@ -735,13 +784,7 @@ class FlowExecutor:
                 operation_context._add_otel_attributes(k, v)
             yield
         finally:
-            for k in values_for_context:
-                operation_context.pop(k)
-            operation_context._remove_otel_attributes(values_for_otel.keys())
-            if original_mode is None:
-                operation_context.pop("run_mode")
-            else:
-                operation_context.run_mode = original_mode
+            OperationContext.set_instance(original_context)
 
     def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
         run_tracker = run_tracker or self._run_tracker
@@ -833,7 +876,6 @@ class FlowExecutor:
         inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
         line_number: Optional[int] = None,
-        variant_id: str = "",
         validate_inputs: bool = False,
         allow_generator_output: bool = False,
     ) -> LineResult:
@@ -866,7 +908,6 @@ class FlowExecutor:
             run_id=line_run_id,
             parent_run_id=run_id,
             index=line_number,
-            variant_id=variant_id,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -875,7 +916,6 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
-            variant_id=variant_id,
         )
         output = {}
         aggregation_inputs = {}
@@ -888,6 +928,94 @@ class FlowExecutor:
                 validate_inputs,
                 allow_generator_output,
             )
+        except KeyboardInterrupt as ex:
+            # Run will be cancelled when the process receives a SIGINT signal.
+            # KeyboardInterrupt will be raised after asyncio finishes its signal handling
+            # End run with the KeyboardInterrupt exception, so that its status will be Canceled
+            flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            run_tracker.end_run(line_run_id, ex=ex)
+            raise
+        except Exception as e:
+            run_tracker.end_run(line_run_id, ex=e)
+            if self._raise_ex:
+                raise
+        finally:
+            run_tracker._update_flow_run_info_with_node_runs(run_info)
+            run_tracker.persist_flow_run(run_info)
+        node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
+        node_runs = {node_run.node: node_run for node_run in node_run_infos}
+        return LineResult(output, aggregation_inputs, run_info, node_runs)
+
+    async def _exec_async(
+        self,
+        inputs: Mapping[str, Any],
+        run_id: Optional[str] = None,
+        line_number: Optional[int] = None,
+        validate_inputs: bool = False,
+        allow_generator_output: bool = False,
+    ) -> LineResult:
+        """execute line run
+
+        Args:
+            inputs (Mapping): flow inputs
+            run_id: the id to identify the flow run
+            line_number: line number for batch inputs
+            validate_inputs:
+                Flag to indicate if input validation needed. It is used along with "_raise_ex" to
+                define if exception shall be raised if inputs validation (type check, etc) failed
+                The flag is True for Flow Run, False for bulk run as default
+            allow_generator_output:
+                Flag to indicate if generator output is allowed.
+
+
+        Returns:
+            LineResult: Line run result
+        """
+        run_id = run_id or str(uuid.uuid4())
+        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
+        run_tracker = RunTracker(
+            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
+        )
+        # We need to copy the allow_generator_types from the original run_tracker.
+        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
+        run_info: FlowRunInfo = run_tracker.start_flow_run(
+            flow_id=self._flow_id,
+            root_run_id=run_id,
+            run_id=line_run_id,
+            parent_run_id=run_id,
+            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
+            index=line_number,
+        )
+        context = FlowExecutionContext(
+            name=self._flow.name,
+            run_tracker=run_tracker,
+            cache_manager=self._cache_manager,
+            run_id=run_id,
+            flow_id=self._flow_id,
+            line_number=line_number,
+        )
+        output = {}
+        aggregation_inputs = {}
+        try:
+            if validate_inputs:
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+            # TODO: Consider async implementation for load_multimedia_data
+            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            # Make sure the run_info with converted inputs results rather than original inputs
+            run_info.inputs = inputs
+            output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
+            # TODO: Consider async implementation for _stringify_generator_output
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
+            # Persist the node runs for the nodes that have a generator output
+            generator_output_nodes = [
+                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+            ]
+            # TODO: Consider async implementation for persist_selected_node_runs
+            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
+            run_tracker.allow_generator_types = allow_generator_output
+            # TODO: Consider async implementation for end_run
+            run_tracker.end_run(line_run_id, result=output)
+            aggregation_inputs = extract_aggregation_inputs(self._flow, nodes_outputs)
         except KeyboardInterrupt as ex:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
@@ -977,6 +1105,16 @@ class FlowExecutor:
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
             nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
+        return outputs, nodes_outputs
+
+    async def _traverse_nodes_async(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
+        batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
+        outputs = {}
+        #  Always use async scheduler when calling from async function.
+        flow_logger.info("Start executing nodes in async mode.")
+        scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+        nodes_outputs, bypassed_nodes = await scheduler.execute(batch_nodes, inputs, context)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 

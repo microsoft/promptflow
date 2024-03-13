@@ -53,6 +53,11 @@ def to_openai_error_message(e: Exception) -> str:
               "'gpt-4-1106-preview'. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/json-mode?tabs=python."
         return f"OpenAI API hits {ex_type}: {msg}"
+    elif "Principal does not have access to API/Operation" in error_message:
+        msg = "Principal does not have access to API/Operation. If you are using azure openai connection, " \
+              "please make sure you have proper role assignment on your azure openai resource. You can refer to " \
+              "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/role-based-access-control"
+        return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {error_message} [{openai_error_code_ref_message}]"
 
@@ -193,3 +198,13 @@ class AzureContentSafetySystemError(SystemErrorException):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class ListDeploymentsError(UserErrorException):
+    def __init__(self, msg, **kwargs):
+        super().__init__(msg, target=ErrorTarget.TOOL, **kwargs)
+
+
+class ParseConnectionError(ListDeploymentsError):
+    def __init__(self, msg, **kwargs):
+        super().__init__(msg, **kwargs)

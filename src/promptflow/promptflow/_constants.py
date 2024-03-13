@@ -111,9 +111,9 @@ class SpanAttributeFieldName:
     INPUTS = "inputs"
     OUTPUT = "output"
     # token metrics
-    COMPLETION_TOKEN_COUNT = "llm.token_count.completion"
-    PROMPT_TOKEN_COUNT = "llm.token_count.prompt"
-    TOTAL_TOKEN_COUNT = "llm.token_count.total"
+    COMPLETION_TOKEN_COUNT = "llm.usage.completion_tokens"
+    PROMPT_TOKEN_COUNT = "llm.usage.prompt_tokens"
+    TOTAL_TOKEN_COUNT = "llm.usage.total_tokens"
     CUMULATIVE_COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     CUMULATIVE_PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     CUMULATIVE_TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
@@ -156,3 +156,19 @@ class SpanEventFieldName:
 class SpanLinkFieldName:
     CONTEXT = "context"
     ATTRIBUTES = "attributes"
+
+
+class MessageFormatType:
+    BASIC = "basic"
+    OPENAI_VISION = "openai_vision"
+
+
+DEFAULT_OUTPUT_NAME = "output"
+
+OUTPUT_FILE_NAME = "output.jsonl"
+
+
+class OutputsFolderName:
+    FLOW_OUTPUTS = "flow_outputs"
+    FLOW_ARTIFACTS = "flow_artifacts"
+    NODE_ARTIFACTS = "node_artifacts"
