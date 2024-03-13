@@ -68,6 +68,7 @@ STREAMING_ANIMATION_TIME = 0.01
 # trace related
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
+RUNNING_LINE_RUN_STATUS = "Running"
 
 
 class TraceEnvironmentVariableName:
