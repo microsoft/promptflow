@@ -121,7 +121,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     provider = trace.get_tracer_provider()
     exporter = MemoryExporter()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
-    feedback_data = {"feedback": "positive"}
+    feedback_data = json.dumps({"feedback": "positive"})
     trace_ctx_version = "00"
     trace_ctx_trace_id = "8a3c60f7d6e2f3b4a4f2f7f3f3f3f3f3"
     trace_ctx_parent_id = "f3f3f3f3f3f3f3f3"
@@ -129,7 +129,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     trace_parent = f"{trace_ctx_version}-{trace_ctx_trace_id}-{trace_ctx_parent_id}-{trace_ctx_flags}"
     response = flow_serving_client.post("/feedback",
                                         headers={"traceparent": trace_parent, "baggage": "userId=alice"},
-                                        data=json.dumps(feedback_data))
+                                        data=feedback_data)
     assert response.status_code == 200
     spans = exporter.spans
     assert len(spans) == 1
@@ -138,8 +138,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     assert spans[0].context.trace_id == int(trace_ctx_trace_id, 16)
     assert spans[0].parent.span_id == int(trace_ctx_parent_id, 16)
     # validate feedback data
-    collected_feedback = json.loads(spans[0].attributes["feedback"])
-    assert collected_feedback == feedback_data
+    assert feedback_data == spans[0].attributes["feedback"]
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")

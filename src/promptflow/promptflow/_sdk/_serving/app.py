@@ -213,7 +213,7 @@ def add_default_routes(app: PromptflowServingApp):
         try:
             with open_telemetry_tracer.start_as_current_span('promptflow-feedback') as span:
                 span.set_attribute("span_type", TraceType.FEEDBACK.value)
-                data = request.get_data()
+                data = request.get_data(as_text=True)
                 should_flattern = request.args.get('flatten', 'false').lower() == 'true'
                 if should_flattern:
                     try:
@@ -223,7 +223,7 @@ def add_default_routes(app: PromptflowServingApp):
                             span.set_attribute(k, serialize_attribute_value(data[k]))
                     except Exception as e:
                         logger.warning(f"Failed to flatten the feedback, fall back to non-flattern mode. Error: {e}.")
-                        span.set_attribute('feedback', str(data))
+                        span.set_attribute('feedback', data)
                 else:
                     span.set_attribute('feedback', data)
                 # add baggage data if exist
