@@ -37,6 +37,7 @@ DEFAULT_ENCODING = "utf-8"
 FLOW_META_JSON = "flow.json"
 FLOW_META_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_DIR_NAME = ".promptflow"
+FLOW_TOOLS_JSON = "flow.tools.json"
 
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.

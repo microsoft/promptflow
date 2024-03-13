@@ -3,14 +3,13 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import DAG_FILE_NAME, FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.core._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.core._flow import AsyncFlow as AsyncFlowCore
 from promptflow.core._flow import Flow as FlowCore
 from promptflow.core._flow import FlowBase as FlowBaseCore
@@ -20,7 +19,27 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 logger = get_cli_sdk_logger()
 
 
-class FlowBase(FlowBaseCore):
+class Flow(FlowCore, SchemaValidatableMixin):
+    __doc__ = FlowCore.__doc__
+
+    def __init__(
+        self,
+        path: Path,
+        code: Path,
+        dag: dict,
+        params_override: Optional[Dict] = None,
+        **kwargs,
+    ):
+        flow_dir, dag_file_name = self._get_flow_definition(self.code)
+        super().__init__(path=path, code=code, dag=dag, **kwargs)
+
+        self._flow_dir = flow_dir
+        self._dag_file_name = dag_file_name
+        self._executable = None
+        self._params_override = params_override
+        self.variant = kwargs.pop("variant", None) or {}
+
+    # region properties
     @property
     def name(self) -> str:
         return self._flow_dir.name
@@ -47,24 +66,21 @@ class FlowBase(FlowBaseCore):
     def display_name(self) -> str:
         return self._data.get("display_name", self._flow_dir.name)
 
+    # endregion
 
-class Flow(FlowBase, FlowCore, SchemaValidatableMixin):
-    __doc__ = FlowCore.__doc__
+    @classmethod
+    def _get_flow_definition(cls, flow, base_path=None) -> Tuple[Path, str]:
+        if base_path:
+            flow_path = Path(base_path) / flow
+        else:
+            flow_path = Path(flow)
 
-    def __init__(
-        self,
-        path: Path,
-        code: Path,
-        dag: dict,
-        params_override: Optional[Dict] = None,
-        **kwargs,
-    ):
-        super().__init__(path=path, code=code, dag=dag, **kwargs)
+        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
+            return flow_path, DAG_FILE_NAME
+        elif flow_path.is_file():
+            return flow_path.parent, flow_path.name
 
-        self._executable = None
-        self._params_override = params_override
-        self.variant = kwargs.pop("variant", None) or {}
-        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
+        raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
 
     # region SchemaValidatableMixin
     @classmethod
@@ -156,11 +172,9 @@ class Flow(FlowBase, FlowCore, SchemaValidatableMixin):
         else:
             return super().invoke(inputs=inputs)
 
-    # endregion
-
 
 class AsyncFlow(Flow, AsyncFlowCore):
-    """This class is used to represent an async protected flow."""
+    __doc__ = AsyncFlowCore.__doc__
 
     async def invoke_async(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
@@ -179,3 +193,4 @@ class AsyncFlow(Flow, AsyncFlowCore):
 
 
 FlowContext = FlowContextCore
+FlowBase = FlowBaseCore

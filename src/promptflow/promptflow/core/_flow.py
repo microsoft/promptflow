@@ -6,13 +6,13 @@ import abc
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
-from promptflow._constants import DAG_FILE_NAME, DEFAULT_ENCODING
-from promptflow._sdk._utils import generate_flow_meta
+from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.core._connection import _Connection
+from promptflow.core._utils import generate_flow_meta
 from promptflow.exceptions import UserErrorException
 
 
@@ -149,20 +149,6 @@ class Flow(FlowBase):
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
         return cls(code=path.parent, path=path, dag=dag, **kwargs)
-
-    @classmethod
-    def _get_flow_definition(cls, flow, base_path=None) -> Tuple[Path, str]:
-        if base_path:
-            flow_path = Path(base_path) / flow
-        else:
-            flow_path = Path(flow)
-
-        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-            return flow_path, DAG_FILE_NAME
-        elif flow_path.is_file():
-            return flow_path.parent, flow_path.name
-
-        raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
