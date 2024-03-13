@@ -3,18 +3,28 @@
 # ---------------------------------------------------------
 
 import base64
+import json
 import os
 import uuid
 from typing import Dict
 from unittest.mock import patch
 
 import pytest
+from mock import mock
 from opentelemetry import trace
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
-from promptflow._constants import SpanResourceAttributesFieldName, SpanResourceFieldName, TraceEnvironmentVariableName
+from promptflow._constants import (
+    SpanAttributeFieldName,
+    SpanResourceAttributesFieldName,
+    SpanResourceFieldName,
+    TraceEnvironmentVariableName,
+)
+from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
+from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.entities._trace import Span
 from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ
 
@@ -38,6 +48,14 @@ def mock_resource() -> Dict:
         },
         SpanResourceFieldName.SCHEMA_URL: "",
     }
+
+
+@pytest.fixture
+def mock_promptflow_service_invocation():
+    """Mock `_invoke_pf_svc` as we don't expect to invoke PFS during unit test."""
+    with mock.patch("promptflow._sdk._tracing._invoke_pf_svc") as mock_func:
+        mock_func.return_value = "23333"
+        yield
 
 
 @pytest.mark.sdk_test
@@ -103,3 +121,28 @@ class TestStartTrace:
         attributes = span._content["attributes"]
         assert isinstance(attributes, dict)
         assert len(attributes) == 0
+
+    def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation) -> None:
+        # experiment orchestrator will help set this context in environment
+        referenced_line_run_id = str(uuid.uuid4())
+        ctx = {PF_TRACE_CONTEXT_ATTR: {ContextAttributeKey.REFERENCED_LINE_RUN_ID: referenced_line_run_id}}
+        with monkeypatch.context() as m:
+            m.setenv(PF_TRACE_CONTEXT, json.dumps(ctx))
+            start_trace_with_devkit(session_id=None)
+            # lineage is stored in context
+            op_ctx = OperationContext.get_instance()
+            otel_attrs = op_ctx._get_otel_attributes()
+            assert otel_attrs[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID] == referenced_line_run_id
+
+    def test_experiment_test_lineage_cleanup(
+        self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation
+    ) -> None:
+        # in previous code, context may be set with lineage
+        op_ctx = OperationContext.get_instance()
+        op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, str(uuid.uuid4()))
+        with monkeypatch.context() as m:
+            m.setenv(PF_TRACE_CONTEXT, json.dumps({PF_TRACE_CONTEXT_ATTR: dict()}))
+            start_trace_with_devkit(session_id=None)
+            # lineage will be reset
+            otel_attrs = op_ctx._get_otel_attributes()
+            assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs

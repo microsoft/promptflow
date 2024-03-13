@@ -191,7 +191,11 @@ class RecordCache:
         if isinstance(item, list):
             return [self._recursive_create_hashable_args(i) for i in item]
         if isinstance(item, dict):
-            return {k: self._recursive_create_hashable_args(v) for k, v in item.items() if k != "extra_headers"}
+            return {
+                k: self._recursive_create_hashable_args(v)
+                for k, v in item.items()
+                if k != "extra_headers" and v is not None
+            }
         elif "module: promptflow.connections" in str(item) or "object at" in str(item):
             return []
         else:
