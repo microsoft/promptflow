@@ -26,6 +26,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from ..._constants import LINE_NUMBER_KEY, FlowLanguage
 from ..._core._errors import NotSupported
 from ..._utils.async_utils import async_run_allowing_running_loop
+from ..._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
 from .._configuration import Configuration
@@ -471,10 +472,7 @@ class TestSubmitter:
                 # remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
 
-        if isinstance(line_result.output, dict):
-            generator_outputs = self._get_generator_outputs(line_result.output)
-            if generator_outputs:
-                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+        self._get_generator_outputs(line_result.output)
         return line_result
 
     def node_test(
@@ -584,5 +582,9 @@ class TestSubmitter:
 
     @staticmethod
     def _get_generator_outputs(outputs):
-        outputs = outputs or {}
-        return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+        # covert output to dict to unify the log
+        outputs = convert_eager_flow_output_to_dict(outputs)
+        if isinstance(outputs, dict):
+            generator_outputs = {key: output for key, output in outputs.items() if isinstance(output, GeneratorType)}
+            if generator_outputs:
+                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
