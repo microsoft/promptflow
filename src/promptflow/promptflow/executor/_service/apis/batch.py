@@ -50,8 +50,8 @@ def initialize(request: InitializationRequest):
         set_environment_variables(request)
         # init batch coordinator to validate flow and create process pool
         batch_coordinator = BatchCoordinator(
-            request.working_dir,
-            request.flow_file,
+            Path(working_dir),
+            Path(flow_file),
             request.output_dir,
             request.connections,
             worker_count=request.worker_count,
