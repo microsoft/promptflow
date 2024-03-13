@@ -84,6 +84,29 @@ class TestTrace:
         line_run = response.json[0]
         assert isinstance(line_run[LineRunFieldName.EVALUATIONS], dict)
 
+    def test_evaluation_name(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+        # mock batch run line
+        mock_batch_run_id = str(uuid.uuid4())
+        batch_run_attrs = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run_id,
+            SpanAttributeFieldName.LINE_NUMBER: "0",
+        }
+        persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attrs)
+        # mock eval run line
+        mock_eval_run_id = str(uuid.uuid4())
+        eval_run_attrs = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_eval_run_id,
+            SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: mock_batch_run_id,
+            SpanAttributeFieldName.LINE_NUMBER: "0",
+        }
+        persist_a_span(session_id=mock_session_id, custom_attributes=eval_run_attrs)
+        line_run = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json[0]
+        assert len(line_run[LineRunFieldName.EVALUATIONS]) == 1
+        eval_line_run = list(line_run[LineRunFieldName.EVALUATIONS].values())[0]
+        assert LineRunFieldName.NAME in eval_line_run
+        # remove below when we remove display name from line run data dataclass
+        assert "display_name" in eval_line_run
+
     def test_illegal_json_values(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
         output_string = json.dumps(
             {
