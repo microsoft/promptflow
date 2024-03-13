@@ -109,23 +109,13 @@ def get_random_port():
 
 
 def _get_process_by_port(port):
-    # use net_connections api to accelerate the process, but require root privileges on macOS and AIX. So use original
-    # way to get process on these platforms. Note: (Solaris) UNIX sockets are not supported, (OpenBSD) laddr and raddr
-    # fields for UNIX sockets are always set to “”. This is a limitation of the OS.
-    # Refer here for more details: https://psutil.readthedocs.io/en/latest/#psutil.AccessDenied
-    try:
-        for conn in psutil.net_connections():
-            if conn.laddr.port == port:
-                return psutil.Process(conn.pid)
-    except (psutil.AccessDenied, NotImplementedError) as e:
-        logger.debug(f"Failed to get process by port {port} using net_connections: {e}")
-        for proc in psutil.process_iter(["pid", "connections", "create_time"]):
-            try:
-                for connection in proc.connections():
-                    if connection.laddr.port == port:
-                        return proc
-            except (psutil.AccessDenied, NotImplementedError) as ex:
-                logger.debug(f"Failed to get process by port {port} using process_iter: {ex}")
+    for proc in psutil.process_iter(["pid", "connections", "create_time"]):
+        try:
+            for connection in proc.connections():
+                if connection.laddr.port == port:
+                    return proc
+        except psutil.AccessDenied:
+            pass
 
 
 def kill_exist_service(port):
