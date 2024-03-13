@@ -29,7 +29,9 @@ from promptflow._sdk.entities._trace import Span
 from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
-def trace_collector(get_created_by_info_with_cache: Callable, logger: logging.Logger):
+def trace_collector(
+    get_created_by_info_with_cache: Callable, logger: logging.Logger, disable_local_trace: bool = False
+):
     """
     This function is target to be reused in other places, so pass in get_created_by_info_with_cache and logger to avoid
     app related dependencies.
@@ -60,13 +62,18 @@ def trace_collector(get_created_by_info_with_cache: Callable, logger: logging.Lo
                 for span in scope_span.spans:
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource)
-                    span._persist()
+                    if not disable_local_trace:
+                        span._persist()
                     all_spans.append(span)
 
-        # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
-        ThreadWithContextVars(
-            target=_try_write_trace_to_cosmosdb, args=(all_spans, get_created_by_info_with_cache, logger)
-        ).start()
+        if disable_local_trace:
+            # When disable local trace, it should be remote mode and we should write trace to cosmosdb synchronously.
+            _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger)
+        else:
+            # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
+            ThreadWithContextVars(
+                target=_try_write_trace_to_cosmosdb, args=(all_spans, get_created_by_info_with_cache, logger)
+            ).start()
         return "Traces received", 200
 
     # JSON protobuf encoding
