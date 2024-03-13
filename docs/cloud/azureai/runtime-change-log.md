@@ -18,12 +18,12 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20240306.v5
 
 #### New features
-- Enable AOAI token based authentication for builtin tool.
-- Support "seed" parameter for LLM tool and GPT-4V tool.
+- Enable using token based AOAI connection in built-in LLM tools and embedding tool.
+- Support "seed" parameter for built-in LLM tools and GPT-4V tools.
 
 #### Bugs fixed
 - Fix and handle ClientAuthenticationError properly.
-- Fix append blob exceed size limit by truncating debug info.
+- Fix appending blob exceeded size limit by truncating debug info.
 - Improve error message for batch run timeout.
 
 
