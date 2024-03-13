@@ -207,7 +207,8 @@ def add_default_routes(app: PromptflowServingApp):
     @app.route("/feedback", methods=["POST"])
     def feedback():
         ctx = try_extract_trace_context(logger)
-        from promptflow.tracing._trace import open_telemetry_tracer
+        from opentelemetry import trace
+        open_telemetry_tracer = trace.get_tracer_provider().get_tracer("promptflow")
         token = context.attach(ctx) if ctx else None
         try:
             with open_telemetry_tracer.start_as_current_span('promptflow-feedback') as span:
