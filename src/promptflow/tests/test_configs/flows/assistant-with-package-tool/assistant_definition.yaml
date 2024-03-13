@@ -1,0 +1,11 @@
+model: gpt-4
+instructions:  You are assistant for communications.
+tools:
+  - type: function
+    source:
+      type: package
+      tool: communicate.Communication.say_hello
+    predefined_inputs:
+      connection: aoai_assistant_connection
+      connection_2: aoai_assistant_connection
+    tool_type: python

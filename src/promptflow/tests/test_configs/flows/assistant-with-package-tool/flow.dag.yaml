@@ -1,0 +1,42 @@
+environment:
+  python_requirements_txt: requirements.txt
+version: 2
+inputs:
+  question:
+    type: string
+    default: Just say hello.
+  assistant_id:
+    type: string
+    default: ""
+  thread_id:
+    type: string
+    default: ""
+outputs:
+  answer:
+    type: string
+    reference: ${assistant.output}
+    is_chat_output: true
+  thread_id:
+    type: string
+    reference: ${get_or_create_thread.output}
+nodes:
+  - name: get_or_create_thread
+    type: python
+    source:
+      type: code
+      path: get_or_create_thread.py
+    inputs:
+      conn: aoai_assistant_connection
+      thread_id: ${inputs.thread_id}
+  - name: assistant
+    type: python
+    source:
+      type: code
+      path: add_message_and_run.py
+    inputs:
+      conn: aoai_assistant_connection
+      message: ${inputs.question}
+      assistant_id: ${inputs.assistant_id}
+      thread_id: ${get_or_create_thread.output}
+      download_images: true
+      assistant_definition: assistant_definition.yaml

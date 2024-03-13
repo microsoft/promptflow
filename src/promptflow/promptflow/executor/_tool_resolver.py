@@ -140,6 +140,42 @@ class ToolResolver:
         # Inject the resolved tools into the assistant definition
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
+    def _load_package_tool_as_function(
+        self, node_name: str, tool_definition: dict, convert_input_types=False
+    ) -> AssistantTool:
+        predefined_inputs = {}
+        if tool_definition.get("predefined_inputs") is not None:
+            for input_name, value in tool_definition.get("predefined_inputs").items():
+                predefined_inputs[input_name] = InputAssignment.deserialize(value)
+
+        # Create new ToolLoader with package tool keys from tools in assistant definition, rather than
+        # relying on the node-level package tool keys
+        function_package_tool_keys = [tool_definition.get("source", {}).get("tool")]
+        tool_loader = ToolLoader(self._working_dir, function_package_tool_keys)
+        tool: Tool = tool_loader.load_tool_for_assistant_package(node_name, tool_definition)
+        # updated_node = copy.deepcopy(node)
+
+        updated_predefined_inputs = predefined_inputs
+        if convert_input_types:
+            updated_predefined_inputs = self._convert_assistant_function_literal_input_types(
+                node_name, predefined_inputs, tool
+            )
+
+        callable, init_args = BuiltinsManager._load_package_tool(
+            tool.name, tool.module, tool.class_name, tool.function, updated_predefined_inputs
+        )
+        self._remove_init_args(updated_predefined_inputs, init_args)
+
+        # construct the AssistantTool object from the updated inputs + Tool object
+        func_name = tool.function
+        definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
+        if updated_predefined_inputs:
+            inputs = {name: value.value for name, value in updated_predefined_inputs.items()}
+            func = partial(callable, **inputs)
+        else:
+            func = callable
+        return AssistantTool(name=func_name, openai_definition=definition, func=func)
+
     def _load_script_tool_as_function(
         self, node_name: str, tool_definition: dict, convert_input_types=False
     ) -> AssistantTool:
@@ -157,7 +193,7 @@ class ToolResolver:
                 predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        m, tool = self._tool_loader.load_tool_for_assistant_node(node_name, tool_definition)
+        m, tool = self._tool_loader.load_tool_for_assistant_script(node_name, tool_definition)
 
         # construct the resolved inputs dictionary
         updated_predefined_inputs = predefined_inputs
@@ -380,7 +416,7 @@ class ToolResolver:
             if tool_type == ToolType.PYTHON:
                 source_type = tool["source"].get("type")
                 if source_type == ToolSourceType.Package:
-                    return self._load_package_tool_as_function(node_name, convert_input_types=convert_input_types)
+                    return self._load_package_tool_as_function(node_name, tool, convert_input_types=convert_input_types)
                 elif source_type == ToolSourceType.Code:
                     return self._load_script_tool_as_function(node_name, tool, convert_input_types=convert_input_types)
                 raise NotImplementedError(
@@ -393,9 +429,6 @@ class ToolResolver:
             if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
                 raise ResolveToolError(node_name=node_name, target=e.target, module=e.module) from e
             raise ResolveToolError(node_name=node_name) from e
-
-    def _load_package_tool_as_function(self, node_name: str, convert_input_types=False) -> AssistantTool:
-        return AssistantTool()
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source

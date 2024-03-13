@@ -427,6 +427,25 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
+    def load_tool_for_assistant_package(self, node_name: str, tool: dict) -> Tool:
+        source_tool = tool.get("source", {}).get("tool")
+        if source_tool in self._package_tools:
+            return Tool.deserialize(self._package_tools[source_tool])
+
+        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
+        # If found, load the tool with the new tool ID for backward compatibility.
+        if source_tool in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[source_tool]
+            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
+            module_logger.warning(f"Tool ID '{source_tool}' is deprecated. Please use '{new_tool_id}' instead.")
+            return Tool.deserialize(self._package_tools[new_tool_id])
+
+        raise PackageToolNotFoundError(
+            f"For assistant node {node_name}, Package tool '{source_tool}' is not found in the current environment. "
+            f"All available package tools are: {list(self._package_tools.keys())}.",
+            target=ErrorTarget.EXECUTOR,
+        )
+
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
         if node.source.path is None:
             raise InvalidSource(
@@ -448,7 +467,7 @@ class ToolLoader:
         f, init_inputs = collect_tool_function_in_module(m)
         return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
-    def load_tool_for_assistant_node(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
+    def load_tool_for_assistant_script(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
         # Generate Tool from the assistant tool definition
         path = tool.get("source", {}).get("path")
         if path is None:
