@@ -63,7 +63,7 @@ class TestPromptflowServiceCLI:
     def test_show_service_status(self, capsys):
         try:
             self._is_service_healthy()
-        except requests.exceptions.ConnectionError:  # noqa: E722
+        except:  # noqa: E722
             with pytest.raises(SystemExit):
                 self._run_pfs_command("show-status")
             start_pfs = subprocess.Popen("pfs start", shell=True)
