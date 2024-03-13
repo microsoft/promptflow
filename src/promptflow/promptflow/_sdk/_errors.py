@@ -81,13 +81,6 @@ class ConnectionNotFoundError(SDKError):
     pass
 
 
-class RequiredEnvironmentVariablesNotSetError(SDKError):
-    """Exception raised if connection from_env required env vars not found."""
-
-    def __init__(self, env_vars: list, cls_name: str):
-        super().__init__(f"Required environment variables {env_vars} to build {cls_name} not set.")
-
-
 class ConnectionNameNotSetError(SDKError):
     """Exception raised if connection not set when create or update."""
 

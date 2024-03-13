@@ -48,9 +48,9 @@ from promptflow.exceptions import UserErrorException
 class FlowOperations(TelemetryMixin):
     """FlowOperations."""
 
-    def __init__(self, client):
+    def __init__(self, client, **kwargs):
+        super().__init__(**kwargs)
         self._client = client
-        super().__init__()
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
