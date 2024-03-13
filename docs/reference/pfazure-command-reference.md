@@ -207,7 +207,17 @@ Local path to the YAML file containing the prompt flow run specification; can be
 
 `--flow`
 
-Local path to the flow directory.
+The flow source to create the run. It could be:
+- Local path to the flow directory.
+  ```bash
+  pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping <key-value-pair>
+  ```
+- The flow name on azure with a prefix `azureml:`. Flow name is a guid that can be found from 2 ways:
+  - After creating a flow to azure, it can be found in the printed message in "name" attribute.
+  - Open a flow in azure portal, the guid is in the url. e.g. https://ml.azure.com/prompts/flow/{workspace-id}/{flow-name}/xxx
+  ```bash
+  pfazure run create --flow azureml:<flow-name> --data <path-to-data-file> --column-mapping <key-value-pair>
+  ```
 
 `--data`
 

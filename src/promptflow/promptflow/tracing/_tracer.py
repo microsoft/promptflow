@@ -23,6 +23,7 @@ class Tracer(ThreadLocalSingleton):
     def __init__(self, run_id, node_name: Optional[str] = None):
         self._run_id = run_id
         self._node_name = node_name
+        self._is_node_span_created = False
         self._traces = []
         self._current_trace_id = ContextVar("current_trace_id", default="")
         self._id_to_trace: Dict[str, Trace] = {}
@@ -31,8 +32,6 @@ class Tracer(ThreadLocalSingleton):
     def start_tracing(cls, run_id, node_name: Optional[str] = None):
         current_run_id = cls.current_run_id()
         if current_run_id is not None:
-            msg = f"Try to start tracing for run {run_id} but {current_run_id} is already active."
-            logging.warning(msg)
             return
         tracer = cls(run_id, node_name)
         tracer._activate_in_context()
@@ -180,8 +179,16 @@ def _create_trace_from_function_call(
     )
 
 
-def get_node_name_from_context():
+def get_node_name_from_context(used_for_span_name=False):
     tracer = Tracer.active_instance()
     if tracer is not None:
-        return tracer._node_name
+        if used_for_span_name:
+            # Since only the direct children of flow span should have the node name as span name, we need to check if
+            # the node span is created, if created, the current span is not a node span, its name should bet set to
+            # function name.
+            if not tracer._is_node_span_created:
+                tracer._is_node_span_created = True
+                return tracer._node_name
+        else:
+            return tracer._node_name
     return None

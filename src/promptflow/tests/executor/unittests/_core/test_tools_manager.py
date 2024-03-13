@@ -166,6 +166,7 @@ def sample_tool(input: str):
 
 
 @pytest.mark.unittest
+@pytest.mark.usefixtures("recording_injection")
 class TestToolsManager:
     def test_collect_package_tools_if_node_source_tool_is_legacy(self):
         legacy_node_source_tools = ["content_safety_text.tools.content_safety_text_tool.analyze_text"]
@@ -282,27 +283,22 @@ class TestToolsManager:
             assert len(result) == 2
 
     def test_retrieve_tool_func_result_dynamic_list_scenario(
-        self,
-        mocked_ws_triple,
-        mock_module_with_for_retrieve_tool_func_result
+        self, mocked_ws_triple, mock_module_with_for_retrieve_tool_func_result
     ):
         from promptflow._sdk._utils import _retrieve_tool_func_result
 
         func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
         func_kwargs = {"prefix": "My"}
         result = _retrieve_tool_func_result(
-            ToolFuncCallScenario.DYNAMIC_LIST,
-            {"func_path": func_path, "func_kwargs": func_kwargs}
+            ToolFuncCallScenario.DYNAMIC_LIST, {"func_path": func_path, "func_kwargs": func_kwargs}
         )
         assert len(result) == 2
 
         # test retrieve tool func result with ws_triple.
-        with patch(
-            "promptflow._cli._utils.get_workspace_triad_from_local",
-            return_value=mocked_ws_triple
-        ):
-            result = _retrieve_tool_func_result(ToolFuncCallScenario.DYNAMIC_LIST, {
-                                                "func_path": func_path, "func_kwargs": func_kwargs})
+        with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
+            result = _retrieve_tool_func_result(
+                ToolFuncCallScenario.DYNAMIC_LIST, {"func_path": func_path, "func_kwargs": func_kwargs}
+            )
 
     @pytest.mark.parametrize(
         "func_call_scenario, func_path, func_kwargs, expected",
@@ -311,26 +307,21 @@ class TestToolsManager:
                 ToolFuncCallScenario.DYNAMIC_LIST,
                 "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func",
                 {"prefix": "My"},
-                list
+                list,
             ),
             (
                 ToolFuncCallScenario.GENERATED_BY,
                 "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
                 {"index_type": "Azure Cognitive Search"},
-                str
+                str,
             ),
             (
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "my_tool_package.tools.tool_with_generated_by_input.reverse_generated_by_func",
-                {
-                    "index_json": json.dumps({
-                        "index_type": "Azure Cognitive Search",
-                        "index": "index_1"
-                    })
-                },
-                dict
-            )
-        ]
+                {"index_json": json.dumps({"index_type": "Azure Cognitive Search", "index": "index_1"})},
+                dict,
+            ),
+        ],
     )
     def test_retrieve_tool_func_result(
         self,
@@ -339,7 +330,7 @@ class TestToolsManager:
         func_kwargs,
         expected,
         mocked_ws_triple,
-        mock_module_with_for_retrieve_tool_func_result
+        mock_module_with_for_retrieve_tool_func_result,
     ):
         from promptflow._sdk._utils import _retrieve_tool_func_result
 
@@ -349,7 +340,8 @@ class TestToolsManager:
         # test retrieve tool func result with ws_triple.
         with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
             result = _retrieve_tool_func_result(
-                func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
+                func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs}
+            )
             assert isinstance(result["result"], expected)
 
     @pytest.mark.parametrize(
@@ -358,22 +350,17 @@ class TestToolsManager:
             (
                 "dummy_senario",
                 "my_tool_package.tools.tool_with_generated_by_input.reverse_generated_by_func",
-                {
-                    "index_json": json.dumps({
-                        "index_type": "Azure Cognitive Search",
-                        "index": "index_1"
-                    })
-                },
+                {"index_json": json.dumps({"index_type": "Azure Cognitive Search", "index": "index_1"})},
                 f"Invalid tool func call scenario: dummy_senario. "
-                f"Available scenarios are {list(ToolFuncCallScenario)}"
+                f"Available scenarios are {list(ToolFuncCallScenario)}",
             ),
             (
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
                 {"index_type": "Azure Cognitive Search"},
-                "ToolFuncCallScenario reverse_generated_by response must be a dict."
-            )
-        ]
+                "ToolFuncCallScenario reverse_generated_by response must be a dict.",
+            ),
+        ],
     )
     def test_retrieve_tool_func_result_error(
         self,
@@ -382,12 +369,13 @@ class TestToolsManager:
         func_kwargs,
         expected,
         mocked_ws_triple,
-        mock_module_with_for_retrieve_tool_func_result
+        mock_module_with_for_retrieve_tool_func_result,
     ):
         from promptflow._sdk._utils import _retrieve_tool_func_result
+
         with pytest.raises(Exception) as e:
             _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
-        assert (expected in str(e.value))
+        assert expected in str(e.value)
 
 
 @pytest.mark.unittest

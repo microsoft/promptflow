@@ -4,8 +4,9 @@ from typing import Dict
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._utils.logger_utils import LogContext
-from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.contracts.run_info import FlowRunInfo
@@ -33,7 +34,7 @@ ACTIVATE_FLOW_TEST_CASES = [
 ]
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorActivate:
     @pytest.mark.parametrize("flow_folder", ACTIVATE_FLOW_TEST_CASES)

@@ -21,6 +21,7 @@ from promptflow._sdk._service.utils.utils import (
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
+    is_run_from_built_binary,
     kill_exist_service,
 )
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
@@ -104,7 +105,7 @@ def start_service(args):
         port = get_port_from_config(create_if_not_exists=True)
         validate_port(port, args.force)
 
-    if sys.executable.endswith("pfcli.exe"):
+    if is_run_from_built_binary():
         # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
         # after packaged by Pyinstaller.
         app, _ = create_app()
