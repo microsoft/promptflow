@@ -212,8 +212,8 @@ def add_default_routes(app: PromptflowServingApp):
         try:
             with open_telemetry_tracer.start_as_current_span('promptflow-feedback') as span:
                 data = request.get_data(as_text=True)
-                should_flattern = request.args.get('flatten', 'false').lower() == 'true'
-                if should_flattern:
+                should_flatten = request.args.get('flatten', 'false').lower() == 'true'
+                if should_flatten:
                     try:
                         # try flatten the data to avoid data too big issue (especially for app insights scenario)
                         data = json.loads(data)

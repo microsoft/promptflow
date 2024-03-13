@@ -35,9 +35,9 @@
     },
     "parameters": [
         {
-            "name": "flattern",
+            "name": "flatten",
             "in": "query",
-            "description": "flattern the feedback data into traced data",
+            "description": "flatten the feedback data into traced data",
             "required": false,
             "schema": {
                 "type": "boolean"
