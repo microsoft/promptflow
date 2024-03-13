@@ -37,8 +37,8 @@ class BaseExecutionRequest(BaseRequest):
             )
         else:
             # Ensure that the flow file path is within the working directory
-            working_dir = os.path.normpath(working_dir)
-            flow_file = os.path.normpath(flow_file)
+            working_dir = os.path.normpath(self.working_dir)
+            flow_file = os.path.normpath(self.flow_file)
             full_path = os.path.normpath(os.path.join(working_dir, flow_file))
             if not full_path.startswith(working_dir):
                 raise FlowFilePathInvalid(
