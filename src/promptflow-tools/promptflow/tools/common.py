@@ -253,13 +253,16 @@ def get_workspace_triad():
 
 
 def list_deployment_connections(
-    subscription_id="",
-    resource_group_name="",
-    workspace_name="",
+    subscription_id=None,
+    resource_group_name=None,
+    workspace_name=None,
     connection="",
 ):
-    # For local, subscription_id is None. Does not support dynamic list for local.
-    if not subscription_id or (not is_on_runtime()):
+    # We do not support dynamic list deployments for local.
+    # Even if the workspace triple is set in the local scope, the connection can't be accurately retrieved.
+    # This is because the connection is fetched from the workspace. However, connection subscription id
+    # is not the same as the workspace subscription id.
+    if not subscription_id or not resource_group_name or not workspace_name or (in_local_env()):
         return None
 
     from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
@@ -597,5 +600,10 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
     return AzureOpenAIClient(**conn_dict)
 
 
-def is_on_runtime() -> bool:
-    return os.getenv('AZUREML_ARM_WORKSPACE_NAME') is not None
+def in_local_env() -> bool:
+    """
+    Check if the code is running on AzureML runtime or local environment.
+    The condition might not be that accurate, but it's good enough for now since these environment variables are
+    typically only set on AzureML runtime.
+    """
+    return os.getenv('AZUREML_ARM_SUBSCRIPTION') is None or os.getenv('AZUREML_ARM_RESOURCEGROUP') is None or os.getenv('AZUREML_ARM_WORKSPACE_NAME') is None

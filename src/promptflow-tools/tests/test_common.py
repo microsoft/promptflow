@@ -4,7 +4,7 @@ import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, \
-    normalize_connection_config, is_on_runtime
+    normalize_connection_config, in_local_env
 from promptflow.tools.exception import ListDeploymentsError
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -17,6 +17,20 @@ DEFAULT_RESOURCE_GROUP_NAME = "rg"
 DEFAULT_WORKSPACE_NAME = "ws"
 DEFAULT_ACCOUNT = "account"
 DEFAULT_CONNECTION = "conn"
+
+
+# set environment variable to mock the runtime environment
+@pytest.fixture(autouse=True)
+def mock_settings_env_vars():
+    with patch.dict(
+        os.environ,
+        {
+            "AZUREML_ARM_SUBSCRIPTION": "fake_sub_id",
+            "AZUREML_ARM_RESOURCEGROUP": "fake_rg",
+            "AZUREML_ARM_WORKSPACE_NAME": "fake_ws",
+        },
+    ):
+        yield
 
 
 def mock_build_connection_dict_func1(**kwargs):
@@ -37,14 +51,6 @@ def mock_build_connection_dict_func3(**kwargs):
 
 
 class TestCommon:
-    def setup_method(self, method):
-        # set environment variable to mock the runtime environment
-        os.environ['AZUREML_ARM_WORKSPACE_NAME'] = 'fake_ws'
-
-    def teardown_method(self, method):
-        # undo the environment variable change after tests
-        del os.environ['AZUREML_ARM_WORKSPACE_NAME']
-
     @pytest.mark.parametrize(
         "functions, error_message",
         [
@@ -351,9 +357,8 @@ class TestCommon:
         }
         assert normalized_config == expected_output
 
-    def test_is_on_runtime(self):
-        os.environ['AZUREML_ARM_WORKSPACE_NAME'] = 'fake_ws'
-        assert is_on_runtime()
-        del os.environ['AZUREML_ARM_WORKSPACE_NAME']
-        assert not is_on_runtime()
-        os.environ['AZUREML_ARM_WORKSPACE_NAME'] = 'fake_ws'
+    def test_is_in_local_env(self):
+        assert not in_local_env()
+
+        with patch.dict('os.environ', values={}, clear=True):
+            assert in_local_env()

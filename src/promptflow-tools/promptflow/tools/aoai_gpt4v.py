@@ -10,9 +10,9 @@ from promptflow.contracts.types import PromptTemplate
 
 
 def list_deployment_names(
-    subscription_id="",
-    resource_group_name="",
-    workspace_name="",
+    subscription_id=None,
+    resource_group_name=None,
+    workspace_name=None,
     connection=""
 ) -> List[Dict[str, str]]:
     res = []
