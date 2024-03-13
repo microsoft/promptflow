@@ -45,6 +45,13 @@ class FlowLanguage:
     CSharp = "csharp"
 
 
+class FlowEntryRegex:
+    """The regex pattern for flow entry function."""
+
+    Python = r"^[a-zA-Z0-9_.]+:[a-zA-Z0-9_]+$"
+    CSharp = r"\((.+)\)[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)+"
+
+
 class AvailableIDE:
     VS = "vs"
     VS_CODE = "vsc"

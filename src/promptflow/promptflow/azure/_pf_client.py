@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -11,7 +12,7 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
-from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
+from promptflow._sdk._utils import ClientUserAgentUtil, generate_yaml_entry, setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure.operations import RunOperations
@@ -196,6 +197,7 @@ class PFClient:
         display_name: str = None,
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
+        code: Union[str, PathLike] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -251,6 +253,8 @@ class PFClient:
         :type tags: Dict[str, str]
         :param resume_from: Create run resume from an existing run.
         :type resume_from: str
+        :param code: Path to the code directory to run.
+        :type code: Union[str, PathLike]
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
@@ -276,20 +280,24 @@ class PFClient:
             return self.runs._create_by_resume_from(
                 resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
             )
-        # TODO(2887134): support cloud eager Run CRUD
-        run = Run(
-            name=name,
-            display_name=display_name,
-            tags=tags,
-            data=data,
-            column_mapping=column_mapping,
-            run=run,
-            variant=variant,
-            flow=flow,
-            connections=connections,
-            environment_variables=environment_variables,
-        )
-        return self.runs.create_or_update(run=run, **kwargs)
+
+        if code and not os.path.exists(code):
+            raise FileNotFoundError(f"code path {code} does not exist")
+        code = Path(code) if code else Path(os.getcwd())
+        with generate_yaml_entry(entry=flow, code=code) as flow:
+            run = Run(
+                name=name,
+                display_name=display_name,
+                tags=tags,
+                data=data,
+                column_mapping=column_mapping,
+                run=run,
+                variant=variant,
+                flow=flow,
+                connections=connections,
+                environment_variables=environment_variables,
+            )
+            return self.runs.create_or_update(run=run, **kwargs)
 
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.

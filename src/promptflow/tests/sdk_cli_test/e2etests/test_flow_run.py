@@ -34,6 +34,7 @@ from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
@@ -1284,6 +1285,29 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
+
+    def test_eager_flow_run_in_working_dir(self, pf):
+        working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"
+        with _change_working_dir(working_dir):
+            run = pf.run(
+                flow="entry2:my_flow1",
+                data="../../datas/simple_eager_flow_data.jsonl",
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # original YAMl content not changed
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        assert original_dict["entry"] == "entry1:my_flow1"
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow1"]}
 
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")

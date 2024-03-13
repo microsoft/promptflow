@@ -32,7 +32,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
+from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT, FlowEntryRegex
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -1246,14 +1246,19 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
+def is_eager_flow_entry(entry: str):
+    """Returns True if entry is eager flow's entry (in python)."""
+    return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
+
+
 @contextmanager
 def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
     """Generate yaml entry to run."""
-    if os.path.exists(entry):
-        yield entry
-    else:
+    if is_eager_flow_entry(entry=entry):
         with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
+    else:
+        yield entry
 
 
 @contextmanager

@@ -642,7 +642,7 @@ class Run(YAMLTranslatableMixin):
     def _validate_for_run_create_operation(self):
         """Validate run object for create operation."""
         # check flow value
-        if Path(self.flow).is_dir():
+        if Path(self.flow).is_dir() or Path(self.flow).is_file():
             # local flow
             pass
         elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):

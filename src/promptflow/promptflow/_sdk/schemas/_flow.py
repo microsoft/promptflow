@@ -5,7 +5,7 @@ import re
 
 from marshmallow import ValidationError, fields, validate, validates_schema
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowEntryRegex, FlowLanguage
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
@@ -60,20 +60,6 @@ class FlowSchema(BaseFlowSchema):
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
 
 
-class PythonEagerFlowEntry(fields.Str):
-    """Entry point for eager flow. For example: pkg.module:func"""
-
-    default_error_messages = {
-        "invalid_entry": "Provided entry {entry} has incorrect format. "
-        "Python eager flow only support pkg.module:func format.",
-    }
-
-    def _validate(self, value):
-        super()._validate(value)
-        if not re.match(r"^[a-zA-Z0-9_.]+:[a-zA-Z0-9_]+$", value):
-            raise self.make_error("invalid_entry", entry=value)
-
-
 class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
@@ -86,9 +72,9 @@ class EagerFlowSchema(BaseFlowSchema):
         language = data.get(LANGUAGE_KEY, FlowLanguage.Python)
         entry_regex = None
         if language == FlowLanguage.CSharp:
-            entry_regex = r"\((.+)\)[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)+"
+            entry_regex = FlowEntryRegex.CSharp
         elif language == FlowLanguage.Python:
-            entry_regex = r"^[a-zA-Z0-9_.]+:[a-zA-Z0-9_]+$"
+            entry_regex = FlowEntryRegex.Python
 
         if entry_regex is not None and not re.match(entry_regex, data["entry"]):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
