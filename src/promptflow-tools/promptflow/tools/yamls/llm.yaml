@@ -15,19 +15,6 @@ promptflow.tools.llm.llm:
 
     # user:
     {{question}}
-  # proposal 2
-  groups:  
-  - name: Funtion calling  
-    display_style :  table
-    inputs:  
-    - functions  
-    - function_call  
-  - name: group_name
-    display_style : tile
-    inputs:  
-    - input1  
-    - input2
-
   inputs:
     connection:
       type:
@@ -69,7 +56,6 @@ promptflow.tools.llm.llm:
       is_multi_select: false
       ui_hints:
         text_box_size: lg
-        allow_connection_override: true
     model:
       type:
         - string
@@ -90,7 +76,6 @@ promptflow.tools.llm.llm:
       is_multi_select: false
       ui_hints:
         text_box_size: lg
-        allow_connection_override: true
     temperature:
       default: 1
       type:
@@ -145,19 +130,3 @@ promptflow.tools.llm.llm:
       advanced: true
       ui_hints:
         text_box_size: lg
-    functions:
-      type:
-      - list
-      ui_hints:
-        group: 
-          name: Function calling
-          display_style: table  # or tile
-    function_call:
-      type:
-      - string
-      - object
-      ui_hints:
-        # proposal 1
-        group: 
-          name: Function calling
-          display_style: table
