@@ -177,7 +177,7 @@ def start_trace_with_devkit(
     ref_line_run_id = env_attrs.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
     op_ctx = OperationContext.get_instance()
     # remove `referenced.line_run_id` from context to avoid stale value set by previous node
-    if ref_line_run_id:
+    if ref_line_run_id is None:
         op_ctx._remove_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID)
     else:
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
