@@ -12,7 +12,7 @@ from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
-from ._pfs_restclient.service_caller import PFSCaller
+from ._restclient.service_caller import PFSCaller
 from ._user_agent import USER_AGENT
 from ._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from .entities import Run

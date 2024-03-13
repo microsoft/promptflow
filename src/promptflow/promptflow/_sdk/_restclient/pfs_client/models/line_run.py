@@ -141,9 +141,7 @@ class LineRun:
         if isinstance(_cumulative_token_count, Unset):
             cumulative_token_count = UNSET
         else:
-            cumulative_token_count = CumulativeTokenCount.from_dict(
-                _cumulative_token_count
-            )
+            cumulative_token_count = CumulativeTokenCount.from_dict(_cumulative_token_count)
 
         _evaluations = d.pop("evaluations", UNSET)
         evaluations: Union[Unset, LineRunEvaluations]

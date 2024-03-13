@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
-from promptflow._sdk._pfs_restclient.pfs_client import Client
+from promptflow._sdk._restclient.pfs_client import Client
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy
 from promptflow.exceptions import UserErrorException
 
@@ -43,7 +43,7 @@ class PFSCaller:
 
     @_request_wrapper()
     def create_experiment(self, name: str, template: Union[str, PathLike]):
-        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.post_experiment import (
+        from promptflow._sdk._restclient.pfs_client.api.experiments.post_experiment import (
             PostExperimentBody,
             sync_detailed,
         )
@@ -55,7 +55,7 @@ class PFSCaller:
 
     @_request_wrapper()
     def show_experiment(self, name: str):
-        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.get_experiment import sync_detailed
+        from promptflow._sdk._restclient.pfs_client.api.experiments.get_experiment import sync_detailed
 
         experiment_response = sync_detailed(client=self.client, name=name)
         return experiment_response.parsed
@@ -68,7 +68,7 @@ class PFSCaller:
         archived_only: bool = False,
         include_archived: bool = False,
     ):
-        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.get_experiment_list import sync_detailed
+        from promptflow._sdk._restclient.pfs_client.api.experiments.get_experiment_list import sync_detailed
 
         experiments = sync_detailed(
             client=self.client,
@@ -90,7 +90,7 @@ class PFSCaller:
         stream: bool = False,
         inputs: Dict = None,
     ):
-        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.post_experiment_start import (
+        from promptflow._sdk._restclient.pfs_client.api.experiments.post_experiment_start import (
             PostExperimentStartBody,
             sync_detailed,
         )
@@ -112,7 +112,7 @@ class PFSCaller:
 
     @_request_wrapper()
     def stop_experiment(self, name: str):
-        from promptflow._sdk._pfs_restclient.pfs_client.api.experiments.post_experiment_stop import sync_detailed
+        from promptflow._sdk._restclient.pfs_client.api.experiments.post_experiment_stop import sync_detailed
 
         experiment_response = sync_detailed(client=self.client, name=name)
         return experiment_response.parsed

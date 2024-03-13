@@ -23,7 +23,7 @@
     "**/*.txt",
     ".gitignore",
     "scripts/docs/_build/**",
-    "src/promptflow/promptflow/_sdk/_pfs_restclient/pfs_client/**",
+    "src/promptflow/promptflow/_sdk/_restclient/pfs_client/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/promptflow/azure/_restclient/swagger.json",
     "src/promptflow/promptflow/azure/_models/**",
