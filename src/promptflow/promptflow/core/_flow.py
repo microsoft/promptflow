@@ -165,18 +165,13 @@ class Flow(FlowBase):
         return data.get("entry")
 
     @classmethod
-    def _dispatch_flow_creation(
-        cls, is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
-    ):
+    def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
         """Dispatch flow load to non-dag flow or async flow."""
         if is_eager_flow:
             return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
-            if is_async_call:
-                return AsyncFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
-            else:
-                return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+            return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
 
     @classmethod
     def _load_prepare(cls, source: Union[str, PathLike]):
@@ -204,9 +199,6 @@ class Flow(FlowBase):
             If the source is a path, it will be open and read.
             An exception is raised if the file does not exist.
         :type source: Union[PathLike, str]
-        :param is_async_call: Optional argument to indicate the return value is an async function.
-            If True, the return value is an async function, otherwise, it is a sync function.
-        :type is_async_call: bool
         :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
         :type raise_error: bool
         :return: A Flow object
@@ -218,9 +210,8 @@ class Flow(FlowBase):
             data = load_yaml_string(flow_content)
             content_hash = hash(flow_content)
         is_eager_flow = cls._is_eager_flow(data)
-        is_async_call = kwargs.pop("is_async_call", False)
         return cls._dispatch_flow_creation(
-            is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=raise_error, **kwargs
+            is_eager_flow, flow_path, data, content_hash, raise_error=raise_error, **kwargs
         )
 
     def _init_executable(self):

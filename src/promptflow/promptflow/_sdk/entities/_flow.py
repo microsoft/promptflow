@@ -147,9 +147,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
 
     @classmethod
-    def _dispatch_flow_creation(
-        cls, is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
-    ):
+    def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
         """Dispatch flow load to eager flow or async flow."""
         from promptflow._sdk.entities._eager_flow import FlexFlow
 
@@ -157,10 +155,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
             return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
-            if is_async_call:
-                return AsyncFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
-            else:
-                return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+            return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""

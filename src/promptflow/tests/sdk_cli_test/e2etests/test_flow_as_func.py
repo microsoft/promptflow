@@ -52,7 +52,9 @@ class TestFlowAsFunc:
         ],
     )
     async def test_flow_as_a_func_asynckw(self, async_call_folder):
-        f = load_flow(async_call_folder, is_async_call=True)
+        from promptflow.core._flow import AsyncFlow
+
+        f = AsyncFlow.load(async_call_folder)
         result = await f(key="PATH")
         assert result["output"] is not None
 
@@ -74,7 +76,7 @@ class TestFlowAsFunc:
             return obj
 
         with mock.patch("promptflow.core._flow.AsyncFlow.invoke_async", parse_invoke_async):
-            f_async_tools = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
+            f_async_tools = AsyncFlow.load(f"{FLOWS_DIR}/async_tools")
             f_env_var_async = AsyncFlow.load(f"{FLOWS_DIR}/print_env_var_async")
 
             time_start = datetime.now()
