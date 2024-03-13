@@ -35,18 +35,19 @@ class BaseExecutionRequest(BaseRequest):
                 working_dir=self.working_dir.as_posix(),
                 flow_file=self.flow_file.as_posix(),
             )
-        else:
-            # Ensure that the flow file path is within the working directory
-            working_dir = os.path.normpath(self.working_dir)
-            flow_file = os.path.normpath(self.flow_file)
-            full_path = os.path.normpath(os.path.join(working_dir, flow_file))
-            if not full_path.startswith(working_dir):
-                raise FlowFilePathInvalid(
-                    message_format=(
-                        "The flow file path ({flow_file}) is invalid. The path should be in the working directory."
-                    ),
-                    flow_file=self.flow_file.as_posix(),
-                )
+        # Ensure that the flow file path is within the working directory
+        working_dir = os.path.normpath(self.working_dir)
+        flow_file = os.path.normpath(self.flow_file)
+        full_path = os.path.normpath(os.path.join(working_dir, flow_file))
+        if not full_path.startswith(working_dir):
+            raise FlowFilePathInvalid(
+                message_format=(
+                    "The flow file path ({flow_file}) is invalid. The path should be in the working directory."
+                ),
+                flow_file=self.flow_file.as_posix(),
+            )
+        self.working_dir = Path(working_dir)
+        self.flow_file = Path(flow_file)
 
 
 class FlowExecutionRequest(BaseExecutionRequest):
