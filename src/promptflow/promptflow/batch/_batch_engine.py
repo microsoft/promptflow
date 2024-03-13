@@ -176,8 +176,6 @@ class BatchEngine:
                     self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
-                    worker_count=self._worker_count,
-                    line_timeout_sec=self._line_timeout_sec,
                     **self._kwargs,
                 )
                 try:
