@@ -6,7 +6,7 @@ import os
 import time
 import base64
 import zlib
-
+from pathlib import Path
 from flask import jsonify, request
 
 from promptflow._sdk._serving._errors import (
@@ -20,6 +20,8 @@ from promptflow.exceptions import ErrorTarget
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context import Context
+
+DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
 
 
 def load_request_data(flow, raw_data, logger):
@@ -144,6 +146,7 @@ def encode_dict(data: dict) -> str:
 
 def try_extract_trace_context(logger) -> Context:
     """Try to extract trace context from request headers."""
+    # reference: https://www.w3.org/TR/trace-context/
     trace_parent = request.headers.get('Traceparent')
     if trace_parent:
         carrier = {'traceparent': trace_parent}
@@ -175,3 +178,12 @@ def serialize_attribute_value(v):
         except Exception:
             v_str = str(v)
         return v_str
+
+
+def load_feedback_swagger():
+    feedback_swagger_path = DEFAULT_RESOURCE_PATH / "feedback_swagger.json"
+    # Open the JSON file
+    with open(feedback_swagger_path, 'r') as file:
+        # Load JSON data from the file
+        data = json.load(file)
+    return data

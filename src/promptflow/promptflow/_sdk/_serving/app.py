@@ -6,7 +6,6 @@ import json
 import logging
 import mimetypes
 import os
-from pathlib import Path
 from typing import Dict
 
 from flask import Flask, g, jsonify, request
@@ -24,6 +23,7 @@ from promptflow._sdk._serving.utils import (
     streaming_response_required,
     try_extract_trace_context,
     serialize_attribute_value,
+    load_feedback_swagger,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._utils.exception_utils import ErrorResponse
@@ -37,7 +37,6 @@ from opentelemetry import context, baggage
 from .swagger import generate_swagger
 
 logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
-DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
 
@@ -113,11 +112,7 @@ class PromptflowServingApp(Flask):
     def init_swagger(self):
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
         self.swagger = generate_swagger(self.flow, self.sample, self.response_fields_to_remove)
-        feedback_swagger_path = DEFAULT_RESOURCE_PATH / "feedback_swagger.json"
-        # Open the JSON file
-        with open(feedback_swagger_path, 'r') as file:
-            # Load JSON data from the file
-            data = json.load(file)
+        data = load_feedback_swagger()
         self.swagger['paths']['/feedback'] = data
 
     def set_default_environment_variables(self, default_environment_variables: Dict[str, str] = None):
@@ -230,7 +225,7 @@ def add_default_routes(app: PromptflowServingApp):
                         logger.warning(f"Failed to flatten the feedback, fall back to non-flattern mode. Error: {e}.")
                         span.set_attribute('feedback', str(data))
                 else:
-                    span.set_attribute('feedback', str(data))
+                    span.set_attribute('feedback', data)
                 # add baggage data if exist
                 data = baggage.get_all()
                 if data:

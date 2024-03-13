@@ -5,13 +5,14 @@ import re
 import pytest
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._serving.utils import load_feedback_swagger
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_swagger(flow_serving_client):
     swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
-    assert swagger_dict == {
+    expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {
             "title": "Promptflow[basic-with-connection] API",
@@ -54,13 +55,82 @@ def test_swagger(flow_serving_client):
         },
         "security": [{"bearerAuth": []}],
     }
+    feedback_swagger = load_feedback_swagger()
+    expected_swagger["paths"]["/feedback"] = feedback_swagger
+    assert swagger_dict == expected_swagger
+
+
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.e2etest
+def test_feedback_flatten(flow_serving_client):
+    from opentelemetry import trace
+    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from promptflow._sdk._serving.monitor.memory_exporter import MemoryExporter
+
+    resource = Resource(
+        attributes={
+            SERVICE_NAME: "promptflow",
+        }
+    )
+    trace.set_tracer_provider(TracerProvider(resource=resource))
+    provider = trace.get_tracer_provider()
+    exporter = MemoryExporter()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    feedback_data = {"feedback": "positive"}
+    response = flow_serving_client.post("/feedback?flatten=true", data=json.dumps(feedback_data))
+    assert response.status_code == 200
+    spans = exporter.spans
+    assert len(spans) == 1
+    assert spans[0].attributes["span_type"] == "Feedback"
+    assert spans[0].attributes["feedback"] == feedback_data["feedback"]
+
+
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
+@pytest.mark.e2etest
+def test_feedback_with_trace_context(flow_serving_client):
+    from opentelemetry import trace
+    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from promptflow._sdk._serving.monitor.memory_exporter import MemoryExporter
+
+    resource = Resource(
+        attributes={
+            SERVICE_NAME: "promptflow",
+        }
+    )
+    trace.set_tracer_provider(TracerProvider(resource=resource))
+    provider = trace.get_tracer_provider()
+    exporter = MemoryExporter()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    feedback_data = {"feedback": "positive"}
+    trace_ctx_version = "00"
+    trace_ctx_trace_id = "8a3c60f7d6e2f3b4a4f2f7f3f3f3f3f3"
+    trace_ctx_parent_id = "f3f3f3f3f3f3f3f3"
+    trace_ctx_flags = "01"
+    trace_parent = f"{trace_ctx_version}-{trace_ctx_trace_id}-{trace_ctx_parent_id}-{trace_ctx_flags}"
+    response = flow_serving_client.post("/feedback",
+                                        headers={"traceparent": trace_parent, "baggage": "userId=alice"},
+                                        data=json.dumps(feedback_data))
+    assert response.status_code == 200
+    spans = exporter.spans
+    assert len(spans) == 1
+    # validate trace context
+    assert spans[0].attributes["span_type"] == "Feedback"
+    assert spans[0].context.trace_id == int(trace_ctx_trace_id, 16)
+    assert spans[0].parent.span_id == int(trace_ctx_parent_id, 16)
+    # validate feedback data
+    collected_feedback = json.loads(spans[0].attributes["feedback"])
+    assert collected_feedback == feedback_data
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_chat_swagger(serving_client_llm_chat):
     swagger_dict = json.loads(serving_client_llm_chat.get("/swagger.json").data.decode())
-    assert swagger_dict == {
+    expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {
             "title": "Promptflow[chat_flow_with_stream_output] API",
@@ -113,6 +183,9 @@ def test_chat_swagger(serving_client_llm_chat):
         },
         "security": [{"bearerAuth": []}],
     }
+    feedback_swagger = load_feedback_swagger()
+    expected_swagger["paths"]["/feedback"] = feedback_swagger
+    assert swagger_dict == expected_swagger
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -368,7 +441,7 @@ def test_eager_flow_serve(simple_eager_flow):
 @pytest.mark.e2etest
 def test_eager_flow_swagger(simple_eager_flow):
     swagger_dict = json.loads(simple_eager_flow.get("/swagger.json").data.decode())
-    assert swagger_dict == {
+    expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {
             "title": "Promptflow[simple_with_dict_output] API",
@@ -414,6 +487,9 @@ def test_eager_flow_swagger(simple_eager_flow):
         },
         "security": [{"bearerAuth": []}],
     }
+    feedback_swagger = load_feedback_swagger()
+    expected_swagger["paths"]["/feedback"] = feedback_swagger
+    assert swagger_dict == expected_swagger
 
 
 @pytest.mark.e2etest
@@ -430,7 +506,7 @@ def test_eager_flow_serve_primitive_output(simple_eager_flow_primitive_output):
 @pytest.mark.e2etest
 def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output):
     swagger_dict = json.loads(simple_eager_flow_primitive_output.get("/swagger.json").data.decode())
-    assert swagger_dict == {
+    expected_swagger = {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
         "info": {"title": "Promptflow[primitive_output] API", "version": "1.0.0", "x-flow-name": "primitive_output"},
         "openapi": "3.0.0",
@@ -469,6 +545,9 @@ def test_eager_flow_primitive_output_swagger(simple_eager_flow_primitive_output)
         },
         "security": [{"bearerAuth": []}],
     }
+    feedback_swagger = load_feedback_swagger()
+    expected_swagger["paths"]["/feedback"] = feedback_swagger
+    assert swagger_dict == expected_swagger
 
 
 @pytest.mark.e2etest
