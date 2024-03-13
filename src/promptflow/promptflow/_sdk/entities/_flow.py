@@ -151,10 +151,10 @@ class Flow(FlowCore, SchemaValidatableMixin):
         cls, is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
     ):
         """Dispatch flow load to eager flow or async flow."""
-        from promptflow._sdk.entities._eager_flow import EagerFlow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
 
         if is_eager_flow:
-            return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
+            return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
             if is_async_call:

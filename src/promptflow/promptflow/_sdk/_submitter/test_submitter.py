@@ -29,7 +29,7 @@ from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
 from .._configuration import Configuration
-from ..entities._eager_flow import EagerFlow
+from ..entities._eager_flow import FlexFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
@@ -61,12 +61,12 @@ class TestSubmitter:
 
     def __init__(
         self,
-        flow: Union[Flow, EagerFlow],
+        flow: Union[Flow, FlexFlow],
         flow_context: FlowContext,
         client=None,
     ):
         self._flow = flow
-        self.entry = flow.entry if isinstance(flow, EagerFlow) else None
+        self.entry = flow.entry if isinstance(flow, FlexFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -161,7 +161,7 @@ class TestSubmitter:
     def _resolve_connections(cls, flow: FlowBase, client):
         if flow.language == FlowLanguage.CSharp:
             # TODO: check if this is a shared logic
-            if isinstance(flow, EagerFlow):
+            if isinstance(flow, FlexFlow):
                 # connection overrides are not supported for eager flow for now
                 return {}
 

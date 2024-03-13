@@ -37,7 +37,7 @@ from promptflow._sdk._utils import (
     logger,
     parse_variant,
 )
-from promptflow._sdk.entities._eager_flow import EagerFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
 from promptflow._sdk.entities._flow import Flow, FlowBase
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
@@ -162,7 +162,7 @@ class FlowOperations(TelemetryMixin):
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow: FlowBase = load_flow(flow)
 
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             if variant or node:
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
@@ -176,7 +176,7 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, EagerFlow):
+            if isinstance(flow, FlexFlow):
                 # TODO(2897153): support chat eager flow
                 is_chat_flow, chat_history_input_name = False, None
                 flow_inputs, dependency_nodes_outputs = inputs, None
@@ -827,8 +827,8 @@ class FlowOperations(TelemetryMixin):
         :return: dict of flow meta
         :rtype: Tuple[dict, dict]
         """
-        flow: Union[Flow, EagerFlow] = load_flow(source=flow)
-        if not isinstance(flow, EagerFlow):
+        flow: Union[Flow, FlexFlow] = load_flow(source=flow)
+        if not isinstance(flow, FlexFlow):
             # No flow meta for DAG flow
             return {}
 

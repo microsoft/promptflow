@@ -127,11 +127,21 @@ class FlowBase(abc.ABC):
 
 
 class Flow(FlowBase):
-    """This class is public Flow interface.
+    """A Flow in the context of PromptFlow is a sequence of steps that define a task.
+    Each step in the flow could be a prompt that is sent to a language model, or simply a function task,
+    and the output of one step can be used as the input to the next.
+    Flows can be used to build complex applications with language models.
 
-    Provides two basic functionalities:
-    1. Load flow from YAML file: flow = Flow.load(source=src, ...)
-    2. Invoke loaded flow with inputs. flow() or flow.invoke(inputs=...)
+    The Flow class provides two basic functionalities:
+    1. Load flow from YAML file: `flow = Flow.load(source=src, ...)`
+    2. Invoke loaded flow with inputs. `flow() or flow.invoke(inputs=...)`
+
+    Simple Example:
+    ```python
+    from promptflow.core import Flow
+    flow = Flow.load(source="path/to/flow.dag.yaml")
+    result = flow(input_a=1, input_b=2)
+    ```
     """
 
     def __init__(
@@ -150,17 +160,17 @@ class Flow(FlowBase):
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
-        """Check if the flow is an eager flow. Use field 'entry' to determine."""
-        # If entry specified, it's an eager flow.
+        """Check if the flow is an non-dag flow. Use field 'entry' to determine."""
+        # If entry specified, it's an non-dag flow.
         return data.get("entry")
 
     @classmethod
     def _dispatch_flow_creation(
         cls, is_eager_flow, is_async_call, flow_path, data, content_hash, raise_error=True, **kwargs
     ):
-        """Dispatch flow load to eager flow or async flow."""
+        """Dispatch flow load to non-dag flow or async flow."""
         if is_eager_flow:
-            return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
+            return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
             if is_async_call:
@@ -197,7 +207,7 @@ class Flow(FlowBase):
         :param is_async_call: Optional argument to indicate the return value is an async function.
             If True, the return value is an async function, otherwise, it is a sync function.
         :type is_async_call: bool
-        :param raise_error: Argument for eager flow raise validation error on unknown fields.
+        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
         :type raise_error: bool
         :return: A Flow object
         :rtype: Flow
@@ -255,10 +265,10 @@ class Flow(FlowBase):
         return result
 
 
-class EagerFlow(Flow):
-    """This class is used to represent an eager flow.
-    Load of eager flow is provided.
-    Direct call eager flow with cause exceptions.
+class FlexFlow(Flow):
+    """A FlexFlow represents an non-dag flow, which uses codes to define the flow.
+    FlexFlow basically behave like a Flow, but its entry function should be provided in the flow.dag.yaml file.
+    Load of this non-dag flow is provided, but direct call of non-dag flow will cause exceptions.
     """
 
     def __init__(
@@ -277,7 +287,7 @@ class EagerFlow(Flow):
         self.entry = entry
         # entry file name
         self.entry_file = self._resolve_entry_file(entry=entry, working_dir=code)
-        # TODO(2910062): support eager flow execution cache
+        # TODO(2910062): support non-dag flow execution cache
         super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
     @classmethod
@@ -296,15 +306,15 @@ class EagerFlow(Flow):
         source: Union[str, PathLike],
         raise_error=True,
         **kwargs,
-    ) -> "EagerFlow":
+    ) -> "FlexFlow":
         """
-        Direct load eager flow from YAML file.
+        Direct load non-dag flow from YAML file.
 
         :param source: The local yaml source of a flow. Must be a path to a local file.
             If the source is a path, it will be open and read.
             An exception is raised if the file does not exist.
         :type source: Union[PathLike, str]
-        :param raise_error: Argument for eager flow raise validation error on unknown fields.
+        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
         :type raise_error: bool
         :return: A EagerFlow object
         :rtype: EagerFlow
@@ -315,7 +325,7 @@ class EagerFlow(Flow):
             data = load_yaml_string(flow_content)
         is_eager_flow = cls._is_eager_flow(data)
         if not is_eager_flow:
-            raise UserErrorException("Please load an eager flow with EagerFlow.load method.")
+            raise UserErrorException("Please load an non-dag flow with EagerFlow.load method.")
         return cls._load(path=flow_path, data=data, **kwargs)
 
     def _init_executable(self):
@@ -331,8 +341,8 @@ class EagerFlow(Flow):
         return ExecutableEagerFlow.deserialize(meta_dict)
 
     def __call__(self, *args, **kwargs):
-        """Direct call of eager flow WILL cause exceptions."""
-        raise UserErrorException("Eager flow can not be called as a function.")
+        """Direct call of non-dag flow WILL cause exceptions."""
+        raise UserErrorException("FlexFlow can not be called as a function.")
 
     # endregion
 
@@ -356,7 +366,15 @@ class EagerFlow(Flow):
 
 
 class AsyncFlow(Flow):
-    """This class is used to represent an async flow."""
+    """Async flow is based on Flow, which is used to invoke flow in async mode.
+
+    Simple Example:
+    ```python
+    from promptflow.core import class AsyncFlow
+    flow = AsyncFlow.load(source="path/to/flow.dag.yaml")
+    result = await flow(input_a=1, input_b=2)
+    ```
+    """
 
     # region overrides
     @classmethod
@@ -373,7 +391,7 @@ class AsyncFlow(Flow):
             If the source is a path, it will be open and read.
             An exception is raised if the file does not exist.
         :type source: Union[PathLike, str]
-        :param raise_error: Argument for eager flow raise validation error on unknown fields.
+        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
         :type raise_error: bool
         :return: An AsyncFlow object
         :rtype: AsyncFlow

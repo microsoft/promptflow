@@ -7,12 +7,12 @@ from typing import Dict
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
-from promptflow.core._flow import EagerFlow as EagerFlowCore
+from promptflow.core._flow import FlexFlow as FlexFlowCore
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
-class EagerFlow(EagerFlowCore, SchemaValidatableMixin):
-    __doc__ = EagerFlowCore.__doc__
+class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
+    __doc__ = FlexFlowCore.__doc__
 
     # region properties
     @property

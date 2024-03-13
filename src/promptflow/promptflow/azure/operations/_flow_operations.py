@@ -601,10 +601,10 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @classmethod
     def _generate_meta_for_eager_flow(cls, code):
         from promptflow import load_flow as load_local_flow
-        from promptflow._sdk.entities._eager_flow import EagerFlow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
 
         flow = load_local_flow(code.path)
-        if isinstance(flow, EagerFlow) and flow.language == FlowLanguage.Python:
+        if isinstance(flow, FlexFlow) and flow.language == FlowLanguage.Python:
             # TODO: support generate meta for CSharp flow
             generate_flow_meta(
                 flow_directory=code.path,
