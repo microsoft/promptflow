@@ -1244,3 +1244,41 @@ def overwrite_null_std_logger():
         sys.stdout = open(os.devnull, "w")
     if sys.stderr is None:
         sys.stderr = sys.stdout
+
+
+@contextmanager
+def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
+    """Generate yaml entry to run."""
+    if os.path.exists(entry):
+        yield entry
+    else:
+        with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
+            yield flow_yaml_path
+
+
+@contextmanager
+def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
+    """Create a temporary flow.dag.yaml in code folder"""
+    # directly return the entry if it's a file
+
+    flow_yaml_path = code / DAG_FILE_NAME
+    existing_content = None
+    try:
+        if flow_yaml_path.exists():
+            logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
+            with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
+                existing_content = f.read()
+        with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
+            dump_yaml({"entry": entry}, f)
+        yield flow_yaml_path
+    finally:
+        # delete the file or recover the content
+        if flow_yaml_path.exists():
+            if existing_content:
+                with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
+                    f.write(existing_content)
+            else:
+                try:
+                    flow_yaml_path.unlink()
+                except Exception as e:
+                    logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")

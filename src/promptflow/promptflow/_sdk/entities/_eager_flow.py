@@ -24,9 +24,9 @@ class EagerFlow(FlowBase, SchemaValidatableMixin):
         data: dict,
         **kwargs,
     ):
-        # flow.dag.yaml file path or entry.py file path
+        # flow.dag.yaml file path
         path = Path(path)
-        # flow.dag.yaml file's folder or entry.py's folder
+        # flow.dag.yaml file's folder
         code = Path(code)
         # entry function name
         self.entry = entry

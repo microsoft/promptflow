@@ -34,6 +34,7 @@ from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
@@ -1249,15 +1250,40 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
-    @pytest.mark.skip("Won't support this kind of usage.")
     def test_eager_flow_run_without_yaml(self, pf):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
         run = pf.run(
-            flow=flow_path,
-            entry="my_flow",
+            flow="entry:my_flow",
+            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
         )
         assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # the YAML file will not exist in user's folder
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+
+    def test_eager_flow_yaml_override(self, pf):
+        run = pf.run(
+            flow="entry2:my_flow2",
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # original YAMl content not changed
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        assert original_dict["entry"] == "entry1:my_flow1"
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
 
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
