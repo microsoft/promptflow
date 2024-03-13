@@ -385,7 +385,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_env_var/flow.dag.yaml
   response:
     body:
       string: ''
@@ -435,7 +435,7 @@ interactions:
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure/flow.dag.yaml
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_env_var/flow.dag.yaml
   response:
     body:
       string: ''
@@ -455,7 +455,7 @@ interactions:
       message: The specified blob does not exist.
 - request:
     body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
-      "LocalUpload/000000000000000000000000000000000000/print_env_var_for_sdk_cli_azure/flow.dag.yaml",
+      "LocalUpload/000000000000000000000000000000000000/print_env_var/flow.dag.yaml",
       "runId": "name", "runDisplayName": "name", "runExperimentName": "", "batchDataInput":
       {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/env_var_names.jsonl"},
       "inputsMapping": {}, "connections": {}, "environmentVariables": {"API_BASE":
@@ -732,7 +732,7 @@ interactions:
         "azureml.promptflow.session_id": "62adccc385dd5d078797bdd0d2e1c55e120f3d5216885b81",
         "azureml.promptflow.flow_lineage_id": "f1efdb93dcf9b3c17e246e7bcf0e2c7398d7bc289f8dd2c3d8f808eacc63c31f",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
-        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/3360ae705933fb90bcd290241ca0ece9/print_env_var_for_sdk_cli_azure/flow.dag.yaml",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/3360ae705933fb90bcd290241ca0ece9/print_env_var/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/c32a61842e439cecc022ebcff5dc0da4/env_var_names.jsonl",
         "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
         "9edd066b-dcf6-4639-933d-6ffb8be07a2c"}, "parameters": {}, "actionUris": {},
