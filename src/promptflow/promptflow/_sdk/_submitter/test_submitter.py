@@ -585,6 +585,6 @@ class TestSubmitter:
         # covert output to dict to unify the log
         outputs = convert_eager_flow_output_to_dict(outputs)
         if isinstance(outputs, dict):
-            generator_outputs = {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+            generator_outputs = {key: output for key, output in outputs.items() if isinstance(output, GeneratorType)}
             if generator_outputs:
                 logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
