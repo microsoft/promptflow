@@ -15,7 +15,6 @@ from promptflow import load_flow
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
-from promptflow.core import AsyncFlow
 from promptflow.core._flow_context_resolver import FlowContextResolver
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
@@ -53,7 +52,7 @@ class TestFlowAsFunc:
         ],
     )
     async def test_flow_as_a_func_asynckw(self, async_call_folder):
-        f = AsyncFlow.load(async_call_folder)
+        f = load_flow(async_call_folder, is_async_call=True)
         result = await f(key="PATH")
         assert result["output"] is not None
 
@@ -75,7 +74,7 @@ class TestFlowAsFunc:
             return obj
 
         with mock.patch("promptflow.core._flow.AsyncFlow.invoke_async", parse_invoke_async):
-            f_async_tools = AsyncFlow.load(f"{FLOWS_DIR}/async_tools")
+            f_async_tools = load_flow(f"{FLOWS_DIR}/async_tools", is_async_call=True)
             f_env_var_async = AsyncFlow.load(f"{FLOWS_DIR}/print_env_var_async")
 
             time_start = datetime.now()

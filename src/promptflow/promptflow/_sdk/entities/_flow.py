@@ -154,13 +154,13 @@ class Flow(FlowCore, SchemaValidatableMixin):
         from promptflow._sdk.entities._eager_flow import EagerFlow
 
         if is_eager_flow:
-            return EagerFlow.load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
+            return EagerFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
             if is_async_call:
-                return AsyncFlow.load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                return AsyncFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
             else:
-                return Flow.load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
+                return Flow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
