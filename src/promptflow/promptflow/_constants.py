@@ -22,7 +22,7 @@ EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
 USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
-DAG_FILE_NAME = "flow.dag.yaml"
+DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
 
 # Tool meta info
 ICON_DARK = "icon_dark"

@@ -38,7 +38,7 @@ from promptflow._sdk._utils import (
     parse_variant,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -682,12 +682,12 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
+        flow_entity: Flow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        if isinstance(flow_entity, ProtectedFlow):
+        if isinstance(flow_entity, Flow):
             # only DAG flow has tools meta
             source_path_mapping = {}
             flow_tools, tools_errors = self._generate_tools_meta(
@@ -748,7 +748,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: FlowBase = load_flow(source=flow)
-        if not isinstance(flow, ProtectedFlow):
+        if not isinstance(flow, Flow):
             # No tools meta for eager flow
             return {}, {}
 
@@ -827,7 +827,7 @@ class FlowOperations(TelemetryMixin):
         :return: dict of flow meta
         :rtype: Tuple[dict, dict]
         """
-        flow: Union[ProtectedFlow, EagerFlow] = load_flow(source=flow)
+        flow: Union[Flow, EagerFlow] = load_flow(source=flow)
         if not isinstance(flow, EagerFlow):
             # No flow meta for DAG flow
             return {}

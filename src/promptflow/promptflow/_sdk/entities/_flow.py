@@ -5,7 +5,13 @@
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-from promptflow._constants import DAG_FILE_NAME, FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
+from promptflow._constants import (
+    DEFAULT_FLOW_YAML_FILE_NAME,
+    FLOW_TOOLS_JSON,
+    LANGUAGE_KEY,
+    PROMPT_FLOW_DIR_NAME,
+    FlowLanguage,
+)
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -30,14 +36,12 @@ class Flow(FlowCore, SchemaValidatableMixin):
         params_override: Optional[Dict] = None,
         **kwargs,
     ):
-        flow_dir, dag_file_name = self._get_flow_definition(self.code)
         super().__init__(path=path, code=code, dag=dag, **kwargs)
 
-        self._flow_dir = flow_dir
-        self._dag_file_name = dag_file_name
         self._executable = None
         self._params_override = params_override
         self.variant = kwargs.pop("variant", None) or {}
+        self.flow_dir, self.dag_file_name = self._get_flow_definition(self.code)
 
     # region properties
     @property
@@ -75,8 +79,8 @@ class Flow(FlowCore, SchemaValidatableMixin):
         else:
             flow_path = Path(flow)
 
-        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-            return flow_path, DAG_FILE_NAME
+        if flow_path.is_dir() and (flow_path / DEFAULT_FLOW_YAML_FILE_NAME).is_file():
+            return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
         elif flow_path.is_file():
             return flow_path.parent, flow_path.name
 

@@ -133,7 +133,7 @@ class Flow(FlowBase):
     interfaces to improve the code quality. On the other hand, making all internal interfaces private will make it
     strange to use them everywhere inside this package.
 
-    Ideally, developers should always initialize ProtectedFlow object instead of Flow object.
+    Ideally, developers should always initialize Flow object instead of Flow object.
     """
 
     def __init__(
