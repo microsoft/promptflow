@@ -77,7 +77,7 @@ class FlowInvoker:
 
     def _init_connections(self, connection_provider):
         self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self.flow)
-        if not connection_provider or isinstance(connection_provider, str):
+        if connection_provider is None or isinstance(connection_provider, str):
             config = {"connection.provider": connection_provider} if connection_provider else None
             self.logger.info(f"Getting connections from pf client with provider from args: {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
