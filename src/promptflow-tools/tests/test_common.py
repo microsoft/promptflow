@@ -10,6 +10,7 @@ from promptflow.tools.exception import ListDeploymentsError
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.contracts.multimedia import Image
 from tests.utils import CustomException, Deployment
+import os
 
 DEFAULT_SUBSCRIPTION_ID = "sub"
 DEFAULT_RESOURCE_GROUP_NAME = "rg"
@@ -36,6 +37,14 @@ def mock_build_connection_dict_func3(**kwargs):
 
 
 class TestCommon:
+    def setup_method(self, method):
+        # set environment variable to mock the runtime environment
+        os.environ['AZUREML_ARM_WORKSPACE_NAME'] = 'fake_ws'
+
+    def teardown_method(self, method):
+        # undo the environment variable change after tests
+        del os.environ['AZUREML_ARM_WORKSPACE_NAME']
+
     @pytest.mark.parametrize(
         "functions, error_message",
         [
@@ -343,4 +352,8 @@ class TestCommon:
         assert normalized_config == expected_output
 
     def test_is_on_runtime(self):
+        os.environ['AZUREML_ARM_WORKSPACE_NAME'] = 'fake_ws'
+        assert is_on_runtime()
+        del os.environ['AZUREML_ARM_WORKSPACE_NAME']
         assert not is_on_runtime()
+        os.environ['AZUREML_ARM_WORKSPACE_NAME'] = 'fake_ws'
