@@ -1209,7 +1209,7 @@ class TestFlowRun:
                     ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
                 ],
             ),
-            _kind="default",
+            _kind="default",  # make the mocked workspace pass the datastore check
         )
 
         def submit(*args, **kwargs):
