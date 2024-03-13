@@ -18,7 +18,6 @@ Default runtime image is continuously updated, and here we record the new featur
 ### 20240306.v5
 
 #### New features
-- Enable using token based AOAI connection in built-in LLM tools and embedding tool.
 - Support "seed" parameter for built-in LLM tools and GPT-4V tools.
 
 #### Bugs fixed
