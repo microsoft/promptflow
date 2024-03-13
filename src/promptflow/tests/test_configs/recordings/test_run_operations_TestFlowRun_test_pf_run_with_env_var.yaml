@@ -9,21 +9,21 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.31)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
-        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
-        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+        "eastus2euap", "tags": {}, "etag": null, "kind": "Default", "sku": {"name":
+        "Basic", "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '3630'
+      - '3649'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.027'
+      - '0.013'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Linux-5.15.146.1-microsoft-standard-WSL2-x86_64-with-glibc2.31)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -67,15 +67,15 @@ interactions:
         "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
         "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
         "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
-        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "systemData": {"createdAt": "2023-09-22T05:26:30.7527337+00:00", "createdBy":
         "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
-        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
-        "lastModifiedByType": "Application"}}]}'
+        "2024-01-10T09:29:14.5412854+00:00", "lastModifiedBy": "Philip Gao", "lastModifiedByType":
+        "User"}}]}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1372'
+      - '1345'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.059'
+      - '0.797'
     status:
       code: 200
       message: OK

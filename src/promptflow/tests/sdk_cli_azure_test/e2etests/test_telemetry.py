@@ -395,7 +395,9 @@ class TestTelemetry:
             ), f"'pf.flows.test' not found in {record.custom_dimensions['activity_name']}"
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
+            shutil.copytree(
+                (Path(FLOWS_DIR) / "print_env_var_for_sdk_cli_azure").resolve().as_posix(), temp_dir, dirs_exist_ok=True
+            )
             with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
                 mock_logger.side_effect = assert_node_run
 
