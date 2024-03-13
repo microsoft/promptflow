@@ -1,13 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from enum import Enum
 from pathlib import Path
 
 CONNECTION_NAME_PROPERTY = "__connection_name"
 CONNECTION_SECRET_KEYS = "__secret_keys"
+CONNECTION_SCRUBBED_VALUE = "******"
 PROMPTFLOW_CONNECTIONS = "PROMPTFLOW_CONNECTIONS"
 PROMPTFLOW_SECRETS_FILE = "PROMPTFLOW_SECRETS_FILE"
 PF_NO_INTERACTIVE_LOGIN = "PF_NO_INTERACTIVE_LOGIN"
+PF_RUN_AS_BUILT_BINARY = "PF_RUN_AS_BUILT_BINARY"
 PF_LOGGING_LEVEL = "PF_LOGGING_LEVEL"
 OPENAI_API_KEY = "openai-api-key"
 BING_API_KEY = "bing-api-key"
@@ -17,6 +20,7 @@ CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
+USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
 # Tool meta info
 ICON_DARK = "icon_dark"
@@ -64,6 +68,7 @@ STREAMING_ANIMATION_TIME = 0.01
 # trace related
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
+RUNNING_LINE_RUN_STATUS = "Running"
 
 
 class TraceEnvironmentVariableName:
@@ -111,9 +116,9 @@ class SpanAttributeFieldName:
     INPUTS = "inputs"
     OUTPUT = "output"
     # token metrics
-    COMPLETION_TOKEN_COUNT = "llm.token_count.completion"
-    PROMPT_TOKEN_COUNT = "llm.token_count.prompt"
-    TOTAL_TOKEN_COUNT = "llm.token_count.total"
+    COMPLETION_TOKEN_COUNT = "llm.usage.completion_tokens"
+    PROMPT_TOKEN_COUNT = "llm.usage.prompt_tokens"
+    TOTAL_TOKEN_COUNT = "llm.usage.total_tokens"
     CUMULATIVE_COMPLETION_TOKEN_COUNT = "__computed__.cumulative_token_count.completion"
     CUMULATIVE_PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     CUMULATIVE_TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
@@ -164,3 +169,50 @@ class MessageFormatType:
 
 
 DEFAULT_OUTPUT_NAME = "output"
+OUTPUT_FILE_NAME = "output.jsonl"
+
+
+class OutputsFolderName:
+    FLOW_OUTPUTS = "flow_outputs"
+    FLOW_ARTIFACTS = "flow_artifacts"
+    NODE_ARTIFACTS = "node_artifacts"
+
+
+class ConnectionType(str, Enum):
+    _NOT_SET = "NotSet"
+    AZURE_OPEN_AI = "AzureOpenAI"
+    OPEN_AI = "OpenAI"
+    QDRANT = "Qdrant"
+    COGNITIVE_SEARCH = "CognitiveSearch"
+    SERP = "Serp"
+    AZURE_CONTENT_SAFETY = "AzureContentSafety"
+    FORM_RECOGNIZER = "FormRecognizer"
+    WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
+    CUSTOM = "Custom"
+
+
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
+
+
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "promptflow.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    PACKAGE = "package"
+    PACKAGE_VERSION = "package_version"
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+    PROMPTFLOW_PACKAGE_KEY = PREFIX + PACKAGE
+    PROMPTFLOW_PACKAGE_VERSION_KEY = PREFIX + PACKAGE_VERSION
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
+        ]

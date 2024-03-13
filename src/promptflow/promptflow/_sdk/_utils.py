@@ -56,7 +56,6 @@ from promptflow._sdk._constants import (
     VARIANTS,
     AzureMLWorkspaceTriad,
     CommonYamlFields,
-    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -75,10 +74,6 @@ from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
-
-
-def snake_to_camel(name):
-    return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
 
 
 def find_type_in_override(params_override: Optional[list] = None) -> Optional[str]:
@@ -313,25 +308,6 @@ def update_dict_value_with_connections(built_connections, connection_dict: dict)
         if connection_key not in built_connections[connection_name]["value"]:
             continue
         connection_dict[key] = built_connections[connection_name]["value"][connection_key]
-
-
-def in_jupyter_notebook() -> bool:
-    """
-    Checks if user is using a Jupyter Notebook. This is necessary because logging is not allowed in
-    non-Jupyter contexts.
-
-    Adapted from https://stackoverflow.com/a/22424821
-    """
-    try:  # cspell:ignore ipython
-        from IPython import get_ipython
-
-        if "IPKernelApp" not in get_ipython().config:
-            return False
-    except ImportError:
-        return False
-    except AttributeError:
-        return False
-    return True
 
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
@@ -1043,41 +1019,6 @@ def parse_remote_flow_pattern(flow: object) -> str:
             raise UserErrorException(error_message)
         flow_name = match.groups()[0]
     return flow_name
-
-
-def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
-    """
-    Get connection operation based on connection provider.
-    This function will be called by PFClient, so please do not refer to PFClient in this function.
-
-    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
-    :type connection_provider: str
-    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
-    :type credential: object
-    :param user_agent: User Agent
-    :type user_agent: str
-    """
-    if connection_provider == ConnectionProvider.LOCAL.value:
-        from promptflow._sdk.operations._connection_operations import ConnectionOperations
-
-        logger.debug("PFClient using local connection operations.")
-        connection_operation = ConnectionOperations()
-    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
-        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
-
-        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
-        if user_agent is None:
-            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
-        else:
-            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
-    else:
-        error = ValueError(f"Unsupported connection provider: {connection_provider}")
-        raise UserErrorException(
-            target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=str(error),
-            error=error,
-        )
-    return connection_operation
 
 
 # extract open read/write as partial to centralize the encoding

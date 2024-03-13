@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -46,7 +46,6 @@ from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
 
-OUTPUT_FILE_NAME = "output.jsonl"
 DEFAULT_CONCURRENCY = 10
 
 
@@ -242,13 +241,13 @@ class BatchEngine:
         return the list of previous line results for the usage of aggregation and summarization.
         """
         # Load the previous flow run output from output.jsonl
-        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl")
+        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / OUTPUT_FILE_NAME)
         previous_run_output_dict = {
             each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
         }
 
         # Copy other files from resume_from_run_output_dir to output_dir in case there are images
-        copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
+        copy_file_except(resume_from_run_output_dir, output_dir, OUTPUT_FILE_NAME)
 
         try:
             previous_run_results = []
@@ -352,7 +351,7 @@ class BatchEngine:
         # execute lines
         is_timeout = False
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            results, is_timeout = self._executor_proxy._exec_batch(
+            results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,
                 run_id,
