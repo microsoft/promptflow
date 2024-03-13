@@ -6,6 +6,7 @@ import pytest
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._serving.utils import load_feedback_swagger
+from promptflow._sdk._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -77,12 +78,13 @@ def test_feedback_flatten(flow_serving_client):
     provider = trace.get_tracer_provider()
     exporter = InMemorySpanExporter()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
-    feedback_data = {"feedback": "positive"}
+    data_field_name = "comment"
+    feedback_data = {data_field_name: "positive"}
     response = flow_serving_client.post("/feedback?flatten=true", data=json.dumps(feedback_data))
     assert response.status_code == 200
     spans = exporter.get_finished_spans()
     assert len(spans) == 1
-    assert spans[0].attributes["feedback"] == feedback_data["feedback"]
+    assert spans[0].attributes[data_field_name] == feedback_data[data_field_name]
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -113,7 +115,7 @@ def test_feedback_with_trace_context(flow_serving_client):
     assert spans[0].context.trace_id == int(trace_ctx_trace_id, 16)
     assert spans[0].parent.span_id == int(trace_ctx_parent_id, 16)
     # validate feedback data
-    assert feedback_data == spans[0].attributes["feedback"]
+    assert feedback_data == spans[0].attributes[FEEDBACK_TRACE_FIELD_NAME]
     assert spans[0].attributes["userId"] == "alice"
 
 

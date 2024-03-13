@@ -14,6 +14,7 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving.extension.extension_factory import ExtensionFactory
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
+from promptflow._sdk._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME
 from promptflow._sdk._serving.utils import (
     enable_monitoring,
     get_output_fields_to_remove,
@@ -211,7 +212,7 @@ def add_default_routes(app: PromptflowServingApp):
         open_telemetry_tracer = trace.get_tracer_provider().get_tracer("promptflow")
         token = context.attach(ctx) if ctx else None
         try:
-            with open_telemetry_tracer.start_as_current_span('promptflow-feedback') as span:
+            with open_telemetry_tracer.start_as_current_span(FEEDBACK_TRACE_SPAN_NAME) as span:
                 data = request.get_data(as_text=True)
                 should_flatten = request.args.get('flatten', 'false').lower() == 'true'
                 if should_flatten:
@@ -222,9 +223,9 @@ def add_default_routes(app: PromptflowServingApp):
                             span.set_attribute(k, serialize_attribute_value(data[k]))
                     except Exception as e:
                         logger.warning(f"Failed to flatten the feedback, fall back to non-flattern mode. Error: {e}.")
-                        span.set_attribute('feedback', data)
+                        span.set_attribute(FEEDBACK_TRACE_FIELD_NAME, data)
                 else:
-                    span.set_attribute('feedback', data)
+                    span.set_attribute(FEEDBACK_TRACE_FIELD_NAME, data)
                 # add baggage data if exist
                 data = baggage.get_all()
                 if data:
