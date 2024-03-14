@@ -36,7 +36,7 @@ from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import PromptflowIgnoreFile
 from promptflow._sdk._vendor._asset_utils import traverse_directory
-from promptflow._sdk.entities._utils import resolve_flow_path
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
@@ -483,9 +483,9 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             if flow._code_uploaded:
                 return
 
-            # generate .promptflow/flow.json for eager flow
+            # generate .promptflow/flow.json for eager flow and .promptflow/flow.dag.yaml for non-eager flow
             flow_directory, flow_file = resolve_flow_path(code.path)
-            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_metadata(
+            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
                 flow_file=flow_directory / flow_file,
                 working_dir=flow_directory,
             )

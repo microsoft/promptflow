@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
@@ -86,8 +86,7 @@ class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
         meta_dict = (
             ExecutorProxyFactory()
             .get_executor_proxy_cls(self.language)
-            .generate_flow_metadata(
-                # TODO: is it possible that there is no path?
+            .generate_flow_json(
                 flow_file=self.path,
                 working_dir=self.code,
                 dump=False,

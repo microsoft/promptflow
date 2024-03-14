@@ -407,7 +407,7 @@ class FlowOperations(TelemetryMixin):
 
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
-                        tools_meta=CSharpExecutorProxy.generate_tool_metadata(
+                        tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
                         ),
@@ -832,14 +832,13 @@ class FlowOperations(TelemetryMixin):
             # No flow meta for DAG flow
             return {}
 
-        # TODO: is it possible that there is no flow.path?
         with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
             from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 
             return (
                 ExecutorProxyFactory()
                 .get_executor_proxy_cls(flow.language)
-                .generate_flow_metadata(
+                .generate_flow_json(
                     flow_file=new_flow_dag_path,
                     working_dir=new_flow_dag_path.parent,
                     dump=dump,

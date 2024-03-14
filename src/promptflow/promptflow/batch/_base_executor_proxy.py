@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, NoReturn, Optional
 
 import httpx
 
@@ -29,12 +29,24 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 class AbstractExecutorProxy:
     @classmethod
-    def generate_tool_metadata(cls, flow_file: Path, working_dir: Optional[Path] = None) -> dict:
-        """Generate tool metadata file for the specified flow."""
-        return cls._get_tool_metadata(flow_file, working_dir or flow_file.parent)
+    def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
+        """Generate metadata for a specific flow."""
+        cls.generate_flow_tools_json(flow_file, working_dir, dump=True)
+        cls.generate_flow_json(flow_file, working_dir, dump=True)
 
     @classmethod
-    def generate_flow_metadata(
+    def generate_flow_tools_json(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        load_in_subprocess: bool = True,
+    ) -> dict:
+        """Generate flow.tools.json for the specified flow."""
+        raise NotImplementedError()
+
+    @classmethod
+    def generate_flow_json(
         cls,
         flow_file: Path,
         working_dir: Path,
@@ -60,19 +72,20 @@ class AbstractExecutorProxy:
         """
         raise NotImplementedError()
 
-    @classmethod
-    def _generate_flow_metadata(cls, flow_file: Path, working_dir: Path):
-        """Generate metadata for the flow and save them to files under .promptflow folder.
-        including flow.json and flow.tools.json.
-        """
-        raise NotImplementedError()
+    def get_inputs_definition(self):
+        """Get the inputs definition of an eager flow"""
+        from promptflow.contracts.flow import FlowInputDefinition
 
-    def get_inputs_definition(self) -> Mapping[str, Any]:
-        raise NotImplementedError()
-
-    @classmethod
-    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
-        raise NotImplementedError()
+        flow_meta = self._get_flow_meta()
+        inputs = {}
+        for key, value in flow_meta.get("inputs", {}).items():
+            # TODO: update this after we determine whether to accept list here or now
+            _type = value.get("type")
+            if isinstance(_type, list):
+                _type = _type[0]
+            value["type"] = _type
+            inputs[key] = FlowInputDefinition.deserialize(value)
+        return inputs
 
     @classmethod
     async def create(
@@ -194,25 +207,52 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         flow_meta_json_path = self.working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
         return self._read_json_content(flow_meta_json_path, "meta of flow")
 
-    def get_inputs_definition(self):
-        """Get the inputs definition of an eager flow"""
-        from promptflow.contracts.flow import FlowInputDefinition
+    @classmethod
+    def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
+        # In abstract class, dump_metadata may redirect to generate_tools_json and generate_flow_json
+        # However, for APIBasedExecutorProxy, we can't get the meta in current process, so generate_tools_json
+        # and generate_flow_json should rely on the metadata file dumped by dump_metadata instead.
 
-        flow_meta = self._get_flow_meta()
-        inputs = {}
-        for key, value in flow_meta.get("inputs", {}).items():
-            # TODO: update this after we determine whether to accept list here or now
-            _type = value.get("type")
-            if isinstance(_type, list):
-                _type = _type[0]
-            value["type"] = _type
-            inputs[key] = FlowInputDefinition.deserialize(value)
-        return inputs
+        # for local, they should override this method and dump metadata, like via a subprocess command
+        # for cloud, they will assume that metadata has already been dumped into the flow directory so do nothing here
+        return
 
     @classmethod
-    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
-        flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-        return cls._read_json_content(flow_tools_json_path, "meta of tools")
+    def generate_flow_tools_json(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        load_in_subprocess: bool = True,
+    ) -> dict:
+        from promptflow import load_flow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
+
+        flow = load_flow(flow_file)
+        if isinstance(flow, FlexFlow):
+            return {}
+        else:
+            flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+            return cls._read_json_content(flow_tools_json_path, "meta of tools")
+
+    @classmethod
+    def generate_flow_json(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
+        from promptflow import load_flow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
+
+        flow = load_flow(flow_file)
+        if isinstance(flow, FlexFlow):
+            flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
+            return cls._read_json_content(flow_tools_json_path, "meta of tools")
+        else:
+            return {}
 
     @classmethod
     def _read_json_content(cls, file_path: Path, target: str) -> dict:

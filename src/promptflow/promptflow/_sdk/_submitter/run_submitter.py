@@ -105,12 +105,13 @@ class RunSubmitter:
     def _submit_bulk_run(self, flow: Union[Flow, FlexFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
+        # for python, we can get metadata in-memory, so no need to dump them first
         if flow.language != FlowLanguage.Python:
-            # TODO: consider moving this to Operations
             from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 
-            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_metadata(
-                flow_file=Path(flow.path), working_dir=Path(flow.code), dump=True
+            # variants are resolved in the context, so we can't move this logic to Operations for now
+            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
+                flow_file=Path(flow.path), working_dir=Path(flow.code)
             )
             # TODO: shall we resolve connections here?
             connections = []

@@ -24,7 +24,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         self._flow_executor = flow_executor
 
     @classmethod
-    def generate_flow_metadata(
+    def generate_flow_json(
         cls,
         flow_file: Path,
         working_dir: Path,
@@ -34,10 +34,10 @@ class PythonExecutorProxy(AbstractExecutorProxy):
     ) -> Dict[str, Any]:
         from promptflow import load_flow
         from promptflow._sdk._utils import generate_flow_meta
-        from promptflow._sdk.entities._eager_flow import EagerFlow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
 
         flow = load_flow(flow_file)
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             # generate flow.json only for eager flow for now
             return generate_flow_meta(
                 flow_directory=working_dir,
@@ -118,11 +118,17 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         return self._flow_executor.get_inputs_definition()
 
     @classmethod
-    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+    def generate_flow_tools_json(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        load_in_subprocess: bool = True,
+    ) -> dict:
         from promptflow._sdk._utils import generate_flow_tools_json
 
         return generate_flow_tools_json(
             flow_directory=working_dir,
-            dump=False,
+            dump=dump,
             used_packages_only=True,
         )

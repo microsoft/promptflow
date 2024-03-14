@@ -1,15 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import json
 import socket
 import subprocess
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import NoReturn, Optional
 
 from promptflow._core._errors import UnexpectedError
-from promptflow._sdk._constants import FLOW_META_JSON, FLOW_META_JSON_GEN_TIMEOUT, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -48,32 +46,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         return self._chat_output_name
 
     @classmethod
-    def generate_flow_metadata(
-        cls,
-        flow_file: Path,
-        working_dir: Path,
-        dump: bool = True,
-        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
-        load_in_subprocess: bool = True,
-    ) -> Dict[str, Any]:
-        # TODO: timeout & dump doesn't take effect for now
-        # TODO: provide a way to skip dumping and directly read from flow.json
-        cls._dump_metadata(
-            flow_file=flow_file,
-            working_dir=working_dir,
-        )
-
-        from promptflow import load_flow
-        from promptflow._sdk.entities._eager_flow import EagerFlow
-
-        flow = load_flow(flow_file)
-        if isinstance(flow, EagerFlow):
-            return json.load((working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON).open())
-        else:
-            return {}
-
-    @classmethod
-    def _dump_metadata(cls, flow_file: Path, working_dir: Path):
+    def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
         """In csharp, we need to generate metadata based on a dotnet command for now and the metadata will
         always be dumped.
         """

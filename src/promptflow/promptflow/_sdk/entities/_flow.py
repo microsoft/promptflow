@@ -9,8 +9,8 @@ from marshmallow import Schema
 
 from promptflow._constants import FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._sdk.entities._utils import resolve_flow_path
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._flow import AsyncFlow as AsyncFlowCore
@@ -38,7 +38,6 @@ class Flow(FlowCore, SchemaValidatableMixin):
         self._flow_dir, self._dag_file_name = resolve_flow_path(self.code)
         self._executable = None
         self._params_override = params_override
-        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
 
     # region properties
     @property

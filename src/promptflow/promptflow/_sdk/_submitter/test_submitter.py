@@ -172,7 +172,7 @@ class TestSubmitter:
 
             return SubmitterHelper.resolve_used_connections(
                 flow=flow,
-                tools_meta=CSharpExecutorProxy.generate_tool_metadata(
+                tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
                     flow_file=flow.flow_dag_path,
                     working_dir=flow.code,
                 ),
@@ -242,14 +242,13 @@ class TestSubmitter:
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
+            # Python flow may get metadata in-memory, so no need to dump them first
             if self.flow.language != FlowLanguage.Python:
-                ExecutorProxyFactory().get_executor_proxy_cls(self.flow.language).generate_flow_metadata(
+                # variant is resolve in the context, so we can't move this to Operations for now
+                ExecutorProxyFactory().get_executor_proxy_cls(self.flow.language).dump_metadata(
                     flow_file=self.flow.path,
                     working_dir=self.flow.code,
-                    dump=True,
                 )
-                # TODO: consider move this to Operations
-                CSharpExecutorProxy.generate_flow_metadata(self.flow.path, self.flow.code)
 
             self._target_node = target_node
             self._enable_stream_output = stream_output
