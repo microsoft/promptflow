@@ -2,34 +2,61 @@ name: promptflow-tracing-test
 
 on:
   schedule:
-    - cron: "40 18 * * *" # Every day starting at 2:40 BJT
+    - cron: "40 18 * * *" # 2:40 Beijing Time (GMT+8) every day
   pull_request:
     paths:
       - src/promptflow-tracing/**
       - .github/workflows/promptflow-tracing-test.yml
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: check out repository
-        uses: actions/checkout@v4
-      - name: set up python
-        uses: actions/setup-python@v5
+    - uses: actions/checkout@v4
+    - uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    - name: build
+      run: poetry build
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - uses: actions/upload-artifact@v4
+      with:
+        name: promptflow-tracing
+        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_tracing-*.whl
+
+  test:
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: install poetry
-        uses: snok/install-poetry@v1
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: promptflow-tracing
+      - name: install promptflow-tracing from wheel
+        run: pip install promptflow_tracing-*.whl
+      - uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - name: install dependencies
-        run: poetry install --no-interaction
-        working-directory: ./src/promptflow-tracing
-      - name: run tests
-        run: |
-          poetry install --with test
-          poetry run pytest
-        working-directory: ./src/promptflow-tracing
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: test
+        run: poetry run pytest
+        working-directory: ${{ env.WORKING_DIRECTORY }}
