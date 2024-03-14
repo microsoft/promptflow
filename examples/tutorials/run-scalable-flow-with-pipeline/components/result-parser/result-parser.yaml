@@ -2,14 +2,18 @@ $schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.jso
 
 type: command
 
-name: data_prep
-display_name: data preparation
+name: result_parser
+description: Aggregate pf source data with output and debug data.
+display_name: result parser.
 version: 0.0.1
 
 inputs:
   source_data:
     type: uri_folder
   pf_output_data:
+    type: uri_folder
+  pf_debug_data:
+    optional: true
     type: uri_folder
 
 outputs:
@@ -26,4 +30,5 @@ command: >-
   python result-parser.py
   --source_data ${{inputs.source_data}}
   --pf_output_data ${{inputs.pf_output_data}}
+  $[[--pf_debug_data ${{inputs.pf_debug_data}}]]
   --merged_data ${{outputs.merged_data}}
