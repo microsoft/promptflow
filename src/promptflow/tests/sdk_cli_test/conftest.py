@@ -231,6 +231,16 @@ def non_json_serializable_output(mocker: MockerFixture):
     return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
 
 
+@pytest.fixture
+def stream_output(mocker: MockerFixture):
+    return create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def multiple_stream_outputs(mocker: MockerFixture):
+    return create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
@@ -260,8 +270,10 @@ def recording_injection(mocker: MockerFixture):
     try:
         yield
     finally:
-        RecordStorage.get_instance().delete_lock_file()
-        delete_count_lock_file()
+        if is_replay() or is_record():
+            RecordStorage.get_instance().delete_lock_file()
+        if is_live():
+            delete_count_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class

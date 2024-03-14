@@ -178,6 +178,11 @@ def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=Fal
     return _process_recursively(value, process_funcs=to_base64_funcs)
 
 
+def convert_multimedia_data_to_string(value: Any, inplace=False):
+    serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
+    return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
+
+
 # TODO: Move this function to a more general place and integrate serialization to this function.
 def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None, inplace: bool = False) -> dict:
     if process_funcs:

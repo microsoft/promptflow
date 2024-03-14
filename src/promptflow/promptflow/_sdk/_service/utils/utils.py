@@ -4,8 +4,10 @@
 import getpass
 import hashlib
 import os
+import platform
 import re
 import socket
+import subprocess
 import sys
 import time
 from dataclasses import InitVar, dataclass, field
@@ -17,6 +19,7 @@ import psutil
 import requests
 from flask import abort, make_response, request
 
+from promptflow._constants import PF_RUN_AS_BUILT_BINARY
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
@@ -60,7 +63,7 @@ def get_current_env_pfs_file(file_name):
 
 
 def get_port_from_config(create_if_not_exists=False):
-    if sys.executable.endswith("pfcli.exe"):
+    if is_run_from_built_binary():
         port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
@@ -79,7 +82,7 @@ def get_port_from_config(create_if_not_exists=False):
 
 
 def dump_port_to_config(port):
-    if sys.executable.endswith("pfcli.exe"):
+    if is_run_from_built_binary():
         port_file_path = HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE
         port_file_path.touch(mode=read_write_by_user(), exist_ok=True)
     else:
@@ -95,6 +98,9 @@ def dump_port_to_config(port):
 
 def is_port_in_use(port: int):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # OS will wait for timeout when connecting to an unused port, so it will take about 2s. Set timeout here to
+        # avoid long waiting time
+        s.settimeout(0.1)
         return s.connect_ex(("localhost", port)) == 0
 
 
@@ -105,13 +111,24 @@ def get_random_port():
 
 
 def _get_process_by_port(port):
-    for proc in psutil.process_iter(["pid", "connections", "create_time"]):
-        try:
-            for connection in proc.connections():
-                if connection.laddr.port == port:
-                    return proc
-        except psutil.AccessDenied:
-            pass
+    if platform.system() == "Windows":
+        command = f"netstat -ano | findstr :{port}"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            output = result.stdout.strip()
+            lines = output.split("\n")
+            for line in lines:
+                if "LISTENING" in line:
+                    pid = line.split()[-1]  # get the PID
+                    return psutil.Process(int(pid))
+    else:  # Linux and macOS
+        command = f"lsof -i :{port} -sTCP:LISTEN | awk 'NR>1 {{print $2}}'"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            output = result.stdout.strip()
+            pid = output.split("\n")[0]  # get the first PID
+            if pid != "":
+                return psutil.Process(int(pid))
 
 
 def kill_exist_service(port):
@@ -125,7 +142,7 @@ def get_started_service_info(port):
     service_info = {}
     proc = _get_process_by_port(port)
     if proc:
-        create_time = proc.info["create_time"]
+        create_time = proc.create_time()
         process_uptime = datetime.now() - datetime.fromtimestamp(create_time)
         service_info["create_time"] = str(datetime.fromtimestamp(create_time))
         service_info["uptime"] = str(process_uptime)
@@ -158,9 +175,8 @@ def is_pfs_service_healthy(pfs_port) -> bool:
             return is_healthy
     except Exception:  # pylint: disable=broad-except
         pass
-    logger.warning(
-        f"Promptflow service can't be reached through port {pfs_port}, will try to start/force restart "
-        f"promptflow service."
+    logger.debug(
+        f"Promptflow service can't be reached through port {pfs_port}, will try to (force) start promptflow service."
     )
     return False
 
@@ -231,13 +247,34 @@ class FormattedException:
 
 
 def build_pfs_user_agent():
-    extra_agent = f"local_pfs/{VERSION}"
-    if request.user_agent.string:
-        return f"{request.user_agent.string} {extra_agent}"
-    return extra_agent
+    user_agent = request.user_agent.string
+    user_agent_for_local_pfs = f"local_pfs/{VERSION}"
+    if user_agent:
+        return f"{user_agent} {user_agent_for_local_pfs}"
+    return user_agent_for_local_pfs
 
 
-def get_client_from_request() -> "PFClient":
+def get_client_from_request(*, connection_provider=None) -> "PFClient":
+    """
+    Build a PFClient instance based on current request in local PFS.
+
+    User agent may be different for each request.
+    """
     from promptflow._sdk._pf_client import PFClient
 
-    return PFClient(user_agent=build_pfs_user_agent())
+    user_agent = build_pfs_user_agent()
+
+    if connection_provider:
+        pf_client = PFClient(connection_provider=connection_provider, user_agent_override=user_agent)
+    else:
+        pf_client = PFClient(user_agent_override=user_agent)
+    return pf_client
+
+
+def is_run_from_built_binary():
+    """
+    Use this function to trigger behavior difference between calling from promptflow sdk/cli and built binary.
+
+    Allow customer to use environment variable to control the triggering.
+    """
+    return sys.executable.endswith("pfcli.exe") or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"

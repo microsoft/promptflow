@@ -8,7 +8,7 @@ from promptflow.executor import FlowExecutor
 from ..utils import get_flow_folder, get_yaml_file
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestAssistant:
     @pytest.mark.parametrize(
@@ -22,6 +22,9 @@ class TestAssistant:
         flow_result = executor.exec_line(line_input)
         print(flow_result.output)
         assert flow_result.run_info.status == Status.Completed
+        assert len(flow_result.output["answer"]["content"]) == 1
+        assert flow_result.output["answer"]["content"][0]["type"] == "text"
+        assert flow_result.output["thread_id"]
 
     @pytest.mark.parametrize(
         "flow_folder, line_input",
