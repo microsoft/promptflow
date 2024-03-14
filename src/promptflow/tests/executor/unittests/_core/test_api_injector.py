@@ -201,7 +201,6 @@ def test_aoai_chat_tool_prompt():
 def test_get_aoai_telemetry_headers():
     # create a mock operation context
     mock_operation_context = OperationContext.get_instance()
-    mock_operation_context.append_user_agent(f"promptflow/{VERSION}")
     mock_operation_context.set_default_tracing_keys({"flow_id", "root_run_id"})
     mock_operation_context.user_agent = "test-user-agent"
     mock_operation_context.update(
@@ -225,7 +224,7 @@ def test_get_aoai_telemetry_headers():
             assert "_" not in key
 
         # assert that the headers are correct
-        ua = f"test-user-agent promptflow-tracing/{TRACING_VERSION} promptflow/{VERSION}"
+        ua = f"test-user-agent promptflow-tracing/{TRACING_VERSION}"
         assert headers[USER_AGENT_HEADER] == ua
         promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
         assert promptflow_headers["flow_id"] == "test-flow-id"

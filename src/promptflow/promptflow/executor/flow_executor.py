@@ -318,13 +318,21 @@ class FlowExecutor:
         :param raise_ex: Whether to raise exceptions or not. Default is False.
         :type raise_ex: Optional[bool]
         """
-        operation_context = OperationContext.get_instance()
-        operation_context.append_user_agent(f"promptflow/{VERSION}")
-        operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
-        operation_context["run_mode"] = RunMode.SingleNode.name
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
+
+        @contextlib.contextmanager
+        def update_operation_context():
+            operation_context = OperationContext.get_instance()
+            original_context = operation_context.copy()
+            try:
+                operation_context.append_user_agent(f"promptflow/{VERSION}")
+                operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+                operation_context["run_mode"] = RunMode.SingleNode.name
+                # Inject OpenAI API to make sure traces and headers injection works and
+                # update OpenAI API configs from environment variables.
+                inject_openai_api()
+                yield
+            finally:
+                OperationContext.set_instance(original_context)
 
         dependency_nodes_outputs = dependency_nodes_outputs or {}
         # Load the node from the flow file
@@ -387,7 +395,7 @@ class FlowExecutor:
             sub_dir = "." if output_sub_dir is None else output_sub_dir
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
-        with run_tracker.node_log_manager:
+        with run_tracker.node_log_manager, update_operation_context():
             # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
@@ -767,11 +775,6 @@ class FlowExecutor:
     def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
         original_context = operation_context.copy()
-        operation_context.append_user_agent(f"promptflow/{VERSION}")
-        operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
         if original_mode == RunMode.Batch.name:
@@ -782,10 +785,15 @@ class FlowExecutor:
         else:
             values_for_otel = {"line_run_id": run_id}
         try:
+            operation_context.append_user_agent(f"promptflow/{VERSION}")
+            operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
             for k, v in values_for_otel.items():
                 operation_context._add_otel_attributes(k, v)
+            # Inject OpenAI API to make sure traces and headers injection works and
+            # update OpenAI API configs from environment variables.
+            inject_openai_api()
             yield
         finally:
             OperationContext.set_instance(original_context)

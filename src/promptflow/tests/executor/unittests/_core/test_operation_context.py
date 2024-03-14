@@ -5,6 +5,7 @@ import pytest
 from promptflow._version import VERSION
 from promptflow.contracts.run_mode import RunMode
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._version import VERSION as TRACING_VERSION
 
 
 def set_run_mode(context: OperationContext, run_mode: RunMode):
@@ -20,10 +21,10 @@ class TestOperationContext:
     def test_get_user_agent(self):
         OperationContext.get_instance().append_user_agent(f"promptflow/{VERSION}")
         operation_context = OperationContext.get_instance()
-        assert operation_context.get_user_agent() == f"promptflow/{VERSION}"
+        assert operation_context.get_user_agent() == f"promptflow/{VERSION} promptflow-tracing/{TRACING_VERSION}"
 
         operation_context.user_agent = "test_agent/0.0.2"
-        assert operation_context.get_user_agent() == f"test_agent/0.0.2 promptflow/{VERSION}"
+        assert operation_context.get_user_agent() == f"test_agent/0.0.2 promptflow-tracing/{TRACING_VERSION}"
 
     @pytest.mark.parametrize(
         "run_mode, expected",
