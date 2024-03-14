@@ -32,8 +32,7 @@ def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> Operati
     # update user agent to operation context
     executor_user_agent = get_executor_version()
     operation_context.append_user_agent(executor_user_agent)
-    promptflow_user_agent = f"promptflow/{VERSION}"
-    operation_context.append_user_agent(promptflow_user_agent)
+    operation_context.set_promptflow_version(VERSION)
     return operation_context
 
 

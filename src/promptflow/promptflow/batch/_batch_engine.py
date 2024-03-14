@@ -45,7 +45,6 @@ from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
-from promptflow.tracing._operation_context import OperationContext
 
 DEFAULT_CONCURRENCY = 10
 

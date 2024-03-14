@@ -126,10 +126,10 @@ class TestExecutorTelemetry:
 
         operation_context = OperationContext.get_instance()
         operation_context.clear()
+        operation_context.set_default_tracing_keys({"default_dummy_key"})
         # Set user-defined properties `scenario` in context
         operation_context.scenario = "test"
         operation_context.dummy_key = "dummy_value"
-        operation_context._tracking_keys = OperationContext._DEFAULT_TRACKING_KEYS
         operation_context._tracking_keys.add("dummy_key")
 
         with override_process_pool_targets(mock_process_wrapper, mock_process_manager):

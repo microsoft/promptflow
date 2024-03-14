@@ -14,6 +14,7 @@ from promptflow._utils.exception_utils import (
     last_frame_info,
     remove_suffix,
 )
+from promptflow._version import VERSION
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -331,6 +332,8 @@ class TestExceptionPresenter:
 @pytest.mark.unittest
 class TestErrorResponse:
     def test_from_error_dict(self):
+        OperationContext.get_instance().set_promptflow_version(VERSION)
+
         error_dict = {
             "code": "UserError",
             "message": "Flow run failed.",
@@ -367,6 +370,8 @@ class TestErrorResponse:
         }
 
     def test_from_exception(self):
+        OperationContext.get_instance().set_promptflow_version(VERSION)
+
         with pytest.raises(CustomizedException) as e:
             raise_general_exception()
 

@@ -5,6 +5,8 @@ import copy
 from contextvars import ContextVar
 from typing import Dict
 
+from ._version import VERSION
+
 
 class OperationContext(Dict):
     """The OperationContext class.
@@ -19,12 +21,10 @@ class OperationContext(Dict):
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
     USER_AGENT_KEY = "user_agent"
     REQUEST_ID_KEY = "request_id"
+    _DEFAULT_TRACING_KEYS = "_default_tracing_keys"
     _OTEL_ATTRIBUTES = "_otel_attributes"
     _TRACKING_KEYS = "_tracking_keys"
-
-    def __init__(self):
-        super().__init__()
-        self._default_tracing_keys = set()
+    _PROMPTFLOW_VERSION = "_promptflow_version"
 
     def copy(self):
         ctx = OperationContext()
@@ -67,6 +67,8 @@ class OperationContext(Dict):
             # create a new instance and set it in the current context
             instance = OperationContext()
             cls._current_context.set(instance)
+        if cls._TRACKING_KEYS not in instance and cls._DEFAULT_TRACING_KEYS in instance:
+            instance[cls._TRACKING_KEYS] = copy.copy(instance[cls._DEFAULT_TRACING_KEYS])
         return instance
 
     @classmethod
@@ -123,6 +125,9 @@ class OperationContext(Dict):
         else:
             super().__delattr__(name)
 
+    def set_promptflow_version(self, version):
+        self[self._PROMPTFLOW_VERSION] = version
+
     def get_user_agent(self):
         """Get the user agent string.
 
@@ -137,6 +142,9 @@ class OperationContext(Dict):
         def parts():
             if OperationContext.USER_AGENT_KEY in self:
                 yield self.get(OperationContext.USER_AGENT_KEY)
+            yield f"promptflow-tracing/{VERSION}"
+            if hasattr(self, self._PROMPTFLOW_VERSION):
+                yield f"promptflow/{self[self._PROMPTFLOW_VERSION]}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         ua = " ".join(parts()).strip()
@@ -166,8 +174,13 @@ class OperationContext(Dict):
         return "unknown"
 
     def set_default_tracing_keys(self, keys: set):
-        self._default_tracing_keys = keys
-        self[self._TRACKING_KEYS] = copy.copy(keys)
+        self[self._DEFAULT_TRACING_KEYS] = keys
+        if not hasattr(self, self._TRACKING_KEYS):
+            self[self._TRACKING_KEYS] = copy.copy(keys)
+        else:
+            for key in keys:
+                if key not in self[self._TRACKING_KEYS]:
+                    self[self._TRACKING_KEYS].add(key)
 
     def get_context_dict(self):
         """Get the context dictionary.
@@ -182,5 +195,5 @@ class OperationContext(Dict):
         return dict(self)
 
     def _get_tracking_info(self):
-        keys = getattr(self, self._TRACKING_KEYS, self._default_tracing_keys)
+        keys = getattr(self, self._TRACKING_KEYS, getattr(self, self._DEFAULT_TRACING_KEYS, []))
         return {k: v for k, v in self.items() if k in keys}

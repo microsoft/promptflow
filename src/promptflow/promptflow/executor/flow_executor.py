@@ -128,7 +128,7 @@ class FlowExecutor:
         :type flow_file: str or None
         """
         operation_context = OperationContext.get_instance()
-        operation_context.append_user_agent(f"promptflow/{VERSION}")
+        operation_context.set_promptflow_version(VERSION)
         operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
         # Inject OpenAI API to make sure traces and headers injection works and
         # update OpenAI API configs from environment variables.
@@ -326,7 +326,7 @@ class FlowExecutor:
         :type raise_ex: Optional[bool]
         """
         operation_context = OperationContext.get_instance()
-        operation_context.append_user_agent(f"promptflow/{VERSION}")
+        operation_context.set_promptflow_version(VERSION)
         operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
         operation_context["run_mode"] = RunMode.SingleNode.name
         # Inject OpenAI API to make sure traces and headers injection works and
