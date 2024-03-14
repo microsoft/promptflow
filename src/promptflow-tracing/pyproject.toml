@@ -45,6 +45,8 @@ pre-commit = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]
@@ -56,6 +58,7 @@ markers = [
 ]
 addopts = """
 --cov=promptflow \
+--cov-config=pyproject.toml \
 --cov-report=term \
 --cov-report=html \
 --cov-report=xml \
@@ -69,7 +72,7 @@ addopts = """
 """
 testpaths = ["tests"]
 
-[tool.coverage.report]
+[tool.coverage.run]
 omit = [
   "__init__.py",
 ]
