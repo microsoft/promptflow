@@ -24,14 +24,6 @@ promptflow.tools.llm.llm:
     ui_hints:
       display_style :  table
   inputs:
-    functions:
-      type:
-      - list
-    function_call:
-      type:
-      - string
-      - object
-  inputs:
     connection:
       type:
       - AzureOpenAIConnection
@@ -148,9 +140,8 @@ promptflow.tools.llm.llm:
         text_box_size: lg
     functions:
       type:
-      - function_list
-      advanced: false
+      - list
     function_call:
       type:
-      - function_str
-      advanced: false
+      - string
+      - object
