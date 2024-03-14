@@ -57,3 +57,27 @@ jobs:
       - name: test
         run: poetry run pytest
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+            ${{ env.WORKING_DIRECTORY }}/htmlcov/
+
+  report:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    steps:
+      - uses: ./.github/actions/step_publish_test_results
+        with:
+          testActionFileName: promptflow-tracing-test.yml
+          testResultTitle: promptflow-tracing test report
+          osVersion: ubuntu-latest
+          pythonVersion: 3.9
+          coverageThreshold: 40
