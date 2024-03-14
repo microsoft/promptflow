@@ -127,13 +127,6 @@ class FlowExecutor:
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
         """
-        operation_context = OperationContext.get_instance()
-        operation_context.append_user_agent(f"promptflow/{VERSION}")
-        operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
-
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
         self._connections = connections
@@ -774,6 +767,11 @@ class FlowExecutor:
     def _update_operation_context(self, run_id: str, line_number: int):
         operation_context = OperationContext.get_instance()
         original_context = operation_context.copy()
+        operation_context.append_user_agent(f"promptflow/{VERSION}")
+        operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+        # Inject OpenAI API to make sure traces and headers injection works and
+        # update OpenAI API configs from environment variables.
+        inject_openai_api()
         original_mode = operation_context.get("run_mode", None)
         values_for_context = {"flow_id": self._flow_id, "root_run_id": run_id}
         if original_mode == RunMode.Batch.name:
