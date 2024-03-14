@@ -5,6 +5,8 @@ from typing import Union, List
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI
 from openai.types.beta.threads import MessageContentImageFile, MessageContentText
+from openai.types.beta.threads.runs.code_tool_call import CodeInterpreterOutputLogs
+from openai.types.beta.threads.runs.tool_calls_step_details import ToolCall
 from openai.types.beta.threads.thread_message import Content
 
 from get_tracer import get_tracer
@@ -166,35 +168,54 @@ async def get_run_steps(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: st
 
 
 async def show_run_step(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], run_step, tracer):
-    with tracer.start_as_current_span(run_step.type, start_time=run_step.created_at, end_on_exit=False) as span:
+    with tracer.start_as_current_span(run_step.type, start_time=_to_nano(run_step.created_at), end_on_exit=False) as span:
         if run_step.type == "message_creation":
             msg_id = run_step.step_details.message_creation.message_id
             message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=run_step.thread_id)
-
             span.set_attribute("output", json.dumps(convert_message_content(message.content)))
-            #print(f"message output: {convert_message_content(message.content)}")
             span.set_attribute("msg_id", msg_id)
             span.set_attribute("role", message.role)
             span.set_attribute("created_at", message.created_at)
         elif run_step.type == "tool_calls":
             for tool_call in run_step.step_details.tool_calls:
                 await show_tool_call(tool_call, tracer)
+            span.set_attribute("output", json.dumps(convert_tool_calls(run_step.step_details.tool_calls)))
         span.set_attribute("thread_id", run_step.thread_id)
-        span.end(end_time=run_step.completed_at)
+        span.end(end_time=_to_nano(run_step.completed_at))
     return run_step
 
 def convert_message_content(contents: List[Content]):
     return [content.dict() for content in contents]
 
+def convert_tool_calls(calls: List[ToolCall]):
+    return [call.dict() for call in calls]
+
+def _to_nano(unix_time_in_sec: int):
+    """Convert Unix timestamp from seconds to nanoseconds."""
+    return unix_time_in_sec*1000000000
 
 async def show_tool_call(tool_call, tracer):
     #Todo: start_time and end_time are not avaliable in tool_call. Shall fullfill it later.
-    with tracer.start_as_current_span(tool_call.function.name) as span:
-        span.set_attribute("inputs", tool_call.function.arguments)
-        span.set_attribute("output", json.dumps(tool_call.function.output))
+    if tool_call.type == "code_interpreter":
+        span_name = "code_interpreter"
+        with tracer.start_as_current_span(span_name) as span:
+            span.set_attribute("inputs", json.dumps(tool_call.code_interpreter.input))
+            span.set_attribute("output", json.dumps(convert_code_interpreter_outputs(tool_call.code_interpreter.outputs)))
+    elif tool_call.type == "function":
+        span_name=tool_call.function.name
+        with tracer.start_as_current_span(span_name) as span:
+            span.set_attribute("inputs", tool_call.function.arguments)
+            span.set_attribute("output", json.dumps(tool_call.function.output))
+    else:
+        span_name = "retrieval"
+        with tracer.start_as_current_span(span_name) as span:
+            # todo: fulfill after retrieval tool enabled in aoai
+            pass
     return tool_call
 
 
+def convert_code_interpreter_outputs(logs: List[CodeInterpreterOutputLogs]):
+    return [log.dict() for log in logs]
 
 
 @trace
