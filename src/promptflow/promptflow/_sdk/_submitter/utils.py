@@ -358,8 +358,7 @@ def resolve_generator_output_with_cache(
                 output = iter(generator_record[generator_key])
         else:
             if hasattr(output.gi_frame.f_locals, "proxy"):
-                proxy = output.gi_frame.f_locals["proxy"]
-                generator_record[generator_key] = proxy
+                generator_record[generator_key] = output.gi_frame.f_locals["proxy"]
             else:
                 generator_record[generator_key] = list(output)
                 output = generator_record[generator_key]

@@ -66,7 +66,8 @@ def _request_wrapper():
                     f"Calling {func.__name__} failed with request id: {self._request_id} \n"
                     f"Status code: {e.status_code} \n"
                     f"Reason: {e.reason} \n"
-                    f"Error message: {e.message} \n"
+                    f"Error message: {e.message} \n",
+                    privacy_info=[func.__name__, e.reason, e.message]
                 )
 
         return wrapper

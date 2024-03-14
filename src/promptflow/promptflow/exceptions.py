@@ -6,7 +6,7 @@ import string
 import traceback
 from enum import Enum
 from functools import cached_property
-from typing import Dict
+from typing import Dict, List
 
 from azure.core.exceptions import HttpResponseError
 
@@ -53,12 +53,14 @@ class PromptflowException(Exception):
         message_format="",
         target: ErrorTarget = ErrorTarget.UNKNOWN,
         module=None,
+        privacy_info: List[str] = None,
         **kwargs,
     ):
         self._inner_exception = kwargs.get("error")
         self._target = target
         self._module = module
         self._message_format = message_format
+        self._privacy_info = privacy_info
         self._kwargs = kwargs
         if message:
             self._message = str(message)
@@ -320,7 +322,13 @@ class _ErrorInfo:
 
     @classmethod
     def _error_message(cls, e: BaseException):
-        return getattr(e, "message_format", "")
+        privacy_info = e._privacy_info if isinstance(e, PromptflowException) else None
+        if privacy_info is None:
+            return getattr(e, "message_format", "")
+        message = e.message
+        for info in privacy_info:
+            info = str(info)
+            message = message.replace(info, "{privacy_info}")
 
     @classmethod
     def _error_detail(cls, e: BaseException):
