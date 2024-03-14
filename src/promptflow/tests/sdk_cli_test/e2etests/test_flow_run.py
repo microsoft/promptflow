@@ -226,7 +226,7 @@ class TestFlowRun:
 
     def test_run_bulk_error(self, pf):
         # path not exist
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{MODEL_ROOT}/not_exist",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",

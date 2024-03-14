@@ -19,6 +19,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
@@ -136,10 +137,10 @@ class TestRun:
 
     def test_run_bulk_invalid_params(self, pf):
         # Test if function raises FileNotFoundError
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(UserErrorException):
             pf.run(flow="invalid_path", data="fake_data")
 
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(UserErrorException):
             pf.run(flow="invalid_path", data="fake_data", batch_run="fake_run")
 
     def test_overwrite_variant(self):
