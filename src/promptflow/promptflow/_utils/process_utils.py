@@ -64,7 +64,7 @@ def get_available_max_worker_count(logger: logging.Logger = bulk_logger):
     return estimated_available_worker_count
 
 
-def log_errors_from_path(log_path):
+def log_errors_from_file(log_path):
     try:
         with open(log_path, "r") as f:
             error_logs = "".join(f.readlines())

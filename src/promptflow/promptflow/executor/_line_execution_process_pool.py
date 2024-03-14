@@ -28,7 +28,7 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
-from promptflow._utils.process_utils import get_available_max_worker_count, log_errors_from_path
+from promptflow._utils.process_utils import get_available_max_worker_count, log_errors_from_file
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.run_info import FlowRunInfo
@@ -110,7 +110,7 @@ class LineExecutionProcessPool:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
-        # Delete log files to prevent interference from the previous run on the current execution.
+        # Delete log files to prevent interference from the current run on the next execution.
         for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(
             f"{ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME}*"
         ):
@@ -378,12 +378,12 @@ class LineExecutionProcessPool:
                     # will be written to the parent process log file.
                     # So if 'log_errors_form_path' return 'false', it means the child process fails to start.
                     # Attempt read the parent process log file.
-                    if not log_errors_from_path(log_path) and self._use_fork:
+                    if not log_errors_from_file(log_path) and self._use_fork:
                         log_path = (
                             ProcessPoolConstants.PROCESS_LOG_PATH
                             / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
                         )
-                        log_errors_from_path(log_path)
+                        log_errors_from_file(log_path)
                     ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
