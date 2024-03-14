@@ -1,7 +1,7 @@
 ## Installation
 * Install promptflow private wheel:
 ```cmd
-pip install "promptflow==0.0.120619417" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install "promptflow==0.0.121226113" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 ```
 * Enable internal features in your conda env
 ```cmd
