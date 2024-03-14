@@ -40,6 +40,7 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
+    is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
     parse_variant,
@@ -589,6 +590,7 @@ class Run(YAMLTranslatableMixin):
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
             compute_name=compute_name,
             identity=identity_resource_id,
+            enable_multi_container=is_multi_container_enabled(),
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
