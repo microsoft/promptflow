@@ -1167,26 +1167,36 @@ def overwrite_null_std_logger():
 
 def is_python_flex_flow_entry(entry: str):
     """Returns True if entry is flex flow's entry (in python)."""
-    return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
+    return bool(isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry))
 
 
 @contextmanager
-def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
+def generate_yaml_entry(entry: Union[str, PathLike, Callable], code: Path = None):
     """Generate yaml entry to run."""
-    if is_python_flex_flow_entry(entry=entry):
-        with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
+    if callable(entry) or is_python_flex_flow_entry(entry=entry):
+        with create_temp_flex_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:
+        # directly return the entry if it's YAML
         yield entry
 
 
 @contextmanager
-def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
+def create_temp_flex_flow_yaml(entry: Union[str, PathLike, Callable], code: Path = None):
     """Create a temporary flow.dag.yaml in code folder"""
-    # directly return the entry if it's a file
-
+    logger.info("Create temporary entry for flex flow.")
+    if callable(entry):
+        entry = callable_to_entry_string(entry)
+    if not code:
+        code = Path.cwd()
+        logger.warning(f"Code path is not specified, use current working directory: {code.as_posix()}")
+    else:
+        code = Path(code)
+        if not code.exists():
+            raise UserErrorException(f"Code path {code.as_posix()} does not exist.")
     flow_yaml_path = code / DAG_FILE_NAME
     existing_content = None
+
     try:
         if flow_yaml_path.exists():
             logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
@@ -1210,8 +1220,6 @@ def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
 
 def callable_to_entry_string(callable_obj: Callable) -> str:
     """Convert callable object to entry string."""
-    # check if callable_obj can be imported from module
-
     if not isfunction(callable_obj):
         raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
 
@@ -1219,7 +1227,9 @@ def callable_to_entry_string(callable_obj: Callable) -> str:
         module_str = callable_obj.__module__
         func_str = callable_obj.__name__
     except AttributeError as e:
-        raise UserErrorException(f"Failed to convert {callable_obj} to entry.") from e
+        raise UserErrorException(
+            f"Failed to convert {callable_obj} to entry, please make sure it has __module__ and __name__"
+        ) from e
 
     # check if callable can be imported from module
     module = importlib.import_module(module_str)

@@ -36,6 +36,10 @@ def test_flow() -> Flow:
     return load_flow(flow_path)
 
 
+async def my_async_func():
+    pass
+
+
 @pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestRun:
@@ -237,6 +241,8 @@ class TestRun:
     def test_callable_to_entry_string(self):
 
         assert callable_to_entry_string(test_flow) == "sdk_cli_test.unittests.test_run:test_flow"
+
+        assert callable_to_entry_string(my_async_func) == "sdk_cli_test.unittests.test_run:my_async_func"
 
         with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
             from entry2 import my_flow2

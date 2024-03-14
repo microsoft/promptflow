@@ -31,10 +31,10 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter.utils import SubmitterHelper
-from promptflow._sdk._utils import _get_additional_includes
+from promptflow._sdk._utils import _get_additional_includes, is_python_flex_flow_entry
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
@@ -48,6 +48,14 @@ FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def my_entry(input1: str):
+    return input1
+
+
+async def my_async_entry(input2: str):
+    return input2
 
 
 def create_run_against_multi_line_data(client) -> Run:
@@ -1285,6 +1293,82 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
+
+    def test_flex_flow_with_func(self, pf):
+        run = pf.run(
+            flow=my_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"input1": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.input1": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+
+        run = pf.run(
+            flow=my_async_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"input2": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.input2": ["input1"], "inputs.line_number": [0], "outputs.output": ["input1"]}
+
+    def test_flex_flow_with_local_imported_func(self, pf):
+        # run eager flow against a function from local file
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
+            from entry2 import my_flow2
+
+            run = pf.run(
+                flow=my_flow2,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+                # set code folder to avoid snapshot too big
+                code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+                column_mapping={"input1": "${data.input_val}"},
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+            # actual result will be entry2:my_flow2
+            details = pf.get_details(run.name)
+            # convert DataFrame to dict
+            details_dict = details.to_dict(orient="list")
+            assert details_dict == {
+                "inputs.input1": ["input1"],
+                "inputs.line_number": [0],
+                "outputs.output": ["entry2flow2"],
+            }
+
+    def test_flex_flow_with_imported_func(self, pf):
+        # run eager flow against a function from module
+        run = pf.run(
+            flow=is_python_flex_flow_entry,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            # set code folder to avoid snapshot too big
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            column_mapping={"entry": "${data.input_val}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.entry": ["input1"], "inputs.line_number": [0], "outputs.output": [False]}
 
     def test_eager_flow_run_in_working_dir(self, pf):
         working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"
