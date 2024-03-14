@@ -1,8 +1,11 @@
 import asyncio
+import dataclasses
 import importlib
 import inspect
 import uuid
+from dataclasses import is_dataclass
 from pathlib import Path
+from types import GeneratorType
 from typing import Any, Callable, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -47,17 +50,23 @@ class ScriptExecutor(FlowExecutor):
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
         with self._update_operation_context(run_id, index):
-            return self._exec_line(inputs, index, run_id)
+            return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
     def _exec_line(
-        self, inputs: Mapping[str, Any], index: Optional[int] = None, run_id: Optional[str] = None
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        allow_generator_output: bool = False,
     ) -> LineResult:
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         run_tracker = RunTracker(self._storage)
+        run_tracker.allow_generator_types = allow_generator_output
         run_info = run_tracker.start_flow_run(
             flow_id=self._flow_id,
             root_run_id=run_id,
@@ -77,6 +86,7 @@ class ScriptExecutor(FlowExecutor):
                 output = asyncio.run(self._func(**inputs))
             else:
                 output = self._func(**inputs)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             traces = Tracer.end_tracing(line_run_id)
             # Should convert output to dict before storing it to run info, since we will add key 'line_number' to it,
             # so it must be a dict.
@@ -94,8 +104,22 @@ class ScriptExecutor(FlowExecutor):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
+    def _stringify_generator_output(self, output):
+        if isinstance(output, dict):
+            return super()._stringify_generator_output(output)
+        elif is_dataclass(output):
+            fields = dataclasses.fields(output)
+            for field in fields:
+                if isinstance(getattr(output, field.name), GeneratorType):
+                    consumed_values = "".join(str(chuck) for chuck in getattr(output, field.name))
+                    setattr(output, field.name, consumed_values)
+        else:
+            if isinstance(output, GeneratorType):
+                output = "".join(str(chuck) for chuck in output)
+        return output
+
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
-        # TODO(2901157): check if eager mode should have streaming
+        # no need to inject streaming here, user can directly pass the param to the function
         return
 
     def get_inputs_definition(self):
