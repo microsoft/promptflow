@@ -606,4 +606,8 @@ def in_local_env() -> bool:
     The condition might not be that accurate, but it's good enough for now since these environment variables are
     typically only set on AzureML runtime.
     """
-    return os.getenv('AZUREML_ARM_SUBSCRIPTION') is None or os.getenv('AZUREML_ARM_RESOURCEGROUP') is None or os.getenv('AZUREML_ARM_WORKSPACE_NAME') is None
+    return (
+        os.getenv("AZUREML_ARM_SUBSCRIPTION") is None
+        or os.getenv("AZUREML_ARM_RESOURCEGROUP") is None
+        or os.getenv("AZUREML_ARM_WORKSPACE_NAME") is None
+    )
