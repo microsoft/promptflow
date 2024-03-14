@@ -54,8 +54,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 markers = [
-    "unittest",
+  "unittest",
 ]
+# junit - analyse and publish test results (https://github.com/EnricoMi/publish-unit-test-result-action)
+# durations - list the slowest test durations
 addopts = """
 --junit-xml=test-results.xml \
 --cov=promptflow \
