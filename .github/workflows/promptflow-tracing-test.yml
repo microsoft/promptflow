@@ -60,7 +60,7 @@ jobs:
       - name: upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: report-${{ matrix.os }}-${{ matrix.python-version }}
+          name: report-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
             ${{ env.WORKING_DIRECTORY }}/*.xml
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
@@ -84,7 +84,7 @@ jobs:
           files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
       - uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: "artifacts/report-ubuntu-latest-3.9/coverage.xml"
+          filename: "artifacts/report-ubuntu-latest-py3.9/coverage.xml"
           badge: true
           fail_below_min: true
           format: markdown
