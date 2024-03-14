@@ -1,7 +1,7 @@
 inputs:
-  topic:
+  question:
     type: string
-  persona:
+  ground_truth:
     type: string
   conversation_history:
     type: list
@@ -16,6 +16,6 @@ nodes:
     type: code
     path: simulator.py
   inputs:
-    topic: ${inputs.topic}
-    persona: ${inputs.persona}
+    question: ${inputs.question}
+    ground_truth: ${inputs.ground_truth}
     conversation_history: ${inputs.conversation_history}

@@ -2,7 +2,7 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   question:
     type: string
-    default: Tell me a joke.
+    default: What's human?
   model:
     type: string
     default: gpt-3.5-turbo
