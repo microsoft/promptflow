@@ -4,6 +4,7 @@
 import collections
 import datetime
 import hashlib
+import importlib
 import json
 import os
 import platform
@@ -17,9 +18,10 @@ import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from functools import partial
+from inspect import isfunction
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import keyring
@@ -1204,6 +1206,30 @@ def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
                     flow_yaml_path.unlink()
                 except Exception as e:
                     logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
+
+
+def callable_to_entry_string(callable_obj: Callable) -> str:
+    """Convert callable object to entry string."""
+    # check if callable_obj can be imported from module
+
+    if not isfunction(callable_obj):
+        raise UserErrorException(f"{callable_obj} is not function, only function is supported.")
+
+    try:
+        module_str = callable_obj.__module__
+        func_str = callable_obj.__name__
+    except AttributeError as e:
+        raise UserErrorException(f"Failed to convert {callable_obj} to entry.") from e
+
+    # check if callable can be imported from module
+    module = importlib.import_module(module_str)
+    func = getattr(module, func_str, None)
+    if not func:
+        raise UserErrorException(
+            f"Failed to import {callable_obj} from module {module}, please make sure it's a global function."
+        )
+
+    return f"{module_str}:{func_str}"
 
 
 generate_flow_meta = _generate_flow_meta

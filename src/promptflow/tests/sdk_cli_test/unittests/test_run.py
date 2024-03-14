@@ -15,14 +15,17 @@ from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
+from promptflow._sdk._utils import callable_to_entry_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
+EAGER_FLOWS_DIR = Path("./tests/test_configs/eager_flows")
 RUNS_DIR = Path("./tests/test_configs/runs")
 DATAS_DIR = Path("./tests/test_configs/datas")
 
@@ -230,3 +233,36 @@ class TestRun:
         run_yaml = Path(RUNS_DIR) / "sample_bulk_run.yaml"
         load_run(source=run_yaml, params_override=[{"unknown_field": "unknown_value"}])
         assert "Unknown fields found" in caplog.text
+
+    def test_callable_to_entry_string(self):
+
+        assert callable_to_entry_string(test_flow) == "sdk_cli_test.unittests.test_run:test_flow"
+
+        with inject_sys_path(f"{EAGER_FLOWS_DIR}/multiple_entries"):
+            from entry2 import my_flow2
+
+            assert callable_to_entry_string(my_flow2) == "entry2:my_flow2"
+
+    def test_callable_to_entry_string_not_supported(self):
+        non_callable = "not a callable"
+
+        def function():
+            pass
+
+        class MyClass:
+            def method(self):
+                pass
+
+            @classmethod
+            def class_method(cls):
+                pass
+
+            @staticmethod
+            def static_method():
+                pass
+
+        obj = MyClass()
+
+        for entry in [non_callable, function, obj.method, obj.class_method, obj.static_method, MyClass.class_method]:
+            with pytest.raises(UserErrorException):
+                callable_to_entry_string(entry)
