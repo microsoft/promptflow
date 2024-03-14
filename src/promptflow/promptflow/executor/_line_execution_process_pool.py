@@ -207,6 +207,7 @@ class LineExecutionProcessPool:
         # If a thread crashed for some reason, the processes it monitors might not be able to exit because
         # they do not receive a terminate signal. So we need to terminate these unmonitored processes.
         self._processes_manager.ensure_all_processes_terminated()
+        # In fork mode, send the 'spawned_manager_end' signal to exit the spawned process manager.
         if self._use_fork:
             self._control_signal_queue.put((ProcessControlSignal.SPAWNED_MANAGER_END, self._use_fork))
 
