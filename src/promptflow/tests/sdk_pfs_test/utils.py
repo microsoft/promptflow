@@ -292,7 +292,7 @@ class PFSOperations:
     def show_image(self, flow_path: str, image_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path, "image_path": image_path}
-        response = self._client.get(f"{self.UI_URL_PREFIX}/image", query_string=query_string)
+        response = self._client.get(f"{self.UI_URL_PREFIX}/media", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response

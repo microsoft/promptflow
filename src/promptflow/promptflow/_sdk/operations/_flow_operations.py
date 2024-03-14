@@ -34,6 +34,7 @@ from promptflow._sdk._utils import (
     generate_flow_meta,
     generate_flow_tools_json,
     generate_random_string,
+    json_load,
     logger,
     parse_variant,
 )
@@ -279,6 +280,84 @@ class FlowOperations(TelemetryMixin):
                 chat_history_name=chat_history_input_name,
                 show_step_output=kwargs.get("show_step_output", False),
             )
+
+    def _test_with_ui(
+        self,
+        flow: Union[str, PathLike],
+        output_path: PathLike,
+        *,
+        inputs: dict = None,
+        variant: str = None,
+        node: str = None,
+        environment_variables: dict = None,
+        entry: str = None,
+        **kwargs,
+    ) -> dict:
+        """Test flow or node by http request.
+
+        :param flow: path to flow directory to test
+        :type flow: Union[str, PathLike]
+        :param inputs: Input data for the flow test
+        :type inputs: dict
+        :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
+           if not specified.
+        :type variant: str
+        :param node: If specified it will only test this node, else it will test the flow.
+        :type node: str
+        :param environment_variables: Environment variables to set by specifying a property path and value.
+           Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
+           The value reference to connection keys will be resolved to the actual value,
+           and all environment variables specified will be set into os.environ.
+        :type environment_variables: dict
+        :return: The result of flow or node
+        :rtype: dict
+        """
+        experiment = kwargs.pop("experiment", None)
+        if Configuration.get_instance().is_internal_features_enabled() and experiment:
+            result = self.test(
+                flow=flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                variant=variant,
+                node=node,
+                experiment=experiment,
+                output_path=output_path,
+            )
+            return_output = {}
+            for key in result:
+                detail_path = output_path / key / "flow.detail.json"
+                log_path = output_path / key / "flow.log"
+                detail_content = json_load(detail_path)
+                with open(log_path, "r") as file:
+                    log_content = file.read()
+                return_output[key] = {"detail": detail_content, "log": log_content}
+        else:
+            self.test(
+                flow=flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                variant=variant,
+                node=node,
+                allow_generator_output=False,
+                stream_output=False,
+                dump_test_result=True,
+                output_path=output_path,
+            )
+            if node:
+                detail_path = output_path / f"flow-{node}.node.detail.json"
+                log_path = output_path / f"{node}.node.log"
+            else:
+                if variant:
+                    tuning_node, node_variant = parse_variant(variant)
+                    detail_path = output_path / f"flow-{tuning_node}-{node_variant}.detail.json"
+                else:
+                    detail_path = output_path / "flow.detail.json"
+                log_path = output_path / "flow.log"
+            detail_content = json_load(detail_path)
+            with open(log_path, "r") as file:
+                log_content = file.read()
+            return_output = {"flow": {"detail": detail_content, "log": log_content}}
+        return return_output
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
     def _chat_with_ui(self, script, skip_open_browser: bool = False):

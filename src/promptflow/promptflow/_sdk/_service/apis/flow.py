@@ -3,20 +3,21 @@
 # ---------------------------------------------------------
 import json
 import os
-from flask import make_response
-from flask_restx import reqparse
-from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import DEFAULT_ENCODING
-from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import get_client_from_request
-from promptflow._sdk._constants import UX_INPUTS_JSON, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import json_load, read_write_by_user, parse_variant
-from promptflow._utils.yaml_utils import load_yaml
-from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow._utils.utils import decrypt_flow_path
-from pathlib import Path
 import shutil
 import uuid
+from pathlib import Path
+
+from flask import make_response
+from flask_restx import reqparse
+
+from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
+from promptflow._sdk._service import Namespace, Resource, fields
+from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow._sdk._utils import json_load, read_write_by_user
+from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.utils import decrypt_flow_path
+from promptflow._utils.yaml_utils import load_yaml
+from promptflow.exceptions import UserErrorException
 
 api = Namespace("Flows", description="Flows Management")
 
@@ -26,11 +27,15 @@ dict_field = api.schema_model("FlowDict", {"additionalProperties": True, "type":
 flow_test_model = api.model(
     "FlowTest",
     {
-        "node": fields.String(required=False, description="If specified it will only test this node, else it will "
-                                                          "test the flow."),
-        "variant": fields.String(required=False, description="Node & variant name in format of ${"
-                                                             "node_name.variant_name}, will use default variant if "
-                                                             "not specified."),
+        "node": fields.String(
+            required=False, description="If specified it will only test this node, else it will " "test the flow."
+        ),
+        "variant": fields.String(
+            required=False,
+            description="Node & variant name in format of ${"
+            "node_name.variant_name}, will use default variant if "
+            "not specified.",
+        ),
         "output_path": fields.String(required=False, description="Output path of flow"),
         "experiment": fields.String(required=False, description="Path of experiment template"),
         "inputs": fields.Nested(dict_field, required=False),
@@ -43,11 +48,11 @@ flow_ux_input_model = api.model(
     {
         "flow": fields.String(required=True, description="Path to flow directory."),
         "ux_inputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
-    }
+    },
 )
 
 flow_path_parser = reqparse.RequestParser()
-flow_path_parser.add_argument('flow', type=str, required=True, location='args', help='Path to flow directory.')
+flow_path_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
 
 
 @api.route("/test")
@@ -77,56 +82,19 @@ class FlowTest(Resource):
             remove_dir = True
         output_path = Path(output_path).resolve()
         try:
-            if Configuration.get_instance().is_internal_features_enabled() and experiment:
-                result = get_client_from_request().flows.test(
-                    flow=flow,
-                    inputs=inputs,
-                    environment_variables=environment_variables,
-                    variant=variant,
-                    node=node,
-                    experiment=experiment,
-                    output_path=output_path,
-                    ux_call=True,
-                )
-                return_output = {}
-                for key in result:
-                    detail_path = output_path / key / "flow.detail.json"
-                    log_path = output_path / key / "flow.log"
-                    detail_content = json_load(detail_path)
-                    with open(log_path, 'r') as file:
-                        log_content = file.read()
-                    return_output[key] = {"detail": detail_content, "log": log_content}
-            else:
-                get_client_from_request().flows.test(
-                    flow=flow,
-                    inputs=inputs,
-                    environment_variables=environment_variables,
-                    variant=variant,
-                    node=node,
-                    allow_generator_output=False,
-                    stream_output=False,
-                    dump_test_result=True,
-                    output_path=output_path,
-                    ux_call=True,
-                )
-                if node:
-                    detail_path = output_path / f"flow-{node}.node.detail.json"
-                    log_path = output_path / f"{node}.node.log"
-                else:
-                    if variant:
-                        tuning_node, node_variant = parse_variant(variant)
-                        detail_path = output_path / f"flow-{tuning_node}-{node_variant}.detail.json"
-                    else:
-                        detail_path = output_path / "flow.detail.json"
-                    log_path = output_path / "flow.log"
-                detail_content = json_load(detail_path)
-                with open(log_path, 'r') as file:
-                    log_content = file.read()
-                return_output = {"flow": {"detail": detail_content, "log": log_content}}
+            result = get_client_from_request().flows._test_with_ui(
+                flow=flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                variant=variant,
+                node=node,
+                experiment=experiment,
+                output_path=output_path,
+            )
         finally:
             if remove_dir:
                 shutil.rmtree(output_path)
-        return return_output
+        return result
 
 
 @api.route("/get")
@@ -138,7 +106,7 @@ class FlowGet(Resource):
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
-            return make_response("The flow doesn't exist", 404)
+            raise UserErrorException(f"The flow doesn't exist: {flow_path}")
         flow_path = resolve_flow_path(Path(flow_path))
         flow_info = load_yaml(flow_path)
         return flow_info
@@ -153,7 +121,7 @@ class FlowUxInputs(Resource):
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
-            return make_response("The flow doesn't exist", 404)
+            raise UserErrorException(f"The flow doesn't exist: {flow_path}")
         flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         if not flow_ux_inputs_path.exists():
             flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)

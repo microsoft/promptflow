@@ -6,13 +6,14 @@ import os
 import uuid
 from pathlib import Path
 
-from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
+from flask import Response, current_app, render_template, send_from_directory, url_for
 from flask_restx import reqparse
 from werkzeug.utils import safe_join
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._utils.utils import decrypt_flow_path
+from promptflow.exceptions import UserErrorException
 
 api = Namespace("ui", description="UI")
 
@@ -64,14 +65,14 @@ class MediaSave(Resource):
         safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
             message = f"The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!"
-            return make_response(message, 403)
+            raise UserErrorException(message)
         file_path = save_image(safe_path, base64_data, extension)
         path = Path(file_path).relative_to(flow)
         return str(path)
 
 
-@api.route("/image")
-class ImageView(Resource):
+@api.route("/media")
+class MediaView(Resource):
     @api.response(code=200, description="Get image url", model=fields.String)
     @api.doc(description="Get image url")
     def get(self):
@@ -84,10 +85,10 @@ class ImageView(Resource):
         safe_path = safe_join(flow, image_path)
         if safe_path is None:
             message = f"The untrusted path {image_path} relative to the base directory {flow} detected!"
-            return make_response(message, 403)
+            raise UserErrorException(message)
         safe_path = Path(safe_path).resolve().as_posix()
         if not os.path.exists(safe_path):
-            return make_response("The image doesn't exist", 404)
+            raise UserErrorException("The image doesn't exist")
 
         directory, filename = os.path.split(safe_path)
         return send_from_directory(directory, filename)
