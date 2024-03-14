@@ -297,10 +297,17 @@ class BatchEngine:
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
-        line_results.extend(previous_line_results or [])
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(batch_inputs, run_id, output_dir, raise_on_line_failure, line_results, aggr_result)
+            self._exec(
+                batch_inputs,
+                run_id,
+                output_dir,
+                raise_on_line_failure,
+                previous_line_results,
+                line_results,
+                aggr_result,
+            )
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -319,8 +326,9 @@ class BatchEngine:
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
-        line_results: List[LineResult] = [],
-        aggr_result: AggregationResult = AggregationResult({}, {}, {}),
+        previous_line_results: List[LineResult] = None,
+        line_results: List[LineResult] = [],  # serve as output
+        aggr_result: AggregationResult = AggregationResult({}, {}, {}),  # serve as output
     ) -> BatchResult:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
@@ -331,9 +339,10 @@ class BatchEngine:
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
 
-        # if there are existing results resumed from last run, we should skip the execution of these lines
-        existing_results_line_numbers = set([r.run_info.index for r in line_results])
-        if len(existing_results_line_numbers) > 0:
+        # if there are existing results resumed from previous run, we should skip the execution of these lines
+        if previous_line_results:
+            line_results.extend(previous_line_results)
+            existing_results_line_numbers = set([r.run_info.index for r in previous_line_results])
             bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
             inputs_to_run = [
                 input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers
