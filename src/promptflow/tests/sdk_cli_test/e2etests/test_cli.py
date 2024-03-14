@@ -20,7 +20,6 @@ import pytest
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
@@ -29,6 +28,7 @@ from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.tracing._operation_context import OperationContext
 
 from ..recording_utilities import is_live
 

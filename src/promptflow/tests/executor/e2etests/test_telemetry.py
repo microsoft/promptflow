@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow._core.operation_context import OperationContext
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
+from promptflow.tracing._operation_context import OperationContext
 
 from ..process_utils import override_process_pool_targets
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl

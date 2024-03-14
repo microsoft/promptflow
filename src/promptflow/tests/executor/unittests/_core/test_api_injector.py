@@ -6,7 +6,6 @@ from unittest.mock import patch
 import openai
 import pytest
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._version import VERSION
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
@@ -19,6 +18,7 @@ from promptflow.tracing._integrations._openai_injector import (
     inject_openai_api,
     inject_operation_headers,
 )
+from promptflow.tracing._operation_context import OperationContext
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -209,7 +209,7 @@ def test_get_aoai_telemetry_headers():
     )
 
     # patch the OperationContext.get_instance method to return the mock operation context
-    with patch("promptflow._core.operation_context.OperationContext.get_instance") as mock_get_instance:
+    with patch("promptflow.tracing._operation_context.OperationContext.get_instance") as mock_get_instance:
         mock_get_instance.return_value = mock_operation_context
 
         # call the function under test and get the headers

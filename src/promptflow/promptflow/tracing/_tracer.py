@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from ._thread_local_singleton import ThreadLocalSingleton
-from ._utils import is_core_installed, serialize
+from ._utils import serialize
 from .contracts.generator_proxy import GeneratorProxy, generate_from_proxy
 from .contracts.trace import Trace, TraceType
 
@@ -64,12 +64,12 @@ class Tracer(ThreadLocalSingleton):
             return obj
         try:
             obj = serialize(obj)
-            default_dump_func = None
-            if is_core_installed():
+            try:
                 from promptflow._utils.utils import default_json_encoder
 
-                default_dump_func = default_json_encoder
-            json.dumps(obj, default=default_dump_func)
+                json.dumps(obj, default=default_json_encoder)
+            except ImportError:
+                json.dumps(obj)
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
             # so we simply convert it to str if it cannot be serialized.
@@ -158,13 +158,16 @@ def _create_trace_from_function_call(
     sig = inspect.signature(f).parameters
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-    if is_core_installed():
+    try:
         from promptflow.contracts.tool import ConnectionType
 
         all_kwargs = {
             k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
             for k, v in all_kwargs.items()
         }
+    except ImportError:
+        pass
+
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
     for key in args_to_ignore:

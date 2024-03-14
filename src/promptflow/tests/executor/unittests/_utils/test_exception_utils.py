@@ -5,7 +5,6 @@ from traceback import TracebackException
 import pytest
 
 from promptflow._core._errors import ToolExecutionError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import (
     ErrorResponse,
     ExceptionPresenter,
@@ -22,6 +21,7 @@ from promptflow.exceptions import (
     UserErrorException,
     ValidationException,
 )
+from promptflow.tracing._operation_context import OperationContext
 
 
 def set_inner_exception_by_parameter():

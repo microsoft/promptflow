@@ -20,7 +20,6 @@ from promptflow._constants import (
     SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
@@ -33,6 +32,7 @@ from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_se
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import _force_set_tracer_provider, _is_tracer_provider_set
 
 logger = get_cli_sdk_logger()

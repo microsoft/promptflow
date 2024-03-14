@@ -76,18 +76,9 @@ def get_input_names_for_prompt_template(template_str):
 def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
 
-    from promptflow.contracts.types import PromptTemplate
-
-    return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
-
-
-def is_core_installed():
     try:
-        from promptflow._core.operation_context import OperationContext  # noqa: F401
-        from promptflow._utils.utils import default_json_encoder  # noqa: F401
-        from promptflow.contracts.tool import ConnectionType  # noqa: F401
-        from promptflow.contracts.types import PromptTemplate  # noqa: F401
+        from promptflow.contracts.types import PromptTemplate
 
-        return True
-    except Exception:
-        return False
+        return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
+    except ImportError:
+        return None

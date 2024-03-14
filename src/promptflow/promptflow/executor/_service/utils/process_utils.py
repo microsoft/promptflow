@@ -13,13 +13,13 @@ from typing import Callable
 import psutil
 
 from promptflow._core._errors import UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
+from promptflow.tracing._operation_context import OperationContext
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
 SHORT_WAIT_TIMEOUT = 10

@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from promptflow._core.operation_context import OperationContext
+from promptflow.tracing._operation_context import OperationContext
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")

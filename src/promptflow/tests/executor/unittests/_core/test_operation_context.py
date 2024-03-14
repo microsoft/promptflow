@@ -2,9 +2,9 @@ import threading
 
 import pytest
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._version import VERSION
 from promptflow.contracts.run_mode import RunMode
+from promptflow.tracing._operation_context import OperationContext
 
 
 def set_run_mode(context: OperationContext, run_mode: RunMode):
@@ -100,32 +100,6 @@ class TestOperationContext:
         context1 = OperationContext.get_instance()
         context2 = OperationContext.get_instance()
         assert context1 is context2
-
-    def test_set_batch_input_source_from_inputs_mapping_run(self):
-        input_mapping = {"input1": "${run.outputs.output1}", "input2": "${run.outputs.output2}"}
-        context = OperationContext()
-        context.set_batch_input_source_from_inputs_mapping(input_mapping)
-        assert context.batch_input_source == "Run"
-
-    def test_set_batch_input_source_from_inputs_mapping_data(self):
-        input_mapping = {"url": "${data.url}"}
-        context = OperationContext()
-        context.set_batch_input_source_from_inputs_mapping(input_mapping)
-        assert context.batch_input_source == "Data"
-
-    def test_set_batch_input_source_from_inputs_mapping_none(self):
-        input_mapping = None
-        context = OperationContext()
-        assert not hasattr(context, "batch_input_source")
-        context.set_batch_input_source_from_inputs_mapping(input_mapping)
-        assert context.batch_input_source == "Data"
-
-    def test_set_batch_input_source_from_inputs_mapping_empty(self):
-        input_mapping = {}
-        context = OperationContext()
-        assert not hasattr(context, "batch_input_source")
-        context.set_batch_input_source_from_inputs_mapping(input_mapping)
-        assert context.batch_input_source == "Data"
 
     def test_different_thread_have_different_instance(self):
         # create a list to store the OperationContext instances from each thread

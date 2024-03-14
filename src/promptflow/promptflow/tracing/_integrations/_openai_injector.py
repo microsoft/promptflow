@@ -12,8 +12,8 @@ from importlib.metadata import version
 
 import openai
 
+from .._operation_context import OperationContext
 from .._trace import _traced_async, _traced_sync
-from .._utils import is_core_installed
 from ..contracts.trace import TraceType
 
 
@@ -45,27 +45,24 @@ def get_aoai_telemetry_headers() -> dict:
     Returns:
         A dictionary of http headers.
     """
-    if is_core_installed():
-        from promptflow._core.operation_context import OperationContext
 
-        # get promptflow info from operation context
-        operation_context = OperationContext.get_instance()
-        tracking_info = operation_context._get_tracking_info()
+    # get promptflow info from operation context
+    operation_context = OperationContext.get_instance()
+    tracking_info = operation_context._get_tracking_info()
 
-        def is_primitive(value):
-            return value is None or isinstance(value, (int, float, str, bool))
+    def is_primitive(value):
+        return value is None or isinstance(value, (int, float, str, bool))
 
-        #  Ensure that the telemetry info is primitive
-        tracking_info = {k: v for k, v in tracking_info.items() if is_primitive(v)}
+    #  Ensure that the telemetry info is primitive
+    tracking_info = {k: v for k, v in tracking_info.items() if is_primitive(v)}
 
-        # init headers
-        headers = {USER_AGENT_HEADER: operation_context.get_user_agent()}
+    # init headers
+    headers = {USER_AGENT_HEADER: operation_context.get_user_agent()}
 
-        # update header with promptflow info
-        headers[PROMPTFLOW_HEADER] = json.dumps(tracking_info)
+    # update header with promptflow info
+    headers[PROMPTFLOW_HEADER] = json.dumps(tracking_info)
 
-        return headers
-    return {}
+    return headers
 
 
 def inject_operation_headers(f):
