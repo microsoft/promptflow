@@ -67,6 +67,7 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
+        run_id: str,
         *args,
         **kwargs,
     ) -> None:
@@ -74,6 +75,7 @@ class AbstractProcessManager:
         self._output_queues = output_queues
         self._process_info: Dict[int, ProcessInfo] = process_info
         self._process_target_func = process_target_func
+        self._run_id = run_id
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
@@ -209,6 +211,7 @@ class SpawnProcessManager(AbstractProcessManager):
                 self._log_context_initialization_func,
                 self._current_operation_context,
                 i,
+                self._run_id,
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
@@ -320,7 +323,8 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+            logName = "{}_{}.log".format(ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME, self._run_id)
+            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName
             try:
                 with open(log_path, "r") as f:
                     error_logs = "".join(f.readlines())
@@ -380,6 +384,7 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 self._log_context_initialization_func,
                 self._current_operation_context,
                 i,
+                self._run_id,
             ),
             daemon=True,
         )
@@ -423,10 +428,11 @@ def create_spawned_fork_process_manager(
     flow_create_kwargs,
     **kwargs,
 ):
+    logName = "{}_{}.log".format(ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME, kwargs.get("run_id"))
     # Ensure the directory exists
     if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
         ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
-    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName
     sys.stderr = open(log_path, "w")
 
     """

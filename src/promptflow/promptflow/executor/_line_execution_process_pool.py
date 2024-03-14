@@ -113,11 +113,10 @@ class LineExecutionProcessPool:
         while True:
             try:
                 # Delete log files to prevent interference from the previous run on the current execution.
-                log_path = (
-                    ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
-                )
-                if log_path.exists():
-                    log_path.unlink()
+                for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(
+                    f"{ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME}*"
+                ):
+                    file.unlink()
                 for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(f"{ProcessPoolConstants.PROCESS_LOG_NAME}*"):
                     file.unlink()
                 # Delete the PROCESS_LOG_PATH directory
@@ -163,6 +162,7 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
+            "run_id": self._run_id,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -652,9 +652,10 @@ def _process_wrapper(
     output_queue: Queue,
     log_context_initialization_func,
     operation_contexts_dict: dict,
-    i,
+    i: int,
+    run_id: str,
 ):
-    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, i)
+    logName_i = "{}_{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, run_id, i)
     if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
         ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
     log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName_i

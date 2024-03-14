@@ -227,7 +227,7 @@ class CustomStrongTypeConnectionConfigs:
 class ProcessPoolConstants:
     PROCESS_LOG_NAME = "process_stderr"
     PROCESS_LOG_PATH = Path("process_log")
-    SPANED_FORK_PROCESS_MANAGER_LOG_NAME = "spawned_fork_process_manager_stderr.log"
+    SPANED_FORK_PROCESS_MANAGER_LOG_NAME = "spawned_fork_process_manager_stderr"
     TERMINATE_SIGNAL = "terminate"
 
 

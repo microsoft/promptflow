@@ -210,10 +210,9 @@ class TestLineExecutionProcessPool:
                 None,
             ) as pool:
                 result_list = await pool.run(zip(range(nlines), bulk_inputs))
-                # Check 'spawned_fork_process_manager_stderr.log' exits.
-                log_file = (
-                    ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
-                )
+                # Check 'spawned_fork_process_manager_stderr_runid.log' exits.
+                logName = "{}_{}.log".format(ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME, run_id)
+                log_file = ProcessPoolConstants.PROCESS_LOG_PATH / logName
                 assert log_file.exists() is True
                 child_process_log_exit = False
                 for file in ProcessPoolConstants.PROCESS_LOG_PATH.iterdir():
