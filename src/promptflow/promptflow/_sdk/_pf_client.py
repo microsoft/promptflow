@@ -13,7 +13,12 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import ClientUserAgentUtil, generate_yaml_entry, is_eager_flow_entry, setup_user_agent_to_operation_context
+from ._utils import (
+    ClientUserAgentUtil,
+    generate_yaml_entry,
+    is_python_flex_flow_entry,
+    setup_user_agent_to_operation_context,
+)
 from .entities import Run
 from .entities._eager_flow import FlexFlow
 from .operations import RunOperations
@@ -152,7 +157,7 @@ class PFClient:
             )
         if not flow:
             raise ValueError("'flow' is required to create a run.")
-        if not os.path.exists(flow) and not is_eager_flow_entry(entry=flow):
+        if not os.path.exists(flow) and not is_python_flex_flow_entry(entry=flow):
             # check if it's eager flow's entry
             raise UserErrorException(f"Flow path {flow} does not exist and it's not a valid entry point.")
         if data and not os.path.exists(data):

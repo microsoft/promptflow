@@ -1163,15 +1163,15 @@ def overwrite_null_std_logger():
         sys.stderr = sys.stdout
 
 
-def is_eager_flow_entry(entry: str):
-    """Returns True if entry is eager flow's entry (in python)."""
+def is_python_flex_flow_entry(entry: str):
+    """Returns True if entry is flex flow's entry (in python)."""
     return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
 
 
 @contextmanager
 def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
     """Generate yaml entry to run."""
-    if is_eager_flow_entry(entry=entry):
+    if is_python_flex_flow_entry(entry=entry):
         with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:
