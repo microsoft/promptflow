@@ -41,5 +41,5 @@ class TestGlobalConfig:
             return get_local_connections_from_executable(client=client, **kwargs)
 
         flow = load_flow(source=f"{FLOWS_DIR}/web_classification")
-        with mock.patch("promptflow._sdk._serving.flow_invoker.get_local_connections_from_executable", assert_client):
+        with mock.patch("promptflow.core._serving.flow_invoker.get_local_connections_from_executable", assert_client):
             FlowContextResolver.resolve(flow=flow)

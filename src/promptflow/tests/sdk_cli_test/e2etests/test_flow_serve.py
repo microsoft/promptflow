@@ -3,15 +3,15 @@ import os
 import re
 
 import pytest
-
-from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._serving.utils import load_feedback_swagger
-from promptflow._sdk._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+from promptflow._core.operation_context import OperationContext
+from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
+from promptflow.core._serving.utils import load_feedback_swagger
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -105,9 +105,9 @@ def test_feedback_with_trace_context(flow_serving_client):
     trace_ctx_parent_id = "f3f3f3f3f3f3f3f3"
     trace_ctx_flags = "01"
     trace_parent = f"{trace_ctx_version}-{trace_ctx_trace_id}-{trace_ctx_parent_id}-{trace_ctx_flags}"
-    response = flow_serving_client.post("/feedback",
-                                        headers={"traceparent": trace_parent, "baggage": "userId=alice"},
-                                        data=feedback_data)
+    response = flow_serving_client.post(
+        "/feedback", headers={"traceparent": trace_parent, "baggage": "userId=alice"}, data=feedback_data
+    )
     assert response.status_code == 200
     spans = exporter.get_finished_spans()
     assert len(spans) == 1

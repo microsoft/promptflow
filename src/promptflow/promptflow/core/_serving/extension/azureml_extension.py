@@ -7,14 +7,14 @@ import os
 import re
 from typing import Any, Tuple
 
-from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
-from promptflow._sdk._serving.extension.default_extension import AppExtension
-from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
-from promptflow._sdk._serving.extension.extension_type import ExtensionType
-from promptflow._sdk._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
 from promptflow._utils.retry_utils import retry
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
+from promptflow.core._serving._errors import InvalidConnectionData, MissingConnectionProvider
+from promptflow.core._serving.extension.default_extension import AppExtension
+from promptflow.core._serving.extension.extension_type import ExtensionType
+from promptflow.core._serving.monitor.data_collector import FlowDataCollector
+from promptflow.core._serving.utils import decode_dict, get_pf_serving_env, normalize_connection_name
 
 USER_AGENT = f"promptflow-cloud-serving/{VERSION}"
 AML_DEPLOYMENT_RESOURCE_ID_REGEX = "/subscriptions/(.*)/resourceGroups/(.*)/providers/Microsoft.MachineLearningServices/workspaces/(.*)/onlineEndpoints/(.*)/deployments/(.*)"  # noqa: E501
@@ -25,7 +25,9 @@ class AzureMLExtension(AppExtension):
     """AzureMLExtension is used to create extension for azureml serving."""
 
     def __init__(self, logger, **kwargs):
-        super().__init__(logger=logger, extension_type=ExtensionType.AZUREML, collector=FlowDataCollector(logger), **kwargs)  # noqa: E501
+        super().__init__(
+            logger=logger, extension_type=ExtensionType.AZUREML, collector=FlowDataCollector(logger), **kwargs
+        )  # noqa: E501
         # parse promptflow project path
         project_path: str = get_pf_serving_env("PROMPTFLOW_PROJECT_PATH")
         if not project_path:

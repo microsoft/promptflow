@@ -2,8 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from flask import Blueprint, current_app as app, request
-from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
+from flask import Blueprint
+from flask import current_app as app
+from flask import request
+
+from promptflow.core._serving.monitor.flow_monitor import FlowMonitor
 
 
 def is_monitoring_enabled() -> bool:

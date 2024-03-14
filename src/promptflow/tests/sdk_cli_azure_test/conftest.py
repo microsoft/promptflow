@@ -150,7 +150,7 @@ MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
 @pytest.fixture
 def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspace_resource_id):
-    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow.core._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -216,7 +216,7 @@ def serving_client_with_connection_data_override(mocker: MockerFixture, remote_w
 
 
 def create_serving_client_with_connections(model_name, mocker: MockerFixture, connections: dict = {}):
-    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow.core._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
