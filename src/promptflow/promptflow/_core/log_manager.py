@@ -119,6 +119,12 @@ class NodeLogWriter(TextIOBase):
         else:
             self._write_to_flow_log(log_info, s)
             stdout: StringIO = self.run_id_to_stdout.get(log_info.run_id)
+            # When the line execution timeout is reached, all running nodes will be cancelled and node info will
+            # be cleared. This will remove StringIO from self.run_id_to_stdout. For sync tools running in a worker
+            # thread, they can't be stopped and self._context won't change in the worker
+            # thread because it's a thread-local variable. Therefore, we need to check if StringIO is None here.
+            if stdout is None:
+                return
             if self._record_datetime and s != "\n":  # For line breaker, do not add datetime prefix.
                 s = f"[{datetime.now(timezone.utc).strftime(self.DATETIME_FORMAT)}] {s}"
             stdout.write(s)

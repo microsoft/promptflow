@@ -1,0 +1,23 @@
+{
+    "function": "my_flow",
+    "entry": "flow_with_dataclass:my_flow",
+    "inputs": {
+        "text": {
+            "type": "string",
+            "default": "default_text"
+        },
+        "models": {
+            "type": "list",
+            "default": "['default_model']"
+        }
+    },
+    "outputs": {
+        "text": {
+            "type": "string"
+        },
+        "models": {
+            "type": "list"
+        }
+    },
+    "source": "flow_with_dataclass.py"
+}
