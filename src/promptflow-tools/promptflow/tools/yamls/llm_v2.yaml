@@ -22,8 +22,11 @@ promptflow.tools.llm_v2.llm:
       - OpenAIConnection
       - ServerlessConnection
     api_of_aoai:
+      type:
+      - string
       enabled_by: connection
-      enabled_by_type: [AzureOpenAIConnection]
+      enabled_by_type:
+      - AzureOpenAIConnection
       default: chat
       enum:
       - chat
@@ -32,8 +35,11 @@ promptflow.tools.llm_v2.llm:
         text_box_size: sm
         display_name: api
     api_of_oai:
+      type:
+      - string
       enabled_by: connection
-      enabled_by_type: [OpenAIConnection]
+      enabled_by_type:
+      - OpenAIConnection
       default: chat
       enum:
       - chat
@@ -42,8 +48,11 @@ promptflow.tools.llm_v2.llm:
         text_box_size: sm
         display_name: api
     api_of_serverless:
+      type:
+      - string
       enabled_by: connection
-      enabled_by_type: [ServerlessConnection]
+      enabled_by_type:
+      - ServerlessConnection
       default: chat
       enum:
       - chat
@@ -52,11 +61,12 @@ promptflow.tools.llm_v2.llm:
         display_name: api
     deployment_name_of_chat:
       type:
-        - string
+      - string
       enabled_by: api_of_aoai
-      enabled_by_value: [chat]
-      # capabilities:
-      #   chat_completion: true
+      enabled_by_value:
+      - chat
+      capabilities:
+        chat_completion: true
       #   # add exclude/include because aoai supports custom models that we cannot limit by model names.
       #   exclude_model_versions:
       #   - vision-preview
@@ -67,11 +77,12 @@ promptflow.tools.llm_v2.llm:
         display_name: deployment_name
     deployment_name_of_completion:
       type:
-        - string
-      enabled_by: api_of_oai
-      enabled_by_value: [completion]
-      # capabilities:
-      #   completion: true
+      - string
+      enabled_by: api_of_aoai
+      enabled_by_value:
+      - completion
+      capabilities:
+        completion: true
       #   include_model_names:
       #     - gpt-35-turbo-instruct
       allow_manual_entry: true
@@ -81,9 +92,10 @@ promptflow.tools.llm_v2.llm:
         display_name: deployment_name
     model_of_chat:
       type:
-        - string
+      - string
       enabled_by: api_of_oai
-      enabled_by_value: [chat]
+      enabled_by_value:
+      - chat
       default: gpt-3.5-turbo
       enum:
       - gpt-3.5-turbo
@@ -102,9 +114,10 @@ promptflow.tools.llm_v2.llm:
         display_name: model
     model_of_completion:
       type:
-        - string
+      - string
       enabled_by: api_of_oai
-      enabled_by_value: [completion]
+      enabled_by_value:
+      - completion
       default: gpt-3.5-turbo-instruct
       enum:
       - gpt-3.5-turbo-instruct
