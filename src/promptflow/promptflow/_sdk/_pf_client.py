@@ -15,7 +15,7 @@ from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import ClientUserAgentUtil, generate_yaml_entry, is_eager_flow_entry, setup_user_agent_to_operation_context
 from .entities import Run
-from .entities._eager_flow import EagerFlow
+from .entities._eager_flow import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -166,7 +166,7 @@ class PFClient:
             # load flow object for validation and early failure
             flow_obj = load_flow(source=flow)
             # validate param conflicts
-            if isinstance(flow_obj, EagerFlow):
+            if isinstance(flow_obj, FlexFlow):
                 if variant or connections:
                     logger.warning("variant and connections are not supported for eager flow, will be ignored")
                     variant, connections = None, None

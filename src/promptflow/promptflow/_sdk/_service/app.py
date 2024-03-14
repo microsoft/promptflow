@@ -111,9 +111,9 @@ def create_app():
             else:
                 request_body = request.get_data()
 
+            app.logger.info("Request coming in: %s", request.url)
             app.logger.debug(
-                "Last request time: %s, Headers: %s, Body: %s",
-                app.config["last_request_time"],
+                "Headers: %s, Body: %s",
                 request.headers,
                 request_body,
             )
@@ -129,17 +129,21 @@ def create_app():
         # Start a monitor process using detach mode. It will stop pfs service if no request to pfs service in 1h in
         # python scenario. For C# scenario, pfs will live until the process is killed manually.
         def monitor_request():
-            while True:
-                time.sleep(PF_SERVICE_MONITOR_SECOND)
-                if "last_request_time" in app.config and datetime.now() - app.config["last_request_time"] > timedelta(
-                    hours=PF_SERVICE_HOUR_TIMEOUT
-                ):
-                    # Todo: check if we have any not complete work? like persist all traces.
-                    port = get_port_from_config()
-                    if port:
-                        app.logger.info(f"Try auto stop pfs service in port {port} since no request to app within 1h")
-                        kill_exist_service(port)
-                    break
+            with app.app_context():
+                while True:
+                    time.sleep(PF_SERVICE_MONITOR_SECOND)
+                    if "last_request_time" in app.config and datetime.now() - app.config[
+                        "last_request_time"
+                    ] > timedelta(hours=PF_SERVICE_HOUR_TIMEOUT):
+                        # Todo: check if we have any not complete work? like persist all traces.
+                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made 1h ago")
+                        port = get_port_from_config()
+                        if port:
+                            app.logger.info(
+                                f"Try auto stop pfs service in port {port} since no request to app within 1h"
+                            )
+                            kill_exist_service(port)
+                        break
 
         if not is_run_from_built_binary():
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)
