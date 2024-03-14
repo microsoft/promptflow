@@ -27,7 +27,7 @@ from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
 
-SAMPLE_FLOW = "web_classification_no_variants"
+SAMPLE_FLOW = "hello-world"
 
 
 def get_line_inputs(flow_folder=""):
