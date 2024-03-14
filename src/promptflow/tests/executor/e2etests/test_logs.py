@@ -3,6 +3,7 @@ from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult
@@ -21,7 +22,6 @@ from ..utils import (
 
 TEST_LOGS_FLOW = ["print_input_flow"]
 SAMPLE_FLOW_WITH_TEN_INPUTS = "simple_flow_with_ten_inputs"
-OUTPUT_FILE_NAME = "output.jsonl"
 
 
 def submit_batch_run(
@@ -166,6 +166,8 @@ class TestExecutorLogs:
             "INFO     Start to run 1 nodes with concurrency level 16.",
             "INFO     Executing node long_run_node.",
             "WARNING  long_run_node in line 0 has been running for 60 seconds, stacktrace of thread",
+            "in wrapped",
+            "output = func(*args, **kwargs)",
             ", line 16, in long_run_func",
             "return f2()",
             ", line 11, in f2",

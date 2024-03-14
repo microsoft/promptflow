@@ -1,22 +1,21 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
-from flask import Response, render_template, url_for
-from flask_restx import reqparse
 import base64
 import os
 import uuid
-from flask import make_response, send_from_directory
 from pathlib import Path
-from werkzeug.utils import safe_join
 
+from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
+from flask_restx import reqparse
+from werkzeug.utils import safe_join
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._utils.utils import decrypt_flow_path
 
 api = Namespace("ui", description="UI")
+
 
 media_save_model = api.model(
     "MediaSave",
@@ -27,19 +26,10 @@ media_save_model = api.model(
 )
 
 flow_path_parser = reqparse.RequestParser()
-flow_path_parser.add_argument('flow', type=str, required=True, location='args', help='Path to flow directory.')
+flow_path_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
 
 image_path_parser = reqparse.RequestParser()
-image_path_parser.add_argument('image_path', type=str, required=True, location='args', help='Path of image.')
-
-
-@api.route("/traces")
-class TraceUI(Resource):
-    def get(self):
-        return Response(
-            render_template("index.html", url_for=url_for),
-            mimetype="text/html",
-        )
+image_path_parser.add_argument("image_path", type=str, required=True, location="args", help="Path of image.")
 
 
 @api.route("/chat")
@@ -60,7 +50,7 @@ def save_image(directory, base64_data, extension):
     return file_path
 
 
-@api.route('/media_save')
+@api.route("/media_save")
 class MediaSave(Resource):
     @api.response(code=200, description="Save image", model=fields.String)
     @api.doc(description="Save image")
@@ -73,14 +63,14 @@ class MediaSave(Resource):
         extension = api.payload["extension"]
         safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
-            message = f'The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!'
+            message = f"The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!"
             return make_response(message, 403)
         file_path = save_image(safe_path, base64_data, extension)
         path = Path(file_path).relative_to(flow)
         return str(path)
 
 
-@api.route('/image')
+@api.route("/image")
 class ImageView(Resource):
     @api.response(code=200, description="Get image url", model=fields.String)
     @api.doc(description="Get image url")
@@ -93,7 +83,7 @@ class ImageView(Resource):
         image_path = args.image_path
         safe_path = safe_join(flow, image_path)
         if safe_path is None:
-            message = f'The untrusted path {image_path} relative to the base directory {flow} detected!'
+            message = f"The untrusted path {image_path} relative to the base directory {flow} detected!"
             return make_response(message, 403)
         safe_path = Path(safe_path).resolve().as_posix()
         if not os.path.exists(safe_path):
@@ -101,3 +91,9 @@ class ImageView(Resource):
 
         directory, filename = os.path.split(safe_path)
         return send_from_directory(directory, filename)
+
+
+def serve_trace_ui(path):
+    if path != "" and os.path.exists(os.path.join(current_app.static_folder, path)):
+        return send_from_directory(current_app.static_folder, path)
+    return send_from_directory(current_app.static_folder, "index.html")

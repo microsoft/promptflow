@@ -30,10 +30,10 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_RUNS_DIR_NAME,
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
@@ -46,10 +46,11 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
+from promptflow._sdk._utils import incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -931,7 +932,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # process the output path
         if output is None:
             # default to be "~/.promptflow/.runs" folder
-            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+            output_directory = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_RUNS_DIR_NAME
         else:
             output_directory = Path(output)
 

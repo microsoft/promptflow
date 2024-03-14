@@ -6,15 +6,16 @@ from types import GeneratorType
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.tracer import TraceType, trace
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
+from promptflow.tracing import trace
+from promptflow.tracing.contracts.trace import TraceType
 
 from ..process_utils import execute_function_in_subprocess
-from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, prepare_memory_exporter, load_content
+from ..utils import get_flow_folder, get_flow_sample_inputs, get_yaml_file, load_content, prepare_memory_exporter
 
 LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -29,14 +30,16 @@ EMBEDDING_FUNCTION_NAMES = [
 ]
 
 LLM_TOKEN_NAMES = [
-    "llm.token_count.prompt",
-    "llm.token_count.completion",
-    "llm.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.completion_tokens",
+    "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 EMBEDDING_TOKEN_NAMES = [
-    "embedding.token_count.prompt",
-    "embedding.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 CUMULATIVE_LLM_TOKEN_NAMES = [
@@ -78,7 +81,7 @@ def sub_level_function():
     return "Hello, World!"
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTraces:
     def validate_openai_apicall(self, apicall: dict):
@@ -312,7 +315,7 @@ class TestExecutorTraces:
             )
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestOTelTracer:
     @pytest.mark.parametrize(
@@ -349,7 +352,7 @@ class TestOTelTracer:
             ("llm_tool", {"topic": "Hello", "stream": False}, "joke.jinja2"),
             # Add back this test case after changing the interface of render_template_jinja2
             # ("prompt_tools", {"text": "test"}, "summarize_text_content_prompt.jinja2"),
-        ]
+        ],
     )
     def test_otel_trace_with_prompt(
         self,
@@ -359,7 +362,11 @@ class TestOTelTracer:
         prompt_tpl_file,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_prompt, dev_connections, flow_file, inputs, prompt_tpl_file
+            self.assert_otel_traces_with_prompt,
+            dev_connections,
+            flow_file,
+            inputs,
+            prompt_tpl_file,
         )
 
     def assert_otel_traces_with_prompt(self, dev_connections, flow_file, inputs, prompt_tpl_file):
@@ -400,7 +407,11 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_llm, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces_with_llm,
+            dev_connections,
+            flow_file,
+            inputs,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, expected_span_length):
@@ -418,7 +429,7 @@ class TestOTelTracer:
         self.validate_openai_tokens(span_list)
         for span in span_list:
             if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                assert span.attributes.get("llm.model", "") in ["gpt-35-turbo", "text-ada-001"]
+                assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
         "flow_file, inputs, expected_span_length",
@@ -426,7 +437,7 @@ class TestOTelTracer:
             ("openai_embedding_api_flow", {"input": "Hello"}, 3),
             # [9906] is the tokenized version of "Hello"
             ("openai_embedding_api_flow_with_token", {"input": [9906]}, 3),
-        ]
+        ],
     )
     def test_otel_trace_with_embedding(
         self,
@@ -436,7 +447,11 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_embedding, dev_connections, flow_file, inputs, expected_span_length
+            self.assert_otel_traces_with_embedding,
+            dev_connections,
+            flow_file,
+            inputs,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_embedding(self, dev_connections, flow_file, inputs, expected_span_length):
@@ -450,7 +465,7 @@ class TestOTelTracer:
         self.validate_span_list(span_list, line_run_id, expected_span_length)
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                assert span.attributes.get("embedding.model", "") == "ada"
+                assert span.attributes.get("llm.response.model", "") == "ada"
                 embeddings = span.attributes.get("embedding.embeddings", "")
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
@@ -495,6 +510,21 @@ class TestOTelTracer:
         assert (
             sub_level_span.parent.span_id == top_level_span.context.span_id
         )  # sub_level_span is a child of top_level_span
+
+    def test_flow_with_nested_tool(self):
+        memory_exporter = prepare_memory_exporter()
+
+        line_result, line_run_id = self.submit_flow_run("flow_with_nested_tool", {"input": "Hello"}, {})
+        assert line_result.output == {"output": "Hello"}
+
+        span_list = memory_exporter.get_finished_spans()
+        for span in span_list:
+            if span.attributes.get("span_type", "") != "Flow":
+                inputs = span.attributes.get("inputs", None)
+                if "\"recursive_call\": false" in inputs:
+                    assert span.name == "nested_tool"
+                else:
+                    assert span.name == "nested_tool_node"
 
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)

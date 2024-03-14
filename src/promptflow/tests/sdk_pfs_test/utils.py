@@ -9,7 +9,9 @@ from unittest import mock
 
 import werkzeug
 from flask.testing import FlaskClient
+
 from promptflow._utils.utils import encrypt_flow_path
+
 
 @contextlib.contextmanager
 def check_activity_end_telemetry(
@@ -31,7 +33,7 @@ def check_activity_end_telemetry(
             "first_call": True,
             "activity_type": "PublicApi",
             "completion_status": "Success",
-            "user_agent": f"promptflow-sdk/0.0.1 Werkzeug/{werkzeug.__version__} local_pfs/0.0.1",
+            "user_agent": [f"Werkzeug/{werkzeug.__version__}", "local_pfs/0.0.1"],
         }
         for i, expected_activity in enumerate(expected_activities):
             temp = default_expected_call.copy()
@@ -39,6 +41,9 @@ def check_activity_end_telemetry(
             expected_activity = temp
             for key, expected_value in expected_activity.items():
                 value = actual_activities[i][key]
+                if isinstance(expected_value, list):
+                    value = list(sorted(value.split(" ")))
+                    expected_value = list(sorted(expected_value))
                 assert (
                     value == expected_value
                 ), f"{key} mismatch in {i+1}th call: expect {expected_value} but got {value}"
@@ -56,7 +61,12 @@ class PFSOperations:
     def __init__(self, client: FlaskClient):
         self._client = client
 
-    def remote_user_header(self):
+    def remote_user_header(self, user_agent=None):
+        if user_agent:
+            return {
+                "X-Remote-User": getpass.getuser(),
+                "User-Agent": user_agent,
+            }
         return {"X-Remote-User": getpass.getuser()}
 
     def heartbeat(self):
@@ -69,8 +79,10 @@ class PFSOperations:
             assert status_code == response.status_code, response.text
         return response
 
-    def list_connections(self, status_code=None):
-        response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers=self.remote_user_header())
+    def list_connections(self, status_code=None, user_agent=None):
+        response = self._client.get(
+            f"{self.CONNECTION_URL_PREFIX}/", headers=self.remote_user_header(user_agent=user_agent)
+        )
         if status_code:
             assert status_code == response.status_code, response.text
         return response
@@ -224,12 +236,20 @@ class PFSOperations:
 
     # trace APIs
     # LineRuns
-    def list_line_runs(self, *, session_id: Optional[str] = None, runs: Optional[List[str]] = None):
+    def list_line_runs(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        runs: Optional[List[str]] = None,
+        trace_ids: Optional[List[str]] = None,
+    ):
         query_string = {}
         if session_id is not None:
             query_string["session"] = session_id
         if runs is not None:
             query_string["run"] = ",".join(runs)
+        if trace_ids is not None:
+            query_string["trace_ids"] = ",".join(trace_ids)
         response = self._client.get(
             f"{self.LINE_RUNS_PREFIX}/list",
             query_string=query_string,

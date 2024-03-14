@@ -13,7 +13,6 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.log_manager import NodeLogManager, NodeLogWriter
 from promptflow._core.metric_logger import add_metric_logger
-from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunRecordNotFound, RunTracker
 from promptflow._core.tool import ToolInvoker, ToolProvider, tool
@@ -42,7 +41,6 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
-from promptflow._core.tracer import Tracer
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.response_creator import ResponseCreator
 from promptflow._sdk._serving.swagger import generate_swagger
@@ -112,3 +110,5 @@ from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._tracer import Tracer

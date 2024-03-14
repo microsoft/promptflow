@@ -375,3 +375,33 @@ def encrypt_flow_path(flow_path):
 
 def decrypt_flow_path(encrypted_flow_path):
     return base64.urlsafe_b64decode(encrypted_flow_path).decode()
+
+
+def in_jupyter_notebook() -> bool:
+    """
+    Checks if user is using a Jupyter Notebook. This is necessary because logging is not allowed in
+    non-Jupyter contexts.
+
+    Adapted from https://stackoverflow.com/a/22424821
+    """
+    try:  # cspell:ignore ipython
+        from IPython import get_ipython
+
+        if "IPKernelApp" not in get_ipython().config:
+            return False
+    except ImportError:
+        return False
+    except AttributeError:
+        return False
+    return True
+
+
+def snake_to_camel(name):
+    return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
+
+
+def prepare_folder(path: Union[str, Path]) -> Path:
+    """Create folder if not exists and return the folder path."""
+    path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
+    return path

@@ -66,8 +66,6 @@ class RunInfo:
     :type index: Optional[int]
     :param api_calls: API calls made during the run
     :type api_calls: Optional[List[Dict[str, Any]]]
-    :param variant_id: Variant id of the run
-    :type variant_id: Optional[str]
     :param cached_run_id: Cached run id
     :type cached_run_id: Optional[str]
     :param cached_flow_run_id: Cached flow run id
@@ -93,7 +91,6 @@ class RunInfo:
     end_time: datetime
     index: Optional[int] = None
     api_calls: Optional[List[Dict[str, Any]]] = None
-    variant_id: str = ""
     cached_run_id: str = None
     cached_flow_run_id: str = None
     logs: Optional[Dict[str, str]] = None
@@ -117,7 +114,6 @@ class RunInfo:
             end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
-            variant_id=data.get("variant_id", ""),
             cached_run_id=data.get("cached_run_id", None),
             cached_flow_run_id=data.get("cached_flow_run_id", None),
             logs=data.get("logs", None),
@@ -161,8 +157,6 @@ class FlowRunInfo:
     :type index: Optional[int]
     :param api_calls: API calls made during the flow run
     :type api_calls: Optional[List[Dict[str, Any]]]
-    :param variant_id: Variant id of the flow run
-    :type variant_id: Optional[str]
     :param name: Name of the flow run
     :type name: Optional[str]
     :param description: Description of the flow run
@@ -192,7 +186,6 @@ class FlowRunInfo:
     end_time: datetime
     index: Optional[int] = None
     api_calls: Optional[List[Dict[str, Any]]] = None
-    variant_id: str = ""
     name: str = ""
     description: str = ""
     tags: Optional[Mapping[str, str]] = None
@@ -219,7 +212,6 @@ class FlowRunInfo:
             end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
-            variant_id=data.get("variant_id", ""),
             name=data.get("name", ""),
             description=data.get("description", ""),
             tags=data.get("tags", None),

@@ -14,6 +14,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
+from promptflow._constants import OUTPUT_FILE_NAME, OutputsFolderName
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -35,7 +36,7 @@ from promptflow._sdk._utils import (
     write_open,
 )
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._eager_flow import EagerFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
@@ -45,6 +46,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     resolve_multimedia_data_recursively,
 )
+from promptflow._utils.utils import prepare_folder
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -192,13 +194,13 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
     def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
-        self.path = self._prepare_folder(self._run._output_path)
+        self.path = prepare_folder(self._run._output_path)
 
         self.logger = LoggerOperations(
             file_path=self.path / LocalStorageFilenames.LOG, stream=stream, run_mode=run_mode
         )
         # snapshot
-        self._snapshot_folder_path = self._prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
+        self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
         self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
@@ -215,10 +217,10 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         # for line run records, store per line
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
-        self.outputs_folder = self._prepare_folder(self.path / "flow_outputs")
-        self._outputs_path = self.outputs_folder / "output.jsonl"  # dumped by executor
-        self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
-        self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")
+        self.outputs_folder = prepare_folder(self.path / OutputsFolderName.FLOW_OUTPUTS)
+        self._outputs_path = self.outputs_folder / OUTPUT_FILE_NAME  # dumped by executor
+        self._node_infos_folder = prepare_folder(self.path / OutputsFolderName.NODE_ARTIFACTS)
+        self._run_infos_folder = prepare_folder(self.path / OutputsFolderName.FLOW_ARTIFACTS)
         self._data_path = Path(run.data) if run.data is not None else None
 
         self._meta_path = self.path / LocalStorageFilenames.META
@@ -236,7 +238,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         if run._run_source == RunInfoSources.LOCAL:
             try:
                 flow_obj = load_flow(source=run.flow)
-                return isinstance(flow_obj, EagerFlow)
+                return isinstance(flow_obj, FlexFlow)
             except Exception as e:
                 # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
                 logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
@@ -380,7 +382,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
-        node_folder = self._prepare_folder(self._node_infos_folder / run_info.node)
+        node_folder = prepare_folder(self._node_infos_folder / run_info.node)
         self._persist_run_multimedia(run_info, node_folder)
         node_run_record = NodeRunRecord.from_run_info(run_info)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
@@ -482,12 +484,6 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         pfbytes_file_reference_encoder = get_file_reference_encoder(folder_path, relative_path, use_absolute_path=True)
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return serialize(value, serialization_funcs=serialization_funcs)
-
-    @staticmethod
-    def _prepare_folder(path: Union[str, Path]) -> Path:
-        path = Path(path)
-        path.mkdir(parents=True, exist_ok=True)
-        return path
 
     @staticmethod
     def _outputs_padding(df: "DataFrame", inputs_line_numbers: List[int]) -> "DataFrame":

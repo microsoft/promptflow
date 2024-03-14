@@ -37,20 +37,20 @@ from promptflow._sdk._utils import (
     logger,
     parse_variant,
 )
-from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException, ErrorTarget
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
 class FlowOperations(TelemetryMixin):
     """FlowOperations."""
 
-    def __init__(self, client):
+    def __init__(self, client, **kwargs):
+        super().__init__(**kwargs)
         self._client = client
-        super().__init__()
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
@@ -161,8 +161,6 @@ class FlowOperations(TelemetryMixin):
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
         :return: Executor result
         """
-        from promptflow._sdk._load_functions import load_flow
-
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
@@ -170,7 +168,7 @@ class FlowOperations(TelemetryMixin):
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow: FlowBase = load_flow(flow)
 
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             if variant or node:
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
@@ -184,8 +182,9 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, EagerFlow):
+            if isinstance(flow, FlexFlow):
                 # TODO(2897153): support chat eager flow
+                # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None
                 flow_inputs, dependency_nodes_outputs = inputs, None
             else:
@@ -690,12 +689,12 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
+        flow_entity: Flow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        if isinstance(flow_entity, ProtectedFlow):
+        if isinstance(flow_entity, Flow):
             # only DAG flow has tools meta
             source_path_mapping = {}
             flow_tools, tools_errors = self._generate_tools_meta(
@@ -756,7 +755,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: FlowBase = load_flow(source=flow)
-        if not isinstance(flow, ProtectedFlow):
+        if not isinstance(flow, Flow):
             # No tools meta for eager flow
             return {}, {}
 
@@ -835,8 +834,8 @@ class FlowOperations(TelemetryMixin):
         :return: dict of flow meta
         :rtype: Tuple[dict, dict]
         """
-        flow: Union[ProtectedFlow, EagerFlow] = load_flow(source=flow)
-        if not isinstance(flow, EagerFlow):
+        flow: Union[Flow, FlexFlow] = load_flow(source=flow)
+        if not isinstance(flow, FlexFlow):
             # No flow meta for DAG flow
             return {}
 
