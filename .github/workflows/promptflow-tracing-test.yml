@@ -48,7 +48,8 @@ jobs:
         with:
           name: promptflow-tracing
       - name: install promptflow-tracing from wheel
-        run: pip install promptflow_tracing-*.whl
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: python -m pip install $(python -c "import glob; print(glob.glob('promptflow_tracing-*.whl')[0])")
       - uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
