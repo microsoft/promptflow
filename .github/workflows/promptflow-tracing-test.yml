@@ -60,7 +60,7 @@ jobs:
       - name: upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
+          name: test report - ${{ matrix.os }} - ${{ matrix.python-version }}
           path: |
             ${{ env.WORKING_DIRECTORY }}/*.xml
             ${{ env.WORKING_DIRECTORY }}/htmlcov/
@@ -74,11 +74,25 @@ jobs:
       contents: read
       issues: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/step_publish_test_results
+      - uses: actions/download-artifact@v4
         with:
-          testActionFileName: promptflow-tracing-test.yml
-          testResultTitle: promptflow-tracing test report
-          osVersion: ubuntu-latest
-          pythonVersion: 3.9
-          coverageThreshold: 40
+          path: reports
+      - id: display_env
+        run: env | sort >> $GITHUB_OUTPUT
+        shell: bash -el {0}
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: "promptflow-tracing test report [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-tracing-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+          comment_title: "promptflow-tracing test report [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-tracing-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+          files: "reports/**/test-*.xml"
+      - uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: "artifacts/test report - ubuntu-latest - 3.9/coverage.xml"
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: 40 80
