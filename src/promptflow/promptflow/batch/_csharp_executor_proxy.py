@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -79,7 +80,7 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
 
         flow_data = load_yaml(flow_file)
         # TODO: no outputs definition for eager flow for now
-        if flow_data.get("entry", None) is not None:
+        if is_flex_flow(flow_data):
             return {}
 
         # TODO: get this from self._get_flow_meta for both eager flow and non-eager flow then remove

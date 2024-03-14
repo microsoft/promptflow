@@ -5,7 +5,7 @@ import hashlib
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Any, Dict, Union
 
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
@@ -69,3 +69,7 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml(flow_dag, f)
     return flow_path
+
+
+def is_flex_flow(flow_dag: Dict[str, Any]):
+    return "entry" in flow_dag

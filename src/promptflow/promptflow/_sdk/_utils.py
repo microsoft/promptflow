@@ -63,6 +63,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -709,6 +710,12 @@ def generate_flow_tools_json(
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
     data = load_yaml(flow_directory / DAG_FILE_NAME)
+    if is_flex_flow(data):
+        # if it's eager flow, we should not generate flow tools json
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message="Eager flow does not support flow tools json generation.",
+        )
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
