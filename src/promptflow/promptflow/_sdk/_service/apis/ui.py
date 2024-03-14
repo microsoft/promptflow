@@ -2,17 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from flask import Response, render_template, url_for
+import os
 
-from promptflow._sdk._service import Namespace, Resource
-
-api = Namespace("ui", description="UI")
+from flask import current_app, send_from_directory
 
 
-@api.route("/traces")
-class TraceUI(Resource):
-    def get(self):
-        return Response(
-            render_template("index.html", url_for=url_for),
-            mimetype="text/html",
-        )
+def serve_trace_ui(path):
+    if path != "" and os.path.exists(os.path.join(current_app.static_folder, path)):
+        return send_from_directory(current_app.static_folder, path)
+    return send_from_directory(current_app.static_folder, "index.html")

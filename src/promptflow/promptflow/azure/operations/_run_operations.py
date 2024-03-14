@@ -103,7 +103,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default()
 
     @property
     def _data_operations(self):
@@ -118,6 +117,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
+
+    @cached_property
+    def _workspace_default_datastore(self):
+        kind = self._workspace._kind
+        # for a normal workspace the kind is "default", for an ai project it's "project". Except these two values, it
+        # can also be "hub" which is not a supported workspace type to get default datastore.
+        if kind not in ["default", "project"]:
+            raise RunOperationParameterError(
+                "Failed to get default workspace datastore. Please make sure you are using the right workspace which "
+                f"is either an azure machine learning studio workspace or an azure ai project. Got {kind!r} instead."
+            )
+        return self._datastore_operations.get_default()
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""

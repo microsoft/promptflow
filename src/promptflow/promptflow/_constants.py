@@ -22,6 +22,8 @@ EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
 USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
+DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
+
 # Tool meta info
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
@@ -32,6 +34,10 @@ TOOL_SCHEMA = Path(__file__).parent / "_sdk" / "data" / "tool.schema.json"
 PF_MAIN_MODULE_NAME = "__pf_main__"
 
 DEFAULT_ENCODING = "utf-8"
+FLOW_META_JSON = "flow.json"
+FLOW_META_JSON_GEN_TIMEOUT = 60
+PROMPT_FLOW_DIR_NAME = ".promptflow"
+FLOW_TOOLS_JSON = "flow.tools.json"
 
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
@@ -68,6 +74,7 @@ STREAMING_ANIMATION_TIME = 0.01
 # trace related
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
+RUNNING_LINE_RUN_STATUS = "Running"
 
 
 class TraceEnvironmentVariableName:
