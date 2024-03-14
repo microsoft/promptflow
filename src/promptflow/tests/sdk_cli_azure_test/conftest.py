@@ -228,7 +228,7 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
     )
     # Set credential to None for azureml extension type
     # As we mock app in github workflow, which do not have managed identity credential
-    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    func = "promptflow.core._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
     with mock.patch(func) as mock_cred_func:
         mock_cred_func.return_value = None
         app = create_serving_app(
