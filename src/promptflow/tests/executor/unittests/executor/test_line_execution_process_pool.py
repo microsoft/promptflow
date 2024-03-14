@@ -10,23 +10,19 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockFixture
 
+from promptflow._constants import ProcessPoolConstants
 from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor._line_execution_process_pool import (
-    PROCESS_LOG_NAME,
     LineExecutionProcessPool,
     _exec_line,
     format_current_process_info,
     log_process_status,
 )
-from promptflow.executor._process_manager import (
-    PROCESS_LOG_PATH,
-    SPANED_FORK_PROCESS_MANAGER_LOG_NAME,
-    create_spawned_fork_process_manager,
-)
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -215,12 +211,14 @@ class TestLineExecutionProcessPool:
             ) as pool:
                 result_list = await pool.run(zip(range(nlines), bulk_inputs))
                 # Check 'spawned_fork_process_manager_stderr.log' exits.
-                log_file = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+                log_file = (
+                    ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+                )
                 assert log_file.exists() is True
                 child_process_log_exit = False
-                for file in PROCESS_LOG_PATH.iterdir():
+                for file in ProcessPoolConstants.PROCESS_LOG_PATH.iterdir():
                     # Check 'process_stderr.log' exits.
-                    if file.name.startswith(PROCESS_LOG_NAME):
+                    if file.name.startswith(ProcessPoolConstants.PROCESS_LOG_NAME):
                         child_process_log_exit = True
                 assert child_process_log_exit is True
             assert len(result_list) == nlines

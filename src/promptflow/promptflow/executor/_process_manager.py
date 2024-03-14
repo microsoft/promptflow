@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Process, Queue
-from pathlib import Path
 from typing import Dict, List
 
 import psutil
 
+from promptflow._constants import ProcessPoolConstants
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
@@ -23,9 +23,6 @@ from promptflow.executor._errors import (
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
-
-PROCESS_LOG_PATH = Path("process_log")
-SPANED_FORK_PROCESS_MANAGER_LOG_NAME = "spawned_fork_process_manager_stderr.log"
 
 
 @dataclass
@@ -323,7 +320,7 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            log_path = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
             try:
                 with open(log_path, "r") as f:
                     error_logs = "".join(f.readlines())
@@ -427,9 +424,9 @@ def create_spawned_fork_process_manager(
     **kwargs,
 ):
     # Ensure the directory exists
-    if not PROCESS_LOG_PATH.exists():
-        PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
-    log_path = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+    if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
+        ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
     sys.stderr = open(log_path, "w")
 
     """

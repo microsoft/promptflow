@@ -62,3 +62,13 @@ def get_available_max_worker_count(logger: logging.Logger = bulk_logger):
             f"= {estimated_available_worker_count}"
         )
     return estimated_available_worker_count
+
+
+def log_errors_from_path(log_path):
+    try:
+        with open(log_path, "r") as f:
+            error_logs = "".join(f.readlines())
+            bulk_logger.error(error_logs)
+        return True
+    except FileNotFoundError:
+        return False

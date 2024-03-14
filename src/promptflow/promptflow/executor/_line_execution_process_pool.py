@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Union
 
 import psutil
 
-from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
+from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, ProcessControlSignal, ProcessPoolConstants
 from promptflow._core._errors import ProcessPoolError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
@@ -29,7 +29,7 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
-from promptflow._utils.process_utils import get_available_max_worker_count
+from promptflow._utils.process_utils import get_available_max_worker_count, log_errors_from_path
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.run_info import FlowRunInfo
@@ -47,21 +47,6 @@ from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage._queue_run_storage import QueueRunStorage
-
-from ._process_manager import PROCESS_LOG_PATH, SPANED_FORK_PROCESS_MANAGER_LOG_NAME, ProcessControlSignal
-
-PROCESS_LOG_NAME = "process_stderr"
-TERMINATE_SIGNAL = "terminate"
-
-
-def read_and_log_error(log_path):
-    try:
-        with open(log_path, "r") as f:
-            error_logs = "".join(f.readlines())
-            bulk_logger.error(error_logs)
-        return True
-    except FileNotFoundError:
-        return False
 
 
 class LineExecutionProcessPool:
@@ -128,14 +113,16 @@ class LineExecutionProcessPool:
         while True:
             try:
                 # Delete log files to prevent interference from the previous run on the current execution.
-                log_path = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+                log_path = (
+                    ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+                )
                 if log_path.exists():
                     log_path.unlink()
-                for file in PROCESS_LOG_PATH.glob(f"{PROCESS_LOG_NAME}*"):
+                for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(f"{ProcessPoolConstants.PROCESS_LOG_NAME}*"):
                     file.unlink()
                 # Delete the PROCESS_LOG_PATH directory
-                if PROCESS_LOG_PATH.exists() and PROCESS_LOG_PATH.is_dir():
-                    PROCESS_LOG_PATH.rmdir()
+                if ProcessPoolConstants.PROCESS_LOG_PATH.exists() and ProcessPoolConstants.PROCESS_LOG_PATH.is_dir():
+                    ProcessPoolConstants.PROCESS_LOG_PATH.rmdir()
                 break
             except PermissionError:
                 # Unable to unlink the file because it is being used by another process. Retrying..."
@@ -338,10 +325,10 @@ class LineExecutionProcessPool:
             # If the line_timeout_sec is None, it means the batch run is timeouted.
             line_timeout_sec = self._calculate_line_timeout_sec()
             # If the task is a terminate signal or the batch run is timeouted, exit the loop.
-            if data == TERMINATE_SIGNAL or line_timeout_sec is None:
+            if data == ProcessPoolConstants.TERMINATE_SIGNAL or line_timeout_sec is None:
                 bulk_logger.info(f"The thread monitoring the process [{process_id}-{process_name}] will be terminated.")
                 # Put the terminate signal into the input queue to notify the sub process to exit.
-                input_queue.put(TERMINATE_SIGNAL)
+                input_queue.put(ProcessPoolConstants.TERMINATE_SIGNAL)
                 # End the process if found the terminate signal.
                 self._processes_manager.end_process(index)
                 # In fork mode, the main process and the sub spawn process communicate through _process_info.
@@ -393,13 +380,18 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
-                    logName_i = "{}_{}.log".format(PROCESS_LOG_NAME, index)
-                    log_path = PROCESS_LOG_PATH / logName_i
+                    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, index)
+                    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName_i
                     # In fork mode, if the child process fails to start, its error information
                     # will be written to the parent process log file.
-                    if not read_and_log_error(log_path) and self._use_fork:
-                        log_path = PROCESS_LOG_PATH / SPANED_FORK_PROCESS_MANAGER_LOG_NAME
-                        read_and_log_error(log_path)
+                    # So if 'log_errors_form_path' return 'false', it means the child process fails to start.
+                    # Attempt read the parent process log file.
+                    if not log_errors_from_path(log_path) and self._use_fork:
+                        log_path = (
+                            ProcessPoolConstants.PROCESS_LOG_PATH
+                            / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
+                        )
+                        log_errors_from_path(log_path)
                     ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
@@ -459,7 +451,7 @@ class LineExecutionProcessPool:
             return
         # Put n (equal to processes number) terminate signals to the task queue to ensure each thread receives one.
         for _ in range(self._n_process):
-            self._task_queue.put(TERMINATE_SIGNAL)
+            self._task_queue.put(ProcessPoolConstants.TERMINATE_SIGNAL)
 
     def _determine_worker_count(self, worker_count):
         # Starting a new process in non-fork mode requires to allocate memory.
@@ -662,10 +654,10 @@ def _process_wrapper(
     operation_contexts_dict: dict,
     i,
 ):
-    logName_i = "{}_{}.log".format(PROCESS_LOG_NAME, i)
-    if not PROCESS_LOG_PATH.exists():
-        PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
-    log_path = PROCESS_LOG_PATH / logName_i
+    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, i)
+    if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
+        ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName_i
     sys.stderr = open(log_path, "w")
 
     if threading.current_thread() is threading.main_thread():
@@ -706,7 +698,7 @@ def _exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queu
     while True:
         try:
             data = input_queue.get(timeout=1)
-            if data == TERMINATE_SIGNAL:
+            if data == ProcessPoolConstants.TERMINATE_SIGNAL:
                 bulk_logger.info(f"The process [{os.getpid()}] has received a terminate signal.")
                 # Add try catch in case of shutdown method is not implemented in the tracer provider.
                 try:
