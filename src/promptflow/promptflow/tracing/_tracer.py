@@ -160,6 +160,8 @@ def _create_trace_from_function_call(
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
     try:
+        # We have removed the dependency of tracing on promptflow, so need to check if the ConnectionType is
+        # available before using it.
         from promptflow.contracts.tool import ConnectionType
 
         all_kwargs = {

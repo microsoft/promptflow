@@ -18,7 +18,7 @@ def set_run_mode(context: OperationContext, run_mode: RunMode):
 @pytest.mark.unittest
 class TestOperationContext:
     def test_get_user_agent(self):
-        OperationContext.get_instance().set_promptflow_version(VERSION)
+        OperationContext.get_instance().append_user_agent(f"promptflow/{VERSION}")
         operation_context = OperationContext.get_instance()
         assert operation_context.get_user_agent() == f"promptflow/{VERSION}"
 

@@ -332,7 +332,7 @@ class TestExceptionPresenter:
 @pytest.mark.unittest
 class TestErrorResponse:
     def test_from_error_dict(self):
-        OperationContext.get_instance().set_promptflow_version(VERSION)
+        OperationContext.get_instance().append_user_agent(f"promptflow/{VERSION}")
 
         error_dict = {
             "code": "UserError",
@@ -370,7 +370,7 @@ class TestErrorResponse:
         }
 
     def test_from_exception(self):
-        OperationContext.get_instance().set_promptflow_version(VERSION)
+        OperationContext.get_instance().append_user_agent(f"promptflow/{VERSION}")
 
         with pytest.raises(CustomizedException) as e:
             raise_general_exception()

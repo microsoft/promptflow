@@ -24,7 +24,6 @@ class OperationContext(Dict):
     _DEFAULT_TRACING_KEYS = "_default_tracing_keys"
     _OTEL_ATTRIBUTES = "_otel_attributes"
     _TRACKING_KEYS = "_tracking_keys"
-    _PROMPTFLOW_VERSION = "_promptflow_version"
 
     def copy(self):
         ctx = OperationContext()
@@ -125,9 +124,6 @@ class OperationContext(Dict):
         else:
             super().__delattr__(name)
 
-    def set_promptflow_version(self, version):
-        self[self._PROMPTFLOW_VERSION] = version
-
     def get_user_agent(self):
         """Get the user agent string.
 
@@ -143,8 +139,6 @@ class OperationContext(Dict):
             if OperationContext.USER_AGENT_KEY in self:
                 yield self.get(OperationContext.USER_AGENT_KEY)
             yield f"promptflow-tracing/{VERSION}"
-            if hasattr(self, self._PROMPTFLOW_VERSION):
-                yield f"promptflow/{self[self._PROMPTFLOW_VERSION]}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         ua = " ".join(parts()).strip()
