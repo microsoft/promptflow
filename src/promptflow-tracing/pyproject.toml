@@ -51,7 +51,28 @@ requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
+markers = [
+    "unittest",
+]
+addopts = """
+--cov=promptflow \
+--cov-report=term \
+--cov-report=html \
+--cov-report=xml \
+--dist loadfile \
+--log-level=info \
+--log-format="%(asctime)s %(levelname)s %(message)s" \
+--log-date-format="[%Y-%m-%d %H:%M:%S]" \
+--durations=5 \
+-ra \
+-vv
+"""
 testpaths = ["tests"]
+
+[tool.coverage.report]
+omit = [
+  "__init__.py",
+]
 
 [tool.black]
 line-length = 120

@@ -11,3 +11,9 @@ class TestStartTrace:
         from promptflow.tracing import start_trace
 
         assert callable(start_trace)
+
+    def test_adhoc_for_coverage(self):
+        from promptflow.tracing import start_trace, trace
+
+        start_trace()
+        trace()
