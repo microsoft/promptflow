@@ -1,6 +1,6 @@
 promptflow.tools.llm.llm:
   name: LLM
-  description: New LLM tool.
+  description: Use Open AI's Large Language Model for text completion or chat. For more details, refer to this [document](https://aka.ms/new-llm-tool).
   type: custom_llm
   module: promptflow.tools.llm
   function: llm
@@ -19,8 +19,8 @@ promptflow.tools.llm.llm:
   - name: Funtion calling
     description: This is a group about function calling
     inputs:  
-    - functions  
-    - function_call
+    - tools
+    - tool_choice
     ui_hints:
       display_style :  table
   inputs:
@@ -138,10 +138,10 @@ promptflow.tools.llm.llm:
       advanced: true
       ui_hints:
         text_box_size: lg
-    functions:
+    tools:
       type:
       - list
-    function_call:
+    tool_choice:
       type:
       - string
       - object

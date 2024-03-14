@@ -1,6 +1,6 @@
 promptflow.tools.llm_vision.llm_vision:
   name: LLM-Vision
-  description: New LLM vision tool.
+  description: Use Open AI with vision ability. For more details, refer to this [document](https://aka.ms/new-llm-vision-tool).
   type: custom_llm
   module: promptflow.tools.llm_vision
   function: llm_vision
