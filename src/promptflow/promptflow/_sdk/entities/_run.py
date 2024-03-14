@@ -69,7 +69,7 @@ logger = get_cli_sdk_logger()
 class Run(YAMLTranslatableMixin):
     """Flow run entity.
 
-    :param flow: Path of the flow directory.
+    :param flow: Path of local flow entry or remote flow.
     :type flow: Path
     :param name: Name of the run.
     :type name: str
