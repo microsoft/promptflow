@@ -38,6 +38,9 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
+    defaults:
+      run:
+        shell: bash
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
