@@ -34,6 +34,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
       fail-fast: false
+    # snok/install-poetry need this to support Windows
     defaults:
       run:
         shell: bash
@@ -50,8 +51,6 @@ jobs:
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
         run: python -m pip install $(python -c "import glob; print(glob.glob('promptflow_tracing-*.whl')[0])")
       - uses: snok/install-poetry@v1
-        with:
-          virtualenvs-in-project: true
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
