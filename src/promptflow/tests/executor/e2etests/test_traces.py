@@ -511,6 +511,21 @@ class TestOTelTracer:
             sub_level_span.parent.span_id == top_level_span.context.span_id
         )  # sub_level_span is a child of top_level_span
 
+    def test_flow_with_nested_tool(self):
+        memory_exporter = prepare_memory_exporter()
+
+        line_result, line_run_id = self.submit_flow_run("flow_with_nested_tool", {"input": "Hello"}, {})
+        assert line_result.output == {"output": "Hello"}
+
+        span_list = memory_exporter.get_finished_spans()
+        for span in span_list:
+            if span.attributes.get("span_type", "") != "Flow":
+                inputs = span.attributes.get("inputs", None)
+                if "\"recursive_call\": false" in inputs:
+                    assert span.name == "nested_tool"
+                else:
+                    assert span.name == "nested_tool_node"
+
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
         line_run_id = str(uuid.uuid4())
