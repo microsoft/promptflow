@@ -43,6 +43,7 @@ def trace_collector(
         get_created_by_info_with_cache (Callable): A function that retrieves information about the creator of the trace.
         logger (logging.Logger): The logger object used for logging.
         cloud_trace_only (bool): If True, only write trace to cosmosdb and skip local trace. Default is False.
+        credential (object): The credential object used to authenticate with cosmosdb. Default is None.
     """
     content_type = request.headers.get("Content-Type")
     # binary protobuf encoding
