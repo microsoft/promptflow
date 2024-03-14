@@ -109,6 +109,7 @@ class LineExecutionProcessPool:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
         # Delete log files to prevent interference from the previous run on the current execution.
         for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(
             f"{ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME}*"
@@ -119,8 +120,6 @@ class LineExecutionProcessPool:
         # Delete the PROCESS_LOG_PATH directory
         if ProcessPoolConstants.PROCESS_LOG_PATH.exists() and ProcessPoolConstants.PROCESS_LOG_PATH.is_dir():
             ProcessPoolConstants.PROCESS_LOG_PATH.rmdir()
-
-        self.close()
 
     @property
     def is_timeout(self):
