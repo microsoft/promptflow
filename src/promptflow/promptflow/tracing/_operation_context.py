@@ -152,6 +152,9 @@ class OperationContext(Dict):
             user_agent (str): The user agent information to append.
         """
         if OperationContext.USER_AGENT_KEY in self:
+            # TODO: this judgement can be wrong when an user agent is a substring of another,
+            #  e.g. "Mozilla/5.0" and "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            #  however, changing this code may impact existing logic, so won't change it now
             if user_agent not in self.user_agent:
                 self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:

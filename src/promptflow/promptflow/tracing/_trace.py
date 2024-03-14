@@ -292,8 +292,8 @@ def _traced_async(
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
+        # For node span we set the span name to node name, otherwise we use the function name.
+        span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
@@ -341,8 +341,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
+        # For node span we set the span name to node name, otherwise we use the function name.
+        span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)

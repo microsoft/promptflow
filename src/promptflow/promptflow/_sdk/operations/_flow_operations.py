@@ -48,9 +48,9 @@ from promptflow.exceptions import UserErrorException
 class FlowOperations(TelemetryMixin):
     """FlowOperations."""
 
-    def __init__(self, client):
+    def __init__(self, client, **kwargs):
+        super().__init__(**kwargs)
         self._client = client
-        super().__init__()
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
@@ -180,6 +180,7 @@ class FlowOperations(TelemetryMixin):
         ) as submitter:
             if isinstance(flow, EagerFlow):
                 # TODO(2897153): support chat eager flow
+                # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None
                 flow_inputs, dependency_nodes_outputs = inputs, None
             else:

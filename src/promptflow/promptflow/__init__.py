@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+
 from promptflow._core.metric_logger import log_metric
 
 # flake8: noqa
