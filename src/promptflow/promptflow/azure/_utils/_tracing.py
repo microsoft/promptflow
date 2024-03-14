@@ -11,12 +11,9 @@ from azure.identity import AzureCliCredential, DefaultAzureCredential
 from promptflow._constants import CosmosDBContainerName
 from promptflow._sdk._tracing import get_ws_tracing_base_url
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
-from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 from promptflow.exceptions import ErrorTarget, UserErrorException
-
-_logger = get_cli_sdk_logger()
 
 
 def _get_credential() -> typing.Union[AzureCliCredential, DefaultAzureCredential]:
@@ -77,11 +74,12 @@ def validate_trace_provider(value: str) -> None:
         pf_client._traces._get_cosmos_db_token(container_name=CosmosDBContainerName.SPAN)
     except FlowRequestException as e:
         ws_tracing_url = get_ws_tracing_base_url(workspace_triad)
-        warning_msg = (
+        msg = (
             f"Failed attempt to retrieve the Cosmos DB token: {str(e)}, "
             "this might because you have not initialized the Cosmos DB for the given workspace, "
             "or it's still be initializing.\n"
             f"Please open the following link to manually initialize it: {ws_tracing_url}; "
             "when it's done, retry the command to set the trace provider again."
         )
-        _logger.warning(warning_msg)
+        no_personal_data_message = "The Cosmos DB was not found."
+        raise _create_trace_provider_value_user_error(msg, no_personal_data_message)
