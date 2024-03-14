@@ -6,7 +6,6 @@ from unittest.mock import patch
 import openai
 import pytest
 
-from promptflow._version import VERSION
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
@@ -19,7 +18,7 @@ from promptflow.tracing._integrations._openai_injector import (
     inject_operation_headers,
 )
 from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._version import VERSION as TRACING_VERSION
+from promptflow.tracing._version import VERSION
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -224,7 +223,7 @@ def test_get_aoai_telemetry_headers():
             assert "_" not in key
 
         # assert that the headers are correct
-        ua = f"test-user-agent promptflow-tracing/{TRACING_VERSION}"
+        ua = f"test-user-agent promptflow-tracing/{VERSION}"
         assert headers[USER_AGENT_HEADER] == ua
         promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
         assert promptflow_headers["flow_id"] == "test-flow-id"
