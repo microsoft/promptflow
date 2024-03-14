@@ -18,3 +18,15 @@ promptflow.core package
    :undoc-members:
    :show-inheritance:
    :noindex:
+
+.. autoclass:: promptflow.core.Flow
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
+.. autoclass:: promptflow.core.AsyncFlow
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
