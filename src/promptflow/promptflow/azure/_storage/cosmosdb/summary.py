@@ -48,7 +48,7 @@ class LineEvaluation:
     outputs: typing.Dict
     trace_id: str
     root_span_id: str
-    display_name: str
+    name: str
     created_by: typing.Dict
     flow_id: str = None
     # Only for batch run
@@ -153,7 +153,7 @@ class Summary:
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
             outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
-            display_name=name,
+            name=name,
             created_by=self.created_by,
         )
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:

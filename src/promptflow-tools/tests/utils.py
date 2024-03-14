@@ -11,6 +11,29 @@ class AttrDict(dict):
         return super().__getattribute__(item)
 
 
+class Deployment:
+    def __init__(self, name, model_name, version):
+        self.name = name
+        self.properties = Properties(model_name, version)
+
+
+class CustomException(Exception):
+    def __init__(self, message, status_code):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class Model:
+    def __init__(self, name, version):
+        self.name = name
+        self.version = version
+
+
+class Properties:
+    def __init__(self, name, version):
+        self.model = Model(name, version)
+
+
 def is_json_serializable(data, function_name):
     try:
         json.dumps(data)

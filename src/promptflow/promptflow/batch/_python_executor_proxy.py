@@ -44,7 +44,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         with self._flow_executor._run_tracker.node_log_manager:
             return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
 
-    def _exec_batch(
+    async def _exec_batch(
         self,
         batch_inputs: List[Mapping[str, Any]],
         output_dir: Path,
@@ -79,7 +79,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 worker_count=worker_count,
             ) as pool:
                 line_number = [batch_input["line_number"] for batch_input in batch_inputs]
-                line_results = pool.run(zip(line_number, batch_inputs))
+                line_results = await pool.run(zip(line_number, batch_inputs))
 
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results, run_tracker)
