@@ -58,7 +58,7 @@ jobs:
         run: poetry run pytest
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
           path: |
