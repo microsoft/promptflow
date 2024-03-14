@@ -5,11 +5,12 @@ import asyncio
 import signal
 import threading
 import uuid
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -22,11 +23,10 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow._utils.utils import (
-    copy_file_except,
     dump_list_to_jsonl,
     get_int_env_var,
-    load_list_from_jsonl,
     log_progress,
     resolve_dir_to_absolute,
     transpose,
@@ -39,14 +39,13 @@ from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
 
-OUTPUT_FILE_NAME = "output.jsonl"
 DEFAULT_CONCURRENCY = 10
 
 
@@ -195,10 +194,12 @@ class BatchEngine:
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
+                    run_id = run_id or str(uuid.uuid4())
+
                     previous_run_results = None
                     if resume_from_run_storage and resume_from_run_output_dir:
                         previous_run_results = self._copy_previous_run_result(
-                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir
+                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir, run_id
                         )
 
                     # run flow in batch mode
@@ -233,26 +234,22 @@ class BatchEngine:
         resume_from_run_output_dir: Path,
         batch_inputs: List,
         output_dir: Path,
+        run_id: str,
     ) -> List[LineResult]:
         """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
         to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
-        # Load the previous flow run output from output.jsonl
-        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl")
-        previous_run_output_dict = {
-            each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
-        }
-
-        # Copy other files from resume_from_run_output_dir to output_dir in case there are images
-        copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
-
         try:
             previous_run_results = []
             for i in range(len(batch_inputs)):
-                previous_run_info = resume_from_run_storage.load_flow_run_info(i)
+                previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
                 if previous_run_info and previous_run_info.status == Status.Completed:
+                    # UI uses root_run_id  to link the base path in datastore with the run_info of line.
+                    # Thus the root_run_id needs to be the current batch run id.
+                    previous_run_info.root_run_id = run_id
+                    previous_run_info.parent_run_id = run_id
                     # Load previous node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
@@ -263,6 +260,10 @@ class BatchEngine:
                     # Extract aggregation inputs for flow with aggregation node
                     aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
+                    # Deepcopy to avoid modifying the original object when serializing image
+                    previous_run_output = deepcopy(previous_run_info.output)
+                    previous_run_output_in_line_result = persist_multimedia_data(previous_run_output, output_dir)
+
                     # Persist previous run info and node run info
                     self._storage.persist_flow_run(previous_run_info)
                     for node_run_info in previous_node_run_infos:
@@ -270,7 +271,7 @@ class BatchEngine:
 
                     # Create LineResult object for previous line result
                     previous_line_result = LineResult(
-                        output=previous_run_output_dict[i],
+                        output=previous_run_output_in_line_result,
                         aggregation_inputs=aggregation_inputs,
                         run_info=previous_run_info,
                         node_run_infos=previous_node_run_infos_dict,
@@ -346,7 +347,7 @@ class BatchEngine:
         # execute lines
         is_timeout = False
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            results, is_timeout = self._executor_proxy._exec_batch(
+            results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,
                 run_id,

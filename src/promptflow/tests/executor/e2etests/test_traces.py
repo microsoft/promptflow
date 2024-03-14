@@ -30,14 +30,16 @@ EMBEDDING_FUNCTION_NAMES = [
 ]
 
 LLM_TOKEN_NAMES = [
-    "llm.token_count.prompt",
-    "llm.token_count.completion",
-    "llm.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.completion_tokens",
+    "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 EMBEDDING_TOKEN_NAMES = [
-    "embedding.token_count.prompt",
-    "embedding.token_count.total",
+    "llm.usage.prompt_tokens",
+    "llm.usage.total_tokens",
+    "llm.response.model",
 ]
 
 CUMULATIVE_LLM_TOKEN_NAMES = [
@@ -427,7 +429,7 @@ class TestOTelTracer:
         self.validate_openai_tokens(span_list)
         for span in span_list:
             if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                assert span.attributes.get("llm.model", "") in ["gpt-35-turbo", "text-ada-001"]
+                assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
 
     @pytest.mark.parametrize(
         "flow_file, inputs, expected_span_length",
@@ -463,7 +465,7 @@ class TestOTelTracer:
         self.validate_span_list(span_list, line_run_id, expected_span_length)
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                assert span.attributes.get("embedding.model", "") == "ada"
+                assert span.attributes.get("llm.response.model", "") == "ada"
                 embeddings = span.attributes.get("embedding.embeddings", "")
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
@@ -508,6 +510,21 @@ class TestOTelTracer:
         assert (
             sub_level_span.parent.span_id == top_level_span.context.span_id
         )  # sub_level_span is a child of top_level_span
+
+    def test_flow_with_nested_tool(self):
+        memory_exporter = prepare_memory_exporter()
+
+        line_result, line_run_id = self.submit_flow_run("flow_with_nested_tool", {"input": "Hello"}, {})
+        assert line_result.output == {"output": "Hello"}
+
+        span_list = memory_exporter.get_finished_spans()
+        for span in span_list:
+            if span.attributes.get("span_type", "") != "Flow":
+                inputs = span.attributes.get("inputs", None)
+                if "\"recursive_call\": false" in inputs:
+                    assert span.name == "nested_tool"
+                else:
+                    assert span.name == "nested_tool_node"
 
     def submit_flow_run(self, flow_file, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)

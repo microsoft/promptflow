@@ -6,7 +6,7 @@ import os
 import time
 import base64
 import zlib
-
+from pathlib import Path
 from flask import jsonify, request
 
 from promptflow._sdk._serving._errors import (
@@ -17,6 +17,15 @@ from promptflow._sdk._serving._errors import (
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow.contracts.flow import Flow as FlowContract
 from promptflow.exceptions import ErrorTarget
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.baggage.propagation import W3CBaggagePropagator
+from opentelemetry.context import Context
+from opentelemetry.propagate import set_global_textmap, extract
+from opentelemetry.propagators.composite import CompositePropagator
+
+DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
+# configure global propagator
+set_global_textmap(CompositePropagator([TraceContextTextMapPropagator(), W3CBaggagePropagator()]))
 
 
 def load_request_data(flow, raw_data, logger):
@@ -137,3 +146,34 @@ def encode_dict(data: dict) -> str:
     b64_data = base64.b64encode(zipped_data)
     # bytes -> str
     return b64_data.decode()
+
+
+def try_extract_trace_context(logger) -> Context:
+    """Try to extract trace context from request headers."""
+    # reference: https://www.w3.org/TR/trace-context/
+    context = extract(request.headers)
+    if context:
+        logger.info(f"Received trace context: {context}")
+    return context
+
+
+def serialize_attribute_value(v):
+    if isinstance(v, (str, int, float, bool)):
+        return v
+    elif isinstance(v, list):
+        return [serialize_attribute_value(x) for x in v]
+    else:
+        try:
+            v_str = json.dumps(v)
+        except Exception:
+            v_str = str(v)
+        return v_str
+
+
+def load_feedback_swagger():
+    feedback_swagger_path = DEFAULT_RESOURCE_PATH / "feedback_swagger.json"
+    # Open the JSON file
+    with open(feedback_swagger_path, 'r') as file:
+        # Load JSON data from the file
+        data = json.load(file)
+    return data

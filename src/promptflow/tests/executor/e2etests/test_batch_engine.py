@@ -1,4 +1,5 @@
 import asyncio
+import glob
 import multiprocessing
 import os
 import traceback
@@ -8,10 +9,11 @@ from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
-from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
@@ -422,10 +424,12 @@ class TestBatch:
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
         resume_run_batch_results = batch_engine.run(
             input_dirs,
             inputs_mapping,
             output_dir,
+            resume_run_id,
             resume_from_run_storage=resume_from_run_storage,
             resume_from_run_output_dir=resume_from_run_output_dir,
         )
@@ -433,6 +437,12 @@ class TestBatch:
         nlines = 3
         assert resume_run_batch_results.total_lines == nlines
         assert resume_run_batch_results.completed_lines == nlines
+
+        jsonl_files = glob.glob(os.path.join(run_storage._run_infos_folder, "*.jsonl"))
+        for file_path in jsonl_files:
+            contents = load_jsonl(file_path)
+            for content in contents:
+                assert content["run_info"]["root_run_id"] == resume_run_id
 
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
@@ -457,10 +467,12 @@ class TestBatch:
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
         resume_run_batch_results = batch_engine.run(
             input_dirs,
             inputs_mapping,
             output_dir,
+            resume_run_id,
             resume_from_run_storage=resume_from_run_storage,
             resume_from_run_output_dir=resume_from_run_output_dir,
         )
@@ -469,6 +481,12 @@ class TestBatch:
         assert resume_run_batch_results.total_lines == nlines
         assert resume_run_batch_results.completed_lines == nlines
         assert resume_run_batch_results.metrics == {"accuracy": 0.67}
+
+        jsonl_files = glob.glob(os.path.join(run_storage._run_infos_folder, "*.jsonl"))
+        for file_path in jsonl_files:
+            contents = load_jsonl(file_path)
+            for content in contents:
+                assert content["run_info"]["root_run_id"] == resume_run_id
 
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
@@ -489,10 +507,12 @@ class TestBatch:
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
         resume_run_batch_results = batch_engine.run(
             input_dirs,
             inputs_mapping,
             output_dir,
+            resume_run_id,
             resume_from_run_storage=resume_from_run_storage,
             resume_from_run_output_dir=resume_from_run_output_dir,
         )
@@ -501,3 +521,9 @@ class TestBatch:
         assert resume_run_batch_results.total_lines == nlines
         assert resume_run_batch_results.completed_lines == nlines
         assert resume_run_batch_results.metrics == {"image_count": 3}
+
+        jsonl_files = glob.glob(os.path.join(run_storage._run_infos_folder, "*.jsonl"))
+        for file_path in jsonl_files:
+            contents = load_jsonl(file_path)
+            for content in contents:
+                assert content["run_info"]["root_run_id"] == resume_run_id
