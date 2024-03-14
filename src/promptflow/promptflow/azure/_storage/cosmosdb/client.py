@@ -5,6 +5,7 @@
 import ast
 import datetime
 import threading
+from typing import Optional
 
 client_map = {}
 _thread_lock = threading.Lock()
@@ -13,7 +14,11 @@ _token_timeout = 60 * 4  # Will try to refresh token if exceed 4 minutes
 
 
 def get_client(
-    container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str, credential: object = None
+    container_name: str,
+    subscription_id: str,
+    resource_group_name: str,
+    workspace_name: str,
+    credential: Optional[object] = None,
 ):
     client_key = _get_db_client_key(container_name, subscription_id, resource_group_name, workspace_name)
     container_client = _get_client_from_map(client_key)
@@ -65,7 +70,11 @@ def _get_container_lock(client_key: str):
 
 
 def _get_resource_token(
-    container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str, credential: object
+    container_name: str,
+    subscription_id: str,
+    resource_group_name: str,
+    workspace_name: str,
+    credential: Optional[object],
 ) -> object:
     from promptflow.azure import PFClient
 
