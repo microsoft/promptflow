@@ -79,7 +79,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Set test mode
-      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "live" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then echo live; else echo live; fi)" >> $GITHUB_ENV
     - name: checkout
       uses: actions/checkout@v4
       with:
