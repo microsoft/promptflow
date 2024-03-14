@@ -5,7 +5,6 @@
 """This is a common util file.
 !!!Please do not include any project related import.!!!
 """
-import base64
 import contextlib
 import contextvars
 import functools
@@ -367,14 +366,6 @@ def copy_file_except(src_dir, dst_dir, exclude_file):
             src_file_path = os.path.join(root, file)
             dst_file_path = os.path.join(current_dst_dir, file)
             shutil.copy2(src_file_path, dst_file_path)
-
-
-def encrypt_flow_path(flow_path):
-    return base64.urlsafe_b64encode(flow_path.encode()).decode()
-
-
-def decrypt_flow_path(encrypted_flow_path):
-    return base64.urlsafe_b64decode(encrypted_flow_path).decode()
 
 
 def in_jupyter_notebook() -> bool:

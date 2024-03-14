@@ -12,7 +12,7 @@ from werkzeug.utils import safe_join
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._utils.utils import decrypt_flow_path
+from promptflow._sdk._service.utils.utils import decrypt_flow_path
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("ui", description="UI")

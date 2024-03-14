@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import base64
 import getpass
 import hashlib
 import os
@@ -278,3 +279,11 @@ def is_run_from_built_binary():
     Allow customer to use environment variable to control the triggering.
     """
     return sys.executable.endswith("pfcli.exe") or os.environ.get(PF_RUN_AS_BUILT_BINARY, "").lower() == "true"
+
+
+def encrypt_flow_path(flow_path):
+    return base64.urlsafe_b64encode(flow_path.encode()).decode()
+
+
+def decrypt_flow_path(encrypted_flow_path):
+    return base64.urlsafe_b64decode(encrypted_flow_path).decode()

@@ -10,7 +10,7 @@ from unittest import mock
 import werkzeug
 from flask.testing import FlaskClient
 
-from promptflow._utils.utils import encrypt_flow_path
+from promptflow._sdk._service.utils.utils import encrypt_flow_path
 
 
 @contextlib.contextmanager

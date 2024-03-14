@@ -12,10 +12,9 @@ from flask_restx import reqparse
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
 from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow._utils.utils import decrypt_flow_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 

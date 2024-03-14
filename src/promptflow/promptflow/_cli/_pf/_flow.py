@@ -41,9 +41,9 @@ from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
+from promptflow._sdk._service.utils.utils import encrypt_flow_path
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow._utils.utils import encrypt_flow_path
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
