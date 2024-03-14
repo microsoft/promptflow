@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -280,10 +279,8 @@ class PFClient:
             return self.runs._create_by_resume_from(
                 resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
             )
-
-        if code and not os.path.exists(code):
-            raise FileNotFoundError(f"code path {code} does not exist")
-        code = Path(code) if code else Path(os.getcwd())
+        if callable(flow):
+            raise UserErrorException(f"Providing callable {flow} as flow is not supported.")
         with generate_yaml_entry(entry=flow, code=code) as flow:
             run = Run(
                 name=name,
