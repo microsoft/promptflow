@@ -59,7 +59,7 @@
                     "type": "string"
                 }
             ],
-            "put": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -71,8 +71,8 @@
                         "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
-                "description": "Update connection",
-                "operationId": "put_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
                         "name": "payload",
@@ -105,6 +105,34 @@
                     "Connections"
                 ]
             },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    },
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    }
+                },
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "get": {
                 "responses": {
                     "200": {
@@ -124,34 +152,6 @@
                         "name": "working_directory",
                         "in": "query",
                         "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    },
-                    "403": {
-                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
-                    }
-                },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
                     }
                 ],
                 "tags": [
@@ -256,21 +256,6 @@
             }
         },
         "/Flows/ux_inputs": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get the file content of file UX_INPUTS_JSON",
-                        "schema": {
-                            "$ref": "#/definitions/FlowDict"
-                        }
-                    }
-                },
-                "description": "Get the file content of file UX_INPUTS_JSON",
-                "operationId": "get_flow_ux_inputs",
-                "tags": [
-                    "Flows"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -292,6 +277,21 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Flows"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get the file content of file UX_INPUTS_JSON",
+                        "schema": {
+                            "$ref": "#/definitions/FlowDict"
+                        }
+                    }
+                },
+                "description": "Get the file content of file UX_INPUTS_JSON",
+                "operationId": "get_flow_ux_inputs",
                 "tags": [
                     "Flows"
                 ]
@@ -370,6 +370,21 @@
                     "type": "string"
                 }
             ],
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Delete run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Delete run",
+                "operationId": "delete_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -402,21 +417,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "204": {
-                        "description": "Delete run",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Delete run",
-                "operationId": "delete_run",
                 "tags": [
                     "Runs"
                 ]
@@ -724,7 +724,7 @@
                 ]
             }
         },
-        "/ui/image": {
+        "/ui/media": {
             "get": {
                 "responses": {
                     "200": {
@@ -735,7 +735,7 @@
                     }
                 },
                 "description": "Get image url",
-                "operationId": "get_image_view",
+                "operationId": "get_media_view",
                 "tags": [
                     "ui"
                 ]
@@ -763,19 +763,6 @@
                         }
                     }
                 ],
-                "tags": [
-                    "ui"
-                ]
-            }
-        },
-        "/ui/traces": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "operationId": "get_trace_ui",
                 "tags": [
                     "ui"
                 ]
