@@ -50,14 +50,20 @@ jobs:
       - name: install promptflow-tracing from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
         run: python -m pip install $(python -c "import glob; print(glob.glob('promptflow_tracing-*.whl')[0])")
+      # snok/install-poetry supports Windows, but requires extra action: `source $VENV`
+      # reference: https://github.com/snok/install-poetry?tab=readme-ov-file#running-on-windows
       - uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
       - name: install test dependency group
-        run: poetry install --only test
+        run: |
+          source $VENV
+          poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: test
-        run: poetry run pytest
+        run: |
+          source $VENV
+          poetry run pytest
         working-directory: ${{ env.WORKING_DIRECTORY }}
