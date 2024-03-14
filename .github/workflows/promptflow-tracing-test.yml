@@ -74,6 +74,7 @@ jobs:
       contents: read
       issues: read
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/step_publish_test_results
         with:
           testActionFileName: promptflow-tracing-test.yml
