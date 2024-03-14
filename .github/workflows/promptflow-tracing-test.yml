@@ -19,10 +19,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: snok/install-poetry@v1
-      with:
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        installer-parallel: true
     - name: build
       run: poetry build
       working-directory: ${{ env.WORKING_DIRECTORY }}
