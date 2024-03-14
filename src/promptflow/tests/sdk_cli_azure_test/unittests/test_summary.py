@@ -9,8 +9,10 @@ from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.summary import LineEvaluation, Summary, SummaryLine
 
 
+@pytest.mark.unittest
 class TestSummary:
     FAKE_CREATED_BY = {"oid": "fake_oid"}
+    FAKE_LOGGER = mock.Mock()
 
     @pytest.fixture(autouse=True)
     def setup_data(self):
@@ -32,7 +34,7 @@ class TestSummary:
             run="test_run",
             experiment="test_experiment",
         )
-        self.summary = Summary(test_span, self.FAKE_CREATED_BY)
+        self.summary = Summary(test_span, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
         app = Flask(__name__)
         with app.app_context():
             yield
@@ -114,7 +116,7 @@ class TestSummary:
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
-            display_name=self.summary.span.name,
+            name=self.summary.span.name,
             created_by=self.FAKE_CREATED_BY,
         )
         expected_patch_operations = [
@@ -162,7 +164,7 @@ class TestSummary:
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
-            display_name=self.summary.span.name,
+            name=self.summary.span.name,
             created_by=self.FAKE_CREATED_BY,
         )
 

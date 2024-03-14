@@ -1,17 +1,35 @@
 import functools
 import json
+import os
 import re
 import sys
 import time
 from typing import List, Mapping
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError
+from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
+    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
+
+from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
+
+
+GPT4V_VERSION = "vision-preview"
+
+
+class Deployment:
+    def __init__(
+            self,
+            name: str,
+            model_name: str,
+            version: str
+    ):
+        self.name = name
+        self.model_name = model_name
+        self.version = version
 
 
 class ChatInputList(list):
@@ -188,6 +206,134 @@ def generate_retry_interval(retry_count: int) -> float:
     return retry_interval
 
 
+def build_deployment_dict(item) -> Deployment:
+    model = item.properties.model
+    return Deployment(item.name, model.name, model.version)
+
+
+def _parse_resource_id(resource_id):
+    # Resource id is connection's id in following format:
+    # "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}"
+    split_parts = resource_id.split("/")
+    if len(split_parts) != 9:
+        raise ParseConnectionError(
+            f"Connection resourceId format invalid, cur resourceId is {resource_id}."
+        )
+    sub, rg, account = split_parts[2], split_parts[4], split_parts[-1]
+
+    return sub, rg, account
+
+
+def _get_credential():
+    from azure.identity import DefaultAzureCredential
+    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    # Support sovereign cloud cases, like mooncake, fairfax.
+    cloud_name = _get_default_cloud_name()
+    if cloud_name != AzureEnvironments.ENV_DEFAULT:
+        cloud = _get_cloud(cloud=cloud_name)
+        authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
+        credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+    else:
+        credential = DefaultAzureCredential()
+
+    return credential
+
+
+def get_workspace_triad():
+    # If flow is submitted from cloud, runtime will save the workspace triad to environment
+    if 'AZUREML_ARM_SUBSCRIPTION' in os.environ and 'AZUREML_ARM_RESOURCEGROUP' in os.environ \
+            and 'AZUREML_ARM_WORKSPACE_NAME' in os.environ:
+        return os.environ["AZUREML_ARM_SUBSCRIPTION"], os.environ["AZUREML_ARM_RESOURCEGROUP"], \
+               os.environ["AZUREML_ARM_WORKSPACE_NAME"]
+    else:
+        # If flow is submitted from local, it will get workspace triad from your azure cloud config file
+        # If this config file isn't set up, it will return None.
+        workspace_triad = get_workspace_triad_from_local()
+        return workspace_triad.subscription_id, workspace_triad.resource_group_name, workspace_triad.workspace_name
+
+
+def list_deployment_connections(
+    subscription_id,
+    resource_group_name,
+    workspace_name,
+    connection="",
+):
+    try:
+        # Do not support dynamic list for local.
+        from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+        from promptflow.azure.operations._arm_connection_operations import \
+            ArmConnectionOperations, OpenURLFailedUserError
+    except ImportError:
+        return None
+
+    # For local, subscription_id is None. Does not support dynamic list for local.
+    if not subscription_id:
+        return None
+
+    try:
+        credential = _get_credential()
+        try:
+            # Currently, the param 'connection' is str, not AzureOpenAIConnection type.
+            conn = ArmConnectionOperations._build_connection_dict(
+                name=connection,
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                credential=credential
+            )
+            resource_id = conn.get("value").get('resource_id', "")
+            if not resource_id:
+                return None
+            conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+        except OpenURLFailedUserError:
+            return None
+        except ListDeploymentsError as e:
+            raise e
+        except Exception as e:
+            msg = f"Parsing connection with exception: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+
+        client = CognitiveServicesManagementClient(
+            credential=credential,
+            subscription_id=conn_sub,
+        )
+        return client.deployments.list(
+            resource_group_name=conn_rg,
+            account_name=conn_account,
+        )
+    except Exception as e:
+        if hasattr(e, 'status_code') and e.status_code == 403:
+            msg = f"Failed to list deployments due to permission issue: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+        else:
+            msg = f"Failed to list deployments with exception: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+
+
+def refine_extra_fields_not_permitted_error(connection, deployment_name, model):
+    tsg = "Please kindly avoid using vision model in LLM tool, " \
+          "because vision model cannot work with some chat api parameters. " \
+          "You can change to use tool 'Azure OpenAI GPT-4 Turbo with Vision' " \
+          "or 'OpenAI GPT-4V' for vision model."
+    try:
+        if isinstance(connection, AzureOpenAIConnection):
+            subscription_id, resource_group, workspace_name = get_workspace_triad()
+            if subscription_id and resource_group and workspace_name:
+                deployment_collection = list_deployment_connections(subscription_id, resource_group, workspace_name,
+                                                                    connection.name)
+                for item in deployment_collection:
+                    if deployment_name == item.name:
+                        if item.properties.model.version in [GPT4V_VERSION]:
+                            return tsg
+        elif isinstance(connection, OpenAIConnection) and model in ["gpt-4-vision-preview"]:
+            return tsg
+    except Exception as e:
+        print(f"Exception occurs when refine extra fields not permitted error for llm: "
+              f"{type(e).__name__}: {str(e)}", file=sys.stderr)
+
+    return None
+
+
 # TODO(2971352): revisit this tries=100 when there is any change to the 10min timeout logic
 def handle_openai_error(tries: int = 100):
     """
@@ -212,6 +358,19 @@ def handle_openai_error(tries: int = 100):
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
+                    # Vision model does not support all chat api parameters, e.g. response_format and function_call.
+                    # Recommend user to use vision model in vision tools, rather than LLM tool.
+                    # Related issue https://github.com/microsoft/promptflow/issues/1683
+                    if isinstance(e, BadRequestError) and "extra fields not permitted" in str(e).lower():
+                        refined_error_message = \
+                            refine_extra_fields_not_permitted_error(args[0].connection,
+                                                                    kwargs.get("deployment_name", ""),
+                                                                    kwargs.get("model", ""))
+                        if refined_error_message:
+                            raise LLMError(message=f"{str(e)} {refined_error_message}")
+                        else:
+                            raise WrappedOpenAIError(e)
+
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
                             and "connection aborted" not in str(e).lower():
                         raise WrappedOpenAIError(e)
@@ -383,19 +542,7 @@ def normalize_connection_config(connection):
     ensuring it is compatible and standardized for use.
     """
     if isinstance(connection, AzureOpenAIConnection):
-        use_key_auth = True
-        try:
-            from promptflow._sdk._constants import ConnectionAuthMode
-            if connection.auth_mode == ConnectionAuthMode.MEID_TOKEN:
-                use_key_auth = False
-        except ImportError as e:
-            if "cannot import name 'ConnectionAuthMode' from 'promptflow._sdk._constants'" in str(e):
-                print("Failed to import ConnectionAuthMode, use key auth by default.")
-                pass
-            else:
-                raise e
-
-        if use_key_auth:
+        if connection.api_key:
             return {
                 # disable OpenAI's built-in retry mechanism by using our own retry
                 # for better debuggability and real-time status updates.

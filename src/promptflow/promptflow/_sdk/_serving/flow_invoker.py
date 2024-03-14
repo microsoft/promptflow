@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Callable, Union
 
 from promptflow import PFClient
-from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.flow_result import FlowResult
@@ -78,15 +77,15 @@ class FlowInvoker:
 
     def _init_connections(self, connection_provider):
         self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self.flow)
-        connection_provider = "local" if connection_provider is None else connection_provider
-        if isinstance(connection_provider, str):
-            self.logger.info(f"Getting connections from pf client with provider {connection_provider}...")
+        if connection_provider is None or isinstance(connection_provider, str):
+            config = {"connection.provider": connection_provider} if connection_provider else None
+            self.logger.info(f"Getting connections from pf client with provider from args: {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = get_local_connections_from_executable(
                 executable=self.flow,
-                client=PFClient(config={"connection.provider": connection_provider}, credential=self._credential),
+                client=PFClient(config=config, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),
@@ -137,6 +136,12 @@ class FlowInvoker:
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         self.logger.info("Promptflow executor initiated successfully.")
 
+    def _invoke_context(self, data: dict, disable_input_output_logging=False):
+        log_data = "<REDACTED>" if disable_input_output_logging else data
+        self.logger.info(f"Validating flow input with data {log_data!r}")
+        validate_request_data(self.flow, data)
+        self.logger.info(f"Execute flow with data {log_data!r}")
+
     def _invoke(self, data: dict, run_id=None, disable_input_output_logging=False):
         """
         Process a flow request in the runtime.
@@ -148,17 +153,9 @@ class FlowInvoker:
         :return: The result of executor.
         :rtype: ~promptflow.executor._result.LineResult
         """
-        log_data = "<REDACTED>" if disable_input_output_logging else data
-        self.logger.info(f"Validating flow input with data {log_data!r}")
-        validate_request_data(self.flow, data)
-        self.logger.info(f"Execute flow with data {log_data!r}")
-        # Pass index 0 as extension require for dumped result.
-        # TODO: Remove this index after extension remove this requirement.
-        result = self.executor.exec_line(data, index=0, run_id=run_id, allow_generator_output=self.streaming())
-        if isinstance(result.output, dict) and LINE_NUMBER_KEY in result.output:
-            # Remove line number from output
-            del result.output[LINE_NUMBER_KEY]
-        return result
+
+        self._invoke_context(data, disable_input_output_logging)
+        return self.executor.exec_line(data, run_id=run_id, allow_generator_output=self.streaming())
 
     def invoke(self, data: dict, run_id=None, disable_input_output_logging=False):
         """
@@ -202,3 +199,27 @@ class FlowInvoker:
                 invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
+
+
+class AsyncFlowInvoker(FlowInvoker):
+    async def _invoke_async(self, data: dict, run_id=None, disable_input_output_logging=False):
+        self._invoke_context(data, disable_input_output_logging)
+        return await self.executor.exec_line_async(data, run_id=run_id, allow_generator_output=self.streaming())
+
+    async def invoke_async(self, data: dict, run_id=None, disable_input_output_logging=False):
+        result = await self._invoke_async(
+            data, run_id=run_id, disable_input_output_logging=disable_input_output_logging
+        )
+        # Get base64 for multi modal object
+        resolved_outputs = self._convert_multimedia_data_to_base64(result)
+        self._dump_invoke_result(result)
+        log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
+        self.logger.info(f"Flow run result: {log_outputs}")
+        if not self.raise_ex:
+            # If raise_ex is False, we will return the trace flow & node run info.
+            return FlowResult(
+                output=resolved_outputs or {},
+                run_info=result.run_info,
+                node_run_infos=result.node_run_infos,
+            )
+        return resolved_outputs

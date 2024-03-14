@@ -30,10 +30,10 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_RUNS_DIR_NAME,
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
@@ -46,10 +46,11 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
+from promptflow._sdk._utils import incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -102,7 +103,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default()
 
     @property
     def _data_operations(self):
@@ -117,6 +117,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
+
+    @cached_property
+    def _workspace_default_datastore(self):
+        kind = self._workspace._kind
+        # for a normal workspace the kind is "default", for an ai project it's "project". Except these two values, it
+        # can also be "hub" which is not a supported workspace type to get default datastore.
+        if kind not in ["default", "project"]:
+            raise RunOperationParameterError(
+                "Failed to get default workspace datastore. Please make sure you are using the right workspace which "
+                f"is either an azure machine learning studio workspace or an azure ai project. Got {kind!r} instead."
+            )
+        return self._datastore_operations.get_default()
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
@@ -931,7 +943,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # process the output path
         if output is None:
             # default to be "~/.promptflow/.runs" folder
-            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+            output_directory = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_RUNS_DIR_NAME
         else:
             output_directory = Path(output)
 
