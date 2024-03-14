@@ -57,6 +57,7 @@ markers = [
     "unittest",
 ]
 addopts = """
+--junit-xml=test-results.xml \
 --cov=promptflow \
 --cov-config=pyproject.toml \
 --cov-report=term \
