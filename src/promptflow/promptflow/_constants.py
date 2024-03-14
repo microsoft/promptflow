@@ -1,10 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from enum import Enum
 from pathlib import Path
 
 CONNECTION_NAME_PROPERTY = "__connection_name"
 CONNECTION_SECRET_KEYS = "__secret_keys"
+CONNECTION_SCRUBBED_VALUE = "******"
 PROMPTFLOW_CONNECTIONS = "PROMPTFLOW_CONNECTIONS"
 PROMPTFLOW_SECRETS_FILE = "PROMPTFLOW_SECRETS_FILE"
 PF_NO_INTERACTIVE_LOGIN = "PF_NO_INTERACTIVE_LOGIN"
@@ -20,6 +22,8 @@ EXTENSION_UA = "prompt-flow-extension"
 LANGUAGE_KEY = "language"
 USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
+DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
+
 # Tool meta info
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
@@ -30,6 +34,10 @@ TOOL_SCHEMA = Path(__file__).parent / "_sdk" / "data" / "tool.schema.json"
 PF_MAIN_MODULE_NAME = "__pf_main__"
 
 DEFAULT_ENCODING = "utf-8"
+FLOW_META_JSON = "flow.json"
+FLOW_META_JSON_GEN_TIMEOUT = 60
+PROMPT_FLOW_DIR_NAME = ".promptflow"
+FLOW_TOOLS_JSON = "flow.tools.json"
 
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
@@ -66,6 +74,7 @@ STREAMING_ANIMATION_TIME = 0.01
 # trace related
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
+RUNNING_LINE_RUN_STATUS = "Running"
 
 
 class TraceEnvironmentVariableName:
@@ -166,7 +175,6 @@ class MessageFormatType:
 
 
 DEFAULT_OUTPUT_NAME = "output"
-
 OUTPUT_FILE_NAME = "output.jsonl"
 
 
@@ -174,3 +182,43 @@ class OutputsFolderName:
     FLOW_OUTPUTS = "flow_outputs"
     FLOW_ARTIFACTS = "flow_artifacts"
     NODE_ARTIFACTS = "node_artifacts"
+
+
+class ConnectionType(str, Enum):
+    _NOT_SET = "NotSet"
+    AZURE_OPEN_AI = "AzureOpenAI"
+    OPEN_AI = "OpenAI"
+    QDRANT = "Qdrant"
+    COGNITIVE_SEARCH = "CognitiveSearch"
+    SERP = "Serp"
+    AZURE_CONTENT_SAFETY = "AzureContentSafety"
+    FORM_RECOGNIZER = "FormRecognizer"
+    WEAVIATE = "Weaviate"
+    SERVERLESS = "Serverless"
+    CUSTOM = "Custom"
+
+
+class ConnectionAuthMode:
+    KEY = "key"
+    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
+
+
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "promptflow.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    PACKAGE = "package"
+    PACKAGE_VERSION = "package_version"
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+    PROMPTFLOW_PACKAGE_KEY = PREFIX + PACKAGE
+    PROMPTFLOW_PACKAGE_VERSION_KEY = PREFIX + PACKAGE_VERSION
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
+        ]
