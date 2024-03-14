@@ -12,7 +12,9 @@ _container_lock_dict = {}
 _token_timeout = 60 * 4  # Will try to refresh token if exceed 4 minutes
 
 
-def get_client(container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str):
+def get_client(
+    container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str, credential: object = None
+):
     client_key = _get_db_client_key(container_name, subscription_id, resource_group_name, workspace_name)
     container_client = _get_client_from_map(client_key)
     if container_client is None:
@@ -21,7 +23,13 @@ def get_client(container_name: str, subscription_id: str, resource_group_name: s
         with container_lock:
             container_client = _get_client_from_map(client_key)
             if container_client is None:
-                token = _get_resource_token(container_name, subscription_id, resource_group_name, workspace_name)
+                if credential is None:
+                    from azure.identity import DefaultAzureCredential
+
+                    credential = DefaultAzureCredential()
+                token = _get_resource_token(
+                    container_name, subscription_id, resource_group_name, workspace_name, credential
+                )
                 container_client = _init_container_client(
                     endpoint=token["accountEndpoint"],
                     database_name=token["databaseName"],
@@ -57,14 +65,12 @@ def _get_container_lock(client_key: str):
 
 
 def _get_resource_token(
-    container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str
+    container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str, credential: object
 ) -> object:
-    from azure.identity import DefaultAzureCredential
-
     from promptflow.azure import PFClient
 
     pf_client = PFClient(
-        credential=DefaultAzureCredential(),
+        credential=credential,
         subscription_id=subscription_id,
         resource_group_name=resource_group_name,
         workspace_name=workspace_name,

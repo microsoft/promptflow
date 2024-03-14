@@ -30,7 +30,10 @@ from promptflow._utils.thread_utils import ThreadWithContextVars
 
 
 def trace_collector(
-    get_created_by_info_with_cache: Callable, logger: logging.Logger, disable_local_trace: bool = False
+    get_created_by_info_with_cache: Callable,
+    logger: logging.Logger,
+    cloud_trace_only: bool = False,
+    credential: object = None,
 ):
     """
     This function is target to be reused in other places, so pass in get_created_by_info_with_cache and logger to avoid
@@ -39,6 +42,7 @@ def trace_collector(
     Args:
         get_created_by_info_with_cache (Callable): A function that retrieves information about the creator of the trace.
         logger (logging.Logger): The logger object used for logging.
+        cloud_trace_only (bool): If True, only write trace to cosmosdb and skip local trace. Default is False.
     """
     content_type = request.headers.get("Content-Type")
     # binary protobuf encoding
@@ -62,17 +66,18 @@ def trace_collector(
                 for span in scope_span.spans:
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource)
-                    if not disable_local_trace:
+                    if not cloud_trace_only:
                         span._persist()
                     all_spans.append(span)
 
-        if disable_local_trace:
-            # When disable local trace, it should be remote mode and we should write trace to cosmosdb synchronously.
-            _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger)
+        if cloud_trace_only:
+            # If we only trace to cloud, we should make sure the data writing is success before return.
+            _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache, logger, credential)
         else:
             # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
             ThreadWithContextVars(
-                target=_try_write_trace_to_cosmosdb, args=(all_spans, get_created_by_info_with_cache, logger)
+                target=_try_write_trace_to_cosmosdb,
+                args=(all_spans, get_created_by_info_with_cache, logger, credential),
             ).start()
         return "Traces received", 200
 
@@ -81,7 +86,9 @@ def trace_collector(
         raise NotImplementedError
 
 
-def _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache: Callable, logger: logging.Logger):
+def _try_write_trace_to_cosmosdb(
+    all_spans, get_created_by_info_with_cache: Callable, logger: logging.Logger, credential: object = None
+):
     if not all_spans:
         return
     try:
@@ -103,7 +110,8 @@ def _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache: Call
         # Load span and summary clients first time may slow.
         # So, we load 2 client in parallel for warm up.
         span_client_thread = ThreadWithContextVars(
-            target=get_client, args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
+            target=get_client,
+            args=(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential),
         )
         span_client_thread.start()
 
@@ -111,7 +119,7 @@ def _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache: Call
         created_by_thread = ThreadWithContextVars(target=get_created_by_info_with_cache)
         created_by_thread.start()
 
-        get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name)
+        get_client(CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name, credential)
 
         span_client_thread.join()
         created_by_thread.join()
@@ -119,12 +127,18 @@ def _try_write_trace_to_cosmosdb(all_spans, get_created_by_info_with_cache: Call
         created_by = get_created_by_info_with_cache()
 
         for span in all_spans:
-            span_client = get_client(CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name)
+            span_client = get_client(
+                CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
+            )
             result = SpanCosmosDB(span, created_by).persist(span_client)
             # None means the span already exists, then we don't need to persist the summary also.
             if result is not None:
                 line_summary_client = get_client(
-                    CosmosDBContainerName.LINE_SUMMARY, subscription_id, resource_group_name, workspace_name
+                    CosmosDBContainerName.LINE_SUMMARY,
+                    subscription_id,
+                    resource_group_name,
+                    workspace_name,
+                    credential,
                 )
                 Summary(span, created_by, logger).persist(line_summary_client)
         logger.info(
