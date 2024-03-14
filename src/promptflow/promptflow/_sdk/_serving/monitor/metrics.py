@@ -140,13 +140,13 @@ except ImportError:
 class MetricsRecorder(object):
     """OpenTelemetry Metrics Recorder"""
 
-    def __init__(self, logger, reader=None, common_dimensions: Dict[str, str] = None) -> None:
+    def __init__(self, logger, readers=None, common_dimensions: Dict[str, str] = None) -> None:
         """initialize metrics recorder
 
         :param logger: logger
         :type logger: Logger
-        :param reader: metric reader
-        :type reader: opentelemetry.sdk.metrics.export.MetricReader
+        :param readers: metric reader list
+        :type readers: List[opentelemetry.sdk.metrics.export.MetricReader]
         :param common_dimensions: common dimensions for all metrics
         :type common_dimensions: Dict[str, str]
         """
@@ -159,9 +159,9 @@ class MetricsRecorder(object):
             )
             return
         self.common_dimensions = common_dimensions or {}
-        self.reader = reader
+        self.readers = readers
         dimension_keys = {key for key in common_dimensions}
-        self._config_common_monitor(dimension_keys, reader)
+        self._config_common_monitor(dimension_keys, readers)
         logger.info("OpenTelemetry metric is enabled, metrics will be recorded.")
 
     def record_flow_request(self, flow_id: str, response_code: int, exception: str, streaming: bool):
@@ -318,7 +318,7 @@ class MetricsRecorder(object):
         return error_response.innermost_error_code
 
     # configure monitor, by default only expose prometheus metrics
-    def _config_common_monitor(self, common_keys: Set[str] = {}, reader=None):
+    def _config_common_monitor(self, common_keys: Set[str] = {}, readers=[]):
         metrics_views = [
             token_view,
             flow_latency_view,
@@ -329,10 +329,6 @@ class MetricsRecorder(object):
         ]
         for view in metrics_views:
             view._attribute_keys.update(common_keys)
-
-        readers = []
-        if reader:
-            readers.append(reader)
 
         meter_provider = MeterProvider(
             metric_readers=readers,
