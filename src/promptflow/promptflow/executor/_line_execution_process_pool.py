@@ -10,7 +10,6 @@ import queue
 import signal
 import sys
 import threading
-import time
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -110,23 +109,17 @@ class LineExecutionProcessPool:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        while True:
-            try:
-                # Delete log files to prevent interference from the previous run on the current execution.
-                for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(
-                    f"{ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME}*"
-                ):
-                    file.unlink()
-                for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(f"{ProcessPoolConstants.PROCESS_LOG_NAME}*"):
-                    file.unlink()
-                # Delete the PROCESS_LOG_PATH directory
-                if ProcessPoolConstants.PROCESS_LOG_PATH.exists() and ProcessPoolConstants.PROCESS_LOG_PATH.is_dir():
-                    ProcessPoolConstants.PROCESS_LOG_PATH.rmdir()
-                break
-            except PermissionError:
-                # Unable to unlink the file because it is being used by another process. Retrying..."
-                time.sleep(1)
-                pass
+        # Delete log files to prevent interference from the previous run on the current execution.
+        for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(
+            f"{ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME}*"
+        ):
+            file.unlink()
+        for file in ProcessPoolConstants.PROCESS_LOG_PATH.glob(f"{ProcessPoolConstants.PROCESS_LOG_NAME}*"):
+            file.unlink()
+        # Delete the PROCESS_LOG_PATH directory
+        if ProcessPoolConstants.PROCESS_LOG_PATH.exists() and ProcessPoolConstants.PROCESS_LOG_PATH.is_dir():
+            ProcessPoolConstants.PROCESS_LOG_PATH.rmdir()
+
         self.close()
 
     @property
