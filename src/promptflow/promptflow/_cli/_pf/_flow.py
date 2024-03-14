@@ -13,7 +13,6 @@ import tempfile
 import webbrowser
 from pathlib import Path
 from urllib.parse import urlencode, urlunparse
-from promptflow._utils.utils import encrypt_flow_path
 
 from promptflow._cli._params import (
     add_param_config,
@@ -33,7 +32,6 @@ from promptflow._cli._pf._init_entry_generators import (
     ChatFlowDAGGenerator,
     FlowDAGGenerator,
     OpenAIConnectionGenerator,
-    StreamlitFileReplicator,
     ToolMetaGenerator,
     ToolPyGenerator,
     copy_extra_files,
@@ -45,6 +43,7 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import encrypt_flow_path
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
@@ -424,15 +423,15 @@ def _build_inputs_for_flow_test(args):
 
 def _test_flow_multi_modal(args):
     """Test flow with multi modality mode."""
-    from promptflow._trace._start_trace import _start_pfs
-    from promptflow._sdk._service.utils.utils import get_port_from_config
     from promptflow._sdk._load_functions import load_flow
+    from promptflow._sdk._service.utils.utils import get_port_from_config
+    from promptflow._trace._start_trace import _start_pfs
 
     # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
     def generate_url(flow_path):
         encrypted_flow_path = encrypt_flow_path(flow_path)
-        query_params = urlencode({'flow': encrypted_flow_path})
-        return urlunparse(('http', f'127.0.0.1:{pfs_port}', '/v1.0/ui/chat', '', query_params, ''))
+        query_params = urlencode({"flow": encrypted_flow_path})
+        return urlunparse(("http", f"127.0.0.1:{pfs_port}", "/v1.0/ui/chat", "", query_params, ""))
 
     pfs_port = get_port_from_config(create_if_not_exists=True)
     _start_pfs(pfs_port)

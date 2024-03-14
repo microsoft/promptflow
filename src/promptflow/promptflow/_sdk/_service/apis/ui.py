@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import base64
+import hashlib
 import os
-import uuid
 from pathlib import Path
 
 from flask import Response, current_app, render_template, send_from_directory, url_for
@@ -44,7 +44,8 @@ class ChatUI(Resource):
 
 def save_image(directory, base64_data, extension):
     image_data = base64.b64decode(base64_data)
-    filename = str(uuid.uuid4())
+    hash_object = hashlib.sha256(image_data)
+    filename = hash_object.hexdigest()
     file_path = Path(directory) / f"{filename}.{extension}"
     with open(file_path, "wb") as f:
         f.write(image_data)
