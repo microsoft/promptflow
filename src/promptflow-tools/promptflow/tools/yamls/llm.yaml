@@ -16,8 +16,8 @@ promptflow.tools.llm.llm:
     # user:
     {{question}}
   groups:  
-  - name: Funtion calling
-    description: This is a group about function calling
+  - name: Tools
+    description: This is a group about tools
     inputs:  
     - tools
     - tool_choice
