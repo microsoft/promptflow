@@ -81,6 +81,7 @@ def validate_trace_provider(value: str) -> None:
             f"Failed attempt to retrieve the Cosmos DB token: {str(e)}, "
             "this might because you have not initialized the Cosmos DB for the given workspace, "
             "or it's still be initializing.\n"
-            f"Please open the following link to manually initialize it: {ws_tracing_url}."
+            f"Please open the following link to manually initialize it: {ws_tracing_url}; "
+            "when it's done, retry the command to set the trace provider again."
         )
         _logger.warning(warning_msg)
