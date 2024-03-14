@@ -1,0 +1,175 @@
+promptflow.tools.llm_v2.llm:
+  name: LLM-V2
+  description: New LLM tool (Proposal 2.0)
+  type: custom_llm
+  module: promptflow.tools.llm_v2
+  function: llm
+  tool_state: preview
+  category: llm
+  icon:
+    light: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVR4nJWSwQ2CQBBFX0jAcjgqXUgPJNiIsQQrIVCIFy8GC6ABDcGDX7Mus9n1Xz7zZ+fPsLPwH4bUg0dD2wMPcbR48Uxq4AKU4iSTDwZ1LhWXipN/B3V0J6hjBTvgLHZNonewBXrgDpzEvXSIjN0BE3AACmmF4kl5F6tNzcCoLpW0SvGovFvsb4oZ2AANcAOu4ka6axCcINN3rg654sww+CYsPD0OwjcozFNh/Qcd78tqVbCIW+n+Fky472Bh/Q6SYb1EEy8tDzd+9IsVPAAAAABJRU5ErkJggg==
+    dark: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR4nJXSzW3CQBAF4DUSTjk+Al1AD0ikESslpBIEheRALhEpgAYSWV8OGUublf/yLuP3PPNmdndS+gdwXZrYDmh7fGE/W+wXbaYd8IYm4rxJPnZ0boI3wZcdJxs/n+AwV7DFK7aFyfQdYIMLPvES8YJNf5yp4jMeeEYdWh38gXOR35YGHe5xabvQdsHv6PLi8qV6gycc8YH3iMfQu6Lh4ASr+F5Hh3XwVWnQYzUkVlX1nccplAb1SN6Y/sfgmlK64VS8wimldIv/0yj2QLkHizG0iWP4AVAfQ34DVQONAAAAAElFTkSuQmCC
+  default_prompt: |
+    # system:
+    You are a helpful assistant.
+
+    # user:
+    {{question}}
+  inputs:
+    connection:
+      type:
+      - AzureOpenAIConnection
+      - OpenAIConnection
+      - ServerlessConnection
+    api_of_aoai:
+      enabled_by: connection
+      enabled_by_type: [AzureOpenAIConnection]
+      default: chat
+      enum:
+      - chat
+      - completion
+      ui_hints:
+        text_box_size: sm
+        display_name: api
+    api_of_oai:
+      enabled_by: connection
+      enabled_by_type: [OpenAIConnection]
+      default: chat
+      enum:
+      - chat
+      - completion
+      ui_hints:
+        text_box_size: sm
+        display_name: api
+    api_of_serverless:
+      enabled_by: connection
+      enabled_by_type: [ServerlessConnection]
+      default: chat
+      enum:
+      - chat
+      ui_hints:
+        text_box_size: sm
+        display_name: api
+    deployment_name_of_chat:
+      type:
+        - string
+      enabled_by: api_of_aoai
+      enabled_by_value: [chat]
+      # capabilities:
+      #   chat_completion: true
+      #   # add exclude/include because aoai supports custom models that we cannot limit by model names.
+      #   exclude_model_versions:
+      #   - vision-preview
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
+        display_name: deployment_name
+    deployment_name_of_completion:
+      type:
+        - string
+      enabled_by: api_of_oai
+      enabled_by_value: [completion]
+      # capabilities:
+      #   completion: true
+      #   include_model_names:
+      #     - gpt-35-turbo-instruct
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
+        display_name: deployment_name
+    model_of_chat:
+      type:
+        - string
+      enabled_by: api_of_oai
+      enabled_by_value: [chat]
+      default: gpt-3.5-turbo
+      enum:
+      - gpt-3.5-turbo
+      - gpt-3.5-turbo-0301
+      - gpt-3.5-turbo-16k
+      - gpt-3.5-turbo-1106
+      - gpt-4
+      - gpt-4-1106-preview
+      - gpt-4-0314
+      - gpt-4-32k
+      - gpt-4-32k-0314
+      allow_manual_entry: true
+      is_multi_select: false
+      ui_hints:
+        text_box_size: lg
+        display_name: model
+    model_of_completion:
+      type:
+        - string
+      enabled_by: api_of_oai
+      enabled_by_value: [completion]
+      default: gpt-3.5-turbo-instruct
+      enum:
+      - gpt-3.5-turbo-instruct
+      ui_hints:
+        text_box_size: lg
+        display_name: model
+    temperature:
+      default: 1
+      type:
+        - double
+      ui_hints:
+        text_box_size: xs
+    top_p:
+      default: 1
+      type:
+        - double
+      ui_hints:
+        text_box_size: xs
+      advanced: true
+    stop:
+      default: ""
+      type:
+        - list
+      ui_hints:
+        text_box_size: md
+    max_tokens:
+      default: ""
+      type:
+        - int
+      ui_hints:
+        text_box_size: xs
+    presence_penalty:
+      default: 0
+      type:
+        - double
+      advanced: true
+    response_format:
+      type:
+      - object
+      advanced: false
+      ui_hints:
+        text_box_size: lg
+      enum:
+      - type: json_object
+      - type: text
+      allow_manual_entry: true
+    frequency_penalty:
+      type:
+      - int
+      default: 0
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    logit_bias:
+      type:
+      - object
+      default: ""
+      advanced: true
+      ui_hints:
+        text_box_size: lg
+    functions:
+      type:
+      - function_list
+      advanced: false
+    function_call:
+      type:
+      - function_str
+      advanced: false
