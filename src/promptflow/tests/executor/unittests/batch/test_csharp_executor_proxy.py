@@ -105,13 +105,13 @@ class TestCSharpExecutorProxy:
         with open(tool_meta_file, "w") as file:
             json.dump(expected_tool_meta, file, indent=4)
 
-        tool_meta = CSharpExecutorProxy.get_tool_metadata("", working_dir)
+        tool_meta = CSharpExecutorProxy.generate_tool_metadata("", working_dir)
         assert tool_meta == expected_tool_meta
 
     def test_get_tool_metadata_failed_with_file_not_found(self):
         working_dir = Path(mkdtemp())
         with pytest.raises(MetaFileNotFound):
-            CSharpExecutorProxy.get_tool_metadata("", working_dir)
+            CSharpExecutorProxy.generate_tool_metadata("", working_dir)
 
     def test_get_tool_metadata_failed_with_content_not_json(self):
         working_dir = Path(mkdtemp())
@@ -120,7 +120,7 @@ class TestCSharpExecutorProxy:
         tool_meta_file.touch()
 
         with pytest.raises(MetaFileReadError):
-            CSharpExecutorProxy.get_tool_metadata("", working_dir)
+            CSharpExecutorProxy.generate_tool_metadata("", working_dir)
 
     def test_find_available_port(self):
         port = CSharpExecutorProxy.find_available_port()

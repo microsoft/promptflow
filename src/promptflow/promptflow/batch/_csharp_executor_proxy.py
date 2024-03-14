@@ -1,13 +1,15 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import socket
 import subprocess
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._sdk._constants import FLOW_META_JSON, FLOW_META_JSON_GEN_TIMEOUT, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -46,9 +48,34 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         return self._chat_output_name
 
     @classmethod
-    def generate_metadata(cls, flow_file: Path, assembly_folder: Path):
-        """Generate metadata for the flow and save them to files under .promptflow folder.
-        including flow.json and flow.tools.json.
+    def generate_flow_metadata(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
+        # TODO: timeout & dump doesn't take effect for now
+        # TODO: provide a way to skip dumping and directly read from flow.json
+        cls._dump_metadata(
+            flow_file=flow_file,
+            working_dir=working_dir,
+        )
+
+        from promptflow import load_flow
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
+        flow = load_flow(flow_file)
+        if isinstance(flow, EagerFlow):
+            return json.load((working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON).open())
+        else:
+            return {}
+
+    @classmethod
+    def _dump_metadata(cls, flow_file: Path, working_dir: Path):
+        """In csharp, we need to generate metadata based on a dotnet command for now and the metadata will
+        always be dumped.
         """
         command = [
             "dotnet",
@@ -62,15 +89,19 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         try:
             subprocess.check_output(
                 command,
-                cwd=assembly_folder,
+                cwd=working_dir,
             )
         except subprocess.CalledProcessError as e:
             raise UnexpectedError(
-                message_format=f"Failed to generate flow meta for csharp flow.\n"
-                f"Command: {' '.join(command)}\n"
-                f"Working directory: {assembly_folder.as_posix()}\n"
-                f"Return code: {e.returncode}\n"
-                f"Output: {e.output}",
+                message_format="Failed to generate flow meta for csharp flow.\n"
+                "Command: {command}\n"
+                "Working directory: {working_directory}\n"
+                "Return code: {return_code}\n"
+                "Output: {output}",
+                command=" ".join(command),
+                working_directory=working_dir.as_posix(),
+                return_code=e.returncode,
+                output=e.output,
             )
 
     @classmethod

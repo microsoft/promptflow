@@ -11,6 +11,7 @@ from promptflow._constants import FlowLanguage
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -24,7 +25,7 @@ from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get
 @pytest.mark.unittest
 class TestCSharpExecutorProxy:
     def setup_method(self):
-        BatchEngine.register_executor(FlowLanguage.CSharp, MockCSharpExecutorProxy)
+        ExecutorProxyFactory.register_executor(FlowLanguage.CSharp, MockCSharpExecutorProxy)
 
     def test_batch(self):
         # submit a batch run

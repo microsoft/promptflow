@@ -32,10 +32,9 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._errors import BatchRunTimeoutError
+from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -51,26 +50,6 @@ DEFAULT_CONCURRENCY = 10
 
 class BatchEngine:
     """This class is used to execute flows in batch mode"""
-
-    executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
-        FlowLanguage.Python: PythonExecutorProxy,
-        FlowLanguage.CSharp: CSharpExecutorProxy,
-    }
-
-    @classmethod
-    def register_executor(cls, type: str, executor_proxy_cls: AbstractExecutorProxy):
-        """Register a executor proxy class for a specific program language.
-
-        This method allows users to register a executor proxy class for a particular
-        programming language. The executor proxy class will be used when creating an instance
-        of the BatchEngine for flows written in the specified language.
-
-        :param type: The flow program language of the executor proxy,
-        :type type: str
-        :param executor_proxy_cls: The executor proxy class to be registered.
-        :type executor_proxy_cls:  ~promptflow.batch.AbstractExecutorProxy
-        """
-        cls.executor_proxy_classes[type] = executor_proxy_cls
 
     def __init__(
         self,
@@ -162,13 +141,12 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                executor_proxy_cls = self.executor_proxy_classes[self._program_language]
-                self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
-                    executor_proxy_cls.create,
-                    self._flow_file,
-                    self._working_dir,
+                self._executor_proxy = ExecutorProxyFactory().create_executor_proxy(
+                    flow_file=self._flow_file,
+                    working_dir=self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
+                    language=self._program_language,
                     **self._kwargs,
                 )
                 try:

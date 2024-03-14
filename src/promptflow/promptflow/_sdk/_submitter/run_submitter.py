@@ -105,11 +105,13 @@ class RunSubmitter:
     def _submit_bulk_run(self, flow: Union[Flow, FlexFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        if flow.language == FlowLanguage.CSharp:
+        if flow.language != FlowLanguage.Python:
             # TODO: consider moving this to Operations
-            from promptflow.batch import CSharpExecutorProxy
+            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 
-            CSharpExecutorProxy.generate_metadata(flow_file=Path(flow.path), assembly_folder=Path(flow.code))
+            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_metadata(
+                flow_file=Path(flow.path), working_dir=Path(flow.code), dump=True
+            )
             # TODO: shall we resolve connections here?
             connections = []
         else:

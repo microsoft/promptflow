@@ -3,10 +3,11 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
+from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
@@ -21,6 +22,34 @@ from promptflow.tracing._operation_context import OperationContext
 class PythonExecutorProxy(AbstractExecutorProxy):
     def __init__(self, flow_executor: FlowExecutor):
         self._flow_executor = flow_executor
+
+    @classmethod
+    def generate_flow_metadata(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
+        from promptflow import load_flow
+        from promptflow._sdk._utils import generate_flow_meta
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
+        flow = load_flow(flow_file)
+        if isinstance(flow, EagerFlow):
+            # generate flow.json only for eager flow for now
+            return generate_flow_meta(
+                flow_directory=working_dir,
+                source_path=flow.entry_file,
+                entry=flow.entry,
+                dump=dump,
+                timeout=timeout,
+                load_in_subprocess=load_in_subprocess,
+            )
+        else:
+            # we will also skip dump for now
+            return {}
 
     @classmethod
     async def create(

@@ -24,7 +24,6 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
-from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
@@ -35,8 +34,9 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_meta
+from promptflow._sdk._utils import PromptflowIgnoreFile
 from promptflow._sdk._vendor._asset_utils import traverse_directory
+from promptflow._sdk.entities._utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
@@ -44,6 +44,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
+from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -481,7 +482,14 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 return
             if flow._code_uploaded:
                 return
-            cls._generate_meta_for_eager_flow(code=code)
+
+            # generate .promptflow/flow.json for eager flow
+            flow_directory, flow_file = resolve_flow_path(code.path)
+            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).generate_flow_metadata(
+                flow_file=flow_directory / flow_file,
+                working_dir=flow_directory,
+            )
+
             if ignore_tools_json:
                 ignore_file = code._ignore_file
                 if isinstance(ignore_file, PromptflowIgnoreFile):
@@ -597,18 +605,3 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             flow._code_uploaded = True
 
     # endregion
-
-    @classmethod
-    def _generate_meta_for_eager_flow(cls, code):
-        from promptflow import load_flow as load_local_flow
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-
-        flow = load_local_flow(code.path)
-        if isinstance(flow, FlexFlow) and flow.language == FlowLanguage.Python:
-            # TODO: support generate meta for CSharp flow
-            generate_flow_meta(
-                flow_directory=code.path,
-                source_path=flow.entry_file,
-                entry=flow.entry,
-                dump=True,
-            )

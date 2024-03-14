@@ -7,13 +7,13 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import httpx
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported, UnexpectedError
-from promptflow._sdk._constants import FLOW_META_JSON, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import FLOW_META_JSON, FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
@@ -29,28 +29,46 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 class AbstractExecutorProxy:
     @classmethod
-    def get_tool_metadata(cls, flow_file: Path, working_dir: Optional[Path] = None) -> dict:
+    def generate_tool_metadata(cls, flow_file: Path, working_dir: Optional[Path] = None) -> dict:
         """Generate tool metadata file for the specified flow."""
         return cls._get_tool_metadata(flow_file, working_dir or flow_file.parent)
 
-    def _get_flow_meta(self) -> dict:
-        """Get the flow metadata from"""
+    @classmethod
+    def generate_flow_metadata(
+        cls,
+        flow_file: Path,
+        working_dir: Path,
+        dump: bool = True,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        load_in_subprocess: bool = True,
+    ) -> Dict[str, Any]:
+        """Generate metadata for a specific flow.
+
+        :param flow_file: The path of the flow file.
+        :type flow_file: Path
+        :param working_dir: The working directory to generate the flow metadata. It will impact the packages to load
+            and the location of generated flow.json file when dump is True.
+        :type working_dir: Path
+        :param dump: Whether to dump the metadata to .promptflow/flow.json.
+        :type dump: bool
+        :param timeout: The timeout for the flow execution. Default timeout is 60 seconds.
+        :type timeout: int
+        :param load_in_subprocess: Whether to load the flow in a subprocess. This parameter works for Python flow only.
+        :type load_in_subprocess: bool
+        :return: The metadata of the flow.
+        :rtype: Dict[str, Any]
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def _generate_flow_metadata(cls, flow_file: Path, working_dir: Path):
+        """Generate metadata for the flow and save them to files under .promptflow folder.
+        including flow.json and flow.tools.json.
+        """
         raise NotImplementedError()
 
     def get_inputs_definition(self) -> Mapping[str, Any]:
-        """Get the inputs definition of an eager flow"""
-        from promptflow.contracts.flow import FlowInputDefinition
-
-        flow_meta = self._get_flow_meta()
-        inputs = {}
-        for key, value in flow_meta.get("inputs", {}).items():
-            # TODO: update this after we determine whether to accept list here or now
-            _type = value.get("type")
-            if isinstance(_type, list):
-                _type = _type[0]
-            value["type"] = _type
-            inputs[key] = FlowInputDefinition.deserialize(value)
-        return inputs
+        raise NotImplementedError()
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
@@ -174,35 +192,46 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
 
     def _get_flow_meta(self) -> dict:
         flow_meta_json_path = self.working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
-        if not flow_meta_json_path.is_file():
-            raise MetaFileNotFound(
-                message_format=(
-                    # TODO: pf flow validate should be able to generate flow.json
-                    "Failed to fetch meta of inputs: cannot find {file_path}, please retry."
-                ),
-                file_path=flow_meta_json_path.absolute().as_posix(),
-            )
+        return self._read_json_content(flow_meta_json_path, "meta of flow")
 
-        with open(flow_meta_json_path, mode="r", encoding=DEFAULT_ENCODING) as flow_meta_json_path:
-            return json.load(flow_meta_json_path)
+    def get_inputs_definition(self):
+        """Get the inputs definition of an eager flow"""
+        from promptflow.contracts.flow import FlowInputDefinition
+
+        flow_meta = self._get_flow_meta()
+        inputs = {}
+        for key, value in flow_meta.get("inputs", {}).items():
+            # TODO: update this after we determine whether to accept list here or now
+            _type = value.get("type")
+            if isinstance(_type, list):
+                _type = _type[0]
+            value["type"] = _type
+            inputs[key] = FlowInputDefinition.deserialize(value)
+        return inputs
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
         flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-        if flow_tools_json_path.is_file():
-            with open(flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        return cls._read_json_content(flow_tools_json_path, "meta of tools")
+
+    @classmethod
+    def _read_json_content(cls, file_path: Path, target: str) -> dict:
+        if file_path.is_file():
+            with open(file_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 try:
                     return json.load(f)
                 except json.JSONDecodeError:
                     raise MetaFileReadError(
-                        message_format="Failed to fetch meta of tools: {file_path} is not a valid json file.",
-                        file_path=flow_tools_json_path.absolute().as_posix(),
+                        message_format="Failed to fetch {target_obj}: {file_path} is not a valid json file.",
+                        file_path=file_path.absolute().as_posix(),
+                        target_obj=target,
                     )
         raise MetaFileNotFound(
             message_format=(
-                "Failed to fetch meta of tools: cannot find {file_path}, please build the flow project first."
+                "Failed to fetch meta of tools: cannot find {file_path}, "
+                "please build the flow project with extension first."
             ),
-            file_path=flow_tools_json_path.absolute().as_posix(),
+            file_path=file_path.absolute().as_posix(),
         )
 
     @property
