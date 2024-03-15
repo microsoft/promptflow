@@ -21,48 +21,24 @@ promptflow.tools.llm_v2.llm:
       - AzureOpenAIConnection
       - OpenAIConnection
       - ServerlessConnection
-    api_of_aoai:
+    api:
       type:
       - string
       enabled_by: connection
       enabled_by_type:
       - AzureOpenAIConnection
-      default: chat
-      enum:
-      - chat
-      - completion
-      ui_hints:
-        text_box_size: sm
-        display_name: api
-    api_of_oai:
-      type:
-      - string
-      enabled_by: connection
-      enabled_by_type:
       - OpenAIConnection
-      default: chat
-      enum:
-      - chat
-      - completion
-      ui_hints:
-        text_box_size: sm
-        display_name: api
-    api_of_serverless:
-      type:
-      - string
-      enabled_by: connection
-      enabled_by_type:
       - ServerlessConnection
       default: chat
       enum:
       - chat
+      - completion
       ui_hints:
         text_box_size: sm
-        display_name: api
     deployment_name_of_chat:
       type:
       - string
-      enabled_by: api_of_aoai
+      enabled_by: api
       enabled_by_value:
       - chat
       capabilities:
@@ -83,7 +59,7 @@ promptflow.tools.llm_v2.llm:
     deployment_name_of_completion:
       type:
       - string
-      enabled_by: api_of_aoai
+      enabled_by: api
       enabled_by_value:
       - completion
       capabilities:
@@ -99,7 +75,7 @@ promptflow.tools.llm_v2.llm:
     model_of_chat:
       type:
       - string
-      enabled_by: api_of_oai
+      enabled_by: api
       enabled_by_value:
       - chat
       default: gpt-3.5-turbo
@@ -121,7 +97,7 @@ promptflow.tools.llm_v2.llm:
     model_of_completion:
       type:
       - string
-      enabled_by: api_of_oai
+      enabled_by: api
       enabled_by_value:
       - completion
       default: gpt-3.5-turbo-instruct
