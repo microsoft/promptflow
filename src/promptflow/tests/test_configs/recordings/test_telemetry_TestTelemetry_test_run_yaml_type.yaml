@@ -1,0 +1,402 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus2euap", "tags": {}, "etag": null, "kind": "Default", "sku": {"name":
+        "Basic", "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3649'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.043'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-09-22T05:26:30.7527337+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2024-01-10T09:29:14.5412854+00:00", "lastModifiedBy": "Philip Gao", "lastModifiedByType":
+        "User"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1345'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.611'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-09-22T05:26:30.7527337+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2024-01-10T09:29:14.5412854+00:00", "lastModifiedBy": "Philip Gao", "lastModifiedByType":
+        "User"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1200'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.062'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.170'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.0 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 12 Mar 2024 07:38:17 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: HEAD
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_input_flow.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      accept-ranges:
+      - bytes
+      content-length:
+      - '56'
+      content-md5:
+      - I/k2vLbQ+WkABQncQUd5Rg==
+      content-type:
+      - application/octet-stream
+      last-modified:
+      - Tue, 26 Dec 2023 03:34:26 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      vary:
+      - Origin
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-creation-time:
+      - Tue, 26 Dec 2023 03:34:26 GMT
+      x-ms-meta-name:
+      - 489008dc-84bd-4bee-82db-0bb80f7ad272
+      x-ms-meta-upload_status:
+      - completed
+      x-ms-meta-version:
+      - b7185e71-1e33-43b7-b8be-43bdd40e6731
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.0 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 12 Mar 2024 07:38:18 GMT
+      x-ms-version:
+      - '2023-11-03'
+    method: HEAD
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_input_flow.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-ms-error-code:
+      - BlobNotFound
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 404
+      message: The specified blob does not exist.
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-09-22T05:26:30.7527337+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2024-01-10T09:29:14.5412854+00:00", "lastModifiedBy": "Philip Gao", "lastModifiedByType":
+        "User"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1200'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.068'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.13.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.065'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '[null]'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '6'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-azuremonitorclient/unknown Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://dc.services.visualstudio.com/v2.1/track
+  response:
+    body:
+      string: '{"itemsReceived": 0, "itemsAccepted": 0, "appId": null, "errors": []}'
+    headers:
+      content-type:
+      - application/json; charset=utf-8
+      server:
+      - Microsoft-HTTPAPI/2.0
+      strict-transport-security:
+      - max-age=31536000
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1
