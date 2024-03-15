@@ -144,22 +144,22 @@ class ExperimentStart(Resource):
 
 @api.route("/stop")
 class ExperimentStop(Resource):
-    @api.doc(body=dict_field, description="Stop experiment")
+    @api.doc(description="Stop experiment")
     @api.response(code=200, description="Experiment details", model=dict_field)
     def post(self):
         args = stop_experiment.parse_args()
+        client = get_client_from_request()
         if args.name:
             api.logger.debug(f"Stop a named experiment {args.name}.")
-            experiment_name = args.name
-        elif args.file:
+            experiment = client._experiments.get(args.name)
+        elif args.template:
             from promptflow._sdk._load_functions import _load_experiment
 
-            api.logger.debug(f"Stop an anonymous experiment {args.file}.")
-            experiment = _load_experiment(source=args.file)
-            experiment_name = experiment.name
+            api.logger.debug(f"Stop an anonymous experiment {args.template}.")
+            experiment = _load_experiment(source=args.template)
         else:
             raise UserErrorException("To stop an experiment, one of [name, template] must be specified.")
-        result = get_client_from_request()._experiments.stop(name=experiment_name)
+        result = get_client_from_request()._experiments.stop(experiment=experiment)
         return jsonify(result._to_dict())
 
 
