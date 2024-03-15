@@ -184,6 +184,17 @@ def log_activity(
             raise exception
 
 
+def extract_telemetry_info(self, *args, **kwargs):
+    """Extract pf telemetry info from given telemetry mix-in instance."""
+    result = {}
+    try:
+        if isinstance(self, TelemetryMixin):
+            return self._get_telemetry_values(*args, **kwargs)
+    except Exception:
+        pass
+    return result
+
+
 def update_activity_name(activity_name, kwargs=None, args=None):
     """Update activity name according to kwargs. For flow test, we want to know if it's node test."""
     if activity_name == "pf.flows.test":
@@ -227,8 +238,12 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
+            if "activity_name" not in kwargs:
+                custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs, activity_name=activity_name))
+            else:
+                custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs))
+
             if isinstance(self, TelemetryMixin):
-                custom_dimensions.update(self._get_telemetry_values())
                 user_agent = self._get_user_agent_override()
             else:
                 user_agent = None
