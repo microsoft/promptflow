@@ -2,6 +2,7 @@ import pytest
 
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
+from promptflow._core._errors import ToolExecutionError
 
 from ..utils import (
     get_yaml_file,
@@ -111,6 +112,32 @@ class TestExecutorFailures:
         #  Make sure the stack trace is as expected
         stacktrace = user_error_info["traceback"].split("\n")
         expected_stack_trace = expected_stack_traces[flow_folder]
+        assert len(stacktrace) == len(expected_stack_trace)
+        for expected_item, actual_item in zip(expected_stack_trace, stacktrace):
+            assert expected_item in actual_item
+
+    @pytest.mark.parametrize(
+        "flow_folder, failed_node_name, message",
+        [
+            ("sync_tools_failures", "sync_fail", "In tool raise_an_exception: dummy_input"),
+            ("async_tools_failures", "async_fail", "In tool raise_an_exception_async: dummy_input"),
+        ],
+    )
+    def test_executor_exec_line_fail_with_exception(self, flow_folder, failed_node_name, message):
+        yaml_file = get_yaml_file(flow_folder)
+        # Here we set raise_ex to True to make sure the exception is raised and we can check the error detail.
+        executor = FlowExecutor.create(yaml_file, {}, raise_ex=True)
+        with pytest.raises(ToolExecutionError) as e:
+            executor.exec_line({})
+        ex = e.value
+        assert ex.error_codes == ["UserError", "ToolExecutionError"]
+        ex_str = str(ex)
+        assert ex_str.startswith(f"Execution failure in '{failed_node_name}'")
+        assert message in ex_str
+        expected_stack_trace = expected_stack_traces[flow_folder]
+        stacktrace = ex.tool_traceback.split("\n")
+        #  Remove "^^^^^^^^" lines as they are not part of actual stack trace
+        stacktrace = [line for line in stacktrace if "^^^^^^^^" not in line]
         assert len(stacktrace) == len(expected_stack_trace)
         for expected_item, actual_item in zip(expected_stack_trace, stacktrace):
             assert expected_item in actual_item
