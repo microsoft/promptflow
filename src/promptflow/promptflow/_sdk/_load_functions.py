@@ -9,6 +9,7 @@ from dotenv import dotenv_values
 
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
+from ..exceptions import UserErrorException
 from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
@@ -63,7 +64,7 @@ def load_common(
             **kwargs,
         )
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def load_flow(
