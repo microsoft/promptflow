@@ -172,7 +172,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         node_name = node.name
         try:
-            if (interval := try_get_long_running_logging_interval(flow_logger, DEFAULT_LOGGING_INTERVAL)) is None:
+            if (
+                interval_seconds := try_get_long_running_logging_interval(flow_logger, DEFAULT_LOGGING_INTERVAL)
+            ) is None:
                 return f(**kwargs)
             logging_name = node_name
             if self._line_number is not None:
@@ -180,11 +182,11 @@ class FlowExecutionContext(ThreadLocalSingleton):
             start_time = time.perf_counter()
             thread_id = threading.current_thread().ident
             with RepeatLogTimer(
-                interval_seconds=interval,
+                interval_seconds=interval_seconds,
                 logger=logger,
                 level=WARNING,
                 log_message_function=generate_elapsed_time_messages,
-                args=(logging_name, start_time, interval, thread_id),
+                args=(logging_name, start_time, interval_seconds, thread_id),
             ):
                 return f(**kwargs)
         except PromptflowException as e:
