@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 from functools import wraps
 from os import PathLike
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import Dict, List, Union
 
 from promptflow._sdk._restclient.pfs_client import Client
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy
+from promptflow._sdk.entities._experiment import Experiment
 from promptflow.exceptions import UserErrorException
 
 
@@ -51,14 +53,14 @@ class PFSCaller:
         experiment_response = sync_detailed(
             client=self.client, name=name, body=PostExperimentBody(template=Path(template).absolute().as_posix())
         )
-        return experiment_response.parsed
+        return Experiment._load(experiment_response.parsed.to_dict())
 
     @_request_wrapper()
     def show_experiment(self, name: str):
         from promptflow._sdk._restclient.pfs_client.api.experiments.get_experiment import sync_detailed
 
         experiment_response = sync_detailed(client=self.client, name=name)
-        return experiment_response.parsed
+        return Experiment._load(experiment_response.parsed.to_dict())
 
     @_request_wrapper()
     def list_experiment(
@@ -77,7 +79,7 @@ class PFSCaller:
             archived_only=archived_only,
             include_archived=include_archived,
         )
-        return experiments.parsed
+        return [Experiment._load(exp.to_dict()) for exp in experiments.parsed]
 
     @_request_wrapper()
     def start_experiment(
@@ -108,13 +110,13 @@ class PFSCaller:
         if stream:
             return response
         else:
-            return response.parsed
+            return Experiment._load(json.loads(response.content.decode("utf-8")))
 
     @_request_wrapper()
     def stop_experiment(self, name: str):
         from promptflow._sdk._restclient.pfs_client.api.experiments.post_experiment_stop import sync_detailed
 
         experiment_response = sync_detailed(client=self.client, name=name)
-        return experiment_response.parsed
+        return Experiment._load(experiment_response.parsed.to_dict())
 
     # endregion

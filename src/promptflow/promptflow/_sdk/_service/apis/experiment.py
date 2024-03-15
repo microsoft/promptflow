@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from flask import Response, jsonify
+from flask_restx import inputs
 
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._load_functions import _load_experiment_template
@@ -23,10 +24,10 @@ create_or_update_experiment.add_argument("template", type=str, location="json", 
 
 # Define list experiments request parsing
 list_experiment = api.parser()
-list_experiment.add_argument("max_results", type=int, default=None, location="query", required=False)
-list_experiment.add_argument("all_results", type=bool, default=False, location="query", required=False)
-list_experiment.add_argument("archived_only", type=bool, default=False, location="query", required=False)
-list_experiment.add_argument("include_archived", type=bool, default=False, location="query", required=False)
+list_experiment.add_argument("max_results", type=int, default=None, location="args", required=False)
+list_experiment.add_argument("all_results", type=inputs.boolean, default=False, location="args", required=False)
+list_experiment.add_argument("archived_only", type=inputs.boolean, default=False, location="args", required=False)
+list_experiment.add_argument("include_archived", type=inputs.boolean, default=False, location="args", required=False)
 
 # Define start experiments request parsing
 stop_experiment = api.parser()
@@ -37,7 +38,7 @@ stop_experiment.add_argument("template", type=str, location="json", required=Fal
 start_experiment = api.parser()
 start_experiment.add_argument("name", type=str, location="json", required=False)
 start_experiment.add_argument("template", type=str, location="json", required=False)
-start_experiment.add_argument("stream", type=bool, default=False, location="json", required=False)
+start_experiment.add_argument("stream", type=inputs.boolean, default=False, location="json", required=False)
 start_experiment.add_argument("from_nodes", type=list, location="json", required=False)
 start_experiment.add_argument("nodes", type=list, location="json", required=False)
 start_experiment.add_argument("inputs", type=list, location="json", required=False)

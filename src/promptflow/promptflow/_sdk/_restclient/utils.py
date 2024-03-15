@@ -4,8 +4,7 @@
 from functools import wraps
 from http import HTTPStatus
 
-from httpx import Response
-
+from promptflow._sdk._restclient.pfs_client.types import Response
 from promptflow.exceptions import SystemErrorException
 
 

@@ -32,7 +32,7 @@ def _get_pf_client():
 
 
 def add_param_template(parser):
-    parser.add_argument("--template", type=str, required=True, help="The experiment template path.")
+    parser.add_argument("--template", type=str, help="The experiment template path.")
 
 
 def add_param_name(parser):
@@ -200,16 +200,20 @@ def dispatch_experiment_commands(args: argparse.Namespace):
 
 
 def create_experiment(args: argparse.Namespace):
-    if not Path(args.template).is_absolute():
-        raise UserErrorException("Please provide the absolute path to the experiment template.")
-    if not Path(args.template).exists():
-        raise UserErrorException(f"Experiment template path {args.template} does not exist.")
+    if not args.template:
+        raise UserErrorException("Template is required parameter to create experiment.")
+    template = args.template
+    if not Path(template).is_absolute():
+        template = Path(template).absolute().as_posix()
+        logger.debug(f"Resolve relative path {args.template} to {template}")
+    if not Path(template).exists():
+        raise UserErrorException(f"Experiment template path {template} does not exist.")
     experiment_name = args.name
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     experiment_name = experiment_name or f"{Path(args.template).parent.name}_{timestamp}"
     logger.debug("Creating experiment %s", experiment_name)
     exp = _get_pf_client()._pfs_client.create_experiment(name=experiment_name, template=args.template)
-    print(json.dumps(exp.to_dict(), indent=4))
+    print(json.dumps(exp._to_dict(), indent=4))
 
 
 def list_experiment(args: argparse.Namespace):
@@ -219,12 +223,12 @@ def list_experiment(args: argparse.Namespace):
         archived_only=args.archived_only,
         include_archived=args.include_archived,
     )
-    print(json.dumps([result.to_dict() for result in results], indent=4))
+    print(json.dumps([result._to_dict() for result in results], indent=4))
 
 
 def show_experiment(args: argparse.Namespace):
     result = _get_pf_client()._pfs_client.show_experiment(args.name)
-    print(json.dumps(result.to_dict(), indent=4))
+    print(json.dumps(result._to_dict(), indent=4))
 
 
 def test_experiment(args: argparse.Namespace):
@@ -233,25 +237,31 @@ def test_experiment(args: argparse.Namespace):
 
 
 def start_experiment(args: argparse.Namespace):
+    template = args.template
     if args.name:
         logger.debug(f"Starting a named experiment {args.name}.")
-    elif args.template:
+    elif template:
         logger.debug(f"Starting an anonymous experiment {args.template}.")
+        if not Path(template).is_absolute():
+            template = Path(template).absolute().as_posix()
+            logger.debug(f"Resolve relative path {args.template} to {template}")
+        if not Path(template).exists():
+            raise UserErrorException(f"Experiment template path {template} does not exist.")
     else:
         raise UserErrorException("To start an experiment, one of [name, template] must be specified.")
     inputs = list_of_dict_to_dict(args.inputs)
     client = _get_pf_client()
     if args.stream:
         with client._pfs_client.start_experiment(
-            name=args.name, template=args.template, executable_path=sys.executable, inputs=inputs, stream=args.stream
+            name=args.name, template=template, executable_path=sys.executable, inputs=inputs, stream=args.stream
         ) as response:
             for chunk in response.iter_text():
-                print(chunk)
+                print(chunk, end="")
     else:
         result = client._pfs_client.start_experiment(
-            name=args.name, template=args.template, executable_path=sys.executable, inputs=inputs, stream=args.stream
+            name=args.name, template=template, executable_path=sys.executable, inputs=inputs, stream=args.stream
         )
-        print(json.dumps(result.to_dict(), indent=4))
+        print(json.dumps(result._to_dict(), indent=4))
 
 
 def stop_experiment(args: argparse.Namespace):
@@ -259,4 +269,4 @@ def stop_experiment(args: argparse.Namespace):
         raise UserErrorException("To stop an experiment, one of [name, template] must be specified.")
     client = _get_pf_client()
     result = client._pfs_client.stop_experiment(name=args.name, template=args.template)
-    print(json.dumps(result.to_dict(), indent=4))
+    print(json.dumps(result._to_dict(), indent=4))
