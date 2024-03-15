@@ -128,8 +128,9 @@ def start_service(args):
             app.logger.setLevel(logging.INFO)
         message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}"
         app.logger.info(message)
-        print(f"{message}. You're feel free to input CTRL+C or close the terminal to exit.")
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
+        entry(["show-status"])
+        print(f"{message}. You're feel free to input CTRL+C or close the terminal to exit.")
     else:
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
