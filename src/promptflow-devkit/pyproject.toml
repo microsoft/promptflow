@@ -83,9 +83,10 @@ line-length = 120
 
 [tool.importlinter]
 root_package = "promptflow"
+include_external_packages = "True"
 
 [[tool.importlinter.contracts]]
 name = "Contract forbidden modules"
 type = "forbidden"
 source_modules = ["promptflow.devkit"]
-forbidden_modules = ["promptflow.tools", "promptflow.azure"]
+forbidden_modules = ["promptflow.azure"]
