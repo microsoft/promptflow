@@ -334,9 +334,31 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
         previous_line_results: List[LineResult] = None,
-        line_results: List[LineResult] = [],  # serve as output
-        aggr_result: AggregationResult = AggregationResult({}, {}, {}),  # serve as output
+        line_results: List[LineResult] = [],
+        aggr_result: AggregationResult = AggregationResult({}, {}, {}),
     ) -> BatchResult:
+        """
+        Asynchronously execute batch processing of inputs with potential resumption from previous results,
+        and aggregate outputs accordingly. Empty list `line_results` and `aggr_result` is passed to ensure
+        their current state can be retrieved when batch run is canceled.
+
+        :param batch_inputs: A list of dictionaries representing the inputs for all lines of the batch.
+        :type batch_inputs: List[Mapping[str, Any]]
+        :param run_id: An optional unique identifier for the run. If not provided, a new UUID will be generated.
+        :type run_id: Optional[str]
+        :param output_dir: An optional path to a directory where outputs will be persisted.
+        :type output_dir: Optional[Path]
+        :param raise_on_line_failure: A flag indicating whether to raise an exception on individual line failures.
+        :type raise_on_line_failure: bool
+        :param previous_line_results: An optional list of previous line results to resume from.
+        :type previous_line_results: Optional[List[~promptflow.executor._result.LineResult]]
+        :param line_results: An output parameter to be populated with the results of processing all lines in the batch.
+        :type line_results: List[~promptflow.executor._result.LineResult]
+        :param aggr_result: An output parameter to be populated with the aggregated results of all lines in the batch.
+        :type aggr_result: ~promptflow.executor._result.AggregationResult
+        :return: A `BatchResult` object containing information about the execution of the batch.
+        :rtype: ~promptflow.batch._result.BatchResult
+        """
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
