@@ -36,6 +36,7 @@ from promptflow._utils.utils import (
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
@@ -46,6 +47,7 @@ from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
+from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 
 DEFAULT_CONCURRENCY = 10
 
@@ -99,15 +101,18 @@ class BatchEngine:
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
+        
         self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-
-        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
+        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else None
+        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() if flow_file is not None else (None, None)
 
         # TODO: why self._flow is not initialized for eager flow?
-        if not self._is_eager_flow:
+        if not flow_file and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+
+        self._chat_group_roles = chat_group_roles
+        self._max_turn = max_turn
 
         self._connections = connections
         self._storage = storage
@@ -172,6 +177,8 @@ class BatchEngine:
                     storage=self._storage,
                     language=self._program_language,
                     **self._kwargs,
+                    chat_group_roles = self._chat_group_roles,
+                    max_turn = self._max_turn,
                 )
                 try:
                     # register signal handler for python flow in the main thread
@@ -445,8 +452,17 @@ class BatchEngine:
     ) -> List[LineResult]:
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
+
+        chat_group_orchestrator = None
+        if self._chat_group_roles is not None:
+            chat_group_orchestrator = ChatGroupOrchestrator(
+                self._chat_group_roles,
+                run_id,
+                self._max_turn
+            )
+
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
+            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id, chat_group_orchestrator))
             for i, line_inputs in enumerate(batch_inputs)
         ]
 
@@ -472,9 +488,10 @@ class BatchEngine:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
+        orchestrator: Optional[ChatGroupOrchestrator] = None,
     ):
         async with semaphore:
-            return await self._executor_proxy.exec_line_async(inputs, index, run_id)
+            return await self._executor_proxy.exec_line_async(inputs, index, run_id, orchestrator)
 
     async def _exec_aggregation(
         self,

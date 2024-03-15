@@ -9,16 +9,15 @@ from promptflow.executor._result import LineResult
 class ChatGroupOrchestrator:
     def __init__(
         self,
-        input_dirs: Dict[str, str],
-        output_dir: Path,
         chat_group_roles: List[ChatGroupRole],
         run_id: Optional[str] = None,
+        max_turn: Optional[int] = None,
         **kwargs
     ):
-        self._input_dirs = input_dirs
-        self._output_dir = output_dir
-        self._chat_groups = run_id
+        self._run_id = run_id
+        self._max_turn = max_turn
         self._chat_group_roles = chat_group_roles
+
         self._kwargs = kwargs
         self._executor_proxies = self._create_executor_proxy()
 
@@ -28,30 +27,28 @@ class ChatGroupOrchestrator:
     
     def _schedule_runs(
             self,
-            semaphore,
-            line_results: List[LineResult],
             line_index: int = None,
             inputs: Mapping[str, Any] = None,
             run_id: Optional[str] = None,
-            max_turn: Optional[int] = None,
             **kwargs
             ) -> LineResult:
 
         """schedule runs for a line, submit roleA and format its output as roleB's input.
         Then submit roleB until the max_turn.
         """
-        pass
-
-    async def _exec_line_under_semaphore(
-        self,
-        semaphore,
-        inputs: Mapping[str, Any],
-        flow_index: int,
-        line_index: Optional[int] = None,
-        run_id: Optional[str] = None,
-        **kwargs
-    ) -> LineResult:
-        pass
+        total_roles = len(self._chat_group_roles)
+        conversation_history = []
+        for turn in range(self._max_turn):
+            role_index = turn % total_roles
+            executor_proxy = self._executor_proxies[role_index]
+            # resolve current input
+            line_result = executor_proxy.exec_line_async(inputs, line_index, run_id)
+            conversation_history = self._process_flow_outputs(line_result, conversation_history)
+            
+        return line_result # or latest conversation_history?
         
     def _check_language_from_yaml(flow: ChatGroupRole):
+        pass
+
+    def _process_flow_outputs(self, line_results: LineResult, conversation_history):
         pass
