@@ -439,10 +439,8 @@ class AssetType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DATASET = "Dataset"
     DATA_STORE = "DataStore"
     SAMPLE_GRAPH = "SampleGraph"
-    FLOW_TOOL = "FlowTool"
     FLOW_TOOL_SETTING = "FlowToolSetting"
     FLOW_CONNECTION = "FlowConnection"
-    FLOW_SAMPLE = "FlowSample"
     FLOW_RUNTIME_SPEC = "FlowRuntimeSpec"
 
 class AutoDeleteCondition(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
@@ -856,6 +854,16 @@ class ExecutionPhase(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     EXECUTION = "Execution"
     INITIALIZATION = "Initialization"
     FINALIZATION = "Finalization"
+
+class ExperimentDefinitionSourceType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    DATA_URI = "DataUri"
+    DEFINITION = "Definition"
+
+class ExperimentNodeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    FLOW = "Flow"
+    CHAT_GROUP = "ChatGroup"
 
 class FeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1699,6 +1707,7 @@ class ToolState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     STABLE = "Stable"
     PREVIEW = "Preview"
     DEPRECATED = "Deprecated"
+    ARCHIVED = "Archived"
 
 class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

@@ -5,7 +5,6 @@ from traceback import TracebackException
 import pytest
 
 from promptflow._core._errors import ToolExecutionError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import (
     ErrorResponse,
     ExceptionPresenter,
@@ -15,6 +14,7 @@ from promptflow._utils.exception_utils import (
     last_frame_info,
     remove_suffix,
 )
+from promptflow._version import VERSION
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -22,6 +22,7 @@ from promptflow.exceptions import (
     UserErrorException,
     ValidationException,
 )
+from promptflow.tracing._operation_context import OperationContext
 
 
 def set_inner_exception_by_parameter():
@@ -331,6 +332,8 @@ class TestExceptionPresenter:
 @pytest.mark.unittest
 class TestErrorResponse:
     def test_from_error_dict(self):
+        OperationContext.get_instance().append_user_agent(f"promptflow/{VERSION}")
+
         error_dict = {
             "code": "UserError",
             "message": "Flow run failed.",
@@ -367,6 +370,8 @@ class TestErrorResponse:
         }
 
     def test_from_exception(self):
+        OperationContext.get_instance().append_user_agent(f"promptflow/{VERSION}")
+
         with pytest.raises(CustomizedException) as e:
             raise_general_exception()
 
