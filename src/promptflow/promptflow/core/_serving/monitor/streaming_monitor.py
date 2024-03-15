@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._sdk._serving.utils import get_cost_up_to_now
-from promptflow._sdk._serving.monitor.metrics import ResponseType
+from promptflow.core._serving.monitor.metrics import ResponseType
+from promptflow.core._serving.utils import get_cost_up_to_now
 
 
 class StreamingMonitor:

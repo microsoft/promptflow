@@ -10,7 +10,7 @@ from flask import Response, jsonify
 from werkzeug.datastructures import MIMEAccept
 
 from promptflow._constants import DEFAULT_OUTPUT_NAME
-from promptflow._sdk._serving._errors import MultipleStreamOutputFieldsNotSupported, NotAcceptable
+from promptflow.core._serving._errors import MultipleStreamOutputFieldsNotSupported, NotAcceptable
 
 
 class ResponseCreator:

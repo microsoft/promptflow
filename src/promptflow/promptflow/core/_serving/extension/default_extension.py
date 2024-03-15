@@ -10,14 +10,14 @@ from typing import Tuple
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
-from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
-from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
-from promptflow._sdk._serving.extension.extension_type import ExtensionType
-from promptflow._sdk._serving.extension.otel_exporter_provider_factory import OTelExporterProviderFactory
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
+from promptflow.core._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
+from promptflow.core._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
+from promptflow.core._serving.extension.extension_type import ExtensionType
+from promptflow.core._serving.extension.otel_exporter_provider_factory import OTelExporterProviderFactory
+from promptflow.core._serving.monitor.flow_monitor import FlowMonitor
 
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 DEFAULT_STATIC_PATH = Path(__file__).parent.parent / "static"
@@ -90,7 +90,9 @@ class AppExtension(ABC):
         custom_dimensions = self.get_metrics_common_dimensions()
         metric_exporters = OTelExporterProviderFactory.get_metrics_exporters(self.logger, self.extension_type)
         trace_exporters = OTelExporterProviderFactory.get_trace_exporters(self.logger, self.extension_type)
-        self.flow_monitor = FlowMonitor(self.logger, self.get_flow_name(), self.data_collector, custom_dimensions, metric_exporters, trace_exporters)  # noqa: E501
+        self.flow_monitor = FlowMonitor(
+            self.logger, self.get_flow_name(), self.data_collector, custom_dimensions, metric_exporters, trace_exporters
+        )  # noqa: E501
         return self.flow_monitor
 
     def _get_mlflow_project_path(self, project_path: str):

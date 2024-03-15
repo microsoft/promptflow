@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
-from promptflow._sdk._serving.flow_invoker import FlowInvoker
+from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
+from promptflow.core._serving.flow_invoker import FlowInvoker
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
