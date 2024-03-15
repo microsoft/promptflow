@@ -5,4 +5,4 @@ import importlib.metadata
 
 __version__ = importlib.metadata.version("promptflow-tracing")
 
-VERSION = __version__
+VERSION: str = __version__
