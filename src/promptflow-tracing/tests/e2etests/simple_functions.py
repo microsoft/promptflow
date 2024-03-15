@@ -4,7 +4,6 @@ from typing import Union
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
-from promptflow.contracts.types import PromptTemplate
 from promptflow.tracing import trace
 
 
@@ -50,13 +49,6 @@ async def dummy_llm_tasks_async(prompt: str, models: list):
         tasks.append(asyncio.create_task(dummy_llm(prompt, model)))
     done, _ = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
     return [task.result() for task in done]
-
-
-@trace
-def render_prompt_template(prompt: PromptTemplate, **kwargs):
-    for k, v in kwargs.items():
-        prompt = prompt.replace(f"{{{{{k}}}}}", str(v))
-    return prompt
 
 
 @trace
