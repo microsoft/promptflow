@@ -6,6 +6,7 @@
 import contextlib
 import hashlib
 import json
+import logging
 import os
 import platform
 import re
@@ -497,6 +498,13 @@ def _set_up_experiment_log_handler(experiment_path, index=None):
     :return: File handler, the number of attempt to execution experiment.
     :rtype: ~promptflow.utils.logger_utils.FileHandler, int
     """
+
+    class SkipLoggerFilter(logging.Filter):
+        # Skip pfs logs in experiment execution log.
+
+        def filter(self, record) -> bool:
+            return record.name != "promptflow._sdk._service.app"
+
     log_folder = Path(experiment_path) / "logs"
     log_folder.mkdir(exist_ok=True, parents=True)
     if index is None:
@@ -513,6 +521,7 @@ def _set_up_experiment_log_handler(experiment_path, index=None):
     log_path = Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
     logger.info(f"Experiment execution log records in {log_path}")
     file_handler = FileHandler(file_path=log_path)
+    file_handler._stream_handler.addFilter(SkipLoggerFilter())
     return file_handler, index
 
 
@@ -531,5 +540,6 @@ def _get_experiment_log_path(experiment_path, index=None):
                     # Skip logs that don't comply with naming rules.
                     pass
     return Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
+
 
 # endregion
