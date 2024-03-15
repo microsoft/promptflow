@@ -30,9 +30,10 @@ promptflow.tools.llm_vision_v2.llm_vision:
       - AzureOpenAIConnection
       capabilities:
         chat_completion: true
-      #   # add exclude/include because aoai supports custom models that we cannot limit by model names.
-      #   include_model_versions:
-      #   - vision-preview
+        # add exclude/include because aoai supports custom models that we cannot limit by model names.
+        include:
+          model_version:
+          - vision-preview
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
