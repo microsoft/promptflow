@@ -36,10 +36,9 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-Jinja2 = "*"
-openai = "*"
-opentelemetry-sdk = ">=1.22.0,<2.0.0"
-tiktoken = ">=0.4.0"
+openai = "*"  # API injector for OpenAI traces
+opentelemetry-sdk = ">=1.22.0,<2.0.0"  # Open Telemetry dependency
+tiktoken = ">=0.4.0"  # get OpenAI token count for streaming scenario
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
