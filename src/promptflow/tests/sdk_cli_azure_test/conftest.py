@@ -339,11 +339,11 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     """Mock PF Azure client to avoid network traffic during replay test."""
     if not is_live():
         mocker.patch(
-            "promptflow._cli._pf_azure._run._get_azure_pf_client",
+            "promptflow.azure._cli._pf_azure._run._get_azure_pf_client",
             return_value=remote_client,
         )
         mocker.patch(
-            "promptflow._cli._pf_azure._flow._get_azure_pf_client",
+            "promptflow.azure._cli._pf_azure._flow._get_azure_pf_client",
             return_value=remote_client,
         )
     yield

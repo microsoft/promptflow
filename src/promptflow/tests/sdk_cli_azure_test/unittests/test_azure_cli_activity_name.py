@@ -1,7 +1,7 @@
 import pytest
 
-from promptflow._cli._pf_azure.entry import get_parser_args
 from promptflow._cli._utils import _get_cli_activity_name
+from promptflow.azure._cli._pf_azure.entry import get_parser_args
 
 
 def get_cli_activity_name(cmd):

@@ -7,7 +7,7 @@ import time
 
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
 from promptflow._cli._user_agent import USER_AGENT
-from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli, cli_exception_and_telemetry_handler
+from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler, get_client_info_for_cli
 
 # Log the start time
 start_time = time.perf_counter()
@@ -17,14 +17,14 @@ import argparse  # noqa: E402
 import logging  # noqa: E402
 import sys  # noqa: E402
 
-from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
-from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
     print_pf_version,
     setup_user_agent_to_operation_context,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
+from promptflow.azure._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
+from promptflow.azure._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 
 # get logger for CLI
 logger = get_cli_sdk_logger()

@@ -20,7 +20,6 @@ from promptflow._cli._params import (
     base_params,
 )
 from promptflow._cli._pf._run import _parse_metadata_args, add_run_create_common, create_run
-from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
@@ -30,6 +29,7 @@ from promptflow._cli._utils import (
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, ListViewType
 from promptflow._sdk._errors import InvalidRunStatusError
 from promptflow._sdk._utils import print_red_error
+from promptflow.azure._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 
 

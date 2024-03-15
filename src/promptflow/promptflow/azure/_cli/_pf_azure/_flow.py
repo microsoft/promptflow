@@ -16,13 +16,13 @@ from promptflow._cli._params import (
     add_param_set,
     base_params,
 )
-from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
     activate_action,
 )
 from promptflow._sdk._constants import AzureFlowSource, get_list_view_type
+from promptflow.azure._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow.azure._entities._flow import Flow
 
 
