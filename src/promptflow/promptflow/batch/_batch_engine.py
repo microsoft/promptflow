@@ -22,6 +22,7 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
     set_batch_input_source_from_inputs_mapping,
 )
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow._utils.utils import (
@@ -479,6 +480,5 @@ class BatchEngine:
             return True, FlowLanguage.CSharp
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
-        is_eager_flow = "entry" in flow_dag
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
-        return is_eager_flow, language
+        return is_flex_flow(flow_dag), language

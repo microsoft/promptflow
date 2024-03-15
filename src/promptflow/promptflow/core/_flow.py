@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from promptflow._constants import DEFAULT_ENCODING
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.core._connection import _Connection
 from promptflow.core._utils import generate_flow_meta
@@ -157,12 +157,6 @@ class Flow(FlowBase):
         return cls(code=path.parent, path=path, dag=dag, **kwargs)
 
     @classmethod
-    def _is_eager_flow(cls, data: dict):
-        """Check if the flow is an non-dag flow. Use field 'entry' to determine."""
-        # If entry specified, it's an non-dag flow.
-        return data.get("entry")
-
-    @classmethod
     def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
         """Dispatch flow load to non-dag flow or async flow."""
         if is_eager_flow:
@@ -211,9 +205,8 @@ class Flow(FlowBase):
             flow_content = f.read()
             data = load_yaml_string(flow_content)
             content_hash = hash(flow_content)
-        is_eager_flow = cls._is_eager_flow(data)
         return cls._dispatch_flow_creation(
-            is_eager_flow, flow_path, data, content_hash, raise_error=raise_error, **kwargs
+            is_flex_flow(data), flow_path, data, content_hash, raise_error=raise_error, **kwargs
         )
 
     def _init_executable(self):
@@ -279,7 +272,7 @@ class FlexFlow(Flow):
         # entry function name
         self.entry = entry
         # entry file name
-        self.entry_file = self._resolve_entry_file(entry=entry, working_dir=code)
+        self.entry_file = resolve_entry_file(entry=entry, working_dir=code)
         # TODO(2910062): support non-dag flow execution cache
         super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
@@ -316,8 +309,7 @@ class FlexFlow(Flow):
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
             flow_content = f.read()
             data = load_yaml_string(flow_content)
-        is_eager_flow = cls._is_eager_flow(data)
-        if not is_eager_flow:
+        if not is_flex_flow(data):
             raise UserErrorException("Please load an non-dag flow with EagerFlow.load method.")
         return cls._load(path=flow_path, data=data, **kwargs)
 

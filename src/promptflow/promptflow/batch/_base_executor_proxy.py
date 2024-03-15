@@ -22,8 +22,10 @@ from promptflow._sdk._constants import (
 )
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -50,11 +52,7 @@ class AbstractExecutorProxy:
         load_in_subprocess: bool = True,
     ) -> dict:
         """Generate flow.tools.json for the specified flow."""
-        from promptflow import load_flow
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-
-        flow = load_flow(flow_file)
-        if isinstance(flow, FlexFlow):
+        if is_flex_flow(load_yaml(flow_file)):
             return {}
         else:
             return cls._generate_flow_tools_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
@@ -95,11 +93,7 @@ class AbstractExecutorProxy:
         :return: The metadata of the flow.
         :rtype: Dict[str, Any]
         """
-        from promptflow import load_flow
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-
-        flow = load_flow(flow_file)
-        if isinstance(flow, FlexFlow):
+        if is_flex_flow(load_yaml(flow_file)):
             return cls._generate_flow_json(flow_file, working_dir, dump, timeout, load_in_subprocess)
         else:
             return {}

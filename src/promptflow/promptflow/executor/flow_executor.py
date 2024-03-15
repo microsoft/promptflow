@@ -31,6 +31,7 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import (
     load_multimedia_data,
@@ -279,8 +280,7 @@ class FlowExecutor:
             flow_file = working_dir / flow_file if working_dir else flow_file
             with open(flow_file, "r", encoding="utf-8") as fin:
                 flow_dag = load_yaml(fin)
-            if "entry" in flow_dag:
-                return True
+            return is_flex_flow(flow_dag)
         return False
 
     @classmethod
@@ -665,9 +665,7 @@ class FlowExecutor:
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
-        results = self._exec(
-            inputs, run_id=run_id, line_number=line_number, validate_inputs=validate_inputs
-        )
+        results = self._exec(inputs, run_id=run_id, line_number=line_number, validate_inputs=validate_inputs)
         self._run_tracker._deactivate_in_context()
         self._processing_idx.pop(line_number)
         self._completed_idx[line_number] = thread_name

@@ -5,11 +5,12 @@ import hashlib
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -99,3 +100,26 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         dump_yaml(flow_dag, f)
     return flow_path
+
+
+def is_flex_flow(flow_dag: dict):
+    """Check if the flow is a flex flow."""
+    return isinstance(flow_dag, dict) and "entry" in flow_dag
+
+
+def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
+    """Resolve entry file from entry.
+    If entry is a local file, e.g. my.local.file:entry_function, return the local file: my/local/file.py
+        and executor will import it from local file.
+    Else, assume the entry is from a package e.g. external.module:entry, return None
+        and executor will try import it from package.
+    """
+    try:
+        entry_file = f'{entry.split(":")[0].replace(".", "/")}.py'
+    except Exception as e:
+        raise UserErrorException(f"Entry function {entry} is not valid: {e}")
+    entry_file = working_dir / entry_file
+    if entry_file.exists():
+        return entry_file.resolve().absolute().as_posix()
+    # when entry file not found in working directory, return None since it can come from package
+    return None

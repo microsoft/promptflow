@@ -8,9 +8,12 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.run_tracker import RunTracker
 from promptflow._sdk._constants import FLOW_META_JSON_GEN_TIMEOUT, FLOW_TOOLS_JSON_GEN_TIMEOUT
+from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
+from promptflow.core._utils import generate_flow_meta
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._result import AggregationResult, LineResult
@@ -32,24 +35,16 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> Dict[str, Any]:
-        from promptflow import load_flow
-        from promptflow._sdk._utils import generate_flow_meta
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-
-        flow = load_flow(flow_file)
-        if isinstance(flow, FlexFlow):
-            # generate flow.json only for eager flow for now
-            return generate_flow_meta(
-                flow_directory=working_dir,
-                source_path=flow.entry_file,
-                entry=flow.entry,
-                dump=dump,
-                timeout=timeout,
-                load_in_subprocess=load_in_subprocess,
-            )
-        else:
-            # we will also skip dump for now
-            return {}
+        flow_dag = load_yaml(flow_file)
+        # generate flow.json only for eager flow for now
+        return generate_flow_meta(
+            flow_directory=working_dir,
+            source_path=resolve_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
+            entry=flow_dag.get("entry"),
+            dump=dump,
+            timeout=timeout,
+            load_in_subprocess=load_in_subprocess,
+        )
 
     @classmethod
     async def create(
