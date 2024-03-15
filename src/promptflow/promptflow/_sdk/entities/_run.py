@@ -750,9 +750,9 @@ class Run(YAMLTranslatableMixin):
 
         from promptflow import load_flow
         from promptflow._constants import FlowType
-        from promptflow._sdk.entities._eager_flow import EagerFlow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
 
         flow_obj = load_flow(source=self.flow)
-        if isinstance(flow_obj, EagerFlow):
+        if isinstance(flow_obj, FlexFlow):
             return FlowType.FLEX_FLOW
         return FlowType.DAG_FLOW
