@@ -5,23 +5,27 @@
 import os
 import re
 from io import open
-from typing import Any, Match, cast
+from typing import Any, List, Match, cast
 
-import pkg_resources
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
-# Change the PACKAGE_NAME only to change folder and different name
 PACKAGE_NAME = "promptflow-evals"
-PACKAGE_PPRINT_NAME = "PromptFlow Evaluation SDK"
+PACKAGE_FOLDER_PATH = "promptflow"
 
-# a-b-c => a/b/c
-PACKAGE_FOLDER_PATH = PACKAGE_NAME.replace("-", "/")
-# a-b-c => a.b.c
-NAMESPACE_NAME = PACKAGE_NAME.replace("-", ".")
+
+def parse_requirements(file_name: str) -> List[str]:
+    with open(file_name) as f:
+        return [
+            require.strip() for require in f
+            if require.strip() and not require.startswith('#')
+        ]
+
 
 # Version extraction inspired from 'requests'
-with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), "r") as fd:
-    version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE)).group(1)
+with open(os.path.join(PACKAGE_FOLDER_PATH, "version.txt"), "r") as fd:
+    version_content = fd.read()
+    print(version_content)
+    version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', version_content, re.MULTILINE)).group(1)
 if not version:
     raise RuntimeError("Cannot find version information")
 
@@ -33,13 +37,13 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 setup(
     name=PACKAGE_NAME,
     version=version,
-    description="Microsoft Azure {} Client Library for Python".format(PACKAGE_PPRINT_NAME),
+    description="Prompt flow evaluation",
     long_description_content_type="text/markdown",
     long_description=readme + "\n\n" + changelog,
     license="MIT License",
     author="Microsoft Corporation",
-    author_email="azuresdkengsysadmins@microsoft.com",
-    url="https://github.com/Azure/azure-sdk-for-python",
+    author_email="aml-pt-eng@microsoft.com",
+    url="https://github.com/microsoft/promptflow",
     keywords="azure, azuresdk, azure sdk",
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -50,26 +54,20 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.12",
     ],
-    zip_safe=False,
-    include_package_data=True,
-    packages=find_packages(
-        exclude=[
-            "tests",
-            "samples",
-        ]
-    ),
     python_requires="<4.0,>=3.8",
-    install_requires=[
-        # NOTE: To avoid breaking changes in a major version bump, all dependencies should pin an upper bound if possible.
-        "azure-ai-ml>=1.14.0",
-        "promptflow>=1.6.0",
-        "promptflow-tools>=1.3.0",
-    ],
+    install_requires=parse_requirements('requirements.txt'),
+    extras_require={
+        "simulator": [
+            # Dependency to list deployment in aoai_gpt4v
+        ]
+    },
+    packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
+    include_package_data=True,
     project_urls={
-        "Bug Reports": "https://github.com/Azure/azure-sdk-for-python/issues",
-        "Source": "https://github.com/Azure/azure-sdk-for-python",
-    }
+        "Bug Reports": "https://github.com/microsoft/promptflow/issues",
+        "Source": "https://github.com/microsoft/promptflow",
+    },
 )
