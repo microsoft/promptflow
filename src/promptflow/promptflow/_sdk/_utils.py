@@ -75,6 +75,7 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.tracing._operation_context import OperationContext
 
 logger = get_cli_sdk_logger()
 
@@ -759,14 +760,10 @@ class ClientUserAgentUtil:
 
     @classmethod
     def _get_context(cls):
-        from promptflow._core.operation_context import OperationContext
-
         return OperationContext.get_instance()
 
     @classmethod
     def get_user_agent(cls):
-        from promptflow._core.operation_context import OperationContext
-
         context = cls._get_context()
         # directly get from context since client side won't need promptflow/xxx.
         return context.get(OperationContext.USER_AGENT_KEY, "").strip()
