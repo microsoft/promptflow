@@ -97,7 +97,7 @@ class TestExecutor:
         from promptflow._utils.logger_utils import flow_logger
 
         flow_logger.addHandler(logging.StreamHandler(sys.stdout))
-        os.environ["PF_TASK_PEEKING_INTERVAL"] = "1"
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "1"
 
         executor = FlowExecutor.create(get_yaml_file("async_tools"), dev_connections)
         executor.exec_line(self.get_line_inputs())
@@ -111,7 +111,7 @@ class TestExecutor:
             expected_long_running_str_2, captured.out, re.DOTALL
         ), "flow_logger should contain long running async tool log"
         flow_logger.handlers.pop()
-        os.environ.pop("PF_TASK_PEEKING_INTERVAL")
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",

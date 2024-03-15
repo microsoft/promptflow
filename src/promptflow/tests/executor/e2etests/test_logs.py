@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -152,6 +153,7 @@ class TestExecutorLogs:
             assert all(node_log in log_content for node_log in node_logs_list)
 
     def test_long_run_log(self):
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "60"
         executor = FlowExecutor.create(get_yaml_file("long_run"), {})
         file_path = Path(mkdtemp()) / "flow.log"
         with LogContext(file_path):
@@ -165,6 +167,7 @@ class TestExecutorLogs:
             "INFO     Start executing nodes in thread pool mode.",
             "INFO     Start to run 1 nodes with concurrency level 16.",
             "INFO     Executing node long_run_node.",
+            "INFO     Using value of PF_LONG_RUNNING_LOGGING_INTERVAL in environment variable",
             "WARNING  long_run_node in line 0 has been running for 60 seconds, stacktrace of thread",
             "in wrapped",
             "output = func(*args, **kwargs)",
@@ -180,6 +183,7 @@ class TestExecutorLogs:
         assert len(lines) == len(target_texts), msg
         for actual, expected in zip(lines, target_texts):
             assert expected in actual, f"Expected {expected} in {actual}"
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping",

@@ -6,6 +6,7 @@ import asyncio
 import functools
 import inspect
 import logging
+import os
 import threading
 import time
 import uuid
@@ -25,6 +26,9 @@ from promptflow.tracing._tracer import Tracer
 
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
+
+DEFAULT_LONG_RUNNING_LOGGING_INTERVAL = 60
+PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
 
 
 class FlowExecutionContext(ThreadLocalSingleton):
@@ -82,7 +86,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
-                result = self._invoke_tool_with_timer(node, f, kwargs)
+                result = self._invoke_tool_inner(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
@@ -166,23 +170,25 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node.name, module=module) from e
 
-    def _invoke_tool_with_timer(self, node: Node, f: Callable, kwargs):
+    def _invoke_tool_inner(self, node: Node, f: Callable, kwargs):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         node_name = node.name
         try:
-            logging_name = node_name
-            if self._line_number is not None:
-                logging_name = f"{node_name} in line {self._line_number}"
-            interval_seconds = 60
-            start_time = time.perf_counter()
-            thread_id = threading.current_thread().ident
-            with RepeatLogTimer(
-                interval_seconds=interval_seconds,
-                logger=logger,
-                level=WARNING,
-                log_message_function=generate_elapsed_time_messages,
-                args=(logging_name, start_time, interval_seconds, thread_id),
-            ):
+            if (interval:=self._try_get_long_running_logging_interval()) is not None:
+                logging_name = node_name
+                if self._line_number is not None:
+                    logging_name = f"{node_name} in line {self._line_number}"
+                start_time = time.perf_counter()
+                thread_id = threading.current_thread().ident
+                with RepeatLogTimer(
+                    interval_seconds=interval,
+                    logger=logger,
+                    level=WARNING,
+                    log_message_function=generate_elapsed_time_messages,
+                    args=(logging_name, start_time, interval, thread_id),
+                ):
+                    return f(**kwargs)
+            else:
                 return f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
@@ -195,6 +201,27 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # For these cases, raise ToolExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node_name, module=module) from e
+
+    def _try_get_long_running_logging_interval(self):
+        logging_interval_in_env = os.environ.get(PF_LONG_RUNNING_LOGGING_INTERVAL, None)
+        if logging_interval_in_env:
+            try:
+                value = int(logging_interval_in_env)
+                if value <= 0:
+                    raise ValueError
+                flow_logger.info(
+                    f"Using value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable as "
+                    f"logging interval: {logging_interval_in_env}"
+                )
+                return value
+            except ValueError:
+                flow_logger.warning(
+                    f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable ('{logging_interval_in_env}') "
+                    f"is invalid, use default value {DEFAULT_LONG_RUNNING_LOGGING_INTERVAL}"
+                )
+                return DEFAULT_LONG_RUNNING_LOGGING_INTERVAL
+        # If the environment variable is not set, return none to disable the long running logging
+        return None
 
     def bypass_node(self, node: Node):
         """Update teh bypassed node run info."""
