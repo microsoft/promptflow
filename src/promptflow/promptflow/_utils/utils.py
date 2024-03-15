@@ -398,7 +398,7 @@ def prepare_folder(path: Union[str, Path]) -> Path:
     return path
 
 
-def try_get_long_running_logging_interval(logger, default_interval):
+def try_get_long_running_logging_interval(logger: logging.Logger, default_interval: int):
     logging_interval_in_env = os.environ.get(PF_LONG_RUNNING_LOGGING_INTERVAL, None)
     if logging_interval_in_env:
         try:
