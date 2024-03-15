@@ -39,7 +39,7 @@ from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
-from promptflow.contracts.flow import Flow
+from promptflow.contracts.flow import Flow, ChatGroupRole
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
@@ -76,6 +76,8 @@ class BatchEngine:
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
+        chat_group_roles: Optional[List[ChatGroupRole]] = None,
+        max_turn: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
