@@ -18,13 +18,12 @@ from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.thread_utils import ThreadWithContextVars
-from promptflow._utils.utils import extract_user_frame_summaries, set_context
+from promptflow._utils.utils import extract_user_frame_summaries, set_context, try_get_long_running_logging_interval
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
 
 PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
-PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
 DEFAULT_TASK_LOGGING_INTERVAL = 60
 ASYNC_DAG_MANAGER_COMPLETED = False
 
@@ -59,7 +58,7 @@ class AsyncNodesScheduler:
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
         self._semaphore = asyncio.Semaphore(self._node_concurrency)
-        if (interval := self._try_get_long_running_logging_interval()) is not None:
+        if (interval := try_get_long_running_logging_interval(flow_logger, DEFAULT_TASK_LOGGING_INTERVAL)) is not None:
             monitor = ThreadWithContextVars(
                 target=monitor_long_running_coroutine,
                 args=(
@@ -171,27 +170,6 @@ class AsyncNodesScheduler:
     ):
         # The task will not be executed before calling create_task.
         return await asyncio.get_running_loop().run_in_executor(executor, context.invoke_tool, node, f, kwargs)
-
-    def _try_get_long_running_logging_interval(self):
-        logging_interval_in_env = os.environ.get(PF_LONG_RUNNING_LOGGING_INTERVAL, None)
-        if logging_interval_in_env:
-            try:
-                value = int(logging_interval_in_env)
-                if value <= 0:
-                    raise ValueError
-                flow_logger.info(
-                    f"Using value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable as "
-                    f"logging interval: {logging_interval_in_env}"
-                )
-                return value
-            except ValueError:
-                flow_logger.warning(
-                    f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable "
-                    f"('{logging_interval_in_env}') is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
-                )
-                return DEFAULT_TASK_LOGGING_INTERVAL
-        # If the environment variable is not set, return none to disable the long running logging
-        return None
 
 
 def signal_handler(sig, frame):
