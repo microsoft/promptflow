@@ -1,6 +1,7 @@
 import json
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client
+    validate_functions, process_function_call, post_process_chat_api_response, init_azure_openai_client, \
+    init_async_azure_openai_client, post_process_async_chat_api_response
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -14,6 +15,7 @@ class AzureOpenAI(ToolProvider):
         super().__init__()
         self.connection = connection
         self._client = init_azure_openai_client(connection)
+        self._async_client = init_async_azure_openai_client(connection)
 
     def calculate_cache_string_for_completion(
         self,
@@ -77,7 +79,6 @@ class AzureOpenAI(ToolProvider):
             logit_bias=logit_bias if logit_bias else {},
             user=user,
             extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"})
-
         if stream:
             def generator():
                 for chunk in response:
@@ -117,46 +118,182 @@ class AzureOpenAI(ToolProvider):
         seed: int = None,
         **kwargs,
     ) -> [str, dict]:
-        # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
-        chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
-        messages = parse_chat(chat_str)
-        # TODO: remove below type conversion after client can pass json rather than string.
-        stream = to_bool(stream)
-        params = {
-            "model": deployment_name,
-            "messages": messages,
-            "temperature": float(temperature),
-            "top_p": float(top_p),
-            "n": int(n),
-            "stream": stream,
-            "presence_penalty": float(presence_penalty),
-            "frequency_penalty": float(frequency_penalty),
-            "user": user,
-            "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
-        }
-        if functions is not None:
-            validate_functions(functions)
-            params["functions"] = functions
-            params["function_call"] = process_function_call(function_call)
-
-        # to avoid vision model validation error for empty param values.
-        if stop:
-            params["stop"] = stop
-        if max_tokens is not None and str(max_tokens).lower() != "inf":
-            params["max_tokens"] = int(max_tokens)
-        if logit_bias:
-            params["logit_bias"] = logit_bias
-        if response_format:
-            params["response_format"] = response_format
-        if seed is not None:
-            params["seed"] = seed
-
+        params = self.prepare_params(
+            prompt=prompt,
+            deployment_name=deployment_name,
+            temperature=temperature,
+            top_p=top_p,
+            n=n,
+            stream=stream,
+            stop=stop,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            user=user,
+            function_call=function_call,
+            functions=functions,
+            response_format=response_format,
+            seed=seed,
+            **kwargs,
+        )
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions)
+
+    @tool
+    async def chat_async(
+        self,
+        prompt: PromptTemplate,
+        # for AOAI, deployment name is customized by user, not model name.
+        deployment_name: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        n: int = 1,
+        # stream is a hidden to the end user, it is only supposed to be set by the executor.
+        stream: bool = False,
+        stop: list = None,
+        max_tokens: int = None,
+        presence_penalty: float = 0,
+        frequency_penalty: float = 0,
+        logit_bias: dict = {},
+        user: str = "",
+        # function_call can be of type str or dict.
+        function_call: object = None,
+        functions: list = None,
+        response_format: object = None,
+        seed: int = None,
+        **kwargs,
+    ):
+        return await _chat_async_impl(
+            self._async_client,
+            prompt=prompt,
+            deployment_name=deployment_name,
+            temperature=temperature,
+            top_p=top_p,
+            n=n,
+            stream=stream,
+            stop=stop,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            user=user,
+            function_call=function_call,
+            functions=functions,
+            response_format=response_format,
+            seed=seed,
+            **kwargs,
+        )
+
+def prepare_params(
+    prompt: PromptTemplate,
+    # for AOAI, deployment name is customized by user, not model name.
+    deployment_name: str,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    n: int = 1,
+    # stream is a hidden to the end user, it is only supposed to be set by the executor.
+    stream: bool = False,
+    stop: list = None,
+    max_tokens: int = None,
+    presence_penalty: float = 0,
+    frequency_penalty: float = 0,
+    logit_bias: dict = {},
+    user: str = "",
+    # function_call can be of type str or dict.
+    function_call: object = None,
+    functions: list = None,
+    response_format: object = None,
+    seed: int = None,
+    **kwargs,
+)
+    # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
+    chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
+    messages = parse_chat(chat_str)
+    # TODO: remove below type conversion after client can pass json rather than string.
+    stream = to_bool(stream)
+    params = {
+        "model": deployment_name,
+        "messages": messages,
+        "temperature": float(temperature),
+        "top_p": float(top_p),
+        "n": int(n),
+        "stream": stream,
+        "presence_penalty": float(presence_penalty),
+        "frequency_penalty": float(frequency_penalty),
+        "user": user,
+        "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
+    }
+    if functions is not None:
+        validate_functions(functions)
+        params["functions"] = functions
+        params["function_call"] = process_function_call(function_call)
+
+    # to avoid vision model validation error for empty param values.
+    if stop:
+        params["stop"] = stop
+    if max_tokens is not None and str(max_tokens).lower() != "inf":
+        params["max_tokens"] = int(max_tokens)
+    if logit_bias:
+        params["logit_bias"] = logit_bias
+    if response_format:
+        params["response_format"] = response_format
+    if seed is not None:
+        params["seed"] = seed
+    return params
 
 
 register_apis(AzureOpenAI)
 
+async def _chat_async_impl(async_client, **kwargs):
+    params = prepare_params(**kwargs)
+    completion = await async_client.chat.completions.create(**params)
+    return post_process_async_chat_api_response(completion, kwargs["functions"])
+
+@tool
+async def chat_async(
+    conn: AzureOpenAIConnection,
+    prompt: PromptTemplate,
+    # for AOAI, deployment name is customized by user, not model name.
+    deployment_name: str,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    n: int = 1,
+    # stream is a hidden to the end user, it is only supposed to be set by the executor.
+    stream: bool = False,
+    stop: list = None,
+    max_tokens: int = None,
+    presence_penalty: float = 0,
+    frequency_penalty: float = 0,
+    logit_bias: dict = {},
+    user: str = "",
+    # function_call can be of type str or dict.
+    function_call: object = None,
+    functions: list = None,
+    response_format: object = None,
+    seed: int = None,
+    **kwargs,
+):
+    return await _chat_async_impl(
+        init_async_azure_openai_client(conn),
+        prompt=prompt,
+        deployment_name=deployment_name,
+        temperature=temperature,
+        top_p=top_p,
+        n=n,
+        stream=stream,
+        stop=stop,
+        max_tokens=max_tokens,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
+        logit_bias=logit_bias,
+        user=user,
+        function_call=function_call,
+        functions=functions,
+        response_format=response_format,
+        seed=seed,
+        **kwargs,
+    )
 
 @tool
 def completion(
