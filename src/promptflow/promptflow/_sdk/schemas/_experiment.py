@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from marshmallow import fields, post_load, pre_load
+from marshmallow import ValidationError, fields, post_load, pre_load
 
 from promptflow._sdk._constants import ExperimentNodeType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
@@ -63,6 +63,23 @@ class ChatGroupSchema(YamlFileSchema):
     stop_signal = fields.Str()
     roles = fields.List(NestedField(ChatRoleSchema))
 
+    @post_load
+    def _validate_roles(self, data, **kwargs):
+        from collections import Counter
+
+        roles = data.get("roles", [])
+        if not roles:
+            raise ValidationError("Chat group should have at least one role.")
+
+        # check if there is duplicate role name
+        role_names = [role["role"] for role in roles]
+        if len(role_names) != len(set(role_names)):
+            counter = Counter(role_names)
+            duplicate_roles = [role for role in counter if counter[role] > 1]
+            raise ValidationError(f"Duplicate roles are not allowed: {duplicate_roles!r}.")
+
+        return data
+
 
 class ExperimentDataSchema(metaclass=PatchedSchemaMeta):
     name = fields.Str(required=True)
@@ -92,7 +109,7 @@ class ExperimentTemplateSchema(YamlFileSchema):
 
     @post_load
     def resolve_nodes(self, data, **kwargs):
-        from promptflow._sdk.entities._experiment import CommandNode, FlowNode
+        from promptflow._sdk.entities._experiment import ChatGroupNode, CommandNode, FlowNode
 
         nodes = data.get("nodes", [])
         resolved_nodes = []
@@ -105,6 +122,10 @@ class ExperimentTemplateSchema(YamlFileSchema):
             elif node_type == ExperimentNodeType.COMMAND:
                 resolved_nodes.append(
                     CommandNode._load_from_dict(data=node, context=self.context, additional_message="")
+                )
+            elif node_type == ExperimentNodeType.CHAT_GROUP:
+                resolved_nodes.append(
+                    ChatGroupNode._load_from_dict(data=node, context=self.context, additional_message="")
                 )
             else:
                 raise ValueError(f"Unknown node type {node_type} for node {node}.")

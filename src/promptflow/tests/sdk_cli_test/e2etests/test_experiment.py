@@ -306,3 +306,9 @@ class TestExperiment:
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_with_chat_group(self, pf: PFClient):
+        experiement_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        experiment = _load_experiment(experiement_path)
+        assert experiment

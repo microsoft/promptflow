@@ -27,6 +27,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._experiment import (
+    ChatGroupSchema,
     CommandNodeSchema,
     ExperimentDataSchema,
     ExperimentInputSchema,
@@ -186,6 +187,46 @@ class CommandNode(YAMLTranslatableMixin):
             shutil.copy(src=self.code, dst=saved_path)
         logger.debug(f"Command node source saved to {saved_path}.")
         self.code = saved_path.resolve().absolute().as_posix()
+
+
+class ChatGroupNode(YAMLTranslatableMixin):
+    def __init__(
+        self,
+        name,
+        roles: List[Dict[str, Any]],
+        max_turns: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        max_time: Optional[int] = None,
+        stop_signal: Optional[str] = None,
+        **kwargs,
+    ):
+        self.type = ExperimentNodeType.CHAT_GROUP
+        self.name = name
+        self.roles = roles
+        self.max_turns = max_turns
+        self.max_tokens = max_tokens
+        self.max_time = max_time
+        self.stop_signal = stop_signal
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ChatGroupSchema
+
+    def _save_snapshot(self, target):
+        """Save chat group source to experiment snapshot."""
+        target = Path(target).resolve()
+        logger.debug(f"Saving chat group node {self.name!r} snapshot to {target.as_posix()!r}.")
+        saved_path = target / self.name
+        saved_path.mkdir(parents=True, exist_ok=True)
+        for role in self.roles:
+            role_path = Path(role["path"]).resolve()
+            if not role_path.exists():
+                raise ExperimentValueError(f"Chat role path {role_path.as_posix()!r} does not exist.")
+
+            if role_path.is_dir():
+                shutil.copytree(src=role_path, dst=saved_path / role["role"])
+            else:
+                shutil.copytree(src=role_path.parent, dst=saved_path / role["role"])
 
 
 class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
