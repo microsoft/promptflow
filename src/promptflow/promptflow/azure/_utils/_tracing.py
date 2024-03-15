@@ -25,14 +25,8 @@ def _get_credential() -> typing.Union[AzureCliCredential, DefaultAzureCredential
         return DefaultAzureCredential()
 
 
-def _create_trace_provider_value_user_error(
-    message: str, no_personal_data_message: typing.Optional[str] = None
-) -> UserErrorException:
-    return UserErrorException(
-        message=message,
-        target=ErrorTarget.CONTROL_PLANE_SDK,
-        no_personal_data_message=no_personal_data_message,
-    )
+def _create_trace_provider_value_user_error(message: str) -> UserErrorException:
+    return UserErrorException(message=message, target=ErrorTarget.CONTROL_PLANE_SDK)
 
 
 def validate_trace_provider(value: str) -> None:
@@ -46,12 +40,7 @@ def validate_trace_provider(value: str) -> None:
     try:
         workspace_triad = extract_workspace_triad_from_trace_provider(value)
     except ValueError as e:
-        no_personal_data_msg = (
-            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
-            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
-            "workspaces/<workspace_name>"
-        )
-        raise _create_trace_provider_value_user_error(str(e), no_personal_data_msg)
+        raise _create_trace_provider_value_user_error(str(e))
 
     # the workspace exists
     ml_client = MLClient(
@@ -63,8 +52,7 @@ def validate_trace_provider(value: str) -> None:
     try:
         ml_client.workspaces.get(name=workspace_triad.workspace_name)
     except ResourceNotFoundError as e:
-        no_personal_data_msg = "The workspace resource was not found."
-        raise _create_trace_provider_value_user_error(str(e), no_personal_data_msg)
+        raise _create_trace_provider_value_user_error(str(e))
 
     # the workspace Cosmos DB is initialized
     # call PFS API to try to retrieve the token
@@ -81,5 +69,4 @@ def validate_trace_provider(value: str) -> None:
             f"Please open the following link to manually initialize it: {ws_tracing_url}; "
             "when it's done, retry the command to set the trace provider again."
         )
-        no_personal_data_message = "The Cosmos DB was not found."
-        raise _create_trace_provider_value_user_error(msg, no_personal_data_message)
+        raise _create_trace_provider_value_user_error(msg)
