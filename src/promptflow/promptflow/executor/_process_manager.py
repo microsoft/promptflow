@@ -12,7 +12,6 @@ from typing import Dict, List
 import psutil
 
 from promptflow._constants import ProcessPoolConstants
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import (
@@ -23,6 +22,7 @@ from promptflow.executor._errors import (
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 
 @dataclass

@@ -31,7 +31,13 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
+from promptflow._constants import (
+    ENABLE_MULTI_CONTAINER_KEY,
+    EXTENSION_UA,
+    PF_NO_INTERACTIVE_LOGIN,
+    PF_USER_AGENT,
+    USER_AGENT,
+)
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -69,6 +75,7 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.tracing._operation_context import OperationContext
 
 logger = get_cli_sdk_logger()
 
@@ -753,14 +760,10 @@ class ClientUserAgentUtil:
 
     @classmethod
     def _get_context(cls):
-        from promptflow._core.operation_context import OperationContext
-
         return OperationContext.get_instance()
 
     @classmethod
     def get_user_agent(cls):
-        from promptflow._core.operation_context import OperationContext
-
         context = cls._get_context()
         # directly get from context since client side won't need promptflow/xxx.
         return context.get(OperationContext.USER_AGENT_KEY, "").strip()
@@ -969,6 +972,12 @@ def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
 
     return CLI_UA in ClientUserAgentUtil.get_user_agent()
+
+
+def is_multi_container_enabled():
+    if ENABLE_MULTI_CONTAINER_KEY in os.environ:
+        return os.environ[ENABLE_MULTI_CONTAINER_KEY].lower() == "true"
+    return None
 
 
 def is_url(value: Union[PathLike, str]) -> bool:
