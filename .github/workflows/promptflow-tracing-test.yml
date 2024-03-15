@@ -57,7 +57,7 @@ jobs:
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: generate end-to-end test config from secret
-        run: echo "${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}" >> connections.json
+        run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: test
         run: poetry run pytest
