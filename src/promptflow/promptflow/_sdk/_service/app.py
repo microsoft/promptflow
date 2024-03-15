@@ -24,7 +24,7 @@ from promptflow._sdk._service.apis.line_run import api as line_run_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
-from promptflow._sdk._service.apis.ui import api as ui_api
+from promptflow._sdk._service.apis.ui import serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
     get_current_env_pfs_file,
@@ -55,6 +55,8 @@ def create_app():
     app.add_url_rule(
         "/v1/traces", view_func=lambda: trace_collector(get_created_by_info_with_cache, app.logger), methods=["POST"]
     )
+    app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
+    app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
 
@@ -65,7 +67,6 @@ def create_app():
         api.add_namespace(telemetry_api)
         api.add_namespace(span_api)
         api.add_namespace(line_run_api)
-        api.add_namespace(ui_api)
         app.register_blueprint(api_v1)
 
         # Disable flask-restx set X-Fields in header. https://flask-restx.readthedocs.io/en/latest/mask.html#usage
@@ -110,9 +111,9 @@ def create_app():
             else:
                 request_body = request.get_data()
 
+            app.logger.info("Request coming in: %s", request.url)
             app.logger.debug(
-                "Last request time: %s, Headers: %s, Body: %s",
-                app.config["last_request_time"],
+                "Headers: %s, Body: %s",
                 request.headers,
                 request_body,
             )
@@ -128,17 +129,21 @@ def create_app():
         # Start a monitor process using detach mode. It will stop pfs service if no request to pfs service in 1h in
         # python scenario. For C# scenario, pfs will live until the process is killed manually.
         def monitor_request():
-            while True:
-                time.sleep(PF_SERVICE_MONITOR_SECOND)
-                if "last_request_time" in app.config and datetime.now() - app.config["last_request_time"] > timedelta(
-                    hours=PF_SERVICE_HOUR_TIMEOUT
-                ):
-                    # Todo: check if we have any not complete work? like persist all traces.
-                    port = get_port_from_config()
-                    if port:
-                        app.logger.info(f"Try auto stop pfs service in port {port} since no request to app within 1h")
-                        kill_exist_service(port)
-                    break
+            with app.app_context():
+                while True:
+                    time.sleep(PF_SERVICE_MONITOR_SECOND)
+                    if "last_request_time" in app.config and datetime.now() - app.config[
+                        "last_request_time"
+                    ] > timedelta(hours=PF_SERVICE_HOUR_TIMEOUT):
+                        # Todo: check if we have any not complete work? like persist all traces.
+                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made 1h ago")
+                        port = get_port_from_config()
+                        if port:
+                            app.logger.info(
+                                f"Try auto stop pfs service in port {port} since no request to app within 1h"
+                            )
+                            kill_exist_service(port)
+                        break
 
         if not is_run_from_built_binary():
             monitor_thread = ThreadWithContextVars(target=monitor_request, daemon=True)

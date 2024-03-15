@@ -26,7 +26,9 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.entities._trace import Span
-from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ
+from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
+
+MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
 
 
 @pytest.fixture
@@ -54,7 +56,7 @@ def mock_resource() -> Dict:
 def mock_promptflow_service_invocation():
     """Mock `_invoke_pf_svc` as we don't expect to invoke PFS during unit test."""
     with mock.patch("promptflow._sdk._tracing._invoke_pf_svc") as mock_func:
-        mock_func.return_value = "23333"
+        mock_func.return_value = MOCK_PROMPTFLOW_SERVICE_PORT
         yield
 
 
@@ -146,3 +148,23 @@ class TestStartTrace:
             # lineage will be reset
             otel_attrs = op_ctx._get_otel_attributes()
             assert SpanAttributeFieldName.REFERENCED_LINE_RUN_ID not in otel_attrs
+
+    def test_setup_exporter_in_executor(self, monkeypatch: pytest.MonkeyPatch):
+        with monkeypatch.context() as m:
+            m.delenv(OTEL_EXPORTER_OTLP_ENDPOINT, raising=False)
+            setup_exporter_from_environ()
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            assert len(tracer_provider._active_span_processor._span_processors) == 0
+
+    def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+
+            start_trace()
+            setup_exporter_from_environ()
+            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            assert len(tracer_provider._active_span_processor._span_processors) == 1
+            assert (
+                tracer_provider._active_span_processor._span_processors[0].span_exporter._endpoint
+                == f"http://localhost:{MOCK_PROMPTFLOW_SERVICE_PORT}/v1/traces"
+            )

@@ -86,13 +86,13 @@ def _print_tracing_url_from_local(
     exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
-    url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    url = f"http://localhost:{pfs_port}/v1.0/ui/traces/"
     if run is not None:
-        url += f"?run={run}"
+        url += f"?#run={run}"
     elif exp is not None:
-        url += f"?experiment={exp}"
+        url += f"?#experiment={exp}"
     elif session_id is not None:
-        url += f"?session={session_id}"
+        url += f"?#session={session_id}"
     print(f"You can view the traces from local: {url}")
 
 
