@@ -18,7 +18,9 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, Serv
 def llm(
     connection: Union[AzureOpenAIConnection, OpenAIConnection, ServerlessConnection], 
     prompt: PromptTemplate,
-    api: str = "chat",
+    api_of_aoai: str = "chat",
+    api_of_oai: str = "chat",
+    api_of_serverless: str = "chat",
     deployment_name_of_chat: str = "",
     deployment_name_of_completion: str = "",
     model_of_chat: str = "",
@@ -42,10 +44,10 @@ def llm(
     # api = ""
     if isinstance(connection, AzureOpenAIConnection):
         client = AzureOpenAIClient(**normalize_connection_config(connection))
-        # api = api_of_aoai
+        api = api_of_aoai
     elif isinstance(connection, (OpenAIConnection, ServerlessConnection)):
         client = OpenAIClient(**normalize_connection_config(connection))
-        # api = api_of_oai if isinstance(connection, OpenAIConnection) else api_of_serverless
+        api = api_of_oai if isinstance(connection, OpenAIConnection) else api_of_serverless
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
