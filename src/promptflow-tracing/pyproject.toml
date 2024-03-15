@@ -36,9 +36,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
+Jinja2 = "*"
 openai = "*"
-tiktoken = ">=0.4.0"
 opentelemetry-sdk = ">=1.22.0,<2.0.0"
+tiktoken = ">=0.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
