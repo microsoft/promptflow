@@ -1,12 +1,39 @@
-# Basic standard flow
-A basic standard flow using code-first approach calls Azure OpenAI with connection info stored in environment variables.
+# Basic chat
+This example shows how to create a basic chat flow. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+
+Tools used in this flow：
+- `llm` tool
 
 ## Prerequisites
 
-Install promptflow sdk and other dependencies:
+Install promptflow sdk and other dependencies in this folder:
 ```bash
 pip install -r requirements.txt
 ```
+
+## What you will learn
+
+In this flow, you will learn
+- how to compose a chat flow.
+- prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
+See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
+    ```jinja
+    system:
+    You are a chatbot having a conversation with a human.
+
+    user:
+    {{question}}
+    ```
+- how to consume chat history in prompt.
+    ```jinja
+    {% for item in chat_history %}
+    user:
+    {{item.inputs.question}}
+    assistant:
+    {{item.outputs.answer}}
+    {% endfor %}
+    ```
+
 
 ## Run flow
 
@@ -21,19 +48,21 @@ cat .env
 ```
 
 - Test flow/node
+
 ```bash
-# test with default input value in flow.dag.yaml
+# run chat flow with default question in flow.dag.yaml
 pf flow test --flow .
 
-# test with flow inputs
-pf flow test --flow . --inputs text="Java Hello World!"
+# run chat flow with new question
+pf flow test --flow . --inputs question="What's Azure Machine Learning?"
 
+pf flow test --flow . --inputs question="What is ChatGPT? Please explain with consise statement."
 ```
 
 - Create run with multiple lines data
 ```bash
 # using environment from .env file (loaded in user code: hello.py)
-pf run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --stream
+pf run create --flow . --data ./data.jsonl --column-mapping question='${data.question}' --stream
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
@@ -81,7 +110,7 @@ pf flow test --flow . --environment-variables OPENAI_API_KEY='${open_ai_connecti
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping text='${data.text}'
+pf run create --flow . --data ./data.jsonl --stream --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping question='${data.question}'
 # create run using yaml file
 pf run create --file run.yml --stream
 
@@ -101,26 +130,6 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping text='${data.text}' --stream
+pfazure run create --flow . --data ./data.jsonl --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping question='${data.question}' --stream
 # run using yaml file
 pfazure run create --file run.yml --stream
-```
-
-- List and show run meta
-```bash
-# list created run
-pfazure run list -r 3
-
-# get a sample run name
-name=$(pfazure run list -r 100 | jq '.[] | select(.name | contains("basic_code_first")) | .name'| head -n 1 | tr -d '"')
-
-# show specific run detail
-pfazure run show --name $name
-
-# show output
-pfazure run show-details --name $name
-
-# visualize run in browser
-pfazure run visualize --name $name
-```
-
