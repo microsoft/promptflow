@@ -2,7 +2,6 @@ import re
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from jinja2 import Environment, meta
 from typing import Callable, Dict
 
 from .contracts.generator_proxy import GeneratorProxy
@@ -59,18 +58,23 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: Dic
 
 
 def get_input_names_for_prompt_template(template_str):
-    input_names = []
-    env = Environment()
-    template = env.parse(template_str)
-    input_names.extend(sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x)))
+    try:
+        from jinja2 import Environment, meta
 
-    # currently we only support image type
-    pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
-    matches = re.finditer(pattern, template_str)
-    for match in matches:
-        input_names.append(match.group(2).strip())
+        input_names = []
+        env = Environment()
+        template = env.parse(template_str)
+        input_names.extend(sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x)))
 
-    return input_names
+        # currently we only support image type
+        pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
+        matches = re.finditer(pattern, template_str)
+        for match in matches:
+            input_names.append(match.group(2).strip())
+
+        return input_names
+    except ImportError:
+        return []
 
 
 def get_prompt_param_name_from_func(f):
