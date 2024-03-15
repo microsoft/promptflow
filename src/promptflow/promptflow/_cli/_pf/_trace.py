@@ -4,6 +4,7 @@
 
 import argparse
 import typing
+from dataclasses import dataclass
 
 from promptflow._cli._params import base_params
 from promptflow._cli._utils import activate_action
@@ -26,7 +27,7 @@ def add_trace_parser(subparsers: argparse._SubParsersAction):
         help="[Experimental] pf trace. This is an experimental feature, and may change at any time.",
     )
     subparsers = trace_parser.add_subparsers()
-    add_trace_delete_params(subparsers)
+    add_delete_trace_params(subparsers)
     trace_parser.set_defaults(action="trace")
 
 
@@ -47,7 +48,7 @@ def _add_param_started_before(parser):
     parser.add_argument("--started-before", type=str, help="Date and time in ISO 8601 format.")
 
 
-def add_trace_delete_params(subparsers):
+def add_delete_trace_params(subparsers):
     epilog = """
 Examples:
 
@@ -70,6 +71,14 @@ pf trace delete --session <session> --started-before <isoformat-string>
         help_message="Delete traces comes from run, session or by time.",
         action_param_name="sub_action",
     )
+
+
+# use @dataclass for validation and strong type
+@dataclass
+class DeleteTraceParser:
+    run: typing.Optional[str] = None
+    session: typing.Optional[str] = None
+    started_before: typing.Optional[str] = None
 
 
 def delete_trace(args: argparse.Namespace) -> None:
