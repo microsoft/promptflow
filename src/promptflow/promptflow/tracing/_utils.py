@@ -62,21 +62,21 @@ def get_input_names_for_prompt_template(template_str):
         # We need to parse jinja template only when the promptflow is installed and run flow with PromptTemplate
         # type input, so using try-catch to avoid the dependency of jinja2 when it's not needed.
         from jinja2 import Environment, meta
-
-        input_names = []
-        env = Environment()
-        template = env.parse(template_str)
-        input_names.extend(sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x)))
-
-        # currently we only support image type
-        pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
-        matches = re.finditer(pattern, template_str)
-        for match in matches:
-            input_names.append(match.group(2).strip())
-
-        return input_names
     except ImportError:
         return []
+
+    input_names = []
+    env = Environment()
+    template = env.parse(template_str)
+    input_names.extend(sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x)))
+
+    # currently we only support image type
+    pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
+    matches = re.finditer(pattern, template_str)
+    for match in matches:
+        input_names.append(match.group(2).strip())
+
+    return input_names
 
 
 def get_prompt_param_name_from_func(f):
