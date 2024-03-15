@@ -14,6 +14,7 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         self,
         **kwargs
     ):
+        self._orchestrator = None
         super().__init__(**kwargs)
 
     async def create(
@@ -26,6 +27,12 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
+
+        chat_group_roles = kwargs.get("chat_group_roles", None)
+        max_turn = kwargs.get("max_turn", None)
+        run_id = kwargs.get("run_id", None)
+        cls._orchestrator = ChatGroupOrchestrator(chat_group_roles, run_id, max_turn)
+
         pass
     
     async def destroy(self):
@@ -33,14 +40,12 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         pass
 
     async def exec_line_async(
-        self,
+        cls,
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        orchestrator: Optional[ChatGroupOrchestrator] = None,
-
     ) -> LineResult:
         """schedule runs for a line, submit roleA and format its output as roleB's input.
         Then submit roleB until the max_turn.
         """
-        return orchestrator._schedule_runs(index, inputs, run_id)
+        return cls._orchestrator._schedule_runs(index, inputs, run_id)

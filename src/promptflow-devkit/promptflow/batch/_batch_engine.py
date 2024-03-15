@@ -179,6 +179,7 @@ class BatchEngine:
                     **self._kwargs,
                     chat_group_roles = self._chat_group_roles,
                     max_turn = self._max_turn,
+                    run_id = run_id,
                 )
                 try:
                     # register signal handler for python flow in the main thread
@@ -453,16 +454,8 @@ class BatchEngine:
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
 
-        chat_group_orchestrator = None
-        if self._chat_group_roles is not None:
-            chat_group_orchestrator = ChatGroupOrchestrator(
-                self._chat_group_roles,
-                run_id,
-                self._max_turn
-            )
-
         pending = [
-            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id, chat_group_orchestrator))
+            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
             for i, line_inputs in enumerate(batch_inputs)
         ]
 
@@ -488,10 +481,9 @@ class BatchEngine:
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
-        orchestrator: Optional[ChatGroupOrchestrator] = None,
     ):
         async with semaphore:
-            return await self._executor_proxy.exec_line_async(inputs, index, run_id, orchestrator)
+            return await self._executor_proxy.exec_line_async(inputs, index, run_id)
 
     async def _exec_aggregation(
         self,
