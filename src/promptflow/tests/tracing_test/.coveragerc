@@ -10,6 +10,7 @@ omit =
     */promptflow/azure/*
     */promptflow/batch/*
     */promptflow/contracts/*
+    */promptflow/core/*
     */promptflow/entities/*
     */promptflow/executor/*
     */promptflow/integrations/*

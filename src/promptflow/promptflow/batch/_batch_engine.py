@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -21,6 +20,7 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
     handle_line_failures,
+    set_batch_input_source_from_inputs_mapping,
 )
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import persist_multimedia_data
@@ -192,7 +192,7 @@ class BatchEngine:
                             )
 
                     # set batch input source from input mapping
-                    OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                    set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
                     inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
                     # resolve input data from input dirs and apply inputs mapping

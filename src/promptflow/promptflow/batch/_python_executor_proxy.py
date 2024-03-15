@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional, Tuple
 
 from promptflow._core._errors import UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
@@ -16,6 +15,7 @@ from promptflow.executor._line_execution_process_pool import LineExecutionProces
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.storage._run_storage import AbstractRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 
 class PythonExecutorProxy(AbstractExecutorProxy):
