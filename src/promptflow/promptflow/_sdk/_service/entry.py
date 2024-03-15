@@ -130,6 +130,7 @@ def start_service(args):
         app.logger.info(message)
         print(f"{message}. You're feel free to input CTRL+C or close the terminal to exit.")
         waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
+        entry(["show-status"])
     else:
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
