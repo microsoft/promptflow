@@ -1,4 +1,4 @@
-from promptflow._core.operation_context import OperationContext
+from promptflow.tracing._operation_context import OperationContext
 
 
 def my_flow():

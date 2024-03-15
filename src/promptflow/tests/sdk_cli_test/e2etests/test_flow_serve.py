@@ -9,9 +9,9 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from promptflow._core.operation_context import OperationContext
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from promptflow.core._serving.utils import load_feedback_swagger
+from promptflow.tracing._operation_context import OperationContext
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")

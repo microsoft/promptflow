@@ -19,7 +19,7 @@ from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 from .recording_utilities import (
     RecordStorage,
@@ -305,15 +305,15 @@ def setup_recording_injection_if_enabled():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
 
     if is_live() and is_in_ci_pipeline():
         patch_targets = {
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
 
