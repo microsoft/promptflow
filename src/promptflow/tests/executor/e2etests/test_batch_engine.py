@@ -6,6 +6,7 @@ import traceback
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -527,3 +528,35 @@ class TestBatch:
             contents = load_jsonl(file_path)
             for content in contents:
                 assert content["run_info"]["root_run_id"] == resume_run_id
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                "hello-world",
+                {"name": "${data.name}"},
+            )
+        ],
+    )
+    def test_batch_run_exec_line_raise_exception(self, flow_folder, inputs_mapping, dev_connections):
+        mock_flow_execution_context = Mock(side_effect=Exception("Initialization error"))
+        with patch(
+            "promptflow._core.flow_execution_context.FlowExecutionContext.__init__", new=mock_flow_execution_context
+        ):
+            batch_result, output_dir = submit_batch_run(
+                flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+            )
+
+            assert isinstance(batch_result, BatchResult)
+            nlines = get_batch_inputs_line(flow_folder)
+            assert batch_result.total_lines == nlines
+            assert batch_result.completed_lines == nlines
+            assert batch_result.start_time < batch_result.end_time
+            assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
