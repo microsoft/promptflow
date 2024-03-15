@@ -59,6 +59,8 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: Dic
 
 def get_input_names_for_prompt_template(template_str):
     try:
+        # We need to parse jinja template only when the promptflow is installed and run flow with PromptTemplate
+        # type input, so using try-catch to avoid the dependency of jinja2 when it's not needed.
         from jinja2 import Environment, meta
 
         input_names = []
