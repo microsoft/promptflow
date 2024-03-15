@@ -54,8 +54,8 @@ class FlowLanguage:
 class FlowType:
     """The enum of flow type."""
 
-    YAML_FLOW = "dag"
-    EAGER_FLOW = "flex"
+    DAG_FLOW = "dag"
+    FLEX_FLOW = "flex"
 
 
 class AvailableIDE:

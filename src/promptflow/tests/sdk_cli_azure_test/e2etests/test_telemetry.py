@@ -441,7 +441,7 @@ class TestTelemetry:
         with patch.object(PromptFlowSDKExporter, "_log_to_envelope", side_effect=log_event), patch(
             "promptflow._sdk._telemetry.telemetry.get_telemetry_logger", side_effect=get_telemetry_logger
         ):
-            flow_type = FlowType.YAML_FLOW
+            flow_type = FlowType.DAG_FLOW
             pf.run(
                 flow="./tests/test_configs/flows/print_input_flow",
                 data="./tests/test_configs/datas/print_input_flow.jsonl",
@@ -451,7 +451,7 @@ class TestTelemetry:
             logger.handlers[0].flush()
             check_evelope()
 
-            flow_type = FlowType.EAGER_FLOW
+            flow_type = FlowType.FLEX_FLOW
             pf.run(
                 flow="./tests/test_configs/eager_flows/simple_with_req",
                 data="./tests/test_configs/datas/simple_eager_flow_data.jsonl",

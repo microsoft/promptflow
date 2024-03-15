@@ -754,5 +754,5 @@ class Run(YAMLTranslatableMixin):
 
         flow_obj = load_flow(source=self.flow)
         if isinstance(flow_obj, EagerFlow):
-            return FlowType.EAGER_FLOW
-        return FlowType.YAML_FLOW
+            return FlowType.FLEX_FLOW
+        return FlowType.DAG_FLOW
