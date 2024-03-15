@@ -29,6 +29,7 @@ from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
+from ...batch._executor_proxy_factory import ExecutorProxyFactory
 from .._configuration import Configuration
 from ..entities._eager_flow import FlexFlow
 from .utils import (
@@ -171,7 +172,7 @@ class TestSubmitter:
 
             return SubmitterHelper.resolve_used_connections(
                 flow=flow,
-                tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
                     flow_file=flow.flow_dag_path,
                     working_dir=flow.code,
                 ),
@@ -241,9 +242,13 @@ class TestSubmitter:
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
-            if self.flow.language == FlowLanguage.CSharp:
-                # TODO: consider move this to Operations
-                CSharpExecutorProxy.generate_metadata(self.flow.path, self.flow.code)
+            # Python flow may get metadata in-memory, so no need to dump them first
+            if self.flow.language != FlowLanguage.Python:
+                # variant is resolve in the context, so we can't move this to Operations for now
+                ExecutorProxyFactory().get_executor_proxy_cls(self.flow.language).dump_metadata(
+                    flow_file=self.flow.path,
+                    working_dir=self.flow.code,
+                )
 
             self._target_node = target_node
             self._enable_stream_output = stream_output

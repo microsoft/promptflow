@@ -6,6 +6,7 @@ import pytest
 
 from promptflow._core._errors import UnexpectedError
 from promptflow.batch import APIBasedExecutorProxy, BatchEngine, CSharpExecutorProxy, PythonExecutorProxy
+from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound
@@ -52,16 +53,16 @@ class TestBatchEngine:
 
     def test_register_executor(self):
         # assert original values
-        assert BatchEngine.executor_proxy_classes["python"] == PythonExecutorProxy
-        assert BatchEngine.executor_proxy_classes["csharp"] == CSharpExecutorProxy
+        assert ExecutorProxyFactory.executor_proxy_classes["python"] == PythonExecutorProxy
+        assert ExecutorProxyFactory.executor_proxy_classes["csharp"] == CSharpExecutorProxy
 
         class MockJSExecutorProxy(APIBasedExecutorProxy):
             pass
 
         # register new proxy
-        BatchEngine.register_executor("js", MockJSExecutorProxy)
-        assert BatchEngine.executor_proxy_classes["js"] == MockJSExecutorProxy
-        assert len(BatchEngine.executor_proxy_classes) == 3
+        ExecutorProxyFactory.register_executor("js", MockJSExecutorProxy)
+        assert ExecutorProxyFactory.executor_proxy_classes["js"] == MockJSExecutorProxy
+        assert len(ExecutorProxyFactory.executor_proxy_classes) == 3
 
     def test_cancel(self):
         batch_engine = BatchEngine(get_yaml_file("print_input_flow"))

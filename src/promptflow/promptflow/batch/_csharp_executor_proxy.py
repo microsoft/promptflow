@@ -5,9 +5,10 @@ import socket
 import subprocess
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import NoReturn, Optional
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -46,9 +47,9 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         return self._chat_output_name
 
     @classmethod
-    def generate_metadata(cls, flow_file: Path, assembly_folder: Path):
-        """Generate metadata for the flow and save them to files under .promptflow folder.
-        including flow.json and flow.tools.json.
+    def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
+        """In csharp, we need to generate metadata based on a dotnet command for now and the metadata will
+        always be dumped.
         """
         command = [
             "dotnet",
@@ -62,24 +63,25 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         try:
             subprocess.check_output(
                 command,
-                cwd=assembly_folder,
+                cwd=working_dir,
             )
         except subprocess.CalledProcessError as e:
             raise UnexpectedError(
-                message_format=f"Failed to generate flow meta for csharp flow.\n"
-                f"Command: {' '.join(command)}\n"
-                f"Working directory: {assembly_folder.as_posix()}\n"
-                f"Return code: {e.returncode}\n"
-                f"Output: {e.output}",
+                message_format="Failed to generate flow meta for csharp flow.\n"
+                "Command: {command}\n"
+                "Working directory: {working_directory}\n"
+                "Return code: {return_code}\n"
+                "Output: {output}",
+                command=" ".join(command),
+                working_directory=working_dir.as_posix(),
+                return_code=e.returncode,
+                output=e.output,
             )
 
     @classmethod
     def get_outputs_definition(cls, flow_file: Path, working_dir: Path) -> dict:
-        from promptflow._utils.yaml_utils import load_yaml
-
-        flow_data = load_yaml(flow_file)
         # TODO: no outputs definition for eager flow for now
-        if flow_data.get("entry", None) is not None:
+        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             return {}
 
         # TODO: get this from self._get_flow_meta for both eager flow and non-eager flow then remove

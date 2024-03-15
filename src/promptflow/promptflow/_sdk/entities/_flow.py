@@ -3,17 +3,14 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
-from promptflow._constants import (
-    DEFAULT_FLOW_YAML_FILE_NAME,
-    FLOW_TOOLS_JSON,
-    LANGUAGE_KEY,
-    PROMPT_FLOW_DIR_NAME,
-    FlowLanguage,
-)
+from marshmallow import Schema
+
+from promptflow._constants import FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.core._flow import AsyncFlow as AsyncFlowCore
@@ -38,9 +35,9 @@ class Flow(FlowCore, SchemaValidatableMixin):
     ):
         super().__init__(path=path, code=code, dag=dag, **kwargs)
 
+        self._flow_dir, self._dag_file_name = resolve_flow_path(self.code)
         self._executable = None
         self._params_override = params_override
-        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
 
     # region properties
     @property
@@ -70,20 +67,6 @@ class Flow(FlowCore, SchemaValidatableMixin):
         return self._data.get("display_name", self._flow_dir.name)
 
     # endregion
-
-    @classmethod
-    def _get_flow_definition(cls, flow, base_path=None) -> Tuple[Path, str]:
-        if base_path:
-            flow_path = Path(base_path) / flow
-        else:
-            flow_path = Path(flow)
-
-        if flow_path.is_dir() and (flow_path / DEFAULT_FLOW_YAML_FILE_NAME).is_file():
-            return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
-        elif flow_path.is_file():
-            return flow_path.parent, flow_path.name
-
-        raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
 
     # region SchemaValidatableMixin
     @classmethod
