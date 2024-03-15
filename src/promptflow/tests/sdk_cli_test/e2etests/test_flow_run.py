@@ -359,7 +359,7 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 connections={"print_env": {"new_connection": "test_custom_connection"}},
             )
-        assert "Connection with name new_connection not found" in str(e.value)
+        assert "Unsupported llm connection overwrite keys" in str(e.value)
 
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
