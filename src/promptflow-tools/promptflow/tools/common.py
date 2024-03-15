@@ -253,21 +253,21 @@ def get_workspace_triad():
 
 
 def list_deployment_connections(
-    subscription_id,
-    resource_group_name,
-    workspace_name,
+    subscription_id=None,
+    resource_group_name=None,
+    workspace_name=None,
     connection="",
 ):
     try:
-        # Do not support dynamic list for local.
+        # Do not support dynamic list if azure packages are not installed.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
         from promptflow.azure.operations._arm_connection_operations import \
             ArmConnectionOperations, OpenURLFailedUserError
     except ImportError:
         return None
 
-    # For local, subscription_id is None. Does not support dynamic list for local.
-    if not subscription_id:
+    # Do not support dynamic list if the workspace triple is set in the local.
+    if not subscription_id or not resource_group_name or not workspace_name:
         return None
 
     try:
