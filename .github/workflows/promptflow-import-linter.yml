@@ -36,12 +36,16 @@ jobs:
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
       run: |
+        echo "=== Running import lint in promptflow-tracing ==="
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
         poetry run lint-imports
+        echo "=== Running import lint in promptflow-core ==="
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
         poetry run lint-imports
+        echo "=== Running import lint in promptflow-devkit ==="
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
         poetry run lint-imports
+        echo "=== Running import lint in promptflow-azure ==="
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
         poetry run lint-imports
       working-directory: ${{ env.WORKING_DIRECTORY }}
