@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy, generate_from_proxy
 
 
 def generator():

@@ -45,8 +45,8 @@ from promptflow._sdk._utils import (
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
-from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, ProtectedFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
+from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
@@ -218,7 +218,7 @@ def variant_overwrite_context(
     if flow.additional_includes:
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
-            if not isinstance(flow, EagerFlow):
+            if not isinstance(flow, FlexFlow):
                 # always overwrite variant since we need to overwrite default variant if not specified.
                 overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
                 overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
@@ -227,7 +227,7 @@ def variant_overwrite_context(
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
-    elif isinstance(flow, EagerFlow):
+    elif isinstance(flow, FlexFlow):
         # eager flow don't support overwrite variant
         yield flow
     else:
@@ -238,7 +238,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = ProtectedFlow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
@@ -254,11 +254,11 @@ class SubmitterHelper:
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
         # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
-        from promptflow._sdk.entities._eager_flow import EagerFlow
+        from promptflow._sdk.entities._eager_flow import FlexFlow
 
         from .._pf_client import PFClient
 
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             # TODO(2898247): support prompt flow management connection for eager flow
             return {}
 
@@ -272,7 +272,7 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
+    def resolve_used_connections(flow: Flow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()

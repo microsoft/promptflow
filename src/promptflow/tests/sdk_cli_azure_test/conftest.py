@@ -108,7 +108,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
             workspace_name=workspace_name,
         )
     assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
-    assert "promptflow/" not in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow-test" not in ClientUserAgentUtil.get_user_agent()
     yield client
 
 

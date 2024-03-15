@@ -19,7 +19,7 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 from .recording_utilities import (
     RecordStorage,
@@ -231,6 +231,16 @@ def non_json_serializable_output(mocker: MockerFixture):
     return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
 
 
+@pytest.fixture
+def stream_output(mocker: MockerFixture):
+    return create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def multiple_stream_outputs(mocker: MockerFixture):
+    return create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
@@ -295,15 +305,15 @@ def setup_recording_injection_if_enabled():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
 
     if is_live() and is_in_ci_pipeline():
         patch_targets = {
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
 

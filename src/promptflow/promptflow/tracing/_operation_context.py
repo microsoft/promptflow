@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 import copy
 from contextvars import ContextVar
-from typing import Dict, Mapping
+from typing import Dict
 
-from promptflow._version import VERSION
+from ._version import VERSION
 
 
 class OperationContext(Dict):
@@ -18,15 +18,16 @@ class OperationContext(Dict):
     """
 
     _CONTEXT_KEY = "operation_context"
-    _OTEL_ATTRIBUTES = "_otel_attributes"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
     USER_AGENT_KEY = "user_agent"
     REQUEST_ID_KEY = "request_id"
-    _DEFAULT_TRACKING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source"}
+    _DEFAULT_TRACING_KEYS = "_default_tracing_keys"
+    _OTEL_ATTRIBUTES = "_otel_attributes"
     _TRACKING_KEYS = "_tracking_keys"
 
     def copy(self):
-        ctx = OperationContext(self)
+        ctx = OperationContext()
+        ctx.update(self)
         ctx[OperationContext._OTEL_ATTRIBUTES] = copy.copy(self._get_otel_attributes())
         return ctx
 
@@ -65,8 +66,8 @@ class OperationContext(Dict):
             # create a new instance and set it in the current context
             instance = OperationContext()
             cls._current_context.set(instance)
-        if cls._TRACKING_KEYS not in instance:
-            instance[cls._TRACKING_KEYS] = copy.copy(cls._DEFAULT_TRACKING_KEYS)
+        if cls._TRACKING_KEYS not in instance and cls._DEFAULT_TRACING_KEYS in instance:
+            instance[cls._TRACKING_KEYS] = copy.copy(instance[cls._DEFAULT_TRACING_KEYS])
         return instance
 
     @classmethod
@@ -137,7 +138,7 @@ class OperationContext(Dict):
         def parts():
             if OperationContext.USER_AGENT_KEY in self:
                 yield self.get(OperationContext.USER_AGENT_KEY)
-            yield f"promptflow/{VERSION}"
+            yield f"promptflow-tracing/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         ua = " ".join(parts()).strip()
@@ -166,47 +167,14 @@ class OperationContext(Dict):
             return self.get(OperationContext.REQUEST_ID_KEY)
         return "unknown"
 
-    def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
-        """Infer the batch input source from the input mapping and set it in the OperationContext instance.
-
-        This method analyzes the `inputs_mapping` to ascertain the origin of the inputs for a batch operation.
-        The `inputs_mapping` should be a dictionary with keys representing input names and values specifying the sources
-        of these inputs. Inputs can originate from direct data or from the outputs of a previous run.
-
-        The `inputs_mapping` is dictated entirely by the external caller. For more details on column mapping, refer to
-        https://aka.ms/pf/column-mapping. The mapping can include references to both the inputs and outputs of previous
-        runs, using a reserved source name 'run' to indicate such references. However, this method specifically checks
-        for references to outputs of previous runs, which are denoted by values starting with "${run.outputs". When such
-        a reference is found, the `batch_input_source` attribute of the OperationContext instance is set to "Run" to
-        reflect that the batch operation is utilizing outputs from a prior run.
-
-        If no values in the `inputs_mapping` start with "${run.outputs", it is inferred that the inputs do not derive
-        from a previous run, and the `batch_input_source` is set to "Data".
-
-        Examples of `inputs_mapping`:
-            - Referencing a previous run's output:
-                {'input1': '${run.outputs.some_output}', 'input2': 'direct_data'}
-              In this case, 'input1' is sourced from a prior run's output, and 'input2' is from direct data.
-              The `batch_input_source` would be set to "Run".
-
-            - Sourcing directly from data:
-                {'input1': 'data_source1', 'input2': 'data_source2'}
-              Since no values start with "${run.outputs", the `batch_input_source` is set to "Data".
-
-        Args:
-            inputs_mapping (Mapping[str, str]): A dictionary mapping input names to their sources, where the sources
-            can be either direct data or outputs from a previous run. The structure and content of this mapping are
-            entirely under the control of the external caller.
-
-        Returns:
-            None
-        """
-        if inputs_mapping and any(
-            isinstance(value, str) and value.startswith("${run.outputs") for value in inputs_mapping.values()
-        ):
-            self.batch_input_source = "Run"
+    def set_default_tracing_keys(self, keys: set):
+        self[self._DEFAULT_TRACING_KEYS] = keys
+        if not hasattr(self, self._TRACKING_KEYS):
+            self[self._TRACKING_KEYS] = copy.copy(keys)
         else:
-            self.batch_input_source = "Data"
+            for key in keys:
+                if key not in self[self._TRACKING_KEYS]:
+                    self[self._TRACKING_KEYS].add(key)
 
     def get_context_dict(self):
         """Get the context dictionary.
@@ -221,5 +189,5 @@ class OperationContext(Dict):
         return dict(self)
 
     def _get_tracking_info(self):
-        keys = getattr(self, self._TRACKING_KEYS, self._DEFAULT_TRACKING_KEYS)
+        keys = getattr(self, self._TRACKING_KEYS, getattr(self, self._DEFAULT_TRACING_KEYS, []))
         return {k: v for k, v in self.items() if k in keys}
