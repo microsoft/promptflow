@@ -9,6 +9,7 @@ from collections import defaultdict
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
+from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._trace import LineRun, Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -155,3 +156,12 @@ class TraceOperations:
                 if line_run is not None:
                     line_runs.append(line_run)
         return line_runs
+
+    @monitor_operation(activity_name="pf.traces.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        run: typing.Optional[str] = None,
+        session: typing.Optional[str] = None,
+        started_before: typing.Optional[str] = None,
+    ) -> typing.Optional[int]:
+        ...

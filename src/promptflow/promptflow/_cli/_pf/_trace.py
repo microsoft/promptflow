@@ -3,9 +3,20 @@
 # ---------------------------------------------------------
 
 import argparse
+import typing
 
 from promptflow._cli._params import base_params
 from promptflow._cli._utils import activate_action
+from promptflow._sdk._pf_client import PFClient
+
+_client: typing.Optional[PFClient] = None
+
+
+def _get_pf_client() -> PFClient:
+    global _client
+    if _client is None:
+        _client = PFClient()
+    return _client
 
 
 def add_trace_parser(subparsers: argparse._SubParsersAction):
@@ -61,5 +72,9 @@ pf trace delete --session <session> --started-before <isoformat-string>
     )
 
 
-def delete_trace(args: argparse.Namespace):
-    pass
+def delete_trace(args: argparse.Namespace) -> None:
+    _get_pf_client()._traces.delete(
+        run=args.run,
+        session=args.session,
+        started_before=args.started_before,
+    )
