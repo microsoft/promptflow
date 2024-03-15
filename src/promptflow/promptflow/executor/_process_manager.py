@@ -323,7 +323,7 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            logName = "{}_{}.log".format(ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME, self._run_id)
+            logName = "{}_{}.log".format(ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME, self._run_id)
             log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName
             try:
                 with open(log_path, "r") as f:
@@ -428,10 +428,8 @@ def create_spawned_fork_process_manager(
     flow_create_kwargs,
     **kwargs,
 ):
-    logName = "{}_{}.log".format(ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME, kwargs.get("run_id"))
-    # Ensure the directory exists
-    if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
-        ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    logName = "{}_{}.log".format(ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME, kwargs.get("run_id"))
+    ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
     log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName
     sys.stderr = open(log_path, "w")
 

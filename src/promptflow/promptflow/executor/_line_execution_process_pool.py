@@ -376,10 +376,7 @@ class LineExecutionProcessPool:
                     # So if 'log_errors_form_path' return 'false', it means the child process fails to start.
                     # Attempt read the parent process log file.
                     if not log_errors_from_file(log_path) and self._use_fork:
-                        log_path = (
-                            ProcessPoolConstants.PROCESS_LOG_PATH
-                            / ProcessPoolConstants.SPANED_FORK_PROCESS_MANAGER_LOG_NAME
-                        )
+                        log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
                         log_errors_from_file(log_path)
                     ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
