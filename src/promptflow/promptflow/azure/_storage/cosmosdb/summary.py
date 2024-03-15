@@ -6,7 +6,6 @@ from dataclasses import asdict, dataclass, field
 
 from azure.cosmos import ContainerProxy
 from azure.cosmos.exceptions import CosmosResourceExistsError, CosmosResourceNotFoundError
-from flask import current_app
 
 from promptflow._constants import (
     OK_LINE_RUN_STATUS,
@@ -192,7 +191,7 @@ class Summary:
                 break
             except InsertEvaluationsRetriableException as e:
                 if attempt == 2:  # If this is the last attempt, ignore and just return
-                    current_app.logger.error(f"Error while inserting evaluation: {e}")
+                    self.logger.error(f"Error while inserting evaluation: {e}")
                     return
                 time.sleep(1)
 
