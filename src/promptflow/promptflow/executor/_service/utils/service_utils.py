@@ -7,11 +7,11 @@ import os
 from typing import Any, Mapping, Union
 
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import LogContext, service_logger
 from promptflow._version import VERSION
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest
+from promptflow.tracing._operation_context import OperationContext
 
 
 def get_log_context(request: BaseExecutionRequest, enable_service_logger: bool = False) -> LogContext:
@@ -32,6 +32,7 @@ def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> Operati
     # update user agent to operation context
     executor_user_agent = get_executor_version()
     operation_context.append_user_agent(executor_user_agent)
+    operation_context.append_user_agent(f"promptflow/{VERSION}")
     return operation_context
 
 

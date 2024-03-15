@@ -4,9 +4,9 @@ import re
 
 import pytest
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._serving.utils import load_feedback_swagger
 from promptflow._sdk._serving.constants import FEEDBACK_TRACE_FIELD_NAME
+from promptflow.tracing._operation_context import OperationContext
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider

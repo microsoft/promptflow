@@ -12,10 +12,9 @@ from importlib.metadata import version
 
 import openai
 
-from promptflow._core.operation_context import OperationContext
-
-from ._trace import _traced_async, _traced_sync
-from .contracts.trace import TraceType
+from .._operation_context import OperationContext
+from .._trace import _traced_async, _traced_sync
+from ..contracts.trace import TraceType
 
 
 USER_AGENT_HEADER = "x-ms-useragent"
@@ -46,6 +45,7 @@ def get_aoai_telemetry_headers() -> dict:
     Returns:
         A dictionary of http headers.
     """
+
     # get promptflow info from operation context
     operation_context = OperationContext.get_instance()
     tracking_info = operation_context._get_tracking_info()

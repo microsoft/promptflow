@@ -14,7 +14,7 @@ from ._constants import (
     RESOURCE_ATTRIBUTES_SERVICE_NAME,
     ResourceAttributesFieldName,
 )
-from ._openai_injector import inject_openai_api
+from ._integrations._openai_injector import inject_openai_api
 
 
 def start_trace(

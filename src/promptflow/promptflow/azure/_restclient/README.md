@@ -22,6 +22,7 @@ Download swagger.json from [here](https://int.api.azureml-test.ms/flow/swagger/v
 - 2024.2.2 - [Support specify compute instance as session compute](https://github.com/microsoft/promptflow/pull/1925)
 - 2024.2.5 - [Support retrieve Cosmos token](https://github.com/microsoft/promptflow/pull/1972)
 - 2024.2.19 - [Update SDK restclient](https://github.com/microsoft/promptflow/pull/2165)
+- 2024.3.14 - [Add enable_multi_container](https://github.com/microsoft/promptflow/pull/2313)
 
 ## Troubleshooting
 
