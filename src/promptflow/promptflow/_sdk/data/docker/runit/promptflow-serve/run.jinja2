@@ -15,4 +15,4 @@ pf connection create --file /{{ connection_yaml_path }}
 {% endfor %}
 echo "start promptflow serving with worker_num: 8, worker_threads: 1"
 cd /flow
-gunicorn -w 8 --threads 1 -b "0.0.0.0:8080" --timeout 300 "promptflow._sdk._serving.app:create_app()"
+gunicorn -w 8 --threads 1 -b "0.0.0.0:8080" --timeout 300 "promptflow.core._serving.app:create_app()"

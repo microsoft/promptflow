@@ -13,8 +13,8 @@ from typing import Dict, Iterator, Union
 from filelock import FileLock
 from openai import NotFoundError
 
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.exceptions import PromptflowException
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 from .constants import ENVIRON_TEST_MODE, RecordMode
 

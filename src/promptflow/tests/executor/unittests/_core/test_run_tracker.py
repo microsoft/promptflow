@@ -1,10 +1,10 @@
 import pytest
 
 from promptflow._core._errors import RunRecordNotFound
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.run_tracker import RunTracker
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.run_info import Status
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 
 class UnserializableClass:

@@ -13,13 +13,13 @@ from sqlalchemy import create_engine
 from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
-from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 from .recording_utilities import (
     RecordStorage,
@@ -132,7 +132,7 @@ def flow_serving_client(mocker: MockerFixture):
 @pytest.fixture
 def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
     from promptflow._core.connection_manager import ConnectionManager
-    from promptflow._sdk._serving.utils import encode_dict
+    from promptflow.core._serving.utils import encode_dict
 
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     connection_manager = ConnectionManager(connection_dict)
@@ -231,6 +231,16 @@ def non_json_serializable_output(mocker: MockerFixture):
     return create_client_by_model("non_json_serializable_output", mocker, model_root=EAGER_FLOW_ROOT)
 
 
+@pytest.fixture
+def stream_output(mocker: MockerFixture):
+    return create_client_by_model("stream_output", mocker, model_root=EAGER_FLOW_ROOT)
+
+
+@pytest.fixture
+def multiple_stream_outputs(mocker: MockerFixture):
+    return create_client_by_model("multiple_stream_outputs", mocker, model_root=EAGER_FLOW_ROOT)
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
@@ -295,15 +305,15 @@ def setup_recording_injection_if_enabled():
             "promptflow._core.tool.tool": mocked_tool,
             "promptflow._internal.tool": mocked_tool,
             "promptflow.tool": mocked_tool,
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
 
     if is_live() and is_in_ci_pipeline():
         patch_targets = {
-            "promptflow.tracing._openai_injector.inject_sync": inject_sync_with_recording,
-            "promptflow.tracing._openai_injector.inject_async": inject_async_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
+            "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
         start_patches(patch_targets)
 

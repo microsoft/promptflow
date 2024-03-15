@@ -18,7 +18,6 @@ import pytest
 
 from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._telemetry import (
@@ -32,6 +31,7 @@ from promptflow._sdk._telemetry import (
 from promptflow._sdk._telemetry.logging_handler import get_promptflow_sdk_log_handler
 from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -90,8 +90,6 @@ class TestTelemetry:
             assert handler._is_telemetry_enabled is False
 
     def test_call_from_extension(self):
-        from promptflow._core.operation_context import OperationContext
-
         assert call_from_extension() is False
         with environment_variable_overwrite(PF_USER_AGENT, "prompt-flow-extension/1.0.0"):
             assert call_from_extension() is True

@@ -347,7 +347,8 @@ class ToolResolver:
         connection = self._connection_manager.get(node.connection)
         if connection is None:
             raise ConnectionNotFound(
-                message_format="Connection of LLM node '{node_name}' is not found.",
+                message_format="Connection '{connection}' of LLM node '{node_name}' is not found.",
+                connection=node.connection,
                 node_name=node.name,
                 target=ErrorTarget.EXECUTOR,
             )

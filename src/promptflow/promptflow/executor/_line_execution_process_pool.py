@@ -22,7 +22,6 @@ import psutil
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import ProcessPoolError, UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -46,6 +45,7 @@ from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage._queue_run_storage import QueueRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 TERMINATE_SIGNAL = "terminate"
 
