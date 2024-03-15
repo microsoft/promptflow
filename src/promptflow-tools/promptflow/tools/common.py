@@ -258,16 +258,17 @@ def list_deployment_connections(
     workspace_name=None,
     connection="",
 ):
-    # We do not support dynamic list deployments for local.
-    # Even if the workspace triple is set in the local scope, the connection can't be accurately retrieved.
-    # This is because the connection is fetched from the workspace. However, connection subscription id
-    # is not the same as the workspace subscription id.
-    if not subscription_id or not resource_group_name or not workspace_name or (in_local_env()):
+    try:
+        # Do not support dynamic list if azure packages are not installed.
+        from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+        from promptflow.azure.operations._arm_connection_operations import \
+            ArmConnectionOperations, OpenURLFailedUserError
+    except ImportError:
         return None
 
-    from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-    from promptflow.azure.operations._arm_connection_operations import \
-        ArmConnectionOperations, OpenURLFailedUserError
+    # Do not support dynamic list if the workspace triple is set in the local.
+    if not subscription_id or not resource_group_name or not workspace_name:
+        return None
 
     try:
         credential = _get_credential()
@@ -598,16 +599,3 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 
     conn_dict = normalize_connection_config(connection)
     return AzureOpenAIClient(**conn_dict)
-
-
-def in_local_env() -> bool:
-    """
-    Check if the code is running on AzureML runtime or local environment.
-    The condition might not be that accurate, but it's good enough for now since these environment variables are
-    typically only set on AzureML runtime.
-    """
-    return (
-        os.getenv("AZUREML_ARM_SUBSCRIPTION") is None
-        or os.getenv("AZUREML_ARM_RESOURCEGROUP") is None
-        or os.getenv("AZUREML_ARM_WORKSPACE_NAME") is None
-    )
