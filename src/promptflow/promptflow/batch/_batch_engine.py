@@ -481,4 +481,4 @@ class BatchEngine:
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
-        return is_flex_flow(flow_dag), language
+        return is_flex_flow(yaml_dict=flow_dag), language

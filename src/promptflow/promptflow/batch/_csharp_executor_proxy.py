@@ -80,11 +80,8 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
 
     @classmethod
     def get_outputs_definition(cls, flow_file: Path, working_dir: Path) -> dict:
-        from promptflow._utils.yaml_utils import load_yaml
-
-        flow_data = load_yaml(flow_file)
         # TODO: no outputs definition for eager flow for now
-        if is_flex_flow(flow_data):
+        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             return {}
 
         # TODO: get this from self._get_flow_meta for both eager flow and non-eager flow then remove

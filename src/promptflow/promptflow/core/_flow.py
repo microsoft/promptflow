@@ -206,7 +206,7 @@ class Flow(FlowBase):
             data = load_yaml_string(flow_content)
             content_hash = hash(flow_content)
         return cls._dispatch_flow_creation(
-            is_flex_flow(data), flow_path, data, content_hash, raise_error=raise_error, **kwargs
+            is_flex_flow(yaml_dict=data), flow_path, data, content_hash, raise_error=raise_error, **kwargs
         )
 
     def _init_executable(self):
@@ -309,7 +309,7 @@ class FlexFlow(Flow):
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
             flow_content = f.read()
             data = load_yaml_string(flow_content)
-        if not is_flex_flow(data):
+        if not is_flex_flow(yaml_dict=data):
             raise UserErrorException("Please load an non-dag flow with EagerFlow.load method.")
         return cls._load(path=flow_path, data=data, **kwargs)
 

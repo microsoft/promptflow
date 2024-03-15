@@ -102,9 +102,22 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
     return flow_path
 
 
-def is_flex_flow(flow_dag: dict):
+def is_flex_flow(
+    *, file_path: Union[str, Path, None] = None, yaml_dict: Optional[dict] = None, working_dir: Optional[Path] = None
+):
     """Check if the flow is a flex flow."""
-    return isinstance(flow_dag, dict) and "entry" in flow_dag
+    if file_path is None and yaml_dict is None:
+        raise UserErrorException("Either file_path or yaml_dict should be provided.")
+    if file_path is not None and yaml_dict is not None:
+        raise UserErrorException("Only one of file_path and yaml_dict should be provided.")
+    if file_path is not None:
+        file_path = Path(file_path)
+        if working_dir is not None and not file_path.is_absolute():
+            file_path = working_dir / file_path
+        if file_path.suffix.lower() not in [".yaml", ".yml"]:
+            return False
+        yaml_dict = load_yaml(file_path)
+    return isinstance(yaml_dict, dict) and "entry" in yaml_dict
 
 
 def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
