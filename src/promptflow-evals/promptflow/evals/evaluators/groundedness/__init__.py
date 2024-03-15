@@ -39,16 +39,7 @@ def init(model_config: AzureOpenAIConnection):
         flow_dir = current_dir / "flow"
         f = load_flow(source=flow_dir)
 
-        # connection = AzureOpenAIConnection(
-        #     name="open_ai_connection",
-        #     api_key=model_config.api_key,
-        #     api_base=model_config.api_base,
-        #     api_type="azure",
-        #     api_version=model_config.api_version,
-        #     model_name=model_config.model_name,
-        #     deployment_name=model_config.deployment_name,
-        # )
-        
+        # Override the connection
         f.context.connections = { 
             "query_llm": { "connection": model_config } 
         }
