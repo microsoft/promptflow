@@ -15,7 +15,7 @@ pip install -r requirements.txt
 
 In this flow, you will learn
 - how to compose a chat flow.
-- prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "# system:", "# user:", "# assistant:".
+- prompt template format of LLM tool chat api. Message delimiter is a separate line containing "#", role name and colon: "# system:", "# user:", "# assistant:".
 See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
     ```jinja
     # system:
