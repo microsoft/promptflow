@@ -37,6 +37,19 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 
 class AbstractExecutorProxy:
+
+    def __init__(self):
+        self._should_apply_inputs_mapping = True
+        self._allow_aggregation = True
+
+    @property
+    def should_apply_inputs_mapping(self):
+        return self._should_apply_inputs_mapping
+
+    @property
+    def allow_aggregation(self):
+        return self._allow_aggregation
+
     @classmethod
     def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
         """Generate metadata for a specific flow."""

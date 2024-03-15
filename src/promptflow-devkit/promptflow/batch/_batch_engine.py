@@ -75,7 +75,7 @@ class BatchEngine:
 
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Optional[Path] = None,
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
@@ -107,13 +107,15 @@ class BatchEngine:
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
-        self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
 
-        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml()
+        self._flow_file = flow_file
+        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
+        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() \
+            if flow_file is not None else (None, None)
+        self._flow = None
 
         # TODO: why self._flow is not initialized for eager flow?
-        if not self._is_eager_flow:
+        if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
@@ -150,6 +152,7 @@ class BatchEngine:
         raise_on_line_failure: Optional[bool] = False,
         resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
         resume_from_run_output_dir: Optional[Path] = None,
+        executor_proxy: Optional[AbstractExecutorProxy] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -176,9 +179,10 @@ class BatchEngine:
         """
         try:
             self._start_time = datetime.utcnow()
-            with _change_working_dir(self._working_dir):
+            with (_change_working_dir(self._working_dir)):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ProxyFactory().create_executor_proxy(
+                # TODO: pass creating proxy related parameters in this run function to void using class properties
+                self._executor_proxy = executor_proxy or ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
@@ -411,7 +415,7 @@ class BatchEngine:
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
-        if not self._is_eager_flow:
+        if not self._is_eager_flow and self._flow_file is not None:
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
@@ -444,6 +448,7 @@ class BatchEngine:
         else:
             # TODO: Enable batch timeout for other api based executor proxy
             await self._exec_batch(line_results, batch_inputs, run_id)
+
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
@@ -456,12 +461,12 @@ class BatchEngine:
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout:
+        if not is_timeout and self._executor_proxy.allow_aggregation:
             # execute aggregation nodes
             aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
             self._update_aggr_result(aggr_result, aggr_exec_result)
-        else:
+        elif is_timeout:
             ex = BatchRunTimeoutError(
                 message_format=(
                     "The batch run failed due to timeout [{batch_timeout_sec}s]. "
@@ -481,6 +486,7 @@ class BatchEngine:
     ) -> List[LineResult]:
         worker_count = self._worker_count or DEFAULT_CONCURRENCY
         semaphore = asyncio.Semaphore(worker_count)
+
         pending = [
             asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
             for i, line_inputs in enumerate(batch_inputs)
@@ -493,7 +499,6 @@ class BatchEngine:
             # wait for any task to complete
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
-            # persist node run infos and flow run info in line result to storage
             self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             # update the progress log

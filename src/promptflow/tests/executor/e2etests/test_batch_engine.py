@@ -10,12 +10,16 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
+from promptflow._proxy._proxy_factory import ProxyFactory
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
+from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
+from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
@@ -39,6 +43,7 @@ SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 RUNS_ROOT = TEST_ROOT / "test_configs/runs"
+DATAS_ROOT = TEST_ROOT / "test_configs/datas"
 
 
 async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
@@ -510,3 +515,75 @@ class TestBatch:
         status_summary = {f"__pf__.nodes.{k}": v for k, v in resume_run_batch_results.node_status.items()}
         assert status_summary["__pf__.nodes.flip_image.completed"] == 3
         assert status_summary["__pf__.nodes.count_image.completed"] == 1
+
+    
+    @pytest.mark.parametrize(
+        "simulation_flow, copilot_flow, max_turn, input_file_name",
+        [
+            ("chat_group_simulation", "chat_group_copilot", 5, "inputs.json"),
+            ("chat_group_simulation", "chat_group_copilot", 5, "inputs_using_default_value.json"),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_chat_group_batch_run(
+            self,
+            simulation_flow,
+            copilot_flow,
+            max_turn,
+            input_file_name,
+            dev_connections):
+        simulation_role = ChatGroupRole(
+            flow_file=get_yaml_file(simulation_flow),
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(simulation_flow),
+            connections=dev_connections,
+            inputs_mapping={"question": "${data.topic}", "ground_truth": "${data.ground_truth}"}
+        )
+        copilot_role = ChatGroupRole(
+            flow_file=get_yaml_file(copilot_flow),
+            role="assistant",
+            name="copilot",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(copilot_flow),
+            connections=dev_connections,
+            inputs_mapping={"question": "${data.question}"}
+        )
+        input_dirs = {"data": get_flow_inputs_file(DATAS_ROOT / "chat_group", file_name=input_file_name)}
+        output_dir = Path(mkdtemp())
+        mem_run_storage = MemoryRunStorage()
+
+        # register python proxy since current python proxy cannot execute single line
+        ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        chat_group_orchestrator_proxy = await ChatGroupOrchestratorProxy.create(
+            flow_file="",
+            chat_group_roles=[simulation_role, copilot_role],
+            max_turn=max_turn)
+        batchEngine = BatchEngine(
+            flow_file=None,
+            working_dir=get_flow_folder("chat_group"),
+            storage=mem_run_storage)
+        batch_result = batchEngine.run(input_dirs, {}, output_dir, executor_proxy=chat_group_orchestrator_proxy)
+
+        nlines = 3
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            # "line_number is the first pair in the dict"
+            assert len(output) == max_turn + 1
+            for j, line in enumerate(output):
+                if "line_number" not in output:
+                    assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
