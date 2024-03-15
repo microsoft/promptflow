@@ -2,8 +2,6 @@ import tiktoken
 from abc import ABC, abstractmethod
 from importlib.metadata import version
 
-from promptflow._utils._errors import CalculatingMetricsError
-
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
@@ -69,13 +67,13 @@ class OpenAIMetricsCalculator:
         ):
             return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
-            raise CalculatingMetricsError(f"Calculating metrics for api {name} is not supported.")
+            self._log_warning(f"Calculating metrics for api {name} is not supported.")
 
     def _try_get_model(self, inputs, output):
         if IS_LEGACY_OPENAI:
             api_type = inputs.get("api_type")
             if not api_type:
-                raise CalculatingMetricsError("Cannot calculate metrics for none or empty api_type.")
+                self._log_warning("Cannot calculate metrics for none or empty api_type.")
             if api_type == "azure":
                 model = inputs.get("engine")
             else:
@@ -92,7 +90,7 @@ class OpenAIMetricsCalculator:
             if not model:
                 model = inputs.get("model")
         if not model:
-            raise CalculatingMetricsError(
+            raise self._log_warning(
                 "Cannot get a valid model to calculate metrics. "
                 "Please specify a engine for AzureOpenAI API or a model for OpenAI API."
             )
@@ -128,7 +126,7 @@ class OpenAIMetricsCalculator:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
-            raise CalculatingMetricsError(f"Calculating metrics for model {model} is not supported.")
+            self._log_warning(f"Calculating metrics for model {model} is not supported.")
         return enc, tokens_per_message, tokens_per_name
 
     def _get_prompt_tokens_from_messages(self, messages, enc, tokens_per_message, tokens_per_name):

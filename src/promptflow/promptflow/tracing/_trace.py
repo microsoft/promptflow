@@ -17,7 +17,7 @@ from opentelemetry.trace import Link
 from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.trace.status import StatusCode
 
-
+from ._openai_utils import OpenAIMetricsCalculator, OpenAIResponseParser
 from ._operation_context import OperationContext
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
