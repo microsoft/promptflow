@@ -153,16 +153,8 @@ class TestExecutorLogs:
             assert all(node_log in log_content for node_log in node_logs_list)
 
     def test_long_run_log(self):
+        # Test long running tasks with log
         os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "60"
-        executor = FlowExecutor.create(get_yaml_file("long_run"), {})
-        file_path = Path(mkdtemp()) / "flow.log"
-        with LogContext(file_path):
-            flow_result = executor.exec_line({}, index=0)
-        node_run = flow_result.node_run_infos["long_run_node"]
-        assert node_run.status == Status.Completed
-        with open(file_path) as fin:
-            lines = fin.readlines()
-        lines = [line for line in lines if line.strip()]
         target_texts = [
             "INFO     Start executing nodes in thread pool mode.",
             "INFO     Start to run 1 nodes with concurrency level 16.",
@@ -179,11 +171,32 @@ class TestExecutorLogs:
             "time.sleep(61)",
             "INFO     Node long_run_node completes.",
         ]
+        self.assert_long_run_log(target_texts)
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
+
+        # Test long running tasks without log
+        target_texts = [
+            "INFO     Start executing nodes in thread pool mode.",
+            "INFO     Start to run 1 nodes with concurrency level 16.",
+            "INFO     Executing node long_run_node.",
+            "INFO     Node long_run_node completes.",
+        ]
+        self.assert_long_run_log(target_texts)
+
+    def assert_long_run_log(self, target_texts):
+        executor = FlowExecutor.create(get_yaml_file("long_run"), {})
+        file_path = Path(mkdtemp()) / "flow.log"
+        with LogContext(file_path):
+            flow_result = executor.exec_line({}, index=0)
+        node_run = flow_result.node_run_infos["long_run_node"]
+        assert node_run.status == Status.Completed
+        with open(file_path) as fin:
+            lines = fin.readlines()
+        lines = [line for line in lines if line.strip()]
         msg = f"Got {len(lines)} lines in {file_path}, expected {len(target_texts)}."
         assert len(lines) == len(target_texts), msg
         for actual, expected in zip(lines, target_texts):
             assert expected in actual, f"Expected {expected} in {actual}"
-        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping",

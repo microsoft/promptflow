@@ -97,8 +97,9 @@ class TestExecutor:
         from promptflow._utils.logger_utils import flow_logger
 
         flow_logger.addHandler(logging.StreamHandler(sys.stdout))
-        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "1"
 
+        # Test long running tasks with log
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "1"
         executor = FlowExecutor.create(get_yaml_file("async_tools"), dev_connections)
         executor.exec_line(self.get_line_inputs())
         captured = capsys.readouterr()
@@ -110,8 +111,19 @@ class TestExecutor:
         assert re.match(
             expected_long_running_str_2, captured.out, re.DOTALL
         ), "flow_logger should contain long running async tool log"
-        flow_logger.handlers.pop()
         os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
+
+        # Test long running tasks without log
+        executor.exec_line(self.get_line_inputs())
+        captured = capsys.readouterr()
+        assert not re.match(
+            expected_long_running_str_1, captured.out, re.DOTALL
+        ), "flow_logger should not contain long running async tool log"
+        assert not re.match(
+            expected_long_running_str_2, captured.out, re.DOTALL
+        ), "flow_logger should not contain long running async tool log"
+
+        flow_logger.handlers.pop()
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
