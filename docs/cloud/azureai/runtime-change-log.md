@@ -15,6 +15,16 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20240306.v5
+
+#### New features
+- Support "seed" parameter for built-in LLM tools and GPT-4V tools.
+
+#### Bugs fixed
+- Handle ClientAuthenticationError properly.
+- Fix appending blob exceeded size limit error by truncating debug info.
+
+
 ### 20240228.v3
 
 #### New features

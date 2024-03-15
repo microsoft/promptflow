@@ -1,15 +1,15 @@
 import asyncio
 import json
-from datetime import datetime
 from typing import Union, List
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI
-from openai.types.beta.threads import MessageContentImageFile, MessageContentText
-from openai.types.beta.threads.runs.code_tool_call import CodeInterpreterOutputLogs
+from openai.types.beta.threads.runs.code_interpreter_tool_call import CodeInterpreterOutput
+
 from openai.types.beta.threads.runs.tool_calls_step_details import ToolCall
-from openai.types.beta.threads.thread_message import Content
 
 from get_tracer import get_tracer
+
+from openai.types.beta.threads import TextContentBlock, ImageFileContentBlock, Message
 
 from promptflow import tool
 from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
@@ -184,7 +184,7 @@ async def show_run_step(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], run_step, tra
         span.end(end_time=_to_nano(run_step.completed_at))
     return run_step
 
-def convert_message_content(contents: List[Content]):
+def convert_message_content(contents: List[Message]):
     return [content.dict() for content in contents]
 
 def convert_tool_calls(calls: List[ToolCall]):
@@ -214,7 +214,7 @@ async def show_tool_call(tool_call, tracer):
     return tool_call
 
 
-def convert_code_interpreter_outputs(logs: List[CodeInterpreterOutputLogs]):
+def convert_code_interpreter_outputs(logs: List[CodeInterpreterOutput]):
     return [log.dict() for log in logs]
 
 
@@ -257,13 +257,13 @@ async def get_openai_file_references(cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
     file_id_references = {}
     file_id = None
     for item in content:
-        if isinstance(item, MessageContentImageFile):
+        if isinstance(item, ImageFileContentBlock):
             file_id = item.image_file.file_id
             if download_image:
                 file_id_references[file_id] = {
                     "content": await download_openai_image(cli, file_id, conn),
                 }
-        elif isinstance(item, MessageContentText):
+        elif isinstance(item, TextContentBlock):
             for annotation in item.text.annotations:
                 if annotation.type == "file_path":
                     file_id = annotation.file_path.file_id
@@ -286,10 +286,10 @@ async def get_openai_file_references(cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
 def to_pf_content(content: list):
     pf_content = []
     for item in content:
-        if isinstance(item, MessageContentImageFile):
+        if isinstance(item, ImageFileContentBlock):
             file_id = item.image_file.file_id
             pf_content.append({"type": "image_file", "image_file": {"file_id": file_id}})
-        elif isinstance(item, MessageContentText):
+        elif isinstance(item, TextContentBlock):
             text_dict = {"type": "text", "text": {"value": item.text.value, "annotations": []}}
             for annotation in item.text.annotations:
                 annotation_dict = {
