@@ -17,13 +17,10 @@ from opentelemetry.trace import Link
 from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow._core.operation_context import OperationContext
-from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
-
-from .._utils.utils import default_json_encoder
+from ._operation_context import OperationContext
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
+from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
+from .contracts.generator_proxy import GeneratorProxy
 from .contracts.trace import TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -101,7 +98,9 @@ def enrich_span_with_prompt_info(span, func, kwargs):
         prompt_tpl_param_name = get_prompt_param_name_from_func(func)
         if prompt_tpl_param_name is not None:
             prompt_tpl = kwargs.get(prompt_tpl_param_name)
-            prompt_vars = {key: kwargs.get(key) for key in get_inputs_for_prompt_template(prompt_tpl) if key in kwargs}
+            prompt_vars = {
+                name: kwargs.get(name) for name in get_input_names_for_prompt_template(prompt_tpl) if name in kwargs
+            }
             prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
             span.set_attributes(prompt_info)
     except Exception as e:
@@ -239,7 +238,12 @@ def serialize_attribute(value):
     try:
         serializable = Tracer.to_serializable(value)
         serialized_value = serialize(serializable)
-        return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+        try:
+            from promptflow._utils.utils import default_json_encoder
+
+            return json.dumps(serialized_value, indent=2, default=default_json_encoder)
+        except ImportError:
+            return json.dumps(serialized_value, indent=2)
     except Exception as e:
         logging.warning(f"Failed to serialize attribute: {e}")
         return None
@@ -288,8 +292,8 @@ def _traced_async(
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
+        # For node span we set the span name to node name, otherwise we use the function name.
+        span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)
@@ -337,8 +341,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         trace = create_trace(func, args, kwargs)
-        # Fall back to trace.name if we can't get node name for better view.
-        span_name = get_node_name_from_context() or trace.name if trace_type == TraceType.TOOL else trace.name
+        # For node span we set the span name to node name, otherwise we use the function name.
+        span_name = get_node_name_from_context(used_for_span_name=True) or trace.name
         with open_telemetry_tracer.start_as_current_span(span_name) as span:
             enrich_span_with_trace(span, trace)
             enrich_span_with_prompt_info(span, func, kwargs)

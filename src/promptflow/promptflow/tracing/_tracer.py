@@ -7,12 +7,9 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
-from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.tool import ConnectionType
-
-from .._utils.utils import default_json_encoder
+from ._thread_local_singleton import ThreadLocalSingleton
+from ._utils import serialize
+from .contracts.generator_proxy import GeneratorProxy, generate_from_proxy
 from .contracts.trace import Trace, TraceType
 
 
@@ -23,6 +20,7 @@ class Tracer(ThreadLocalSingleton):
     def __init__(self, run_id, node_name: Optional[str] = None):
         self._run_id = run_id
         self._node_name = node_name
+        self._is_node_span_created = False
         self._traces = []
         self._current_trace_id = ContextVar("current_trace_id", default="")
         self._id_to_trace: Dict[str, Trace] = {}
@@ -67,7 +65,12 @@ class Tracer(ThreadLocalSingleton):
             return obj
         try:
             obj = serialize(obj)
-            json.dumps(obj, default=default_json_encoder)
+            try:
+                from promptflow._utils.utils import default_json_encoder
+
+                json.dumps(obj, default=default_json_encoder)
+            except ImportError:
+                json.dumps(obj)
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
             # so we simply convert it to str if it cannot be serialized.
@@ -156,10 +159,18 @@ def _create_trace_from_function_call(
     sig = inspect.signature(f).parameters
 
     all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-    all_kwargs = {
-        k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
-        for k, v in all_kwargs.items()
-    }
+    try:
+        # We have removed the dependency of tracing on promptflow, so need to check if the ConnectionType is
+        # available before using it.
+        from promptflow.contracts.tool import ConnectionType
+
+        all_kwargs = {
+            k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
+            for k, v in all_kwargs.items()
+        }
+    except ImportError:
+        pass
+
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
     for key in args_to_ignore:
@@ -178,8 +189,16 @@ def _create_trace_from_function_call(
     )
 
 
-def get_node_name_from_context():
+def get_node_name_from_context(used_for_span_name=False):
     tracer = Tracer.active_instance()
     if tracer is not None:
-        return tracer._node_name
+        if used_for_span_name:
+            # Since only the direct children of flow span should have the node name as span name, we need to check if
+            # the node span is created, if created, the current span is not a node span, its name should bet set to
+            # function name.
+            if not tracer._is_node_span_created:
+                tracer._is_node_span_created = True
+                return tracer._node_name
+        else:
+            return tracer._node_name
     return None

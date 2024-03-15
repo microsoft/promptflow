@@ -21,7 +21,6 @@ from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
@@ -40,6 +39,7 @@ from promptflow._utils.multimedia_utils import (
 )
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -57,7 +57,8 @@ from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     enrich_span_with_context,
     enrich_span_with_input,
@@ -126,10 +127,6 @@ class FlowExecutor:
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
         """
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
-
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
         self._connections = connections
@@ -321,13 +318,23 @@ class FlowExecutor:
         :param raise_ex: Whether to raise exceptions or not. Default is False.
         :type raise_ex: Optional[bool]
         """
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
 
-        OperationContext.get_instance().run_mode = RunMode.SingleNode.name
+        @contextlib.contextmanager
+        def update_operation_context():
+            operation_context = OperationContext.get_instance()
+            original_context = operation_context.copy()
+            try:
+                operation_context.append_user_agent(f"promptflow/{VERSION}")
+                operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+                operation_context["run_mode"] = RunMode.SingleNode.name
+                # Inject OpenAI API to make sure traces and headers injection works and
+                # update OpenAI API configs from environment variables.
+                inject_openai_api()
+                yield
+            finally:
+                OperationContext.set_instance(original_context)
+
         dependency_nodes_outputs = dependency_nodes_outputs or {}
-
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
@@ -388,7 +395,7 @@ class FlowExecutor:
             sub_dir = "." if output_sub_dir is None else output_sub_dir
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
-        with run_tracker.node_log_manager:
+        with run_tracker.node_log_manager, update_operation_context():
             # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
@@ -778,10 +785,15 @@ class FlowExecutor:
         else:
             values_for_otel = {"line_run_id": run_id}
         try:
+            operation_context.append_user_agent(f"promptflow/{VERSION}")
+            operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
             for k, v in values_for_otel.items():
                 operation_context._add_otel_attributes(k, v)
+            # Inject OpenAI API to make sure traces and headers injection works and
+            # update OpenAI API configs from environment variables.
+            inject_openai_api()
             yield
         finally:
             OperationContext.set_instance(original_context)
