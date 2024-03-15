@@ -51,6 +51,7 @@ cov.xml
 .hypothesis/
 .pytest_cache/
 cover/
+test-results.xml
 
 # Translations
 *.mo
