@@ -21,10 +21,10 @@ from promptflow._utils.utils import generate_elapsed_time_messages, try_get_long
 from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
+from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
 from promptflow.tracing._tracer import Tracer
 
 from .run_tracker import RunTracker
-from .thread_local_singleton import ThreadLocalSingleton
 
 DEFAULT_LOGGING_INTERVAL = 60
 
