@@ -34,6 +34,7 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -403,3 +404,56 @@ class TestTelemetry:
                 mock_logger.side_effect = assert_flow_test
 
                 pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
+
+    @pytest.mark.skipif(
+        condition=not is_live(), reason="Live mode can run successfully, but an error will be reported when recording."
+    )
+    def test_run_yaml_type(self, pf, randstr: Callable[[str], str]):
+        from promptflow._constants import FlowType
+        from promptflow._sdk._configuration import Configuration
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
+
+        envelope = None
+        flow_type = None
+        config = Configuration.get_instance()
+        custom_dimensions = {
+            "python_version": platform.python_version(),
+            "installation_id": config.get_or_set_installation_id(),
+        }
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",
+            custom_dimensions=custom_dimensions,
+        )._log_to_envelope
+
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
+
+        def check_evelope():
+            assert envelope.data.base_data.name.startswith("pfazure.runs.create_or_update")
+            custom_dimensions = pydash.get(envelope, "data.base_data.properties")
+            assert isinstance(custom_dimensions, dict)
+            assert "flow_type" in custom_dimensions
+            assert custom_dimensions["flow_type"] == flow_type
+
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope", side_effect=log_event), patch(
+            "promptflow._sdk._telemetry.telemetry.get_telemetry_logger", side_effect=get_telemetry_logger
+        ):
+            flow_type = FlowType.DAG_FLOW
+            pf.run(
+                flow="./tests/test_configs/flows/print_input_flow",
+                data="./tests/test_configs/datas/print_input_flow.jsonl",
+                name=randstr("name"),
+            )
+            logger = get_telemetry_logger()
+            logger.handlers[0].flush()
+            check_evelope()
+
+            flow_type = FlowType.FLEX_FLOW
+            pf.run(
+                flow="./tests/test_configs/eager_flows/simple_with_req",
+                data="./tests/test_configs/datas/simple_eager_flow_data.jsonl",
+                name=randstr("name"),
+            )
+            logger.handlers[0].flush()
+            check_evelope()

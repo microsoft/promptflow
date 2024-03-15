@@ -52,6 +52,13 @@ class FlowLanguage:
     CSharp = "csharp"
 
 
+class FlowType:
+    """The enum of flow type."""
+
+    DAG_FLOW = "dag"
+    FLEX_FLOW = "flex"
+
+
 class AvailableIDE:
     VS = "vs"
     VS_CODE = "vsc"

@@ -745,3 +745,16 @@ class Run(YAMLTranslatableMixin):
         }
         logger.debug(f"Run init params: {init_params}")
         return Run(**init_params)
+
+    @functools.cached_property
+    def _flow_type(self) -> str:
+        """Get flow type of run."""
+
+        from promptflow import load_flow
+        from promptflow._constants import FlowType
+        from promptflow._sdk.entities._eager_flow import FlexFlow
+
+        flow_obj = load_flow(source=self.flow)
+        if isinstance(flow_obj, FlexFlow):
+            return FlowType.FLEX_FLOW
+        return FlowType.DAG_FLOW
