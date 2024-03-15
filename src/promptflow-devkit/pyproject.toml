@@ -86,6 +86,6 @@ root_package = "promptflow"
 
 [[tool.importlinter.contracts]]
 name = "Contract forbidden modules"
-type = "independence"
+type = "forbidden"
 source_modules = ["promptflow.devkit"]
 forbidden_modules = ["promptflow.tools", "promptflow.azure"]
