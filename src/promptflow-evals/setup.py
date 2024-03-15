@@ -31,6 +31,7 @@ if not version:
 
 with open("README.md", encoding="utf-8") as f:
     readme = f.read()
+
 with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
@@ -44,7 +45,6 @@ setup(
     author_email="aml-pt-eng@microsoft.com",
     url="https://github.com/microsoft/promptflow",
     classifiers=[
-        "Development Status :: 4 - Beta",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
