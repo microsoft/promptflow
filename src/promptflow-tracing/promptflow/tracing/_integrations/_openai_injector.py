@@ -16,7 +16,6 @@ from .._operation_context import OperationContext
 from .._trace import _traced_async, _traced_sync
 from ..contracts.trace import TraceType
 
-
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_HEADER = "ms-azure-ai-promptflow"
 IS_LEGACY_OPENAI = version("openai").startswith("0.")

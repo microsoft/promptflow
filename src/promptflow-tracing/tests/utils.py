@@ -1,5 +1,4 @@
 import traceback
-
 from multiprocessing import Queue, get_context
 
 from opentelemetry.sdk.trace import TracerProvider

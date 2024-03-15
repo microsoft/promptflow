@@ -2,8 +2,9 @@ import re
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from jinja2 import Environment, meta
 from typing import Callable, Dict
+
+from jinja2 import Environment, meta
 
 from .contracts.generator_proxy import GeneratorProxy
 
