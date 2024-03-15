@@ -47,10 +47,10 @@ promptflow.tools.llm_v2.llm:
         # include:
         #   model_names: 
         #   model_versions: 
-        exclude:
-          # model_names: 
-          model_versions: 
-          - vision-preview
+        # exclude:
+        #   # model_names: 
+        #   model_versions: 
+        #   - vision-preview
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
@@ -64,9 +64,9 @@ promptflow.tools.llm_v2.llm:
       - completion
       capabilities:
         completion: true
-        include:
-          model_names: 
-          - gpt-35-turbo-instruct
+        # include:
+        #   model_names: 
+        #   - gpt-35-turbo-instruct
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
