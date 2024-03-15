@@ -5,8 +5,9 @@
 import os
 from abc import abstractmethod
 from enum import Enum
-from promptflow._sdk._serving.extension.extension_type import ExtensionType
-from promptflow._sdk._serving.monitor.mdc_exporter import MdcExporter
+
+from promptflow.core._serving.extension.extension_type import ExtensionType
+from promptflow.core._serving.monitor.mdc_exporter import MdcExporter
 
 
 class ExporterType(Enum):
@@ -52,6 +53,7 @@ class AppInsightTraceExporterProvider(AppInsightExporterProvider):
     def get_exporter(self, **kwargs):
         try:
             from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+
             return AzureMonitorTraceExporter.from_connection_string(self.app_insight_connection_string)
         except ImportError:
             return None
@@ -75,6 +77,7 @@ class AppInsightMetricsExporterProvider(AppInsightExporterProvider):
     def get_exporter(self, **kwargs):
         try:
             from azure.monitor.opentelemetry.exporter import AzureMonitorMetricExporter
+
             return AzureMonitorMetricExporter.from_connection_string(self.app_insight_connection_string)
         except ImportError:
             return None

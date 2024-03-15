@@ -2,10 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import flask
-from jinja2 import Template
 from pathlib import Path
-from flask import Blueprint, request, url_for, current_app as app
+
+import flask
+from flask import Blueprint
+from flask import current_app as app
+from flask import request, url_for
+from jinja2 import Template
 
 
 def construct_staticweb_blueprint(static_folder):

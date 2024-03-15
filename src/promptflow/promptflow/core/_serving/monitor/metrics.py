@@ -3,11 +3,10 @@
 # ---------------------------------------------------------
 
 from enum import Enum
-from typing import Dict, Sequence, Set, List, Any
+from typing import Any, Dict, List, Sequence, Set
 
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
-
 
 # define metrics dimension keys
 FLOW_KEY = "flow"

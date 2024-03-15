@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow.core._serving.app import create_app
+from ._version import __version__
 
-# Keep this for backward compatibility, will be removed after runtime is updated
-create_app = create_app
+__all__ = ["__version__"]

@@ -1,27 +1,28 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import base64
 import json
 import os
 import time
-import base64
 import zlib
 from pathlib import Path
-from flask import jsonify, request
 
-from promptflow._sdk._serving._errors import (
+from flask import jsonify, request
+from opentelemetry.baggage.propagation import W3CBaggagePropagator
+from opentelemetry.context import Context
+from opentelemetry.propagate import extract, set_global_textmap
+from opentelemetry.propagators.composite import CompositePropagator
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
+from promptflow.contracts.flow import Flow as FlowContract
+from promptflow.core._serving._errors import (
     JsonPayloadRequiredForMultipleInputFields,
     MissingRequiredFlowInput,
     NotAcceptable,
 )
-from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
-from promptflow.contracts.flow import Flow as FlowContract
 from promptflow.exceptions import ErrorTarget
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-from opentelemetry.baggage.propagation import W3CBaggagePropagator
-from opentelemetry.context import Context
-from opentelemetry.propagate import set_global_textmap, extract
-from opentelemetry.propagators.composite import CompositePropagator
 
 DEFAULT_RESOURCE_PATH = Path(__file__).parent / "resources"
 # configure global propagator
@@ -173,7 +174,7 @@ def serialize_attribute_value(v):
 def load_feedback_swagger():
     feedback_swagger_path = DEFAULT_RESOURCE_PATH / "feedback_swagger.json"
     # Open the JSON file
-    with open(feedback_swagger_path, 'r') as file:
+    with open(feedback_swagger_path, "r") as file:
         # Load JSON data from the file
         data = json.load(file)
     return data
