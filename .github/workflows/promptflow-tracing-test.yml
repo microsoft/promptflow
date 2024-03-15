@@ -44,13 +44,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: promptflow-tracing
       - uses: snok/install-poetry@v1
       - name: install promptflow-tracing from wheel
         # wildcard expansion (*) does not work in Windows, so leverage python to find and install
         run: poetry run pip install $(python -c "import glob; print(glob.glob('promptflow_tracing-*.whl')[0])")
+      - uses: actions/download-artifact@v4
+        with:
+          name: promptflow-tracing
+          path: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
