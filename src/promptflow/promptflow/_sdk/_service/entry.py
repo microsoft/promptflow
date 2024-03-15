@@ -173,7 +173,12 @@ def start_service(args):
             win32api.CloseHandle(thread_handle)
         else:
             # Set host to localhost, only allow request from localhost.
-            cmd = ["waitress-serve", f"--listen=127.0.0.1:{port}", "promptflow._sdk._service.entry:get_app"]
+            cmd = [
+                "waitress-serve",
+                f"--listen=127.0.0.1:{port}",
+                "promptflow._sdk._service.entry:get_app",
+                f"--threads={PF_SERVICE_WORKER_NUM}",
+            ]
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
         if is_healthy:
