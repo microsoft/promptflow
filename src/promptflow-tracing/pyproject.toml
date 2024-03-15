@@ -47,6 +47,7 @@ pre-commit = "*"
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 pytest-cov = "*"
+pytest-mock = "*"
 pytest-xdist = "*"
 
 [build-system]
