@@ -1,0 +1,8 @@
+[
+    {
+      "question": "Which tent is the most waterproof?",
+      "context": "From the our product list, the alpine explorer tent is the most waterproof. The Adventure Dining Table has higher weight.",
+      "answer": "The Alpine Explorer Tent is the most waterproof.",
+      "ground_truth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m"
+    }
+  ]

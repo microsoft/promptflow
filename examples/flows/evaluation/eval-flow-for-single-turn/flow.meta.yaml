@@ -1,0 +1,11 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: evaluation flow for single turn
+display_name: evaluation flow for single turn
+type: evaluate
+path: ./flow.dag.yaml
+description: Compute the quality of the answer for the given question based on the ground_truth and the context
+properties:
+  promptflow.stage: prod
+  promptflow.details.type: markdown
+  promptflow.details.source: README.md
+  promptflow.batch_inputs: samples.json
