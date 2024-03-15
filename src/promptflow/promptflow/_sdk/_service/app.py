@@ -136,11 +136,13 @@ def create_app():
                         "last_request_time"
                     ] > timedelta(hours=PF_SERVICE_HOUR_TIMEOUT):
                         # Todo: check if we have any not complete work? like persist all traces.
-                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made 1h ago")
+                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made "
+                                           f"{PF_SERVICE_HOUR_TIMEOUT}h ago")
                         port = get_port_from_config()
                         if port:
                             app.logger.info(
-                                f"Try auto stop pfs service in port {port} since no request to app within 1h"
+                                f"Try auto stop pfs service in port {port} since no request to app within "
+                                f"{PF_SERVICE_HOUR_TIMEOUT}h"
                             )
                             kill_exist_service(port)
                         break
