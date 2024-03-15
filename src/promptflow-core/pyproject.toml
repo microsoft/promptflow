@@ -39,6 +39,7 @@ python = "<4.0,>=3.8"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
+import-linter = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -46,7 +47,9 @@ pytest-cov = "*"
 pytest-xdist = "*"
 
 [build-system]
-requires = ["poetry-core>=1.5.0"]
+requires = [
+  "poetry-core>=1.5.0",
+]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]

@@ -42,6 +42,7 @@ opentelemetry-sdk = ">=1.22.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
+import-linter = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

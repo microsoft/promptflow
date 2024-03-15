@@ -22,13 +22,13 @@ jobs:
     - name: Install all packages
       run: |
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
-        poetry install
+        poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
-        poetry install
+        poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
-        poetry install
+        poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
-        poetry install
+        poetry install --with dev
       working-directory: ${{ env.WORKING_DIRECTORY }}
     - name: import lint
       run: |
