@@ -241,6 +241,7 @@ class TestExecutorLogs:
             assert all(log in log_content for log in logs_list)
 
     def test_async_log_in_worker_thread(self):
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "60"
         logs_directory = Path(mkdtemp())
         log_path = str(logs_directory / "flow.log")
         with LogContext(log_path, run_mode=RunMode.Test):
@@ -250,3 +251,4 @@ class TestExecutorLogs:
             # Below log is created by worker thread
             logs_list = ["INFO     monitor_long_running_coroutine started"]
             assert all(log in log_content for log in logs_list)
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
