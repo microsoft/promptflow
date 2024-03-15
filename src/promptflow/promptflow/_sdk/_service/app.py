@@ -61,7 +61,7 @@ def create_app():
     app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
     with app.app_context():
-        api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
+        api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0", template_folder="static")
 
         # Registers resources from namespace for current instance of api
         api = Api(api_v1, title="Prompt Flow Service", version="1.0")
