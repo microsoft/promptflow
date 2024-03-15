@@ -1,0 +1,44 @@
+name: promptflow-import-linter
+
+on:
+  pull_request:
+    paths:
+      - src/promptflow-tracing/**
+      - src/promptflow-core/**
+      - src/promptflow-devkit/**
+      - src/promptflow-azure/**
+      - .github/workflows/promptflow-import-linter.yml
+  workflow_dispatch:
+
+env:
+  WORKING_DIRECTORY: ${{ github.workspace }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: snok/install-poetry@v1
+    - name: Install all packages
+      run: |
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
+        poetry install
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
+        poetry install
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
+        poetry install
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
+        poetry install
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - name: import lint
+      run: |
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-tracing
+        poetry run lint-imports
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-core
+        poetry run lint-imports
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
+        poetry run lint-imports
+        cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
+        poetry run lint-imports
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+

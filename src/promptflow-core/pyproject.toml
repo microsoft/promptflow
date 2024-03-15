@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "promptflow-tracing"
-version = "0.1.0b2"
-description = "Prompt flow tracing"
+name = "promptflow-core"
+version = "0.1.0b1"
+description = "Prompt flow core"
 
 license = "MIT"
 
@@ -13,7 +13,7 @@ repository = "https://github.com/microsoft/promptflow"
 homepage = "https://microsoft.github.io/promptflow/"
 
 readme = ["README.md"]
-keywords = ["telemetry"]
+keywords = ["core"]
 
 classifiers = [
   "Programming Language :: Python",
@@ -36,9 +36,6 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-openai = "*"
-tiktoken = ">=0.4.0"
-opentelemetry-sdk = ">=1.22.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
@@ -47,16 +44,6 @@ pre-commit = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-xdist = "*"
-
-[tool.importlinter]
-root_package = "promptflow.tracing"
-include_external_packages = "True"
-
-[[tool.importlinter.contracts]]
-name = "Contract forbidden modules"
-type = "independence"
-source_modules = ["promptflow.tracing"]
-forbidden_modules = ["promptflow.tools", "promptflow.devkit", "promptflow.azure", "promptflow.core"]
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]
@@ -92,3 +79,13 @@ omit = [
 
 [tool.black]
 line-length = 120
+
+[tool.importlinter]
+root_package = "promptflow"
+include_external_packages = "True"
+
+[[tool.importlinter.contracts]]
+name = "Contract forbidden modules"
+type = "independence"
+source_modules = ["promptflow.core"]
+forbidden_modules = ["promptflow.tools", "promptflow.devkit", "promptflow.azure", "promptflow.core"]
