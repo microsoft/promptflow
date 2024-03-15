@@ -59,10 +59,12 @@ class AsyncNodesScheduler:
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
         self._semaphore = asyncio.Semaphore(self._node_concurrency)
-        if (interval:=self._try_get_long_running_logging_interval()) is not None:
+        if (interval := self._try_get_long_running_logging_interval()) is not None:
             monitor = ThreadWithContextVars(
                 target=monitor_long_running_coroutine,
-                args=(interval, loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event),
+                args=(
+                    interval, loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event
+                ),
                 daemon=True,
             )
             monitor.start()
@@ -184,8 +186,8 @@ class AsyncNodesScheduler:
                 return value
             except ValueError:
                 flow_logger.warning(
-                    f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable ('{logging_interval_in_env}') "
-                    f"is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
+                    f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable "
+                    f"('{logging_interval_in_env}') is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
                 )
                 return DEFAULT_TASK_LOGGING_INTERVAL
         # If the environment variable is not set, return none to disable the long running logging

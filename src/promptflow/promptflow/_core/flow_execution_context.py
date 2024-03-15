@@ -27,7 +27,7 @@ from promptflow.tracing._tracer import Tracer
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
 
-DEFAULT_LONG_RUNNING_LOGGING_INTERVAL = 60
+DEFAULT_LOGGING_INTERVAL = 60
 PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
 
 
@@ -174,7 +174,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         node_name = node.name
         try:
-            if (interval:=self._try_get_long_running_logging_interval()) is not None:
+            if (interval := self._try_get_long_running_logging_interval()) is not None:
                 logging_name = node_name
                 if self._line_number is not None:
                     logging_name = f"{node_name} in line {self._line_number}"
@@ -216,10 +216,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 return value
             except ValueError:
                 flow_logger.warning(
-                    f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable ('{logging_interval_in_env}') "
-                    f"is invalid, use default value {DEFAULT_LONG_RUNNING_LOGGING_INTERVAL}"
+                    f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable "
+                    f"('{logging_interval_in_env}') is invalid, use default value {DEFAULT_LOGGING_INTERVAL}"
                 )
-                return DEFAULT_LONG_RUNNING_LOGGING_INTERVAL
+                return DEFAULT_LOGGING_INTERVAL
         # If the environment variable is not set, return none to disable the long running logging
         return None
 
