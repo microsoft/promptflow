@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._sdk._serving.extension.default_extension import AppExtension
-from promptflow._sdk._serving.extension.extension_type import ExtensionType
+from promptflow.core._serving.extension.default_extension import AppExtension
+from promptflow.core._serving.extension.extension_type import ExtensionType
 
 
 class ExtensionFactory:
@@ -19,10 +19,10 @@ class ExtensionFactory:
 
         if extension_type == ExtensionType.AZUREML:
             logger.info("Enable AzureML extension.")
-            from promptflow._sdk._serving.extension.azureml_extension import AzureMLExtension
+            from promptflow.core._serving.extension.azureml_extension import AzureMLExtension
 
             return AzureMLExtension(logger=logger, **kwargs)
         else:
-            from promptflow._sdk._serving.extension.default_extension import DefaultAppExtension
+            from promptflow.core._serving.extension.default_extension import DefaultAppExtension
 
             return DefaultAppExtension(logger=logger, **kwargs)

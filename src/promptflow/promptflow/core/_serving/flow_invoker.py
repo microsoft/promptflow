@@ -7,9 +7,6 @@ from typing import Callable, Union
 
 from promptflow import PFClient
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
-from promptflow._sdk._serving.flow_result import FlowResult
-from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
     dump_flow_result,
     get_local_connections_from_executable,
@@ -17,12 +14,15 @@ from promptflow._sdk._utils import (
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
 )
-from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow.core._connection import _Connection
+from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
+from promptflow.core._serving.flow_result import FlowResult
+from promptflow.core._serving.utils import validate_request_data
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 

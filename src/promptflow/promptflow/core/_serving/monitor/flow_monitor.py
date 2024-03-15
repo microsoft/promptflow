@@ -4,25 +4,29 @@
 
 import time
 from typing import Dict
-from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
-from promptflow._sdk._serving.monitor.streaming_monitor import StreamingMonitor
-from promptflow._sdk._serving.monitor.metrics import MetricsRecorder, ResponseType
-from promptflow._sdk._serving.utils import streaming_response_required, get_cost_up_to_now
-from promptflow._sdk._serving.flow_result import FlowResult
+
+from flask import g, request
+
 from promptflow._utils.exception_utils import ErrorResponse
-from flask import request, g
+from promptflow.core._serving.flow_result import FlowResult
+from promptflow.core._serving.monitor.data_collector import FlowDataCollector
+from promptflow.core._serving.monitor.metrics import MetricsRecorder, ResponseType
+from promptflow.core._serving.monitor.streaming_monitor import StreamingMonitor
+from promptflow.core._serving.utils import get_cost_up_to_now, streaming_response_required
 
 
 class FlowMonitor:
     """FlowMonitor is used to collect metrics & data for promptflow serving."""
 
-    def __init__(self,
-                 logger,
-                 default_flow_name,
-                 data_collector: FlowDataCollector,
-                 custom_dimensions: Dict[str, str],
-                 metric_exporters=None,
-                 trace_exporters=None):
+    def __init__(
+        self,
+        logger,
+        default_flow_name,
+        data_collector: FlowDataCollector,
+        custom_dimensions: Dict[str, str],
+        metric_exporters=None,
+        trace_exporters=None,
+    ):
         self.data_collector = data_collector
         self.logger = logger
         self.metrics_recorder = self.setup_metrics_recorder(custom_dimensions, metric_exporters)
@@ -32,6 +36,7 @@ class FlowMonitor:
     def setup_metrics_recorder(self, custom_dimensions, metric_exporters):
         if metric_exporters:
             from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
             exporter_names = [n.__class__.__name__ for n in metric_exporters]
             self.logger.info(f"Enable {len(metric_exporters)} metric exporters: {exporter_names}.")
             readers = []
