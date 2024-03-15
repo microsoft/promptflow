@@ -1364,18 +1364,29 @@ class TestFlowRun:
         run = pf.run(
             flow=f"{FLOWS_DIR}/python_tool_deployment_name",
             data=f"{DATAS_DIR}/env_var_names.jsonl",
-            column_mapping={"env": "${data.key}"},
+            column_mapping={"key": "${data.key}"},
             connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
         )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {
-            "inputs.env": ["API_BASE"],
             "inputs.key": ["API_BASE"],
             "inputs.line_number": [0],
-            "outputs.output": [{"deployment_name": "my_deployment_name", "key": "API_BASE", "model": "my_model"}],
+            "outputs.output": [{"deployment_name": "my_deployment_name", "model": "my_model"}],
         }
+
+        # TODO(3021931): this should fail.
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/deployment_name_not_enabled",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"env": "${data.key}"},
+            connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
 
     def test_deployment_overwrite_failure(self, local_client, local_aoai_connection, pf):
         # deployment name not exist

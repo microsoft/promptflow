@@ -3,7 +3,7 @@ inputs:
     type: string
 outputs:
   output:
-    type: object
+    type: string
     reference: ${print_env.output}
 nodes:
 - name: print_env

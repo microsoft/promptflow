@@ -16,7 +16,7 @@
 ### Bugs Fixed
 
 - [SDK/CLI] environment variable `PF_HOME_DIRECTORY` doesn't work for run details & logs.
-- [SDK/CLI] Support override "deployment_name" by `enabled_by` in python tool.
+- [SDK/CLI] Support override hard coded "deployment_name" and "model".
 
 ## 1.6.0 (2024.03.01)
 

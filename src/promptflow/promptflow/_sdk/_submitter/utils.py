@@ -41,7 +41,6 @@ from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
-    generate_flow_tools_json,
     get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
@@ -104,7 +103,7 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
     executable_flow = ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=Path(working_dir))
 
     # generate tool meta for deployment name, model override
-    tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)
+    # tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)
 
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
 
@@ -127,7 +126,7 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
             override_python_connections(
                 node=node,
                 connection_dict=connection_dict,
-                tools_meta=tools_meta,
+                tools_meta={},
                 executable_flow=executable_flow,
                 node_name=node_name,
             )
@@ -162,25 +161,26 @@ def override_python_connections(
 ):
     """apply connection override on python node."""
     connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
+    consumed_connections = set()
     for c, v in connection_dict.items():
         if c in connection_inputs:
             logger.debug(f"Overwriting connection for node {node_name} with {c}:{v}")
             node[INPUTS][c] = v
+            consumed_connections.add(c)
         else:
-            # check if input c is enabled by connection.
-            try:
-                input_dict = tools_meta["code"][node["source"]["path"]]["inputs"][c]
-                # TODO: refine this
-                if (
-                    "AzureOpenAIConnection" in input_dict["enabled_by_type"]
-                    or "OpenAIConnection" in input_dict["enabled_by_type"]
-                ):
-                    logger.debug(f"Overwriting enabled by connection input for node {node_name} with {c}:{v}")
-                    node[INPUTS][c] = v
-            except KeyError as e:
-                raise InvalidFlowError(
-                    f"Failed to overwrite python node {node_name} with connections {connection_dict}"
-                ) from e
+            # TODO(3021931): check if input c is enabled by connection instead of hard code
+            logger.debug(f"Overwriting enabled by connection input for node {node_name} with {c}:{v}")
+            for field in [ConnectionFields.DEPLOYMENT_NAME.value, ConnectionFields.MODEL.value]:
+                if field in connection_dict:
+                    logger.debug(f"Overwriting {field} for node {node_name} with {connection_dict[field]}")
+                    node[INPUTS][field] = connection_dict[field]
+                    consumed_connections.add(field)
+    unused_connections = connection_dict.keys() - consumed_connections
+    if unused_connections:
+        raise InvalidFlowError(
+            f"Unsupported llm connection overwrite keys: {unused_connections},"
+            f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
+        )
 
 
 def overwrite_flow(flow_dag: dict, params_overrides: dict):
