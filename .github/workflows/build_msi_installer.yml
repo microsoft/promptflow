@@ -54,6 +54,7 @@ jobs:
           Remove-Item -Path 'wix-archive.zip'
 
       - name: Python Setup
+        id: setup-python
         uses: "./.github/actions/step_create_python_environment"
 
       - name: Install stable promptflow
@@ -107,6 +108,11 @@ jobs:
         with:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
+
+      - name: Generate portable promptflow
+        run: |
+          Compress-Archive -Path ${{ steps.setup-python.outputs.python-env-path }} -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
+        shell: pwsh
 
 
       - name: Generate promptflow spec file to config pyinstaller
@@ -190,6 +196,13 @@ jobs:
           } else {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
+          }
+          # Upload zip file
+          if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
+            az storage blob upload --account-name promptflowartifact --container-name portable-installer --file "promptflow-${{ steps.get-version.outputs.version }}.zip" --name "promptflow.zip" --overwrite
+            az storage blob copy start --account-name promptflowartifact --destination-container portable-installer --destination-blob "promptflow-${{ steps.get-version.outputs.version }}.zip" --source-container portable-installer --source-blob "promptflow.zip"
+          } else {
+            az storage blob upload --account-name promptflowartifact --container-name portable-installer --file "promptflow-${{ steps.get-version.outputs.version }}.zip" --name "promptflow-${{ steps.get-version.outputs.version }}.zip" --overwrite
           }
         env:
           INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}
