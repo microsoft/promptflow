@@ -56,13 +56,6 @@ jobs:
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
 
-
-      - name: Test_Generate portable promptflow
-        run: | 
-          echo "Python_ROOT_DIR: $env:Python_ROOT_DIR"
-          Compress-Archive -Path $env:Python_ROOT_DIR -DestinationPath promptflow.zip
-        shell: pwsh
-
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
@@ -114,6 +107,12 @@ jobs:
         with:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
+
+      - name: Generate portable promptflow
+        run: | 
+          echo "Python_ROOT_DIR: $env:Python_ROOT_DIR"
+          Compress-Archive -Path $env:Python_ROOT_DIR -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
+        shell: pwsh
 
       - name: Generate portable promptflow
         run: |
