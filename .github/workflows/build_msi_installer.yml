@@ -111,7 +111,7 @@ jobs:
 
       - name: Generate portable promptflow
         run: |
-          Compress-Archive -Path ${{ steps.setup-python.outputs.python-env-path }} -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
+          Compress-Archive -Path "${{ steps.setup-python.outputs.python-env-path }}" -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
         shell: pwsh
 
 
