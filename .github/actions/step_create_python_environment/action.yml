@@ -8,10 +8,15 @@ inputs:
     required: false
     default: "3.9"
     type: string
+outputs:
+  python_env_path:
+    description: "The path of the Python environment"
+    value: ${{ steps.set-up-python.outputs.python_env_path }}
 runs:
   using: composite
   steps:
   - name: Set up Python
+    id: set-up-python
     uses: actions/setup-python@v4
     with:
       python-version: ${{ inputs.pythonVersion }}
@@ -21,5 +26,5 @@ runs:
       pip freeze
       $python_env_path = (python -c 'import os, sys; print(os.path.dirname(sys.executable))')
       echo "Python environment path: $python_env_path"
-      echo $python_env_path > ${{ github.workspace }}/python_env_path.txt
+      Write-Output "python_env_path=$python_env_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
     shell: pwsh
