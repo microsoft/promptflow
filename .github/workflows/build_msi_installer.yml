@@ -58,9 +58,11 @@ jobs:
         uses: "./.github/actions/step_create_python_environment"
 
       - name: Test_Generate portable promptflow
-        run: |
-          Compress-Archive -Path "${{ steps.setup-python.outputs.python_env_path }}" -DestinationPath promptflow.zip
+        run: | 
+          Compress-Archive -Path $env:ENV_PATH -DestinationPath promptflow.zip
         shell: pwsh
+        env:
+          ENV_PATH: ${{ steps.setup-python.outputs.python_env_path }}
 
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
