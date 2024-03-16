@@ -54,19 +54,13 @@ jobs:
           Remove-Item -Path 'wix-archive.zip'
 
       - name: Python Setup
-        id: setup-python
         uses: "./.github/actions/step_create_python_environment"
 
-      - name: Print python_env_path
-        run: |
-          echo "python_env_path: ${{ steps.setup-python.outputs.python_env_path }}"
 
       - name: Test_Generate portable promptflow
         run: | 
-          Compress-Archive -Path $env:ENV_PATH -DestinationPath promptflow.zip
+          Compress-Archive -Path $env:Python_ROOT_DIR -DestinationPath promptflow.zip
         shell: pwsh
-        env:
-          ENV_PATH: ${{ steps.setup-python.outputs.python_env_path }}
 
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
