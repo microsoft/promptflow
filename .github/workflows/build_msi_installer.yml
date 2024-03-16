@@ -59,6 +59,7 @@ jobs:
 
       - name: Test_Generate portable promptflow
         run: | 
+          echo "Python_ROOT_DIR: $env:Python_ROOT_DIR"
           Compress-Archive -Path $env:Python_ROOT_DIR -DestinationPath promptflow.zip
         shell: pwsh
 
