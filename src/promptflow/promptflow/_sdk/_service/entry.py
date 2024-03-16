@@ -109,6 +109,13 @@ def start_service(args):
                 logger.warning(f"Service port {port} is used.")
                 raise UserErrorException(f"Service port {port} is used.")
 
+    if is_run_from_built_binary():
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        parent_dir = os.path.dirname(sys.executable)
+        sys.stdout = open(os.path.join(parent_dir, "output.txt"), "w")
+        sys.stderr = sys.stdout
+        print(f"output txt: {parent_dir}")
     if port:
         dump_port_to_config(port)
         validate_port(port, args.force)
@@ -119,16 +126,20 @@ def start_service(args):
     if is_run_from_built_binary():
         # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
         # after packaged by Pyinstaller.
-        global app
-        if app is None:
-            app, _ = create_app()
-        if os.environ.get(PF_SERVICE_DEBUG) == "true":
-            app.logger.setLevel(logging.DEBUG)
-        else:
-            app.logger.setLevel(logging.INFO)
-        message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}"
-        app.logger.info(message)
-        waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
+        try:
+            global app
+            if app is None:
+                app, _ = create_app()
+            if os.environ.get(PF_SERVICE_DEBUG) == "true":
+                app.logger.setLevel(logging.DEBUG)
+            else:
+                app.logger.setLevel(logging.INFO)
+            message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}"
+            app.logger.info(message)
+            waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
     else:
         # Start a pfs process using detach mode. It will start a new process and create a new app. So we use environment
         # variable to pass the debug mode, since it will inherit parent process environment variable.
