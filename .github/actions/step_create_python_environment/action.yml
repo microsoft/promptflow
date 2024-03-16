@@ -8,9 +8,6 @@ inputs:
     required: false
     default: "3.9"
     type: string
-outputs:
-  python_env_path:
-    description: "The path of the Python environment"
 runs:
   using: composite
   steps:
@@ -22,7 +19,7 @@ runs:
       python -m pip install --upgrade pip
       pip install -r ${{ inputs.pipFilePath }}
       pip freeze
-      $python_env_path = python -c 'import os, sys; print(os.path.dirname(sys.executable))'
+      $python_env_path = (python -c 'import os, sys; print(os.path.dirname(sys.executable))')
       echo "Python environment path: $python_env_path"
-      echo "::set-output name=python_env_path::$python_env_path"
+      echo $python_env_path > ${{ github.workspace }}/python_env_path.txt
     shell: pwsh
