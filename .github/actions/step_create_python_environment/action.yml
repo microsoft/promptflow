@@ -9,7 +9,7 @@ inputs:
     default: "3.9"
     type: string
 outputs:
-  python-env-path:
+  python_env_path:
     description: "The path of the Python environment"
 runs:
   using: composite
