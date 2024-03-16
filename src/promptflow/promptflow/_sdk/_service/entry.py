@@ -103,19 +103,23 @@ def start_service(args):
     def validate_port(port, force_start):
         if is_port_in_use(port):
             if force_start:
-                logger.warning(f"Force restart the service on the port {port}.")
+                message = f"Force restart the service on the port {port}."
+                print(message)
+                logger.warning(message)
                 kill_exist_service(port)
             else:
                 logger.warning(f"Service port {port} is used.")
                 raise UserErrorException(f"Service port {port} is used.")
 
     if is_run_from_built_binary():
+        # For msi installer, use vbs to start pfs in a hidden window. But it doesn't support redirect output in the
+        # hidden window to terminal. So we redirect output to a file. And then print the file content to terminal in
+        # pfs.bat.
         old_stdout = sys.stdout
         old_stderr = sys.stderr
         parent_dir = os.path.dirname(sys.executable)
         sys.stdout = open(os.path.join(parent_dir, "output.txt"), "w")
         sys.stderr = sys.stdout
-        print(f"output txt: {parent_dir}")
     if port:
         dump_port_to_config(port)
         validate_port(port, args.force)
@@ -136,6 +140,8 @@ def start_service(args):
                 app.logger.setLevel(logging.INFO)
             message = f"Start Prompt Flow Service on {port}, version: {get_promptflow_sdk_version()}"
             app.logger.info(message)
+            print(message)
+            sys.stdout.flush()
             waitress.serve(app, host="127.0.0.1", port=port, threads=PF_SERVICE_WORKER_NUM)
         finally:
             sys.stdout = old_stdout
