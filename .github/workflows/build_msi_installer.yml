@@ -59,7 +59,7 @@ jobs:
 
       - name: Test_Generate portable promptflow
         run: |
-          Compress-Archive -Path "${{ steps.setup-python.outputs.python-env-path }}" -DestinationPath promptflow.zip
+          Compress-Archive -Path "${{ steps.setup-python.outputs.python_env_path }}" -DestinationPath promptflow.zip
         shell: pwsh
 
       - name: Install stable promptflow

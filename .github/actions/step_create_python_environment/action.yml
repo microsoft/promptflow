@@ -22,7 +22,7 @@ runs:
       python -m pip install --upgrade pip
       pip install -r ${{ inputs.pipFilePath }}
       pip freeze
-      python_env_path=$(python -c 'import os, sys; print(os.path.dirname(sys.executable))')
+      $python_env_path = python -c 'import os, sys; print(os.path.dirname(sys.executable))'
       echo "Python environment path: $python_env_path"
-      echo "::set-output name=python-env-path::$python_env_path"
+      echo "::set-output name=python_env_path::$python_env_path"
     shell: pwsh
