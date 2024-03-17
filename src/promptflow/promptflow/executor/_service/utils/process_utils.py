@@ -17,7 +17,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerialized
 from promptflow._utils.logger_utils import service_logger
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
+from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
 from promptflow.tracing._operation_context import OperationContext
 
@@ -52,10 +52,6 @@ async def invoke_sync_function_in_process(
             start_time = datetime.utcnow()
             while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p):
                 await asyncio.sleep(1)
-
-            # If process_id is None, it indicates that the process has been terminated by cancel request.
-            if run_id and not ProcessManager().get_process(run_id):
-                raise ExecutionCanceledError(run_id)
 
             # Terminate the process if it is still alive after timeout
             if p.is_alive():
