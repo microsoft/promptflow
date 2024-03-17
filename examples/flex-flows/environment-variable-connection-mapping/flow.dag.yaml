@@ -1,0 +1,7 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+entry: flow:flow_entry
+
+environment_variables:
+  AZURE_OPENAI_API_KEY: ${aoai.api_key}
+  AZURE_OPENAI_ENDPOINT: ${aoai.api_base}
+  AZURE_OPENAI_DEPLOYMENT_NAME: gpt-4-v
