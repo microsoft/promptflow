@@ -177,6 +177,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
+        use_async_scheduler: Optional[bool] = False,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -218,6 +219,7 @@ class FlowExecutor:
                 raise_ex=raise_ex,
                 node_override=node_override,
                 line_timeout_sec=line_timeout_sec,
+                use_async_scheduler=use_async_scheduler,
             )
 
     @classmethod
@@ -232,6 +234,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
+        use_async_scheduler: Optional[bool] = False,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -272,6 +275,7 @@ class FlowExecutor:
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
+            use_async_scheduler=use_async_scheduler,
         )
         logger.debug("The flow executor is initialized successfully.")
         return executor
@@ -1279,6 +1283,7 @@ def execute_flow(
     run_aggregation: bool = True,
     enable_stream_output: bool = False,
     allow_generator_output: bool = False,  # TODO: remove this
+    use_async_scheduler: bool = False,
     **kwargs,
 ) -> LineResult:
     """Execute the flow, including aggregation nodes.
@@ -1302,7 +1307,9 @@ def execute_flow(
     :return: The line result of executing the flow.
     :rtype: ~promptflow.executor._result.LineResult
     """
-    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
+    flow_executor = FlowExecutor.create(
+        flow_file, connections, working_dir, raise_ex=False, use_async_scheduler=use_async_scheduler, **kwargs
+    )
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
         # execute nodes in the flow except the aggregation nodes
