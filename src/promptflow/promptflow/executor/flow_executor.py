@@ -106,7 +106,7 @@ class FlowExecutor:
         working_dir=None,
         line_timeout_sec=None,
         flow_file=None,
-        use_async_scheduler=False,
+        enable_async_execution=False,
     ):
         """Initialize a FlowExecutor object.
 
@@ -128,6 +128,8 @@ class FlowExecutor:
         :type line_timeout_sec: int or None
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
+        :param enable_async_execution: If True, AsyncNodeScheduler will be used by default to execute node.
+        :type enable_async_execution: bool
         """
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
@@ -163,7 +165,7 @@ class FlowExecutor:
         self._completed_idx = None
         # TODO: Improve the experience about configuring node concurrency.
         self._node_concurrency = DEFAULT_CONCURRENCY_BULK
-        self._use_async_scheduler = use_async_scheduler
+        self._enable_async_execution = enable_async_execution
 
     @classmethod
     def create(
@@ -177,7 +179,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
-        use_async_scheduler: Optional[bool] = False,
+        enable_async_execution: Optional[bool] = False,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -197,6 +199,8 @@ class FlowExecutor:
         :type node_override: Optional[Dict[str, Dict[str, Any]]]
         :param line_timeout_sec: The line timeout in seconds to be used for the flow. Default is LINE_TIMEOUT_SEC.
         :type line_timeout_sec: Optional[int]
+        :param enable_async_execution: If True, AsyncNodeScheduler will be used by default to execute node.
+        :type enable_async_execution: Optional[bool]
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
@@ -219,7 +223,7 @@ class FlowExecutor:
                 raise_ex=raise_ex,
                 node_override=node_override,
                 line_timeout_sec=line_timeout_sec,
-                use_async_scheduler=use_async_scheduler,
+                enable_async_execution=enable_async_execution,
             )
 
     @classmethod
@@ -234,7 +238,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
-        use_async_scheduler: Optional[bool] = False,
+        enable_async_execution: Optional[bool] = False,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -275,7 +279,7 @@ class FlowExecutor:
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
-            use_async_scheduler=use_async_scheduler,
+            enable_async_execution=enable_async_execution,
         )
         logger.debug("The flow executor is initialized successfully.")
         return executor
@@ -941,7 +945,8 @@ class FlowExecutor:
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
             run_tracker.end_run(line_run_id, ex=ex)
-            if not self._use_async_scheduler:
+            # If async execution is enabled, ignore this exception and return the partial line results.
+            if not self._enable_async_execution:
                 raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
@@ -1098,7 +1103,8 @@ class FlowExecutor:
 
     def _should_use_async(self):
         return (
-            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            self._enable_async_execution
+            or all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
             or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
         )
 
@@ -1136,7 +1142,7 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        if self._should_use_async() or self._use_async_scheduler:
+        if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
             return asyncio.run(scheduler.execute(nodes, inputs, context))
@@ -1283,7 +1289,7 @@ def execute_flow(
     run_aggregation: bool = True,
     enable_stream_output: bool = False,
     allow_generator_output: bool = False,  # TODO: remove this
-    use_async_scheduler: bool = False,
+    enable_async_execution: bool = False,
     **kwargs,
 ) -> LineResult:
     """Execute the flow, including aggregation nodes.
@@ -1302,13 +1308,15 @@ def execute_flow(
     :type enable_stream_output: Optional[bool]
     :param run_id: Run id will be set in operation context and used for session.
     :type run_id: Optional[str]
+    :param enable_async_execution: If True, AsyncNodeScheduler will be used by default to execute node.
+    :type enable_async_execution: Optional[bool]
     :param kwargs: Other keyword arguments to create flow executor.
     :type kwargs: Any
     :return: The line result of executing the flow.
     :rtype: ~promptflow.executor._result.LineResult
     """
     flow_executor = FlowExecutor.create(
-        flow_file, connections, working_dir, raise_ex=False, use_async_scheduler=use_async_scheduler, **kwargs
+        flow_file, connections, working_dir, raise_ex=False, enable_async_execution=enable_async_execution, **kwargs
     )
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
