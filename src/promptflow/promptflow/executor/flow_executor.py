@@ -31,6 +31,7 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import (
     load_multimedia_data,
@@ -196,7 +197,7 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        if cls._is_eager_flow_yaml(flow_file, working_dir):
+        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
@@ -272,16 +273,6 @@ class FlowExecutor:
         )
         logger.debug("The flow executor is initialized successfully.")
         return executor
-
-    @classmethod
-    def _is_eager_flow_yaml(cls, flow_file: Path, working_dir: Optional[Path] = None):
-        if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-            flow_file = working_dir / flow_file if working_dir else flow_file
-            with open(flow_file, "r", encoding="utf-8") as fin:
-                flow_dag = load_yaml(fin)
-            if "entry" in flow_dag:
-                return True
-        return False
 
     @classmethod
     def load_and_exec_node(
