@@ -74,6 +74,7 @@ promptflow.tools.llm_v2.llm:
           model_version:
           - vision-preview
       allow_manual_entry: true
+      allow_connection_override: true
       is_multi_select: false
       ui_hints:
         text_box_size: lg
@@ -90,6 +91,7 @@ promptflow.tools.llm_v2.llm:
           model_name:
           - gpt-35-turbo-instruct
       allow_manual_entry: true
+      allow_connection_override: true 
       is_multi_select: false
       ui_hints:
         text_box_size: lg
@@ -112,6 +114,7 @@ promptflow.tools.llm_v2.llm:
       - gpt-4-32k
       - gpt-4-32k-0314
       allow_manual_entry: true
+      allow_connection_override: true
       is_multi_select: false
       ui_hints:
         text_box_size: lg
@@ -125,6 +128,8 @@ promptflow.tools.llm_v2.llm:
       default: gpt-3.5-turbo-instruct
       enum:
       - gpt-3.5-turbo-instruct
+      allow_manual_entry: true
+      allow_connection_override: true
       ui_hints:
         text_box_size: lg
         display_name: model
