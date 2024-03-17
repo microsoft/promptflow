@@ -41,7 +41,7 @@ def llm(
     **kwargs,
 ):
     # 1. init client
-    # api = ""
+    api = ""
     if isinstance(connection, AzureOpenAIConnection):
         client = AzureOpenAIClient(**normalize_connection_config(connection))
         api = api_of_aoai
