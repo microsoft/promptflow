@@ -6,10 +6,7 @@ from typing import Dict, Type
 
 from promptflow._constants import FlowLanguage
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-
-from ._base_executor_proxy import AbstractExecutorProxy
-from ._csharp_executor_proxy import CSharpExecutorProxy
-from ._python_executor_proxy import PythonExecutorProxy
+from promptflow.batch import AbstractExecutorProxy, CSharpExecutorProxy, PythonExecutorProxy
 
 
 class ExecutorProxyFactory:
