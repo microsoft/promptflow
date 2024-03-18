@@ -10,7 +10,7 @@ from executor.process_utils import (
     current_process_wrapper_var,
     override_process_class,
 )
-from executor.record_utils import mocked_spawned_process_patch, setup_recording
+from executor.record_utils import setup_patch, setup_recording
 from fastapi.testclient import TestClient
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
@@ -28,8 +28,6 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.executor._service.app import app
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
-from .mock_functions import mock_flow_execution_context
-
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 
 
@@ -43,36 +41,29 @@ def recording_setup():
             patcher.stop()
 
 
-def _default_mock_process_wrapper(*args, **kwargs):
-    # Default mock implementation of _process_wrapper in recording mode
-    setup_recording()
-    _process_wrapper(*args, **kwargs)
-
-
-def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
-    # Default mock implementation of create_spawned_fork_process_manager in recording mode
-    setup_recording()
-    create_spawned_fork_process_manager(*args, **kwargs)
-
-
 def _custom_mock_process_wrapper(*args, **kwargs):
-    # Default mock implementation of _process_wrapper in recording mode
-    patch_target_list = kwargs.pop("patch_target_list", None)
-    mock_function_list = kwargs.pop("mock_function_list", None)
-    mocked_spawned_process_patch(patch_target_list, mock_function_list)
+    patch_dict = kwargs.pop("patch_dict", None)
+    if patch_dict is not None:
+        # Mock implementation of _process_wrapper with custom patch.
+        setup_patch(patch_dict)
+    else:
+        # Default mock implementation of _process_wrapper in recording mode
+        setup_recording()
     _process_wrapper(*args, **kwargs)
 
 
 def _custom_mock_create_spawned_fork_process_manager(*args, **kwargs):
-    # Default mock implementation of create_spawned_fork_process_manager in recording mode
-    patch_target_list = kwargs.pop("patch_target_list", None)
-    mock_function_list = kwargs.pop("mock_function_list", None)
-    mocked_spawned_process_patch(patch_target_list, mock_function_list)
+    patch_dict = kwargs.pop("patch_dict", None)
+    if patch_dict is not None:
+        # Mock implementation of create_spawned_fork_process_manager with custom patch.
+        setup_patch(patch_dict)
+    else:
+        # Default mock implementation of create_spawned_fork_process_manager in recording mode
+        setup_recording()
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
-def process_override_setup():
-    # Step II: override the process pool class
+def process_class_override_setup():
     process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
     original_process_class = override_process_class(process_class_dict)
 
@@ -86,35 +77,28 @@ def process_override_setup():
                     multiprocessing.Process = original_process_class[start_method]
 
 
+def setup_custom_process_target(patch_dict=None):
+    current_process_wrapper_var.set(functools.partial(_custom_mock_process_wrapper, patch_dict=patch_dict))
+    current_process_manager_var.set(
+        functools.partial(_custom_mock_create_spawned_fork_process_manager, patch_dict=patch_dict)
+    )
+
+
 @pytest.fixture
 def process_override():
     # This fixture is used to override the Process class to ensure the recording mode works
-
     # Step I: set process pool targets placeholder with customized targets
-    current_process_wrapper_var.set(_default_mock_process_wrapper)
-    current_process_manager_var.set(_default_mock_create_spawned_fork_process_manager)
+    setup_custom_process_target()
+    # Step II: override the process pool class
+    yield from process_class_override_setup()
 
-    yield from process_override_setup()
 
-
-def configure_process_override_with_custom_parameters(patch_target_list, mock_function_list):
-    # This fixture is used to override the Process class to ensure the recording mode works
-
+def configure_process_override_with_custom_patch(patch_dict):
+    # This fixture is used to override the Process class to ensure the custom patch wokers.
     # Step I: set process pool targets placeholder with customized targets
-    current_process_wrapper_var.set(
-        functools.partial(
-            _custom_mock_process_wrapper, patch_target_list=patch_target_list, mock_function_list=mock_function_list
-        )
-    )
-    current_process_manager_var.set(
-        functools.partial(
-            _custom_mock_create_spawned_fork_process_manager,
-            patch_target_list=patch_target_list,
-            mock_function_list=mock_function_list,
-        )
-    )
-
-    yield from process_override_setup()
+    setup_custom_process_target(patch_dict)
+    # Step II: override the process pool class
+    yield from process_class_override_setup()
 
 
 @pytest.fixture
@@ -131,10 +115,8 @@ def recording_injection(recording_setup, process_override):
 
 
 @pytest.fixture
-def configure_flow_execution_context_init_with_error():
-    patch_target_list = ["promptflow._core.flow_execution_context.FlowExecutionContext.__init__"]
-    mock_function_list = [mock_flow_execution_context]
-    yield from configure_process_override_with_custom_parameters(patch_target_list, mock_function_list)
+def configure_flow_execution_context_init_with_error(patch_dict):
+    yield from configure_process_override_with_custom_patch(patch_dict)
 
 
 @pytest.fixture(autouse=True, scope="session")

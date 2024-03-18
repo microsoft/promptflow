@@ -40,6 +40,10 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 RUNS_ROOT = TEST_ROOT / "test_configs/runs"
 
 
+def mock_flow_execution_context(*args, **params):
+    raise Exception("Init flow execution context failed")
+
+
 async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
     await asyncio.sleep(1)
@@ -529,16 +533,17 @@ class TestBatch:
                 assert content["run_info"]["root_run_id"] == resume_run_id
 
     @pytest.mark.parametrize(
-        "flow_folder, inputs_mapping",
+        "flow_folder, inputs_mapping, patch_dict",
         [
             (
                 "hello-world",
                 {"name": "${data.name}"},
+                {"promptflow._core.flow_execution_context.FlowExecutionContext.__init__": mock_flow_execution_context},
             )
         ],
     )
     def test_batch_run_exec_line_raise_exception(
-        self, flow_folder, inputs_mapping, dev_connections, configure_flow_execution_context_init_with_error
+        self, flow_folder, inputs_mapping, dev_connections, patch_dict, configure_flow_execution_context_init_with_error
     ):
         batch_result, output_dir = submit_batch_run(
             flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True

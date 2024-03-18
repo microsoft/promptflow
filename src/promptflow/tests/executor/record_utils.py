@@ -59,7 +59,7 @@ def setup_recording():
     return patches
 
 
-def mocked_spawned_process_patch(patch_target_list=[], mock_function_list=[]):
+def setup_patch(patch_dict={}):
     patches = []
 
     def start_patches(patch_targets):
@@ -69,9 +69,5 @@ def mocked_spawned_process_patch(patch_target_list=[], mock_function_list=[]):
             patches.append(patcher)
             patcher.start()
 
-    # Setup patches
-    patch_targets = {}
-    for patch_target, mock_function in zip(patch_target_list, mock_function_list):
-        patch_targets[patch_target] = mock_function
-    start_patches(patch_targets)
+    start_patches(patch_dict)
     return patches
