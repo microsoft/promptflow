@@ -33,10 +33,10 @@ def validate_text_chunk(
     Returns:
         dict: Text chunk context and its validation result.
     """
-    model_or_deployment_name = deployment_name if deployment_name else model
     text_chunk_score_res = get_text_chunk_score(
         connection,
-        model_or_deployment_name,
+        model,
+        deployment_name,
         score_text_chunk_prompt,
         response_format,
         score_threshold,

@@ -45,7 +45,7 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
 ## Create a test data generation flow
   - Open the [sample test data generation flow](../../examples/gen_test_data/gen_test_data/generate_test_data_flow/) in VSCode. This flow is designed to generate a pair of question and suggested answer based on the given text chunk. The flow also includes validation prompts to ensure the quality of the generated test data.
-  - Fill in node inputs including `connection`, `model_or_deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode by referring to [Test flow with VS Code Extension](https://microsoft.github.io/promptflow/how-to-guides/init-and-test-a-flow.html#visual-editor-on-the-vs-code-for-prompt-flow).
+  - Fill in node inputs including `connection`, `model` or `deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode by referring to [Test flow with VS Code Extension](https://microsoft.github.io/promptflow/how-to-guides/init-and-test-a-flow.html#visual-editor-on-the-vs-code-for-prompt-flow).
 
     > !Note: Recommend to use `gpt-4` series models than the `gpt-3.5` for better performance.
 

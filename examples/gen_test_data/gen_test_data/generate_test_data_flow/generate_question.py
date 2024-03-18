@@ -35,6 +35,5 @@ def generate_question(
     if not context:
         return ""
 
-    model_or_deployment_name = deployment_name if deployment_name else model
-    seed_question = llm_call(connection, model_or_deployment_name, generate_question_prompt, temperature=temperature)
+    seed_question = llm_call(connection, model, deployment_name, generate_question_prompt, temperature=temperature)
     return seed_question

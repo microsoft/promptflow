@@ -36,10 +36,10 @@ def validate_suggested_answer(
     if not suggested_answer:
         return {"suggested_answer": "", "validation_res": None}
 
-    model_or_deployment_name = deployment_name if deployment_name else model
     validation_res = get_suggested_answer_validation_res(
         connection,
-        model_or_deployment_name,
+        model,
+        deployment_name,
         validate_suggested_answer_prompt,
         suggested_answer,
         temperature,

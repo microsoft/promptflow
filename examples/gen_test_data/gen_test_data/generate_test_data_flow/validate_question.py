@@ -37,10 +37,10 @@ def validate_question(
     if not generated_question:
         return {"question": "", "question_type": "", "validation_res": None}
 
-    model_or_deployment_name = deployment_name if deployment_name else model
     validation_res = get_question_validation_res(
         connection,
-        model_or_deployment_name,
+        model,
+        deployment_name,
         validate_question_prompt,
         generated_question,
         response_format,

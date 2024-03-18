@@ -32,11 +32,11 @@ def generate_suggested_answer(
     Returns:
         str: The generated suggested answer.
     """
-    model_or_deployment_name = deployment_name if deployment_name else model
     if question and context:
         return llm_call(
             connection,
-            model_or_deployment_name,
+            model,
+            deployment_name,
             generate_suggested_answer_prompt,
             temperature=temperature,
         )
