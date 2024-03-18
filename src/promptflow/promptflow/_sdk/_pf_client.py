@@ -321,3 +321,8 @@ class PFClient:
         return self.flows.test(
             flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
         )
+
+    @property
+    def traces(self) -> TraceOperations:
+        """Operations on the trace that can manage traces."""
+        return self._traces
