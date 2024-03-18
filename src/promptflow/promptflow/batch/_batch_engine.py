@@ -33,10 +33,9 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.batch import ExecutorProxyFactory, PythonExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
-from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
-from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo, Status

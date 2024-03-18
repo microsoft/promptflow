@@ -9,7 +9,7 @@ from typing import NoReturn, Optional
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.flow_utils import is_flex_flow
-from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
+from promptflow.batch import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
