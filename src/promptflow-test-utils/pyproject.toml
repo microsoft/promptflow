@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "promptflow-test-utils"
+version = "0.1.0b1"
+description = "Prompt flow test utilities"
+
+license = "MIT"
+
+authors = [
+  "Microsoft Corporation <aml-pt-eng@microsoft.com>"
+]
+
+repository = "https://github.com/microsoft/promptflow"
+homepage = "https://microsoft.github.io/promptflow/"
+
+readme = ["README.md"]
+keywords = ["promptflow_test"]
+
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+packages = [
+  { include = "promptflow_test" }
+]
+
+[tool.poetry.urls]
+"Bug Reports" = "https://github.com/microsoft/promptflow/issues"
+
+[tool.poetry.dependencies]
+python = "<4.0,>=3.8"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "*"
+import-linter = "*"
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
+
+[build-system]
+requires = [
+  "poetry-core>=1.5.0",
+]
+build-backend = "poetry.core.masonry.api"
