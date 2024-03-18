@@ -193,6 +193,7 @@ class TraceOperations:
                     from datetime import datetime
 
                     datetime.fromisoformat(started_before)
+                    return
                 except ValueError:
                     pass
             elif session != TRACE_DEFAULT_SESSION_ID:
