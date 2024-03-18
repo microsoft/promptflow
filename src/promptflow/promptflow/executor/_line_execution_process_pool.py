@@ -16,6 +16,7 @@ from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
 
 import psutil
@@ -44,13 +45,25 @@ from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.storage._queue_run_storage import QueueRunStorage
+from promptflow.storage._queue_run_storage import QueueRunStorage, ServiceQueueRunStorage
 from promptflow.tracing._operation_context import OperationContext
 
 TERMINATE_SIGNAL = "terminate"
 
 
 class LineExecutionProcessPool:
+    """A process pool for executing lines in batch mode.
+
+    :param output_dir: The output directory for the batch run.
+    :param flow_executor: The flow executor used to provide flow_create_kwargs to execute the lines.
+    :param worker_count: The number of worker processes in the pool.
+    :param line_timeout_sec: The timeout for each line execution in seconds.
+    :param batch_timeout_sec: The timeout for the entire batch run in seconds.
+    :param run_id: The run id of the batch run.
+    :param nlines: The number of lines in the batch run.
+    :param serialize_multimedia_during_execution: Whether to serialize multimedia data during line execution.
+    """
+
     _DEFAULT_WORKER_COUNT = 4
     _THREAD_TERMINATED_TIMEOUT = 10
     _PROCESS_TERMINATED_TIMEOUT = 60
@@ -58,13 +71,14 @@ class LineExecutionProcessPool:
 
     def __init__(
         self,
-        flow_executor: FlowExecutor,
-        nlines: int,
-        run_id: int,
         output_dir: Path,
-        batch_timeout_sec: Optional[int] = None,
-        line_timeout_sec: Optional[int] = None,
+        flow_executor: FlowExecutor,
         worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
+        batch_timeout_sec: Optional[int] = None,
+        run_id: Optional[str] = None,
+        nlines: Optional[int] = None,
+        serialize_multimedia_during_execution: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -85,6 +99,13 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
+
+        # - If it is False, we will use QueueRunStorage as the storage during execution.
+        # It will only put the original run info into the output queue to wait for processing.
+        # - If it is True, we will use ServiceQueueRunStorage as the storage during execution.
+        # It will persist multimedia data in the run infos and aggregation_inputs to output_dir
+        # and convert Image object to path dict.
+        self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Initialize the results dictionary that stores line results.
         self._result_dict: Dict[int, LineResult] = {}
@@ -146,6 +167,8 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
+            "output_dir": self._output_dir,
+            "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -202,6 +225,8 @@ class LineExecutionProcessPool:
         # If a thread crashed for some reason, the processes it monitors might not be able to exit because
         # they do not receive a terminate signal. So we need to terminate these unmonitored processes.
         self._processes_manager.ensure_all_processes_terminated()
+        # Clear the result dict.
+        self._result_dict.clear()
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
@@ -550,6 +575,12 @@ class LineExecutionProcessPool:
         # Serialize multimedia data in node run infos to string
         for node_run_info in result.node_run_infos.values():
             self._serialize_multimedia(node_run_info)
+        # Persist multimedia data in the aggregation_inputs of line result to output_dir
+        # if _serialize_multimedia_during_execution is True.
+        if self._serialize_multimedia_during_execution:
+            result.aggregation_inputs = persist_multimedia_data(
+                result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
+            )
         # Persist multimedia data in the outputs of line result to output_dir
         result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
@@ -617,6 +648,8 @@ class LineExecutionProcessPool:
 
 def _process_wrapper(
     executor_creation_func,
+    output_dir: Path,
+    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -635,9 +668,9 @@ def _process_wrapper(
 
     if log_context_initialization_func:
         with log_context_initialization_func():
-            _exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+            _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
     else:
-        _exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
 
 
 def signal_handler(signum, frame):
@@ -653,8 +686,12 @@ def signal_handler(signum, frame):
         sys.exit(1)
 
 
-def _exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
-    run_storage = QueueRunStorage(output_queue)
+def _exec_line_for_queue(
+    executor_creation_func, output_dir: Path, serialize_multimedia: bool, input_queue: Queue, output_queue: Queue
+):
+    run_storage = (
+        ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
+    )
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     while True:
