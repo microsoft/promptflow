@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, AsyncIterator
 
 from opentelemetry.trace.status import StatusCode
 
@@ -1211,6 +1211,11 @@ def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_p
         signature = inspect.signature(f)
         if streaming_option_parameter not in signature.parameters:
             return f
+        # We only wrap the function if it is not a coroutine function
+        # For a coroutine function, the streaming mode will return an async generator
+        # which is not supported in the current sync implementation.
+        if inspect.iscoroutinefunction(f):
+            return f
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -1218,7 +1223,7 @@ def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_p
             kwargs.update({streaming_option_parameter: should_stream()})
 
             return f(*args, **kwargs)
-
+        
         return wrapper
 
     return stream_option_decorator

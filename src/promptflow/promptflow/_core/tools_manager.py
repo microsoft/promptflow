@@ -211,6 +211,10 @@ class BuiltinsManager:
 
     @staticmethod
     def _load_llm_api(api_name: str) -> Tool:
+        async_tool = apis.get(api_name + "_async")
+        if async_tool:
+            # If the async version of the API is found, return it.
+            return async_tool
         result = apis.get(api_name)
         if result is None:
             raise APINotFound(
