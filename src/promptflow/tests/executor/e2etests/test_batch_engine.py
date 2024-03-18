@@ -1,4 +1,5 @@
 import asyncio
+import glob
 import multiprocessing
 import os
 import traceback
@@ -22,13 +23,14 @@ from ..conftest import setup_recording
 from ..process_utils import MockForkServerProcess, MockSpawnProcess, override_process_class
 from ..utils import (
     MemoryRunStorage,
+    get_batch_inputs_line,
     get_flow_expected_metrics,
     get_flow_expected_status_summary,
     get_flow_folder,
     get_flow_inputs_file,
-    get_flow_sample_inputs,
     get_yaml_file,
     load_jsonl,
+    submit_batch_run,
 )
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -87,33 +89,6 @@ def _run_batch_with_start_method(multiprocessing_start_method, flow_folder, inpu
         assert isinstance(output, dict)
         assert "line_number" in output, f"line_number is not in {i}th output {output}"
         assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-
-
-def submit_batch_run(
-    flow_folder,
-    inputs_mapping,
-    *,
-    input_dirs={},
-    input_file_name="samples.json",
-    run_id=None,
-    connections={},
-    storage=None,
-    return_output_dir=False,
-):
-    batch_engine = BatchEngine(
-        get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
-    )
-    if not input_dirs and inputs_mapping:
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
-    output_dir = Path(mkdtemp())
-    if return_output_dir:
-        return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
-    return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
-
-
-def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
-    inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
-    return len(inputs)
 
 
 class MockRun(object):
@@ -423,10 +398,12 @@ class TestBatch:
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
         resume_run_batch_results = batch_engine.run(
             input_dirs,
             inputs_mapping,
             output_dir,
+            resume_run_id,
             resume_from_run_storage=resume_from_run_storage,
             resume_from_run_output_dir=resume_from_run_output_dir,
         )
@@ -434,6 +411,12 @@ class TestBatch:
         nlines = 3
         assert resume_run_batch_results.total_lines == nlines
         assert resume_run_batch_results.completed_lines == nlines
+
+        jsonl_files = glob.glob(os.path.join(run_storage._run_infos_folder, "*.jsonl"))
+        for file_path in jsonl_files:
+            contents = load_jsonl(file_path)
+            for content in contents:
+                assert content["run_info"]["root_run_id"] == resume_run_id
 
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
@@ -458,10 +441,12 @@ class TestBatch:
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
         resume_run_batch_results = batch_engine.run(
             input_dirs,
             inputs_mapping,
             output_dir,
+            resume_run_id,
             resume_from_run_storage=resume_from_run_storage,
             resume_from_run_output_dir=resume_from_run_output_dir,
         )
@@ -470,6 +455,12 @@ class TestBatch:
         assert resume_run_batch_results.total_lines == nlines
         assert resume_run_batch_results.completed_lines == nlines
         assert resume_run_batch_results.metrics == {"accuracy": 0.67}
+
+        jsonl_files = glob.glob(os.path.join(run_storage._run_infos_folder, "*.jsonl"))
+        for file_path in jsonl_files:
+            contents = load_jsonl(file_path)
+            for content in contents:
+                assert content["run_info"]["root_run_id"] == resume_run_id
 
     @pytest.mark.parametrize(
         "flow_folder, resume_from_run_name",
@@ -490,10 +481,12 @@ class TestBatch:
         mock_resume_from_run = MockRun(resume_from_run_name, run_folder)
         resume_from_run_storage = LocalStorageOperations(mock_resume_from_run)
         resume_from_run_output_dir = resume_from_run_storage.outputs_folder
+        resume_run_id = mock_resume_from_run.name + "_resume"
         resume_run_batch_results = batch_engine.run(
             input_dirs,
             inputs_mapping,
             output_dir,
+            resume_run_id,
             resume_from_run_storage=resume_from_run_storage,
             resume_from_run_output_dir=resume_from_run_output_dir,
         )
@@ -502,3 +495,9 @@ class TestBatch:
         assert resume_run_batch_results.total_lines == nlines
         assert resume_run_batch_results.completed_lines == nlines
         assert resume_run_batch_results.metrics == {"image_count": 3}
+
+        jsonl_files = glob.glob(os.path.join(run_storage._run_infos_folder, "*.jsonl"))
+        for file_path in jsonl_files:
+            contents = load_jsonl(file_path)
+            for content in contents:
+                assert content["run_info"]["root_run_id"] == resume_run_id

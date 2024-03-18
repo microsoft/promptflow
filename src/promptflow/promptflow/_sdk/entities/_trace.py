@@ -310,7 +310,11 @@ class LineRun:
         )
 
     @staticmethod
-    def _from_spans(spans: typing.List[Span], run: typing.Optional[str] = None) -> typing.Optional["LineRun"]:
+    def _from_spans(
+        spans: typing.List[Span],
+        run: typing.Optional[str] = None,
+        trace_id: typing.Optional[str] = None,
+    ) -> typing.Optional["LineRun"]:
         main_line_run_data: _LineRunData = None
         evaluations = dict()
         for span in spans:
@@ -323,6 +327,12 @@ class LineRun:
                 # `run` is specified, this line run comes from a batch run
                 batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
                 if batch_run_id == run:
+                    main_line_run_data = line_run_data
+                else:
+                    evaluations[span.name] = line_run_data
+            elif trace_id is not None:
+                # `trace_id` is specified, if matched, this should be the main line run
+                if trace_id == span.trace_id:
                     main_line_run_data = line_run_data
                 else:
                     evaluations[span.name] = line_run_data

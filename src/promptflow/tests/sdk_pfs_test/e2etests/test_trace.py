@@ -31,7 +31,7 @@ def persist_a_span(
     session_id: str,
     custom_attributes: typing.Optional[typing.Dict] = None,
     parent_span_id: typing.Optional[str] = None,
-) -> None:
+) -> Span:
     if custom_attributes is None:
         custom_attributes = {}
     span = Span(
@@ -65,7 +65,7 @@ def persist_a_span(
     if parent_span_id is not None:
         span.parent_span_id = parent_span_id
     span._persist()
-    return
+    return span
 
 
 # flask-restx uses marshmallow before response, so we do need this test class to execute end-to-end test
@@ -144,6 +144,18 @@ class TestTrace:
         }
         persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attributes)
         line_runs = pfs_op.list_line_runs(runs=[mock_batch_run_id]).json
+        assert len(line_runs) == 1
+
+    def test_list_eval_line_run_with_trace_id(self, pfs_op: PFSOperations, mock_session_id: str) -> None:
+        mock_batch_run = str(uuid.uuid4())
+        mock_ref_batch_run = str(uuid.uuid4())
+        batch_run_attrs = {
+            SpanAttributeFieldName.BATCH_RUN_ID: mock_batch_run,
+            SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: mock_ref_batch_run,
+            SpanAttributeFieldName.LINE_NUMBER: "0",
+        }
+        span = persist_a_span(session_id=mock_session_id, custom_attributes=batch_run_attrs)
+        line_runs = pfs_op.list_line_runs(trace_ids=[span.trace_id]).json
         assert len(line_runs) == 1
 
     def test_list_running_line_run(self, pfs_op: PFSOperations, mock_session_id: str) -> None:

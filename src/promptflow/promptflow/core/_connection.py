@@ -12,6 +12,7 @@ from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.contracts.types import Secret
+from promptflow.core._errors import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -700,10 +701,3 @@ class CustomConnection(_Connection):
         connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance
-
-
-class RequiredEnvironmentVariablesNotSetError(UserErrorException):
-    """Exception raised if connection from_env required env vars not found."""
-
-    def __init__(self, env_vars: list, cls_name: str):
-        super().__init__(f"Required environment variables {env_vars} to build {cls_name} not set.")

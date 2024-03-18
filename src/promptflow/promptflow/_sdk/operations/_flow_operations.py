@@ -31,14 +31,13 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
-    generate_flow_meta,
     generate_flow_tools_json,
     generate_random_string,
     logger,
     parse_variant,
 )
-from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -155,8 +154,6 @@ class FlowOperations(TelemetryMixin):
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
         :return: Executor result
         """
-        from promptflow._sdk._load_functions import load_flow
-
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
@@ -164,7 +161,7 @@ class FlowOperations(TelemetryMixin):
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow: FlowBase = load_flow(flow)
 
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             if variant or node:
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
@@ -178,8 +175,9 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, EagerFlow):
+            if isinstance(flow, FlexFlow):
                 # TODO(2897153): support chat eager flow
+                # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None
                 flow_inputs, dependency_nodes_outputs = inputs, None
             else:
@@ -409,7 +407,7 @@ class FlowOperations(TelemetryMixin):
 
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
-                        tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                        tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
                         ),
@@ -687,12 +685,12 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
+        flow_entity: Flow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        if isinstance(flow_entity, ProtectedFlow):
+        if isinstance(flow_entity, Flow):
             # only DAG flow has tools meta
             source_path_mapping = {}
             flow_tools, tools_errors = self._generate_tools_meta(
@@ -753,7 +751,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: FlowBase = load_flow(source=flow)
-        if not isinstance(flow, ProtectedFlow):
+        if not isinstance(flow, Flow):
             # No tools meta for eager flow
             return {}, {}
 
@@ -832,17 +830,22 @@ class FlowOperations(TelemetryMixin):
         :return: dict of flow meta
         :rtype: Tuple[dict, dict]
         """
-        flow: Union[ProtectedFlow, EagerFlow] = load_flow(source=flow)
-        if not isinstance(flow, EagerFlow):
+        flow: Union[Flow, FlexFlow] = load_flow(source=flow)
+        if not isinstance(flow, FlexFlow):
             # No flow meta for DAG flow
             return {}
 
         with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
-            return generate_flow_meta(
-                flow_directory=new_flow_dag_path.parent,
-                source_path=flow.entry_file,
-                entry=flow.entry,
-                dump=dump,
-                timeout=timeout,
-                load_in_subprocess=load_in_subprocess,
+            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+
+            return (
+                ExecutorProxyFactory()
+                .get_executor_proxy_cls(flow.language)
+                .generate_flow_json(
+                    flow_file=new_flow_dag_path,
+                    working_dir=new_flow_dag_path.parent,
+                    dump=dump,
+                    timeout=timeout,
+                    load_in_subprocess=load_in_subprocess,
+                )
             )

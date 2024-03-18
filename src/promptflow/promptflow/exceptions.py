@@ -22,6 +22,7 @@ class ErrorTarget(str, Enum):
 
     EXECUTOR = "Executor"
     BATCH = "Batch"
+    CORE = "Core"
     FLOW_EXECUTOR = "FlowExecutor"
     NODE_EXECUTOR = "NodeExecutor"
     TOOL = "Tool"

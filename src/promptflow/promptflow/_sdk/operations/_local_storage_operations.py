@@ -36,7 +36,7 @@ from promptflow._sdk._utils import (
     write_open,
 )
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._eager_flow import EagerFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
@@ -237,7 +237,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         if run._run_source == RunInfoSources.LOCAL:
             try:
                 flow_obj = load_flow(source=run.flow)
-                return isinstance(flow_obj, EagerFlow)
+                return isinstance(flow_obj, FlexFlow)
             except Exception as e:
                 # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
                 logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
