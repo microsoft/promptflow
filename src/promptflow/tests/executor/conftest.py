@@ -1,3 +1,4 @@
+import functools
 import multiprocessing
 from pathlib import Path
 
@@ -30,9 +31,8 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 
 
-@pytest.fixture
-def recording_setup():
-    patches = setup_recording()
+def setup_and_cleanup_patches(param=None):
+    patches = setup_recording(param)
     try:
         yield
     finally:
@@ -40,16 +40,60 @@ def recording_setup():
             patcher.stop()
 
 
+@pytest.fixture
+def recording_setup():
+    yield from setup_and_cleanup_patches()
+
+
+@pytest.fixture
+def flow_execution_context():
+    return "flow_execution_context"
+
+
+@pytest.fixture
+def recording_flow_execution_context_setup(flow_execution_context):
+    yield from setup_and_cleanup_patches(flow_execution_context)
+
+
 def _default_mock_process_wrapper(*args, **kwargs):
     # Default mock implementation of _process_wrapper in recording mode
-    setup_recording()
+    param = kwargs.pop("param", None)
+    setup_recording(param)
     _process_wrapper(*args, **kwargs)
 
 
 def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
     # Default mock implementation of create_spawned_fork_process_manager in recording mode
-    setup_recording()
+    param = kwargs.pop("param", None)
+    setup_recording(param)
     create_spawned_fork_process_manager(*args, **kwargs)
+
+
+def process_override_setup(flow_execution_context=None):
+    # This fixture is used to override the Process class to ensure the recording mode works
+
+    # Step I: set process pool targets placeholder with customized targets
+    if flow_execution_context is not None:
+        current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper, param=flow_execution_context))
+        current_process_manager_var.set(
+            functools.partial(_default_mock_create_spawned_fork_process_manager, param=flow_execution_context)
+        )
+    else:
+        current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper))
+        current_process_manager_var.set(functools.partial(_default_mock_create_spawned_fork_process_manager))
+
+    # Step II: override the process pool class
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    original_process_class = override_process_class(process_class_dict)
+
+    try:
+        yield
+    finally:
+        for start_method, MockProcessClass in process_class_dict.items():
+            if start_method in multiprocessing.get_all_start_methods():
+                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
+                if start_method == multiprocessing.get_start_method():
+                    multiprocessing.Process = original_process_class[start_method]
 
 
 @pytest.fixture
@@ -57,8 +101,32 @@ def process_override():
     # This fixture is used to override the Process class to ensure the recording mode works
 
     # Step I: set process pool targets placeholder with customized targets
-    current_process_wrapper_var.set(_default_mock_process_wrapper)
-    current_process_manager_var.set(_default_mock_create_spawned_fork_process_manager)
+    current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper))
+    current_process_manager_var.set(functools.partial(_default_mock_create_spawned_fork_process_manager))
+
+    # Step II: override the process pool class
+    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    original_process_class = override_process_class(process_class_dict)
+
+    try:
+        yield
+    finally:
+        for start_method, MockProcessClass in process_class_dict.items():
+            if start_method in multiprocessing.get_all_start_methods():
+                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
+                if start_method == multiprocessing.get_start_method():
+                    multiprocessing.Process = original_process_class[start_method]
+
+
+@pytest.fixture
+def process_override_set_flow_execution_context(flow_execution_context):
+    # This fixture is used to override the Process class to ensure the recording mode works
+
+    # Step I: set process pool targets placeholder with customized targets
+    current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper, param=flow_execution_context))
+    current_process_manager_var.set(
+        functools.partial(_default_mock_create_spawned_fork_process_manager, param=flow_execution_context)
+    )
 
     # Step II: override the process pool class
     process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
@@ -76,7 +144,19 @@ def process_override():
 
 @pytest.fixture
 def recording_injection(recording_setup, process_override):
-    # This fixture is used to main entry point to inject recording mode into the test
+    # This fixture is used as the main entry point to inject recording mode into the test
+    return _inject_recording_mode(recording_setup, process_override)
+
+
+@pytest.fixture
+def recording_flow_execution_context(
+    recording_flow_execution_context_setup, process_override_set_flow_execution_context
+):
+    # This fixture is used as the main entry point to inject recording mode into the test
+    return _inject_recording_mode(recording_flow_execution_context_setup, process_override_set_flow_execution_context)
+
+
+def _inject_recording_mode(setup_function, process_override_function):
     try:
         yield (is_replay() or is_record(), recording_array_extend)
     finally:

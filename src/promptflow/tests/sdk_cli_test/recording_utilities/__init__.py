@@ -1,5 +1,9 @@
 from .mock_tool import delete_count_lock_file, mock_tool, recording_array_extend, recording_array_reset
-from .openai_inject_recording import inject_async_with_recording, inject_sync_with_recording
+from .openai_inject_recording import (
+    inject_async_with_recording,
+    inject_sync_with_recording,
+    mock_flow_execution_context,
+)
 from .record_storage import (
     Counter,
     RecordFileMissingException,
@@ -21,6 +25,7 @@ __all__ = [
     "recording_array_reset",
     "inject_async_with_recording",
     "inject_sync_with_recording",
+    "mock_flow_execution_context",
     "is_live",
     "is_record",
     "is_replay",

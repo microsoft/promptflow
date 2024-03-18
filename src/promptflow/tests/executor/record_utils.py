@@ -8,6 +8,7 @@ from sdk_cli_test.recording_utilities import (
     is_live,
     is_record,
     is_replay,
+    mock_flow_execution_context,
     mock_tool,
 )
 
@@ -17,7 +18,7 @@ PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 
 
-def setup_recording():
+def setup_recording(param=None):
     patches = []
 
     def start_patches(patch_targets):
@@ -44,6 +45,7 @@ def setup_recording():
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
+        patch_targets = update_patch_targets(param, patch_targets)
         start_patches(patch_targets)
         inject_openai_api()
 
@@ -57,3 +59,11 @@ def setup_recording():
         inject_openai_api()
 
     return patches
+
+
+def update_patch_targets(param, patch_targets):
+    if param == "flow_execution_context":
+        patch_targets[
+            "promptflow._core.flow_execution_context.FlowExecutionContext.__init__"
+        ] = mock_flow_execution_context
+    return patch_targets
