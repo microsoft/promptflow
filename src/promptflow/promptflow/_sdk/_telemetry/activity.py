@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
-from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.exceptions import _ErrorInfo
 
 

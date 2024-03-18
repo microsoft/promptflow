@@ -29,7 +29,8 @@ from promptflow._sdk._telemetry import (
     log_activity,
 )
 from promptflow._sdk._telemetry.logging_handler import get_promptflow_sdk_log_handler
-from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
+from promptflow._sdk._utils import call_from_extension
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.tracing._operation_context import OperationContext
 
