@@ -3,11 +3,10 @@ import inspect
 import os
 from pathlib import Path
 
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
-from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.tracing._tracer import _create_trace_from_function_call
 from promptflow.tracing.contracts.trace import TraceType
 
+from ..record_mode import is_in_ci_pipeline
 from .record_storage import (
     Counter,
     RecordFileMissingException,
@@ -204,6 +203,8 @@ def mock_tool(original_tool):
                         raise
 
                 new_f = decorated_tool
+
+            from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 
             if type is not None and type not in [k.value for k in ToolType]:
                 raise UserErrorException(f"Tool type {type} is not supported yet.")
