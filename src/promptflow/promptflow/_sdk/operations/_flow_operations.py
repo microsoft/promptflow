@@ -833,10 +833,10 @@ class FlowOperations(TelemetryMixin):
             return {}
 
         with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
-            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+            from promptflow._proxy import ProxyFactory
 
             return (
-                ExecutorProxyFactory()
+                ProxyFactory()
                 .get_executor_proxy_cls(flow.language)
                 .generate_flow_json(
                     flow_file=new_flow_dag_path,

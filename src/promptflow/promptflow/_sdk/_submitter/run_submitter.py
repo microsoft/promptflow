@@ -107,17 +107,15 @@ class RunSubmitter:
         run_id = run.name
         # for python, we can get metadata in-memory, so no need to dump them first
         if flow.language != FlowLanguage.Python:
-            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+            from promptflow._proxy import ProxyFactory
 
             # variants are resolved in the context, so we can't move this logic to Operations for now
-            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
+            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
                 flow_file=Path(flow.path), working_dir=Path(flow.code)
             )
-            # TODO: shall we resolve connections here?
-            connections = []
-        else:
-            with _change_working_dir(flow.code):
-                connections = SubmitterHelper.resolve_connections(flow=flow)
+
+        with _change_working_dir(flow.code):
+            connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(

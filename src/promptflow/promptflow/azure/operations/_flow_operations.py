@@ -24,6 +24,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
@@ -44,7 +45,6 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
-from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -485,7 +485,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
             # generate .promptflow/flow.json for eager flow and .promptflow/flow.dag.yaml for non-eager flow
             flow_directory, flow_file = resolve_flow_path(code.path)
-            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
+            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
                 flow_file=flow_directory / flow_file,
                 working_dir=flow_directory,
             )

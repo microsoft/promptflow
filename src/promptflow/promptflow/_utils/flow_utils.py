@@ -2,11 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import hashlib
+import json
 import os
 from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -136,3 +138,23 @@ def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:
         return entry_file.resolve().absolute().as_posix()
     # when entry file not found in working directory, return None since it can come from package
     return None
+
+
+def read_json_content(file_path: Path, target: str) -> dict:
+    if file_path.is_file():
+        with open(file_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                raise MetaFileReadError(
+                    message_format="Failed to fetch {target_obj}: {file_path} is not a valid json file.",
+                    file_path=file_path.absolute().as_posix(),
+                    target_obj=target,
+                )
+    raise MetaFileNotFound(
+        message_format=(
+            "Failed to fetch meta of tools: cannot find {file_path}, "
+            "please build the flow project with extension first."
+        ),
+        file_path=file_path.absolute().as_posix(),
+    )

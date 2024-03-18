@@ -80,11 +80,11 @@ class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
 
     def _init_executable(self, **kwargs):
         # TODO(2991934): support environment variables here
-        from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+        from promptflow._proxy import ProxyFactory
         from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
 
         meta_dict = (
-            ExecutorProxyFactory()
+            ProxyFactory()
             .get_executor_proxy_cls(self.language)
             .generate_flow_json(
                 flow_file=self.path,
