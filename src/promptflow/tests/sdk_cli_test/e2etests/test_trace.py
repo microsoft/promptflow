@@ -100,11 +100,25 @@ class TestTraceOperations:
         assert row_cnt == num_spans
 
     def test_delete_traces_with_started_before(self, pf: PFClient) -> None:
-        # mock some traces that start 2 days before, and delete those start 1 days before
-        mock_start_time = (datetime.datetime.now() - datetime.timedelta(days=2)).isoformat()
+        # mock some traces that start 7 days before, and delete those start 6 days before
+        mock_start_time = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
         num_spans = 3
         for _ in range(num_spans):
             persist_a_span(start_time=mock_start_time)
-        delete_query_time = datetime.datetime.now() - datetime.timedelta(days=1)
+        delete_query_time = datetime.datetime.now() - datetime.timedelta(days=6)
         row_cnt = pf._traces.delete(started_before=delete_query_time.isoformat())
         assert row_cnt == num_spans
+
+    def test_delete_traces_with_session_and_started_before(self, pf: PFClient) -> None:
+        # mock some traces that start 2 days before, and delete those start 1 days before
+        mock_start_time = (datetime.datetime.now() - datetime.timedelta(days=2)).isoformat()
+        num_spans = 3
+        session1, session2 = str(uuid.uuid4()), str(uuid.uuid4())
+        for _ in range(num_spans):
+            persist_a_span(session_id=session1, start_time=mock_start_time)
+            persist_a_span(session_id=session2, start_time=mock_start_time)
+        delete_query_time = datetime.datetime.now() - datetime.timedelta(days=1)
+        row_cnt1 = pf._traces.delete(session=session1, started_before=delete_query_time.isoformat())
+        row_cnt2 = pf._traces.delete(session=session2, started_before=delete_query_time.isoformat())
+        assert row_cnt1 == num_spans
+        assert row_cnt2 == num_spans
