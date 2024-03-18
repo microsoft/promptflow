@@ -68,31 +68,38 @@ class ToolResolver:
         resolver._activate_in_context(force=True)
         return resolver
 
-    def _convert_to_connection_value(self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType]):
+    def _convert_to_connection_value(self, k: str, v: InputAssignment, node_name: str, conn_types: List[ValueType]):
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
-            raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+            raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
-                f"Input '{k}' for node '{node.name}' of type {type(connection_value).__name__!r}"
+                f"Input '{k}' for node '{node_name}' of type {type(connection_value).__name__!r}"
                 f" is not supported, valid types {conn_types}."
             )
             raise NodeInputValidationError(message=msg)
         return connection_value
 
     def _convert_to_custom_strong_type_connection_value(
-        self, k: str, v: InputAssignment, node: Node, tool: Tool, conn_types: List[str], module: types.ModuleType
+        self,
+        k: str,
+        v: InputAssignment,
+        node_name: str,
+        source_type: ToolSourceType,
+        tool: Tool,
+        conn_types: List[str],
+        module: types.ModuleType,
     ):
         if not conn_types:
-            msg = f"Input '{k}' for node '{node.name}' has invalid types: {conn_types}."
+            msg = f"Input '{k}' for node '{node_name}' has invalid types: {conn_types}."
             raise NodeInputValidationError(message=msg)
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
-            raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+            raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
 
         custom_defined_connection_class_name = conn_types[0]
-        if node.source.type == ToolSourceType.Package:
+        if source_type == ToolSourceType.Package:
             module = tool.module
         return connection_value._convert_to_custom_strong_type(
             module=module, to_class=custom_defined_connection_class_name
@@ -150,15 +157,17 @@ class ToolResolver:
 
         # Create new ToolLoader with package tool keys from tools in assistant definition, rather than
         # relying on the node-level package tool keys
-        function_package_tool_keys = [tool_definition.get("source", {}).get("tool")]
+        source_tool = tool_definition.get("source", {}).get("tool")
+        source_type = tool_definition.get("source", {}).get("type")
+        function_package_tool_keys = [source_tool]
         tool_loader = ToolLoader(self._working_dir, function_package_tool_keys)
-        tool: Tool = tool_loader.load_package_tool(tool_definition.get("source", {}).get("tool"))
+        tool: Tool = tool_loader.load_package_tool(source_tool)
         # updated_node = copy.deepcopy(node)
 
         updated_predefined_inputs = predefined_inputs
         if convert_input_types:
-            updated_predefined_inputs = self._convert_assistant_function_literal_input_types(
-                node_name, predefined_inputs, tool
+            updated_predefined_inputs = self._convert_literal_input_types(
+                node_name, source_type, predefined_inputs, tool
             )
 
         callable, init_args = BuiltinsManager._load_package_tool(
@@ -193,13 +202,15 @@ class ToolResolver:
                 predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        m, tool = self._tool_loader.load_script_tool(tool_definition.get("source", {}).get("path"), node_name)
+        source_path = tool_definition.get("source", {}).get("path")
+        source_type = tool_definition.get("source", {}).get("type")
+        m, tool = self._tool_loader.load_script_tool(source_path, node_name)
 
         # construct the resolved inputs dictionary
         updated_predefined_inputs = predefined_inputs
         if convert_input_types:
-            updated_predefined_inputs = self._convert_assistant_function_literal_input_types(
-                node_name, predefined_inputs, tool, m
+            updated_predefined_inputs = self._convert_literal_input_types(
+                node_name, source_type, predefined_inputs, tool, m
             )
         callable, init_args = BuiltinsManager._load_tool_from_module(
             m, tool.name, tool.module, tool.class_name, tool.function, updated_predefined_inputs
@@ -244,10 +255,12 @@ class ToolResolver:
         except Exception as e:
             raise FailedToParseAssistantTool(func_name=func_name) from e
 
-    def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
+    def _convert_literal_input_types(
+        self, node_name: str, source_type: ToolSourceType, inputs: dict, tool: Tool, module: types.ModuleType = None
+    ):
         updated_inputs = {
             k: v
-            for k, v in node.inputs.items()
+            for k, v in inputs.items()
             if (v.value is not None and v.value != "") or v.value_type != InputValueType.LITERAL
         }
         for k, v in updated_inputs.items():
@@ -261,10 +274,10 @@ class ToolResolver:
             if ConnectionType.is_connection_class_name(value_type):
                 if tool_input.custom_type:
                     updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
-                        k, v, node, tool, tool_input.custom_type, module=module
+                        k, v, node_name, source_type, tool, tool_input.custom_type, module=module
                     )
                 else:
-                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 try:
                     updated_inputs[k].value = create_image(v.value)
@@ -278,7 +291,7 @@ class ToolResolver:
                     ) from e
             elif value_type == ValueType.ASSISTANT_DEFINITION:
                 try:
-                    updated_inputs[k].value = self._convert_to_assistant_definition(v.value, k, node.name)
+                    updated_inputs[k].value = self._convert_to_assistant_definition(v.value, k, node_name)
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
@@ -296,7 +309,7 @@ class ToolResolver:
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
                         "type {value_type}.",
                         key=k,
-                        node_name=node.name,
+                        node_name=node_name,
                         value=v.value,
                         value_type=value_type.value,
                         target=ErrorTarget.EXECUTOR,
@@ -317,67 +330,12 @@ class ToolResolver:
                     f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
                     target=ErrorTarget.EXECUTOR,
                 )
-        updated_node = copy.deepcopy(node)
-        updated_node.inputs = updated_inputs
-        return updated_node
+        return updated_inputs
 
-    def _convert_assistant_function_literal_input_types(
-        self, node_name: str, predefined_inputs: dict, tool: Tool, module: types.ModuleType = None
-    ):
-        updated_predefined_inputs = {
-            k: v
-            for k, v in predefined_inputs.items()
-            if (v.value is not None and v.value != "") or v.value_type != InputValueType.LITERAL
-        }
-        for k, v in updated_predefined_inputs.items():
-            if v.value_type != InputValueType.LITERAL:
-                continue
-            tool_input = tool.inputs.get(k)
-            if tool_input is None:  # For kwargs input, tool_input is None.
-                continue
-            value_type = tool_input.type[0]
-            updated_predefined_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
-            if ConnectionType.is_connection_class_name(value_type):
-                if tool_input.custom_type:
-                    updated_predefined_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
-                        k, v, None, tool, tool_input.custom_type, module=module
-                    )
-                else:
-                    updated_predefined_inputs[k].value = self._convert_to_connection_value(
-                        k, v, node_name, tool_input.type
-                    )
-            elif isinstance(value_type, ValueType):
-                try:
-                    updated_predefined_inputs[k].value = value_type.parse(v.value)
-                except Exception as e:
-                    raise NodeInputValidationError(
-                        message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
-                        "type {value_type}.",
-                        key=k,
-                        node_name=node_name,
-                        value=v.value,
-                        value_type=value_type.value,
-                        target=ErrorTarget.EXECUTOR,
-                    ) from e
-                try:
-                    updated_predefined_inputs[k].value = load_multimedia_data_recursively(
-                        updated_predefined_inputs[k].value
-                    )
-                except Exception as e:
-                    error_type_and_message = f"({e.__class__.__name__}) {e}"
-                    raise NodeInputValidationError(
-                        message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k,
-                        error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR,
-                    ) from e
-            else:
-                # The value type is in ValueType enum or is connection type. null connection has been handled before.
-                raise ValueTypeUnresolved(
-                    f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
-                    target=ErrorTarget.EXECUTOR,
-                )
-        return updated_predefined_inputs
+    def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
+        updated_node = copy.deepcopy(node)
+        updated_node.inputs = self._convert_literal_input_types(node.name, node.source.type, node.inputs, tool, module)
+        return updated_node
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
         try:

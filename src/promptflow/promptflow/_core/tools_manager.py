@@ -456,11 +456,6 @@ class ToolLoader:
         """Load tool for script node."""
         return self.load_script_tool(node.source.path, node.name)
 
-    def load_tool_for_assistant_script(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
-        """Load tool for script function from assistant node."""
-        path = tool.get("source", {}).get("path")
-        return self.load_script_tool(path, node_name)
-
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
         return BuiltinsManager._load_llm_api(api_name)
