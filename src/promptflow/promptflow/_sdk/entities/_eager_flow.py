@@ -79,7 +79,6 @@ class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
         return None
 
     def _init_executable(self, **kwargs):
-        # TODO(2991934): support environment variables here
         from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
         from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
 

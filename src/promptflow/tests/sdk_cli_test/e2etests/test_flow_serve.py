@@ -631,3 +631,19 @@ def test_eager_flow_multiple_stream_output(multiple_stream_outputs):
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
     assert response == {"error": {"code": "UserError", "message": "Multiple stream output fields not supported."}}
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc(eager_flow_evc):
+    response = eager_flow_evc.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == "Hello world! azure"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_override(eager_flow_evc):
+    # TODO: add this
+    pass

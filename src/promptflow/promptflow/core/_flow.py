@@ -316,11 +316,10 @@ class FlexFlow(Flow):
     def _init_executable(self):
         from promptflow.contracts.flow import EagerFlow as ExecutableEagerFlow
 
-        # TODO(2991934): support environment variables here
         meta_dict = generate_flow_meta(
             flow_directory=self.code,
             source_path=self.entry_file,
-            entry=self.entry,
+            data=self._data,
             dump=False,
         )
         return ExecutableEagerFlow.deserialize(meta_dict)

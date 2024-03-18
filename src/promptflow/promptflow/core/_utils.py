@@ -20,14 +20,14 @@ from promptflow.core._errors import GenerateFlowMetaJsonError
 logger = LoggerFactory.get_logger(name=__name__)
 
 
-def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
+def _generate_meta_from_file(working_dir, source_path, data, meta_dict, exception_list):
     from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
 
     with _change_working_dir(working_dir), inject_sys_path(working_dir):
         try:
             result = generate_flow_meta_dict_by_file(
                 path=source_path,
-                entry=entry,
+                data=data,
             )
             meta_dict.update(result)
         except Exception as e:
@@ -37,7 +37,7 @@ def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, excepti
 def _generate_flow_meta(
     flow_directory: Path,
     source_path: str,
-    entry: str,
+    data: dict,
     timeout: int,
     *,
     load_in_subprocess: bool = True,
@@ -59,7 +59,7 @@ def _generate_flow_meta(
         meta_dict = manager.dict()
         exception_list = manager.list()
         p = multiprocessing.Process(
-            target=_generate_meta_from_file, args=(flow_directory, source_path, entry, meta_dict, exception_list)
+            target=_generate_meta_from_file, args=(flow_directory, source_path, data, meta_dict, exception_list)
         )
         p.start()
         p.join(timeout=timeout)
@@ -78,7 +78,7 @@ def _generate_flow_meta(
             "Generate meta in current process and timeout won't take effect. "
             "Please handle timeout manually outside current process."
         )
-        _generate_meta_from_file(flow_directory, source_path, entry, meta_dict, exception_list)
+        _generate_meta_from_file(flow_directory, source_path, data, meta_dict, exception_list)
     # directly raise error if failed to generate meta
     if len(exception_list) > 0:
         error_message = "Generate meta failed, detail error:\n" + str(exception_list)
@@ -89,7 +89,7 @@ def _generate_flow_meta(
 def generate_flow_meta(
     flow_directory: Union[str, Path],
     source_path: str,
-    entry: str,
+    data: dict,
     dump: bool = True,
     timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
     load_in_subprocess: bool = True,
@@ -99,7 +99,7 @@ def generate_flow_meta(
     flow_meta = _generate_flow_meta(
         flow_directory=flow_directory,
         source_path=source_path,
-        entry=entry,
+        data=data,
         timeout=timeout,
         load_in_subprocess=load_in_subprocess,
     )
