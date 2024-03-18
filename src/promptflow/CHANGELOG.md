@@ -3,7 +3,7 @@
 ## 1.7.0 (Upcoming)
 
 ### NOTICES
-- Import warning will be print when importing from `promptflow` namespace, please use imports from new namespaces
+- Import warnings will be printed when importing from `promptflow` namespace, please use imports from new namespaces
   suggested in the warning message.
 
 ### Features Added
