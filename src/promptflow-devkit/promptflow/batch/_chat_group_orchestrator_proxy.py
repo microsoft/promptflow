@@ -24,14 +24,12 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
-        **kwargs,
+        chat_group_roles: Optional[ChatGroupRole] = None,
+        max_turn: Optional[int] = None,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
 
-        chat_group_roles = kwargs.get("chat_group_roles", None)
-        max_turn = kwargs.get("max_turn", None)
-        run_id = kwargs.get("run_id", None)
-        cls._orchestrator = ChatGroupOrchestrator(chat_group_roles, run_id, max_turn)
+        cls._orchestrator = ChatGroupOrchestrator(chat_group_roles, max_turn)
 
         pass
     

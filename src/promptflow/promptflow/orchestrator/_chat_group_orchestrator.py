@@ -10,11 +10,9 @@ class ChatGroupOrchestrator:
     def __init__(
         self,
         chat_group_roles: List[ChatGroupRole],
-        run_id: Optional[str] = None,
         max_turn: Optional[int] = None,
         **kwargs
     ):
-        self._run_id = run_id
         self._max_turn = max_turn
         self._chat_group_roles = chat_group_roles
 
