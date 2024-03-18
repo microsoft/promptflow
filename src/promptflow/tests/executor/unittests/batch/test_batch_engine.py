@@ -64,6 +64,11 @@ class TestBatchEngine:
         assert ProxyFactory.executor_proxy_classes["js"] == MockJSExecutorProxy
         assert len(ProxyFactory.executor_proxy_classes) == 3
 
+    def test_get_executor_proxy_cls(self):
+        assert ExecutorProxyFactory.get_executor_proxy_cls("python") == PythonExecutorProxy
+        assert ExecutorProxyFactory.get_executor_proxy_cls("csharp") == CSharpExecutorProxy
+        assert ExecutorProxyFactory.get_executor_proxy_cls() == CSharpExecutorProxy
+
     def test_cancel(self):
         batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
         assert batch_engine._is_canceled is False

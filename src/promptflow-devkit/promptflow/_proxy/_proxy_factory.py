@@ -22,7 +22,7 @@ class ProxyFactory:
         pass
 
     def get_executor_proxy_cls(self, language: str) -> Type[AbstractExecutorProxy]:
-        return self.executor_proxy_classes[language]
+        return self.executor_proxy_classes[language] if language is not None else ChatGroupOrchestratorProxy
 
     @classmethod
     def register_executor(cls, language: str, executor_proxy_cls: Type[AbstractExecutorProxy]):
@@ -42,7 +42,7 @@ class ProxyFactory:
     def create_executor_proxy(
         self, flow_file, working_dir, connections, storage, language: str, **kwargs
     ) -> AbstractExecutorProxy:
-        executor_proxy_cls = self.get_executor_proxy_cls(language) if language is not None else ChatGroupOrchestratorProxy
+        executor_proxy_cls = self.get_executor_proxy_cls(language)
         return async_run_allowing_running_loop(
             executor_proxy_cls.create,
             flow_file,
