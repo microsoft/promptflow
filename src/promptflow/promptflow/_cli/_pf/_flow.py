@@ -556,7 +556,7 @@ def _resolve_python_flow_additional_includes(source) -> Path:
 
 
 def serve_flow_python(args, source):
-    from promptflow._sdk._serving.app import create_app
+    from promptflow.core._serving.app import create_app
 
     static_folder = args.static_folder
     if static_folder:
