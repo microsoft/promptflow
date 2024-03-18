@@ -59,7 +59,7 @@ environment_variables:
   AZURE_OPENAI_DEPLOYMENT_NAME: some_value
 ```
 
-### EVC mapping format
+### How to set EVC mapping
 
 There're multiple ways to set EVC mapping. We list them in order. When user run a flex flow using prompt flow VSC/SDK/CLI, pf SDK will try to lookup the EVC mapping from below location from top to down. And pf SDK will be responsible for resolving the connection and set the value into corresponding environment variable. 
 
@@ -99,17 +99,11 @@ Below table shows a summary of how prompt flow support set Environment variable 
 ## local behaviors
 - When user do flow test or batch run in local, user can set environment variables, pf SDK support set both value or EVC mapping.
 - When user deploy a flow as an endpoint using "pf flow serve" or build the flow as a docker/executable app using "pf flow build", pf SDK won't do the EVC mapping resolve work, because it's common to pass environment variable values when doing the deployment, and we cannot gurantee pf SDK has ability to access connections.
+
 - (TODO: what's the behavior of flow load for EVC? Support set environment variable value, but no EVC mapping resolve?)
 ## submit flow to cloud with EVC
 When run a flow in cloud, we need to get secret keys via connection stored in workspace. In that case, you can set the EVC mapping with valid connection in workspace.
 
-- Create run
-```bash
-# run with environment variable reference connection in azureml workspace
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${aoai.api_key}' AZURE_OPENAI_ENDPOINT='${aoai.api_base}' --column-mapping question='${data.question}' --stream
-# run using yaml file
-pfazure run create --file run.yml --stream
-```
 ## cloud behavior
 When user author/run a flow in AzureML workspace/AI Studio project, there're ways 
 - During flow authoring: User can edit the raw flow.dag.yaml file to specify the EVC mapping
