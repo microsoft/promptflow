@@ -1,6 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-id: evaluation_flow_for_single_turn
-name: Evaluation flow for single turn
 inputs:
   question:
     type: string

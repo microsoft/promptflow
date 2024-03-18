@@ -1,6 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-id: simulation_standard_flow
-name: Simulation Standard Flow
 inputs:
   chat_history:
     type: list

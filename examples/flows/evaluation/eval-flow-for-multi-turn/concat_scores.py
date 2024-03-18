@@ -15,7 +15,7 @@ def get_score(result):
             return score
         else:
             return None
-    except json.JSONDecodeError: 
+    except json.JSONDecodeError:
         print("Invalid JSON string.")
         return None
 

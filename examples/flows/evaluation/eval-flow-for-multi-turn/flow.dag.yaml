@@ -1,6 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-id: evaluation flow for multi turn
-name: evaluation flow for multi turn
 inputs:
   chat_history:
     type: list
