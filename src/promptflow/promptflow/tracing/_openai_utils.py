@@ -206,6 +206,17 @@ class OpenAIResponseParser(ABC):
         self._response = response
         self._is_chat = is_chat
 
+    @property
+    def model(self):
+        for item in self._response:
+            if hasattr(item, "model"):
+                return item.model
+        return None
+
+    @property
+    def is_chat(self):
+        return self._is_chat
+
     @staticmethod
     def init_parser(response):
         if IS_LEGACY_OPENAI:
@@ -221,16 +232,6 @@ class OpenAIResponseParser(ABC):
         else:
             raise NotImplementedError("Only support 'ChatCompletionChunk' and 'Completion' response.")
 
-    @property
-    @abstractmethod
-    def model(self):
-        pass
-
-    @property
-    @abstractmethod
-    def is_chat(self):
-        pass
-
     @abstractmethod
     def get_generated_message(self):
         pass
@@ -239,17 +240,6 @@ class OpenAIResponseParser(ABC):
 class OpenAIChatResponseParser(OpenAIResponseParser):
     def __init__(self, response, is_chat):
         super().__init__(response, is_chat)
-
-    @property
-    def model(self):
-        for item in self._response:
-            if hasattr(item, "model"):
-                return item.model
-        return None
-
-    @property
-    def is_chat(self):
-        return self._is_chat
 
     def get_generated_message(self):
         chunks = []
@@ -264,17 +254,6 @@ class OpenAIChatResponseParser(OpenAIResponseParser):
 class OpenAICompletionResponseParser(OpenAIResponseParser):
     def __init__(self, response, is_chat):
         super().__init__(response, is_chat)
-
-    @property
-    def model(self):
-        for item in self._response:
-            if hasattr(item, "model"):
-                return item.model
-        return None
-
-    @property
-    def is_chat(self):
-        return self._is_chat
 
     def get_generated_message(self):
         chunks = []
