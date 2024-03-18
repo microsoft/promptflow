@@ -223,7 +223,7 @@ class ErrorInfo:
             self.target = exception.target
             self.module = exception.module
             self.reference_code = exception.reference_code
-            self.inner_exception = exception.inner_exception
+            self.inner_exception = str(exception.inner_exception)
             self.additional_info = exception.additional_info
             self.error_codes = exception.error_codes
         else:
