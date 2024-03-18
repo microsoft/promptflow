@@ -5,8 +5,8 @@ import re
 from typing import Any, Dict, Mapping
 
 from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._utils._errors import ApplyInputMappingError
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -90,8 +90,3 @@ def apply_inputs_mapping(
     if LINE_NUMBER_KEY in inputs:
         result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
     return result
-
-
-class ApplyInputMappingError(ValidationException):
-    def __init__(self, target: ErrorTarget = ErrorTarget.CORE, **kwargs):
-        super().__init__(target=target, **kwargs)
