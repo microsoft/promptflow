@@ -446,34 +446,11 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
-        if node.source.path is None:
-            raise InvalidSource(
-                target=ErrorTarget.EXECUTOR,
-                message_format="Load tool failed for node '{node_name}'. The source path is 'None'.",
-                node_name=node.name,
-            )
-        path = node.source.path
-        if not (self._working_dir / path).is_file():
-            raise InvalidSource(
-                target=ErrorTarget.EXECUTOR,
-                message_format="Load tool failed for node '{node_name}'. Tool file '{source_path}' can not be found.",
-                source_path=path,
-                node_name=node.name,
-            )
-        m = load_python_module_from_file(self._working_dir / path)
-        if m is None:
-            raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f, init_inputs = collect_tool_function_in_module(m)
-        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
-
-    def load_tool_for_assistant_script(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
-        # Generate Tool from the assistant tool definition
-        path = tool.get("source", {}).get("path")
+    def load_script_tool(self, path: str, node_name: str) -> Tuple[types.ModuleType, Tool]:
         if path is None:
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
-                message_format="Load assistant tool failed for node '{node_name}'. The source path is 'None'.",
+                message_format="Load tool failed for node '{node_name}'. The source path is 'None'.",
                 node_name=node_name,
             )
         if not (self._working_dir / path).is_file():
@@ -486,9 +463,18 @@ class ToolLoader:
             )
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
-            raise CustomToolSourceLoadError(f"Cannot load module for assistant tool from {path}.")
+            raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f, init_inputs = collect_tool_function_in_module(m)
         return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
+
+    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
+        """Load tool for script node."""
+        return self.load_script_tool(node.source.path, node.name)
+
+    def load_tool_for_assistant_script(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
+        """Load tool for script function from assistant node."""
+        path = tool.get("source", {}).get("path")
+        return self.load_script_tool(path, node_name)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
