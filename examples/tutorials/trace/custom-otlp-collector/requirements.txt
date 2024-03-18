@@ -1,2 +1,2 @@
-opentelemetry-exporter-otlp-proto-http
+promptflow-tracing
 python-dotenv
