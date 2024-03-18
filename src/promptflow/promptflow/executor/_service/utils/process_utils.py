@@ -15,7 +15,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerialized
 from promptflow._utils.logger_utils import service_logger
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
-from promptflow.executor._service._errors import ExecutionTimeoutError
+from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
 from promptflow.tracing._operation_context import OperationContext
 
@@ -60,6 +60,10 @@ async def invoke_sync_function_in_process(
 
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
+                # If process is None, it indicates that the process has been terminated by cancel request.
+                if run_id and not ProcessManager().get_process(run_id):
+                    raise ExecutionCanceledError(run_id)
+                # If process is not None, it indicates that the process has been terminated by other errors.
                 exception = error_dict.get("error", None)
                 if exception is None:
                     raise UnexpectedError(
