@@ -102,6 +102,7 @@ def completion_endpoints_provider(endpoints_provider: Dict[str, List[str]]) -> D
     return completion_endpoints
 
 
+@pytest.mark.skip("Skipping - requires new test resources")
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenModelLLM:
     stateless_os_llm = OpenModelLLM()
