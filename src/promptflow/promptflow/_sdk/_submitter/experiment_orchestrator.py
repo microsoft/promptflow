@@ -54,9 +54,9 @@ from promptflow._sdk._submitter.utils import (
 from promptflow._sdk._utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
-from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations import RunOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -101,8 +101,7 @@ class ExperimentOrchestrator:
         start_nodes = [
             node
             for node in template.nodes
-            if node.type == ExperimentNodeType.FLOW
-            and Flow._get_flow_definition(node.path) == Flow._get_flow_definition(flow_path)
+            if node.type == ExperimentNodeType.FLOW and resolve_flow_path(node.path) == resolve_flow_path(flow_path)
         ]
         if not start_nodes:
             raise ExperimentValueError(f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")

@@ -180,7 +180,8 @@
     "addrs",
     "pywin",
     "STARTF",
-    "mltable"
+    "mltable",
+    "setenv"
   ],
   "flagWords": [
     "Prompt Flow"
