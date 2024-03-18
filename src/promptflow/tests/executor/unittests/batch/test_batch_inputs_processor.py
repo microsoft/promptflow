@@ -5,7 +5,7 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._core._errors import UnexpectedError
-from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
+from promptflow._utils.inputs_mapping_utils import ApplyInputMappingError, apply_inputs_mapping
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
@@ -135,7 +135,7 @@ class TestBatchInputsProcessor:
                     "question": "${baseline.output}",
                     "answer": "${data.output}",
                 },
-                InputMappingError,
+                ApplyInputMappingError,
                 "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data.",
             ),

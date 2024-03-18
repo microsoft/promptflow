@@ -78,7 +78,7 @@ def apply_inputs_mapping(
     # Return all not found mapping relations in one exception to provide better debug experience.
     if notfound_mapping_relations:
         invalid_relations = ", ".join(notfound_mapping_relations)
-        raise InputMappingError(
+        raise ApplyInputMappingError(
             message_format=(
                 "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data. "
@@ -92,6 +92,6 @@ def apply_inputs_mapping(
     return result
 
 
-class InputMappingError(ValidationException):
+class ApplyInputMappingError(ValidationException):
     def __init__(self, target: ErrorTarget = ErrorTarget.CORE, **kwargs):
         super().__init__(target=target, **kwargs)
