@@ -857,7 +857,7 @@ class ExperimentHelper:
         """Get experiment node edges mapping."""
         edges = {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
         if flow_only:
-            nodes_to_remove = [node for node in nodes if node.type == ExperimentNodeType.COMMAND]
+            nodes_to_remove = [node for node in nodes if node.type != ExperimentNodeType.FLOW]
             ExperimentHelper._remove_nodes_from_active_edges(nodes_to_remove, edges)
         return edges
 
