@@ -21,13 +21,14 @@ from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
-from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
+from promptflow_test.azure_recording_utilities import SanitizedValues
+from promptflow_test.record_mode import is_replay
 
 load_dotenv()
 
@@ -169,15 +170,9 @@ def mock_generated_by_func():
     def my_generated_by_func(index_type: str):
         inputs = ""
         if index_type == "Azure Cognitive Search":
-            inputs = {
-                "index_type": index_type,
-                "index": "index_1"
-                }
+            inputs = {"index_type": index_type, "index": "index_1"}
         elif index_type == "Workspace MLIndex":
-            inputs = {
-                "index_type": index_type,
-                "index" : "index_2"
-            }
+            inputs = {"index_type": index_type, "index": "index_2"}
 
         result = json.dumps(inputs)
         return result
@@ -198,9 +193,7 @@ def mock_reverse_generated_by_func():
 
 @pytest.fixture(scope="session")
 def mock_module_with_for_retrieve_tool_func_result(
-    mock_list_func,
-    mock_generated_by_func,
-    mock_reverse_generated_by_func
+    mock_list_func, mock_generated_by_func, mock_reverse_generated_by_func
 ):
     """Mock module object for dynamic list testing."""
     mock_module_list_func = MagicMock()

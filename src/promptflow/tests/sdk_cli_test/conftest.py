@@ -15,23 +15,20 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
-from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow_test import (
+from promptflow_test.local_recording_utilities import (
     RecordStorage,
     check_pydantic_v2,
     delete_count_lock_file,
     inject_async_with_recording,
     inject_sync_with_recording,
-    is_live,
-    is_record,
-    is_replay,
     mock_tool,
     recording_array_reset,
 )
+from promptflow_test.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -40,7 +37,9 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 SRC_ROOT = PROMOTFLOW_ROOT / ".."
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "../tests/test_configs/node_recordings").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(
+    SRC_ROOT / "promptflow-test-utils/promptflow_test/local_recording_utilities/recordings"
+).resolve()
 
 
 @pytest.fixture(scope="session")

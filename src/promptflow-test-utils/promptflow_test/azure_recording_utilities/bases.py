@@ -82,10 +82,8 @@ class PFAzureIntegrationTestRecording:
             )
 
     def _get_recording_file(self) -> Path:
-        # recording files are expected to be located at "tests/test_configs/recordings"
-        # test file path should locate at "tests/sdk_cli_azure_test/e2etests"
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
-        recording_dir = (test_file_path.parent.parent.parent / "test_configs" / "recordings").resolve()
+        recording_dir = (test_file_path.parent / "recordings").resolve()
         recording_dir.mkdir(exist_ok=True)
 
         test_file_name = test_file_path.stem
@@ -250,7 +248,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         run_data_requests = dict()
         log_content_requests = dict()
         for req, resp in self.cassette.data:
-            # run hisotry's rundata API
+            # run history's rundata API
             if str(req.path).endswith("/rundata"):
                 body = req.body.decode("utf-8")
                 body_dict = json.loads(body)

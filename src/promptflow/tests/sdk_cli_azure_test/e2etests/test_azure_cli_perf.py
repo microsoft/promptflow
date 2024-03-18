@@ -9,7 +9,7 @@ import pytest
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 from promptflow._sdk._telemetry import log_activity
 from promptflow._sdk._utils import ClientUserAgentUtil
-from sdk_cli_azure_test.recording_utilities import is_replay
+from promptflow_test.record_mode import is_replay
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
