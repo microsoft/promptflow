@@ -47,7 +47,3 @@ def inject_sync_with_recording(f, trace_type):
     )
     wrapper_fun._original = f
     return wrapper_fun
-
-
-def mock_flow_execution_context(*args, **params):
-    raise Exception("Init flow execution context failed")

@@ -8,7 +8,6 @@ from sdk_cli_test.recording_utilities import (
     is_live,
     is_record,
     is_replay,
-    mock_flow_execution_context,
     mock_tool,
 )
 
@@ -18,7 +17,7 @@ PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 
 
-def setup_recording(param=None):
+def setup_recording():
     patches = []
 
     def start_patches(patch_targets):
@@ -45,7 +44,6 @@ def setup_recording(param=None):
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
         }
-        patch_targets = update_patch_targets(param, patch_targets)
         start_patches(patch_targets)
         inject_openai_api()
 
@@ -61,9 +59,19 @@ def setup_recording(param=None):
     return patches
 
 
-def update_patch_targets(param, patch_targets):
-    if param == "flow_execution_context":
-        patch_targets[
-            "promptflow._core.flow_execution_context.FlowExecutionContext.__init__"
-        ] = mock_flow_execution_context
-    return patch_targets
+def mocked_flow_executor_patch(patch_target_list=[], mock_function_list=[]):
+    patches = []
+
+    def start_patches(patch_targets):
+        # Functions to setup the mock for list of targets
+        for target, mock_func in patch_targets.items():
+            patcher = patch(target, mock_func)
+            patches.append(patcher)
+            patcher.start()
+
+    # Setup patches
+    patch_targets = {}
+    for patch_target, mock_function in zip(patch_target_list, mock_function_list):
+        patch_targets[patch_target] = mock_function
+    start_patches(patch_targets)
+    return patches
