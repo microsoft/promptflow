@@ -62,5 +62,5 @@ def set_environment_variables(request: BaseExecutionRequest):
 
 def enable_async_execution():
     """Set env PF_USE_ASYNC to true to enable async execution"""
-    # Will remove when AsyncNodesScheduler is used by default
+    # TODO: Will remove when AsyncNodesScheduler is used by default
     os.environ["PF_USE_ASYNC"] = "true"
