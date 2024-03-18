@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import base64
+import datetime
 import json
 import os
 import uuid
@@ -22,9 +23,16 @@ from promptflow._constants import (
     SpanResourceFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
+from promptflow._sdk._constants import (
+    PF_TRACE_CONTEXT,
+    PF_TRACE_CONTEXT_ATTR,
+    TRACE_DEFAULT_SESSION_ID,
+    ContextAttributeKey,
+)
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.entities._trace import Span
+from promptflow.exceptions import UserErrorException
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
 
@@ -168,3 +176,22 @@ class TestStartTrace:
                 tracer_provider._active_span_processor._span_processors[0].span_exporter._endpoint
                 == f"http://localhost:{MOCK_PROMPTFLOW_SERVICE_PORT}/v1/traces"
             )
+
+
+@pytest.mark.unittest
+@pytest.mark.sdk_test
+class TestTraceOperations:
+    def test_validate_delete_query_params(self, pf: PFClient) -> None:
+        expected_error_message = (
+            'Valid delete queries: 1) specify `run`; 2) specify `session` (not "default"); '
+            "3) specify `session` and `started_before` (ISO 8601)."
+        )
+
+        def _validate_invalid_params(kwargs: Dict):
+            with pytest.raises(UserErrorException) as e:
+                pf._traces._validate_delete_query_params(**kwargs)
+            assert expected_error_message in str(e)
+
+        _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
+        _validate_invalid_params({"session": TRACE_DEFAULT_SESSION_ID})
+        _validate_invalid_params({"session": str(uuid.uuid4()), "started_before": "invalid isoformat"})
