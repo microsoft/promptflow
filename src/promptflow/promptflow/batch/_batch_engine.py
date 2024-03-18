@@ -113,7 +113,7 @@ class BatchEngine:
             MultimediaProcessor.create()
 
         self._connections = connections
-        self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
+        self._storage = storage or DefaultRunStorage(base_dir=self._working_dir)
         self._kwargs = kwargs
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")

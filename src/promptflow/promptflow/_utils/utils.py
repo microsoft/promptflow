@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING, PF_LONG_RUNNING_LOGGING_INTERVAL
-from promptflow.contracts.multimedia import PFBytes
+from promptflow.contracts.multimedia import PFBytes, Text
 from promptflow.contracts.types import AssistantDefinition
 
 T = TypeVar("T")
@@ -327,6 +327,8 @@ def default_json_encoder(obj):
         return str(obj)
     if isinstance(obj, AssistantDefinition):
         return obj.serialize()
+    if isinstance(obj, Text):
+        return str(obj)
     else:
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 

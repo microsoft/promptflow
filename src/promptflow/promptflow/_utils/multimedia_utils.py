@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
+from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError, UninitializedError
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes, Text
@@ -166,11 +166,18 @@ class MultimediaProcessor(ThreadLocalSingleton, ABC):
             multimedia_processor._activate_in_context(force=True)
 
     @classmethod
-    def get_instance(cls):
+    def get_instance(cls, force_create: bool = False):
         instance = cls.active_instance()
         if instance is None:
-            instance = BasicMultimediaProcessor()
-            instance._activate_in_context()
+            if force_create:
+                instance = BasicMultimediaProcessor()
+                instance._activate_in_context()
+            else:
+                raise UninitializedError(
+                    message_format="Please initialize the multimedia processor with "
+                    "'MultimediaProcessor.create or MultimediaProcessor.create_from_yaml' before using it.",
+                    target=ErrorTarget.EXECUTOR,
+                )
         return instance
 
     def create_image(self, value: any):
@@ -270,7 +277,7 @@ class MultimediaProcessor(ThreadLocalSingleton, ABC):
     def convert_multimedia_data_to_string(value: Any, inplace=False):
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
         return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
-    
+
     def process_multimedia_in_run_info(
         self, run_info: Union[FlowRunInfo, NodeRunInfo], base_dir: Path, sub_dir: Path = None, use_absolute_path=False
     ):
@@ -292,10 +299,6 @@ class MultimediaProcessor(ThreadLocalSingleton, ABC):
 
     @abstractstaticmethod
     def _create_image_from_dict(image_dict: dict):
-        pass
-
-    @abstractstaticmethod
-    def default_json_encoder(obj):
         pass
 
     @abstractmethod
@@ -358,13 +361,6 @@ class BasicMultimediaProcessor(MultimediaProcessor):
                     target=ErrorTarget.EXECUTOR,
                 )
 
-    @staticmethod
-    def default_json_encoder(obj):
-        if isinstance(obj, PFBytes):
-            return str(obj)
-        else:
-            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
     def load_multimedia_data_recursively(self, value: Any):
         process_funcs = {self.is_multimedia_dict: self._create_image_from_dict}
         return self._process_multimedia_dict_recursively(value, process_funcs)
@@ -393,11 +389,12 @@ class BasicMultimediaProcessor(MultimediaProcessor):
         return self._process_multimedia_dict_recursively(value, process_funcs)
 
     def persist_multimedia_data(
-            self, value: Any, base_dir: Path, sub_dir: Path = None, use_absolute_path=False, inplace: bool = False
-        ):
+        self, value: Any, base_dir: Path, sub_dir: Path = None, use_absolute_path=False, inplace: bool = False
+    ):
         pfbytes_file_reference_encoder = (
-            self.get_file_reference_encoder(base_dir, sub_dir, use_absolute_path=use_absolute_path) 
-            if base_dir else None
+            self.get_file_reference_encoder(base_dir, sub_dir, use_absolute_path=use_absolute_path)
+            if base_dir
+            else None
         )
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
@@ -445,15 +442,6 @@ class OpenaiVisionMultimediaProcessor(MultimediaProcessor):
                 target=ErrorTarget.EXECUTOR,
             )
 
-    @staticmethod
-    def default_json_encoder(obj):
-        if isinstance(obj, PFBytes):
-            return str(obj)
-        elif isinstance(obj, Text):
-            return str(obj)
-        else:
-            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
     def load_multimedia_data_recursively(self, value: Any):
         process_funcs = {
             self.is_multimedia_dict: self._create_image_from_dict,
@@ -484,11 +472,12 @@ class OpenaiVisionMultimediaProcessor(MultimediaProcessor):
         return self._process_multimedia_dict_recursively(value, process_funcs)
 
     def persist_multimedia_data(
-            self, value: Any, base_dir: Path, sub_dir: Path = None, use_absolute_path=False, inplace: bool = False
-        ):
+        self, value: Any, base_dir: Path, sub_dir: Path = None, use_absolute_path=False, inplace: bool = False
+    ):
         pfbytes_file_reference_encoder = (
-            self.get_file_reference_encoder(base_dir, sub_dir, use_absolute_path=use_absolute_path) 
-            if base_dir else None
+            self.get_file_reference_encoder(base_dir, sub_dir, use_absolute_path=use_absolute_path)
+            if base_dir
+            else None
         )
         serialization_funcs = {
             Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder}),
@@ -507,12 +496,12 @@ class OpenaiVisionMultimediaProcessor(MultimediaProcessor):
 
 # TODO：Runtime relies on these old interfaces and will be removed in the future.
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
-    return MultimediaProcessor.get_instance().persist_multimedia_data(value, base_dir, sub_dir)
+    return MultimediaProcessor.get_instance(force_create=True).persist_multimedia_data(value, base_dir, sub_dir)
 
 
 def load_multimedia_data_recursively(value: Any):
-    return MultimediaProcessor.get_instance().load_multimedia_data_recursively(value)
+    return MultimediaProcessor.get_instance(force_create=True).load_multimedia_data_recursively(value)
 
 
 def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
-    return MultimediaProcessor.get_instance().resolve_multimedia_data_recursively(input_dir, value)
+    return MultimediaProcessor.get_instance(force_create=True).resolve_multimedia_data_recursively(input_dir, value)

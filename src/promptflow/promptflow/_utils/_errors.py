@@ -18,3 +18,7 @@ class YamlParseError(SystemErrorException):
 class ApplyInputMappingError(ValidationException):
     def __init__(self, target: ErrorTarget = ErrorTarget.CORE, **kwargs):
         super().__init__(target=target, **kwargs)
+
+
+class UninitializedError(SystemErrorException):
+    pass
