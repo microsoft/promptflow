@@ -55,7 +55,7 @@ def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
-def _common_mock_process_wrapper(*args, **kwargs):
+def _custom_mock_process_wrapper(*args, **kwargs):
     # Default mock implementation of _process_wrapper in recording mode
     patch_target_list = kwargs.pop("patch_target_list", None)
     mock_function_list = kwargs.pop("mock_function_list", None)
@@ -63,7 +63,7 @@ def _common_mock_process_wrapper(*args, **kwargs):
     _process_wrapper(*args, **kwargs)
 
 
-def _common_mock_create_spawned_fork_process_manager(*args, **kwargs):
+def _custom_mock_create_spawned_fork_process_manager(*args, **kwargs):
     # Default mock implementation of create_spawned_fork_process_manager in recording mode
     patch_target_list = kwargs.pop("patch_target_list", None)
     mock_function_list = kwargs.pop("mock_function_list", None)
@@ -103,12 +103,12 @@ def configure_process_override_with_custom_parameters(patch_target_list, mock_fu
     # Step I: set process pool targets placeholder with customized targets
     current_process_wrapper_var.set(
         functools.partial(
-            _common_mock_process_wrapper, patch_target_list=patch_target_list, mock_function_list=mock_function_list
+            _custom_mock_process_wrapper, patch_target_list=patch_target_list, mock_function_list=mock_function_list
         )
     )
     current_process_manager_var.set(
         functools.partial(
-            _common_mock_create_spawned_fork_process_manager,
+            _custom_mock_create_spawned_fork_process_manager,
             patch_target_list=patch_target_list,
             mock_function_list=mock_function_list,
         )
