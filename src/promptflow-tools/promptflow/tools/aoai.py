@@ -118,7 +118,7 @@ class AzureOpenAI(ToolProvider):
         seed: int = None,
         **kwargs,
     ) -> [str, dict]:
-        params = self.prepare_params(
+        params = prepare_params(
             prompt=prompt,
             deployment_name=deployment_name,
             temperature=temperature,
@@ -206,7 +206,7 @@ def prepare_params(
     response_format: object = None,
     seed: int = None,
     **kwargs,
-)
+):
     # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
     chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
     messages = parse_chat(chat_str)
