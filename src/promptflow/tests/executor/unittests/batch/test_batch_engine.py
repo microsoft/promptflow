@@ -7,6 +7,7 @@ import pytest
 from promptflow._core._errors import UnexpectedError
 from promptflow._proxy import ProxyFactory
 from promptflow.batch import APIBasedExecutorProxy, BatchEngine, CSharpExecutorProxy, PythonExecutorProxy
+from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound
@@ -65,9 +66,10 @@ class TestBatchEngine:
         assert len(ProxyFactory.executor_proxy_classes) == 3
 
     def test_get_executor_proxy_cls(self):
-        assert ExecutorProxyFactory.get_executor_proxy_cls("python") == PythonExecutorProxy
-        assert ExecutorProxyFactory.get_executor_proxy_cls("csharp") == CSharpExecutorProxy
-        assert ExecutorProxyFactory.get_executor_proxy_cls() == CSharpExecutorProxy
+        executor_proxy_factory = ExecutorProxyFactory()
+        assert executor_proxy_factory.get_executor_proxy_cls("python") == PythonExecutorProxy
+        assert executor_proxy_factory.get_executor_proxy_cls("csharp") == CSharpExecutorProxy
+        assert executor_proxy_factory.get_executor_proxy_cls(None) == ChatGroupOrchestratorProxy
 
     def test_cancel(self):
         batch_engine = BatchEngine(get_yaml_file("print_input_flow"))

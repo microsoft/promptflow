@@ -10,7 +10,7 @@ from promptflow._utils.async_utils import async_run_allowing_running_loop
 from ._base_executor_proxy import AbstractExecutorProxy
 from ._csharp_executor_proxy import CSharpExecutorProxy
 from ._python_executor_proxy import PythonExecutorProxy
-from _chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
+from ._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 
 class ProxyFactory:
     executor_proxy_classes: Dict[str, Type[AbstractExecutorProxy]] = {
