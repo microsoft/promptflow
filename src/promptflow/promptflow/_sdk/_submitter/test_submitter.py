@@ -262,7 +262,8 @@ class TestSubmitter:
                 or {},
             )
 
-            if Configuration(overrides=self._client._config).is_internal_features_enabled():
+            # do not enable trace when test single node, as we have not determined this behavior
+            if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
                 logger.debug("Starting trace for flow test...")
                 start_trace(session=session)
 
