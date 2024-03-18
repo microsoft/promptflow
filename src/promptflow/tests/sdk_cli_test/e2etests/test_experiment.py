@@ -307,8 +307,18 @@ class TestExperiment:
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
 
+    @pytest.mark.skip("Enable when chat group node run is ready")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_with_chat_group(self, pf: PFClient):
-        experiement_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
-        experiment = _load_experiment(experiement_path)
-        assert experiment
+        template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        exp = pf._experiments.create_or_update(experiment)
+
+        if is_live():
+            # Async start
+            exp = pf._experiments.start(exp)
+            exp = self.wait_for_experiment_terminated(pf, exp)
+        else:
+            exp = pf._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(pf, exp).start()

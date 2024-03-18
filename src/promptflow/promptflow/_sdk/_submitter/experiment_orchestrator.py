@@ -21,6 +21,7 @@ from typing import Union
 import psutil
 
 from promptflow._sdk._constants import (
+    EXP_NODE_TYPE_2_RUN_TYPE,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     PROMPT_FLOW_DIR_NAME,
@@ -29,7 +30,6 @@ from promptflow._sdk._constants import (
     ExperimentNodeType,
     ExperimentStatus,
     FlowRunProperties,
-    RunTypes,
 )
 from promptflow._sdk._errors import (
     ExperimentCommandRunError,
@@ -266,17 +266,10 @@ class ExperimentOrchestrator:
         :type from_nodes: list
         """
 
-        def prepare_edges(node):
-            """Get all in-degree nodes of this node."""
-            node_names = set()
-            for input_value in node.inputs.values():
-                if ExperimentHelper._is_node_reference(input_value):
-                    referenced_node_name = input_value.split(".")[0].replace("${", "")
-                    node_names.add(referenced_node_name)
-            return node_names
-
         def generate_node_mapping_by_nodes(from_nodes):
-            all_node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            all_node_edges_mapping = {
+                node.name: ExperimentHelper._prepare_single_node_edges(node) for node in self.experiment.nodes
+            }
             node_edges_mapping, next_nodes = {node: all_node_edges_mapping[node] for node in from_nodes}, from_nodes
             while next_nodes:
                 linked_nodes = set()
@@ -390,14 +383,16 @@ class ExperimentOrchestrator:
             pre_nodes = set()
             node_mapping = {node.name: node for node in self.experiment.nodes}
             for node_name in nodes:
-                pre_nodes.update(prepare_edges(node_mapping[node_name]))
+                pre_nodes.update(ExperimentHelper._prepare_single_node_edges(node_mapping[node_name]))
             if not check_in_degree_node_outputs(pre_nodes):
                 raise UserErrorException(f"The output(s) of in-degree of nodes {nodes} do not exist.")
             node_edges_mapping = {}
             next_execute_nodes = [self._nodes[name] for name in nodes]
         else:
             # Execute all nodes in experiment.
-            node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            node_edges_mapping = {
+                node.name: ExperimentHelper._prepare_single_node_edges(node) for node in self.experiment.nodes
+            }
             logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
             next_execute_nodes = get_next_executable_nodes()
 
@@ -517,16 +512,16 @@ class ExperimentNodeRun(Run):
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
         super().__init__(
             # Use node name as prefix for run name?
-            type=RunTypes.COMMAND if node.type == ExperimentNodeType.COMMAND else RunTypes.BATCH,
+            type=EXP_NODE_TYPE_2_RUN_TYPE[node.type],
             name=self.context.node_name_to_id[node.name],
-            display_name=node.display_name or node.name,
-            column_mapping=node.inputs,
+            display_name=getattr(node, "display_name") or node.name,
+            column_mapping=getattr(node, "inputs", None),
             variant=getattr(node, "variant", None),
             flow=self._get_node_path(),
             outputs=getattr(node, "outputs", None),
             connections=getattr(node, "connections", None),
             command=getattr(node, "command", None),
-            environment_variables=node.environment_variables,
+            environment_variables=getattr(node, "environment_variables", None),
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
             **kwargs,
         )
@@ -838,7 +833,18 @@ class ExperimentHelper:
     def _prepare_single_node_edges(node):
         """Prepare single node name to referenced node name edges mapping."""
         node_names = set()
-        for input_value in node.inputs.values():
+
+        # if node is chat group, then get all inputs from roles
+        node_input_values = []
+        if node.type == ExperimentNodeType.CHAT_GROUP:
+            for role in node.roles:
+                role_inputs = role.get("inputs", {}).values()
+                node_input_values.append(list(role_inputs))
+        else:
+            node_input_values = list(node.inputs.values())
+
+        # Get all in-degree nodes of this node
+        for input_value in node_input_values:
             if not isinstance(input_value, str):
                 continue
             if ExperimentHelper._is_node_reference(input_value):
@@ -851,7 +857,7 @@ class ExperimentHelper:
         """Get experiment node edges mapping."""
         edges = {node.name: ExperimentHelper._prepare_single_node_edges(node) for node in nodes}
         if flow_only:
-            nodes_to_remove = [node for node in nodes if node.type != ExperimentNodeType.FLOW]
+            nodes_to_remove = [node for node in nodes if node.type == ExperimentNodeType.COMMAND]
             ExperimentHelper._remove_nodes_from_active_edges(nodes_to_remove, edges)
         return edges
 

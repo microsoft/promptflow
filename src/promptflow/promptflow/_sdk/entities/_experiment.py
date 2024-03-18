@@ -407,6 +407,10 @@ class Experiment(ExperimentTemplate):
                 nodes.append(
                     CommandNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
+            elif node_dict["type"] == ExperimentNodeType.CHAT_GROUP:
+                nodes.append(
+                    ChatGroupNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
+                )
             else:
                 raise Exception(f"Unknown node type {node_dict['type']}")
         data = [

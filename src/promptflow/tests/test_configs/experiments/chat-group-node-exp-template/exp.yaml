@@ -19,19 +19,17 @@ nodes:
     max_turns: 4
     stop_signal: "[STOP]"
     roles:
-      - name: copilot
-        role: assistant
+      - role: assistant
         path: ../../flows/chat_group_copilot
         inputs:
-          question: ${my_data.question}
+          question: ${data.my_data.question}
           model: ${inputs.model_name}
           conversation_history: ${parent.conversation_history}
-      - name: simulation
-        role: user
+      - role: user
         path: ../../flows/chat_group_simulation
         inputs:
-          question: ${my_data.question}
-          ground_truth: ${my_data.ground_truth}
+          question: ${data.my_data.question}
+          ground_truth: ${data.my_data.ground_truth}
           conversation_history: ${parent.conversation_history}
 
   # evaluate the chat history
@@ -39,6 +37,6 @@ nodes:
     type: flow
     path: ../../flows/chat_group_eval_history
     inputs:
-      question: ${my_data.question}
-      ground_truth: ${my_data.ground_truth}
+      question: ${data.my_data.question}
+      ground_truth: ${data.my_data.ground_truth}
       conversation_history: ${multi_turn_chat.conversation_history}
