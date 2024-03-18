@@ -31,13 +31,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import (
-    ENABLE_MULTI_CONTAINER_KEY,
-    EXTENSION_UA,
-    PF_NO_INTERACTIVE_LOGIN,
-    PF_USER_AGENT,
-    USER_AGENT,
-)
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -70,12 +64,12 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException
-from promptflow.tracing._operation_context import OperationContext
 
 logger = get_cli_sdk_logger()
 
@@ -753,58 +747,6 @@ def generate_flow_tools_json(
             json.dump(flow_tools, f, indent=4)
 
     return flow_tools
-
-
-class ClientUserAgentUtil:
-    """SDK/CLI side user agent utilities."""
-
-    @classmethod
-    def _get_context(cls):
-        return OperationContext.get_instance()
-
-    @classmethod
-    def get_user_agent(cls):
-        context = cls._get_context()
-        # directly get from context since client side won't need promptflow/xxx.
-        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
-
-    @classmethod
-    def append_user_agent(cls, user_agent: Optional[str]):
-        if not user_agent:
-            return
-        context = cls._get_context()
-        context.append_user_agent(user_agent)
-
-    @classmethod
-    def update_user_agent_from_env_var(cls):
-        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
-        for env_name in [USER_AGENT, PF_USER_AGENT]:
-            if env_name in os.environ:
-                cls.append_user_agent(os.environ[env_name])
-
-    @classmethod
-    def update_user_agent_from_config(cls):
-        """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
-        from promptflow._sdk._configuration import Configuration
-
-        config = Configuration.get_instance()
-        user_agent = config.get_user_agent()
-        if user_agent:
-            cls.append_user_agent(user_agent)
-
-
-def setup_user_agent_to_operation_context(user_agent):
-    """Setup user agent to OperationContext.
-    For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
-    For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
-    For calls from SDK, ua will be like: promptflow-sdk/
-    For 1p customer call which set user agent in config, ua will be like: PFCustomer_XXX/
-    """
-    # add user added UA after SDK/CLI
-    ClientUserAgentUtil.append_user_agent(user_agent)
-    ClientUserAgentUtil.update_user_agent_from_env_var()
-    ClientUserAgentUtil.update_user_agent_from_config()
-    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
