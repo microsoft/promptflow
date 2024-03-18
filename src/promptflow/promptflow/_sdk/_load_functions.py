@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import hashlib
 from os import PathLike
 from pathlib import Path
 from typing import IO, AnyStr, Optional, Union
@@ -11,7 +10,6 @@ from dotenv import dotenv_values
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
 from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
-from ._utils import _sanitize_python_variable_name
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._experiment import Experiment, ExperimentTemplate
@@ -70,7 +68,6 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-    is_async_call: Optional[bool] = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
@@ -79,13 +76,10 @@ def load_flow(
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
-    :param is_async_call: Optional argument to indicate the return value is an async function.
-        If True, the return value is an async function, otherwise, it is a sync function.
-    :type is_async_call: bool
     :return: A Flow object
     :rtype: Flow
     """
-    return Flow.load(source, is_async_call=is_async_call, **kwargs)
+    return Flow.load(source, **kwargs)
 
 
 def load_run(
@@ -205,8 +199,5 @@ def _load_experiment(
     absolute_path = source.resolve().absolute().as_posix()
     if not source.exists():
         raise NoExperimentTemplateError(f"Experiment file {absolute_path} not found.")
-    anonymous_exp_name = _sanitize_python_variable_name(
-        f"{source.stem}_{hashlib.sha1(absolute_path.encode('utf-8')).hexdigest()}"
-    )
-    experiment = load_common(Experiment, source, params_override=[{"name": anonymous_exp_name}], **kwargs)
+    experiment = load_common(Experiment, source, **kwargs)
     return experiment

@@ -105,6 +105,7 @@ def log_activity(
     activity_name,
     activity_type=ActivityType.INTERNALCALL,
     custom_dimensions=None,
+    user_agent=None,
 ):
     """Log an activity.
 
@@ -121,12 +122,16 @@ def log_activity(
     :type activity_type: str
     :param custom_dimensions: The custom properties of the activity.
     :type custom_dimensions: dict
+    :param user_agent: Specify user agent. If not specified, the user agent will be got from OperationContext.
+    :type user_agent: str
     :return: None
     """
     if not custom_dimensions:
         custom_dimensions = {}
 
-    user_agent = ClientUserAgentUtil.get_user_agent()
+    # provided user agent will be respected even if it's ""
+    if user_agent is None:
+        user_agent = ClientUserAgentUtil.get_user_agent()
     request_id = request_id_context.get()
     if not request_id:
         # public function call
@@ -179,12 +184,12 @@ def log_activity(
             raise exception
 
 
-def extract_telemetry_info(self):
+def extract_telemetry_info(self, *args, **kwargs):
     """Extract pf telemetry info from given telemetry mix-in instance."""
     result = {}
     try:
         if isinstance(self, TelemetryMixin):
-            return self._get_telemetry_values()
+            return self._get_telemetry_values(*args, **kwargs)
     except Exception:
         pass
     return result
@@ -233,10 +238,25 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
-            custom_dimensions.update(extract_telemetry_info(self))
+            if "activity_name" not in kwargs:
+                custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs, activity_name=activity_name))
+            else:
+                custom_dimensions.update(extract_telemetry_info(self, *args, **kwargs))
+
+            if isinstance(self, TelemetryMixin):
+                user_agent = self._get_user_agent_override()
+            else:
+                user_agent = None
+
             # update activity name according to kwargs.
             _activity_name = update_activity_name(activity_name, kwargs=kwargs)
-            with log_activity(logger, _activity_name, activity_type, custom_dimensions):
+            with log_activity(
+                logger=logger,
+                activity_name=_activity_name,
+                activity_type=activity_type,
+                custom_dimensions=custom_dimensions,
+                user_agent=user_agent,
+            ):
                 if _activity_name in HINT_ACTIVITY_NAME:
                     hint_for_update()
                     # set check_latest_version as deamon thread to avoid blocking main thread

@@ -18,9 +18,10 @@ import pydash
 import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
+from pytest_mock import MockFixture
 
 from promptflow._sdk._constants import DownloadedRun, RunStatus
-from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -1207,7 +1208,8 @@ class TestFlowRun:
                 user_assigned_identities=[
                     ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
                 ],
-            )
+            ),
+            _kind="default",  # make the mocked workspace pass the datastore check
         )
 
         def submit(*args, **kwargs):
@@ -1226,3 +1228,10 @@ class TestFlowRun:
                     params_override=[{"name": run_id}],
                 )
                 pf.runs.create_or_update(run=run)
+
+    def test_wrong_workspace_type(self, pf: PFClient, mocker: MockFixture):
+        # test wrong workspace type "hub"
+        mocker.patch.object(pf.runs._workspace, "_kind", "hub")
+        with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
+            datastore = pf.runs._workspace_default_datastore
+            assert datastore

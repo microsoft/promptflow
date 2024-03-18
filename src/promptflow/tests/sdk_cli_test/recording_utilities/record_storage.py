@@ -13,8 +13,8 @@ from typing import Dict, Iterator, Union
 from filelock import FileLock
 from openai import NotFoundError
 
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.exceptions import PromptflowException
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 from .constants import ENVIRON_TEST_MODE, RecordMode
 
@@ -191,7 +191,11 @@ class RecordCache:
         if isinstance(item, list):
             return [self._recursive_create_hashable_args(i) for i in item]
         if isinstance(item, dict):
-            return {k: self._recursive_create_hashable_args(v) for k, v in item.items() if k != "extra_headers"}
+            return {
+                k: self._recursive_create_hashable_args(v)
+                for k, v in item.items()
+                if k != "extra_headers" and v is not None
+            }
         elif "module: promptflow.connections" in str(item) or "object at" in str(item):
             return []
         else:

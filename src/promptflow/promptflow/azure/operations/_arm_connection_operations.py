@@ -12,7 +12,7 @@ from azure.ai.ml._scope_dependent_operations import (
 )
 from azure.core.exceptions import ClientAuthenticationError
 
-from promptflow._sdk._constants import ConnectionAuthMode
+from promptflow._constants import ConnectionAuthMode
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.azure._models._models import WorkspaceConnectionPropertiesV2BasicResource

@@ -131,13 +131,13 @@ def add_experiment_start(subparsers):
     # Start a named experiment:
     pf experiment start -n my_experiment --inputs data1=data1_val data2=data2_val
     # Run an experiment by yaml file:
-    pf experiment start --file path/to/my_experiment.exp.yaml --inputs data1=data1_val data2=data2_val
+    pf experiment start --template path/to/my_experiment.exp.yaml --inputs data1=data1_val data2=data2_val
     """
     activate_action(
         name="start",
         description="Start an experiment.",
         epilog=epilog,
-        add_params=[add_param_name, add_param_file, add_param_input, add_param_stream] + base_params,
+        add_params=[add_param_name, add_param_template, add_param_input, add_param_stream] + base_params,
         subparsers=subparsers,
         help_message="Start an experiment.",
         action_param_name="sub_action",
@@ -235,20 +235,18 @@ def start_experiment(args: argparse.Namespace):
     if args.name:
         logger.debug(f"Starting a named experiment {args.name}.")
         inputs = list_of_dict_to_dict(args.inputs)
-        if inputs:
-            logger.warning("The inputs of named experiment cannot be modified.")
         client = _get_pf_client()
         experiment = client._experiments.get(args.name)
-        result = client._experiments.start(experiment=experiment, stream=args.stream)
-    elif args.file:
+        result = client._experiments.start(experiment=experiment, inputs=inputs, stream=args.stream)
+    elif args.template:
         from promptflow._sdk._load_functions import _load_experiment
 
-        logger.debug(f"Starting an anonymous experiment {args.file}.")
-        experiment = _load_experiment(source=args.file)
+        logger.debug(f"Starting an anonymous experiment {args.template}.")
+        experiment = _load_experiment(source=args.template)
         inputs = list_of_dict_to_dict(args.inputs)
         result = _get_pf_client()._experiments.start(experiment=experiment, inputs=inputs, stream=args.stream)
     else:
-        raise UserErrorException("To start an experiment, one of [name, file] must be specified.")
+        raise UserErrorException("To start an experiment, one of [name, template] must be specified.")
     print(json.dumps(result._to_dict(), indent=4))
 
 

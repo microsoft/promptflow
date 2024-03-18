@@ -1,8 +1,10 @@
+import os
 from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult
@@ -11,44 +13,17 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
 from ..utils import (
+    get_batch_inputs_line,
     get_flow_folder,
     get_flow_inputs_file,
-    get_flow_sample_inputs,
     get_yaml_file,
     load_content,
     load_jsonl,
+    submit_batch_run,
 )
 
 TEST_LOGS_FLOW = ["print_input_flow"]
 SAMPLE_FLOW_WITH_TEN_INPUTS = "simple_flow_with_ten_inputs"
-OUTPUT_FILE_NAME = "output.jsonl"
-
-
-def submit_batch_run(
-    flow_folder,
-    inputs_mapping,
-    *,
-    input_dirs={},
-    input_file_name="samples.json",
-    run_id=None,
-    connections={},
-    storage=None,
-    return_output_dir=False,
-):
-    batch_engine = BatchEngine(
-        get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
-    )
-    if not input_dirs and inputs_mapping:
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
-    output_dir = Path(mkdtemp())
-    if return_output_dir:
-        return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
-    return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
-
-
-def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
-    inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
-    return len(inputs)
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -152,19 +127,13 @@ class TestExecutorLogs:
             assert all(node_log in log_content for node_log in node_logs_list)
 
     def test_long_run_log(self):
-        executor = FlowExecutor.create(get_yaml_file("long_run"), {})
-        file_path = Path(mkdtemp()) / "flow.log"
-        with LogContext(file_path):
-            flow_result = executor.exec_line({}, index=0)
-        node_run = flow_result.node_run_infos["long_run_node"]
-        assert node_run.status == Status.Completed
-        with open(file_path) as fin:
-            lines = fin.readlines()
-        lines = [line for line in lines if line.strip()]
+        # Test long running tasks with log
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "60"
         target_texts = [
             "INFO     Start executing nodes in thread pool mode.",
             "INFO     Start to run 1 nodes with concurrency level 16.",
             "INFO     Executing node long_run_node.",
+            "INFO     Using value of PF_LONG_RUNNING_LOGGING_INTERVAL in environment variable",
             "WARNING  long_run_node in line 0 has been running for 60 seconds, stacktrace of thread",
             "in wrapped",
             "output = func(*args, **kwargs)",
@@ -176,6 +145,28 @@ class TestExecutorLogs:
             "time.sleep(61)",
             "INFO     Node long_run_node completes.",
         ]
+        self.assert_long_run_log(target_texts)
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
+
+        # Test long running tasks without log
+        target_texts = [
+            "INFO     Start executing nodes in thread pool mode.",
+            "INFO     Start to run 1 nodes with concurrency level 16.",
+            "INFO     Executing node long_run_node.",
+            "INFO     Node long_run_node completes.",
+        ]
+        self.assert_long_run_log(target_texts)
+
+    def assert_long_run_log(self, target_texts):
+        executor = FlowExecutor.create(get_yaml_file("long_run"), {})
+        file_path = Path(mkdtemp()) / "flow.log"
+        with LogContext(file_path):
+            flow_result = executor.exec_line({}, index=0)
+        node_run = flow_result.node_run_infos["long_run_node"]
+        assert node_run.status == Status.Completed
+        with open(file_path) as fin:
+            lines = fin.readlines()
+        lines = [line for line in lines if line.strip()]
         msg = f"Got {len(lines)} lines in {file_path}, expected {len(target_texts)}."
         assert len(lines) == len(target_texts), msg
         for actual, expected in zip(lines, target_texts):
@@ -237,6 +228,7 @@ class TestExecutorLogs:
             assert all(log in log_content for log in logs_list)
 
     def test_async_log_in_worker_thread(self):
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "60"
         logs_directory = Path(mkdtemp())
         log_path = str(logs_directory / "flow.log")
         with LogContext(log_path, run_mode=RunMode.Test):
@@ -246,3 +238,4 @@ class TestExecutorLogs:
             # Below log is created by worker thread
             logs_list = ["INFO     monitor_long_running_coroutine started"]
             assert all(log in log_content for log in logs_list)
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")

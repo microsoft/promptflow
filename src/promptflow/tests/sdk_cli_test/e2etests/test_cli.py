@@ -20,7 +20,6 @@ import pytest
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
@@ -29,6 +28,7 @@ from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.tracing._operation_context import OperationContext
 
 from ..recording_utilities import is_live
 
@@ -1985,18 +1985,20 @@ class TestCli:
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
-        from promptflow._sdk._load_functions import _load_experiment
-
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
-            mock_func.return_value = True
-            experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
-            run_pf_command("experiment", "start", "--file", experiment_file, "--stream")
-            experiment = _load_experiment(source=experiment_file)
-            exp = local_client._experiments.get(name=experiment.name)
-            assert len(exp.node_runs) == 4
-            assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
-            metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
-            assert "accuracy" in metrics
+            from promptflow._sdk.entities._experiment import Experiment
+
+            with mock.patch.object(Experiment, "_generate_name") as mock_generate_name:
+                experiment_name = str(uuid.uuid4())
+                mock_generate_name.return_value = experiment_name
+                mock_func.return_value = True
+                experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
+                run_pf_command("experiment", "start", "--template", experiment_file, "--stream")
+                exp = local_client._experiments.get(name=experiment_name)
+                assert len(exp.node_runs) == 4
+                assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
+                metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+                assert "accuracy" in metrics
 
     @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
     def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):

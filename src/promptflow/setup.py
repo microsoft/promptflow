@@ -23,7 +23,6 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 REQUIRES = [
     "psutil",  # get process information when bulk run
     "httpx>=0.25.1",  # used to send http requests asynchronously
-    "openai",  # promptflow._core.api_injector
     "flask>=2.2.3,<4.0.0",  # Serving endpoint requirements
     "sqlalchemy>=1.4.48,<3.0.0",  # sqlite requirements
     # note that pandas 1.5.3 is the only version to test in ci before promptflow 0.1.0b7 is released
@@ -40,7 +39,6 @@ REQUIRES = [
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
     "marshmallow>=3.5,<4.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
-    "tiktoken>=0.4.0",
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
@@ -53,6 +51,7 @@ REQUIRES = [
     "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
     "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
     "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
+    "promptflow-tracing",  # tracing capabilities
 ]
 
 setup(
@@ -92,7 +91,6 @@ setup(
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
-            "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
