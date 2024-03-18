@@ -1,4 +1,4 @@
-name: Build and Package MSI
+name: Build and Package MSI & Portable Installer
 
 on:
   workflow_dispatch:
@@ -108,6 +108,11 @@ jobs:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
 
+      - name: Generate portable promptflow
+        run: | 
+          echo "Python_ROOT_DIR: $env:Python_ROOT_DIR"
+          Compress-Archive -Path $env:Python_ROOT_DIR -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
+        shell: pwsh
 
       - name: Generate promptflow spec file to config pyinstaller
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
@@ -190,6 +195,13 @@ jobs:
           } else {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
+          }
+          # Upload zip file
+          if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
+            az storage blob upload --account-name promptflowartifact --container-name portable-installer --file "promptflow-${{ steps.get-version.outputs.version }}.zip" --name "promptflow.zip" --overwrite
+            az storage blob copy start --account-name promptflowartifact --destination-container portable-installer --destination-blob "promptflow-${{ steps.get-version.outputs.version }}.zip" --source-container portable-installer --source-blob "promptflow.zip"
+          } else {
+            az storage blob upload --account-name promptflowartifact --container-name portable-installer --file "promptflow-${{ steps.get-version.outputs.version }}.zip" --name "promptflow-${{ steps.get-version.outputs.version }}.zip" --overwrite
           }
         env:
           INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}
