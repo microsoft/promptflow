@@ -59,7 +59,7 @@ def setup_recording():
     return patches
 
 
-def mocked_flow_executor_patch(patch_target_list=[], mock_function_list=[]):
+def mocked_spawned_process_patch(patch_target_list=[], mock_function_list=[]):
     patches = []
 
     def start_patches(patch_targets):

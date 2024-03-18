@@ -10,7 +10,7 @@ from executor.process_utils import (
     current_process_wrapper_var,
     override_process_class,
 )
-from executor.record_utils import mocked_flow_executor_patch, setup_recording
+from executor.record_utils import mocked_spawned_process_patch, setup_recording
 from fastapi.testclient import TestClient
 from sdk_cli_test.recording_utilities import (
     RecordStorage,
@@ -59,7 +59,7 @@ def _common_mock_process_wrapper(*args, **kwargs):
     # Default mock implementation of _process_wrapper in recording mode
     patch_target_list = kwargs.pop("patch_target_list", None)
     mock_function_list = kwargs.pop("mock_function_list", None)
-    mocked_flow_executor_patch(patch_target_list, mock_function_list)
+    mocked_spawned_process_patch(patch_target_list, mock_function_list)
     _process_wrapper(*args, **kwargs)
 
 
@@ -67,7 +67,7 @@ def _common_mock_create_spawned_fork_process_manager(*args, **kwargs):
     # Default mock implementation of create_spawned_fork_process_manager in recording mode
     patch_target_list = kwargs.pop("patch_target_list", None)
     mock_function_list = kwargs.pop("mock_function_list", None)
-    mocked_flow_executor_patch(patch_target_list, mock_function_list)
+    mocked_spawned_process_patch(patch_target_list, mock_function_list)
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
