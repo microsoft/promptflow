@@ -19,7 +19,7 @@ from promptflow_test.record_mode import is_in_ci_pipeline, is_live, is_record, i
 
 from .utils import _run_in_subprocess
 
-RECORDINGS_TEST_CONFIGS_ROOT = Path(__file__).parent / "recordings_test_configs"
+RECORDINGS_TEST_CONFIGS_ROOT = Path(__file__).parent / "recordings"
 
 
 @pytest.fixture

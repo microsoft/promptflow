@@ -87,6 +87,8 @@ addopts = """
 -ra \
 -vv
 """
+env = [
+]
 testpaths = ["tests"]
 
 [tool.coverage.run]
