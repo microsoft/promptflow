@@ -324,7 +324,8 @@ def append_workspace_triple_to_func_input_params(
 def load_function_from_function_path(func_path: str):
     """Load a function from a function path.
 
-    The function path should be in the format of "module_name.function_name".
+    If function is in an installed package, the function path should be in the format of "module_name.function_name".
+    If function is in a script, the function path should be in the format of "function_path:function_name".
     """
     try:
         if ":" in func_path:
