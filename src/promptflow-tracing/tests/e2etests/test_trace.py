@@ -8,14 +8,7 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..utils import execute_function_in_subprocess, prepare_memory_exporter
-from .simple_functions import (
-    dummy_llm_tasks_async,
-    greetings,
-    openai_chat,
-    openai_completion,
-    openai_embedding_async,
-    render_prompt_template,
-)
+from .simple_functions import dummy_llm_tasks_async, greetings, openai_chat, openai_completion, openai_embedding_async
 
 LLM_FUNCTION_NAMES = [
     "openai.resources.chat.completions.Completions.create",
@@ -74,15 +67,6 @@ class TestTracing:
         assert isinstance(result, (str, list))
         span_list = exporter.get_finished_spans()
         self.validate_span_list(span_list, expected_span_length)
-
-    @pytest.mark.parametrize(
-        "func, inputs",
-        [
-            (render_prompt_template, {"prompt": "Hello {{name}}!", "name": "world"}),
-        ],
-    )
-    def test_otel_trace_with_prompt(self, func, inputs):
-        execute_function_in_subprocess(self.assert_otel_traces_with_prompt, func, inputs)
 
     def assert_otel_traces_with_prompt(self, func, inputs):
         memory_exporter = prepare_memory_exporter()

@@ -8,7 +8,7 @@ import uuid
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Type
 
 from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
@@ -33,6 +33,7 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
@@ -51,6 +52,19 @@ DEFAULT_CONCURRENCY = 10
 
 class BatchEngine:
     """This class is used to execute flows in batch mode"""
+
+    @classmethod
+    def register_executor(cls, language: str, executor_proxy_cls: Type[AbstractExecutorProxy]):
+        """Register a executor proxy class for a specific program language.
+
+        this function is left to keep the compatibility with the old version promptflow-runtime; it will
+        redirect the registration to the ExecutorProxyFactory.
+        """
+        # TODO: remove this after we migrate to multi-container
+        ExecutorProxyFactory.register_executor(
+            language=language,
+            executor_proxy_cls=executor_proxy_cls,
+        )
 
     def __init__(
         self,
@@ -100,6 +114,13 @@ class BatchEngine:
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
+        # update kwargs with worker_count and line_timeout_sec
+        self._kwargs.update(
+            {
+                "worker_count": self._worker_count,
+                "line_timeout_sec": self._line_timeout_sec,
+            }
+        )
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
