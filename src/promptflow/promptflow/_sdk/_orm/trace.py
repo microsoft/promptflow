@@ -80,11 +80,11 @@ class Span(Base):
         with trace_mgmt_db_session() as session:
             stmt: Query = session.query(Span)
             if run is not None:
-                stmt.filter(Span.run == run)
+                stmt = stmt.filter(Span.run == run)
             if session_id is not None:
-                stmt.filter(Span.session_id == session_id)
+                stmt = stmt.filter(Span.session_id == session_id)
             if started_before is not None:
-                stmt.filter(text(f"json_extract(span.content, '$.start_time') < '{started_before}'"))
+                stmt = stmt.filter(text(f"json_extract(span.content, '$.start_time') < '{started_before}'"))
             row_cnt = stmt.delete()
             session.commit()
             return row_cnt
