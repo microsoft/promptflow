@@ -10,8 +10,6 @@ import os
 from datetime import datetime, timedelta
 from typing import Callable
 
-import psutil
-
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
