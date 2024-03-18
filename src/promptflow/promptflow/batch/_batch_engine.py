@@ -283,10 +283,17 @@ class BatchEngine:
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
-        line_results.extend(previous_line_results or [])
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+            self._exec(
+                batch_inputs,
+                run_id,
+                output_dir,
+                raise_on_line_failure,
+                previous_line_results,
+                line_results,
+                aggr_result,
+            )
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -301,13 +308,36 @@ class BatchEngine:
 
     async def _exec(
         self,
-        line_results: List[LineResult],
-        aggr_result: AggregationResult,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
+        previous_line_results: List[LineResult] = None,
+        line_results: List[LineResult] = [],
+        aggr_result: AggregationResult = AggregationResult({}, {}, {}),
     ) -> BatchResult:
+        """
+        Asynchronously execute batch processing of inputs with potential resumption from previous results,
+        and aggregate outputs accordingly. Empty list `line_results` and `aggr_result` is passed to ensure
+        their current state can be retrieved when batch run is canceled.
+
+        :param batch_inputs: A list of dictionaries representing the inputs for all lines of the batch.
+        :type batch_inputs: List[Mapping[str, Any]]
+        :param run_id: An optional unique identifier for the run. If not provided, a new UUID will be generated.
+        :type run_id: Optional[str]
+        :param output_dir: An optional path to a directory where outputs will be persisted.
+        :type output_dir: Optional[Path]
+        :param raise_on_line_failure: A flag indicating whether to raise an exception on individual line failures.
+        :type raise_on_line_failure: bool
+        :param previous_line_results: An optional list of previous line results to resume from.
+        :type previous_line_results: Optional[List[~promptflow.executor._result.LineResult]]
+        :param line_results: An output parameter to be populated with the results of processing all lines in the batch.
+        :type line_results: List[~promptflow.executor._result.LineResult]
+        :param aggr_result: An output parameter to be populated with the aggregated results of all lines in the batch.
+        :type aggr_result: ~promptflow.executor._result.AggregationResult
+        :return: A `BatchResult` object containing information about the execution of the batch.
+        :rtype: ~promptflow.batch._result.BatchResult
+        """
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
@@ -317,9 +347,16 @@ class BatchEngine:
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
 
-        existing_results_line_numbers = set([r.run_info.index for r in line_results])
-        bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
-        inputs_to_run = [input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers]
+        # if there are existing results resumed from previous run, we should skip the execution of these lines
+        if previous_line_results:
+            line_results.extend(previous_line_results)
+            existing_results_line_numbers = set([r.run_info.index for r in previous_line_results])
+            bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
+            inputs_to_run = [
+                input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers
+            ]
+        else:
+            inputs_to_run = batch_inputs
 
         run_id = run_id or str(uuid.uuid4())
 
