@@ -48,6 +48,4 @@ class ProcessManager:
                     f"Process[{process.pid}] for run[{run_id}] not found, it might have already terminated."
                 )
         else:
-            service_logger.info(
-                f"Process[{process.pid}] for run[{run_id}] not found in mapping, it may have already been removed."
-            )
+            service_logger.info(f"Process for run[{run_id}] not found in mapping, it may have already been removed.")

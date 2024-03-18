@@ -79,15 +79,6 @@ async def invoke_sync_function_in_process(
                 ProcessManager().remove_process(run_id)
 
 
-def _is_process_alive(p: multiprocessing.Process):
-    if psutil.pid_exists(p.pid):
-        if psutil.Process(p.pid).status() != psutil.STATUS_ZOMBIE:
-            return True
-    # Call p.join() to clear the zombie process correctly.
-    p.join()
-    return False
-
-
 def _execute_target_function(
     target_function: Callable,
     args: tuple,
