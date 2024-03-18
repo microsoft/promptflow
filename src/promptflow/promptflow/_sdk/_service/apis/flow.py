@@ -106,8 +106,8 @@ class FlowGet(Resource):
         flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
             raise UserErrorException(f"The flow doesn't exist: {flow_path}")
-        flow_path = resolve_flow_path(Path(flow_path))
-        flow_info = load_yaml(flow_path)
+        flow_path_dir, flow_path_file = resolve_flow_path(Path(flow_path))
+        flow_info = load_yaml(flow_path_dir / flow_path_file)
         return flow_info
 
 
