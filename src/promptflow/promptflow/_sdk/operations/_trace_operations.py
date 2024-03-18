@@ -163,5 +163,9 @@ class TraceOperations:
         run: typing.Optional[str] = None,
         session: typing.Optional[str] = None,
         started_before: typing.Optional[str] = None,
-    ) -> typing.Optional[int]:
-        ...
+    ) -> int:
+        return ORMSpan.delete(
+            run=run,
+            session_id=session,
+            started_before=started_before,
+        )
