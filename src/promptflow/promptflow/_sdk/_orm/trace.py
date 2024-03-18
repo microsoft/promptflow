@@ -85,7 +85,9 @@ class Span(Base):
                 stmt = stmt.filter(Span.session_id == session_id)
             if started_before is not None:
                 stmt = stmt.filter(text(f"json_extract(span.content, '$.start_time') < '{started_before}'"))
-            row_cnt = stmt.delete()
+            # retrieves the primary key identity of affected rows
+            # this is required for delete with arbitrary filter
+            row_cnt = stmt.delete(synchronize_session="fetch")
             session.commit()
             return row_cnt
 
