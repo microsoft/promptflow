@@ -4,10 +4,10 @@
 
 import os
 import signal
+from multiprocessing import Process
 from typing import Dict
 
 from promptflow._utils.logger_utils import service_logger
-from multiprocessing import Process
 
 
 class ProcessManager:
@@ -27,7 +27,7 @@ class ProcessManager:
         return self._processes_mapping.get(run_id, None)
 
     def remove_process(self, run_id: str) -> Process:
-        self._processes_mapping.pop(run_id, None)
+        return self._processes_mapping.pop(run_id, None)
 
     def end_process(self, run_id: str):
         process = self.remove_process(run_id)
