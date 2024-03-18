@@ -10,6 +10,7 @@ from traceback import TracebackException, format_tb
 from types import TracebackType, FrameType
 
 from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException, ValidationException
+from promptflow.tracing._operation_context import OperationContext
 
 ADDITIONAL_INFO_USER_EXECUTION_ERROR = "ToolExecutionErrorDetails"
 ADDITIONAL_INFO_USER_CODE_STACKTRACE = "UserCodeStackTrace"
@@ -107,8 +108,6 @@ class ErrorResponse:
         return user_execution_error_info
 
     def to_dict(self):
-        from promptflow._core.operation_context import OperationContext
-
         return {
             "error": self._error_dict,
             "correlation": None,  # TODO: to be implemented

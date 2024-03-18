@@ -22,10 +22,10 @@ from promptflow._constants import (
     SpanResourceFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
 from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.entities._trace import Span
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"

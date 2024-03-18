@@ -6,11 +6,11 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Process, Queue
+from pathlib import Path
 from typing import Dict, List
 
 import psutil
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import (
@@ -21,6 +21,7 @@ from promptflow.executor._errors import (
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 
 @dataclass
@@ -64,6 +65,8 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
+        output_dir: Path = None,
+        serialize_multimedia: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -74,6 +77,8 @@ class AbstractProcessManager:
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
+        self._output_dir = output_dir
+        self._serialize_multimedia = serialize_multimedia
 
     def new_process(self, i):
         """
@@ -201,6 +206,8 @@ class SpawnProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
@@ -364,6 +371,8 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
