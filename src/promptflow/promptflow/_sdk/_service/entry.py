@@ -191,8 +191,8 @@ def start_service(args):
             cmd = [
                 "waitress-serve",
                 f"--listen=127.0.0.1:{port}",
-                "promptflow._sdk._service.entry:get_app",
                 f"--threads={PF_SERVICE_WORKER_NUM}",
+                "promptflow._sdk._service.entry:get_app",
             ]
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, start_new_session=True)
         is_healthy = check_pfs_service_status(port)
