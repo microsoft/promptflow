@@ -1,4 +1,4 @@
-name: Build and Package MSI
+name: Build and Package MSI & Portable Installer
 
 on:
   workflow_dispatch:
