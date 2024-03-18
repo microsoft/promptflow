@@ -102,6 +102,9 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
     # Load executable flow to check if connection is LLM connection
     executable_flow = ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=Path(working_dir))
 
+    # generate tool meta for deployment name, model override
+    # tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)
+
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
 
     for node_name, connection_dict in connections.items():
@@ -111,30 +114,73 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
             raise InvalidFlowError(f"Invalid connection overwrite format: {connection_dict}, only dict is supported.")
         node = node_name_2_node[node_name]
         executable_node = executable_flow.get_node(node_name=node_name)
+
+        # override connections
         if executable_flow.is_llm_node(executable_node):
-            unsupported_keys = connection_dict.keys() - SUPPORTED_CONNECTION_FIELDS
-            if unsupported_keys:
-                raise InvalidFlowError(
-                    f"Unsupported llm connection overwrite keys: {unsupported_keys},"
-                    f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
-                )
-            try:
-                connection = connection_dict.get(ConnectionFields.CONNECTION)
-                if connection:
-                    node[ConnectionFields.CONNECTION] = connection
-                deploy_name = connection_dict.get(ConnectionFields.DEPLOYMENT_NAME)
-                if deploy_name:
-                    node[INPUTS][ConnectionFields.DEPLOYMENT_NAME] = deploy_name
-            except KeyError as e:
-                raise InvalidFlowError(
-                    f"Failed to overwrite llm node {node_name} with connections {connections}"
-                ) from e
+            override_llm_connections(
+                node=node,
+                connection_dict=connection_dict,
+                node_name=node_name,
+            )
         else:
-            connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
-            for c, v in connection_dict.items():
-                if c not in connection_inputs:
-                    raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
-                node[INPUTS][c] = v
+            override_python_connections(
+                node=node,
+                connection_dict=connection_dict,
+                tools_meta={},
+                executable_flow=executable_flow,
+                node_name=node_name,
+            )
+
+
+def override_llm_connections(node: dict, connection_dict: dict, node_name: str):
+    """apply connection override on llm node."""
+    try:
+        # override connection
+        connection = connection_dict.get(ConnectionFields.CONNECTION.value)
+        if connection:
+            logger.debug(f"Overwriting connection for node {node_name} with {connection}")
+            node[ConnectionFields.CONNECTION] = connection
+            connection_dict.pop(ConnectionFields.CONNECTION.value)
+        # override deployment_name and model
+        for field in [ConnectionFields.DEPLOYMENT_NAME.value, ConnectionFields.MODEL.value]:
+            if field in connection_dict:
+                logger.debug(f"Overwriting {field} for node {node_name} with {connection_dict[field]}")
+                node[INPUTS][field] = connection_dict[field]
+                connection_dict.pop(field)
+    except KeyError as e:
+        raise InvalidFlowError(f"Failed to overwrite llm node {node_name} with connections {connection_dict}") from e
+    if connection_dict:
+        raise InvalidFlowError(
+            f"Unsupported llm connection overwrite keys: {connection_dict.keys()},"
+            f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
+        )
+
+
+def override_python_connections(
+    node: dict, connection_dict: dict, tools_meta: dict, executable_flow: ExecutableFlow, node_name: str
+):
+    """apply connection override on python node."""
+    connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
+    consumed_connections = set()
+    for c, v in connection_dict.items():
+        if c in connection_inputs:
+            logger.debug(f"Overwriting connection for node {node_name} with {c}:{v}")
+            node[INPUTS][c] = v
+            consumed_connections.add(c)
+        else:
+            # TODO(3021931): check if input c is enabled by connection instead of hard code
+            logger.debug(f"Overwriting enabled by connection input for node {node_name} with {c}:{v}")
+            for field in [ConnectionFields.DEPLOYMENT_NAME.value, ConnectionFields.MODEL.value]:
+                if field in connection_dict:
+                    logger.debug(f"Overwriting {field} for node {node_name} with {connection_dict[field]}")
+                    node[INPUTS][field] = connection_dict[field]
+                    consumed_connections.add(field)
+    unused_connections = connection_dict.keys() - consumed_connections
+    if unused_connections:
+        raise InvalidFlowError(
+            f"Unsupported llm connection overwrite keys: {unused_connections},"
+            f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
+        )
 
 
 def overwrite_flow(flow_dag: dict, params_overrides: dict):

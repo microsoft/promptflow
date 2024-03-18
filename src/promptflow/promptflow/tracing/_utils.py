@@ -2,7 +2,6 @@ import re
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from jinja2 import Environment, meta
 from typing import Callable, Dict
 
 from .contracts.generator_proxy import GeneratorProxy
@@ -59,6 +58,13 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: Dic
 
 
 def get_input_names_for_prompt_template(template_str):
+    try:
+        # We need to parse jinja template only when the promptflow is installed and run flow with PromptTemplate
+        # type input, so using try-catch to avoid the dependency of jinja2 when it's not needed.
+        from jinja2 import Environment, meta
+    except ImportError:
+        return []
+
     input_names = []
     env = Environment()
     template = env.parse(template_str)
