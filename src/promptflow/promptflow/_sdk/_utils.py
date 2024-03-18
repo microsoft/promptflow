@@ -71,7 +71,7 @@ from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -189,7 +189,7 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         return schema(context=context).load(data, **kwargs)
     except ValidationError as e:
         pretty_error = json.dumps(e.normalized_messages(), indent=2)
-        raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
+        raise ValidationException(decorate_validation_error(schema, pretty_error, additional_message))
 
 
 def strip_quotation(value):

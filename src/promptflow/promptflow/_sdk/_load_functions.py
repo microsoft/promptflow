@@ -134,20 +134,22 @@ def _load_env_to_connection(
     source = Path(source)
     name = next((_dct["name"] for _dct in params_override if "name" in _dct), None)
     if not name:
-        raise Exception("Please specify --name when creating connection from .env.")
+        raise UserErrorException("Please specify --name when creating connection from .env.")
     if not source.exists():
-        raise FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        e = FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
     try:
         data = dict(dotenv_values(source))
         if not data:
             # Handle some special case dotenv returns empty with no exception raised.
-            raise ValueError(
+            e = ValueError(
                 f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
                 "please make sure the file is not empty and readable."
             )
+            raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
         return CustomConnection(name=name, secrets=data)
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def _load_experiment_template(

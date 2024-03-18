@@ -265,6 +265,8 @@ class _ErrorInfo:
     def _is_user_error(cls, e: BaseException):
         if isinstance(e, UserErrorException):
             return True
+        if isinstance(e, (KeyboardInterrupt,)):
+            return True
 
         return False
 
