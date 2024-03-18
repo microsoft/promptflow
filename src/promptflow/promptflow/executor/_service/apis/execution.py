@@ -92,7 +92,6 @@ def flow_test(request: FlowExecutionRequest):
             request.inputs,
             run_id=request.run_id,
             storage=storage,
-            enable_async_execution=True,
         )
 
 
