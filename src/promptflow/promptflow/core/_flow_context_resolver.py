@@ -114,7 +114,7 @@ class FlowContextResolver:
     def _create_invoker(
         self, flow_context: FlowContext, is_async_call=False
     ) -> Union["FlowInvoker", "AsyncFlowInvoker"]:
-        from promptflow._sdk._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
+        from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
 
         connections = self._resolve_connection_objs(flow_context=flow_context)
         # use updated flow dag to create new flow object for invoker

@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import FlowLanguage
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
@@ -19,6 +18,7 @@ from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
+from promptflow.tracing._operation_context import OperationContext
 
 from ..._utils.logger_utils import LoggerFactory
 from .._configuration import Configuration
@@ -105,11 +105,14 @@ class RunSubmitter:
     def _submit_bulk_run(self, flow: Union[Flow, FlexFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
-        if flow.language == FlowLanguage.CSharp:
-            # TODO: consider moving this to Operations
-            from promptflow.batch import CSharpExecutorProxy
+        # for python, we can get metadata in-memory, so no need to dump them first
+        if flow.language != FlowLanguage.Python:
+            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 
-            CSharpExecutorProxy.generate_metadata(flow_file=Path(flow.path), assembly_folder=Path(flow.code))
+            # variants are resolved in the context, so we can't move this logic to Operations for now
+            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
+                flow_file=Path(flow.path), working_dir=Path(flow.code)
+            )
             # TODO: shall we resolve connections here?
             connections = []
         else:
