@@ -44,12 +44,22 @@ FLOW_TOOLS_JSON = "flow.tools.json"
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
 
+# Environment variables
+PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
+
 
 class FlowLanguage:
     """The enum of tool source type."""
 
     Python = "python"
     CSharp = "csharp"
+
+
+class FlowType:
+    """The enum of flow type."""
+
+    DAG_FLOW = "dag"
+    FLEX_FLOW = "flex"
 
 
 class AvailableIDE:
