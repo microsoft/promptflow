@@ -139,7 +139,7 @@ jobs:
 
       - name: Generate portable promptflow
         run: | 
-          Compress-Archive -Path ${{ github.workspace }}/scripts/installer/windows/scripts/dist -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
+          Compress-Archive -Path ${{ github.workspace }}/scripts/installer/windows/scripts/dist/promptflow -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
         shell: pwsh
 
       - name: Build WIX project
