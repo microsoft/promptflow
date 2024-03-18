@@ -120,17 +120,6 @@ def configure_process_override_with_custom_parameters(patch_target_list, mock_fu
 @pytest.fixture
 def recording_injection(recording_setup, process_override):
     # This fixture is used as the main entry point to inject recording mode into the test
-    return _inject_recording_mode(recording_setup, process_override)
-
-
-@pytest.fixture
-def configure_flow_execution_context_init_with_error():
-    patch_target_list = ["promptflow._core.flow_execution_context.FlowExecutionContext.__init__"]
-    mock_function_list = [mock_flow_execution_context]
-    yield from configure_process_override_with_custom_parameters(patch_target_list, mock_function_list)
-
-
-def _inject_recording_mode(setup_function, process_override_function):
     try:
         yield (is_replay() or is_record(), recording_array_extend)
     finally:
@@ -139,6 +128,13 @@ def _inject_recording_mode(setup_function, process_override_function):
         if is_live():
             delete_count_lock_file()
         recording_array_reset()
+
+
+@pytest.fixture
+def configure_flow_execution_context_init_with_error():
+    patch_target_list = ["promptflow._core.flow_execution_context.FlowExecutionContext.__init__"]
+    mock_function_list = [mock_flow_execution_context]
+    yield from configure_process_override_with_custom_parameters(patch_target_list, mock_function_list)
 
 
 @pytest.fixture(autouse=True, scope="session")
