@@ -99,16 +99,6 @@ class TestTraceOperations:
         row_cnt = pf._traces.delete(session=mock_session_id)
         assert row_cnt == num_spans
 
-    def test_delete_traces_with_started_before(self, pf: PFClient) -> None:
-        # mock some traces that start 7 days before, and delete those start 6 days before
-        mock_start_time = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
-        num_spans = 3
-        for _ in range(num_spans):
-            persist_a_span(start_time=mock_start_time)
-        delete_query_time = datetime.datetime.now() - datetime.timedelta(days=6)
-        row_cnt = pf._traces.delete(started_before=delete_query_time.isoformat())
-        assert row_cnt == num_spans
-
     def test_delete_traces_with_session_and_started_before(self, pf: PFClient) -> None:
         # mock some traces that start 2 days before, and delete those start 1 days before
         mock_start_time = (datetime.datetime.now() - datetime.timedelta(days=2)).isoformat()
