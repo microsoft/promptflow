@@ -409,42 +409,27 @@ class ToolLoader:
         else:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
+    def load_package_tool(self, tool: str) -> Tool:
+        if tool in self._package_tools:
+            return Tool.deserialize(self._package_tools[tool])
+
+        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
+        # If found, load the tool with the new tool ID for backward compatibility.
+        if tool in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[tool]
+            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
+            module_logger.warning(f"Tool ID '{tool}' is deprecated. Please use '{new_tool_id}' instead.")
+            return Tool.deserialize(self._package_tools[new_tool_id])
+
+        raise PackageToolNotFoundError(
+            f"Package tool '{tool}' is not found in the current environment. "
+            f"All available package tools are: {list(self._package_tools.keys())}.",
+            target=ErrorTarget.EXECUTOR,
+        )
+
     def load_tool_for_package_node(self, node: Node) -> Tool:
-        if node.source.tool in self._package_tools:
-            return Tool.deserialize(self._package_tools[node.source.tool])
-
-        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
-        # If found, load the tool with the new tool ID for backward compatibility.
-        if node.source.tool in self._deprecated_tools:
-            new_tool_id = self._deprecated_tools[node.source.tool]
-            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead.")
-            return Tool.deserialize(self._package_tools[new_tool_id])
-
-        raise PackageToolNotFoundError(
-            f"Package tool '{node.source.tool}' is not found in the current environment. "
-            f"All available package tools are: {list(self._package_tools.keys())}.",
-            target=ErrorTarget.EXECUTOR,
-        )
-
-    def load_tool_for_assistant_package(self, node_name: str, tool: dict) -> Tool:
-        source_tool = tool.get("source", {}).get("tool")
-        if source_tool in self._package_tools:
-            return Tool.deserialize(self._package_tools[source_tool])
-
-        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
-        # If found, load the tool with the new tool ID for backward compatibility.
-        if source_tool in self._deprecated_tools:
-            new_tool_id = self._deprecated_tools[source_tool]
-            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(f"Tool ID '{source_tool}' is deprecated. Please use '{new_tool_id}' instead.")
-            return Tool.deserialize(self._package_tools[new_tool_id])
-
-        raise PackageToolNotFoundError(
-            f"For assistant node {node_name}, Package tool '{source_tool}' is not found in the current environment. "
-            f"All available package tools are: {list(self._package_tools.keys())}.",
-            target=ErrorTarget.EXECUTOR,
-        )
+        tool = node.source.tool
+        return self.load_package_tool(tool)
 
     def load_script_tool(self, path: str, node_name: str) -> Tuple[types.ModuleType, Tool]:
         if path is None:
@@ -456,7 +441,7 @@ class ToolLoader:
         if not (self._working_dir / path).is_file():
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
-                message_format="Load assistant tool failed for node '{node_name}'. "
+                message_format="Load tool failed for node '{node_name}'. "
                 "Tool file '{source_path}' can not be found.",
                 source_path=path,
                 node_name=node_name,

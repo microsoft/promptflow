@@ -152,7 +152,7 @@ class ToolResolver:
         # relying on the node-level package tool keys
         function_package_tool_keys = [tool_definition.get("source", {}).get("tool")]
         tool_loader = ToolLoader(self._working_dir, function_package_tool_keys)
-        tool: Tool = tool_loader.load_tool_for_assistant_package(node_name, tool_definition)
+        tool: Tool = tool_loader.load_package_tool(tool_definition.get("source", {}).get("tool"))
         # updated_node = copy.deepcopy(node)
 
         updated_predefined_inputs = predefined_inputs
@@ -193,7 +193,7 @@ class ToolResolver:
                 predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        m, tool = self._tool_loader.load_tool_for_assistant_script(node_name, tool_definition)
+        m, tool = self._tool_loader.load_package_tool(tool_definition.get("source", {}).get("path"))
 
         # construct the resolved inputs dictionary
         updated_predefined_inputs = predefined_inputs
