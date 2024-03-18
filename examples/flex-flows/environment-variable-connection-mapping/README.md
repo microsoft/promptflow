@@ -51,34 +51,37 @@ python ./flow.py
 
 ## EVC mapping format
 EVC mapping is a section in yaml/CLI parameter, the format is like below. The section's name is environment_variables, it's a list of key-value pair. The key represent the environment variable name. The value can be a string value of the environment variable, or a conneciton'sfield wrap with ${}. 
-*To avoid expose plain secret in anywhere, we strongly recommend you to always use the connection field as the value in EVC mapping, instead of put real keys into this section. *
+
+
 ```bash
 environment_variables: 
   AZURE_OPENAI_API_KEY: ${some_connection.api_key} 
   AZURE_OPENAI_ENDPOINT: ${some_connection.api_base} 
   AZURE_OPENAI_DEPLOYMENT_NAME: some_value
 ```
+- To avoid expose plain secret in anywhere, **For secret keys, we strongly recommend you to always use the connection field as the value in environment variable's value, instead of put real secret keys into this section**.
+- Regarding to how to create a connection, please refer [this doc](../../connections/README.md)
 
 ### How to set EVC mapping
 
 There're multiple ways to set EVC mapping. We list them in order. When user run a flex flow using prompt flow VSC/SDK/CLI, pf SDK will try to lookup the EVC mapping from below location from top to down. And pf SDK will be responsible for resolving the connection and set the value into corresponding environment variable. 
 
-1. During run submition: User can set EVC mapping in run.yaml, when user submit batch run, the EVC mapping in run.yaml will take effect.
+1. During run submission: User can set EVC mapping in run.yaml, when user submit batch run, the EVC mapping in run.yaml will take effect.
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${aoai.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping question='${data.question}'
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}' --column-mapping question='${data.question}'
 # create run using yaml file
 pf run create --file run.yml --stream
 ```
 2. In flow definition: User can set EVC mapping in flow.dag.yaml
 ```bash
 # test with default input value in flow.dag.yaml
-pf flow test --flow . --environment-variables OPENAI_API_KEY='${aoai.api_key}' AZURE_OPENAI_ENDPOINT='${aoai.api_base}'
+pf flow test --flow . --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}'
 ```
 3. In global setting: User can set the EVC mapping in glbal setting. When doing that, the global setting only store the mapping instead of resolve real value.
 ```bash
 # test with default input value in flow.dag.yaml
-pf config set --environment-variables OPENAI_API_KEY='${aoai.api_key}' AZURE_OPENAI_ENDPOINT='${aoai.api_base}'
+pf config set --environment-variables OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_ENDPOINT='${open_ai_connection.api_base}'
 ```
 ## Run flex flow using pf CLI with EVC mapping
 Below table shows a summary of how prompt flow support set Environment variable in each stage:
@@ -96,15 +99,15 @@ Below table shows a summary of how prompt flow support set Environment variable 
 | Cloud       | Flow deploy(to MIR) | Support      | Support                    |
 | Cloud       | Flow to Component  | Support      | Supported                        |
 
-## local behaviors
+## Local behaviors
 - When user do flow test or batch run in local, user can set environment variables, pf SDK support set both value or EVC mapping.
 - When user deploy a flow as an endpoint using "pf flow serve" or build the flow as a docker/executable app using "pf flow build", pf SDK won't do the EVC mapping resolve work, because it's common to pass environment variable values when doing the deployment, and we cannot gurantee pf SDK has ability to access connections.
 
 - (TODO: what's the behavior of flow load for EVC? Support set environment variable value, but no EVC mapping resolve?)
-## submit flow to cloud with EVC
+## Submit flow to cloud with EVC
 When run a flow in cloud, we need to get secret keys via connection stored in workspace. In that case, you can set the EVC mapping with valid connection in workspace.
 
-## cloud behavior
+## Cloud behavior
 When user author/run a flow in AzureML workspace/AI Studio project, there're ways 
 - During flow authoring: User can edit the raw flow.dag.yaml file to specify the EVC mapping
 - During flow batch run submit: User can set EVC mapping in batch run wizard, if user set here, it will overwrite the one in flow.dag.yaml
