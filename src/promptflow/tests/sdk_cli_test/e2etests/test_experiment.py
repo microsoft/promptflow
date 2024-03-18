@@ -118,7 +118,7 @@ class TestExperiment:
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
         # Assert Trace
-        line_runs = client._traces.list_line_runs(session_id=session)
+        line_runs = client.traces.list_line_runs(session_id=session)
         if len(line_runs) > 0:
             assert len(line_runs) == 3
             line_run = line_runs[0]
@@ -250,7 +250,7 @@ class TestExperiment:
             # Assert session exists
             # TODO: Task 2942400, avoid sleep/if and assert traces
             time.sleep(10)  # TODO fix this
-            line_runs = client._traces.list_line_runs(session_id=session)
+            line_runs = client.traces.list_line_runs(session_id=session)
             if len(line_runs) > 0:
                 assert len(line_runs) == 1
                 line_run = line_runs[0]

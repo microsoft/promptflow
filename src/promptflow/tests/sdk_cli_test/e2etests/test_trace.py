@@ -88,7 +88,7 @@ class TestTraceOperations:
         num_spans = 3
         for _ in range(num_spans):
             persist_a_span(run=mock_run)
-        row_cnt = pf._traces.delete(run=mock_run)
+        row_cnt = pf.traces.delete(run=mock_run)
         assert row_cnt == num_spans
 
     def test_delete_traces_with_session(self, pf: PFClient) -> None:
@@ -96,7 +96,7 @@ class TestTraceOperations:
         num_spans = 3
         for _ in range(num_spans):
             persist_a_span(session_id=mock_session_id)
-        row_cnt = pf._traces.delete(session=mock_session_id)
+        row_cnt = pf.traces.delete(session=mock_session_id)
         assert row_cnt == num_spans
 
     def test_delete_traces_with_session_and_started_before(self, pf: PFClient) -> None:
@@ -108,7 +108,7 @@ class TestTraceOperations:
             persist_a_span(session_id=session1, start_time=mock_start_time)
             persist_a_span(session_id=session2, start_time=mock_start_time)
         delete_query_time = datetime.datetime.now() - datetime.timedelta(days=1)
-        row_cnt1 = pf._traces.delete(session=session1, started_before=delete_query_time.isoformat())
-        row_cnt2 = pf._traces.delete(session=session2, started_before=delete_query_time.isoformat())
+        row_cnt1 = pf.traces.delete(session=session1, started_before=delete_query_time.isoformat())
+        row_cnt2 = pf.traces.delete(session=session2, started_before=delete_query_time.isoformat())
         assert row_cnt1 == num_spans
         assert row_cnt2 == num_spans

@@ -82,7 +82,7 @@ class DeleteTraceParser:
 
 
 def delete_trace(args: argparse.Namespace) -> None:
-    _get_pf_client()._traces.delete(
+    _get_pf_client().traces.delete(
         run=args.run,
         session=args.session,
         started_before=args.started_before,

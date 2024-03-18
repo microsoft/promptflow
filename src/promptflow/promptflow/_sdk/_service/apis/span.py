@@ -110,7 +110,7 @@ class Spans(Resource):
 
         client: PFClient = get_client_from_request()
         args = ListSpanParser.from_request()
-        spans = client._traces.list_spans(
+        spans = client.traces.list_spans(
             session_id=args.session_id,
             trace_ids=args.trace_ids,
         )

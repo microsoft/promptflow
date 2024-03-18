@@ -189,7 +189,7 @@ class TestTraceOperations:
 
         def _validate_invalid_params(kwargs: Dict):
             with pytest.raises(UserErrorException) as e:
-                pf._traces._validate_delete_query_params(**kwargs)
+                pf.traces._validate_delete_query_params(**kwargs)
             assert expected_error_message in str(e)
 
         _validate_invalid_params({"run": str(uuid.uuid4()), "started_before": datetime.datetime.now().isoformat()})
