@@ -10,6 +10,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
 
 
+@pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.sdk_test
 class TestTraceWithDevKit:
