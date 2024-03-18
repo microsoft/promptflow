@@ -193,7 +193,7 @@ class ToolResolver:
                 predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        m, tool = self._tool_loader.load_package_tool(tool_definition.get("source", {}).get("path"))
+        m, tool = self._tool_loader.load_script_tool(tool_definition.get("source", {}).get("path"), node_name)
 
         # construct the resolved inputs dictionary
         updated_predefined_inputs = predefined_inputs
