@@ -4,7 +4,7 @@ Prompt flow tracing.
 
 # Release History
 
-## 0.1.0b2 (2024.03.15)
+## 0.1.0b2 (2024.03.18)
 
 - First preview version.
 
