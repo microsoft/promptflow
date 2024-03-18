@@ -69,19 +69,7 @@ def _default_mock_create_spawned_fork_process_manager(*args, **kwargs):
     create_spawned_fork_process_manager(*args, **kwargs)
 
 
-def process_override_setup(flow_execution_context=None):
-    # This fixture is used to override the Process class to ensure the recording mode works
-
-    # Step I: set process pool targets placeholder with customized targets
-    if flow_execution_context is not None:
-        current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper, param=flow_execution_context))
-        current_process_manager_var.set(
-            functools.partial(_default_mock_create_spawned_fork_process_manager, param=flow_execution_context)
-        )
-    else:
-        current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper))
-        current_process_manager_var.set(functools.partial(_default_mock_create_spawned_fork_process_manager))
-
+def process_override_setup():
     # Step II: override the process pool class
     process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
     original_process_class = override_process_class(process_class_dict)
@@ -104,18 +92,7 @@ def process_override():
     current_process_wrapper_var.set(functools.partial(_default_mock_process_wrapper))
     current_process_manager_var.set(functools.partial(_default_mock_create_spawned_fork_process_manager))
 
-    # Step II: override the process pool class
-    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
-    original_process_class = override_process_class(process_class_dict)
-
-    try:
-        yield
-    finally:
-        for start_method, MockProcessClass in process_class_dict.items():
-            if start_method in multiprocessing.get_all_start_methods():
-                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
-                if start_method == multiprocessing.get_start_method():
-                    multiprocessing.Process = original_process_class[start_method]
+    yield from process_override_setup()
 
 
 @pytest.fixture
@@ -128,18 +105,7 @@ def process_override_set_flow_execution_context(flow_execution_context):
         functools.partial(_default_mock_create_spawned_fork_process_manager, param=flow_execution_context)
     )
 
-    # Step II: override the process pool class
-    process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
-    original_process_class = override_process_class(process_class_dict)
-
-    try:
-        yield
-    finally:
-        for start_method, MockProcessClass in process_class_dict.items():
-            if start_method in multiprocessing.get_all_start_methods():
-                multiprocessing.get_context(start_method).Process = original_process_class[start_method]
-                if start_method == multiprocessing.get_start_method():
-                    multiprocessing.Process = original_process_class[start_method]
+    yield from process_override_setup()
 
 
 @pytest.fixture
