@@ -2,13 +2,14 @@ from promptflow import tool
 import json
 import numpy as np
 
+
 @tool
 def calculate(llm_result: str) -> str:
     try:
         score = 1
         response = json.loads(llm_result)
         if response:
-            result= response.get("result", "")
+            result = response.get("result", "")
             print(result)
             if result:
                 response = [

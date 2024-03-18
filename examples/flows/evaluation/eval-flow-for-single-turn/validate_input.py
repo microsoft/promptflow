@@ -28,5 +28,5 @@ def validate_input(question: str, answer: str, context: str, ground_truth: str, 
 
     if data_validation['answer_correctness']:
         data_validation['answer_similarity'] = True
-        
+
     return data_validation

@@ -2,6 +2,7 @@ from promptflow import tool
 import json
 import numpy as np
 
+
 @tool
 def calculate(statement_result: str, similarity_score: str) -> str:
     try:
@@ -27,7 +28,7 @@ def calculate(statement_result: str, similarity_score: str) -> str:
             ]
             score = 5 * tp / (tp + 0.5 * (fp + fn))
 
-        final_score  = weights[0] * score + weights[1] * int(similarity_score)
+        final_score = weights[0] * score + weights[1] * int(similarity_score)
 
         print(score)
         print(similarity_score)

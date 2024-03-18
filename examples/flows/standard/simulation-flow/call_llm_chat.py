@@ -1,16 +1,17 @@
 from promptflow import tool
-import re
-from typing import Mapping, List, Union
+from typing import Union
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from openai import AzureOpenAI as AzureOpenAIClient
+from openai import OpenAI as OpenAIClient
 from promptflow.tools.common import parse_chat
+
 
 def parse_questions(completion: str) -> list:
     questions = []
 
     for item in completion.choices:
         response = getattr(item.message, "content", "")
-        print (response)
+        print(response)
         questions.append(response)
     return questions
 
@@ -39,15 +40,14 @@ def call_llm_chat(
             }
     if isinstance(connection, AzureOpenAIConnection):
         client = AzureOpenAIClient(api_key=connection.api_key,
-            api_version=connection.api_version,
-            azure_endpoint=connection.api_base)
+                                   api_version=connection.api_version,
+                                   azure_endpoint=connection.api_base)
     elif isinstance(connection, OpenAIConnection):
         client = OpenAIClient(api_key=connection.api_key,
-            organization=connection.organization,
-            base_url=connection.base_url)
+                              organization=connection.organization,
+                              base_url=connection.base_url)
     else:
         raise ValueError("Unsupported connection type")
-
 
     completion = client.chat.completions.create(**params)
     print(completion)

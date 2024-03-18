@@ -1,5 +1,6 @@
 from promptflow import tool
 
+
 @tool
 def covert_chat_history_to_conversation(chat_history: list) -> dict:
     conversation = ""

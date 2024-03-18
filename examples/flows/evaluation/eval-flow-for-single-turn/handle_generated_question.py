@@ -1,6 +1,7 @@
 from promptflow import tool
 import json
 
+
 @tool
 def handle_generated_question(llm_result: str) -> str:
     try:
@@ -9,4 +10,4 @@ def handle_generated_question(llm_result: str) -> str:
     except Exception as e:
         print("exception in handle_generated_question: " + str(e))
         print("llm_result: " + llm_result)
-        return {"question": "", "noncommittal": true}
+        return {"question": "", "noncommittal": True}

@@ -1,8 +1,10 @@
 from promptflow import tool
 
+
 # Validate the metric's inputs.
 def is_valid(metric):
     return True
+
 
 @tool
 def validate_input(chat_history: list, selected_metrics: dict) -> dict:
@@ -14,7 +16,7 @@ def validate_input(chat_history: list, selected_metrics: dict) -> dict:
     for item in chat_history:
         actual_input_cols.update(set(item["inputs"].keys()))
         actual_input_cols.update(set(item["outputs"].keys()))
-        break;
+        break
 
     data_validation = selected_metrics
     for metric in selected_metrics:

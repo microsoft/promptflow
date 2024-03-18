@@ -6,7 +6,7 @@ from promptflow import tool
 # Please update the function name/signature per need
 @tool
 def select_metrics(metrics: str) -> dict:
-    supported_metrics = ('answer_relevancy','answer_quality','creativity','grounding')
+    supported_metrics = ('answer_relevancy', 'answer_quality', 'creativity', 'grounding')
     user_selected_metrics = [metric.strip() for metric in metrics.split(',') if metric]
     metric_selection_dict = {}
     for metric in supported_metrics:
