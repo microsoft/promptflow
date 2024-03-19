@@ -20,119 +20,123 @@ promptflow.tools.llm_v2.llm:
       - AzureOpenAIConnection
       - OpenAIConnection
       - ServerlessConnection
-    api_of_aoai:
+    api_1:
+      type:
+      - string
+      default: chat
+      enum:
+      - chat
+      - completion
+      ui_hints:
+        text_box_size: sm
+    # proposal 1
+    deployment_name:
       type:
       - string
       enabled_by: connection
       enabled_by_type:
       - AzureOpenAIConnection
-      default: chat
-      enum:
-      - chat
-      - completion
+      capabilities:
+        api_name: api_1
+        filter_by_api:
+          chat:
+            chat_completion: true
+            exclude:
+              model_version:
+              - vision-preview
+          completion:
+            completion: true
+            include:
+              model_name:
+              - gpt-35-turbo-instruct
+      allow_manual_entry: true
+      is_multi_select: false
       ui_hints:
-        text_box_size: sm
-        display_name: api
-    api_of_oai:
+        text_box_size: lg
+    model:
       type:
       - string
       enabled_by: connection
-      enabled_by_type:
+      enabled_by_value:
       - OpenAIConnection
-      default: chat
-      enum:
-      - chat
-      - completion
+      default: gpt-3.5-turbo
+      capabilities:
+        api_name: api_1
+        filter_by_api:
+          chat:
+            enum:
+            - gpt-3.5-turbo
+            - gpt-3.5-turbo-0301
+            - gpt-3.5-turbo-16k
+            - gpt-3.5-turbo-1106
+            - gpt-4
+            - gpt-4-1106-preview
+            - gpt-4-0314
+            - gpt-4-32k
+            - gpt-4-32k-0314
+          completion:
+            enum:
+            - gpt-3.5-turbo-instruct
+      allow_manual_entry: true
+      is_multi_select: false
       ui_hints:
-        text_box_size: sm
-        display_name: api
-    api_of_serverless:
+        text_box_size: lg
+
+    # proposal 2
+    deployment_name:
       type:
       - string
       enabled_by: connection
       enabled_by_type:
-      - ServerlessConnection
-      default: chat
-      enum:
-      - chat
-      ui_hints:
-        text_box_size: sm
-        display_name: api
-    deployment_name_of_chat:
-      type:
-      - string
-      enabled_by: api_of_aoai
-      enabled_by_value:
-      - chat
-      capabilities:
-        chat_completion: true
-        # include:
-        #   model_name:
-        #   model_version:
-        exclude:
-          # model_name:
-          model_version:
-          - vision-preview
+      - AzureOpenAIConnection
+      filter_by_api:
+        api_name: api_1
+        values:
+          chat:
+            capabilities:
+              chat_completion: true
+              exclude:
+                model_version:
+                - vision-preview
+          completion:
+            capabilities:
+              completion: true
+              include:
+                model_name:
+                - gpt-35-turbo-instruct
       allow_manual_entry: true
-      allow_connection_override: true
       is_multi_select: false
       ui_hints:
         text_box_size: lg
-        display_name: deployment_name
-    deployment_name_of_completion:
+    model:
       type:
       - string
-      enabled_by: api_of_aoai
+      enabled_by: connection
       enabled_by_value:
-      - completion
-      capabilities:
-        completion: true
-        include:
-          model_name:
-          - gpt-35-turbo-instruct
-      allow_manual_entry: true
-      allow_connection_override: true 
-      is_multi_select: false
-      ui_hints:
-        text_box_size: lg
-        display_name: deployment_name
-    model_of_chat:
-      type:
-      - string
-      enabled_by: api_of_oai
-      enabled_by_value:
-      - chat
+      - OpenAIConnection
       default: gpt-3.5-turbo
-      enum:
-      - gpt-3.5-turbo
-      - gpt-3.5-turbo-0301
-      - gpt-3.5-turbo-16k
-      - gpt-3.5-turbo-1106
-      - gpt-4
-      - gpt-4-1106-preview
-      - gpt-4-0314
-      - gpt-4-32k
-      - gpt-4-32k-0314
+      filter_by_api:
+        api_name: api_1
+        values:
+          chat:
+            enum:
+            - gpt-3.5-turbo
+            - gpt-3.5-turbo-0301
+            - gpt-3.5-turbo-16k
+            - gpt-3.5-turbo-1106
+            - gpt-4
+            - gpt-4-1106-preview
+            - gpt-4-0314
+            - gpt-4-32k
+            - gpt-4-32k-0314
+          completion:
+            enum:
+            - gpt-3.5-turbo-instruct
       allow_manual_entry: true
-      allow_connection_override: true
       is_multi_select: false
       ui_hints:
         text_box_size: lg
-        display_name: model
-    model_of_completion:
-      type:
-      - string
-      enabled_by: api_of_oai
-      enabled_by_value:
-      - completion
-      default: gpt-3.5-turbo-instruct
-      enum:
-      - gpt-3.5-turbo-instruct
-      allow_manual_entry: true
-      allow_connection_override: true
-      ui_hints:
-        text_box_size: lg
-        display_name: model
+    
     temperature:
       default: 1
       type:
