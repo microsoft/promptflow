@@ -15,6 +15,16 @@ REPO_ROOT_DIR = Path(__file__).parent.parent.parent.parent
 PROMPT_FLOW_TRACING_ROOT_DIR = REPO_ROOT_DIR / "src/promptflow-tracing"
 
 
+def _print_red(msg: str) -> None:
+    # print for prompt
+    print("\033[91m" + msg + "\033[0m")
+
+
+def _print_blue(msg: str) -> None:
+    # print for progess
+    print("\033[94m" + msg + "\033[0m")
+
+
 @contextmanager
 def _change_dir(dst: Path):
     cwd = os.getcwd()
@@ -62,17 +72,17 @@ def _setup_dev_deps() -> None:
             if collect_flag and line:
                 deps.append(line.split("=")[0].strip())
     cmd = ["pip", "install"] + deps
-    print(f"Running {cmd}")
+    _print_blue(f"Running {cmd}")
     _run_cmd(cmd)
 
 
 def setup_promptflow_tracing() -> None:
     with _change_dir(PROMPT_FLOW_TRACING_ROOT_DIR):
-        print("- Setting up promptflow-tracing")
+        _print_blue("- Setting up promptflow-tracing")
         # pip install -e . from pyproject.toml
-        print("- Installing promptflow-tracing from source")
+        _print_blue("- Installing promptflow-tracing from source")
         cmd = ["pip", "install", "--editable", "."]
-        print(f"Running {cmd}")
+        _print_blue(f"Running {cmd}")
         _run_cmd(cmd)
         # install dev & test dependencies
         _setup_dev_deps()
@@ -100,7 +110,7 @@ def create_test_resource_template() -> None:
         f"Created test-required file {connections_filename!r} at {connections_file_path.as_posix()!r}, "
         "please update with your test resource(s)."
     )
-    print(prompt_msg)
+    _print_red(prompt_msg)
 
 
 if __name__ == "__main__":
