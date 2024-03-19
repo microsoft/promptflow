@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Union
 
 import psutil
 
-from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, ProcessControlSignal, ProcessPoolConstants
+from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import ProcessPoolError, UnexpectedError
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
@@ -42,7 +42,13 @@ from promptflow.executor._errors import (
     ProcessCrashError,
     ThreadCrashError,
 )
-from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
+from promptflow.executor._process_manager import (
+    ForkProcessManager,
+    ProcessControlSignal,
+    ProcessInfo,
+    ProcessPoolConstants,
+    SpawnProcessManager,
+)
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
@@ -166,7 +172,6 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
-            "run_id": self._run_id,
             "output_dir": self._output_dir,
             "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
@@ -675,9 +680,8 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
     i: int,
-    run_id: str,
 ):
-    logName_i = "{}_{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, run_id, i)
+    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, i)
     if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
         ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
     log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName_i

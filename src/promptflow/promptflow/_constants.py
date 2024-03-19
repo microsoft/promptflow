@@ -234,17 +234,3 @@ class CustomStrongTypeConnectionConfigs:
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
         ]
-
-
-class ProcessPoolConstants:
-    PROCESS_LOG_PATH = Path("process_log")
-    PROCESS_LOG_NAME = "process_stderr"
-    MANAGER_PROCESS_LOG_NAME = "manager_process_stderr"
-    TERMINATE_SIGNAL = "terminate"
-
-
-class ProcessControlSignal(str, Enum):
-    START = "start"
-    RESTART = "restart"
-    END = "end"
-    SPAWNED_MANAGER_END = "spawned_manager_end"

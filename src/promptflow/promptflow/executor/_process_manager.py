@@ -4,6 +4,7 @@ import signal
 import sys
 import time
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from multiprocessing import Process, Queue
 from pathlib import Path
@@ -11,7 +12,6 @@ from typing import Dict, List
 
 import psutil
 
-from promptflow._constants import ProcessControlSignal, ProcessPoolConstants
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import (
@@ -30,6 +30,20 @@ class ProcessInfo:
     index: int
     process_id: str
     process_name: str
+
+
+class ProcessPoolConstants:
+    PROCESS_LOG_PATH = Path("process_log")
+    PROCESS_LOG_NAME = "process_stderr"
+    MANAGER_PROCESS_LOG_NAME = "manager_process_stderr.log"
+    TERMINATE_SIGNAL = "terminate"
+
+
+class ProcessControlSignal(str, Enum):
+    START = "start"
+    RESTART = "restart"
+    END = "end"
+    SPAWNED_MANAGER_END = "spawned_manager_end"
 
 
 class AbstractProcessManager:
@@ -60,7 +74,6 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
-        run_id: str,
         output_dir: Path = None,
         serialize_multimedia: bool = False,
         *args,
@@ -70,7 +83,6 @@ class AbstractProcessManager:
         self._output_queues = output_queues
         self._process_info: Dict[int, ProcessInfo] = process_info
         self._process_target_func = process_target_func
-        self._run_id = run_id
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
@@ -210,7 +222,6 @@ class SpawnProcessManager(AbstractProcessManager):
                 self._log_context_initialization_func,
                 self._current_operation_context,
                 i,
-                self._run_id,
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
@@ -322,8 +333,7 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            logName = "{}_{}.log".format(ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME, self._run_id)
-            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName
+            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
             try:
                 with open(log_path, "r") as f:
                     error_logs = "".join(f.readlines())
@@ -385,7 +395,6 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 self._log_context_initialization_func,
                 self._current_operation_context,
                 i,
-                self._run_id,
             ),
             daemon=True,
         )
@@ -429,9 +438,8 @@ def create_spawned_fork_process_manager(
     flow_create_kwargs,
     **kwargs,
 ):
-    logName = "{}_{}.log".format(ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME, kwargs.get("run_id"))
     ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
-    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName
+    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
     sys.stderr = open(log_path, "w")
 
     """
