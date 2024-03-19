@@ -17,7 +17,7 @@ from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connecti
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -86,7 +86,7 @@ class ToolResolver:
         k: str,
         v: InputAssignment,
         node_name: str,
-        source_type: ToolSourceType,
+        source: ToolSource,
         tool: Tool,
         conn_types: List[str],
         module: types.ModuleType,
@@ -99,6 +99,7 @@ class ToolResolver:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node_name!r} input {k!r}.")
 
         custom_defined_connection_class_name = conn_types[0]
+        source_type = getattr(source, "type", None)
         if source_type == ToolSourceType.Package:
             module = tool.module
         return connection_value._convert_to_custom_strong_type(
@@ -157,18 +158,16 @@ class ToolResolver:
 
         # Create new ToolLoader with package tool keys from tools in assistant definition, rather than
         # relying on the node-level package tool keys
-        source_tool = tool_definition.get("source", {}).get("tool")
-        source_type = tool_definition.get("source", {}).get("type")
-        function_package_tool_keys = [source_tool]
+        source = ToolSource.deserialize(tool_definition["source"]) if "source" in tool_definition else None
+        source_tool = getattr(source, "tool", None)
+        function_package_tool_keys = [source.tool]
         tool_loader = ToolLoader(self._working_dir, function_package_tool_keys)
         tool: Tool = tool_loader.load_package_tool(source_tool)
         # updated_node = copy.deepcopy(node)
 
         updated_predefined_inputs = predefined_inputs
         if convert_input_types:
-            updated_predefined_inputs = self._convert_literal_input_types(
-                node_name, source_type, predefined_inputs, tool
-            )
+            updated_predefined_inputs = self._convert_literal_input_types(node_name, source, predefined_inputs, tool)
 
         callable, init_args = BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, updated_predefined_inputs
@@ -202,16 +201,14 @@ class ToolResolver:
                 predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
         # load the module and Tool object
-        source_path = tool_definition.get("source", {}).get("path")
-        source_type = tool_definition.get("source", {}).get("type")
+        source = ToolSource.deserialize(tool_definition["source"]) if "source" in tool_definition else None
+        source_path = getattr(source, "path", None)
         m, tool = self._tool_loader.load_script_tool(source_path, node_name)
 
         # construct the resolved inputs dictionary
         updated_predefined_inputs = predefined_inputs
         if convert_input_types:
-            updated_predefined_inputs = self._convert_literal_input_types(
-                node_name, source_type, predefined_inputs, tool, m
-            )
+            updated_predefined_inputs = self._convert_literal_input_types(node_name, source, predefined_inputs, tool, m)
         callable, init_args = BuiltinsManager._load_tool_from_module(
             m, tool.name, tool.module, tool.class_name, tool.function, updated_predefined_inputs
         )
@@ -256,7 +253,7 @@ class ToolResolver:
             raise FailedToParseAssistantTool(func_name=func_name) from e
 
     def _convert_literal_input_types(
-        self, node_name: str, source_type: ToolSourceType, inputs: dict, tool: Tool, module: types.ModuleType = None
+        self, node_name: str, source: ToolSource, inputs: dict, tool: Tool, module: types.ModuleType = None
     ):
         updated_inputs = {
             k: v
@@ -274,7 +271,7 @@ class ToolResolver:
             if ConnectionType.is_connection_class_name(value_type):
                 if tool_input.custom_type:
                     updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
-                        k, v, node_name, source_type, tool, tool_input.custom_type, module=module
+                        k, v, node_name, source, tool, tool_input.custom_type, module=module
                     )
                 else:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node_name, tool_input.type)
@@ -334,7 +331,7 @@ class ToolResolver:
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_node = copy.deepcopy(node)
-        updated_node.inputs = self._convert_literal_input_types(node.name, node.source.type, node.inputs, tool, module)
+        updated_node.inputs = self._convert_literal_input_types(node.name, node.source, node.inputs, tool, module)
         return updated_node
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
