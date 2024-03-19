@@ -653,7 +653,8 @@ def test_eager_flow_evc_override(eager_flow_evc_override):
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
     assert response != "Hello world! ${azure_open_ai_connection.api_base}"
-    assert "openai.azure.com" in response
+    # check regex match
+    assert re.findall(r"Hello world! https://[\w\W]+.openai.azure.com", response), response
 
 
 @pytest.mark.e2etest
@@ -664,5 +665,5 @@ def test_eager_flow_evc_override_not_exist(eager_flow_evc_override_not_exist):
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
-    # EVC not resolved since the connection not exist in flow defintion
+    # EVC not resolved since the connection not exist in flow definition
     assert response == "Hello world! ${azure_open_ai_connection.api_type}"
