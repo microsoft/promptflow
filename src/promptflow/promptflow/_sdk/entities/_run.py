@@ -750,8 +750,8 @@ class Run(YAMLTranslatableMixin):
     def _flow_type(self) -> str:
         """Get flow type of run."""
 
-        from promptflow import load_flow
         from promptflow._constants import FlowType
+        from promptflow._sdk._load_functions import load_flow
         from promptflow._sdk.entities._eager_flow import FlexFlow
 
         flow_obj = load_flow(source=self.flow)

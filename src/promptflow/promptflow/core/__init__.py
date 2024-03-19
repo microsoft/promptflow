@@ -12,5 +12,4 @@ from promptflow.core._flow import AsyncFlow, Flow
 # backward compatibility
 log_flow_metric = log_metric
 
-# TODO: Add the Flow class
 __all__ = ["log_metric", "ToolProvider", "tool", "Flow", "AsyncFlow"]
