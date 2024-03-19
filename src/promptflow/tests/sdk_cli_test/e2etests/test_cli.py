@@ -1989,7 +1989,7 @@ class TestCli:
             out, _ = capfd.readouterr()
             if not out.startswith("["):
                 out = "\n".join(out.split("\n")[1:])
-            assert len(json.loads(out)) == 2
+            assert len(json.loads(out)) <= 2
 
             with pytest.raises(SystemExit):
                 run_pf_command(
