@@ -12,9 +12,9 @@ from flask import Flask, g, jsonify, request
 from opentelemetry import baggage, context
 
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._version import VERSION
 from promptflow.contracts.run_info import Status
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME

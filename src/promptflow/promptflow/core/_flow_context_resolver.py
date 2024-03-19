@@ -27,7 +27,7 @@ class FlowContextResolver:
     """Flow context resolver."""
 
     def __init__(self, flow_path: PathLike):
-        from promptflow import PFClient
+        from promptflow._sdk._pf_client import PFClient
 
         self.flow_path, self.flow_dag = load_flow_dag(flow_path=Path(flow_path))
         self.working_dir = Path(self.flow_path).parent.resolve()

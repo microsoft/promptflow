@@ -1,23 +1,23 @@
-system:
+# system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
 Return the final numerical answer only and any accompanying reasoning or explanation seperately as json format.
 
-user:
+# user:
 A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
-assistant:
+# assistant:
 {Chain of thought: "The total number of marbles is $2+3+10=15$.  The probability that the first marble drawn will be red is $2/15$.  Then, there will be one red left, out of 14.  Therefore, the probability of drawing out two red marbles will be: $$\\frac{2}{15}\\cdot\\frac{1}{14}=\\boxed{\\frac{1}{105}}$$.", "answer": "1/105"}
-user:
+# user:
 Find the greatest common divisor of $7!$ and $(5!)^2.$
-assistant:
+# assistant:
 {"Chain of thought": "$$ \\begin{array} 7! &=& 7 \\cdot 6 \\cdot 5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1 &=& 2^4 \\cdot 3^2 \\cdot 5^1 \\cdot 7^1 \\\\ (5!)^2 &=& (5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1)^2 &=& 2^6 \\cdot 3^2 \\cdot 5^2 \\\\ \\text{gcd}(7!, (5!)^2) &=& 2^4 \\cdot 3^2 \\cdot 5^1 &=& \\boxed{720} \\end{array} $$.", "answer": "720"}
 {% for item in chat_history %}
 
-user:
+# user:
 {{item.inputs.question}}
-assistant:
+# assistant:
 {{item.outputs.answer}}
 {% endfor %}
 
-user:
+# user:
 {{question}}

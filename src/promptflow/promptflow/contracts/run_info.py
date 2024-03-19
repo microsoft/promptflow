@@ -100,6 +100,8 @@ class RunInfo:
     @staticmethod
     def deserialize(data: dict) -> "RunInfo":
         """Deserialize the RunInfo from a dict."""
+        start_time = data.get("start_time", None)
+        end_time = data.get("end_time", None)
         run_info = RunInfo(
             node=data.get("node"),
             flow_run_id=data.get("flow_run_id"),
@@ -110,8 +112,8 @@ class RunInfo:
             metrics=data.get("metrics", None),
             error=data.get("error", None),
             parent_run_id=data.get("parent_run_id", None),
-            start_time=parser.parse(data.get("start_time")).replace(tzinfo=None),
-            end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
+            start_time=parser.parse(start_time).replace(tzinfo=None) if start_time else None,
+            end_time=parser.parse(end_time).replace(tzinfo=None) if end_time else None,
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
             cached_run_id=data.get("cached_run_id", None),
