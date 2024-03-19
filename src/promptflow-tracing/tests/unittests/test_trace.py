@@ -26,7 +26,8 @@ class MockSpan:
     def set_attributes(self, attributes):
         if not self.raise_exception_for_attr:
             self.attributes.update(attributes)
-        raise Exception("Dummy Error")
+        else:
+            raise Exception("Dummy Error")
 
 
 class MockSpanContext:
@@ -111,7 +112,7 @@ def test_enrich_span_with_context(caplog):
 
 @pytest.mark.unittest
 def test_enrich_span_with_trace(caplog):
-    with patch("promptflow.tracing._tracer.get_node_name_from_context", return_value="test_node_name"):
+    with patch("promptflow.tracing._trace.get_node_name_from_context", return_value="test_node_name"):
         # Normal case
         span = MockSpan(MockSpanContext(1))
         trace = MockTrace("test_trace", MockTraceType.TYPE_1)
@@ -133,5 +134,4 @@ def test_enrich_span_with_trace(caplog):
 @pytest.mark.unittest
 def test_traced_generator():
     pass
-
 
