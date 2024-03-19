@@ -106,7 +106,7 @@ class Spans(Resource):
     @api.marshal_list_with(span_model)
     @api.response(code=200, description="Spans")
     def get(self):
-        from promptflow import PFClient
+        from promptflow.client import PFClient
 
         client: PFClient = get_client_from_request()
         args = ListSpanParser.from_request()

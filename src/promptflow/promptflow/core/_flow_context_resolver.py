@@ -27,7 +27,7 @@ class FlowContextResolver:
     """Flow context resolver."""
 
     def __init__(self, flow_path: PathLike):
-        from promptflow import PFClient
+        from promptflow._sdk._pf_client import PFClient
 
         self.flow_path, self.flow_dag = load_flow_dag(flow_path=Path(flow_path))
         self.working_dir = Path(self.flow_path).parent.resolve()
@@ -114,7 +114,7 @@ class FlowContextResolver:
     def _create_invoker(
         self, flow_context: FlowContext, is_async_call=False
     ) -> Union["FlowInvoker", "AsyncFlowInvoker"]:
-        from promptflow._sdk._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
+        from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
 
         connections = self._resolve_connection_objs(flow_context=flow_context)
         # use updated flow dag to create new flow object for invoker

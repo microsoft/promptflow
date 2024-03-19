@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from copy import deepcopy
 
-from promptflow._core.generator_proxy import GeneratorProxy
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 
 def _deep_copy_and_extract_items_from_generator_proxy(value: object) -> object:

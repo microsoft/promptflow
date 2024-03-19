@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
-from promptflow._constants import DEFAULT_ENCODING
+from promptflow._constants import DEFAULT_ENCODING, PF_LONG_RUNNING_LOGGING_INTERVAL
 from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.types import AssistantDefinition
 
@@ -396,3 +396,25 @@ def prepare_folder(path: Union[str, Path]) -> Path:
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def try_get_long_running_logging_interval(logger: logging.Logger, default_interval: int):
+    logging_interval_in_env = os.environ.get(PF_LONG_RUNNING_LOGGING_INTERVAL, None)
+    if logging_interval_in_env:
+        try:
+            value = int(logging_interval_in_env)
+            if value <= 0:
+                raise ValueError
+            logger.info(
+                f"Using value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable as "
+                f"logging interval: {logging_interval_in_env}"
+            )
+            return value
+        except ValueError:
+            logger.warning(
+                f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable "
+                f"('{logging_interval_in_env}') is invalid, use default value {default_interval}"
+            )
+            return default_interval
+    # If the environment variable is not set, return none to disable the long running logging
+    return None

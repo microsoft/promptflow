@@ -31,8 +31,13 @@ from promptflow.exceptions import UserErrorException
 logger = get_cli_sdk_logger()
 
 
+app = None
+
+
 def get_app(environ, start_response):
-    app, _ = create_app()
+    global app
+    if app is None:
+        app, _ = create_app()
     if os.environ.get(PF_SERVICE_DEBUG) == "true":
         app.logger.setLevel(logging.DEBUG)
     else:
@@ -114,7 +119,9 @@ def start_service(args):
     if is_run_from_built_binary():
         # For msi installer, use sdk api to start pfs since it's not supported to invoke waitress by cli directly
         # after packaged by Pyinstaller.
-        app, _ = create_app()
+        global app
+        if app is None:
+            app, _ = create_app()
         if os.environ.get(PF_SERVICE_DEBUG) == "true":
             app.logger.setLevel(logging.DEBUG)
         else:

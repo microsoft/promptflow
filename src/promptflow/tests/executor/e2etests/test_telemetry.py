@@ -9,13 +9,13 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
-from promptflow._core.operation_context import OperationContext
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
+from promptflow.tracing._operation_context import OperationContext
 
 from ..process_utils import override_process_pool_targets
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
@@ -126,10 +126,10 @@ class TestExecutorTelemetry:
 
         operation_context = OperationContext.get_instance()
         operation_context.clear()
+        operation_context.set_default_tracing_keys({"default_dummy_key"})
         # Set user-defined properties `scenario` in context
         operation_context.scenario = "test"
         operation_context.dummy_key = "dummy_value"
-        operation_context._tracking_keys = OperationContext._DEFAULT_TRACKING_KEYS
         operation_context._tracking_keys.add("dummy_key")
 
         with override_process_pool_targets(mock_process_wrapper, mock_process_manager):

@@ -21,7 +21,6 @@ from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
@@ -32,6 +31,7 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
 )
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import (
     load_multimedia_data,
@@ -40,6 +40,7 @@ from promptflow._utils.multimedia_utils import (
 )
 from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -57,7 +58,8 @@ from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     enrich_span_with_context,
     enrich_span_with_input,
@@ -126,10 +128,6 @@ class FlowExecutor:
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
         """
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
-
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
         self._connections = connections
@@ -199,7 +197,7 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        if cls._is_eager_flow_yaml(flow_file, working_dir):
+        if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
@@ -277,16 +275,6 @@ class FlowExecutor:
         return executor
 
     @classmethod
-    def _is_eager_flow_yaml(cls, flow_file: Path, working_dir: Optional[Path] = None):
-        if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-            flow_file = working_dir / flow_file if working_dir else flow_file
-            with open(flow_file, "r", encoding="utf-8") as fin:
-                flow_dag = load_yaml(fin)
-            if "entry" in flow_dag:
-                return True
-        return False
-
-    @classmethod
     def load_and_exec_node(
         cls,
         flow_file: Path,
@@ -321,13 +309,23 @@ class FlowExecutor:
         :param raise_ex: Whether to raise exceptions or not. Default is False.
         :type raise_ex: Optional[bool]
         """
-        # Inject OpenAI API to make sure traces and headers injection works and
-        # update OpenAI API configs from environment variables.
-        inject_openai_api()
 
-        OperationContext.get_instance().run_mode = RunMode.SingleNode.name
+        @contextlib.contextmanager
+        def update_operation_context():
+            operation_context = OperationContext.get_instance()
+            original_context = operation_context.copy()
+            try:
+                operation_context.append_user_agent(f"promptflow/{VERSION}")
+                operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
+                operation_context["run_mode"] = RunMode.SingleNode.name
+                # Inject OpenAI API to make sure traces and headers injection works and
+                # update OpenAI API configs from environment variables.
+                inject_openai_api()
+                yield
+            finally:
+                OperationContext.set_instance(original_context)
+
         dependency_nodes_outputs = dependency_nodes_outputs or {}
-
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
@@ -388,7 +386,7 @@ class FlowExecutor:
             sub_dir = "." if output_sub_dir is None else output_sub_dir
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
-        with run_tracker.node_log_manager:
+        with run_tracker.node_log_manager, update_operation_context():
             # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
@@ -600,6 +598,8 @@ class FlowExecutor:
             return AggregationResult({}, {}, {})
         run_id = run_id or str(uuid.uuid4())
         nodes = [copy.deepcopy(node) for node in self._flow.nodes if node.aggregation]
+        # Load multimedia data from aggregation_inputs
+        aggregation_inputs = load_multimedia_data_recursively(aggregation_inputs)
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {
@@ -658,9 +658,7 @@ class FlowExecutor:
         thread_name = current_thread().name
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
-        results = self._exec(
-            inputs, run_id=run_id, line_number=line_number, validate_inputs=validate_inputs
-        )
+        results = self._exec(inputs, run_id=run_id, line_number=line_number, validate_inputs=validate_inputs)
         self._run_tracker._deactivate_in_context()
         self._processing_idx.pop(line_number)
         self._completed_idx[line_number] = thread_name
@@ -778,10 +776,15 @@ class FlowExecutor:
         else:
             values_for_otel = {"line_run_id": run_id}
         try:
+            operation_context.append_user_agent(f"promptflow/{VERSION}")
+            operation_context.set_default_tracing_keys({"run_mode", "root_run_id", "flow_id", "batch_input_source"})
             operation_context.run_mode = original_mode or RunMode.Test.name
             operation_context.update(values_for_context)
             for k, v in values_for_otel.items():
                 operation_context._add_otel_attributes(k, v)
+            # Inject OpenAI API to make sure traces and headers injection works and
+            # update OpenAI API configs from environment variables.
+            inject_openai_api()
             yield
         finally:
             OperationContext.set_instance(original_context)
@@ -934,7 +937,9 @@ class FlowExecutor:
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
             run_tracker.end_run(line_run_id, ex=ex)
-            raise
+            # If async execution is enabled, ignore this exception and return the partial line results.
+            if not self._should_use_async():
+                raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -1098,13 +1103,7 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        if self._should_use_async():
-            flow_logger.info("Start executing nodes in async mode.")
-            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
-        else:
-            flow_logger.info("Start executing nodes in thread pool mode.")
-            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
@@ -1134,13 +1133,14 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(
-            self._tools_manager,
-            inputs,
-            nodes,
-            self._node_concurrency,
-            context,
-        ).execute(self._line_timeout_sec)
+        if self._should_use_async():
+            flow_logger.info("Start executing nodes in async mode.")
+            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+            return asyncio.run(scheduler.execute(nodes, inputs, context))
+        else:
+            flow_logger.info("Start executing nodes in thread pool mode.")
+            scheduler = FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context)
+            return scheduler.execute(self._line_timeout_sec)
 
     @staticmethod
     def apply_inputs_mapping(

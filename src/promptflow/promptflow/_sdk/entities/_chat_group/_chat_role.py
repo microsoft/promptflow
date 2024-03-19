@@ -5,9 +5,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Union
 
-from promptflow import load_flow
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._sdk._errors import ChatRoleError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk.entities._chat_group._chat_group_io import ChatRoleInputs, ChatRoleOutputs
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml

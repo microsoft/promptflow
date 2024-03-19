@@ -1,16 +1,17 @@
 import multiprocessing
 import queue
 import signal
+import sys
 import time
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from multiprocessing import Process, Queue
+from pathlib import Path
 from typing import Dict, List
 
 import psutil
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import (
@@ -21,6 +22,7 @@ from promptflow.executor._errors import (
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.storage import AbstractRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 
 @dataclass
@@ -30,10 +32,18 @@ class ProcessInfo:
     process_name: str
 
 
+class ProcessPoolConstants:
+    PROCESS_LOG_PATH = Path("process_log")
+    PROCESS_LOG_NAME = "process_stderr"
+    MANAGER_PROCESS_LOG_NAME = "manager_process_stderr.log"
+    TERMINATE_SIGNAL = "terminate"
+
+
 class ProcessControlSignal(str, Enum):
     START = "start"
     RESTART = "restart"
     END = "end"
+    SPAWNED_MANAGER_END = "spawned_manager_end"
 
 
 class AbstractProcessManager:
@@ -64,6 +74,8 @@ class AbstractProcessManager:
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
+        output_dir: Path = None,
+        serialize_multimedia: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -74,6 +86,8 @@ class AbstractProcessManager:
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
+        self._output_dir = output_dir
+        self._serialize_multimedia = serialize_multimedia
 
     def new_process(self, i):
         """
@@ -201,10 +215,13 @@ class SpawnProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
                 self._current_operation_context,
+                i,
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
@@ -316,6 +333,13 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
+            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+            try:
+                with open(log_path, "r") as f:
+                    error_logs = "".join(f.readlines())
+                    bulk_logger.error(error_logs)
+            except FileNotFoundError:
+                pass
             bulk_logger.error("The spawned fork process manager failed to start.")
             ex = SpawnedForkProcessManagerStartFailure()
             raise ex
@@ -364,10 +388,13 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
                 self._current_operation_context,
+                i,
             ),
             daemon=True,
         )
@@ -411,6 +438,10 @@ def create_spawned_fork_process_manager(
     flow_create_kwargs,
     **kwargs,
 ):
+    ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+    sys.stderr = open(log_path, "w")
+
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
@@ -441,8 +472,6 @@ def create_spawned_fork_process_manager(
 
     # Main loop to handle control signals and manage process lifecycle.
     while True:
-        all_processes_stopped = True
-
         try:
             process_info_list = manager._process_info.items()
         except Exception as e:
@@ -454,20 +483,19 @@ def create_spawned_fork_process_manager(
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
                 process = psutil.Process(pid)
-                if process.status() != "zombie":
-                    all_processes_stopped = False
-                else:
+                if process.status() == "zombie":
                     # If do not call wait(), the child process may become a zombie process,
                     # and psutil.pid_exists(pid) is always true, which will cause spawn proces
                     # never exit.
                     process.wait()
 
-        # If all fork child processes exit, exit the loop.
-        if all_processes_stopped:
-            break
         try:
             control_signal, i = control_signal_queue.get(timeout=1)
-            manager.handle_signals(control_signal, i)
+            # Exit the spawned process manager.
+            if control_signal == ProcessControlSignal.SPAWNED_MANAGER_END and i is True:
+                break
+            else:
+                manager.handle_signals(control_signal, i)
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass

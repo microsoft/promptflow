@@ -31,7 +31,6 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
-    generate_flow_meta,
     generate_flow_tools_json,
     generate_random_string,
     logger,
@@ -408,7 +407,7 @@ class FlowOperations(TelemetryMixin):
 
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
-                        tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                        tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
                         ),
@@ -733,7 +732,7 @@ class FlowOperations(TelemetryMixin):
         This is a private interface for vscode extension, so do not change the interface unless necessary.
 
         Usage:
-        from promptflow import PFClient
+        from promptflow.client import PFClient
         PFClient().flows._generate_tools_meta(flow="flow.dag.yaml", source_name="convert_to_dict.py")
 
         :param flow: path to the flow directory or flow dag to export
@@ -813,7 +812,7 @@ class FlowOperations(TelemetryMixin):
         This is a private interface for vscode extension, so do not change the interface unless necessary.
 
         Usage:
-        from promptflow import PFClient
+        from promptflow.client import PFClient
         PFClient().flows._generate_flow_meta(flow="flow.dag.yaml")
 
         :param flow: path to the flow directory or flow dag to export
@@ -834,11 +833,16 @@ class FlowOperations(TelemetryMixin):
             return {}
 
         with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
-            return generate_flow_meta(
-                flow_directory=new_flow_dag_path.parent,
-                source_path=flow.entry_file,
-                entry=flow.entry,
-                dump=dump,
-                timeout=timeout,
-                load_in_subprocess=load_in_subprocess,
+            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+
+            return (
+                ExecutorProxyFactory()
+                .get_executor_proxy_cls(flow.language)
+                .generate_flow_json(
+                    flow_file=new_flow_dag_path,
+                    working_dir=new_flow_dag_path.parent,
+                    dump=dump,
+                    timeout=timeout,
+                    load_in_subprocess=load_in_subprocess,
+                )
             )
