@@ -9,11 +9,12 @@ Prompt flow provides a few different LLM APIs:
 
 
 ## Prerequisite
-Create OpenAI resources:
+Create OpenAI or Azure OpenAI resources:
 
 - **OpenAI**
 
     Sign up account [OpenAI website](https://openai.com/)
+
     Login and [Find personal API key](https://platform.openai.com/account/api-keys)
 
 - **Azure OpenAI (AOAI)**

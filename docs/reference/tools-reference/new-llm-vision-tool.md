@@ -8,14 +8,17 @@ Create OpenAI or Azure OpenAI resources:
 
 - **OpenAI**
 
-    - Sign up account [OpenAI website](https://openai.com/)
-    - Login and [Find personal API key](https://platform.openai.com/account/api-keys)
+    Sign up account [OpenAI website](https://openai.com/)
+
+    Login and [Find personal API key](https://platform.openai.com/account/api-keys)
 
 - **Azure OpenAI (AOAI)**
 
-    - Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
-    - Browse to [Azure OpenAI Studio](https://oai.azure.com/) and sign in with the credentials associated with your Azure OpenAI resource. During or after the sign-in workflow, select the appropriate directory, Azure subscription, and Azure OpenAI resource.
-    - Under Management select Deployments and Create a GPT-4 Turbo with Vision deployment by selecting model name: `gpt-4` and model version `vision-preview`.
+    Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
+
+    Browse to [Azure OpenAI Studio](https://oai.azure.com/) and sign in with the credentials associated with your Azure OpenAI resource. During or after the sign-in workflow, select the appropriate directory, Azure subscription, and Azure OpenAI resource.
+
+    Under Management select Deployments and Create a GPT-4 Turbo with Vision deployment by selecting model name: `gpt-4` and model version `vision-preview`.
 
 
    
