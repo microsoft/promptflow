@@ -4,9 +4,6 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
-from .evaluate import evaluate
+from ._evaluate import evaluate
 
-__all__ = [
-    "evaluate"
-]
-
+__all__ = ["evaluate"]
