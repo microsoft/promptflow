@@ -1,0 +1,3 @@
+azure-ai-ml>=1.14.0
+promptflow
+promptflow-tools
