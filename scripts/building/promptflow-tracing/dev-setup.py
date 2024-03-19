@@ -41,7 +41,7 @@ def _run_cmd(cmd: typing.List[str]) -> None:
 
 
 def _setup_pre_commit() -> None:
-    _run_cmd(cmds=["pre-commit", "install"])
+    _run_cmd(cmd=["pre-commit", "install"])
 
 
 def _setup_dev_deps() -> None:
