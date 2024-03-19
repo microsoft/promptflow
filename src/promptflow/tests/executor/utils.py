@@ -1,5 +1,7 @@
+import contextlib
 import json
 import uuid
+from contextvars import ContextVar
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Dict, Union
@@ -183,3 +185,12 @@ def prepare_memory_exporter():
     tracer_provider.add_span_processor(span_processor)
     opentelemetry.trace.set_tracer_provider(tracer_provider)
     return memory_exporter
+
+
+@contextlib.contextmanager
+def setup_contextvar(contextvar: ContextVar, value):
+    token = contextvar.set(value)
+    try:
+        yield
+    finally:
+        contextvar.reset(token)

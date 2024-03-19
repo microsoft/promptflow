@@ -1,6 +1,5 @@
 import json
 import multiprocessing
-import threading
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional, Tuple, Union
@@ -10,6 +9,7 @@ import pytest
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import ProxyFactory
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.thread_utils import ThreadWithContextVars
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._result import BatchResult
@@ -72,7 +72,7 @@ class TestCSharpExecutorProxy:
 
     def _submit_batch_run(
         self, run_in_thread=False, has_error=False, init_error_file=None
-    ) -> Union[Tuple[BatchEngine, threading.Thread], Tuple[BatchEngine, BatchResult]]:
+    ) -> Union[Tuple[BatchEngine, ThreadWithContextVars], Tuple[BatchEngine, BatchResult]]:
         flow_folder = "csharp_flow"
         mem_run_storage = MemoryRunStorage()
         # init the batch engine
@@ -88,7 +88,7 @@ class TestCSharpExecutorProxy:
         inputs_mapping = {"question": "${data.question}"}
         output_dir = Path(mkdtemp())
         if run_in_thread:
-            return batch_engine, threading.Thread(
+            return batch_engine, ThreadWithContextVars(
                 target=self._batch_run_in_thread, args=(batch_engine, input_dirs, inputs_mapping, output_dir)
             )
         else:

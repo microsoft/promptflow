@@ -11,6 +11,7 @@ from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._internal import tool
 from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
@@ -25,7 +26,7 @@ from promptflow.executor._errors import (
 )
 from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 
-from ...utils import DATA_ROOT, FLOW_ROOT
+from ...utils import DATA_ROOT, FLOW_ROOT, setup_contextvar
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -231,7 +232,10 @@ class TestToolResolver:
             tool=tool,
             inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
         )
-        with pytest.raises(NodeInputValidationError) as exe_info:
+        with (
+            pytest.raises(NodeInputValidationError) as exe_info,
+            setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()),
+        ):
             tool_resolver = ToolResolver(working_dir=None, connections={})
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "Invalid base64 image"
@@ -345,27 +349,29 @@ class TestToolResolver:
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=None, connections=connections)
-        tool_resolver._tool_loader = tool_loader
-        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}![image]({{image}})")
 
-        node = Node(
-            name="mock",
-            tool=None,
-            inputs={
-                "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
-                "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
-                "image": InputAssignment(value=str(DATA_ROOT / "logo.jpg"), value_type=InputValueType.LITERAL),
-            },
-            connection="conn_name",
-            provider="mock",
-        )
-        resolved_tool = tool_resolver._resolve_llm_node(node, convert_input_types=True)
-        assert len(resolved_tool.node.inputs) == 2
-        kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
-        pattern = re.compile(r"^Hello World!!\[image\]\(Image\([a-z0-9]{8}\)\)$")
-        prompt = resolved_tool.callable(**kwargs)
-        assert re.match(pattern, prompt)
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver._tool_loader = tool_loader
+            mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}![image]({{image}})")
+
+            node = Node(
+                name="mock",
+                tool=None,
+                inputs={
+                    "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                    "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
+                    "image": InputAssignment(value=str(DATA_ROOT / "logo.jpg"), value_type=InputValueType.LITERAL),
+                },
+                connection="conn_name",
+                provider="mock",
+            )
+            resolved_tool = tool_resolver._resolve_llm_node(node, convert_input_types=True)
+            assert len(resolved_tool.node.inputs) == 2
+            kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
+            pattern = re.compile(r"^Hello World!!\[image\]\(Image\([a-z0-9]{8}\)\)$")
+            prompt = resolved_tool.callable(**kwargs)
+            assert re.match(pattern, prompt)
 
     def test_resolve_script_node(self, mocker):
         def mock_python_func(prompt: PromptTemplate, **kwargs):
@@ -564,8 +570,9 @@ class TestToolResolver:
 
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
-        tool_resolver._resolve_assistant_tool(assistant_definitions)
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
+            tool_resolver._resolve_assistant_tool(assistant_definitions)
         invoker = assistant_definitions._tool_invoker
         assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
         for tool_name, assistant_tool in invoker._assistant_tools.items():

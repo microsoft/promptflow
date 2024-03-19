@@ -7,13 +7,14 @@ import pytest
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils._errors import ApplyInputMappingError
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 
-from ...utils import DATA_ROOT
+from ...utils import DATA_ROOT, setup_contextvar
 
 
 @pytest.mark.unittest
@@ -27,7 +28,8 @@ class TestBatchInputsProcessor:
         dump_list_to_jsonl(data_file, data)
         input_dirs = {"data": data_file}
         inputs_mapping = {"question": "${data.question}"}
-        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
         assert batch_inputs == [
             {"line_number": 0, "question": "What's promptflow?"},
             {"line_number": 1, "question": "Do you like promptflow?"},
@@ -38,7 +40,9 @@ class TestBatchInputsProcessor:
         data_file.touch()
         input_dirs = {"data": data_file}
         inputs_mapping = {"question": "${data.question}"}
-        with pytest.raises(EmptyInputsData) as e:
+        with pytest.raises(EmptyInputsData) as e, setup_contextvar(
+            MultimediaProcessor.context_var, BasicMultimediaProcessor()
+        ):
             BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
         expected_error_message = (
             "Couldn't find any inputs data at the given input paths. "
@@ -60,11 +64,13 @@ class TestBatchInputsProcessor:
         with open(inputs_file, "w") as file:
             file.write(json.dumps(data))
 
-        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(inputs_dir)
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            result = BatchInputsProcessor("", {})._resolve_data_from_input_path(inputs_dir)
         assert result == data + data
 
         # if has max_lines_count
-        result = BatchInputsProcessor("", {}, max_lines_count=1)._resolve_data_from_input_path(inputs_dir)
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            result = BatchInputsProcessor("", {}, max_lines_count=1)._resolve_data_from_input_path(inputs_dir)
         assert result == [
             {"question": "What's promptflow?"},
         ]
@@ -78,17 +84,19 @@ class TestBatchInputsProcessor:
     )
     def test_resolve_data_from_input_path_with_large_data(self, data_path):
         data_path = DATA_ROOT / "load_data_cases" / data_path
-        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
         assert isinstance(result, list)
         assert len(result) == 10000
 
         # specify max_rows_count
         max_rows_count = 5
-        head_results = BatchInputsProcessor(
-            working_dir="",
-            flow_inputs={},
-            max_lines_count=max_rows_count,
-        )._resolve_data_from_input_path(Path(data_path))
+        with setup_contextvar(MultimediaProcessor.context_var, BasicMultimediaProcessor()):
+            head_results = BatchInputsProcessor(
+                working_dir="",
+                flow_inputs={},
+                max_lines_count=max_rows_count,
+            )._resolve_data_from_input_path(Path(data_path))
         assert isinstance(head_results, list)
         assert len(head_results) == max_rows_count
         assert result[:max_rows_count] == head_results

@@ -14,7 +14,7 @@ from promptflow._utils.multimedia_utils import (
     _process_recursively,
 )
 from promptflow.contracts.flow import FlowInputDefinition
-from promptflow.contracts.multimedia import Image, PFBytes, Text
+from promptflow.contracts.multimedia import Image, Text
 from promptflow.contracts.tool import ValueType
 
 from ...utils import DATA_ROOT, FLOW_ROOT, get_flow_folder
@@ -264,16 +264,6 @@ class TestBasicMultimediaProcessor:
             self.processor.create_image("")
         assert "The image input should not be empty." in ex.value.message_format
 
-    def test_default_json_encoder(self):
-        obj = PFBytes(b"test", "image/jpg", None)
-        result = self.processor.default_json_encoder(obj)
-        assert result == "b'test'"
-
-        obj = Text("test")
-        with pytest.raises(TypeError) as e:
-            result = self.processor.default_json_encoder(obj)
-        assert "Object of type Text is not JSON serializable" in str(e.value)
-
     def test_load_multimedia_data(self):
         # Case 1: Test normal node
         inputs = {
@@ -443,25 +433,6 @@ class TestOpenaiVisionMultimediaProcessor:
         with pytest.raises(InvalidImageInput) as ex:
             self.processor.create_image("")
         assert "The image input should not be empty." in ex.value.message_format
-
-    def test_default_json_encoder(self):
-        obj = PFBytes(b"test", "image/jpg", None)
-        result = self.processor.default_json_encoder(obj)
-        assert result == "b'test'"
-
-        obj = Text("test")
-        result = self.processor.default_json_encoder(obj)
-        assert result == "test"
-
-        class InvalidClass(str):
-            def __new__(cls, value: str):
-                obj = str.__new__(cls, value)
-                return obj
-
-        obj = InvalidClass("test")
-        with pytest.raises(TypeError) as e:
-            result = self.processor.default_json_encoder(obj)
-        assert "Object of type InvalidClass is not JSON serializable" in str(e.value)
 
     def test_load_multimedia_data(self):
         # Case 1: Test normal node
