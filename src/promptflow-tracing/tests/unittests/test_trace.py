@@ -1,11 +1,10 @@
 from enum import Enum
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import TokenCollector, enrich_span_with_context, enrich_span_with_trace
-from promptflow.tracing._tracer import Trace
 
 
 class MockSpan:
@@ -67,7 +66,7 @@ class MockTraceType(Enum):
 @pytest.mark.unittest
 def test_token_collector():
     """
-        1
+          1
         / |
         2  3
         |
@@ -112,7 +111,7 @@ def test_enrich_span_with_context(caplog):
 
 @pytest.mark.unittest
 def test_enrich_span_with_trace(caplog):
-    with patch("promptflow.tracing._trace.get_node_name_from_context", return_value="test_node_name"):
+    with patch("promptflow.tracing._tracer.get_node_name_from_context", return_value="test_node_name"):
         # Normal case
         span = MockSpan(MockSpanContext(1))
         trace = MockTrace("test_trace", MockTraceType.TYPE_1)
