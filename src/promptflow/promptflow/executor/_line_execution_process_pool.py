@@ -759,7 +759,7 @@ def _exec_line(
             run_tracker = RunTracker(executor._storage)
         else:
             run_tracker = executor._run_tracker
-        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
+        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id, index=index)
         run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(
