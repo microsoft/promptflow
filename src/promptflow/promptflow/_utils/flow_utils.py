@@ -10,7 +10,7 @@ from typing import Optional, Tuple, Union
 
 from promptflow._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
-from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
+from promptflow._sdk._constants import CHAT_HISTORY, DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -199,3 +199,36 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, cu
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+def is_executable_chat_flow(flow):
+    """
+    Check if the flow is chat flow.
+    Check if chat_history in the flow input and only one chat input and
+    one chat output to determine if it is a chat flow.
+
+    :param flow: The flow object.
+    :type flow: promptflow.contracts.flow.Flow
+    """
+    chat_inputs = [item for item in flow.inputs.values() if item.is_chat_input]
+    chat_outputs = [item for item in flow.outputs.values() if item.is_chat_output]
+    chat_history_input_name = next(
+        iter([input_name for input_name, value in flow.inputs.items() if value.is_chat_history]), None
+    )
+    if (
+        not chat_history_input_name
+        and CHAT_HISTORY in flow.inputs
+        and flow.inputs[CHAT_HISTORY].is_chat_history is not False
+    ):
+        chat_history_input_name = CHAT_HISTORY
+    _is_chat_flow, error_msg = True, ""
+    if len(chat_inputs) != 1:
+        _is_chat_flow = False
+        error_msg = "chat flow does not support multiple chat inputs"
+    elif len(chat_outputs) != 1:
+        _is_chat_flow = False
+        error_msg = "chat flow does not support multiple chat outputs"
+    elif not chat_history_input_name:
+        _is_chat_flow = False
+        error_msg = "chat_history is required in the inputs of chat flow"
+    return _is_chat_flow, chat_history_input_name, error_msg

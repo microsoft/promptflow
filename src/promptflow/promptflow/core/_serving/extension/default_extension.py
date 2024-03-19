@@ -54,7 +54,7 @@ class AppExtension(ABC):
         Get override connections for current extension.
 
         :param flow: The flow to execute.
-        :type flow: ~promptflow._sdk.entities._flow.Flow
+        :type flow: ~promptflow.contracts.flow.Flow
         :return: The override connections, first dict is for connection data override, second dict is for connection name override.  # noqa: E501
         :rtype: (dict, dict)
         """
@@ -132,7 +132,7 @@ class DefaultAppExtension(AppExtension):
         logger.info(f"Static_folder: {self.static_folder}")
         app_config = kwargs.get("config", None) or {}
 
-        # TODO: remove this import in connection related refactor PR
+        # TODO (3027983): remove this import in connection related refactor PR
         from promptflow._sdk._configuration import Configuration
 
         pf_config = Configuration(overrides=app_config)

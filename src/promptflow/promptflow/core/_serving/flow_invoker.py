@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, Union
 
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
-from promptflow._utils.flow_utils import dump_flow_result
+from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -69,10 +69,7 @@ class FlowInvoker:
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
-        # TODO: move this to core utils in this PR
-        from promptflow._sdk.operations._flow_operations import FlowOperations
-
-        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self.flow)
+        self._is_chat_flow, _, _ = is_executable_chat_flow(self.flow)
 
         if connection_provider is None or isinstance(connection_provider, str):
             config = {"connection.provider": connection_provider} if connection_provider else None
