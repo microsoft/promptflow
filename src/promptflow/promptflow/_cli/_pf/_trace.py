@@ -55,7 +55,8 @@ Examples:
 # Delete traces
 pf trace delete --run <run>
 pf trace delete --session <session>
-pf trace delete --session <session> --started-before <isoformat-string>
+# `started_before` should be in ISO 8601 format
+pf trace delete --session <session> --started-before '2024-03-19T15:17:23.807563'
 """
     add_params = [
         _add_param_run,
