@@ -67,3 +67,9 @@ class ChatAPIFunctionRoleInvalidFormatError(CoreError):
     """Exception raised when failed to validate chat api function role format."""
 
     pass
+
+
+class MissingRequiredInputError(CoreError):
+    """Exception raised when missing required input"""
+
+    pass

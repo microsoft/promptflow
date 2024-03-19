@@ -148,10 +148,12 @@ def get_connection(connection):
             from promptflow._sdk._pf_client import PFClient
         except ImportError as ex:
             raise CoreError(f"Please try 'pip install promptflow-devkit' to install dependency, {ex.msg}")
-        connection_obj = PFClient().connections.get(connection, with_secret=True)
-        connection = connection_obj._to_dict()
-        connection.update(connection_obj._secrets)
-    connection_type = connection.pop("type", None)
+        client = PFClient()
+        connection_obj = client.connections.get(connection, with_secrets=True)
+        connection = connection_obj._to_execution_connection_dict()["value"]
+        connection_type = connection_obj.TYPE
+    else:
+        connection_type = connection.pop("type", None)
     if connection_type == AzureOpenAIConnection.TYPE:
         return AzureOpenAIConnection(**connection)
     elif connection_type == OpenAIConnection.TYPE:

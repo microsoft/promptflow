@@ -15,6 +15,7 @@ from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
 from promptflow.core._connection import _Connection
+from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._utils import (
     convert_to_chat_list,
     find_referenced_image_set,
@@ -172,7 +173,7 @@ class Flow(FlowBase):
     def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
         """Dispatch flow load to non-dag flow or async flow."""
         if is_prompty_flow(file_path=flow_path):
-            return Prompty._load(path=flow_path)
+            return Prompty._load(path=flow_path, **kwargs)
 
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
             flow_content = f.read()
@@ -371,18 +372,20 @@ class Prompty(FlowBase):
         # prompty file path
         path = Path(path)
         configs, self.template = self._parse_prompty(path)
-        for k, v in kwargs:
+        for k in list(kwargs.keys()):
             if k in configs:
-                if isinstance(v, dict):
-                    configs[k].update(v)
+                value = kwargs.pop(k)
+                if isinstance(value, dict):
+                    configs[k].update(value)
                 else:
-                    configs[k] = v
+                    configs[k] = value
         # TODO update data
         configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
         configs["outputs"] = {"output": {"type": ValueType.STRING.value}}
         self.connection = configs.get("connection", "")
         self.parameters = configs.get("parameters", {})
         self.api = configs["api"]
+        self.inputs = configs["inputs"]
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -445,6 +448,18 @@ class Prompty(FlowBase):
 
         return ExecutablePromptyFlow.deserialize(self._data)
 
+    def _validate_inputs(self, input_values):
+        resolved_inputs = {}
+        missing_inputs = []
+        for input_name, value in self.inputs.items():
+            if input_name not in input_values and "default" not in value:
+                missing_inputs.append(input_name)
+                continue
+            resolved_inputs[input_name] = input_values.get(input_name, value.get("default", None))
+        if missing_inputs:
+            raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
+        return resolved_inputs
+
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -458,7 +473,7 @@ class Prompty(FlowBase):
         from promptflow.core._connection import AzureOpenAIConnection
 
         if args:
-            raise UserErrorException("Flow can only be called with keyword arguments.")
+            raise UserErrorException("Prompty can only be called with keyword arguments.")
         # 1. init client
         connection = get_connection(self.connection)
         api_client = get_open_ai_client_by_connection(connection=connection)
@@ -471,11 +486,12 @@ class Prompty(FlowBase):
             params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
 
         # 3.deal with prompt
+        inputs = self._validate_inputs(kwargs)
         prompt = preprocess_template_string(self.template)
-        referenced_images = find_referenced_image_set(kwargs)
+        referenced_images = find_referenced_image_set(inputs)
 
         # convert list type into ChatInputList type
-        converted_kwargs = convert_to_chat_list(kwargs)
+        converted_kwargs = convert_to_chat_list(inputs)
         rendered_prompt = render_jinja_template_content(
             template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
         )
@@ -483,7 +499,6 @@ class Prompty(FlowBase):
             params["prompt"] = rendered_prompt
             return api_client.completions.create(**params).choices[0].text
         else:
-            # TODO parse chat
             params["messages"] = parse_chat(rendered_prompt, list(referenced_images))
             completion = api_client.chat.completions.create(**params)
             return getattr(completion.choices[0].message, "content", "")

@@ -7,10 +7,10 @@ from promptflow._core.metric_logger import log_metric
 
 # flake8: noqa
 from promptflow._core.tool import ToolProvider, tool
-from promptflow.core._flow import AsyncFlow, Flow
+from promptflow.core._flow import AsyncFlow, Flow, Prompty
 
 # backward compatibility
 log_flow_metric = log_metric
 
 # TODO: Add the Flow class
-__all__ = ["log_metric", "ToolProvider", "tool", "Flow", "AsyncFlow"]
+__all__ = ["log_metric", "ToolProvider", "tool", "Flow", "Prompty", "AsyncFlow"]
