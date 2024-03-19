@@ -6,9 +6,15 @@ from promptflow import PFClient
 
 
 class FlowRunWrapper(object):
+<<<<<<< HEAD
     def __init__(self, flow_run, prefix=None, **kwargs):
         self.flow_run = flow_run
         self.column_mapping = flow_run.column_mapping
+=======
+    def __init__(self, flow_run, column_mapping=None, prefix=None, **kwargs):
+        self.flow_run = flow_run
+        self.column_mapping = column_mapping
+>>>>>>> 5ca5613b (Evaluate API - First Draft)
         self.prefix = prefix if prefix is not None else ""
         self.client = PFClient()
 

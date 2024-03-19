@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 VERSION = "0.0.b1"
+=======
+VERSION = "0.0.b1"
+>>>>>>> 5ca5613b (Evaluate API - First Draft)
