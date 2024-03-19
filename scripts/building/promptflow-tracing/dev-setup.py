@@ -97,7 +97,7 @@ def create_test_resource_template() -> None:
     
     connections_file_path = (PROMPT_FLOW_TRACING_ROOT_DIR / connections_filename).resolve().absolute()
     prompt_msg = (
-        f"Created test-required file {connections_filename!r} at {connections_file_path!r}, "
+        f"Created test-required file {connections_filename!r} at {connections_file_path.as_posix()!r}, "
         "please update with your test resource(s)."
     )
     print(prompt_msg)
