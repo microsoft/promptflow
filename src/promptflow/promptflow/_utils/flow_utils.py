@@ -11,10 +11,10 @@ from typing import Optional, Tuple, Union
 from promptflow._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import CHAT_HISTORY, DAG_FILE_NAME, DEFAULT_ENCODING
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
+from promptflow.tracing._utils import serialize
 
 logger = LoggerFactory.get_logger(name=__name__)
 
