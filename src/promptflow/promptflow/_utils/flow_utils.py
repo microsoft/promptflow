@@ -7,6 +7,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
+from promptflow._constants import PROMPTY_EXTENSION
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -118,6 +119,13 @@ def is_flex_flow(
             return False
         yaml_dict = load_yaml(file_path)
     return isinstance(yaml_dict, dict) and "entry" in yaml_dict
+
+
+def is_prompty_flow(file_path: Union[str, Path]):
+    """Check if the flow is a prompty flow."""
+    if not Path(file_path).exists():
+        raise UserErrorException(f"Cannot find the prompty file {file_path}.")
+    return Path(file_path).suffix.lower() == PROMPTY_EXTENSION
 
 
 def resolve_entry_file(entry: str, working_dir: Path) -> Optional[str]:

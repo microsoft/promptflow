@@ -26,7 +26,6 @@ import keyring
 import pydash
 from cryptography.fernet import Fernet
 from filelock import FileLock
-from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
@@ -74,6 +73,7 @@ from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
+from promptflow.core._utils import render_jinja_template_content
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.tracing._operation_context import OperationContext
 
@@ -316,8 +316,9 @@ def update_dict_value_with_connections(built_connections, connection_dict: dict)
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
     with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
-        template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
-    return template.render(**kwargs)
+        return render_jinja_template_content(
+            f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline, **kwargs
+        )
 
 
 def print_yellow_warning(message):

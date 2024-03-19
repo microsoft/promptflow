@@ -932,3 +932,48 @@ class EagerFlow(FlowBase):
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
         )
+
+
+@dataclass
+class PromptyFlow(FlowBase):
+    """This class represents a prompty flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
+    """
+
+    connection: str
+
+    def get_connection_names(self):
+        """Return connection names."""
+        return (self.connection,)
+
+    @staticmethod
+    def deserialize(data: dict) -> "PromptyFlow":
+        """Deserialize the flow from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.EagerFlow
+        """
+
+        inputs = data.get("inputs") or {}
+        outputs = data.get("outputs") or {}
+        return PromptyFlow(
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            connection=data.get("connection"),
+        )

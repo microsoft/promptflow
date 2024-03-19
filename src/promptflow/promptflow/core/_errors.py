@@ -49,3 +49,21 @@ class InvalidConnectionTypeError(CoreError):
     """Exception raised if connection type is not found."""
 
     pass
+
+
+class InvalidConnectionError(CoreError):
+    """Exception raised if provide invalid connection info."""
+
+    pass
+
+
+class ChatAPIInvalidRoleError(CoreError):
+    """Exception raised when failed to validate chat api role."""
+
+    pass
+
+
+class ChatAPIFunctionRoleInvalidFormatError(CoreError):
+    """Exception raised when failed to validate chat api function role format."""
+
+    pass

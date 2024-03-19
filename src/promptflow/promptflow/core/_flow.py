@@ -15,7 +15,16 @@ from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
 from promptflow.core._connection import _Connection
-from promptflow.core._utils import generate_flow_meta, get_open_ai_client_by_connection, render_jinja_template_content
+from promptflow.core._utils import (
+    convert_to_chat_list,
+    find_referenced_image_set,
+    generate_flow_meta,
+    get_connection,
+    get_open_ai_client_by_connection,
+    parse_chat,
+    preprocess_template_string,
+    render_jinja_template_content,
+)
 from promptflow.exceptions import UserErrorException
 
 
@@ -451,11 +460,7 @@ class Prompty(FlowBase):
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
         # 1. init client
-        # TODO dependency
-        from promptflow._sdk._pf_client import PFClient
-
-        connection = PFClient().connections.get(self.connection, with_secret=True)
-        connection = AzureOpenAIConnection(api_base=connection.api_base, api_key=connection._secrets["api_key"])
+        connection = get_connection(self.connection)
         api_client = get_open_ai_client_by_connection(connection=connection)
 
         # 2. prepare params
@@ -466,16 +471,20 @@ class Prompty(FlowBase):
             params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
 
         # 3.deal with prompt
-        # TODO support image inputs
-        prompt = render_jinja_template_content(
-            template_content=self.template, trim_blocks=True, keep_trailing_newline=True, **kwargs
+        prompt = preprocess_template_string(self.template)
+        referenced_images = find_referenced_image_set(kwargs)
+
+        # convert list type into ChatInputList type
+        converted_kwargs = convert_to_chat_list(kwargs)
+        rendered_prompt = render_jinja_template_content(
+            template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
         )
         if self.api == "completion":
-            params["prompt"] = prompt
+            params["prompt"] = rendered_prompt
             return api_client.completions.create(**params).choices[0].text
         else:
             # TODO parse chat
-            params["messages"] = prompt
+            params["messages"] = parse_chat(rendered_prompt, list(referenced_images))
             completion = api_client.chat.completions.create(**params)
             return getattr(completion.choices[0].message, "content", "")
 
