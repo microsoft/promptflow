@@ -87,7 +87,7 @@ def process_override(patch_dict=None):
 
 @pytest.fixture
 def recording_injection(recording_setup):
-    yield from process_override()
+    process_override()
     # This fixture is used to main entry point to inject recording mode into the test
     try:
         yield (is_replay() or is_record(), recording_array_extend)
