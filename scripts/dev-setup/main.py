@@ -63,7 +63,12 @@ def inject_pth_file() -> None:
 
 
 def install_pkg_editable(pkg: str, verbose: bool) -> None:
-    folder_name = pkg.split("[")[0]  # remove extra(s)
+    if "[" in pkg:
+        folder_name, extras = pkg.split("[")
+        extras = f"[{extras}"
+    else:
+        folder_name = pkg
+        extras = ""
     pkg_working_dir = REPO_ROOT_DIR / "src" / folder_name
     print(pkg_working_dir.as_posix())
     with change_cwd(pkg_working_dir):
@@ -71,7 +76,7 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
 
         # pip install -e . from pyproject.toml/setup.py
         print_blue(f"- Installing {pkg} from source")
-        cmd = ["pip", "install", "--editable", "."]
+        cmd = ["pip", "install", "--editable", f".{extras}"]
         print_blue(f"Running {cmd}")
         run_cmd(cmd, verbose=verbose)
 
