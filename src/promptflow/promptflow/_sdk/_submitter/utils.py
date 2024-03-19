@@ -47,6 +47,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._eager_flow import FlexFlow
 from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._prompty import Prompty
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
@@ -230,6 +231,9 @@ def variant_overwrite_context(
     elif isinstance(flow, FlexFlow):
         # eager flow don't support overwrite variant
         yield flow
+    elif isinstance(flow, Prompty):
+        # Prompty don't support overwrite variant
+        yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
@@ -260,6 +264,8 @@ class SubmitterHelper:
 
         if isinstance(flow, FlexFlow):
             # TODO(2898247): support prompt flow management connection for eager flow
+            return {}
+        elif isinstance(flow, Prompty):
             return {}
 
         client = client or PFClient()

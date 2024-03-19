@@ -478,6 +478,8 @@ class BatchEngine:
         # TODO: remove this after path is removed
         if flow_file.suffix.lower() == ".dll":
             return True, FlowLanguage.CSharp
+        elif flow_file.suffix.lower() == ".prompty":
+            return True, FlowLanguage.Python
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)

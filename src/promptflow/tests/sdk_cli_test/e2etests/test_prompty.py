@@ -1,9 +1,11 @@
 import pytest
 
+from promptflow._sdk._pf_client import PFClient
 from promptflow.core import Flow, Prompty
 from promptflow.core._errors import MissingRequiredInputError
 
 PROMPTY_DIR = "./tests/test_configs/prompty"
+DATA_DIR = "./tests/test_configs/datas"
 
 
 class TestPrompty:
@@ -88,8 +90,9 @@ class TestPrompty:
         result = image_prompty(image_input={"data:image/png;path": ""})
         assert result
 
-    def test_prompty_batch_run(self):
-        pass
+    def test_prompty_batch_run(self, client: PFClient):
+        run = client.run(source=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")
+        assert run
 
     def test_prompty_test(self):
         pass
