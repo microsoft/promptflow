@@ -53,7 +53,7 @@ def collect_and_install_from_pyproject() -> None:
 
 
 def inject_pth_file() -> None:
-    # content of the .pth file will be aded to `sys.path`
+    # content of the .pth file will be added to `sys.path`
     # for packages installed from pyproject.toml, this file should already be there
     # for `promptflow`, inject this, and we can avoid `conda env config vars set`
     # reference: https://docs.python.org/3/library/site.html
