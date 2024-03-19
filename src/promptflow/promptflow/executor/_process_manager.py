@@ -4,7 +4,6 @@ import signal
 import sys
 import time
 from dataclasses import dataclass
-from enum import Enum
 from functools import partial
 from multiprocessing import Process, Queue
 from pathlib import Path
@@ -12,7 +11,7 @@ from typing import Dict, List
 
 import psutil
 
-from promptflow._constants import ProcessPoolConstants
+from promptflow._constants import ProcessControlSignal, ProcessPoolConstants
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor._errors import (
@@ -31,13 +30,6 @@ class ProcessInfo:
     index: int
     process_id: str
     process_name: str
-
-
-class ProcessControlSignal(str, Enum):
-    START = "start"
-    RESTART = "restart"
-    END = "end"
-    SPAWNED_MANAGER_END = "spawned_manager_end"
 
 
 class AbstractProcessManager:
