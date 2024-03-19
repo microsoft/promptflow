@@ -7,9 +7,10 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 from promptflow import load_flow
 from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
+from promptflow.evals import AzureOpenAIModelConfiguration
 
 
-def init(model_config: AzureOpenAIConnection):
+def init(model_config: AzureOpenAIModelConfiguration):
     """
     Initialize an evaluation function configured for a specific Azure OpenAI model.
 
@@ -28,6 +29,7 @@ def init(model_config: AzureOpenAIConnection):
             context="Tokyo is Japan's capital, known for its blend of traditional culture \
                 and technological advancements.")
     """
+
     def eval_fn(answer: str, context: str):
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
@@ -35,11 +37,18 @@ def init(model_config: AzureOpenAIConnection):
         f = load_flow(source=flow_dir)
 
         # Override the connection
-        f.context.connections = { 
-            "query_llm": { "connection": model_config } 
+        f.context.connections = {
+            "query_llm": {"connection": AzureOpenAIConnection(
+                api_base=model_config.api_base,
+                api_key=model_config.api_key,
+                api_version=model_config.api_version,
+                api_type="azure"
+            ),
+                "deployment_name": model_config.deployment_name,
+            }
         }
 
         # Run the evaluation flow
         return f(answer=answer, context=context)
+
     return eval_fn
-    
