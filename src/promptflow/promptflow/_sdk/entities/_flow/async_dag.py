@@ -2,7 +2,6 @@ from os import PathLike
 from typing import Union
 
 from promptflow._constants import DEFAULT_ENCODING, FlowLanguage
-from promptflow._utils.docs import AsyncFlowDoc
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.exceptions import UserErrorException
 
@@ -10,9 +9,18 @@ from .dag import Flow
 
 
 class AsyncFlow(Flow):
-    __doc__ = AsyncFlowDoc.__doc__
+    """Async flow is based on Flow, which is used to invoke flow in async mode.
 
-    async def invoke_async(self, inputs: dict) -> "LineResult":
+    Simple Example:
+
+    .. code-block:: python
+
+        from promptflow.entities import AsyncFlow
+        flow = AsyncFlow.load(source="path/to/flow.dag.yaml")
+        result = await flow(input_a=1, input_b=2)
+    """
+
+    async def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         from promptflow._sdk._submitter import TestSubmitter
 
@@ -25,7 +33,7 @@ class AsyncFlow(Flow):
                 result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
                 return result
         else:
-            return await super().invoke_async(inputs=inputs)
+            return await super().invoke(inputs=inputs)
 
     # region overrides
     @classmethod
@@ -69,5 +77,5 @@ class AsyncFlow(Flow):
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        result = await self.invoke_async(inputs=kwargs)
+        result = await self.invoke(inputs=kwargs)
         return result.output

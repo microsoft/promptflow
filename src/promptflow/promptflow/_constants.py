@@ -25,6 +25,8 @@ USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
 DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
 
+CHAT_HISTORY = "chat_history"
+
 # Tool meta info
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"

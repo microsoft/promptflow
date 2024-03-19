@@ -16,7 +16,7 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
         super(AppendToDictAction, self).__call__(parser, namespace, action, option_string)
 
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
-        from promptflow._sdk._utils import strip_quotation
+        from promptflow._utils.utils import strip_quotation
 
         kwargs = {}
         for item in values:
