@@ -43,7 +43,6 @@ from promptflow._core.tools_manager import (
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
 from promptflow._sdk._utils import (
     get_used_connection_names_from_environment_variables,
-    setup_user_agent_to_operation_context,
     update_environment_variables_with_connections,
 )
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -85,6 +84,7 @@ from promptflow._utils.multimedia_utils import (
     persist_multimedia_data,
     resolve_multimedia_data_recursively,
 )
+from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._utils.utils import (
     AttrDict,
     camel_to_snake,

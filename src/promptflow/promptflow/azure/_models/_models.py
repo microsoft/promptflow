@@ -8,8 +8,6 @@
 
 import msrest.serialization
 
-from azure.core.exceptions import HttpResponseError
-
 
 class WorkspaceConnectionPropertiesV2(msrest.serialization.Model):
     """WorkspaceConnectionPropertiesV2.
