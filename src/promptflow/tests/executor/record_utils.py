@@ -59,7 +59,7 @@ def setup_recording():
     return patches
 
 
-def setup_patch(patch_dict={}):
+def setup_patching(patch_dict={}):
     patches = []
 
     def start_patches(patch_targets):
