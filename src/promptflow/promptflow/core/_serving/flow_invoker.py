@@ -5,8 +5,8 @@ import dataclasses
 from pathlib import Path
 from typing import Callable, Union
 
-from promptflow import PFClient
 from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import (
     dump_flow_result,
     get_local_connections_from_executable,

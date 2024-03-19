@@ -732,7 +732,7 @@ class FlowOperations(TelemetryMixin):
         This is a private interface for vscode extension, so do not change the interface unless necessary.
 
         Usage:
-        from promptflow import PFClient
+        from promptflow.client import PFClient
         PFClient().flows._generate_tools_meta(flow="flow.dag.yaml", source_name="convert_to_dict.py")
 
         :param flow: path to the flow directory or flow dag to export
@@ -812,7 +812,7 @@ class FlowOperations(TelemetryMixin):
         This is a private interface for vscode extension, so do not change the interface unless necessary.
 
         Usage:
-        from promptflow import PFClient
+        from promptflow.client import PFClient
         PFClient().flows._generate_flow_meta(flow="flow.dag.yaml")
 
         :param flow: path to the flow directory or flow dag to export
