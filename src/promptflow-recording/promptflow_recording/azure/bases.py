@@ -81,7 +81,7 @@ class PFAzureIntegrationTestRecording:
 
     def _get_recording_file(self) -> Path:
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
-        recording_dir = (test_file_path.parent / "recordings").resolve()
+        recording_dir = (Path(__file__).parent / "recordings").resolve()
         recording_dir.mkdir(exist_ok=True)
 
         test_file_name = test_file_path.stem

@@ -19,16 +19,27 @@ from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow_recording.local import (
-    RecordStorage,
-    check_pydantic_v2,
-    delete_count_lock_file,
-    inject_async_with_recording,
-    inject_sync_with_recording,
-    mock_tool,
-    recording_array_reset,
-)
-from promptflow_recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
+
+try:
+    from promptflow_recording.local import recording_array_reset
+    from promptflow_recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
+except ImportError:
+    # Run test in empty mode if promptflow-recording is not installed
+    def recording_array_reset():
+        pass
+
+    def is_in_ci_pipeline():
+        return False
+
+    def is_live():
+        return False
+
+    def is_record():
+        return False
+
+    def is_replay():
+        return False
+
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -38,6 +49,13 @@ EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 SRC_ROOT = PROMOTFLOW_ROOT / ".."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(SRC_ROOT / "promptflow-recording/promptflow_recording/local/recordings").resolve()
+
+
+def pytest_configure():
+    pytest.is_live = is_live()
+    pytest.is_record = is_record()
+    pytest.is_replay = is_replay()
+    pytest.is_in_ci_pipeline = is_in_ci_pipeline()
 
 
 @pytest.fixture(scope="session")
@@ -268,9 +286,13 @@ def recording_injection(mocker: MockerFixture):
     try:
         yield
     finally:
-        if is_replay() or is_record():
+        if pytest.is_replay or pytest.is_record:
+            from promptflow_recording.local import RecordStorage
+
             RecordStorage.get_instance().delete_lock_file()
-        if is_live():
+        if pytest.is_live:
+            from promptflow_recording.local import delete_count_lock_file
+
             delete_count_lock_file()
         recording_array_reset()
 
@@ -291,7 +313,15 @@ def setup_recording_injection_if_enabled():
             patches.append(patcher)
             patcher.start()
 
-    if is_replay() or is_record():
+    if pytest.is_replay or pytest.is_record:
+        from promptflow_recording.local import (
+            RecordStorage,
+            inject_async_with_recording,
+            inject_sync_with_recording,
+            mock_tool,
+        )
+        from promptflow_recording.record_mode import check_pydantic_v2
+
         check_pydantic_v2()
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
@@ -308,7 +338,9 @@ def setup_recording_injection_if_enabled():
         }
         start_patches(patch_targets)
 
-    if is_live() and is_in_ci_pipeline():
+    if pytest.is_live and pytest.is_in_ci_pipeline:
+        from promptflow_recording.local import inject_async_with_recording, inject_sync_with_recording
+
         patch_targets = {
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
             "promptflow.tracing._integrations._openai_injector.inject_async": inject_async_with_recording,
