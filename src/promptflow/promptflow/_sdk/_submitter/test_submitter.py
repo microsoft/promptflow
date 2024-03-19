@@ -13,11 +13,11 @@ from colorama import Fore, init
 from promptflow._internal import ConnectionManager
 from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow._utils.flow_utils import parse_variant
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException

@@ -9,11 +9,11 @@ from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
-from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import parse_variant
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode

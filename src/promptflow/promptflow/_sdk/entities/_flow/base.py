@@ -137,7 +137,7 @@ class Flow(FlowBase):
 
     .. code-block:: python
 
-        from promptflow.core import Flow
+        from promptflow.entities import Flow
         flow = Flow.load(source="path/to/flow.dag.yaml")
         result = flow(input_a=1, input_b=2)
 

@@ -62,7 +62,7 @@ class TestFlowAsFunc:
     async def test_flow_as_a_func_real_async(self):
         from promptflow.core._flow import AsyncFlow
 
-        original_async_func = AsyncFlow.invoke_async
+        original_async_func = AsyncFlow.invoke
 
         # Modify the original function and retrieve the time info.
         run_info_group = []
@@ -75,7 +75,7 @@ class TestFlowAsFunc:
             node_run_infos_group.append(obj.node_run_infos)
             return obj
 
-        with mock.patch("promptflow.core._flow.AsyncFlow.invoke_async", parse_invoke_async):
+        with mock.patch("promptflow.core._flow.AsyncFlow.invoke", parse_invoke_async):
             f_async_tools = AsyncFlow.load(f"{FLOWS_DIR}/async_tools")
             f_env_var_async = AsyncFlow.load(f"{FLOWS_DIR}/print_env_var_async")
 

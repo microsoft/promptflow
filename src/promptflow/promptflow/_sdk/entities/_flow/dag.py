@@ -8,7 +8,6 @@ from marshmallow import Schema
 
 from promptflow._constants import FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._utils.docs import FlowDoc
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
@@ -20,7 +19,10 @@ logger = get_cli_sdk_logger()
 
 
 class Flow(FlowBase):
-    __doc__ = FlowDoc.__doc__
+    """A FlexFlow represents an non-dag flow, which uses codes to define the flow.
+    FlexFlow basically behave like a Flow, but its entry function should be provided in the flow.dag.yaml file.
+    Load of this non-dag flow is provided, but direct call of it will cause exceptions.
+    """
 
     def __init__(
         self,

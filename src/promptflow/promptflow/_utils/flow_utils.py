@@ -4,16 +4,19 @@
 import hashlib
 import json
 import os
+import re
 from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
-from promptflow._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._constants import CHAT_HISTORY, DEFAULT_ENCODING, DEFAULT_FLOW_YAML_FILE_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import CHAT_HISTORY, DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.utils import strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import UserErrorException
+from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.tracing._utils import serialize
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -75,11 +78,11 @@ def resolve_flow_path(
 
     if new:
         if flow_path.is_dir():
-            return flow_path, DAG_FILE_NAME
+            return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
         return flow_path.parent, flow_path.name
 
-    if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-        return flow_path, DAG_FILE_NAME
+    if flow_path.is_dir() and (flow_path / DEFAULT_FLOW_YAML_FILE_NAME).is_file():
+        return flow_path, DEFAULT_FLOW_YAML_FILE_NAME
     elif flow_path.is_file():
         return flow_path.parent, flow_path.name
 
@@ -201,7 +204,7 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, cu
             json.dump(output, f, indent=2, ensure_ascii=False)
 
 
-def is_executable_chat_flow(flow):
+def is_executable_chat_flow(flow: ExecutableFlow):
     """
     Check if the flow is chat flow.
     Check if chat_history in the flow input and only one chat input and
@@ -232,3 +235,19 @@ def is_executable_chat_flow(flow):
         _is_chat_flow = False
         error_msg = "chat_history is required in the inputs of chat flow"
     return _is_chat_flow, chat_history_input_name, error_msg
+
+
+def parse_variant(variant: str) -> Tuple[str, str]:
+    variant_regex = r"\${([^.]+).([^}]+)}"
+    match = re.match(variant_regex, strip_quotation(variant))
+    if match:
+        return match.group(1), match.group(2)
+    else:
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
