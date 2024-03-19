@@ -20,6 +20,12 @@ class InvalidCustomLLMTool(ValidationException):
     pass
 
 
+class InvalidAssistantTool(ValidationException):
+    """Exception raised when assistant tool definition is wrong."""
+
+    pass
+
+
 class ValueTypeUnresolved(ValidationException):
     pass
 
