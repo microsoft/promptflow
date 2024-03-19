@@ -443,7 +443,7 @@ class LineExecutionProcessPool:
     # endregion
 
     # region private methods
-    def _delete_log_files():
+    def _delete_log_files(self):
         try:
             shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
         except Exception as e:
