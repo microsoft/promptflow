@@ -48,7 +48,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
-from promptflow._utils.dataclass_serializer import deserialize_dataclass, serialize
+from promptflow._utils.dataclass_serializer import deserialize_dataclass
 from promptflow._utils.exception_utils import (
     ErrorResponse,
     ExceptionPresenter,
@@ -112,3 +112,4 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._tracer import Tracer
+from promptflow.tracing._utils import serialize

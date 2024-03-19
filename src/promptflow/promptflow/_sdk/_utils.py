@@ -68,7 +68,6 @@ from promptflow._sdk._errors import (
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
@@ -76,6 +75,7 @@ from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._utils import serialize
 
 logger = get_cli_sdk_logger()
 

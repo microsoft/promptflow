@@ -3,9 +3,9 @@ from datetime import datetime
 
 import pytest
 
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.storage.run_records import LineRunRecord, NodeRunRecord
+from promptflow.tracing._utils import serialize
 
 
 @pytest.mark.unittest
