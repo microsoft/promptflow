@@ -4,8 +4,10 @@
 
 import argparse
 import os
+import site
 import typing
 from dataclasses import dataclass
+from pathlib import Path
 
 from test_resources import REGISTERED_TEST_RESOURCES_FUNCTIONS
 from utils import REPO_ROOT_DIR, change_cwd, print_blue, run_cmd
@@ -50,6 +52,16 @@ def collect_and_install_from_pyproject() -> None:
     run_cmd(cmd)
 
 
+def inject_pth_file() -> None:
+    # content of the .pth file will be aded to `sys.path`
+    # for packages installed from pyproject.toml, this file should already be there
+    # for `promptflow`, inject this, and we can avoid `conda env config vars set`
+    # reference: https://docs.python.org/3/library/site.html
+    site_packages_path = Path(site.getsitepackages()[0])
+    with open(site_packages_path / "promptflow.pth", mode="w", encoding="utf-8") as f:
+        f.write((REPO_ROOT_DIR / "src" / "promptflow").resolve().absolute().as_posix())   
+
+
 def install_pkg_editable(pkg: str, verbose: bool) -> None:
     folder_name = pkg.split("[")[0]  # remove extra(s)
     pkg_working_dir = REPO_ROOT_DIR / folder_name
@@ -69,6 +81,7 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
         if os.path.exists("dev_requirements.txt"):
             cmd = ["pip", "install", "-r", "dev_requirements.txt"]
             run_cmd(cmd, verbose=verbose)
+            inject_pth_file()
         # promptflow-* will have "pyproject.toml", parse and install
         # we can refine this leveraging `poetry export` later
         elif os.path.exists("pyproject.toml"):
