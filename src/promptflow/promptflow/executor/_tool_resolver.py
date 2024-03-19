@@ -184,7 +184,7 @@ class ToolResolver:
             raise InvalidAssistantTool(
                 message_format=(
                     "The 'tool' property is missing in 'source' of the assistant package tool "
-                    "for node '{node_name}'. Please make sure the assistant definition is correct."
+                    "in node '{node_name}'. Please make sure the assistant definition is correct."
                 ),
                 node_name=node_name,
             )
@@ -216,8 +216,8 @@ class ToolResolver:
         if source_path is None:
             raise InvalidAssistantTool(
                 message_format=(
-                    "The 'path' property is missing in 'source' of the assistant package tool "
-                    "for node '{node_name}'. Please make sure the assistant definition is correct."
+                    "The 'path' property is missing in 'source' of the assistant python tool "
+                    "in node '{node_name}'. Please make sure the assistant definition is correct."
                 ),
                 node_name=node_name,
             )
@@ -379,7 +379,10 @@ class ToolResolver:
     def resolve_function_by_definition(self, node_name: str, tool: dict, convert_input_types=True) -> AssistantTool:
         try:
             if tool.get("source") is None:
-                raise UserErrorException(f"Node {node_name} does not have source defined in assistant definition.")
+                raise InvalidAssistantTool(
+                    message_format=("Node {node_name} does has tools without source defined in assistant definition."),
+                    node_name=node_name,
+                )
             tool_type = tool.get("tool_type")
             if tool_type == ToolType.PYTHON:
                 source_type = tool["source"].get("type")

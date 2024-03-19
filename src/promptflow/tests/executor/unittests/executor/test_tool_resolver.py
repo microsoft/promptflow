@@ -553,7 +553,7 @@ class TestToolResolver:
             {
                 "type": "function",
                 "tool_type": "python",
-                "source": {"type": "code", "path": "test_assistant_tool_invoker.py"},
+                "source": {"type": "code", "path": "assistant_sample_tool.py"},
                 "predefined_inputs": predefined_inputs,
             },
         ]
