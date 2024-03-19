@@ -59,7 +59,7 @@ def inject_pth_file() -> None:
     # reference: https://docs.python.org/3/library/site.html
     site_packages_path = Path(site.getsitepackages()[0])
     with open(site_packages_path / "promptflow.pth", mode="w", encoding="utf-8") as f:
-        f.write((REPO_ROOT_DIR / "src" / "promptflow").resolve().absolute().as_posix())   
+        f.write((REPO_ROOT_DIR / "src" / "promptflow").resolve().absolute().as_posix())
 
 
 def install_pkg_editable(pkg: str, verbose: bool) -> None:
