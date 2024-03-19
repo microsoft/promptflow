@@ -517,7 +517,7 @@ class TestBatch:
         ],
     )
     def test_batch_run_exec_line_raise_exception(
-        self, flow_folder, inputs_mapping, dev_connections, patch_dict, configure_custom_patch
+        self, flow_folder, inputs_mapping, dev_connections, patch_dict, configure_process_with_custom_patch
     ):
         batch_result, output_dir = submit_batch_run(
             flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True

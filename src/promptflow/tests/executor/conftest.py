@@ -78,17 +78,7 @@ def setup_custom_process_target(patch_dict=None):
     )
 
 
-@pytest.fixture
-def process_override():
-    # This fixture is used to override the Process class to ensure the recording mode works
-    # Step I: set process pool targets placeholder with customized targets
-    setup_custom_process_target()
-    # Step II: override the process pool class
-    yield from process_class_override_setup()
-
-
-def configure_process_with_custom_patch(patch_dict):
-    # This fixture is used to override the Process class to ensure the custom patch works.
+def process_override(patch_dict=None):
     # Step I: set process pool targets placeholder with customized targets
     setup_custom_process_target(patch_dict)
     # Step II: override the process pool class
@@ -96,7 +86,8 @@ def configure_process_with_custom_patch(patch_dict):
 
 
 @pytest.fixture
-def recording_injection(recording_setup, process_override):
+def recording_injection(recording_setup):
+    yield from process_override()
     # This fixture is used to main entry point to inject recording mode into the test
     try:
         yield (is_replay() or is_record(), recording_array_extend)
@@ -109,8 +100,8 @@ def recording_injection(recording_setup, process_override):
 
 
 @pytest.fixture
-def configure_custom_patch(patch_dict):
-    yield from configure_process_with_custom_patch(patch_dict)
+def configure_process_with_custom_patch(patch_dict):
+    yield from process_override(patch_dict)
 
 
 @pytest.fixture(autouse=True, scope="session")
