@@ -247,7 +247,7 @@ class Flow(FlowBase):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow.core._flow_context_resolver import FlowContextResolver
+        from promptflow._sdk.entities._flow._flow_context_resolver import FlowContextResolver
 
         invoker = FlowContextResolver.resolve(flow=self)
         result = invoker._invoke(
