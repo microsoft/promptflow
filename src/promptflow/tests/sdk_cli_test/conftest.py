@@ -13,10 +13,10 @@ from sqlalchemy import create_engine
 from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
-from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
@@ -132,7 +132,7 @@ def flow_serving_client(mocker: MockerFixture):
 @pytest.fixture
 def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
     from promptflow._core.connection_manager import ConnectionManager
-    from promptflow._sdk._serving.utils import encode_dict
+    from promptflow.core._serving.utils import encode_dict
 
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     connection_manager = ConnectionManager(connection_dict)
