@@ -246,6 +246,26 @@ def eager_flow_evc(mocker: MockerFixture):
     return create_client_by_model("environment_variables_connection", mocker, model_root=EAGER_FLOW_ROOT)
 
 
+@pytest.fixture
+def eager_flow_evc_override(mocker: MockerFixture):
+    return create_client_by_model(
+        "environment_variables_connection",
+        mocker,
+        model_root=EAGER_FLOW_ROOT,
+        environment_variables={"TEST": "${azure_open_ai_connection.api_version}"},
+    )
+
+
+@pytest.fixture
+def eager_flow_evc_override_not_exist(mocker: MockerFixture):
+    return create_client_by_model(
+        "environment_variables",
+        mocker,
+        model_root=EAGER_FLOW_ROOT,
+        environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
+    )
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.

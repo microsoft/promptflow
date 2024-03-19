@@ -635,6 +635,7 @@ def test_eager_flow_multiple_stream_output(multiple_stream_outputs):
 
 @pytest.mark.e2etest
 def test_eager_flow_evc(eager_flow_evc):
+    # Supported: flow with EVC in definition
     response = eager_flow_evc.post("/score", data=json.dumps({}))
     assert (
         response.status_code == 200
@@ -644,6 +645,23 @@ def test_eager_flow_evc(eager_flow_evc):
 
 
 @pytest.mark.e2etest
-def test_eager_flow_evc_override(eager_flow_evc):
-    # TODO: add this
-    pass
+def test_eager_flow_evc_override(eager_flow_evc_override):
+    # Supported: EVC's connection exist in flow definition
+    response = eager_flow_evc_override.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == "Hello world! 2023-03-15-preview"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_override_not_exist(eager_flow_evc_override_not_exist):
+    # Not supported: EVC's connection not exist in flow definition
+    response = eager_flow_evc_override_not_exist.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # EVC not resolved since the connection not exist in flow defintion
+    assert response == "Hello world! ${azure_open_ai_connection.api_type}"
