@@ -18,6 +18,7 @@
 - [SDK/CLI] environment variable `PF_HOME_DIRECTORY` doesn't work for run details & logs.
 - [SDK/CLI] Support override hard coded "deployment_name" and "model".
 - [SDK] `connection.provider` config doesn't work when calling flow as a function.
+- [SDK/CLI] Support override unprovided connection inputs in nodes.
 
 ## 1.6.0 (2024.03.01)
 

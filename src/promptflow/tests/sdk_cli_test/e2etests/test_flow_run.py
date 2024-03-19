@@ -1408,3 +1408,21 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" in run_dict
         assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]
+
+    def test_run_with_non_provided_connection_override(self, pf, local_custom_connection):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"deployment_name": "my_deployment_name", "model": "my_model"}],
+        }
