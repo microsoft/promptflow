@@ -266,6 +266,16 @@ def eager_flow_evc_override_not_exist(mocker: MockerFixture):
     )
 
 
+@pytest.fixture
+def eager_flow_evc_remove(mocker: MockerFixture):
+    return create_client_by_model(
+        "environment_variables_connection",
+        mocker,
+        model_root=EAGER_FLOW_ROOT,
+        environment_variables={"TEST": "value"},
+    )
+
+
 # ==================== Recording injection ====================
 # To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
 # in fork mode, this is automatically enabled.
