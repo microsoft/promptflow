@@ -9,37 +9,30 @@ from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
 
 
-def init(model_config: AzureOpenAIConnection):
+def init():
     """
-    Initialize an evaluation function configured for a specific Azure OpenAI model.
+    Initialize an evaluation function for calculating F1 score.
 
-    :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIConnection
-    :return: A function that evaluates groundedness.
+    :return: A function that evaluates F1 score.
     :rtype: function
 
     **Usage**
 
     .. code-block:: python
 
-        eval_fn = groundedness.init(model_config)
+        eval_fn = f1_score.init()
         result = eval_fn(
             answer="The capital of Japan is Tokyo.", 
-            context="Tokyo is Japan's capital, known for its blend of traditional culture \
+            ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
                 and technological advancements.")
     """
-    def eval_fn(answer: str, context: str):
+    def eval_fn(answer: str, ground_truth: str):    
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
         f = load_flow(source=flow_dir)
 
-        # Override the connection
-        f.context.connections = { 
-            "query_llm": { "connection": model_config } 
-        }
-
         # Run the evaluation flow
-        return f(answer=answer, context=context)
+        return f(answer=answer, ground_truth=ground_truth)
     return eval_fn
     

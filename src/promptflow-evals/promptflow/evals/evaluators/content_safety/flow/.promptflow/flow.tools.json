@@ -1,0 +1,76 @@
+{
+  "package": {},
+  "code": {
+    "aggregate.py": {
+      "type": "python",
+      "inputs": {
+        "results": {
+          "type": [
+            "object"
+          ]
+        },
+        "thresholds": {
+          "type": [
+            "object"
+          ]
+        },
+        "metric_names": {
+          "type": [
+            "object"
+          ]
+        }
+      },
+      "source": "aggregate.py",
+      "function": "aggregate"
+    },
+    "evaluate_with_rai_service.py": {
+      "type": "python",
+      "inputs": {
+        "question": {
+          "type": [
+            "string"
+          ]
+        },
+        "answer": {
+          "type": [
+            "string"
+          ]
+        },
+        "metric_name": {
+          "type": [
+            "string"
+          ]
+        },
+        "project_scope": {
+          "type": [
+            "object"
+          ]
+        },
+        "credential": {
+          "type": [
+            "object"
+          ]
+        }
+      },
+      "source": "evaluate_with_rai_service.py",
+      "function": "evaluate_with_rai_service"
+    },
+    "validate_inputs.py": {
+      "type": "python",
+      "inputs": {
+        "question": {
+          "type": [
+            "string"
+          ]
+        },
+        "answer": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "validate_inputs.py",
+      "function": "validate_inputs"
+    }
+  }
+}

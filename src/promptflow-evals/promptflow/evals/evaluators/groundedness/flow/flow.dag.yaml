@@ -14,6 +14,14 @@ outputs:
     type: string
     reference: ${parse_score.output}
 nodes:
+- name: validate_inputs
+  type: python
+  source:
+    type: code
+    path: validate_inputs.py
+  inputs:
+    answer: ${inputs.answer}
+    context: ${inputs.context}
 - name: query_llm
   type: llm
   source:
@@ -31,6 +39,9 @@ nodes:
   connection: open_ai_connection
   api: chat
   use_variants: false
+  activate:
+    when: ${validate_inputs.output}
+    is: true
 - name: parse_score
   type: python
   source:
