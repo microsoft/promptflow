@@ -277,6 +277,7 @@ class TestExceptions:
         _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
         assert error_message == "File '{privacy_info}' not found."
 
+    def test_message_with_privacy_info_filter2(self):
         source = Path(__file__)
         e = ValueError(
             f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
@@ -294,3 +295,22 @@ class TestExceptions:
         ex = UserErrorException(f"Load entity error: {ex}", privacy_info=[str(ex)])
         _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
         assert error_message == "Load entity error: {privacy_info}"
+
+        func = self.test_message_with_privacy_info_filter2
+        request_id = "0000-0000-0000-0000"
+        ex.status_code = 404
+        ex.reason = "params error"
+        ex = UserErrorException(
+            f"Calling {func.__name__} failed with request id: {request_id}"
+            f"Status code: {ex.status_code}"
+            f"Reason: {ex.reason}"
+            f"Error message: {ex.message}",
+            privacy_info=[ex.reason, ex.message],
+        )
+        _, _, _, error_message, _ = _ErrorInfo.get_error_info(ex)
+        assert error_message == (
+            "Calling test_message_with_privacy_info_filter2 failed with request id: 0000-0000-0000-0000"
+            "Status code: 404"
+            "Reason: {privacy_info}"
+            "Error message: {privacy_info}"
+        )
