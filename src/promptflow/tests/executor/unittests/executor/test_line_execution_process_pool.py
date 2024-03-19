@@ -21,7 +21,7 @@ from promptflow.executor._line_execution_process_pool import (
     format_current_process_info,
     log_process_status,
 )
-from promptflow.executor._process_manager import create_spawned_fork_process_manager
+from promptflow.executor._process_manager import ProcessPoolConstants, create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -209,6 +209,15 @@ class TestLineExecutionProcessPool:
                 run_id=run_id,
             ) as pool:
                 result_list = await pool.run(zip(range(nlines), bulk_inputs))
+                # Check 'spawned_fork_process_manager_stderr_runid.log' exits.
+                log_file = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+                assert log_file.exists() is True
+                child_process_log_exit = False
+                for file in ProcessPoolConstants.PROCESS_LOG_PATH.iterdir():
+                    # Check 'process_stderr.log' exits.
+                    if file.name.startswith(ProcessPoolConstants.PROCESS_LOG_NAME):
+                        child_process_log_exit = True
+                assert child_process_log_exit is True
             assert len(result_list) == nlines
             for i, line_result in enumerate(result_list):
                 assert isinstance(line_result, LineResult)

@@ -480,7 +480,7 @@ def _calculate_snapshot(column_mapping, input_data, flow_path):
                     if ignore_item in dirs:
                         dirs.remove(ignore_item)
                 for file in files:
-                    with open(os.path.join(root, file), "r") as f:
+                    with open(os.path.join(root, file), "r", encoding="utf-8") as f:
                         relative_path = (Path(root) / file).relative_to(Path(file_path)).as_posix()
                         try:
                             file_content[relative_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()

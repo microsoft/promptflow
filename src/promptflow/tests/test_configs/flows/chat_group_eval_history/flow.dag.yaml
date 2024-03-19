@@ -6,17 +6,28 @@ inputs:
     type: string
   conversation_history:
     type: list
+    default: []
+  
 outputs:
   output:
     type: string
-    reference: ${simulator.output}
+    reference: ${line_process.output}
+
 nodes:
-- name: simulator
+- name: line_process
   type: python
   source:
     type: code
-    path: simulator.py
+    path: line_process.py
   inputs:
-    question: ${inputs.question}
     ground_truth: ${inputs.ground_truth}
     conversation_history: ${inputs.conversation_history}
+- name: aggregate
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    processed_results: ${line_process.output}
+  aggregation: true
+
