@@ -8,7 +8,7 @@ import pytest
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 from promptflow._sdk._telemetry import log_activity
-from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow_test.record_mode import is_replay
 
 FLOWS_DIR = "./tests/test_configs/flows"
