@@ -5,16 +5,16 @@ from pathlib import Path
 
 import pytest
 
-from promptflow.core import Flow
 from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow.core._serving.flow_invoker import FlowInvoker
+from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
 FLOWS_DIR = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 EXAMPLE_FLOW_DIR = FLOWS_DIR / "web_classification"
 EXAMPLE_FLOW_FILE = EXAMPLE_FLOW_DIR / "flow.dag.yaml"
-EXAMPLE_FLOW = Flow.load(EXAMPLE_FLOW_DIR)._init_executable()
+EXAMPLE_FLOW = init_executable(flow_path=EXAMPLE_FLOW_FILE)
 
 
 @pytest.mark.sdk_test
