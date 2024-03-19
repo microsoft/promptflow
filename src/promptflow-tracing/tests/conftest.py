@@ -7,7 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow_recording.local_recording_utilities import (
+from promptflow_recording.local import (
     RecordStorage,
     check_pydantic_v2,
     delete_count_lock_file,
@@ -20,7 +20,7 @@ from promptflow_recording.record_mode import is_in_ci_pipeline, is_live, is_reco
 from .utils import _run_in_subprocess
 
 RECORDINGS_TEST_CONFIGS_ROOT = (
-    Path(__file__).parent / "promptflow-recording/promptflow_recording/local_recording_utilities/recordings"
+    Path(__file__).parent.parent.parent / "promptflow-recording/promptflow_recording/local/recordings"
 )
 
 
@@ -85,7 +85,7 @@ def setup_recording_injection_if_enabled():
 
     if is_replay() or is_record():
         check_pydantic_v2()
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "tracing.node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
         patch_targets = {

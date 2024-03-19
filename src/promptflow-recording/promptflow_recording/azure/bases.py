@@ -12,6 +12,7 @@ import vcr
 from vcr import matchers
 from vcr.request import Request
 
+from ..record_mode import is_live, is_record, is_replay
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
 from .processors import (
     AzureMLExperimentIDProcessor,
@@ -29,9 +30,6 @@ from .processors import (
 from .utils import (
     is_httpx_response,
     is_json_payload_request,
-    is_live,
-    is_record,
-    is_replay,
     sanitize_automatic_runtime_request_path,
     sanitize_azure_workspace_triad,
     sanitize_file_share_flow_path,

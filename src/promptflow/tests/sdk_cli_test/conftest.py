@@ -19,7 +19,7 @@ from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow_recording.local_recording_utilities import (
+from promptflow_recording.local import (
     RecordStorage,
     check_pydantic_v2,
     delete_count_lock_file,
@@ -37,9 +37,7 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 SRC_ROOT = PROMOTFLOW_ROOT / ".."
-RECORDINGS_TEST_CONFIGS_ROOT = Path(
-    SRC_ROOT / "promptflow_recording/promptflow_recording/local_recording_utilities/recordings"
-).resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(SRC_ROOT / "promptflow-recording/promptflow_recording/local/recordings").resolve()
 
 
 @pytest.fixture(scope="session")
