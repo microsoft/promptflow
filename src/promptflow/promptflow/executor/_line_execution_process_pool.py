@@ -231,13 +231,7 @@ class LineExecutionProcessPool:
         # Clear the result dict.
         self._result_dict.clear()
         # Delete log files to prevent interference from the current run on the next execution.
-        self.delete_log_files()
-
-    def delete_log_files():
-        try:
-            shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
-        except Exception as e:
-            bulk_logger.warning(f"Failed to delete the folder, exception: {e}")
+        self._delete_log_files()
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
@@ -449,6 +443,12 @@ class LineExecutionProcessPool:
     # endregion
 
     # region private methods
+    def _delete_log_files():
+        try:
+            shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
+        except Exception as e:
+            bulk_logger.warning(f"Failed to delete the folder, exception: {e}")
+
     def _get_task_from_queue(self, task_queue: Queue):
         """Get task from the task queue. Ignore the queue being empty and only exit the loop when getting data."""
         while True:
