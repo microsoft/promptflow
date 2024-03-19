@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "promptflow-test-utils"
+name = "promptflow-recording"
 version = "0.1.0b1"
-description = "Prompt flow test utilities"
+description = "Prompt flow recording utilities"
 
 license = "MIT"
 
@@ -13,7 +13,7 @@ repository = "https://github.com/microsoft/promptflow"
 homepage = "https://microsoft.github.io/promptflow/"
 
 readme = ["README.md"]
-keywords = ["promptflow_test"]
+keywords = ["promptflow_recording"]
 
 classifiers = [
   "Programming Language :: Python",
@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 packages = [
-  { include = "promptflow_test" }
+  { include = "promptflow_recording" }
 ]
 
 [tool.poetry.urls]

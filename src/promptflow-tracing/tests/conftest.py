@@ -7,7 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow_test.local_recording_utilities import (
+from promptflow_recording.local_recording_utilities import (
     RecordStorage,
     check_pydantic_v2,
     delete_count_lock_file,
@@ -15,7 +15,7 @@ from promptflow_test.local_recording_utilities import (
     inject_sync_with_recording,
     recording_array_reset,
 )
-from promptflow_test.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
+from promptflow_recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 
 from .utils import _run_in_subprocess
 

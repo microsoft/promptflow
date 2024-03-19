@@ -2,17 +2,17 @@ from pathlib import Path
 from unittest.mock import patch
 
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
-from promptflow_test.local_recording_utilities import (
+from promptflow_recording.local_recording_utilities import (
     RecordStorage,
     inject_async_with_recording,
     inject_sync_with_recording,
     mock_tool,
 )
-from promptflow_test.record_mode import is_live, is_record, is_replay
+from promptflow_recording.record_mode import is_live, is_record, is_replay
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(
-    PROMPTFLOW_ROOT / "../promptflow-test-utils/promptflow_test/local_recording_utilities/recordings"
+    PROMPTFLOW_ROOT / "../promptflow-recording/promptflow_recording/local_recording_utilities/recordings"
 ).resolve()
 
 

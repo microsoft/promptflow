@@ -27,8 +27,8 @@ from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
-from promptflow_test.azure_recording_utilities import SanitizedValues
-from promptflow_test.record_mode import is_replay
+from promptflow_recording.azure_recording_utilities import SanitizedValues
+from promptflow_recording.record_mode import is_replay
 
 load_dotenv()
 
