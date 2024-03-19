@@ -95,4 +95,4 @@ jobs:
           format: markdown
           hide_complexity: true
           output: both
-          thresholds: 40 80
+          thresholds: 90
