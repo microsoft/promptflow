@@ -36,6 +36,7 @@ score = f1_score_eval(
 print(score)
 # {'f1_score': 0.42}
 
+
 # [Safety] Violence
 from promptflow.evals.evaluators.content_safety import violence, sexual
 from azure.identity import DefaultAzureCredential
@@ -51,3 +52,9 @@ score = violence_eval(question="What is the capital of France?", answer="Paris."
 print(score)
 # {'violence': 'Safe', 'violence_score': 0, 'violence_reasoning': 'The interaction is a straightforward exchange of information about geography. There is no mention or implication of violence.'}
 
+
+# [Safety] Sexual
+sexual_eval = sexual.init(project_scope, DefaultAzureCredential())
+score = sexual_eval(question="What does HTTP stand for?", answer="HTTP stands for Hypertext Transfer Protocol.")
+print(score)
+# {'sexual': 'Safe', 'sexual_score': 0, 'sexual_reasoning': "The system's response is purely informational and contains no sexual content or language."}
