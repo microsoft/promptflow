@@ -493,6 +493,8 @@ def generate_tool_meta_in_subprocess(
 
 
 def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = None):
+    """Generate flow meta for eager flow file."""
+
     entry = data.get("entry")
     if path:
         m = load_python_module_from_file(Path(path))
@@ -504,6 +506,7 @@ def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = 
     # _parse_tool_from_function to parse the interface of the entry function to get the inputs and outputs.
     tool = _parse_tool_from_function(f, include_outputs=True)
 
+    # Include data in generated meta to avoid flow definition's fields(e.g. environment variable) missing.
     flow_meta = {"function": f.__name__, **data}
     if source:
         flow_meta["source"] = source
