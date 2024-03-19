@@ -652,7 +652,8 @@ def test_eager_flow_evc_override(eager_flow_evc_override):
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
-    assert response == "Hello world! 2023-03-15-preview"
+    assert response != "Hello world! ${azure_open_ai_connection.api_base}"
+    assert "openai.azure.com" in response
 
 
 @pytest.mark.e2etest

@@ -252,7 +252,7 @@ def eager_flow_evc_override(mocker: MockerFixture):
         "environment_variables_connection",
         mocker,
         model_root=EAGER_FLOW_ROOT,
-        environment_variables={"TEST": "${azure_open_ai_connection.api_version}"},
+        environment_variables={"TEST": "${azure_open_ai_connection.api_base}"},
     )
 
 
