@@ -784,29 +784,6 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(
-    executable, client, connections_to_ignore: List[str] = None, connections_to_add: List[str] = None
-):
-    """Get local connections from executable.
-
-    executable: The executable flow object.
-    client: Local client to get connections.
-    connections_to_ignore: The connection names to ignore when getting connections.
-    connections_to_add: The connection names to add when getting connections.
-    """
-
-    connection_names = executable.get_connection_names()
-    if connections_to_add:
-        connection_names.update(connections_to_add)
-    connections_to_ignore = connections_to_ignore or []
-    result = {}
-    for n in connection_names:
-        if n not in connections_to_ignore:
-            conn = client.connections.get(name=n, with_secrets=True)
-            result[n] = conn._to_execution_connection_dict()
-    return result
-
-
 def _generate_connections_dir():
     # Get Python executable path
     python_path = sys.executable
@@ -845,45 +822,6 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
                     dump_yaml(yaml_data, f)
-
-
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
-    """Dump flow result for extension.
-
-    :param flow_folder: The flow folder.
-    :param prefix: The file prefix.
-    :param flow_result: The flow result returned by exec_line.
-    :param node_result: The node result when test node returned by load_and_exec_node.
-    :param custom_path: The custom path to dump flow result.
-    """
-    if flow_result:
-        flow_serialize_result = {
-            "flow_runs": [serialize(flow_result.run_info)],
-            "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
-        }
-    else:
-        flow_serialize_result = {
-            "flow_runs": [],
-            "node_runs": [serialize(node_result)],
-        }
-
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
-    dump_folder.mkdir(parents=True, exist_ok=True)
-
-    with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
-        json.dump(flow_serialize_result, f, indent=2, ensure_ascii=False)
-    if node_result:
-        metrics = flow_serialize_result["node_runs"][0]["metrics"]
-        output = flow_serialize_result["node_runs"][0]["output"]
-    else:
-        metrics = flow_serialize_result["flow_runs"][0]["metrics"]
-        output = flow_serialize_result["flow_runs"][0]["output"]
-    if metrics:
-        with open(dump_folder / f"{prefix}.metrics.json", "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(metrics, f, indent=2, ensure_ascii=False)
-    if output:
-        with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(output, f, indent=2, ensure_ascii=False)
 
 
 def read_write_by_user():
