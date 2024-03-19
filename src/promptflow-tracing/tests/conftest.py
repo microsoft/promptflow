@@ -19,7 +19,9 @@ from promptflow_recording.record_mode import is_in_ci_pipeline, is_live, is_reco
 
 from .utils import _run_in_subprocess
 
-RECORDINGS_TEST_CONFIGS_ROOT = Path(__file__).parent / "recordings"
+RECORDINGS_TEST_CONFIGS_ROOT = (
+    Path(__file__).parent / "promptflow-recording/promptflow_recording/local_recording_utilities/recordings"
+)
 
 
 @pytest.fixture

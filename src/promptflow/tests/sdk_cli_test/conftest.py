@@ -38,7 +38,7 @@ EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 SRC_ROOT = PROMOTFLOW_ROOT / ".."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(
-    SRC_ROOT / "promptflow-test-utils/promptflow_recording/local_recording_utilities/recordings"
+    SRC_ROOT / "promptflow_recording/promptflow_recording/local_recording_utilities/recordings"
 ).resolve()
 
 
