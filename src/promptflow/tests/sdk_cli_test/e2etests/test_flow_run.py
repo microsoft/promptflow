@@ -1410,6 +1410,12 @@ class TestFlowRun:
         assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]
 
     def test_shadow_evc(self, pf):
+        # run without env override will fail
+        with pytest.raises(ConnectionNotFoundError):
+            pf.run(
+                flow=f"{FLOWS_DIR}/evc_connection_not_exist",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+            )
         # won't fail with connection not found
         run = pf.run(
             flow=f"{FLOWS_DIR}/evc_connection_not_exist",
@@ -1422,3 +1428,26 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.key": ["API_BASE"], "inputs.line_number": [0], "outputs.output": ["VAL"]}
+
+    def test_shadow_evc_flex_flow(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/evc_connection_not_exist")
+
+        # run without env override will fail
+        with pytest.raises(ConnectionNotFoundError):
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+
+        # won't fail in flex flow
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "VAL"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
