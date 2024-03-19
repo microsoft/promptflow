@@ -65,8 +65,8 @@ Setup connections to provisioned resources in prompt flow.
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
 | frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0.| No       |
 | logit\_bias            | dictionary  | the logit bias for the language model. Default is empty dictionary.                            | No       |
-| function\_call         | object      | value that controls which function is called by the model. Default is null.                    | No       |
-| functions              | list        | a list of functions the model may generate JSON inputs for. Default is null.                   | No       |
+| tool\_choice           | object      | value that controls which function is called by the model. Default is null.                    | No       |
+| tools                  | list        | a list of tools the model may generate JSON inputs for. Default is null.                       | No       |
 | response_format        | object      | an object specifying the format that the model must output. Default is null.                   | No       |
 
 ## Outputs
