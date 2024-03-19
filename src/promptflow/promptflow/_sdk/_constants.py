@@ -160,6 +160,7 @@ class RunTypes:
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
     COMMAND = "command"
+    CHAT_GROUP = "chat_group"
 
 
 class AzureRunTypes:
@@ -395,6 +396,13 @@ class ExperimentNodeType(object):
     FLOW = "flow"
     CHAT_GROUP = "chat_group"
     COMMAND = "command"
+
+
+EXP_NODE_TYPE_2_RUN_TYPE = {
+    ExperimentNodeType.FLOW: RunTypes.BATCH,
+    ExperimentNodeType.CHAT_GROUP: RunTypes.CHAT_GROUP,
+    ExperimentNodeType.COMMAND: RunTypes.COMMAND,
+}
 
 
 class ExperimentStatus(object):
