@@ -1,6 +1,9 @@
 promptflow.tools.llm_vision.llm_vision:
   name: LLM-Vision
-  description: Use OpenAI-like Large Language Model to leverage vision ability. For more details, refer to this [document](https://aka.ms/new-llm-vision-tool).
+  description:
+    default: Use OpenAI-like Large Language Model to leverage vision ability.
+    aml: Use OpenAI-like Large Language Model to leverage vision ability. For more details, refer to this [document](https://aka.ms/promptflow/new-llm-vision-tool).
+    ai_studio: Use OpenAI-like Large Language Model to leverage vision ability. For more details, refer to this [document](https://aka.ms/aistudio/pf/new-llm-vision-tool).
   type: custom_llm
   module: promptflow.tools.llm_vision
   function: llm_vision
