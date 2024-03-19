@@ -64,7 +64,7 @@ def inject_pth_file() -> None:
 
 def install_pkg_editable(pkg: str, verbose: bool) -> None:
     folder_name = pkg.split("[")[0]  # remove extra(s)
-    pkg_working_dir = REPO_ROOT_DIR / folder_name
+    pkg_working_dir = REPO_ROOT_DIR / "src" / folder_name
     print(pkg_working_dir.as_posix())
     with change_cwd(pkg_working_dir):
         print_blue(f"- Setting up {pkg}")
