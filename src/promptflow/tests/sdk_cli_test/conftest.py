@@ -10,11 +10,11 @@ from mock import mock
 from pytest_mock import MockerFixture
 from sqlalchemy import create_engine
 
-from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow.client import PFClient
 from promptflow.core._serving.app import create_app as create_serving_app
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager

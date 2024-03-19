@@ -11,12 +11,13 @@ from typing import Dict
 from flask import Flask, g, jsonify, request
 from opentelemetry import baggage, context
 
-from promptflow._sdk._load_functions import load_flow
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._version import VERSION
 from promptflow.contracts.run_info import Status
+from promptflow.core._flow import Flow
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME
 from promptflow.core._serving.extension.extension_factory import ExtensionFactory
 from promptflow.core._serving.flow_invoker import FlowInvoker
@@ -51,8 +52,7 @@ class PromptflowServingApp(Flask):
             # parse promptflow project path
             self.project_path = self.extension.get_flow_project_path()
             logger.info(f"Project path: {self.project_path}")
-            self.flow_entity = load_flow(self.project_path)
-            self.flow = self.flow_entity._init_executable()
+            self.flow = Flow.load(self.project_path)._init_executable()
 
             # enable environment_variables
             environment_variables = kwargs.get("environment_variables", {})
@@ -93,8 +93,9 @@ class PromptflowServingApp(Flask):
         if self.flow_invoker:
             return
         logger.info("Promptflow executor starts initializing...")
+        working_dir, flow_file = resolve_flow_path(self.project_path)
         self.flow_invoker = FlowInvoker(
-            self.project_path,
+            self.flow,
             connection_provider=self.connection_provider,
             streaming=streaming_response_required,
             raise_ex=False,
@@ -103,7 +104,10 @@ class PromptflowServingApp(Flask):
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
             credential=self.credential,
+            flow_path=working_dir / flow_file,
+            working_dir=working_dir,
         )
+        # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow
         # Set the flow name as folder name
         self.flow.name = self.flow_name

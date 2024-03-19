@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Tuple
 
 from promptflow._constants import DEFAULT_ENCODING
-from promptflow._sdk._configuration import Configuration
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
@@ -55,7 +54,7 @@ class AppExtension(ABC):
         Get override connections for current extension.
 
         :param flow: The flow to execute.
-        :type flow: ~promptflow._sdk.entities._flow.Flow
+        :type flow: ~promptflow.contracts.flow.Flow
         :return: The override connections, first dict is for connection data override, second dict is for connection name override.  # noqa: E501
         :rtype: (dict, dict)
         """
@@ -132,6 +131,10 @@ class DefaultAppExtension(AppExtension):
         self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
         logger.info(f"Static_folder: {self.static_folder}")
         app_config = kwargs.get("config", None) or {}
+
+        # TODO (3027983): remove this import in connection related refactor PR
+        from promptflow._sdk._configuration import Configuration
+
         pf_config = Configuration(overrides=app_config)
         logger.info(f"Promptflow config: {pf_config}")
         self.connection_provider = pf_config.get_connection_provider()

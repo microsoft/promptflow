@@ -9,8 +9,12 @@ from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
+from promptflow._constants import (
+    CONNECTION_NAME_PROPERTY,
+    CONNECTION_SECRET_KEYS,
+    PROMPTFLOW_CONNECTIONS,
+    CustomStrongTypeConnectionConfigs,
+)
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
