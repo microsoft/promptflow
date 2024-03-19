@@ -8,7 +8,7 @@ from utils import REPO_ROOT_DIR, print_yellow
 
 
 def create_tracing_test_resource_template() -> None:
-    working_dir = REPO_ROOT_DIR / "promptflow-tracing"
+    working_dir = REPO_ROOT_DIR / "src" / "promptflow-tracing"
     connections_filename = "connections.json"
     connections_file_path = (working_dir / connections_filename).resolve().absolute()
     connections_template = {
