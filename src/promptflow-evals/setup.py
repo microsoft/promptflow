@@ -10,7 +10,7 @@ from typing import Any, List, Match, cast
 from setuptools import find_namespace_packages, setup
 
 PACKAGE_NAME = "promptflow-evals"
-PACKAGE_FOLDER_PATH = "promptflow-evals"
+PACKAGE_FOLDER_PATH = "promptflow"
 
 
 def parse_requirements(file_name: str) -> List[str]:

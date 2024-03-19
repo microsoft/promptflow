@@ -1,0 +1,67 @@
+{
+  "package": {},
+  "code": {
+    "line_process.py": {
+      "type": "python",
+      "inputs": {
+        "groundtruth": {
+          "type": [
+            "string"
+          ]
+        },
+        "prediction": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "function": "line_process"
+    },
+    "aggregate.py": {
+      "type": "python",
+      "inputs": {
+        "results": {
+          "type": [
+            "object"
+          ]
+        }
+      },
+      "source": "aggregate.py",
+      "function": "aggregate"
+    },
+    "f1_score.py": {
+      "type": "python",
+      "inputs": {
+        "answer": {
+          "type": [
+            "string"
+          ]
+        },
+        "ground_truth": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "f1_score.py",
+      "function": "compute_f1_score"
+    },
+    "validate_inputs.py": {
+      "type": "python",
+      "inputs": {
+        "answer": {
+          "type": [
+            "string"
+          ]
+        },
+        "ground_truth": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "validate_inputs.py",
+      "function": "validate_inputs"
+    }
+  }
+}
