@@ -130,7 +130,7 @@ def _load_env_to_connection(
     source = Path(source)
     name = next((_dct["name"] for _dct in params_override if "name" in _dct), None)
     if not name:
-        raise UserErrorException("Please specify --name when creating connection from .env.")
+        raise UserErrorException("Please specify --name when creating connection from .env.", privacy_info=[])
     if not source.exists():
         e = FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
         raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e

@@ -333,6 +333,8 @@ class _ErrorInfo:
             info = str(info)
             message = message.replace(info, "{privacy_info}")
 
+        return message
+
     @classmethod
     def _error_detail(cls, e: BaseException):
         promptflow_codes = cls._promptflow_error_traceback(e)
