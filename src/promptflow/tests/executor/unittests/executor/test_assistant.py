@@ -33,6 +33,35 @@ class TestAssistant:
                     "Please make sure the assistant definition is correct."
                 ),
             ),
+            (
+                "assistant_python_tool_wrong_tool_type",
+                ResolveToolError,
+                (
+                    "Tool type python1 is not supported yet in assistant definition for node 'assistant'. "
+                    "Please make sure the assistant definition is correct."
+                ),
+            ),
+            (
+                "assistant_package_tool_wrong_source_type",
+                ResolveToolError,
+                (
+                    "Tool source type package1 is not supported yet in assistant definition for node 'assistant'. "
+                    "Please make sure the assistant definition is correct."
+                ),
+            ),
+            (
+                "assistant_package_tool_wrong_tool",
+                ResolveToolError,
+                (
+                    "Package tool 'hello.world' is not found in the current environment. "
+                    "All available package tools are: []."
+                ),
+            ),
+            (
+                "assistant_python_tool_wrong_path",
+                ResolveToolError,
+                ("Load tool failed for node 'assistant'. Tool file './hello.py' can not be found."),
+            ),
         ],
     )
     def test_assistant_tool_resolve_exception(self, dev_connections, flow_folder, exception_class, error_message):
