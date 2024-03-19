@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "promptflow-tracing"
-version = "0.1.0b2"
+version = "1.0.0.dev0"
 description = "Prompt flow tracing"
 
 license = "MIT"
