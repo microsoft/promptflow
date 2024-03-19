@@ -12,7 +12,7 @@ from .._utils.yaml_utils import load_yaml
 from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._experiment import ExperimentTemplate
+from .entities._experiment import Experiment, ExperimentTemplate
 from .entities._flow import Flow
 
 logger = get_cli_sdk_logger()
@@ -179,3 +179,25 @@ def _load_experiment_template(
             f"Experiment template file {source_path.resolve().absolute().as_posix()} not found."
         )
     return load_common(ExperimentTemplate, source=source_path)
+
+
+def _load_experiment(
+    source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
+):
+    """
+    Load experiment from YAML file.
+
+    :param source: The local yaml source of an experiment. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: An Experiment object
+    :rtype: Experiment
+    """
+    source = Path(source)
+    absolute_path = source.resolve().absolute().as_posix()
+    if not source.exists():
+        raise NoExperimentTemplateError(f"Experiment file {absolute_path} not found.")
+    experiment = load_common(Experiment, source, **kwargs)
+    return experiment

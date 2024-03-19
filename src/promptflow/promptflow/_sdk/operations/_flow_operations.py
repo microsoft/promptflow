@@ -15,7 +15,13 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import (
+    CHAT_HISTORY,
+    DEFAULT_ENCODING,
+    FLOW_META_JSON_GEN_TIMEOUT,
+    FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    LOCAL_MGMT_DB_PATH,
+)
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
@@ -30,8 +36,8 @@ from promptflow._sdk._utils import (
     logger,
     parse_variant,
 )
-from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, FlowBase, ProtectedFlow
+from promptflow._sdk.entities._eager_flow import FlexFlow
+from promptflow._sdk.entities._flow import Flow, FlowBase
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -41,9 +47,9 @@ from promptflow.exceptions import UserErrorException
 class FlowOperations(TelemetryMixin):
     """FlowOperations."""
 
-    def __init__(self, client):
+    def __init__(self, client, **kwargs):
+        super().__init__(**kwargs)
         self._client = client
-        super().__init__()
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
@@ -148,8 +154,6 @@ class FlowOperations(TelemetryMixin):
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
         :return: Executor result
         """
-        from promptflow._sdk._load_functions import load_flow
-
         inputs = inputs or {}
         output_path = kwargs.get("output_path", None)
         session = kwargs.pop("session", None)
@@ -157,7 +161,7 @@ class FlowOperations(TelemetryMixin):
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
         flow: FlowBase = load_flow(flow)
 
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             if variant or node:
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
@@ -171,8 +175,9 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, EagerFlow):
+            if isinstance(flow, FlexFlow):
                 # TODO(2897153): support chat eager flow
+                # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None
                 flow_inputs, dependency_nodes_outputs = inputs, None
             else:
@@ -402,7 +407,7 @@ class FlowOperations(TelemetryMixin):
 
                 return self._migrate_connections(
                     connection_names=SubmitterHelper.get_used_connection_names(
-                        tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                        tools_meta=CSharpExecutorProxy.generate_flow_tools_json(
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
                         ),
@@ -525,24 +530,37 @@ class FlowOperations(TelemetryMixin):
             for flow_input, value in executable.inputs.items()
             if not value.is_chat_history
         }
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
-        flow_inputs_params = ",".join(flow_inputs_params)
 
         is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        chat_output_name = next(
+            filter(
+                lambda key: executable.outputs[key].is_chat_output,
+                executable.outputs.keys(),
+            ),
+            None,
+        )
         label = "Chat" if is_chat_flow else "Run"
+        is_streaming = True if is_chat_flow else False
+        config_content = {
+            "flow_name": flow_name,
+            "flow_inputs": flow_inputs,
+            "flow_path": flow_dag_path.as_posix(),
+            "is_chat_flow": is_chat_flow,
+            "chat_history_input_name": chat_history_input_name,
+            "label": label,
+            "chat_output_name": chat_output_name,
+            "is_streaming": is_streaming,
+        }
+
+        with open(output_dir / "config.json", "w") as file:
+            json.dump(config_content, file, indent=4)
+
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
-                "flow_name": flow_name,
                 "runtime_interpreter_path": runtime_interpreter_path,
-                "flow_inputs": flow_inputs,
-                "flow_inputs_params": flow_inputs_params,
-                "flow_path": None,
-                "is_chat_flow": is_chat_flow,
-                "chat_history_input_name": chat_history_input_name,
-                "label": label,
             },
         )
         self._run_pyinstaller(output_dir)
@@ -664,12 +682,12 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow_entity: ProtectedFlow = load_flow(source=flow, raise_error=False)
+        flow_entity: Flow = load_flow(source=flow, raise_error=False)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        if isinstance(flow_entity, ProtectedFlow):
+        if isinstance(flow_entity, Flow):
             # only DAG flow has tools meta
             source_path_mapping = {}
             flow_tools, tools_errors = self._generate_tools_meta(
@@ -730,7 +748,7 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: FlowBase = load_flow(source=flow)
-        if not isinstance(flow, ProtectedFlow):
+        if not isinstance(flow, Flow):
             # No tools meta for eager flow
             return {}, {}
 
@@ -779,3 +797,52 @@ class FlowOperations(TelemetryMixin):
         flow_tools["code"] = flow_tools_meta
 
         return flow_tools, tools_errors
+
+    @monitor_operation(activity_name="pf.flows._generate_flow_meta", activity_type=ActivityType.INTERNALCALL)
+    def _generate_flow_meta(
+        self,
+        flow: Union[str, PathLike],
+        *,
+        timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
+        dump: bool = False,
+        load_in_subprocess: bool = True,
+    ) -> dict:
+        """Generate flow meta for a specific flow or a specific node in the flow.
+
+        This is a private interface for vscode extension, so do not change the interface unless necessary.
+
+        Usage:
+        from promptflow import PFClient
+        PFClient().flows._generate_flow_meta(flow="flow.dag.yaml")
+
+        :param flow: path to the flow directory or flow dag to export
+        :type flow: Union[str, PathLike]
+        :param timeout: timeout for generating flow meta
+        :type timeout: int
+        :param dump: whether to dump the flow meta to .promptflow/flow.json
+        :type dump: bool
+        :param load_in_subprocess: whether to load flow in subprocess. will set to False for VSCode extension since
+            it's already executes in a separate process.
+        :type load_in_subprocess: bool
+        :return: dict of flow meta
+        :rtype: Tuple[dict, dict]
+        """
+        flow: Union[Flow, FlexFlow] = load_flow(source=flow)
+        if not isinstance(flow, FlexFlow):
+            # No flow meta for DAG flow
+            return {}
+
+        with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
+            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+
+            return (
+                ExecutorProxyFactory()
+                .get_executor_proxy_cls(flow.language)
+                .generate_flow_json(
+                    flow_file=new_flow_dag_path,
+                    working_dir=new_flow_dag_path.parent,
+                    dump=dump,
+                    timeout=timeout,
+                    load_in_subprocess=load_in_subprocess,
+                )
+            )

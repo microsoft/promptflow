@@ -107,6 +107,24 @@ class RunOperations(TelemetryMixin):
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
 
+    @monitor_operation(activity_name="pf.runs.resume", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs) -> Run:
+        """Create a run by the resume_from run, a new run will be created to rerun failed lines.
+
+        :param resume_from: Run name to resume from.
+        :type resume_from: str
+        :return: Run object created based on an existing run.
+        :rtype: ~promptflow.entities.Run
+        """
+        logger.debug(f"Resume from {resume_from!r}, kwargs: {kwargs}")
+        stream = kwargs.pop("stream", False)
+        from promptflow._sdk._submitter import RunSubmitter
+
+        created_run = RunSubmitter(client=self._client).resume(resume_from=resume_from, **kwargs)
+        if stream:
+            self.stream(created_run)
+        return created_run
+
     def _create_run_from_existing_run_folder(self, run: Run, **kwargs) -> Run:
         """Create run from existing run folder."""
         try:
@@ -417,3 +435,15 @@ class RunOperations(TelemetryMixin):
         if isinstance(run, str):
             run = self.get(name=run)
         return LocalStorageOperations(run)
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pf.runs.create_or_update":
+                run: Run = kwargs.get("run", None) or args[0]
+                telemetry_values["flow_type"] = run._flow_type
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values

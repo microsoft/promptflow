@@ -1,0 +1,10 @@
+name: flow_run_20230629_101205
+flow: ../flows/web_classification
+data: ../datas/webClassification1.jsonl
+column_mapping:
+   url: "${data.url}"
+variant: ${summarize_text_content.variant_0}
+
+identity:
+  type: managed
+  client_id: fake_client_id

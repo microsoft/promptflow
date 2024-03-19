@@ -3,14 +3,20 @@
 # ---------------------------------------------------------
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import service_logger
-from promptflow.executor._service.contracts.execution_request import FlowExecutionRequest, NodeExecutionRequest
+from promptflow.executor._service.contracts.execution_request import (
+    CancelExecutionRequest,
+    FlowExecutionRequest,
+    NodeExecutionRequest,
+)
+from promptflow.executor._service.utils.process_manager import ProcessManager
 from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
 from promptflow.executor._service.utils.service_utils import (
+    enable_async_execution,
     get_log_context,
-    get_service_log_context,
     set_environment_variables,
     update_and_get_operation_context,
 )
@@ -22,7 +28,7 @@ router = APIRouter(prefix="/execution")
 
 @router.post("/flow")
 async def flow_execution(request: FlowExecutionRequest):
-    with get_service_log_context(request):
+    with get_log_context(request, enable_service_logger=True):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received flow execution request, flow run id: {request.run_id}, "
@@ -30,7 +36,7 @@ async def flow_execution(request: FlowExecutionRequest):
         )
         try:
             result = await invoke_sync_function_in_process(
-                flow_test, args=(request,), context_dict=request.operation_context
+                flow_test, args=(request,), run_id=request.run_id, context_dict=request.operation_context
             )
             service_logger.info(f"Completed flow execution request, flow run id: {request.run_id}.")
             return result
@@ -44,7 +50,7 @@ async def flow_execution(request: FlowExecutionRequest):
 
 @router.post("/node")
 async def node_execution(request: NodeExecutionRequest):
-    with get_service_log_context(request):
+    with get_log_context(request, enable_service_logger=True):
         operation_context = update_and_get_operation_context(request.operation_context)
         service_logger.info(
             f"Received node execution request, node name: {request.node_name}, "
@@ -52,7 +58,7 @@ async def node_execution(request: NodeExecutionRequest):
         )
         try:
             result = await invoke_sync_function_in_process(
-                single_node_run, args=(request,), context_dict=request.operation_context
+                single_node_run, args=(request,), run_id=request.run_id, context_dict=request.operation_context
             )
             service_logger.info(f"Completed node execution request, node name: {request.node_name}.")
             return result
@@ -64,11 +70,19 @@ async def node_execution(request: NodeExecutionRequest):
             raise ex
 
 
+@router.post("/cancel")
+def cancel_execution(request: CancelExecutionRequest):
+    ProcessManager().end_process(request.run_id)
+    resp = {"status": "canceled"}
+    return JSONResponse(resp)
+
+
 def flow_test(request: FlowExecutionRequest):
     # validate request
     request.validate_request()
     # resolve environment variables
     set_environment_variables(request)
+    enable_async_execution()
     # execute flow
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
     with get_log_context(request):

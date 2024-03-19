@@ -72,7 +72,7 @@ def _get_entry_points_by_group(group):
     # which allows us to select entry points by group. In the previous versions, the entry_points() method
     # returns a dictionary-like object, we can use group name directly as a key.
     entry_points = importlib.metadata.entry_points()
-    if isinstance(entry_points, list):
+    if hasattr(entry_points, "select"):
         return entry_points.select(group=group)
     else:
         return entry_points.get(group, [])

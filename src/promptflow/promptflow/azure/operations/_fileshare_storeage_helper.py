@@ -20,7 +20,7 @@ from azure.storage.fileshare import DirectoryProperties, ShareDirectoryClient
 
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow.azure._constants._flow import PROMPTFLOW_FILE_SHARE_DIR
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential
+from promptflow.azure._utils.general import get_user_alias_from_credential
 
 uploading_lock = defaultdict(Lock)
 

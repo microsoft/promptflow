@@ -457,7 +457,7 @@ interactions:
       "inputsMapping": {"key": "${data.key}"}, "connections": {}, "environmentVariables":
       {}, "runtimeName": "fake-runtime-name", "sessionId": "000000000000000000000000000000000000000000000000",
       "sessionSetupMode": "SystemWait", "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
-      "runDisplayNameGenerationType": "UserProvidedMacro", "computeName": "wanhan1"}'
+      "runDisplayNameGenerationType": "UserProvidedMacro", "computeName": "fake-compute"}'
     headers:
       Accept:
       - application/json

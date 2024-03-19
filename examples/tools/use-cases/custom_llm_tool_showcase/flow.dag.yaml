@@ -19,5 +19,8 @@ nodes:
     path: prompt_template.jinja2
   inputs:
     connection: basic_custom_connection
+    api: ''
     website_name: ${inputs.website_name}
     user_name: ${inputs.user_name}
+    deployment_name: ''
+    temperature: 1

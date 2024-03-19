@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
-from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
@@ -24,6 +23,7 @@ from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
 
 
 class RunTracker(ThreadLocalSingleton):
@@ -81,7 +81,6 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id="",
         inputs=None,
         index=None,
-        variant_id="",
     ) -> FlowRunInfo:
         """Create a flow run and save to run storage on demand."""
         run_info = FlowRunInfo(
@@ -99,7 +98,6 @@ class RunTracker(ThreadLocalSingleton):
             start_time=datetime.utcnow(),
             end_time=None,
             index=index,
-            variant_id=variant_id,
         )
         self.persist_flow_run(run_info)
         self._flow_runs[run_id] = run_info
@@ -140,7 +138,6 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
-        variant_id,
     ):
         run_info = RunInfo(
             node=node,
@@ -156,7 +153,6 @@ class RunTracker(ThreadLocalSingleton):
             end_time=datetime.utcnow(),
             result=None,
             index=index,
-            variant_id=variant_id,
             api_calls=[],
         )
         self._node_runs[run_id] = run_info

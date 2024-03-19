@@ -13,8 +13,6 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.log_manager import NodeLogManager, NodeLogWriter
 from promptflow._core.metric_logger import add_metric_logger
-from promptflow._core.openai_injector import inject_openai_api
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunRecordNotFound, RunTracker
 from promptflow._core.tool import ToolInvoker, ToolProvider, tool
 from promptflow._core.tool_meta_generator import (
@@ -42,21 +40,9 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
-from promptflow._core.tracer import Tracer
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
-from promptflow._sdk._serving.response_creator import ResponseCreator
-from promptflow._sdk._serving.swagger import generate_swagger
-from promptflow._sdk._serving.utils import (
-    get_output_fields_to_remove,
-    get_sample_json,
-    handle_error_to_response,
-    load_request_data,
-    streaming_response_required,
-    validate_request_data,
-)
 from promptflow._sdk._utils import (
     get_used_connection_names_from_environment_variables,
-    setup_user_agent_to_operation_context,
     update_environment_variables_with_connections,
 )
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -98,6 +84,7 @@ from promptflow._utils.multimedia_utils import (
     persist_multimedia_data,
     resolve_multimedia_data_recursively,
 )
+from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._utils.utils import (
     AttrDict,
     camel_to_snake,
@@ -109,6 +96,19 @@ from promptflow._utils.utils import (
 )
 from promptflow._version import VERSION
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
+from promptflow.core._serving.response_creator import ResponseCreator
+from promptflow.core._serving.swagger import generate_swagger
+from promptflow.core._serving.utils import (
+    get_output_fields_to_remove,
+    get_sample_json,
+    handle_error_to_response,
+    load_request_data,
+    streaming_response_required,
+    validate_request_data,
+)
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._tracer import Tracer

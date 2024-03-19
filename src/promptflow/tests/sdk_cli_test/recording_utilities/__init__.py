@@ -5,6 +5,7 @@ from .record_storage import (
     RecordFileMissingException,
     RecordItemMissingException,
     RecordStorage,
+    check_pydantic_v2,
     is_live,
     is_record,
     is_replay,
@@ -24,4 +25,5 @@ __all__ = [
     "is_record",
     "is_replay",
     "delete_count_lock_file",
+    "check_pydantic_v2",
 ]

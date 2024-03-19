@@ -59,7 +59,7 @@ jobs:
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
-          pip install "promptflow[azure,executable]==$env:INPUT_VERSION" promptflow-tools
+          pip install "promptflow[azure,executable,azureml-serving,executor-service]==$env:INPUT_VERSION" promptflow-tools
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
@@ -108,6 +108,12 @@ jobs:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
 
+
+      - name: Generate promptflow spec file to config pyinstaller
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
+        run: |
+          python generate_dependency.py
+          Get-Content promptflow.spec
 
       - name: Build Pyinstaller project
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts

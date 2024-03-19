@@ -16,7 +16,7 @@ class NodeRunRecord:
 
     :param str node_name: The name of the node
     :param int line_number: The line number in the source file
-    :param str run_info: The information about the run
+    :param dict run_info: The information about the run
     :param datetime start_time: The time the node started running
     :param datetime end_time: The time the node finished running
     :param str status: The status of the node run
@@ -24,7 +24,7 @@ class NodeRunRecord:
 
     node_name: str
     line_number: int
-    run_info: str
+    run_info: dict
     start_time: datetime
     end_time: datetime
     status: str
@@ -60,7 +60,7 @@ class LineRunRecord:
     """A dataclass for storing the run record of a single line execution on the flow.
 
     :param int line_number: The line number in the record
-    :param str run_info: The information about the line run
+    :param dict run_info: The information about the line run
     :param datetime start_time: The time the line started executing
     :param datetime end_time: The time the line finished executing
     :param str name: The name of the line run
@@ -70,7 +70,7 @@ class LineRunRecord:
     """
 
     line_number: int
-    run_info: str
+    run_info: dict
     start_time: datetime
     end_time: datetime
     name: str

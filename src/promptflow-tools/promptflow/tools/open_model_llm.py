@@ -521,11 +521,15 @@ def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, 
     return (endpoint_connection_details[0].lower(), endpoint_connection_details[1])
 
 
-def list_endpoint_names(subscription_id: str,
-                        resource_group_name: str,
-                        workspace_name: str,
+def list_endpoint_names(subscription_id: str = None,
+                        resource_group_name: str = None,
+                        workspace_name: str = None,
                         return_endpoint_url: bool = False,
                         force_refresh: bool = False) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    # return an empty list if workspace triad is not available.
+    if not subscription_id or not resource_group_name or not workspace_name:
+        return []
+
     cache_file_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -598,10 +602,14 @@ Error:{e}""", file=sys.stdout)
     return list_of_endpoints
 
 
-def list_deployment_names(subscription_id: str,
-                          resource_group_name: str,
-                          workspace_name: str,
+def list_deployment_names(subscription_id: str = None,
+                          resource_group_name: str = None,
+                          workspace_name: str = None,
                           endpoint: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    # return an empty list if workspace triad is not available.
+    if not subscription_id or not resource_group_name or not workspace_name:
+        return []
+
     deployment_default_list = [{
         "value": DEPLOYMENT_DEFAULT,
         "display_value": DEPLOYMENT_DEFAULT,

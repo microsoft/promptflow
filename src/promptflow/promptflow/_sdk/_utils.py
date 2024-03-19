@@ -5,7 +5,6 @@ import collections
 import datetime
 import hashlib
 import json
-import multiprocessing
 import os
 import platform
 import re
@@ -32,10 +31,9 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
-from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
-from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import (
+    AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
@@ -53,8 +51,8 @@ from promptflow._sdk._constants import (
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
+    AzureMLWorkspaceTriad,
     CommonYamlFields,
-    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -66,16 +64,14 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
+from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
-
-
-def snake_to_camel(name):
-    return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
 
 
 def find_type_in_override(params_override: Optional[list] = None) -> Optional[str]:
@@ -312,25 +308,6 @@ def update_dict_value_with_connections(built_connections, connection_dict: dict)
         connection_dict[key] = built_connections[connection_name]["value"][connection_key]
 
 
-def in_jupyter_notebook() -> bool:
-    """
-    Checks if user is using a Jupyter Notebook. This is necessary because logging is not allowed in
-    non-Jupyter contexts.
-
-    Adapted from https://stackoverflow.com/a/22424821
-    """
-    try:  # cspell:ignore ipython
-        from IPython import get_ipython
-
-        if "IPKernelApp" not in get_ipython().config:
-            return False
-    except ImportError:
-        return False
-    except AttributeError:
-        return False
-    return True
-
-
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
     with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
         template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
@@ -507,15 +484,21 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
-def _generate_meta_from_files(
-    tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
-) -> None:
-    with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
-        for source, tool_type in tools:
-            try:
-                tools_dict[source] = generate_tool_meta_dict_by_file(source, ToolType(tool_type))
-            except Exception as e:
-                exception_dict[source] = str(e)
+def _construct_tool_dict(tools: List[Tuple[str, str]]) -> Dict[str, Dict[str, str]]:
+    """Construct tool dict from tool list.
+
+    :param tools: tool list, like [('test.py', 'python'), ('test.jinja2', 'llm')]
+    :return: tool dict, like
+    {
+        'test.py': {
+            'tool_type': 'python'
+        },
+        'test.jinja2': {
+            'tool_type': 'llm'
+        }
+    }
+    """
+    return {source: {"tool_type": tool_type} for source, tool_type in tools}
 
 
 def _generate_tool_meta(
@@ -538,23 +521,13 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
+    from promptflow._core.tool_meta_generator import generate_tool_meta, generate_tool_meta_in_subprocess
+
+    tools = _construct_tool_dict(tools)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
-        manager = multiprocessing.Manager()
-        tools_dict = manager.dict()
-        exception_dict = manager.dict()
-        p = multiprocessing.Process(
-            target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-        )
-        p.start()
-        p.join(timeout=timeout)
-        if p.is_alive():
-            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
-            p.terminate()
-            p.join()
+        tool_dict, exception_dict = generate_tool_meta_in_subprocess(flow_directory, tools, logger, timeout=timeout)
     else:
-        tools_dict, exception_dict = {}, {}
-
         #  There is no built-in method to forcefully stop a running thread/coroutine in Python
         #  because abruptly stopping a thread can cause issues like resource leaks,
         #  deadlocks, or inconsistent states.
@@ -563,8 +536,8 @@ def _generate_tool_meta(
             "Generate meta in current process and timeout won't take effect. "
             "Please handle timeout manually outside current process."
         )
-        _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
-    res = {source: tool for source, tool in tools_dict.items()}
+        tool_dict, exception_dict = generate_tool_meta(flow_directory, tools)
+    res = {source: tool for source, tool in tool_dict.items()}
 
     for source in res:
         # remove name in tool meta
@@ -580,13 +553,8 @@ def _generate_tool_meta(
                     if isinstance(tool_input_type[i], Enum):
                         tool_input_type[i] = tool_input_type[i].value
 
-    # collect errors and print warnings
-    errors = {
-        source: exception for source, exception in exception_dict.items()
-    }  # for not processed tools, regard as timeout error
-    for source, _ in tools:
-        if source not in res and source not in errors:
-            errors[source] = f"Generate meta timeout for source {source!r}."
+    # collect errors and print warnings, exception_dict is a dict of source and error dict
+    errors = {source: error_dict.get("message", "unknown exception") for source, error_dict in exception_dict.items()}
     for source in errors:
         if include_errors_in_output:
             res[source] = errors[source]
@@ -605,6 +573,8 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: func call result according to func_call_scenario.
     """
+    from promptflow._core.tools_manager import retrieve_tool_func_result
+
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
     # May call azure control plane api in the custom function to list Azure resources.
@@ -629,6 +599,8 @@ def _gen_dynamic_list(function_config: Dict) -> List:
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: a list of tool input dynamic enums.
     """
+    from promptflow._core.tools_manager import gen_dynamic_list
+
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
     # May call azure control plane api in the custom function to list Azure resources.
@@ -775,62 +747,6 @@ def generate_flow_tools_json(
             json.dump(flow_tools, f, indent=4)
 
     return flow_tools
-
-
-class ClientUserAgentUtil:
-    """SDK/CLI side user agent utilities."""
-
-    @classmethod
-    def _get_context(cls):
-        from promptflow._core.operation_context import OperationContext
-
-        return OperationContext.get_instance()
-
-    @classmethod
-    def get_user_agent(cls):
-        from promptflow._core.operation_context import OperationContext
-
-        context = cls._get_context()
-        # directly get from context since client side won't need promptflow/xxx.
-        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
-
-    @classmethod
-    def append_user_agent(cls, user_agent: Optional[str]):
-        if not user_agent:
-            return
-        context = cls._get_context()
-        context.append_user_agent(user_agent)
-
-    @classmethod
-    def update_user_agent_from_env_var(cls):
-        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
-        for env_name in [USER_AGENT, PF_USER_AGENT]:
-            if env_name in os.environ:
-                cls.append_user_agent(os.environ[env_name])
-
-    @classmethod
-    def update_user_agent_from_config(cls):
-        """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
-        from promptflow._sdk._configuration import Configuration
-
-        config = Configuration.get_instance()
-        user_agent = config.get_user_agent()
-        if user_agent:
-            cls.append_user_agent(user_agent)
-
-
-def setup_user_agent_to_operation_context(user_agent):
-    """Setup user agent to OperationContext.
-    For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
-    For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
-    For calls from SDK, ua will be like: promptflow-sdk/
-    For 1p customer call which set user agent in config, ua will be like: PFCustomer_XXX/
-    """
-    # add user added UA after SDK/CLI
-    ClientUserAgentUtil.append_user_agent(user_agent)
-    ClientUserAgentUtil.update_user_agent_from_env_var()
-    ClientUserAgentUtil.update_user_agent_from_config()
-    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
@@ -1000,6 +916,12 @@ def is_from_cli():
     return CLI_UA in ClientUserAgentUtil.get_user_agent()
 
 
+def is_multi_container_enabled():
+    if ENABLE_MULTI_CONTAINER_KEY in os.environ:
+        return os.environ[ENABLE_MULTI_CONTAINER_KEY].lower() == "true"
+    return None
+
+
 def is_url(value: Union[PathLike, str]) -> bool:
     try:
         result = urlparse(str(value))
@@ -1045,41 +967,6 @@ def parse_remote_flow_pattern(flow: object) -> str:
             raise UserErrorException(error_message)
         flow_name = match.groups()[0]
     return flow_name
-
-
-def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
-    """
-    Get connection operation based on connection provider.
-    This function will be called by PFClient, so please do not refer to PFClient in this function.
-
-    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
-    :type connection_provider: str
-    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
-    :type credential: object
-    :param user_agent: User Agent
-    :type user_agent: str
-    """
-    if connection_provider == ConnectionProvider.LOCAL.value:
-        from promptflow._sdk.operations._connection_operations import ConnectionOperations
-
-        logger.debug("PFClient using local connection operations.")
-        connection_operation = ConnectionOperations()
-    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
-        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
-
-        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
-        if user_agent is None:
-            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
-        else:
-            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
-    else:
-        error = ValueError(f"Unsupported connection provider: {connection_provider}")
-        raise UserErrorException(
-            target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=str(error),
-            error=error,
-        )
-    return connection_operation
 
 
 # extract open read/write as partial to centralize the encoding
@@ -1188,3 +1075,43 @@ def parse_otel_span_status_code(value: int) -> str:
         return "Ok"
     else:
         return "Error"
+
+
+def _generate_meta_from_file(working_dir, source_path, entry, meta_dict, exception_list):
+    from promptflow._core.tool_meta_generator import generate_flow_meta_dict_by_file
+
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
+        try:
+            result = generate_flow_meta_dict_by_file(
+                path=source_path,
+                entry=entry,
+            )
+            meta_dict.update(result)
+        except Exception as e:
+            exception_list.append(str(e))
+
+
+def extract_workspace_triad_from_trace_provider(trace_provider: str) -> AzureMLWorkspaceTriad:
+    match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, trace_provider)
+    if not match or len(match.groups()) != 5:
+        raise ValueError(
+            "Malformed trace provider string, expected azureml://subscriptions/<subscription_id>/"
+            "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+            f"workspaces/<workspace_name>, got {trace_provider}"
+        )
+    subscription_id = match.group(1)
+    resource_group_name = match.group(3)
+    workspace_name = match.group(5)
+    return AzureMLWorkspaceTriad(subscription_id, resource_group_name, workspace_name)
+
+
+def overwrite_null_std_logger():
+    # For the process started in detach mode, stdout/stderr will be none.
+    # To avoid exception to stdout/stderr calls in the dependency package, point stdout/stderr to devnull.
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout
+
+
+generate_flow_meta = _generate_flow_meta

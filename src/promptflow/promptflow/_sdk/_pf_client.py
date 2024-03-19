@@ -6,14 +6,16 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from .._constants import USER_AGENT_OVERRIDE_KEY
 from .._utils.logger_utils import get_cli_sdk_logger
+from .._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
+from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
-from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
-from .entities._eager_flow import EagerFlow
+from .entities._eager_flow import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -34,26 +36,31 @@ class PFClient:
 
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
-        self._runs = RunOperations(self)
+        # when this is set, telemetry from this client will use this user agent and ignore the one from OperationContext
+        self._user_agent_override = kwargs.pop(USER_AGENT_OVERRIDE_KEY, None)
         self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
         # The credential is used as an option to override
         # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
+
+        # user_agent_override will be applied to all TelemetryMixin operations
+        self._runs = RunOperations(self, user_agent_override=self._user_agent_override)
+        self._flows = FlowOperations(client=self, user_agent_override=self._user_agent_override)
+        self._experiments = ExperimentOperations(self, user_agent_override=self._user_agent_override)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
-        self._flows = FlowOperations(client=self)
+
         self._tools = ToolOperations()
         # add user agent from kwargs if any
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
-        self._experiments = ExperimentOperations(self)
         self._traces = TraceOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -64,6 +71,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -112,9 +120,35 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+        if not flow:
+            raise ValueError("'flow' is required to create a run.")
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
         if data and not os.path.exists(data):
@@ -124,7 +158,7 @@ class PFClient:
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow)
         # validate param conflicts
-        if isinstance(flow_obj, EagerFlow):
+        if isinstance(flow_obj, FlexFlow):
             if variant or connections:
                 logger.warning("variant and connections are not supported for eager flow, will be ignored")
                 variant, connections = None, None
@@ -216,8 +250,40 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            self._connections = get_connection_operation(self._connection_provider, self._credential)
+            self._connections = PFClient._build_connection_operation(
+                self._connection_provider,
+                self._credential,
+                user_agent_override=self._user_agent_override,
+            )
         return self._connections
+
+    @staticmethod
+    def _build_connection_operation(connection_provider: str, credential=None, **kwargs):
+        """
+        Build a ConnectionOperation object based on connection provider.
+
+        :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+        :type connection_provider: str
+        :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+        :type credential: object
+        """
+        if connection_provider == ConnectionProvider.LOCAL.value:
+            from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+            logger.debug("PFClient using local connection operations.")
+            connection_operation = ConnectionOperations(**kwargs)
+        elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+            from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+            logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential, **kwargs)
+        else:
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message_format="Unsupported connection provider: {connection_provider}",
+                connection_provider=connection_provider,
+            )
+        return connection_operation
 
     @property
     def flows(self) -> FlowOperations:

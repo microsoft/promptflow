@@ -1,0 +1,17 @@
+inputs:
+  input:
+    type: list
+outputs:
+  output:
+    type: list
+    reference: ${embedding.output}
+nodes:
+- name: embedding
+  type: python
+  source:
+    type: code
+    path: embedding.py
+  inputs:
+    connection: azure_open_ai_connection
+    input: ${inputs.input}
+    model: text-embedding-ada-002

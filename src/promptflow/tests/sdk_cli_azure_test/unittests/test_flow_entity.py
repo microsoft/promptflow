@@ -215,3 +215,30 @@ class TestFlow:
 
             _, flow_dag = load_flow_dag(flow_path=flow_folder)
             assert flow_dag[ENVIRONMENT] == {"image": "python:3.8-slim"}
+
+    def test_flow_resolve_environment(self):
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            # flow without env
+            shutil.copytree(FLOWS_DIR / "hello-world", temp / "hello-world")
+            flow = load_flow(source=temp / "hello-world")
+            with flow._build_code():
+                assert flow._environment == {}
+
+            # flow with requirements
+            shutil.copytree(FLOWS_DIR / "flow_with_requirements_txt", temp / "flow_with_requirements_txt")
+            flow = load_flow(source=temp / "flow_with_requirements_txt")
+            with flow._build_code():
+                assert flow._environment == {"python_requirements_txt": ["langchain"]}
+
+            shutil.copytree(
+                FLOWS_DIR / "flow_with_requirements_txt_and_env", temp / "flow_with_requirements_txt_and_env"
+            )
+            flow = load_flow(source=temp / "flow_with_requirements_txt_and_env")
+            with flow._build_code():
+                assert flow._environment == {"image": "python:3.8-slim", "python_requirements_txt": ["langchain"]}
+
+            # flow with requirements in additional includes
+            flow = load_flow(source=FLOWS_DIR / "flow_with_additional_include_req")
+            with flow._build_code():
+                assert flow._environment == {"python_requirements_txt": ["tensorflow"]}

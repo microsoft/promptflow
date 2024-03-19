@@ -1,0 +1,104 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  document:
+    type: string
+  summary:
+    type: string
+outputs:
+  coherence:
+    type: double
+    reference: ${score_coherence.output}
+  consistency:
+    type: double
+    reference: ${score_consistency.output}
+  fluency:
+    type: double
+    reference: ${score_fluency.output}
+  relevance:
+    type: double
+    reference: ${score_relevance.output}
+nodes:
+- name: prompt_coherence
+  type: prompt
+  source:
+    type: code
+    path: prompts/coherence.jinja2
+  inputs:
+    Document: ${inputs.document}
+    Summary: ${inputs.summary}
+- name: score_coherence
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: open_ai_connection
+    prompt_with_src_and_gen: ${prompt_coherence.output}
+    max_score: 5
+    deployment_name: gpt-4
+- name: prompt_consistency
+  type: prompt
+  source:
+    type: code
+    path: prompts/consistency.jinja2
+  inputs:
+    Document: ${inputs.document}
+    Summary: ${inputs.summary}
+- name: score_consistency
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: open_ai_connection
+    prompt_with_src_and_gen: ${prompt_consistency.output}
+    max_score: 5
+    deployment_name: gpt-4
+- name: prompt_fluency
+  type: prompt
+  source:
+    type: code
+    path: prompts/fluency.jinja2
+  inputs:
+    Summary: ${inputs.summary}
+- name: score_fluency
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: open_ai_connection
+    prompt_with_src_and_gen: ${prompt_fluency.output}
+    max_score: 3
+    deployment_name: gpt-4
+- name: prompt_relevance
+  type: prompt
+  source:
+    type: code
+    path: prompts/relevance.jinja2
+  inputs:
+    Document: ${inputs.document}
+    Summary: ${inputs.summary}
+- name: score_relevance
+  type: python
+  source:
+    type: code
+    path: geval.py
+  inputs:
+    connection: open_ai_connection
+    prompt_with_src_and_gen: ${prompt_relevance.output}
+    max_score: 5
+    deployment_name: gpt-4
+- name: average_scores
+  type: python
+  source:
+    type: code
+    path: average_scores.py
+  inputs:
+    fluency_list: ${score_fluency.output}
+    consistency_list: ${score_consistency.output}
+    relevance_list: ${score_relevance.output}
+    coherence_list: ${score_coherence.output}
+  aggregation: true

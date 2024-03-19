@@ -7,8 +7,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Type, TypeVar
 
-from promptflow._core.generator_proxy import GeneratorProxy
+from promptflow._constants import DEFAULT_OUTPUT_NAME
 from promptflow.contracts.tool import ConnectionType
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 T = TypeVar("T")
 
@@ -136,4 +137,4 @@ def convert_eager_flow_output_to_dict(value: Any):
     elif is_dataclass(value):
         return {f.name: getattr(value, f.name) for f in fields(value)}
     else:
-        return {"output": value}
+        return {DEFAULT_OUTPUT_NAME: value}

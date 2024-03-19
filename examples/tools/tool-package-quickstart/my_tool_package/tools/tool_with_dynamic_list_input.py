@@ -31,7 +31,10 @@ def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, U
     return result
 
 
-def list_endpoint_names(subscription_id, resource_group_name, workspace_name, prefix: str = "") -> List[Dict[str, str]]:
+def list_endpoint_names(subscription_id: str = None,
+                        resource_group_name: str = None,
+                        workspace_name: str = None,
+                        prefix: str = "") -> List[Dict[str, str]]:
     """This is an example to show how to get Azure ML resource in tool input list function.
 
     :param subscription_id: Azure subscription id.
@@ -39,6 +42,10 @@ def list_endpoint_names(subscription_id, resource_group_name, workspace_name, pr
     :param workspace_name: Azure ML workspace name.
     :param prefix: prefix to add to each item.
     """
+    # return an empty list if workspace triad is not available.
+    if not subscription_id or not resource_group_name or not workspace_name:
+        return []
+
     from azure.ai.ml import MLClient
     from azure.identity import DefaultAzureCredential
 

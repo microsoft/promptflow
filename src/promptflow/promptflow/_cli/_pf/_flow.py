@@ -556,7 +556,7 @@ def _resolve_python_flow_additional_includes(source) -> Path:
 
 
 def serve_flow_python(args, source):
-    from promptflow._sdk._serving.app import create_app
+    from promptflow.core._serving.app import create_app
 
     static_folder = args.static_folder
     if static_folder:
@@ -620,6 +620,6 @@ def validate_flow(args):
     )
     print(repr(validation_result))
     if not validation_result.passed:
-        exit(1)
+        sys.exit(1)
     else:
-        exit(0)
+        sys.exit(0)

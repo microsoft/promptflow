@@ -16,20 +16,6 @@ runs:
     shell: pwsh
     run: |
       pip uninstall -y promptflow promptflow-sdk promptflow-tools
-  - name: 'Build and install: promptflow with extra'
-    if: inputs.setupType == 'promptflow_with_extra'
-    shell: pwsh
-    run: |
-      Set-PSDebug -Trace 1
-      pip install -r ./dev_requirements.txt
-      echo "########### pip list (Before) ###########"
-      pip list
-      python ./setup.py bdist_wheel
-      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
-      pip install $($package.FullName + "[azure,executable,azureml-serving,executor-service]")
-      echo "########### pip freeze (After) ###########"
-      pip freeze
-    working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow-sdk'
     if: inputs.setupType == 'promptflow_dev'
     shell: pwsh
@@ -52,3 +38,17 @@ runs:
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
+  - name: 'Build and install: promptflow with extra'
+    if: inputs.setupType == 'promptflow_with_extra'
+    shell: pwsh
+    run: |
+      Set-PSDebug -Trace 1
+      pip install -r ./dev_requirements.txt
+      echo "########### pip list (Before) ###########"
+      pip list
+      python ./setup.py bdist_wheel
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
+      pip install --force-reinstall $($package.FullName + "[azure,executable,azureml-serving,executor-service]")
+      echo "########### pip freeze (After) ###########"
+      pip freeze
+    working-directory: ${{ inputs.scriptPath }}

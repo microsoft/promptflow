@@ -4,7 +4,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'Prompt flow'
-copyright = '2023, Microsoft'
+copyright = '2024, Microsoft'
 author = 'Microsoft'
 
 sys.path.append(".")
@@ -54,7 +54,7 @@ linkcheck_ignore = [
     r"^(?!https?)",
     "deploy-using-docker.html",
     "deploy-using-kubernetes.html",
-    "https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-basic",
+    "https://portal.azure.com/#create/Microsoft.CognitiveServicesTextAnalytics",  # sphinx recognizes #create as an anchor while it's not. # noqa: E501
 ]
 
 linkcheck_exclude_documents = ["contributing"]

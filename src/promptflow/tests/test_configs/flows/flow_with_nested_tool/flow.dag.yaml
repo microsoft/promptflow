@@ -1,0 +1,16 @@
+inputs:
+  input:
+    type: string
+    default: test
+outputs:
+  output:
+    type: string
+    reference: ${nested_tool_node.output}
+nodes:
+  - name: nested_tool_node
+    type: python
+    source:
+      type: code
+      path: nested_tool.py
+    inputs:
+      input: ${inputs.input}
