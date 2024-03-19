@@ -12,7 +12,7 @@ from utils import dict_iter_render_message, parse_image_content, parse_list_from
 
 from promptflow._constants import STREAMING_ANIMATION_TIME
 from promptflow._sdk._submitter.utils import resolve_generator, resolve_generator_output_with_cache
-from promptflow._sdk._utils import dump_flow_result
+from promptflow._utils.flow_utils import dump_flow_result
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.client import load_flow
 

@@ -15,7 +15,7 @@ from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from .entities import Run
-from .entities._eager_flow import FlexFlow
+from .entities._flow import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations

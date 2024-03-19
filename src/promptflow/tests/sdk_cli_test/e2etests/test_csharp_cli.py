@@ -57,6 +57,18 @@ class TestCSharpCli:
             "topic=promptflow",
         )
 
+    def test_pf_run_create_with_connection_override(self):
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{get_repo_base_path()}\\examples\\BasicWithBuiltinLLM\\bin\\Debug\\net6.0",
+            "--data",
+            f"{get_repo_base_path()}\\examples\\BasicWithBuiltinLLM\\batchRunData.jsonl",
+            "--connections",
+            "get_answer.connection=azure_open_ai_connection",
+        )
+
     def test_flow_chat(self, monkeypatch, capsys):
         flow_dir = f"{get_repo_base_path()}\\src\\PromptflowCSharp\\Sample\\BasicChat\\bin\\Debug\\net6.0"
         # mock user input with pop so make chat list reversed

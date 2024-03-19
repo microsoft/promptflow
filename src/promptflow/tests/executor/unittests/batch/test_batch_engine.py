@@ -5,8 +5,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._proxy import ProxyFactory
 from promptflow.batch import APIBasedExecutorProxy, BatchEngine, CSharpExecutorProxy, PythonExecutorProxy
-from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound
@@ -53,16 +53,16 @@ class TestBatchEngine:
 
     def test_register_executor(self):
         # assert original values
-        assert ExecutorProxyFactory.executor_proxy_classes["python"] == PythonExecutorProxy
-        assert ExecutorProxyFactory.executor_proxy_classes["csharp"] == CSharpExecutorProxy
+        assert ProxyFactory.executor_proxy_classes["python"] == PythonExecutorProxy
+        assert ProxyFactory.executor_proxy_classes["csharp"] == CSharpExecutorProxy
 
         class MockJSExecutorProxy(APIBasedExecutorProxy):
             pass
 
         # register new proxy
-        ExecutorProxyFactory.register_executor("js", MockJSExecutorProxy)
-        assert ExecutorProxyFactory.executor_proxy_classes["js"] == MockJSExecutorProxy
-        assert len(ExecutorProxyFactory.executor_proxy_classes) == 3
+        ProxyFactory.register_executor("js", MockJSExecutorProxy)
+        assert ProxyFactory.executor_proxy_classes["js"] == MockJSExecutorProxy
+        assert len(ProxyFactory.executor_proxy_classes) == 3
 
     def test_cancel(self):
         batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
