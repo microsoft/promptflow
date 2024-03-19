@@ -69,7 +69,6 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException
-from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._utils import serialize
 
 
