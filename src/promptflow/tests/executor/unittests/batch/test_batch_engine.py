@@ -66,10 +66,9 @@ class TestBatchEngine:
         assert len(ProxyFactory.executor_proxy_classes) == 3
 
     def test_get_executor_proxy_cls(self):
-        executor_proxy_factory = ExecutorProxyFactory()
-        assert executor_proxy_factory.get_executor_proxy_cls("python") == PythonExecutorProxy
-        assert executor_proxy_factory.get_executor_proxy_cls("csharp") == CSharpExecutorProxy
-        assert executor_proxy_factory.get_executor_proxy_cls(None) == ChatGroupOrchestratorProxy
+        assert ProxyFactory().get_executor_proxy_cls("python") == PythonExecutorProxy
+        assert ProxyFactory().get_executor_proxy_cls("csharp") == CSharpExecutorProxy
+        assert ProxyFactory().get_executor_proxy_cls(None) == ChatGroupOrchestratorProxy
 
     def test_cancel(self):
         batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
