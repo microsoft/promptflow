@@ -189,35 +189,6 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
 
 
-def strip_quotation(value):
-    """
-    To avoid escaping chars in command args, args will be surrounded in quotas.
-    Need to remove the pair of quotation first.
-    """
-    if value.startswith('"') and value.endswith('"'):
-        return value[1:-1]
-    elif value.startswith("'") and value.endswith("'"):
-        return value[1:-1]
-    else:
-        return value
-
-
-def parse_variant(variant: str) -> Tuple[str, str]:
-    variant_regex = r"\${([^.]+).([^}]+)}"
-    match = re.match(variant_regex, strip_quotation(variant))
-    if match:
-        return match.group(1), match.group(2)
-    else:
-        error = ValueError(
-            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
-        )
-        raise UserErrorException(
-            target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=str(error),
-            error=error,
-        )
-
-
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
 def get_used_connection_names_from_environment_variables():
     """The function will get all potential related connection names from current environment variables.

@@ -43,11 +43,10 @@ from promptflow._sdk._utils import (
     is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
-    parse_variant,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 

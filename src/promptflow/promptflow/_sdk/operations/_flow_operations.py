@@ -32,12 +32,11 @@ from promptflow._sdk._utils import (
     generate_flow_tools_json,
     generate_random_string,
     logger,
-    parse_variant,
 )
 from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
+from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, parse_variant
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 

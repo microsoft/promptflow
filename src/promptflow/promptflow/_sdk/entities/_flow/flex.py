@@ -7,7 +7,6 @@ from typing import Dict, Optional, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._utils.docs import FlexFlowDoc
 from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -15,7 +14,11 @@ from .dag import Flow
 
 
 class FlexFlow(Flow):
-    __doc__ = FlexFlowDoc.__doc__
+    """A FlexFlow represents a flow defined with codes directly. It doesn't involve a directed acyclic graph (DAG)
+    explicitly, but its entry function haven't been provided.
+    FlexFlow basically behave like a Flow.
+    Load of this non-dag flow is provided, but direct call of it will cause exceptions.
+    """
 
     def __init__(
         self,
