@@ -6,6 +6,7 @@ import inspect
 from pathlib import Path
 
 from flask import jsonify, request
+from flask_restx import inputs
 
 import promptflow._sdk.schemas._connection as connection
 from promptflow._sdk._configuration import Configuration
@@ -86,7 +87,7 @@ class ConnectionList(Resource):
         connection_op = _get_connection_operation(args.working_directory)
         # parse query parameters
         max_results = request.args.get("max_results", default=50, type=int)
-        all_results = request.args.get("all_results", default=False, type=bool)
+        all_results = request.args.get("all_results", default=False, type=inputs.boolean)
 
         connections = connection_op.list(max_results=max_results, all_results=all_results)
         connections_dict = [connection._to_dict() for connection in connections]

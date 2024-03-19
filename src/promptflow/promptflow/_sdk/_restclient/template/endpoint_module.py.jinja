@@ -1,0 +1,164 @@
+from http import HTTPStatus
+from typing import Any, Dict, List, Optional, Union, cast
+
+import httpx
+
+from ...client import AuthenticatedClient, Client
+from ...types import Response, UNSET
+from ... import errors
+from ....utils import _request_wrapper
+
+{% for relative in endpoint.relative_imports %}
+{{ relative }}
+{% endfor %}
+
+{% from "endpoint_macros.py.jinja" import header_params, cookie_params, query_params,
+    arguments, client, kwargs, parse_response, docstring, body_to_kwarg %}
+
+{% set return_string = endpoint.response_type() %}
+{% set parsed_responses = (endpoint.responses | length > 0) and return_string != "Any" %}
+
+def _get_kwargs(
+    {{ arguments(endpoint, include_client=False) | indent(4) }}
+) -> Dict[str, Any]:
+    {{ header_params(endpoint) | indent(4) }}
+
+    {{ cookie_params(endpoint) | indent(4) }}
+
+    {{ query_params(endpoint) | indent(4) }}
+
+    _kwargs: Dict[str, Any] = {
+        "method": "{{ endpoint.method }}",
+        {% if endpoint.path_parameters %}
+        "url": "{{ endpoint.path }}".format(
+        {%- for parameter in endpoint.path_parameters.values() -%}
+        {{parameter.python_name}}={{parameter.python_name}},
+        {%- endfor -%}
+        ),
+        {% else %}
+        "url": "{{ endpoint.path }}",
+        {% endif %}
+        {% if endpoint.query_parameters %}
+        "params": params,
+        {% endif %}
+        {% if endpoint.cookie_parameters %}
+        "cookies": cookies,
+        {% endif %}
+    }
+
+{% if endpoint.bodies | length > 1 %}
+{% for body in endpoint.bodies %}
+    if isinstance(body, {{body.prop.get_type_string() }}):
+        {% set destination = "_" + body.body_type + "_body" %}
+        {{ body_to_kwarg(body, destination) | indent(8) }}
+        _kwargs["{{ body.body_type.value }}"] = {{ destination }}
+        headers["Content-Type"] = "{{ body.content_type }}"
+{% endfor %}
+{% elif endpoint.bodies | length == 1 %}
+{% set body = endpoint.bodies[0] %}
+    {{ body_to_kwarg(body, "_body") | indent(4) }}
+    _kwargs["{{ body.body_type.value }}"] = _body
+    {% if body.content_type != "multipart/form-data" %}{# Need httpx to set the boundary automatically #}
+    headers["Content-Type"] = "{{ body.content_type }}"
+    {% endif %}
+{% endif %}
+
+{% if endpoint.header_parameters or endpoint.bodies | length > 0 %}
+    _kwargs["headers"] = headers
+{% endif %}
+    return _kwargs
+
+
+def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[{{ return_string }}]:
+    {% for response in endpoint.responses %}
+    if response.status_code == HTTPStatus.{{ response.status_code.name }}:
+        {% if parsed_responses %}{% import "property_templates/" + response.prop.template as prop_template %}
+        {% if prop_template.construct %}
+        {{ prop_template.construct(response.prop, response.source.attribute) | indent(8) }}
+        {% elif response.source.return_type == response.prop.get_type_string()  %}
+        {{ response.prop.python_name }} = {{ response.source.attribute }}
+        {% else %}
+        {{ response.prop.python_name }} = cast({{ response.prop.get_type_string() }}, {{ response.source.attribute }})
+        {% endif %}
+        return {{ response.prop.python_name }}
+        {% else %}
+        return None
+        {% endif %}
+    {% endfor %}
+    if client.raise_on_unexpected_status:
+        raise errors.UnexpectedStatus(response.status_code, response.content)
+    else:
+        return None
+
+
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[{{ return_string }}]:
+    return Response(
+        status_code=HTTPStatus(response.status_code),
+        content=response.content,
+        headers=response.headers,
+        parsed=_parse_response(client=client, response=response),
+    )
+
+
+@_request_wrapper()
+def sync_detailed(
+    {{ arguments(endpoint) | indent(4) }}
+    stream: bool = False,
+) -> Response[{{ return_string }}]:
+    {{ docstring(endpoint, return_string, is_detailed=true) | indent(4) }}
+
+    kwargs = _get_kwargs(
+        {{ kwargs(endpoint, include_client=False) }}
+    )
+
+    if stream:
+        return client.get_httpx_client().stream(**kwargs)
+    else:
+        response = client.get_httpx_client().request(
+            **kwargs,
+        )
+        return _build_response(client=client, response=response)
+
+{% if parsed_responses %}
+@_request_wrapper()
+def sync(
+    {{ arguments(endpoint) | indent(4) }}
+) -> Optional[{{ return_string }}]:
+    {{ docstring(endpoint, return_string, is_detailed=false) | indent(4) }}
+
+    return sync_detailed(
+        {{ kwargs(endpoint) }}
+    ).parsed
+{% endif %}
+
+@_request_wrapper()
+async def asyncio_detailed(
+    {{ arguments(endpoint) | indent(4) }}
+    stream: bool = False,
+) -> Response[{{ return_string }}]:
+    {{ docstring(endpoint, return_string, is_detailed=true) | indent(4) }}
+
+    kwargs = _get_kwargs(
+        {{ kwargs(endpoint, include_client=False) }}
+    )
+    if stream:
+        with await client.get_httpx_client().stream(**kwargs) as response:
+            return _build_response(client=client, response=response)
+    else:
+        response = await client.get_async_httpx_client().request(
+            **kwargs
+        )
+
+        return _build_response(client=client, response=response)
+
+{% if parsed_responses %}
+@_request_wrapper()
+async def asyncio(
+    {{ arguments(endpoint) | indent(4) }}
+) -> Optional[{{ return_string }}]:
+    {{ docstring(endpoint, return_string, is_detailed=false) | indent(4) }}
+
+    return (await asyncio_detailed(
+        {{ kwargs(endpoint) }}
+    )).parsed
+{% endif %}

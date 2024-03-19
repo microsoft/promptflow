@@ -13,6 +13,7 @@ from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
+from ._restclient.service_caller import PFSCaller
 from ._user_agent import USER_AGENT
 from .entities import Run
 from .entities._eager_flow import FlexFlow
@@ -56,6 +57,7 @@ class PFClient:
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._traces = TraceOperations()
+        self._pfs_client = PFSCaller()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(

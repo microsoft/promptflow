@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import os.path
+import re
 import shutil
 import subprocess
 import sys
@@ -1942,24 +1943,87 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_create(self, monkeypatch, capfd):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            experiment_path = f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml"
+            invalid_path = Path("invalid/exp/path").absolute().as_posix()
+            with pytest.raises(SystemExit):
+                # Raise exception when template path is a relative path.
+                run_pf_command(
+                    "experiment",
+                    "create",
+                    "--template",
+                    invalid_path,
+                )
+            out, _ = capfd.readouterr()
+            assert f"Experiment template path {invalid_path} does not exist." in out
+
+            experiment_name = str(uuid.uuid4())
+            run_pf_command(
+                "experiment",
+                "create",
+                "--name",
+                experiment_name,
+                "--template",
+                experiment_path,
+            )
+            out, _ = capfd.readouterr()
+            assert experiment_name in out
+
+            run_pf_command(
+                "experiment",
+                "show",
+                "--name",
+                experiment_name,
+            )
+            out, _ = capfd.readouterr()
+            assert experiment_name in out
+
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_list(self, monkeypatch, capfd):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            run_pf_command("experiment", "list", "--max-results", "2")
+            out, _ = capfd.readouterr()
+            if not out.startswith("["):
+                out = "\n".join(out.split("\n")[1:])
+            assert len(json.loads(out)) <= 2
+
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "experiment",
+                    "list",
+                    "--archived-only",
+                    "--include-archived",
+                )
+            out, _ = capfd.readouterr()
+            assert "Cannot provide both archived-only and include-archived" in out
+
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
         def wait_for_experiment_terminated(experiment_name):
-            experiment = local_client._experiments.get(experiment_name)
-            while experiment.status in [ExperimentStatus.IN_PROGRESS, ExperimentStatus.QUEUING]:
+            experiment = local_client._pfs_client.show_experiment(experiment_name)
+            while experiment.status in [
+                ExperimentStatus.NOT_STARTED,
+                ExperimentStatus.IN_PROGRESS,
+                ExperimentStatus.QUEUING,
+            ]:
                 sleep(10)
-                experiment = local_client._experiments.get(experiment_name)
+                experiment = local_client._pfs_client.show_experiment(experiment_name)
             return experiment
 
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
             exp_name = str(uuid.uuid4())
+            template_path = Path(EXPERIMENT_DIR) / "basic-script-template" / "basic-script.exp.yaml"
             run_pf_command(
                 "experiment",
                 "create",
                 "--template",
-                f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml",
+                template_path.absolute().as_posix(),
                 "--name",
                 exp_name,
             )
@@ -1974,7 +2038,6 @@ class TestCli:
                 exp_name,
             )
             out, _ = capfd.readouterr()
-            assert ExperimentStatus.QUEUING in out
             wait_for_experiment_terminated(exp_name)
             exp = local_client._experiments.get(name=exp_name)
             assert len(exp.node_runs) == 4
@@ -1984,21 +2047,19 @@ class TestCli:
 
     @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
-    def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
+    def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client, capfd):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
-            from promptflow._sdk.entities._experiment import Experiment
-
-            with mock.patch.object(Experiment, "_generate_name") as mock_generate_name:
-                experiment_name = str(uuid.uuid4())
-                mock_generate_name.return_value = experiment_name
-                mock_func.return_value = True
-                experiment_file = f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml"
-                run_pf_command("experiment", "start", "--template", experiment_file, "--stream")
-                exp = local_client._experiments.get(name=experiment_name)
-                assert len(exp.node_runs) == 4
-                assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
-                metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
-                assert "accuracy" in metrics
+            mock_func.return_value = True
+            experiment_file = Path(EXPERIMENT_DIR) / "basic-script-template" / "basic-script.exp.yaml"
+            run_pf_command("experiment", "start", "--template", experiment_file.absolute().as_posix(), "--stream")
+            out, _ = capfd.readouterr()
+            pattern = r"^    \"name\": \"(.*)\""
+            experiment_name = re.search(pattern, out, re.MULTILINE).groups()[0]
+            exp = local_client._experiments.get(name=experiment_name)
+            assert len(exp.node_runs) == 4
+            assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
+            metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+            assert "accuracy" in metrics
 
     @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
     def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):

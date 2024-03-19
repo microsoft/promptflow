@@ -10,6 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from flask import Response, jsonify, make_response, request
+from flask_restx import inputs
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._errors import RunNotFoundError
@@ -44,9 +45,9 @@ class RunList(Resource):
     def get(self):
         # parse query parameters
         max_results = request.args.get("max_results", default=50, type=int)
-        all_results = request.args.get("all_results", default=False, type=bool)
-        archived_only = request.args.get("archived_only", default=False, type=bool)
-        include_archived = request.args.get("include_archived", default=False, type=bool)
+        all_results = request.args.get("all_results", default=False, type=inputs.boolean)
+        archived_only = request.args.get("archived_only", default=False, type=inputs.boolean)
+        include_archived = request.args.get("include_archived", default=False, type=inputs.boolean)
         # align with CLI behavior
         if all_results:
             max_results = None
