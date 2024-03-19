@@ -1,7 +1,7 @@
 import pytest
 
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 
 @pytest.mark.unittest

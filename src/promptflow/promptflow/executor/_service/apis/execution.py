@@ -15,6 +15,7 @@ from promptflow.executor._service.contracts.execution_request import (
 from promptflow.executor._service.utils.process_manager import ProcessManager
 from promptflow.executor._service.utils.process_utils import invoke_sync_function_in_process
 from promptflow.executor._service.utils.service_utils import (
+    enable_async_execution,
     get_log_context,
     set_environment_variables,
     update_and_get_operation_context,
@@ -81,6 +82,7 @@ def flow_test(request: FlowExecutionRequest):
     request.validate_request()
     # resolve environment variables
     set_environment_variables(request)
+    enable_async_execution()
     # execute flow
     storage = DefaultRunStorage(base_dir=request.working_dir, sub_dir=request.output_dir)
     with get_log_context(request):

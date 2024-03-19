@@ -8,12 +8,14 @@ import logging
 import re
 from dataclasses import asdict, fields, is_dataclass
 from enum import Enum, EnumMeta
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
 from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -279,8 +281,8 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
 def validate_tool_func_result(func_call_scenario: str, result):
     if func_call_scenario not in list(ToolFuncCallScenario):
         raise RetrieveToolFuncResultValidationError(
-                f"Invalid tool func call scenario: {func_call_scenario}. "
-                f"Available scenarios are {list(ToolFuncCallScenario)}"
+            f"Invalid tool func call scenario: {func_call_scenario}. "
+            f"Available scenarios are {list(ToolFuncCallScenario)}"
         )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
@@ -322,11 +324,20 @@ def append_workspace_triple_to_func_input_params(
 def load_function_from_function_path(func_path: str):
     """Load a function from a function path.
 
-    The function path should be in the format of "module_name.function_name".
+    If function is in an installed package, the function path should be in the format of "module_name.function_name".
+    If function is in a script, the function path should be in the format of "function_path:function_name".
     """
     try:
-        module_name, func_name = func_path.rsplit(".", 1)
-        module = importlib.import_module(module_name)
+        if ":" in func_path:
+            script_path, func_name = func_path.rsplit(":", 1)
+            script_name = Path(script_path).stem
+            with _change_working_dir(Path(script_path).parent):
+                spec = importlib.util.spec_from_file_location(script_name, script_path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+        else:
+            module_name, func_name = func_path.rsplit(".", 1)
+            module = importlib.import_module(module_name)
         f = getattr(module, func_name)
         if callable(f):
             return f
@@ -437,7 +448,7 @@ def _get_function_path(function):
     elif isinstance(function, Callable):
         func = function
         if function.__module__ == PF_MAIN_MODULE_NAME:
-            func_path = function.__name__
+            func_path = f"{inspect.getfile(function)}:{function.__name__}"
         else:
             func_path = f"{function.__module__}.{function.__name__}"
     else:

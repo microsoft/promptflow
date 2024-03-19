@@ -11,6 +11,7 @@ PROMPTFLOW_CONNECTIONS = "PROMPTFLOW_CONNECTIONS"
 PROMPTFLOW_SECRETS_FILE = "PROMPTFLOW_SECRETS_FILE"
 PF_NO_INTERACTIVE_LOGIN = "PF_NO_INTERACTIVE_LOGIN"
 PF_RUN_AS_BUILT_BINARY = "PF_RUN_AS_BUILT_BINARY"
+ENABLE_MULTI_CONTAINER_KEY = "PF_ENABLE_MULTI_CONTAINER"
 PF_LOGGING_LEVEL = "PF_LOGGING_LEVEL"
 OPENAI_API_KEY = "openai-api-key"
 BING_API_KEY = "bing-api-key"
@@ -43,6 +44,9 @@ FLOW_TOOLS_JSON = "flow.tools.json"
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
 
+# Environment variables
+PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
+
 
 class FlowLanguage:
     """The enum of tool source type."""
@@ -56,6 +60,13 @@ class FlowEntryRegex:
 
     Python = r"^[a-zA-Z0-9_.]+:[a-zA-Z0-9_]+$"
     CSharp = r"\((.+)\)[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)+"
+
+
+class FlowType:
+    """The enum of flow type."""
+
+    DAG_FLOW = "dag"
+    FLEX_FLOW = "flex"
 
 
 class AvailableIDE:
@@ -82,6 +93,7 @@ STREAMING_ANIMATION_TIME = 0.01
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
+OK_LINE_RUN_STATUS = "Ok"
 
 
 class TraceEnvironmentVariableName:

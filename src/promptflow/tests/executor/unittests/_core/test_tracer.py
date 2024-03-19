@@ -3,11 +3,11 @@ import inspect
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tracing import trace
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer, _create_trace_from_function_call
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 from promptflow.tracing.contracts.trace import Trace, TraceType
 
 from ...utils import prepare_memory_exporter
