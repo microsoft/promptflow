@@ -14,19 +14,19 @@ flow_folder: "<your-test-data-gen-flow-folder-path>"
 node_inputs_override: # Override some node inputs, if not fill in "node_inputs_override", will use the values in flow.dag.yaml
   validate_text_chunk: # node name in flow.dag.yaml
     connection: "<your-connection-name>" # input name of `validate_text_chunk`
-    model_or_deployment_name: "<your-model-or-deployment-name>"
+    deployment_name: "<your-model-or-deployment-name>"  # Use key `deployment_name` for Azure OpenAI connection, `model` for OpenAI.
   generate_question:
     connection: "<your-connection-name>"
-    model_or_deployment_name: "<your-model-or-deployment-name>"
+    deployment_name: "<your-model-or-deployment-name>"
   validate_question:
     connection: "<your-connection-name>"
-    model_or_deployment_name: "<your-model-or-deployment-name>"
+    deployment_name: "<your-model-or-deployment-name>"
   generate_suggested_answer:
     connection: "<your-connection-name>"
-    model_or_deployment_name: "<your-model-or-deployment-name>"
+    deployment_name: "<your-model-or-deployment-name>"
   validate_suggested_answer:
     connection: "<your-connection-name>"
-    model_or_deployment_name: "<your-model-or-deployment-name>"
+    deployment_name: "<your-model-or-deployment-name>"
 
 
 # Local section: this section is for local test data generation related configuration. Can skip if not run in local.
