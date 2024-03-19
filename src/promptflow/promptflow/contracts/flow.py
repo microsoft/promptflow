@@ -546,13 +546,14 @@ class FlowBase:
                 environment_variables[k] = v
         return environment_variables
 
-    def get_connection_names(self):
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names."""
+        environment_variables = self.get_environment_variables_with_overrides(environment_variables_overrides)
         connection_names = set({})
 
         # Add connection names from environment variable reference
-        if self.environment_variables:
-            for k, v in self.environment_variables.items():
+        if environment_variables:
+            for k, v in environment_variables.items():
                 if not isinstance(v, str) or not v.startswith("${"):
                     continue
                 connection_name, _ = _match_reference(v)
@@ -843,9 +844,9 @@ class Flow(FlowBase):
                 connection_names[k] = input_assignment.value
         return connection_names
 
-    def get_connection_names(self):
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names."""
-        connection_names = super().get_connection_names()
+        connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
         nodes = [
             self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
             for node in self.nodes

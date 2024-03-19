@@ -1408,3 +1408,17 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" in run_dict
         assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]
+
+    def test_shadow_evc(self, pf):
+        # won't fail with connection not found
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/evc_connection_not_exist",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            environment_variables={"API_BASE": "VAL"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.key": ["API_BASE"], "inputs.line_number": [0], "outputs.output": ["VAL"]}

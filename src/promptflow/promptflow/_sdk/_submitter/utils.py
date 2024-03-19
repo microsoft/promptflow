@@ -50,6 +50,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
+from promptflow.contracts.flow import EagerFlow as ExecutableFlexFlow
 from promptflow.contracts.flow import Flow as ExecutableFlow
 
 logger = get_cli_sdk_logger()
@@ -252,23 +253,28 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
+    def resolve_connections(
+        flow: Flow, client=None, connections_to_ignore=None, environment_variables_overrides=None
+    ) -> dict:
         # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
         from promptflow._sdk.entities._eager_flow import FlexFlow
 
         from .._pf_client import PFClient
 
-        if isinstance(flow, FlexFlow):
-            # TODO(2898247): support prompt flow management connection for eager flow
-            return {}
-
         client = client or PFClient()
         with _change_working_dir(flow.code):
-            executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+            if not isinstance(flow, FlexFlow):
+                executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+            else:
+                # TODO(2898247): support prompt flow management connection for eager flow
+                executable = ExecutableFlexFlow.deserialize(data=flow._data)
         executable.name = str(Path(flow.code).stem)
 
         return get_local_connections_from_executable(
-            executable=executable, client=client, connections_to_ignore=connections_to_ignore
+            executable=executable,
+            client=client,
+            connections_to_ignore=connections_to_ignore,
+            environment_variables_overrides=environment_variables_overrides,
         )
 
     @staticmethod

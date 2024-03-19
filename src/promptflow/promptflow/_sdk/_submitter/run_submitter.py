@@ -117,7 +117,10 @@ class RunSubmitter:
             connections = []
         else:
             with _change_working_dir(flow.code):
-                connections = SubmitterHelper.resolve_connections(flow=flow)
+                # resolve connections with environment variables overrides to avoid getting unused connections
+                connections = SubmitterHelper.resolve_connections(
+                    flow=flow, environment_variables_overrides=run.environment_variables
+                )
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
