@@ -166,6 +166,19 @@ class TraceOperations:
         session: typing.Optional[str] = None,
         started_before: typing.Optional[str] = None,
     ) -> int:
+        """Delete traces permanently.
+
+        Support delete according to 1) run, 2) non default session and 3) session combined with started before.
+
+        :param run: Name of the run.
+        :type run: Optional[str]
+        :param session: Id of the session.
+        :type session: Optional[str]
+        :param started_before: ISO 8601 format time string (e.g., '2024-03-19T15:17:23.807563').
+        :type started_before: Optional[str]
+        :return: Number of deleted traces.
+        :rtype: int
+        """
         self._validate_delete_query_params(run=run, session=session, started_before=started_before)
         return ORMSpan.delete(
             run=run,
