@@ -976,3 +976,6 @@ class ChatGroupRole:
     stop_signal: str
     working_dir: Optional[Path] = None
     connections: Optional[Dict[str, Any]] = None
+    inputs_mapping: Optional[Dict[str, str]] = None
+    port: Optional[str] = None
+    flow: Optional[Flow] = None

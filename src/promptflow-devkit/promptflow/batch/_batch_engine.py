@@ -36,7 +36,7 @@ from promptflow._utils.utils import (
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
@@ -104,9 +104,10 @@ class BatchEngine:
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else None
         self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() if flow_file is not None else (None, None)
+        self._flow = None
 
         # TODO: why self._flow is not initialized for eager flow?
-        if not flow_file and not self._is_eager_flow:
+        if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
@@ -193,13 +194,16 @@ class BatchEngine:
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
 
+                    batch_inputs = None
+                    if not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy):
                     # set batch input source from input mapping
-                    set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                    # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
-                    # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                        set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                        # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
+                        inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                        # resolve input data from input dirs and apply inputs mapping
+                        batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
+                        batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 

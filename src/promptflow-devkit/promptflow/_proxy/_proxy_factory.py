@@ -7,10 +7,10 @@ from typing import Dict, Type
 from promptflow._constants import FlowLanguage
 from promptflow._proxy import AbstractInspectorProxy
 from promptflow._utils.async_utils import async_run_allowing_running_loop
-from ._base_executor_proxy import AbstractExecutorProxy
-from ._csharp_executor_proxy import CSharpExecutorProxy
-from ._python_executor_proxy import PythonExecutorProxy
-from ._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
+from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow.batch._python_executor_proxy import PythonExecutorProxy
+
 
 class ProxyFactory:
     executor_proxy_classes: Dict[str, Type[AbstractExecutorProxy]] = {
@@ -22,7 +22,7 @@ class ProxyFactory:
         pass
 
     def get_executor_proxy_cls(self, language: str) -> Type[AbstractExecutorProxy]:
-        return self.executor_proxy_classes[language] if language is not None else ChatGroupOrchestratorProxy
+        return self.executor_proxy_classes[language]
 
     @classmethod
     def register_executor(cls, language: str, executor_proxy_cls: Type[AbstractExecutorProxy]):
