@@ -5,12 +5,9 @@
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar
 
 from promptflow._constants import DEFAULT_OUTPUT_NAME
-from promptflow.contracts.tool import ConnectionType
-from promptflow.tracing._utils import serialize
-from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 T = TypeVar("T")
 

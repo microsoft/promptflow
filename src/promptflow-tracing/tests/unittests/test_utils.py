@@ -82,4 +82,4 @@ def test_get_prompt_param_name_from_func():
     def dummy_func(input: str):
         pass
 
-    assert get_prompt_param_name_from_func(dummy_func) == None
+    assert get_prompt_param_name_from_func(dummy_func) is None

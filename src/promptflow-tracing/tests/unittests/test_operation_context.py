@@ -36,7 +36,7 @@ class TestOperationContext:
         run_test_with_new_context(assert_context)
 
     def test_get_request_id(self):
-        def assert_context(context):      
+        def assert_context(context):
             assert context.get_request_id() == "unknown"
             context["request_id"] = "test_request_id"
             assert context.get_request_id() == "test_request_id"
@@ -116,4 +116,3 @@ class TestOperationContext:
         # assert that the list has two elements and they are different objects
         assert len(instances) == 2
         assert instances[0] is not instances[1]
-
