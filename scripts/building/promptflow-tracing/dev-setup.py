@@ -104,7 +104,7 @@ def create_test_resource_template() -> None:
     with _change_dir(PROMPT_FLOW_TRACING_ROOT_DIR):
         with open(connections_filename, mode="w", encoding="utf-8") as f:
             json.dump(connections_template, f, ensure_ascii=False, indent=4)
-    
+
     connections_file_path = (PROMPT_FLOW_TRACING_ROOT_DIR / connections_filename).resolve().absolute()
     prompt_msg = (
         f"Created test-required file {connections_filename!r} at {connections_file_path.as_posix()!r}, "
