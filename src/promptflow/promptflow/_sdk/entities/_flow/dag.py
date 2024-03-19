@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -9,21 +8,19 @@ from marshmallow import Schema
 
 from promptflow._constants import FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._sdk.entities._validation import SchemaValidatableMixin
+from promptflow._utils.docs import FlowDoc
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.core._flow import AsyncFlow as AsyncFlowCore
-from promptflow.core._flow import Flow as FlowCore
-from promptflow.core._flow import FlowBase as FlowBaseCore
-from promptflow.core._flow import FlowContext as FlowContextCore
 from promptflow.exceptions import ErrorTarget, UserErrorException
+
+from .base import Flow as FlowBase
 
 logger = get_cli_sdk_logger()
 
 
-class Flow(FlowCore, SchemaValidatableMixin):
-    __doc__ = FlowCore.__doc__
+class Flow(FlowBase):
+    __doc__ = FlowDoc.__doc__
 
     def __init__(
         self,
@@ -74,7 +71,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
     @classmethod
     def _create_schema_for_validation(cls, context) -> "Schema":
         # import here to avoid circular import
-        from ..schemas._flow import FlowSchema
+        from promptflow._sdk.schemas._flow import FlowSchema
 
         return FlowSchema(context=context)
 
@@ -134,7 +131,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
     @classmethod
     def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
         """Dispatch flow load to eager flow or async flow."""
-        from promptflow._sdk.entities._eager_flow import FlexFlow
+        from .flex import FlexFlow
 
         if is_eager_flow:
             return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
@@ -154,26 +151,3 @@ class Flow(FlowCore, SchemaValidatableMixin):
                 return result
         else:
             return super().invoke(inputs=inputs)
-
-
-class AsyncFlow(Flow, AsyncFlowCore):
-    __doc__ = AsyncFlowCore.__doc__
-
-    async def invoke_async(self, inputs: dict) -> "LineResult":
-        """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter import TestSubmitter
-
-        if self.language == FlowLanguage.CSharp:
-            # Sync C# calling
-            # TODO: Async C# support: Task(3002242)
-            with TestSubmitter(flow=self, flow_context=self.context).init(
-                stream_output=self.context.streaming
-            ) as submitter:
-                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
-                return result
-        else:
-            return await super().invoke_async(inputs=inputs)
-
-
-FlowContext = FlowContextCore
-FlowBase = FlowBaseCore

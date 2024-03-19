@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Tuple
 
 from promptflow._constants import DEFAULT_ENCODING
-from promptflow._sdk._configuration import Configuration
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
@@ -132,6 +131,10 @@ class DefaultAppExtension(AppExtension):
         self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
         logger.info(f"Static_folder: {self.static_folder}")
         app_config = kwargs.get("config", None) or {}
+
+        # TODO: remove this import in connection related refactor PR
+        from promptflow._sdk._configuration import Configuration
+
         pf_config = Configuration(overrides=app_config)
         logger.info(f"Promptflow config: {pf_config}")
         self.connection_provider = pf_config.get_connection_provider()

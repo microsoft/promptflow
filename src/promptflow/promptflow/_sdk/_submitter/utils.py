@@ -45,8 +45,7 @@ from promptflow._sdk._utils import (
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
-from promptflow._sdk.entities._eager_flow import FlexFlow
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -254,7 +253,7 @@ class SubmitterHelper:
     def resolve_connections(
         flow: Flow, client=None, *, connections_to_ignore=None, connections_to_add: List[str] = None
     ) -> dict:
-        from promptflow._sdk.entities._eager_flow import FlexFlow
+        from promptflow._sdk.entities._flow import FlexFlow
 
         if isinstance(flow, FlexFlow):
             # TODO(2898247): support prompt flow management connection for eager flow
@@ -273,14 +272,12 @@ class SubmitterHelper:
             )
         )
 
-        if connections_to_add:
-            connection_names.extend(connections_to_add)
-
         return SubmitterHelper.resolve_connection_names(
             connection_names=connection_names,
             client=client,
             connections_to_ignore=connections_to_ignore,
             raise_error=True,
+            connections_to_add=connections_to_add,
         )
 
     @staticmethod
@@ -327,7 +324,17 @@ class SubmitterHelper:
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, client, *, raise_error=False, connections_to_ignore=None):
+    def resolve_connection_names(
+        connection_names,
+        client,
+        *,
+        raise_error=False,
+        connections_to_ignore=None,
+        connections_to_add=None,
+    ):
+        connection_names = set(connection_names)
+        if connections_to_add:
+            connection_names.update(connections_to_add)
         result = {}
         for n in connection_names:
             if connections_to_ignore and n in connections_to_ignore:

@@ -30,16 +30,15 @@ from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
-    dump_flow_result,
     generate_flow_tools_json,
     generate_random_string,
     logger,
     parse_variant,
 )
-from promptflow._sdk.entities._eager_flow import FlexFlow
-from promptflow._sdk.entities._flow import Flow, FlowBase
+from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import dump_flow_result
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
@@ -159,7 +158,7 @@ class FlowOperations(TelemetryMixin):
         session = kwargs.pop("session", None)
         # Run id will be set in operation context and used for session
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
-        flow: FlowBase = load_flow(flow)
+        flow = load_flow(flow)
 
         if isinstance(flow, FlexFlow):
             if variant or node:
@@ -249,7 +248,7 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow: FlowBase = load_flow(flow)
+        flow = load_flow(flow)
         flow.context.variant = variant
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
@@ -400,7 +399,7 @@ class FlowOperations(TelemetryMixin):
         that the flow involves no additional includes, symlink, or variant.
         :param output_dir: output directory to export connections
         """
-        flow: FlowBase = load_flow(built_flow_dag_path)
+        flow = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -598,7 +597,7 @@ class FlowOperations(TelemetryMixin):
         output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow: FlowBase = load_flow(flow)
+        flow = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
@@ -687,7 +686,7 @@ class FlowOperations(TelemetryMixin):
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        if isinstance(flow_entity, Flow):
+        if not isinstance(flow_entity, FlexFlow):
             # only DAG flow has tools meta
             source_path_mapping = {}
             flow_tools, tools_errors = self._generate_tools_meta(
@@ -747,7 +746,7 @@ class FlowOperations(TelemetryMixin):
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow: FlowBase = load_flow(source=flow)
+        flow = load_flow(source=flow)
         if not isinstance(flow, Flow):
             # No tools meta for eager flow
             return {}, {}

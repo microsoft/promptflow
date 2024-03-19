@@ -8,8 +8,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
+from promptflow._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
+from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
@@ -158,3 +160,42 @@ def read_json_content(file_path: Path, target: str) -> dict:
         ),
         file_path=file_path.absolute().as_posix(),
     )
+
+
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
+    """Dump flow result for extension.
+
+    :param flow_folder: The flow folder.
+    :param prefix: The file prefix.
+    :param flow_result: The flow result returned by exec_line.
+    :param node_result: The node result when test node returned by load_and_exec_node.
+    :param custom_path: The custom path to dump flow result.
+    """
+    if flow_result:
+        flow_serialize_result = {
+            "flow_runs": [serialize(flow_result.run_info)],
+            "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
+        }
+    else:
+        flow_serialize_result = {
+            "flow_runs": [],
+            "node_runs": [serialize(node_result)],
+        }
+
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
+    dump_folder.mkdir(parents=True, exist_ok=True)
+
+    with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
+        json.dump(flow_serialize_result, f, indent=2, ensure_ascii=False)
+    if node_result:
+        metrics = flow_serialize_result["node_runs"][0]["metrics"]
+        output = flow_serialize_result["node_runs"][0]["output"]
+    else:
+        metrics = flow_serialize_result["flow_runs"][0]["metrics"]
+        output = flow_serialize_result["flow_runs"][0]["output"]
+    if metrics:
+        with open(dump_folder / f"{prefix}.metrics.json", "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(metrics, f, indent=2, ensure_ascii=False)
+    if output:
+        with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)

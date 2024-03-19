@@ -1,18 +1,40 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._sdk.entities._validation import SchemaValidatableMixin
-from promptflow.core._flow import FlexFlow as FlexFlowCore
+from promptflow._utils.docs import FlexFlowDoc
+from promptflow._utils.flow_utils import resolve_entry_file
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
+from .dag import Flow
 
-class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
-    __doc__ = FlexFlowCore.__doc__
+
+class FlexFlow(Flow):
+    __doc__ = FlexFlowDoc.__doc__
+
+    def __init__(
+        self,
+        path: Union[str, PathLike],
+        code: Union[str, PathLike],
+        entry: str,
+        data: dict,
+        **kwargs,
+    ):
+        # flow.dag.yaml file path or entry.py file path
+        path = Path(path)
+        # flow.dag.yaml file's folder or entry.py's folder
+        code = Path(code)
+        # entry function name
+        self.entry = entry
+        # entry file name
+        self.entry_file = resolve_entry_file(entry=entry, working_dir=code)
+        # TODO(2910062): support non-dag flow execution cache
+        super().__init__(code=code, path=path, dag=data, content_hash=None, **kwargs)
 
     # region properties
     @property
@@ -32,7 +54,13 @@ class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
         if raise_error:
             # Abstract here. The actual validation is done in subclass.
             data = cls._create_schema_for_validation(context={BASE_PATH_CONTEXT_KEY: path.parent}).load(data)
-        return super()._load(path=path, data=data, **kwargs)
+
+        entry = data.get("entry")
+        code = path.parent
+
+        if entry is None:
+            raise UserErrorException(f"Entry function is not specified for flow {path}")
+        return cls(path=path, code=code, entry=entry, data=data, **kwargs)
 
     # endregion overrides
 
@@ -40,7 +68,7 @@ class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
     @classmethod
     def _create_schema_for_validation(cls, context):
         # import here to avoid circular import
-        from ..schemas._flow import EagerFlowSchema
+        from promptflow._sdk.schemas._flow import EagerFlowSchema
 
         return EagerFlowSchema(context=context)
 
@@ -93,3 +121,7 @@ class FlexFlow(FlexFlowCore, SchemaValidatableMixin):
             )
         )
         return ExecutableEagerFlow.deserialize(meta_dict)
+
+    def __call__(self, *args, **kwargs):
+        """Direct call of non-dag flow WILL cause exceptions."""
+        raise UserErrorException("FlexFlow can not be called as a function.")

@@ -6,13 +6,7 @@ import multiprocessing
 from pathlib import Path
 from typing import Dict, Union
 
-from promptflow._constants import (
-    DEFAULT_ENCODING,
-    DEFAULT_FLOW_YAML_FILE_NAME,
-    FLOW_META_JSON,
-    FLOW_META_JSON_GEN_TIMEOUT,
-    PROMPT_FLOW_DIR_NAME,
-)
+from promptflow._constants import DEFAULT_ENCODING, FLOW_META_JSON, FLOW_META_JSON_GEN_TIMEOUT, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.core._errors import GenerateFlowMetaJsonError
@@ -112,10 +106,3 @@ def generate_flow_meta(
             json.dump(flow_meta, f, indent=4)
 
     return flow_meta
-
-
-def resolve_flow_path(flow_path: Path):
-    """Resolve given flow path to dag file path."""
-    if flow_path.is_dir():
-        flow_path = flow_path / DEFAULT_FLOW_YAML_FILE_NAME
-    return flow_path

@@ -23,7 +23,7 @@ from promptflow.tracing._operation_context import OperationContext
 from ..._utils.logger_utils import LoggerFactory
 from .._configuration import Configuration
 from .._load_functions import load_flow
-from ..entities._eager_flow import FlexFlow
+from ..entities._flow import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
