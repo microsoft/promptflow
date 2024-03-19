@@ -10,7 +10,6 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockFixture
 
-from promptflow._constants import ProcessPoolConstants
 from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -22,7 +21,7 @@ from promptflow.executor._line_execution_process_pool import (
     format_current_process_info,
     log_process_status,
 )
-from promptflow.executor._process_manager import create_spawned_fork_process_manager
+from promptflow.executor._process_manager import ProcessPoolConstants, create_spawned_fork_process_manager
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -211,8 +210,7 @@ class TestLineExecutionProcessPool:
             ) as pool:
                 result_list = await pool.run(zip(range(nlines), bulk_inputs))
                 # Check 'spawned_fork_process_manager_stderr_runid.log' exits.
-                logName = "{}_{}.log".format(ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME, run_id)
-                log_file = ProcessPoolConstants.PROCESS_LOG_PATH / logName
+                log_file = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
                 assert log_file.exists() is True
                 child_process_log_exit = False
                 for file in ProcessPoolConstants.PROCESS_LOG_PATH.iterdir():
