@@ -180,7 +180,9 @@
     "addrs",
     "pywin",
     "STARTF",
-    "mltable"
+    "mltable",
+    "prompty",
+    "Prompty"
   ],
   "flagWords": [
     "Prompt Flow"

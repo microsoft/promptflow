@@ -3,16 +3,19 @@
 # ---------------------------------------------------------
 
 import abc
+import copy
 import json
+import re
 from os import PathLike
 from pathlib import Path
 from typing import Optional, Union
 
-from promptflow._constants import DEFAULT_ENCODING
-from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
+from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION
+from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_entry_file, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
+from promptflow.contracts.tool import ValueType
 from promptflow.core._connection import _Connection
-from promptflow.core._utils import generate_flow_meta
+from promptflow.core._utils import generate_flow_meta, get_open_ai_client_by_connection, render_jinja_template_content
 from promptflow.exceptions import UserErrorException
 
 
@@ -157,9 +160,16 @@ class Flow(FlowBase):
         return cls(code=path.parent, path=path, dag=dag, **kwargs)
 
     @classmethod
-    def _dispatch_flow_creation(cls, is_eager_flow, flow_path, data, content_hash, raise_error=True, **kwargs):
+    def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
         """Dispatch flow load to non-dag flow or async flow."""
-        if is_eager_flow:
+        if is_prompty_flow(file_path=flow_path):
+            return Prompty._load(path=flow_path)
+
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+            content_hash = hash(flow_content)
+        if is_flex_flow(yaml_dict=data):
             return FlexFlow._load(path=flow_path, data=data, raise_error=raise_error, **kwargs)
         else:
             # TODO: schema validation and warning on unknown fields
@@ -177,8 +187,8 @@ class Flow(FlowBase):
         if not flow_path.exists():
             raise UserErrorException(f"Flow file {flow_path.absolute().as_posix()} does not exist")
 
-        if flow_path.suffix not in [".yaml", ".yml"]:
-            raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
+        if flow_path.suffix not in [".yaml", ".yml", PROMPTY_EXTENSION]:
+            raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file or a prompty file")
         return source_path, flow_path
 
     @classmethod
@@ -201,13 +211,7 @@ class Flow(FlowBase):
         :rtype: Flow
         """
         _, flow_path = cls._load_prepare(source)
-        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-            flow_content = f.read()
-            data = load_yaml_string(flow_content)
-            content_hash = hash(flow_content)
-        return cls._dispatch_flow_creation(
-            is_flex_flow(yaml_dict=data), flow_path, data, content_hash, raise_error=raise_error, **kwargs
-        )
+        return cls._dispatch_flow_creation(flow_path, raise_error=raise_error, **kwargs)
 
     def _init_executable(self):
         from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -348,6 +352,132 @@ class FlexFlow(Flow):
             return entry_file.resolve().absolute().as_posix()
         # when entry file not found in working directory, return None since it can come from package
         return None
+
+
+class Prompty(FlowBase):
+    # TODO update docstring
+    """A Prompt represents an non-dag flow, which uses prompty file to define the flow."""
+
+    def __init__(self, path: Union[str, PathLike], **kwargs):
+        # prompty file path
+        path = Path(path)
+        configs, self.template = self._parse_prompty(path)
+        for k, v in kwargs:
+            if k in configs:
+                if isinstance(v, dict):
+                    configs[k].update(v)
+                else:
+                    configs[k] = v
+        # TODO update data
+        configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
+        configs["outputs"] = {"output": {"type": ValueType.STRING.value}}
+        self.connection = configs.get("connection", "")
+        self.parameters = configs.get("parameters", {})
+        self.api = configs["api"]
+        super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
+
+    @classmethod
+    def _load(cls, path: Path, **kwargs):
+        return cls(path=path, **kwargs)
+
+    # region overrides
+    @classmethod
+    def load(
+        cls,
+        source: Union[str, PathLike],
+        raise_error=True,
+        **kwargs,
+    ) -> "Prompty":
+        """
+        Direct load non-dag flow from prompty file.
+
+        :param source: The local prompt file. Must be a path to a local file.
+            If the source is a path, it will be open and read.
+            An exception is raised if the file does not exist.
+        :type source: Union[PathLike, str]
+        :param raise_error: Argument for non-dag flow raise validation error on unknown fields.
+        :type raise_error: bool
+        :return: A Prompty object
+        :rtype: Prompty
+        """
+        source_path = Path(source)
+        if not source_path.exists():
+            raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
+
+        if source_path.suffix != PROMPTY_EXTENSION:
+            raise UserErrorException("Source must be a file with .prompty extension.")
+        return cls._load(path=source_path, **kwargs)
+
+    @staticmethod
+    def _parse_prompty(path):
+        """ """
+        with open(path, "r", encoding=DEFAULT_ENCODING) as f:
+            prompty_content = f.read()
+        pattern = r"-{3,}\n(.*)-{3,}\n(.*)"
+        result = re.search(pattern, prompty_content, re.DOTALL)
+        if not result:
+            # TODO
+            raise UserErrorException("")
+        config_content, prompt_template = result.groups()
+        configs = load_yaml_string(config_content)
+        return configs, prompt_template
+
+    def _resolve_inputs(self, inputs):
+        resolved_inputs = {}
+        for k, v in inputs.items():
+            if isinstance(v, dict):
+                resolved_inputs[k] = v
+            else:
+                resolved_inputs[k] = {"type": ValueType.from_value(v).value, "default": v}
+        return resolved_inputs
+
+    def _init_executable(self):
+        from promptflow.contracts.flow import PromptyFlow as ExecutablePromptyFlow
+
+        return ExecutablePromptyFlow.deserialize(self._data)
+
+    def __call__(self, *args, **kwargs):
+        """Calling flow as a function, the inputs should be provided with key word arguments.
+        Returns the output of the prompty.
+        The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
+        SystemErrorException: if the flow execution failed due to unexpected executor error.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: flow inputs with key word arguments.
+        :return:
+        """
+        from promptflow.core._connection import AzureOpenAIConnection
+
+        if args:
+            raise UserErrorException("Flow can only be called with keyword arguments.")
+        # 1. init client
+        # TODO dependency
+        from promptflow._sdk._pf_client import PFClient
+
+        connection = PFClient().connections.get(self.connection, with_secret=True)
+        connection = AzureOpenAIConnection(api_base=connection.api_base, api_key=connection._secrets["api_key"])
+        api_client = get_open_ai_client_by_connection(connection=connection)
+
+        # 2. prepare params
+        params = copy.copy(self.parameters)
+        # TODO function_call
+        if isinstance(connection, AzureOpenAIConnection):
+            params["model"] = params.pop("deployment_name")
+            params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
+
+        # 3.deal with prompt
+        # TODO support image inputs
+        prompt = render_jinja_template_content(
+            template_content=self.template, trim_blocks=True, keep_trailing_newline=True, **kwargs
+        )
+        if self.api == "completion":
+            params["prompt"] = prompt
+            return api_client.completions.create(**params).choices[0].text
+        else:
+            # TODO parse chat
+            params["messages"] = prompt
+            completion = api_client.chat.completions.create(**params)
+            return getattr(completion.choices[0].message, "content", "")
 
 
 class AsyncFlow(Flow):

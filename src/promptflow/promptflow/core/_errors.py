@@ -43,3 +43,9 @@ class RequiredEnvironmentVariablesNotSetError(CoreError):
 
     def __init__(self, env_vars: list, cls_name: str):
         super().__init__(f"Required environment variables {env_vars} to build {cls_name} not set.")
+
+
+class InvalidConnectionTypeError(CoreError):
+    """Exception raised if connection type is not found."""
+
+    pass

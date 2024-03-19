@@ -6,6 +6,8 @@ import multiprocessing
 from pathlib import Path
 from typing import Dict, Union
 
+from jinja2 import Template
+
 from promptflow._constants import (
     DEFAULT_ENCODING,
     DEFAULT_FLOW_YAML_FILE_NAME,
@@ -15,7 +17,8 @@ from promptflow._constants import (
 )
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.core._errors import GenerateFlowMetaJsonError
+from promptflow.core._connection import AzureOpenAIConnection, OpenAIConnection
+from promptflow.core._errors import GenerateFlowMetaJsonError, InvalidConnectionTypeError
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -119,3 +122,64 @@ def resolve_flow_path(flow_path: Path):
     if flow_path.is_dir():
         flow_path = flow_path / DEFAULT_FLOW_YAML_FILE_NAME
     return flow_path
+
+
+def render_jinja_template_content(template_content, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
+    template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+    return template.render(**kwargs)
+
+
+def normalize_connection_config(connection):
+    """
+    Normalizes the configuration of a given connection object for compatibility.
+
+    This function takes a connection object and normalizes its configuration,
+    ensuring it is compatible and standardized for use.
+    """
+    if isinstance(connection, AzureOpenAIConnection):
+        if connection.api_key:
+            return {
+                # disable OpenAI's built-in retry mechanism by using our own retry
+                # for better debuggability and real-time status updates.
+                "max_retries": 0,
+                "api_key": connection.api_key,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+            }
+        else:
+            return {
+                "max_retries": 0,
+                "api_version": connection.api_version,
+                "azure_endpoint": connection.api_base,
+                "azure_ad_token_provider": connection.get_token,
+            }
+    elif isinstance(connection, OpenAIConnection):
+        return {
+            "max_retries": 0,
+            "api_key": connection.api_key,
+            "organization": connection.organization,
+            "base_url": connection.base_url,
+        }
+    else:
+        error_message = (
+            f"Not Support connection type '{type(connection).__name__}'. "
+            f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+        )
+        raise InvalidConnectionTypeError(message=error_message)
+
+
+def get_open_ai_client_by_connection(connection):
+    from openai import AzureOpenAI as AzureOpenAIClient
+    from openai import OpenAI as OpenAIClient
+
+    if isinstance(connection, AzureOpenAIConnection):
+        client = AzureOpenAIClient(**normalize_connection_config(connection))
+    elif isinstance(connection, OpenAIConnection):
+        client = OpenAIClient(**normalize_connection_config(connection))
+    else:
+        error_message = (
+            f"Not Support connection type '{type(connection).__name__}' for embedding api. "
+            f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+        )
+        raise InvalidConnectionTypeError(message=error_message)
+    return client
