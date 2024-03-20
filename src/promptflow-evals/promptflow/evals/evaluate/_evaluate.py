@@ -18,6 +18,7 @@ def _calculate_mean(df) -> Dict[str, float]:
     mean_value = df.mean(numeric_only=True)
     return mean_value.to_dict()
 
+
 def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name):
     if target is None and data is None:
         raise ValueError("Either target or data must be provided for evaluation.")
