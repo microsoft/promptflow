@@ -1,5 +1,7 @@
+from dotenv import load_dotenv
 from openai import AzureOpenAI
 from promptflow.tracing import trace, start_trace
+
 import ast
 import os
 
@@ -57,7 +59,7 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
         "Make sure only reply the executable code, no other words."
     )
     completion = client.chat.completions.create(
-        model="my-dep",
+        model=os.getenv("CHAT_DEPLOYMENT_NAME"),
         messages=[
             {
                 "role": "system",
@@ -66,15 +68,20 @@ def code_gen(client: AzureOpenAI, question: str) -> str:
             {"role": "user", "content": question},
         ],
     )
-    raw_code = completion.choices[0].message.content
-    return code_refine(raw_code)
+    raw_code = completion.choices[0].message.content    
+    result = code_refine(raw_code)
+    return result
 
 
 if __name__ == "__main__":
     start_trace()
 
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
+        # load environment variables from .env file
+        load_dotenv()
+
     client = AzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_KEY"),
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         api_version="2023-12-01-preview",
     )
