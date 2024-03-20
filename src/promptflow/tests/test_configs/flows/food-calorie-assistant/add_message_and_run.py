@@ -26,8 +26,10 @@ URL_PREFIX = "https://platform.openai.com/files/"
 RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
 
 # Why we define global variable instead of function parameter? We want to keep trace input as simple as possible.
-cli_var: ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]] = ContextVar("cli_var", default=None)
-
+cli_var: ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]] = \
+    ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]]("cli_var", default=None)
+tracer_var: ContextVar = ContextVar("tracer_var", default=None)
+tool_invoker_var: ContextVar[AssistantToolInvoker] = ContextVar[AssistantToolInvoker]("tool_invoker_var", default=None)
 
 
 @tool
@@ -42,7 +44,9 @@ async def add_message_and_run(
     cli = await get_assistant_client(conn)
     cli_var.set(cli)
     tracer = await get_tracer()
+    tracer_var.set(tracer)
     invoker = assistant_definition._tool_invoker
+    tool_invoker_var.set(invoker)
     # Check if assistant id is valid. If not, create a new assistant.
     # Note: tool registration at run creation, rather than at assistant creation.
     if not assistant_id:
@@ -51,13 +55,13 @@ async def add_message_and_run(
 
     await add_message(message, thread_id)
 
-    run = await start_run(assistant_id, thread_id, assistant_definition, invoker)
+    run = await start_run(assistant_id, thread_id, assistant_definition)
 
-    await wait_for_run_complete(thread_id, invoker, run, tracer)
+    await wait_for_run_complete(thread_id, run)
 
     messages = await get_message(thread_id)
 
-    await list_run_steps(thread_id, run.id, tracer)
+    await list_run_steps(thread_id, run.id)
 
     file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
@@ -87,9 +91,9 @@ async def add_message(message: list, thread_id: str):
 async def start_run(
         assistant_id: str,
         thread_id: str,
-        assistant_definition: AssistantDefinition,
-        invoker: AssistantToolInvoker,
+        assistant_definition: AssistantDefinition
 ):
+    invoker = tool_invoker_var.get()
     tools = invoker.to_openai_tools()
     cli = cli_var.get()
     run = await cli.beta.threads.runs.create(
@@ -115,13 +119,14 @@ async def get_run_status(thread_id: str, run_id: str):
 
 
 
-async def get_tool_calls_outputs(invoker: AssistantToolInvoker, run):
+async def get_tool_calls_outputs(run):
     tool_calls = run.required_action.submit_tool_outputs.tool_calls
     tool_outputs = []
     for tool_call in tool_calls:
         tool_name = tool_call.function.name
         tool_args = json.loads(tool_call.function.arguments)
         print(f"Invoking tool: {tool_call.function.name} with args: {tool_args}")
+        invoker=tool_invoker_var.get()
         output = invoker.invoke_tool(tool_name, tool_args)
 
         tool_outputs.append(
@@ -143,19 +148,17 @@ async def submit_tool_calls_outputs(thread_id: str, run_id: str,
 
 
 
-async def require_actions(thread_id: str, run,
-                          invoker: AssistantToolInvoker):
-    tool_outputs = await get_tool_calls_outputs(invoker, run)
+async def require_actions(thread_id: str, run):
+    tool_outputs = await get_tool_calls_outputs(run)
     await submit_tool_calls_outputs(thread_id, run.id, tool_outputs)
 
 
 @trace
-async def wait_for_run_complete(thread_id: str,
-                                invoker: AssistantToolInvoker, run, tracer):
+async def wait_for_run_complete(thread_id: str, run):
     processed_steps_num= 0
     while not is_run_terminated(run):
         await wait_for_status_check()
-        processed_steps_num = await get_new_run_steps(thread_id, run.id, processed_steps_num, invoker, tracer)
+        processed_steps_num = await get_new_run_steps(thread_id, run.id, processed_steps_num)
         run = await get_run_status(thread_id, run.id)
         if run.status == "requires_action":
             # We might get into this status since the run and run_step are managed separately.
@@ -172,19 +175,19 @@ async def wait_for_run_complete(thread_id: str,
 
 
 
-async def get_new_run_steps(thread_id: str, run_id: str, processed_steps_num: int, invoker: AssistantToolInvoker, tracer):
+async def get_new_run_steps(thread_id: str, run_id: str, processed_steps_num: int):
     cli=cli_var.get()
     run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
     # Todo: For now, assume the step are completed sequentially;
     # Actually it might be concurrently. Do some research and change later
     for i in reversed(range(len(run_steps.data))):
         if i < len(run_steps.data) - processed_steps_num:
-            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id, invoker, tracer)
+            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id)
     processed_steps_num = len(run_steps.data)
     return processed_steps_num
 
 @trace
-async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str, invoker: AssistantToolInvoker, tracer):
+async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str):
     span = get_current_span()
     cli=cli_var.get()
     step_run = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
@@ -192,7 +195,7 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
     while not is_run_terminated(step_run):
         run = await get_run_status(thread_id, run_id)
         if run.status == "requires_action":
-            await require_actions(thread_id, run, invoker)
+            await require_actions(thread_id, run)
         await wait_for_status_check()
         step_run = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
         #todo: Research if action on other status here
@@ -204,7 +207,7 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
             await message(thread_id, msg_id)
         elif step_run.type == "tool_calls":
             if step_run.step_details.tool_calls[0].type == "code_interpreter":
-                await trace_code_interpreter(step_run, tracer)
+                await trace_code_interpreter(step_run)
             elif step_run.step_details.type == "retrieval":
                 pass
         else:
@@ -221,8 +224,9 @@ async def message(thread_id: str, msg_id: str):
     message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=thread_id)
     return convert_message_content(message.content)
 
-async def trace_code_interpreter(step_run, tracer):
+async def trace_code_interpreter(step_run):
     tool_call = step_run.step_details.tool_calls[0]
+    tracer = tracer_var.get()
     with tracer.start_as_current_span(tool_call.type, start_time=_to_nano(step_run.created_at), end_on_exit=False) as span:
         span.set_attribute("inputs", json.dumps(tool_call.code_interpreter.input))
         span.set_attribute("output", json.dumps(convert_code_interpreter_outputs(tool_call.code_interpreter.outputs)))
@@ -232,18 +236,19 @@ async def trace_code_interpreter(step_run, tracer):
 
 
 @trace
-async def list_run_steps(thread_id: str, run_id: str, tracer):
+async def list_run_steps(thread_id: str, run_id: str):
     cli = cli_var.get()
     run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
     step_runs = []
     for run_step in run_steps.data:
         step_runs.append(run_step.dict())
-        await show_run_step(run_step, tracer)
+        await show_run_step(run_step)
     return step_runs
 
 
-async def show_run_step(run_step, tracer):
+async def show_run_step(run_step):
     cli=cli_var.get()
+    tracer=tracer_var.get()
     with tracer.start_as_current_span(run_step.type, start_time=_to_nano(run_step.created_at), end_on_exit=False) as span:
         if run_step.type == "message_creation":
             msg_id = run_step.step_details.message_creation.message_id
@@ -254,7 +259,7 @@ async def show_run_step(run_step, tracer):
             span.set_attribute("created_at", message.created_at)
         elif run_step.type == "tool_calls":
             for tool_call in run_step.step_details.tool_calls:
-                await show_tool_call(tool_call, tracer)
+                await show_tool_call(tool_call)
             span.set_attribute("output", json.dumps(convert_tool_calls(run_step.step_details.tool_calls)))
         span.set_attribute("thread_id", run_step.thread_id)
         span.end(end_time=_to_nano(run_step.completed_at))
@@ -270,8 +275,9 @@ def _to_nano(unix_time_in_sec: int):
     """Convert Unix timestamp from seconds to nanoseconds."""
     return unix_time_in_sec*1000000000
 
-async def show_tool_call(tool_call, tracer):
+async def show_tool_call(tool_call):
     #Todo: start_time and end_time are not avaliable in tool_call. Shall fullfill it later.
+    tracer=tracer_var.get()
     if tool_call.type == "code_interpreter":
         span_name = "code_interpreter"
         with tracer.start_as_current_span(span_name) as span:
