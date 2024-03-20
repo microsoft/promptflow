@@ -8,7 +8,7 @@ import uuid
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Type
 
 from promptflow._constants import (
     LANGUAGE_KEY,
@@ -19,6 +19,7 @@ from promptflow._constants import (
     FlowLanguage,
 )
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
+from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -40,9 +41,9 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
-from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -58,6 +59,19 @@ DEFAULT_CONCURRENCY = 10
 
 class BatchEngine:
     """This class is used to execute flows in batch mode"""
+
+    @classmethod
+    def register_executor(cls, language: str, executor_proxy_cls: Type[AbstractExecutorProxy]):
+        """Register a executor proxy class for a specific program language.
+
+        this function is left to keep the compatibility with the old version promptflow-runtime; it will
+        redirect the registration to the ExecutorProxyFactory.
+        """
+        # TODO: remove this after we migrate to multi-container
+        ProxyFactory.register_executor(
+            language=language,
+            executor_proxy_cls=executor_proxy_cls,
+        )
 
     def __init__(
         self,
@@ -107,6 +121,13 @@ class BatchEngine:
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
+        # update kwargs with worker_count and line_timeout_sec
+        self._kwargs.update(
+            {
+                "worker_count": self._worker_count,
+                "line_timeout_sec": self._line_timeout_sec,
+            }
+        )
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -149,7 +170,7 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ExecutorProxyFactory().create_executor_proxy(
+                self._executor_proxy = ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
@@ -290,10 +311,17 @@ class BatchEngine:
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
-        line_results.extend(previous_line_results or [])
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+            self._exec(
+                batch_inputs,
+                run_id,
+                output_dir,
+                raise_on_line_failure,
+                previous_line_results,
+                line_results,
+                aggr_result,
+            )
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -308,13 +336,36 @@ class BatchEngine:
 
     async def _exec(
         self,
-        line_results: List[LineResult],
-        aggr_result: AggregationResult,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
+        previous_line_results: List[LineResult] = None,
+        line_results: List[LineResult] = [],
+        aggr_result: AggregationResult = AggregationResult({}, {}, {}),
     ) -> BatchResult:
+        """
+        Asynchronously execute batch processing of inputs with potential resumption from previous results,
+        and aggregate outputs accordingly. Empty list `line_results` and `aggr_result` is passed to ensure
+        their current state can be retrieved when batch run is canceled.
+
+        :param batch_inputs: A list of dictionaries representing the inputs for all lines of the batch.
+        :type batch_inputs: List[Mapping[str, Any]]
+        :param run_id: An optional unique identifier for the run. If not provided, a new UUID will be generated.
+        :type run_id: Optional[str]
+        :param output_dir: An optional path to a directory where outputs will be persisted.
+        :type output_dir: Optional[Path]
+        :param raise_on_line_failure: A flag indicating whether to raise an exception on individual line failures.
+        :type raise_on_line_failure: bool
+        :param previous_line_results: An optional list of previous line results to resume from.
+        :type previous_line_results: Optional[List[~promptflow.executor._result.LineResult]]
+        :param line_results: An output parameter to be populated with the results of processing all lines in the batch.
+        :type line_results: List[~promptflow.executor._result.LineResult]
+        :param aggr_result: An output parameter to be populated with the aggregated results of all lines in the batch.
+        :type aggr_result: ~promptflow.executor._result.AggregationResult
+        :return: A `BatchResult` object containing information about the execution of the batch.
+        :rtype: ~promptflow.batch._result.BatchResult
+        """
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
@@ -324,9 +375,16 @@ class BatchEngine:
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
 
-        existing_results_line_numbers = set([r.run_info.index for r in line_results])
-        bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
-        inputs_to_run = [input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers]
+        # if there are existing results resumed from previous run, we should skip the execution of these lines
+        if previous_line_results:
+            line_results.extend(previous_line_results)
+            existing_results_line_numbers = set([r.run_info.index for r in previous_line_results])
+            bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
+            inputs_to_run = [
+                input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers
+            ]
+        else:
+            inputs_to_run = batch_inputs
 
         run_id = run_id or str(uuid.uuid4())
 

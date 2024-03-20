@@ -16,12 +16,14 @@ FLOWS_DIR = TEST_ROOT / "test_configs/flows"
 @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
 class TestChatGroup:
     def test_chat_group_basic_invoke(self):
-        topic = "Tell me a joke"
+        question = "What's the most beautiful thing in the world?"
+        ground_truth = "The world itself."
+
         copilot = ChatRole(
             flow=FLOWS_DIR / "chat_group_copilot",
             role="assistant",
             inputs=dict(
-                question=topic,
+                question=question,
                 model="gpt-3.5-turbo",
                 conversation_history="${parent.conversation_history}",
             ),
@@ -30,8 +32,8 @@ class TestChatGroup:
             flow=FLOWS_DIR / "chat_group_simulation",
             role="user",
             inputs=dict(
-                topic=topic,
-                persona="criticizer",
+                question=question,
+                ground_truth=ground_truth,
                 conversation_history="${parent.conversation_history}",
             ),
         )

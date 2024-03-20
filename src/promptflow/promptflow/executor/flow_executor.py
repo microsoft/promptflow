@@ -606,6 +606,8 @@ class FlowExecutor:
             return AggregationResult({}, {}, {})
         run_id = run_id or str(uuid.uuid4())
         nodes = [copy.deepcopy(node) for node in self._flow.nodes if node.aggregation]
+        # Load multimedia data from aggregation_inputs
+        aggregation_inputs = load_multimedia_data_recursively(aggregation_inputs)
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {
@@ -943,7 +945,9 @@ class FlowExecutor:
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
             run_tracker.end_run(line_run_id, ex=ex)
-            raise
+            # If async execution is enabled, ignore this exception and return the partial line results.
+            if not self._should_use_async():
+                raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -1107,13 +1111,7 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        if self._should_use_async():
-            flow_logger.info("Start executing nodes in async mode.")
-            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
-        else:
-            flow_logger.info("Start executing nodes in thread pool mode.")
-            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
@@ -1143,13 +1141,14 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(
-            self._tools_manager,
-            inputs,
-            nodes,
-            self._node_concurrency,
-            context,
-        ).execute(self._line_timeout_sec)
+        if self._should_use_async():
+            flow_logger.info("Start executing nodes in async mode.")
+            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+            return asyncio.run(scheduler.execute(nodes, inputs, context))
+        else:
+            flow_logger.info("Start executing nodes in thread pool mode.")
+            scheduler = FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context)
+            return scheduler.execute(self._line_timeout_sec)
 
     @staticmethod
     def apply_inputs_mapping(

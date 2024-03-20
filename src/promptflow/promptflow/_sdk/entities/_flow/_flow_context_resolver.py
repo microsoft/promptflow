@@ -8,10 +8,9 @@ from pathlib import Path
 from typing import Dict, Union
 
 from promptflow._sdk._constants import NODES
-from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities import FlowContext
 from promptflow._sdk.entities._flow import Flow
-from promptflow._utils.flow_utils import load_flow_dag
+from promptflow._utils.flow_utils import load_flow_dag, parse_variant
 from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts.flow import Node
 from promptflow.exceptions import UserErrorException
@@ -27,7 +26,7 @@ class FlowContextResolver:
     """Flow context resolver."""
 
     def __init__(self, flow_path: PathLike):
-        from promptflow import PFClient
+        from promptflow._sdk._pf_client import PFClient
 
         self.flow_path, self.flow_dag = load_flow_dag(flow_path=Path(flow_path))
         self.working_dir = Path(self.flow_path).parent.resolve()
@@ -125,15 +124,21 @@ class FlowContextResolver:
             with open(flow_file, "w") as fp:
                 dump_yaml(self.flow_dag, fp)
             resolved_flow._path = flow_file.absolute().as_posix()
+
+            executable_flow = resolved_flow._init_executable()
             if is_async_call:
                 return AsyncFlowInvoker(
-                    flow=resolved_flow,
+                    flow=executable_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
+                    flow_path=resolved_flow.path,
+                    working_dir=resolved_flow.code,
                 )
             else:
                 return FlowInvoker(
-                    flow=resolved_flow,
+                    flow=executable_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
+                    flow_path=resolved_flow.path,
+                    working_dir=resolved_flow.code,
                 )

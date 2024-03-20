@@ -182,7 +182,8 @@
     "STARTF",
     "mltable",
     "prompty",
-    "Prompty"
+    "Prompty",
+    "setenv"
   ],
   "flagWords": [
     "Prompt Flow"

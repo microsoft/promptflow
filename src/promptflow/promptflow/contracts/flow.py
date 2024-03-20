@@ -11,7 +11,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
@@ -318,6 +317,8 @@ class Node:
         :return: The node constructed from the dict.
         :rtype: ~promptflow.contracts.flow.Node
         """
+        from promptflow._utils.flow_utils import is_prompty_flow
+
         if data.get("source", {}).get("path", None) and is_prompty_flow(data.get("source").get("path")):
             from promptflow.core._flow import Prompty
 

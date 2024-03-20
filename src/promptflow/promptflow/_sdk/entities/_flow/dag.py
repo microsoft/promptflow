@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -9,21 +8,21 @@ from marshmallow import Schema
 
 from promptflow._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, LANGUAGE_KEY, PROMPT_FLOW_DIR_NAME, FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
-from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
-from promptflow.core._flow import AsyncFlow as AsyncFlowCore
-from promptflow.core._flow import Flow as FlowCore
-from promptflow.core._flow import FlowBase as FlowBaseCore
-from promptflow.core._flow import FlowContext as FlowContextCore
 from promptflow.exceptions import ErrorTarget, UserErrorException
+
+from .base import Flow as FlowBase
 
 logger = get_cli_sdk_logger()
 
 
-class Flow(FlowCore, SchemaValidatableMixin):
-    __doc__ = FlowCore.__doc__
+class Flow(FlowBase):
+    """A FlexFlow represents an non-dag flow, which uses codes to define the flow.
+    FlexFlow basically behave like a Flow, but its entry function should be provided in the flow.dag.yaml file.
+    Load of this non-dag flow is provided, but direct call of it will cause exceptions.
+    """
 
     def __init__(
         self,
@@ -35,6 +34,8 @@ class Flow(FlowCore, SchemaValidatableMixin):
     ):
         super().__init__(path=path, code=code, dag=dag, **kwargs)
 
+        # TODO: this can be dangerous. path always point to the flow yaml file; code always point to the flow directory;
+        #   but path may not under code (like a temp generated flow yaml file).
         self._flow_dir, self._dag_file_name = resolve_flow_path(self.code)
         self._executable = None
         self._params_override = params_override
@@ -72,7 +73,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
     @classmethod
     def _create_schema_for_validation(cls, context) -> "Schema":
         # import here to avoid circular import
-        from ..schemas._flow import FlowSchema
+        from promptflow._sdk.schemas._flow import FlowSchema
 
         return FlowSchema(context=context)
 
@@ -132,11 +133,11 @@ class Flow(FlowCore, SchemaValidatableMixin):
     @classmethod
     def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
         """Dispatch flow load to eager flow, async flow or prompty flow."""
-        from promptflow._sdk.entities._eager_flow import FlexFlow
-        from promptflow._sdk.entities._prompty import Prompty
+        from promptflow._sdk.entities._flow.flex import FlexFlow
+        from promptflow._sdk.entities._flow.prompty import Prompty
 
         if is_prompty_flow(file_path=flow_path, raise_error=raise_error):
-            return Prompty._load(path=flow_path)
+            return Prompty._load(path=flow_path, **kwargs)
 
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
             flow_content = f.read()
@@ -160,26 +161,3 @@ class Flow(FlowCore, SchemaValidatableMixin):
                 return result
         else:
             return super().invoke(inputs=inputs)
-
-
-class AsyncFlow(Flow, AsyncFlowCore):
-    __doc__ = AsyncFlowCore.__doc__
-
-    async def invoke_async(self, inputs: dict) -> "LineResult":
-        """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter import TestSubmitter
-
-        if self.language == FlowLanguage.CSharp:
-            # Sync C# calling
-            # TODO: Async C# support: Task(3002242)
-            with TestSubmitter(flow=self, flow_context=self.context).init(
-                stream_output=self.context.streaming
-            ) as submitter:
-                result = submitter.flow_test(inputs=inputs, allow_generator_output=self.context.streaming)
-                return result
-        else:
-            return await super().invoke_async(inputs=inputs)
-
-
-FlowContext = FlowContextCore
-FlowBase = FlowBaseCore

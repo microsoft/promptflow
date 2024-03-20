@@ -4,7 +4,6 @@ from typing import Union
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
-from promptflow.contracts.types import PromptTemplate
 from promptflow.tracing import trace
 
 
@@ -53,20 +52,10 @@ async def dummy_llm_tasks_async(prompt: str, models: list):
 
 
 @trace
-def render_prompt_template(prompt: PromptTemplate, **kwargs):
-    for k, v in kwargs.items():
-        prompt = prompt.replace(f"{{{{{k}}}}}", str(v))
-    return prompt
-
-
-@trace
 def openai_chat(connection: dict, prompt: str, stream: bool = False):
     client = AzureOpenAI(**connection)
 
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": prompt}
-    ]
+    messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": prompt}]
     response = client.chat.completions.create(model="gpt-35-turbo", messages=messages, stream=stream)
     return response.choices[0].message.content or ""
 

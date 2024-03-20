@@ -2,9 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-__path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
+from ._base_inspector_proxy import AbstractInspectorProxy
+from ._proxy_factory import ProxyFactory
 
-from ._start_trace import start_trace
-from ._trace import trace
-
-__all__ = ["start_trace", "trace"]
+__all__ = ["ProxyFactory", "AbstractInspectorProxy"]
