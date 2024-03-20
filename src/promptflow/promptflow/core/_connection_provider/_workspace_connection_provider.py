@@ -51,10 +51,10 @@ def get_case_insensitive_key(d, key, default=None):
 class WorkspaceConnectionProvider(ConnectionProvider):
     def __init__(
         self,
-        credential=None,
         subscription_id: Optional[str] = None,
         resource_group_name: Optional[str] = None,
         workspace_name: Optional[str] = None,
+        credential=None,
     ):
         self.credential = credential
         self.subscription_id = subscription_id
@@ -215,14 +215,15 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         # Note: Filter empty values out to ensure default values can be picked when init class object.
         return {**meta, "value": {k: v for k, v in value.items() if v}}
 
-    def _build_connection_dict(self, name) -> dict:
+    @classmethod
+    def _build_connection_dict(cls, name, subscription_id, resource_group_name, workspace_name, credential) -> dict:
         """
         :type name: str
         """
         url = GET_CONNECTION_URL.format(
-            sub=self.subscription_id,
-            rg=self.resource_group_name,
-            ws=self.workspace_name,
+            sub=subscription_id,
+            rg=resource_group_name,
+            ws=workspace_name,
             name=name,
         )
         try:
@@ -231,13 +232,13 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             from ._models import WorkspaceConnectionPropertiesV2BasicResource
         except ImportError as e:
             raise MissingRequiredPackage(
-                message="Please install azure-identity>=1.12.0,<2.0.0 and msrest to use workspace connection."
+                message="Please install 'azure-identity>=1.12.0,<2.0.0' and 'msrest' to use workspace connection."
             ) from e
         try:
             from promptflow.azure._utils.general import get_arm_token
 
-            rest_obj: WorkspaceConnectionPropertiesV2BasicResource = self.open_url(
-                get_arm_token(credential=self.credential),
+            rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
+                get_arm_token(credential=credential),
                 url=url,
                 action="listsecrets",
                 method="POST",
@@ -256,15 +257,37 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             raise SystemErrorException(target=ErrorTarget.CORE, message=str(e), error=e)
 
         try:
-            return self.build_connection_dict_from_rest_object(name, rest_obj)
+            return cls.build_connection_dict_from_rest_object(name, rest_obj)
         except Exception as e:
             raise BuildConnectionError(
                 message_format=f"Build connection dict for connection {{name}} failed with {e}.",
                 name=name,
             )
 
+    @classmethod
+    def _convert_to_connection_dict(cls, conn_name, conn_data):
+        try:
+            from ._models import WorkspaceConnectionPropertiesV2BasicResource
+        except ImportError as e:
+            raise MissingRequiredPackage(message="Please install 'msrest' to use workspace connection.") from e
+        try:
+            rest_obj = WorkspaceConnectionPropertiesV2BasicResource.deserialize(conn_data)
+            conn_dict = cls.build_connection_dict_from_rest_object(conn_name, rest_obj)
+            return conn_dict
+        except Exception as e:
+            raise BuildConnectionError(
+                message_format=f"Build connection dict for connection {{name}} failed with {e}.",
+                name=conn_name,
+            )
+
     def get(self, name: str):
-        connection_dict = self._build_connection_dict(name)
+        connection_dict = self._build_connection_dict(
+            name,
+            subscription_id=self.subscription_id,
+            resource_group_name=self.resource_group_name,
+            workspace_name=self.workspace_name,
+            credential=self.credential,
+        )
         return _Connection._from_execution_connection_dict(name=name, data=connection_dict)
 
 
