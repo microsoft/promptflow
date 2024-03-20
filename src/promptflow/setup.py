@@ -102,7 +102,7 @@ setup(
     scripts=["pf", "pf.bat"],
     entry_points={
         "console_scripts": [
-            "pfazure = promptflow.azure._cli._pf_azure.entry:main",
+            "pfazure = promptflow.azure._cli.entry:main",
             "pfs = promptflow._sdk._service.entry:main",
         ],
     },

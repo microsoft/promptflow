@@ -22,7 +22,7 @@ from promptflow._cli._utils import (
     activate_action,
 )
 from promptflow._sdk._constants import AzureFlowSource, get_list_view_type
-from promptflow.azure._cli._pf_azure._utils import _get_azure_pf_client
+from promptflow.azure._cli._utils import _get_azure_pf_client
 from promptflow.azure._entities._flow import Flow
 
 

@@ -28,7 +28,7 @@ export PF_INSTALLER=Script
 """
 
 PFAZURE_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
-{install_dir}/bin/python -m promptflow.azure._cli._pf_azure.entry "$@"
+{install_dir}/bin/python -m promptflow.azure._cli.entry "$@"
 """
 
 PFS_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
