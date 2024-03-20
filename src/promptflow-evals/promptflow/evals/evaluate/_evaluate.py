@@ -19,27 +19,6 @@ def _calculate_mean(df) -> Dict[str, float]:
     return mean_value.to_dict()
 
 
-def _load_data(data: str) -> Union[str, Path]:
-    try:
-        if isinstance(data, (str, Path)):
-            if Path(data).exists():
-                test_data = load_jsonl(data)
-                _data_is_file = True
-            else:
-                raise Exception(f"{data} does not point to a valid path")
-        else:
-            # data as list of json objects
-            _ = [json.dumps(line) for line in data]
-            test_data = data
-    except JSONDecodeError as jde:
-        raise Exception("Data could not be loaded. Please validate if data is valid jsonl.") from jde
-    except TypeError as te:
-        raise Exception("Data is not valid json.") from te
-    except Exception as ex:
-        raise Exception(f"Error loading data: {ex}") from ex
-    return test_data
-
-
 def _validation(target, data, evaluators, output_path, tracking_uri, evaluation_name):
     if target is None and data is None:
         raise ValueError("Either target or data must be provided for evaluation.")
@@ -111,7 +90,6 @@ def evaluate(
             data=data,
             stream=True
         ),
-            column_mapping=evaluator_config.get(evaluator_name, evaluator_config.get("default", None)),
             prefix=evaluator_name
         ))
 
