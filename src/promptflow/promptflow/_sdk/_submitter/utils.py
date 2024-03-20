@@ -42,7 +42,6 @@ from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
-    generate_flow_tools_json,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
@@ -102,7 +101,7 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
     executable_flow = ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=Path(working_dir))
 
     # generate tool meta for deployment name, model override
-    tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)
+    # tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)
 
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
 
@@ -125,7 +124,7 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
             override_python_connections(
                 node=node,
                 connection_dict=connection_dict,
-                tools_meta=tools_meta,
+                tools_meta={},
                 executable_flow=executable_flow,
                 node_name=node_name,
             )
@@ -159,7 +158,9 @@ def override_python_connections(
     node: dict, connection_dict: dict, tools_meta: dict, executable_flow: ExecutableFlow, node_name: str
 ):
     """apply connection override on python node."""
-    connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
+    connection_inputs = executable_flow.get_connection_input_names_for_node(
+        node_name=node_name, return_unassigned_inputs=True
+    )
     consumed_connections = set()
     for c, v in connection_dict.items():
         if c in connection_inputs:
