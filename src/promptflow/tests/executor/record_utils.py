@@ -57,3 +57,17 @@ def setup_recording():
         inject_openai_api()
 
     return patches
+
+
+def setup_patching(patch_dict={}):
+    patches = []
+
+    def start_patches(patch_targets):
+        # Functions to setup the mock for list of targets
+        for target, mock_func in patch_targets.items():
+            patcher = patch(target, mock_func)
+            patches.append(patcher)
+            patcher.start()
+
+    start_patches(patch_dict)
+    return patches
