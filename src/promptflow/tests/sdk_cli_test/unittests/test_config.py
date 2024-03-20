@@ -7,7 +7,7 @@ import pytest
 
 from promptflow._sdk._configuration import Configuration, InvalidConfigValue
 from promptflow._sdk._constants import FLOW_DIRECTORY_MACRO_IN_CONFIG
-from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
 

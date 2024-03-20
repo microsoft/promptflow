@@ -258,7 +258,7 @@ class TestExecutorTraces:
         # Assert the "greetings" tool
         greetings_trace = flow_trace["children"][0]
         assert greetings_trace["name"] == "greetings"
-        assert greetings_trace["type"] == "Tool"
+        assert greetings_trace["type"] == "Function"
         assert greetings_trace["inputs"] == inputs
         assert greetings_trace["output"] == {"greeting": "Hello, User 1!"}
         assert greetings_trace["error"] is None
@@ -540,8 +540,6 @@ class TestOTelTracer:
             assert span.attributes["framework"] == "promptflow"
             if span.parent is None:
                 expected_span_type = TraceType.FLOW
-            elif span.parent.span_id == root_span.context.span_id:
-                expected_span_type = TraceType.TOOL
             elif span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
                 expected_span_type = TraceType.LLM
             elif span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:

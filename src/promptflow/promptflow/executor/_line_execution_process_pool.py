@@ -7,6 +7,7 @@ import contextvars
 import multiprocessing
 import os
 import queue
+import shutil
 import signal
 import sys
 import threading
@@ -16,6 +17,7 @@ from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Dict, List, Optional, Union
 
 import psutil
@@ -27,7 +29,12 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
-from promptflow._utils.process_utils import get_available_max_worker_count
+from promptflow._utils.process_utils import (
+    get_available_max_worker_count,
+    get_manager_process_log_path,
+    get_subprocess_log_path,
+    log_errors_from_file,
+)
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.run_info import FlowRunInfo
@@ -40,17 +47,33 @@ from promptflow.executor._errors import (
     ProcessCrashError,
     ThreadCrashError,
 )
-from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
+from promptflow.executor._process_manager import (
+    ForkProcessManager,
+    ProcessControlSignal,
+    ProcessInfo,
+    ProcessPoolConstants,
+    SpawnProcessManager,
+)
 from promptflow.executor._result import LineResult
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.storage._queue_run_storage import QueueRunStorage
+from promptflow.storage._queue_run_storage import QueueRunStorage, ServiceQueueRunStorage
 from promptflow.tracing._operation_context import OperationContext
-
-TERMINATE_SIGNAL = "terminate"
 
 
 class LineExecutionProcessPool:
+    """A process pool for executing lines in batch mode.
+
+    :param output_dir: The output directory for the batch run.
+    :param flow_executor: The flow executor used to provide flow_create_kwargs to execute the lines.
+    :param worker_count: The number of worker processes in the pool.
+    :param line_timeout_sec: The timeout for each line execution in seconds.
+    :param batch_timeout_sec: The timeout for the entire batch run in seconds.
+    :param run_id: The run id of the batch run.
+    :param nlines: The number of lines in the batch run.
+    :param serialize_multimedia_during_execution: Whether to serialize multimedia data during line execution.
+    """
+
     _DEFAULT_WORKER_COUNT = 4
     _THREAD_TERMINATED_TIMEOUT = 10
     _PROCESS_TERMINATED_TIMEOUT = 60
@@ -58,13 +81,14 @@ class LineExecutionProcessPool:
 
     def __init__(
         self,
-        flow_executor: FlowExecutor,
-        nlines: int,
-        run_id: int,
         output_dir: Path,
-        batch_timeout_sec: Optional[int] = None,
-        line_timeout_sec: Optional[int] = None,
+        flow_executor: FlowExecutor,
         worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
+        batch_timeout_sec: Optional[int] = None,
+        run_id: Optional[str] = None,
+        nlines: Optional[int] = None,
+        serialize_multimedia_during_execution: bool = False,
     ):
         # Determine whether to use fork to create process.
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
@@ -85,6 +109,13 @@ class LineExecutionProcessPool:
         self._batch_timeout_sec = batch_timeout_sec
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._worker_count = self._determine_worker_count(worker_count)
+
+        # - If it is False, we will use QueueRunStorage as the storage during execution.
+        # It will only put the original run info into the output queue to wait for processing.
+        # - If it is True, we will use ServiceQueueRunStorage as the storage during execution.
+        # It will persist multimedia data in the run infos and aggregation_inputs to output_dir
+        # and convert Image object to path dict.
+        self._serialize_multimedia_during_execution = serialize_multimedia_during_execution
 
         # Initialize the results dictionary that stores line results.
         self._result_dict: Dict[int, LineResult] = {}
@@ -146,6 +177,8 @@ class LineExecutionProcessPool:
             "output_queues": self._output_queues,
             "process_info": process_info,
             "process_target_func": _process_wrapper,
+            "output_dir": self._output_dir,
+            "serialize_multimedia": self._serialize_multimedia_during_execution,
         }
         if self._use_fork:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
@@ -202,6 +235,13 @@ class LineExecutionProcessPool:
         # If a thread crashed for some reason, the processes it monitors might not be able to exit because
         # they do not receive a terminate signal. So we need to terminate these unmonitored processes.
         self._processes_manager.ensure_all_processes_terminated()
+        # In fork mode, send the 'spawned_manager_end' signal to exit the spawned process manager.
+        if self._use_fork:
+            self._control_signal_queue.put((ProcessControlSignal.SPAWNED_MANAGER_END, self._use_fork))
+        # Clear the result dict.
+        self._result_dict.clear()
+        # Delete log files to prevent interference from the current run on the next execution.
+        self._delete_log_files()
 
     async def submit(self, run_id: str, line_number: int, inputs: dict):
         """Submit a line execution request to the process pool and return the line result."""
@@ -306,10 +346,10 @@ class LineExecutionProcessPool:
             # If the line_timeout_sec is None, it means the batch run is timeouted.
             line_timeout_sec = self._calculate_line_timeout_sec()
             # If the task is a terminate signal or the batch run is timeouted, exit the loop.
-            if data == TERMINATE_SIGNAL or line_timeout_sec is None:
+            if data == ProcessPoolConstants.TERMINATE_SIGNAL or line_timeout_sec is None:
                 bulk_logger.info(f"The thread monitoring the process [{process_id}-{process_name}] will be terminated.")
                 # Put the terminate signal into the input queue to notify the sub process to exit.
-                input_queue.put(TERMINATE_SIGNAL)
+                input_queue.put(ProcessPoolConstants.TERMINATE_SIGNAL)
                 # End the process if found the terminate signal.
                 self._processes_manager.end_process(index)
                 # In fork mode, the main process and the sub spawn process communicate through _process_info.
@@ -361,6 +401,14 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
+                    log_path = get_subprocess_log_path(index)
+                    # In fork mode, if the child process fails to start, its error information
+                    # will be written to the parent process log file.
+                    # So if 'log_errors_form_path' return 'false', it means the child process fails to start.
+                    # Attempt read the parent process log file.
+                    if not log_errors_from_file(log_path) and self._use_fork:
+                        log_path = get_manager_process_log_path()
+                        log_errors_from_file(log_path)
                     ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
                     # Handle line execution timeout.
@@ -404,6 +452,12 @@ class LineExecutionProcessPool:
     # endregion
 
     # region private methods
+    def _delete_log_files(self):
+        try:
+            shutil.rmtree(ProcessPoolConstants.PROCESS_LOG_PATH)
+        except Exception as e:
+            bulk_logger.warning(f"Failed to delete the folder, exception: {e}")
+
     def _get_task_from_queue(self, task_queue: Queue):
         """Get task from the task queue. Ignore the queue being empty and only exit the loop when getting data."""
         while True:
@@ -420,7 +474,7 @@ class LineExecutionProcessPool:
             return
         # Put n (equal to processes number) terminate signals to the task queue to ensure each thread receives one.
         for _ in range(self._n_process):
-            self._task_queue.put(TERMINATE_SIGNAL)
+            self._task_queue.put(ProcessPoolConstants.TERMINATE_SIGNAL)
 
     def _determine_worker_count(self, worker_count):
         # Starting a new process in non-fork mode requires to allocate memory.
@@ -550,6 +604,12 @@ class LineExecutionProcessPool:
         # Serialize multimedia data in node run infos to string
         for node_run_info in result.node_run_infos.values():
             self._serialize_multimedia(node_run_info)
+        # Persist multimedia data in the aggregation_inputs of line result to output_dir
+        # if _serialize_multimedia_during_execution is True.
+        if self._serialize_multimedia_during_execution:
+            result.aggregation_inputs = persist_multimedia_data(
+                result.aggregation_inputs, Path(mkdtemp()), use_absolute_path=True
+            )
         # Persist multimedia data in the outputs of line result to output_dir
         result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
@@ -617,11 +677,18 @@ class LineExecutionProcessPool:
 
 def _process_wrapper(
     executor_creation_func,
+    output_dir: Path,
+    serialize_multimedia: bool,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
     operation_contexts_dict: dict,
+    i: int,
 ):
+    ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = get_subprocess_log_path(i)
+    sys.stderr = open(log_path, "w")
+
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal_handler)
     else:
@@ -635,9 +702,9 @@ def _process_wrapper(
 
     if log_context_initialization_func:
         with log_context_initialization_func():
-            _exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+            _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
     else:
-        _exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
 
 
 def signal_handler(signum, frame):
@@ -653,14 +720,18 @@ def signal_handler(signum, frame):
         sys.exit(1)
 
 
-def _exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
-    run_storage = QueueRunStorage(output_queue)
+def _exec_line_for_queue(
+    executor_creation_func, output_dir: Path, serialize_multimedia: bool, input_queue: Queue, output_queue: Queue
+):
+    run_storage = (
+        ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
+    )
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     while True:
         try:
             data = input_queue.get(timeout=1)
-            if data == TERMINATE_SIGNAL:
+            if data == ProcessPoolConstants.TERMINATE_SIGNAL:
                 bulk_logger.info(f"The process [{os.getpid()}] has received a terminate signal.")
                 # Add try catch in case of shutdown method is not implemented in the tracer provider.
                 try:
@@ -722,7 +793,7 @@ def _exec_line(
             run_tracker = RunTracker(executor._storage)
         else:
             run_tracker = executor._run_tracker
-        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
+        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id, index=index)
         run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(

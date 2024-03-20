@@ -62,3 +62,26 @@ def get_available_max_worker_count(logger: logging.Logger = bulk_logger):
             f"= {estimated_available_worker_count}"
         )
     return estimated_available_worker_count
+
+
+def log_errors_from_file(log_path):
+    try:
+        with open(log_path, "r") as f:
+            error_logs = "".join(f.readlines())
+            bulk_logger.error(error_logs)
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def get_subprocess_log_path(index):
+    from promptflow.executor._process_manager import ProcessPoolConstants
+
+    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, index)
+    return ProcessPoolConstants.PROCESS_LOG_PATH / logName_i
+
+
+def get_manager_process_log_path():
+    from promptflow.executor._process_manager import ProcessPoolConstants
+
+    return ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME

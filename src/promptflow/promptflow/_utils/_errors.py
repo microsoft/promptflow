@@ -1,4 +1,4 @@
-from promptflow.exceptions import SystemErrorException, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
 class InvalidImageInput(ValidationException):
@@ -15,7 +15,6 @@ class YamlParseError(SystemErrorException):
     pass
 
 
-class CalculatingMetricsError(UserErrorException):
-    """The exception that is raised when calculating metrics failed."""
-
-    pass
+class ApplyInputMappingError(ValidationException):
+    def __init__(self, target: ErrorTarget = ErrorTarget.CORE, **kwargs):
+        super().__init__(target=target, **kwargs)

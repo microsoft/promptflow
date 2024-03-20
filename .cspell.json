@@ -16,6 +16,8 @@
   ],
   "ignorePaths": [
     "**/*.js",
+    "**/*.mjs",
+    "**/*.css",
     "**/*.pyc",
     "**/*.log",
     "**/*.jsonl",
@@ -180,7 +182,8 @@
     "addrs",
     "pywin",
     "STARTF",
-    "mltable"
+    "mltable",
+    "setenv"
   ],
   "flagWords": [
     "Prompt Flow"

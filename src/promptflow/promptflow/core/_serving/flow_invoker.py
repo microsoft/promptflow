@@ -5,20 +5,11 @@ import dataclasses
 from pathlib import Path
 from typing import Callable, Union
 
-from promptflow import PFClient
-from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import (
-    dump_flow_result,
-    get_local_connections_from_executable,
-    override_connection_config_with_environment_variable,
-    resolve_connections_environment_variable_reference,
-    update_environment_variables_with_connections,
-)
-from promptflow._sdk.entities._flow import Flow
-from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
+from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.core._connection import _Connection
 from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow.core._serving.flow_result import FlowResult
@@ -31,8 +22,8 @@ class FlowInvoker:
     """
     The invoker of a flow.
 
-    :param flow: The path of the flow, or the flow loaded by load_flow().
-    :type flow: [str, ~promptflow._sdk.entities._flow.Flow]
+    :param flow: The path of the flow.
+    :type flow: [str, Path]
     :param connection_provider: The connection provider, defaults to None
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
@@ -49,17 +40,19 @@ class FlowInvoker:
 
     def __init__(
         self,
-        flow: [str, Flow],
+        flow: ExecutableFlow,
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
         connections: dict = None,
         connections_name_overrides: dict = None,
         raise_ex: bool = True,
+        *,
+        flow_path: Path,
+        working_dir: Path,
         **kwargs,
     ):
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
-        self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
-        self.flow = self.flow_entity._init_executable()
+        self.flow = flow
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
         self.raise_ex = raise_ex
@@ -72,23 +65,29 @@ class FlowInvoker:
         self._credential = kwargs.get("credential", None)
 
         self._init_connections(connection_provider)
-        self._init_executor()
+        self._init_executor(flow_path, working_dir)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
-        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self.flow)
+        self._is_chat_flow, _, _ = is_executable_chat_flow(self.flow)
+
         if connection_provider is None or isinstance(connection_provider, str):
             config = {"connection.provider": connection_provider} if connection_provider else None
             self.logger.info(f"Getting connections from pf client with provider from args: {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
-            connections = get_local_connections_from_executable(
-                executable=self.flow,
+            # TODO (3027983): remove connection related dependency from promptflow-core
+            from promptflow import PFClient
+            from promptflow._sdk._submitter.utils import SubmitterHelper
+
+            connections = SubmitterHelper.resolve_connection_names(
+                connection_names=self.flow.get_connection_names(),
                 client=PFClient(config=config, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),
+                raise_error=True,
             )
             # use original name for connection with name override
             override_name_to_original_name_mapping = {v: k for k, v in self.connections_name_overrides.items()}
@@ -114,12 +113,19 @@ class FlowInvoker:
         else:
             raise UnsupportedConnectionProvider(connection_provider)
 
+        # TODO (3027983): remove connection related dependency from promptflow-core
+        from promptflow._sdk._utils import (
+            override_connection_config_with_environment_variable,
+            resolve_connections_environment_variable_reference,
+            update_environment_variables_with_connections,
+        )
+
         override_connection_config_with_environment_variable(self.connections)
         resolve_connections_environment_variable_reference(self.connections)
         update_environment_variables_with_connections(self.connections)
         self.logger.info(f"Promptflow get connections successfully. keys: {self.connections.keys()}")
 
-    def _init_executor(self):
+    def _init_executor(self, flow_path, working_dir):
         self.logger.info("Promptflow executor starts initializing...")
         storage = None
         if self._dump_to:
@@ -127,8 +133,8 @@ class FlowInvoker:
         else:
             storage = self.storage
         self.executor = FlowExecutor.create(
-            flow_file=self.flow_entity.path,
-            working_dir=self.flow_entity.code,
+            flow_file=flow_path,
+            working_dir=working_dir,
             connections=self.connections,
             raise_ex=self.raise_ex,
             storage=storage,
@@ -198,6 +204,7 @@ class FlowInvoker:
             invoke_result.output = persist_multimedia_data(
                 invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
+
             dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
 
 
