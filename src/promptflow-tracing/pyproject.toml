@@ -90,6 +90,8 @@ addopts = """
 testpaths = ["tests"]
 
 [tool.coverage.run]
+concurrency = ["multiprocessing"]
+source = ["promptflow"]
 omit = [
   "__init__.py",
 ]
