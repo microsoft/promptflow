@@ -11,6 +11,7 @@ import shutil
 import signal
 import sys
 import threading
+from contextlib import nullcontext
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -18,7 +19,7 @@ from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import psutil
 
@@ -700,11 +701,14 @@ def _process_wrapper(
 
     setup_exporter_from_environ()
 
-    if log_context_initialization_func:
-        with log_context_initialization_func():
-            _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
-    else:
-        _exec_line_for_queue(executor_creation_func, output_dir, serialize_multimedia, input_queue, output_queue)
+    _exec_line_for_queue(
+        executor_creation_func,
+        output_dir,
+        serialize_multimedia,
+        input_queue,
+        output_queue,
+        log_context_initialization_func,
+    )
 
 
 def signal_handler(signum, frame):
@@ -721,7 +725,12 @@ def signal_handler(signum, frame):
 
 
 def _exec_line_for_queue(
-    executor_creation_func, output_dir: Path, serialize_multimedia: bool, input_queue: Queue, output_queue: Queue
+    executor_creation_func,
+    output_dir: Path,
+    serialize_multimedia: bool,
+    input_queue: Queue,
+    output_queue: Queue,
+    log_context_initialization_func: Optional[Callable] = None,
 ):
     run_storage = (
         ServiceQueueRunStorage(output_queue, output_dir) if serialize_multimedia else QueueRunStorage(output_queue)
@@ -732,30 +741,35 @@ def _exec_line_for_queue(
         try:
             data = input_queue.get(timeout=1)
             if data == ProcessPoolConstants.TERMINATE_SIGNAL:
-                bulk_logger.info(f"The process [{os.getpid()}] has received a terminate signal.")
-                # Add try catch in case of shutdown method is not implemented in the tracer provider.
-                try:
-                    import opentelemetry.trace as otel_trace
+                with log_context_initialization_func() if log_context_initialization_func else nullcontext():
+                    bulk_logger.info(f"The process [{os.getpid()}] has received a terminate signal.")
+                    # Add try catch in case of shutdown method is not implemented in the tracer provider.
+                    try:
+                        import opentelemetry.trace as otel_trace
 
-                    # Meet span missing issue when end process normally (even add wait() when end it).
-                    # Shutdown the tracer provider to flush the remaining spans.
-                    # The tracer provider is created for each process, so it's ok to shutdown it here.
-                    otel_trace.get_tracer_provider().shutdown()
-                except Exception as e:
-                    bulk_logger.warning(f"Error occurred while shutting down tracer provider: {e}")
+                        # Meet span missing issue when end process normally (even add wait() when end it).
+                        # Shutdown the tracer provider to flush the remaining spans.
+                        # The tracer provider is created for each process, so it's ok to shutdown it here.
+                        otel_trace.get_tracer_provider().shutdown()
+                    except Exception as e:
+                        bulk_logger.warning(f"Error occurred while shutting down tracer provider: {e}")
 
-                # If found the terminate signal, exit the process.
-                break
+                    # If found the terminate signal, exit the process.
+                    break
             run_id, line_number, inputs, line_timeout_sec = data
-            result = _exec_line(
-                executor=executor,
-                output_queue=output_queue,
-                inputs=inputs,
-                run_id=run_id,
-                index=line_number,
-                line_timeout_sec=line_timeout_sec,
-            )
-            output_queue.put(result)
+            # Set logger context for each line execution. Because we also need to record line logs in batch run.
+            with log_context_initialization_func(
+                line_number=line_number
+            ) if log_context_initialization_func else nullcontext():
+                result = _exec_line(
+                    executor=executor,
+                    output_queue=output_queue,
+                    inputs=inputs,
+                    run_id=run_id,
+                    index=line_number,
+                    line_timeout_sec=line_timeout_sec,
+                )
+                output_queue.put(result)
         except queue.Empty:
             # Do nothing until the input_queue have content or process is killed
             # TODO: Exit the process more gracefully.

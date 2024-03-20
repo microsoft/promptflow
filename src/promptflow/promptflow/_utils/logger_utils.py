@@ -168,6 +168,16 @@ class FileHandlerConcurrentWrapper(logging.Handler):
         self._context_var.set(None)
 
 
+class LineFileHandlerConcurrentWrapper(FileHandlerConcurrentWrapper):
+    """
+    Inherit FileHandlerConcurrentWrapper and use different context variable.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._context_var = ContextVar("batch_flow_logs_folder_handler", default=None)
+
+
 valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", "DEBUG", "NOTSET"}
 
 
@@ -215,12 +225,19 @@ class LogContext:
 
     file_path: str  # Log file path.
     run_mode: Optional[RunMode] = RunMode.Test
+    LINE_NUMBER_WIDTH = 9
     credential_list: Optional[List[str]] = None  # These credentials will be scrubbed in logs.
     input_logger: logging.Logger = None  # If set, then context will also be set for input_logger.
+    flow_logs_folder: Optional[str] = None  # Used in batch mode to specify the folder for flow logs.
+    line_number: Optional[int] = None  # Used in batch mode to specify the line log file name.
 
     def get_initializer(self):
         return partial(
-            LogContext, file_path=self.file_path, run_mode=self.run_mode, credential_list=self.credential_list
+            LogContext,
+            file_path=self.file_path,
+            run_mode=self.run_mode,
+            credential_list=self.credential_list,
+            flow_logs_folder=self.flow_logs_folder,
         )
 
     @staticmethod
@@ -244,6 +261,7 @@ class LogContext:
 
     def __enter__(self):
         self._set_log_path()
+        self._set_batch_run_flow_logs_handler()
         self._set_credential_list()
         LogContext.set_current(self)
 
@@ -270,6 +288,18 @@ class LogContext:
                 if isinstance(log_handler, FileHandlerConcurrentWrapper):
                     handler = FileHandler(self.file_path)
                     log_handler.handler = handler
+
+    def _set_batch_run_flow_logs_handler(self):
+        if self.run_mode != RunMode.Batch or self.flow_logs_folder is None or self.line_number is None:
+            return
+        from pathlib import Path
+
+        filename = f"{str(self.line_number).zfill(self.LINE_NUMBER_WIDTH)}.log"
+        path = Path(self.flow_logs_folder) / filename
+        for logger in self._get_batch_run_flow_loggers_list():
+            handler = LineFileHandlerConcurrentWrapper()
+            handler.handler = FileHandler(path)
+            logger.addHandler(handler)
 
     def _set_credential_list(self):
         # Set credential list to all loggers.
@@ -301,6 +331,11 @@ class LogContext:
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
         # return all loggers for executor
         return [logger, flow_logger, bulk_logger]
+
+    @classmethod
+    def _get_batch_run_flow_loggers_list(cls) -> List[logging.Logger]:
+        # Exclude bulk_logger for line execution log.
+        return [logger, flow_logger]
 
 
 def update_log_path(log_path: str, input_logger: logging.Logger = None):
