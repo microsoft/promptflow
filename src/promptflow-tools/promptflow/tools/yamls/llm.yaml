@@ -155,7 +155,9 @@ promptflow.tools.llm.llm:
     tools:
       type:
       - list
+      default: []
     tool_choice:
       type:
       - string
       - object
+      default: ""
