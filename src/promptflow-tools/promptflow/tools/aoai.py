@@ -139,13 +139,13 @@ class AzureOpenAI(ToolProvider):
 
         # functions and function_call are deprecated and are replaced by tools and tool_choice.
         # if both are provided, tools and tool_choice are used and functions and function_call are ignored.
-        if tools is not None:
+        if tools:
             # TODO: add validate_tools
             params["tools"] = tools
             # TODO: add validate_tool_choice
             params["tool_choice"] = tool_choice
         else:
-            if functions is not None:
+            if functions:
                 validate_functions(functions)
                 params["functions"] = functions
                 params["function_call"] = process_function_call(function_call)
