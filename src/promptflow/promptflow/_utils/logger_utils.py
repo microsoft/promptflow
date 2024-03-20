@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional
 
-from promptflow._constants import PF_LOGGING_LEVEL
+from promptflow._constants import LINE_NUMBER_WIDTH, PF_LOGGING_LEVEL
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
@@ -225,7 +225,6 @@ class LogContext:
 
     file_path: str  # Log file path.
     run_mode: Optional[RunMode] = RunMode.Test
-    LINE_NUMBER_WIDTH = 9
     credential_list: Optional[List[str]] = None  # These credentials will be scrubbed in logs.
     input_logger: logging.Logger = None  # If set, then context will also be set for input_logger.
     flow_logs_folder: Optional[str] = None  # Used in batch mode to specify the folder for flow logs.
@@ -294,8 +293,8 @@ class LogContext:
             return
         from pathlib import Path
 
-        filename = f"{str(self.line_number).zfill(self.LINE_NUMBER_WIDTH)}.log"
-        path = Path(self.flow_logs_folder) / filename
+        file_name = f"{str(self.line_number).zfill(LINE_NUMBER_WIDTH)}.log"
+        path = Path(self.flow_logs_folder) / file_name
         for logger in self._get_batch_run_flow_loggers_list():
             handler = LineFileHandlerConcurrentWrapper()
             handler.handler = FileHandler(path)

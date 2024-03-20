@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._constants import OUTPUT_FILE_NAME
+from promptflow._constants import LINE_NUMBER_WIDTH, OUTPUT_FILE_NAME
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult
@@ -221,7 +221,8 @@ class TestExecutorLogs:
             )
             nlines = len(get_bulk_inputs_from_jsonl(flow_folder))
             for i in range(nlines):
-                flow_log_file = Path(bulk_run_flow_logs_folder) / f"{i}.log"
+                file_name = f"{str(i).zfill(LINE_NUMBER_WIDTH)}.log"
+                flow_log_file = Path(bulk_run_flow_logs_folder) / file_name
                 assert flow_log_file.is_file()
                 log_content = load_content(flow_log_file)
                 # Assert flow log file contains expected logs

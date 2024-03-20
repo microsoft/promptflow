@@ -15,7 +15,7 @@
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
 
-- [Executor] Added per-line logging for batch runs, stored under the `flow_logs` folder.
+- [Batch] Added per-line logging for batch runs, stored under the `flow_logs` folder.
 - [SDK/CLI] Support `AzureOpenAIConnection.from_env` and `OpenAIConnection.from_env`. Reach more details [here](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#load-from-environment-variables).
 
 ### Bugs Fixed
