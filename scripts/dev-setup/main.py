@@ -71,7 +71,6 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
         folder_name = pkg
         extras = ""
     pkg_working_dir = REPO_ROOT_DIR / "src" / folder_name
-    print(pkg_working_dir.as_posix())
     with change_cwd(pkg_working_dir):
         print_blue(f"- Setting up {pkg}")
 
