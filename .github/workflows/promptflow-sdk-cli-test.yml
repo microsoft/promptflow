@@ -13,6 +13,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
   build:
     strategy:
@@ -79,6 +80,9 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
+    - name: install recording
+      run: poetry install
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
       uses: azure/login@v1

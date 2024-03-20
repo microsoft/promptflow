@@ -57,11 +57,11 @@ jobs:
         run: poetry run pip install $(python -c "import glob; print(glob.glob('promptflow_tracing-*.whl')[0])")
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
-        run: |
-          poetry install --only test
-          cd ${{ env.RECORD_DIRECTORY }}
-          poetry install
+        run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
