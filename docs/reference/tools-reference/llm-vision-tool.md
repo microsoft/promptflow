@@ -35,7 +35,6 @@ Setup connections to provisioned resources in prompt flow.
 
 | Name                    | Type        | Description                                                                                    | Required |
 |-------------------------|-------------|------------------------------------------------------------------------------------------------|----------|
-| connection              | AzureOpenAI | the AzureOpenAI connection to be used in the tool                                              | Yes      |
 | model, deployment\_name | string      | the language model to use                                                                      | Yes      |
 | prompt                  | string      | The text prompt that the language model will use to generate it's response.                    | Yes      |
 | max\_tokens             | integer     | the maximum number of tokens to generate in the response. Default is 512.                      | No       |
