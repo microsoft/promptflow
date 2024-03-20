@@ -15,20 +15,20 @@ def init(model_config: AzureOpenAIConnection):
 
     :param model_config: Configuration for the Azure OpenAI model.
     :type model_config: AzureOpenAIConnection
-    :return: A function that evaluates groundedness.
+    :return: A function that evaluates similarity.
     :rtype: function
 
     **Usage**
 
     .. code-block:: python
 
-        eval_fn = groundedness.init(model_config)
+        eval_fn = similarity.init(model_config)
         result = eval_fn(
+            question="What is the capital of Japan?",
             answer="The capital of Japan is Tokyo.",
-            context="Tokyo is Japan's capital, known for its blend of traditional culture \
-                and technological advancements.")
+            ground_truth="Tokyo is Japan's capital.")
     """
-    def eval_fn(answer: str, context: str):
+    def eval_fn(question: str, answer: str, ground_truth: str):
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
@@ -40,5 +40,5 @@ def init(model_config: AzureOpenAIConnection):
         }
 
         # Run the evaluation flow
-        return f(answer=answer, context=context)
+        return f(question=question, answer=answer, ground_truth=ground_truth)
     return eval_fn
