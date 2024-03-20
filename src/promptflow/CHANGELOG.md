@@ -2,6 +2,10 @@
 
 ## 1.7.0 (Upcoming)
 
+### NOTICES
+- Import warnings will be printed when importing from `promptflow` namespace, please use imports from new namespaces
+  suggested in the warning message.
+
 ### Features Added
 
 - [SDK/CLI] Create a run with `resume_from`, note that only run created with `promptflow>=1.7.0` can be used as the value of `resume_from`:
