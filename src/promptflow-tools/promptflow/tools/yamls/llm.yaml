@@ -130,6 +130,7 @@ promptflow.tools.llm.llm:
       - type: json_object
       - type: text
       allow_manual_entry: true
+      default: ""
     frequency_penalty:
       type:
       - int
