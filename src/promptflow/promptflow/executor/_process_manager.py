@@ -14,6 +14,7 @@ import psutil
 
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
+from promptflow._utils.process_utils import get_manager_process_log_path, get_subprocess_log_path, log_errors_from_file
 from promptflow.executor._errors import (
     ProcessInfoObtainedTimeout,
     ProcessTerminatedTimeout,
@@ -135,6 +136,10 @@ class AbstractProcessManager:
             self.ensure_healthy()
             try:
                 if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
+                    log_path = get_subprocess_log_path(index)
+                    if not log_errors_from_file(log_path):
+                        log_path = get_manager_process_log_path()
+                        log_errors_from_file(log_path)
                     raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
                 # Try to get process id and name from the process_info
                 process_id = self._process_info[index].process_id
@@ -333,7 +338,7 @@ class ForkProcessManager(AbstractProcessManager):
         # The normal state of the spawned process is 'running'. If the process does not start successfully
         # or exit unexpectedly, its state will be 'zombie'.
         if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-            log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+            log_path = get_manager_process_log_path()
             try:
                 with open(log_path, "r") as f:
                     error_logs = "".join(f.readlines())
@@ -439,7 +444,7 @@ def create_spawned_fork_process_manager(
     **kwargs,
 ):
     ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
-    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+    log_path = get_manager_process_log_path()
     sys.stderr = open(log_path, "w")
 
     """

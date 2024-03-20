@@ -29,7 +29,12 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_string, persist_multimedia_data
-from promptflow._utils.process_utils import get_available_max_worker_count, log_errors_from_file
+from promptflow._utils.process_utils import (
+    get_available_max_worker_count,
+    get_manager_process_log_path,
+    get_subprocess_log_path,
+    log_errors_from_file,
+)
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.run_info import FlowRunInfo
@@ -396,14 +401,13 @@ class LineExecutionProcessPool:
                 # Handle process crashed.
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
-                    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, index)
-                    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName_i
+                    log_path = get_subprocess_log_path(index)
                     # In fork mode, if the child process fails to start, its error information
                     # will be written to the parent process log file.
                     # So if 'log_errors_form_path' return 'false', it means the child process fails to start.
                     # Attempt read the parent process log file.
                     if not log_errors_from_file(log_path) and self._use_fork:
-                        log_path = ProcessPoolConstants.PROCESS_LOG_PATH / ProcessPoolConstants.MANAGER_PROCESS_LOG_NAME
+                        log_path = get_manager_process_log_path()
                         log_errors_from_file(log_path)
                     ex = ProcessCrashError(line_number)
                 elif self._line_timeout_expired(start_time, line_timeout_sec=line_timeout_sec):
@@ -681,10 +685,8 @@ def _process_wrapper(
     operation_contexts_dict: dict,
     i: int,
 ):
-    logName_i = "{}_{}.log".format(ProcessPoolConstants.PROCESS_LOG_NAME, i)
-    if not ProcessPoolConstants.PROCESS_LOG_PATH.exists():
-        ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
-    log_path = ProcessPoolConstants.PROCESS_LOG_PATH / logName_i
+    ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = get_subprocess_log_path(i)
     sys.stderr = open(log_path, "w")
 
     if threading.current_thread() is threading.main_thread():
