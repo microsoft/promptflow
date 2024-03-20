@@ -390,13 +390,13 @@ def get_secret_input(prompt, mask="*"):
     """
     if not isinstance(prompt, str):
         e = TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
-        raise UserErrorException(str(e), privacy_info=[]) from e
+        raise UserErrorException(message_format=str(e)) from e
     if not isinstance(mask, str):
         e = TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
-        raise UserErrorException(str(e), privacy_info=[]) from e
+        raise UserErrorException(message_format=str(e)) from e
     if len(mask) != 1:
         e = ValueError("mask argument must be a one-character str")
-        raise UserErrorException(str(e), privacy_info=[]) from e
+        raise UserErrorException(message_format=str(e)) from e
 
     if sys.platform == "win32":
         # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:

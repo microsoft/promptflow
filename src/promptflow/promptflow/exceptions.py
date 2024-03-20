@@ -46,6 +46,11 @@ class PromptflowException(Exception):
     :type target: ~promptflow.exceptions.ErrorTarget
     :param error: The original exception if any.
     :type error: Exception
+    :param privacy_info: To record messages to telemetry, it is necessary to mask private information.
+                        If set to None, messages will not be recorded to telemetry.
+                        Otherwise, it will replace the content string in messages
+                        that contain privacy_info with '{privacy_info}'.
+    :type privacy_info: List[str]
     """
 
     def __init__(

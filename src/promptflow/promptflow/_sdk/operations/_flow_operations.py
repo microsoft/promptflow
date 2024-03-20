@@ -571,7 +571,7 @@ class FlowOperations(TelemetryMixin):
                 subprocess.run(["pyinstaller", "app.spec"], check=True)
                 print("PyInstaller command executed successfully.")
             except FileNotFoundError as e:
-                raise UserErrorException("app.spec not found when run pyinstaller", privacy_info=[]) from e
+                raise UserErrorException(message_format="app.spec not found when run pyinstaller") from e
 
     @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
