@@ -132,11 +132,10 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
         entry = flow_dag.get("entry")
         entry_file = resolve_entry_file(entry=entry, working_dir=working_dir)
 
-        # TODO(2991934): support environment variables here
         meta_dict = generate_flow_meta(
             flow_directory=working_dir,
             source_path=entry_file,
-            entry=entry,
+            data=flow_dag,
             dump=False,
         )
         return ExecutableEagerFlow.deserialize(meta_dict)
