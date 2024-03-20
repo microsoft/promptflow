@@ -1,6 +1,6 @@
 from .file_clients.file_client_factory import FileClientFactory
 from .utils.yaml_parser import YamlParser
-from .contracts.entities import CachedExperimentConfig, ExperimentConfig
+from .contracts.entities import ExperimentConfig
 from .contracts.entities import GroupType, Step
 from .contracts.entities import Experiment
 from .contracts.entities import Variant
@@ -22,7 +22,7 @@ CACHE_EXPIRATION_SECONDS = 300
 class Exp:
 
     # cache mock
-    _cached_exp: Dict[str, CachedExperimentConfig] = {}
+    _cached_exp: Dict[str, ExperimentConfig] = {}
     _cached_exp_lock = threading.Lock()
 
     _exp_variants = contextvars.ContextVar("exp_variants")
@@ -38,12 +38,7 @@ class Exp:
         _file_identifier = file_identifier
 
         if not Exp._is_cache_valid(file_identifier):
-            experiment_config = Exp._load_config(file_identifier)
-            if experiment_config:
-                with Exp._cached_exp_lock:
-                    Exp._cached_exp[file_identifier] = CachedExperimentConfig(
-                        experiment_config, datetime.now()
-                    )
+            Exp._update_cache(file_identifier)
 
     # Get variant based on given randonmization unit ID and experiment name
     # Extra Requirement: add extra columns into all the upcoming spans under
@@ -58,7 +53,7 @@ class Exp:
         experiment_name: str
     ) -> Tuple[int, Variant]:
         bucket = Exp._get_bucket(rand_unit_id)
-        for exp in Exp._cached_exp[_file_identifier].experiment_config.experiments:
+        for exp in Exp._cached_exp[_file_identifier].experiments:
             if exp.name == experiment_name:
                 variant = Exp._get_variant(exp, bucket)
 
@@ -81,6 +76,14 @@ class Exp:
     @staticmethod
     def get_ruid() -> str:
         return Exp._exp_ruid.get()
+
+    @staticmethod
+    def _update_cache(file_identifier: str):
+        experiment_config = Exp._load_config(file_identifier)
+        if experiment_config:
+            with Exp._cached_exp_lock:
+                Exp._cached_exp[file_identifier] = experiment_config
+        threading.Timer(CACHE_EXPIRATION_SECONDS, Exp._update_cache, [file_identifier]).start()
 
     @staticmethod
     def _get_bucket(rand_unit_id: str) -> int:
@@ -117,10 +120,7 @@ class Exp:
     @staticmethod
     def _is_cache_valid(file_identifier: str) -> bool:
         with Exp._cached_exp_lock:
-            if file_identifier not in Exp._cached_exp:
-                return False
-            diff = datetime.now() - Exp._cached_exp[file_identifier].last_updated
-            return diff.total_seconds() < CACHE_EXPIRATION_SECONDS
+            return file_identifier in Exp._cached_exp
 
     @staticmethod
     def _load_config(file_identifier: str) -> ExperimentConfig:

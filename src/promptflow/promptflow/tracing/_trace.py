@@ -313,6 +313,7 @@ def _traced_async(
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)
+                enrich_span_with_exp_info(span)
                 span.set_status(StatusCode.OK)
                 output = Tracer.pop(output)
             except Exception as e:

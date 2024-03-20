@@ -34,9 +34,3 @@ class Experiment:
 @dataclass
 class ExperimentConfig:
     experiments: List[Experiment] = None
-
-
-@dataclass
-class CachedExperimentConfig:
-    experiment_config: ExperimentConfig = None
-    last_updated: datetime = None
