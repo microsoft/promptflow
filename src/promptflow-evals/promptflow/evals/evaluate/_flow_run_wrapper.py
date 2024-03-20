@@ -12,9 +12,9 @@ class FlowRunWrapper(object):
         self.prefix = prefix if prefix is not None else ""
         self.client = PFClient()
 
-    def get_result_df(self, run, all_results=True, exclude_inputs=False):
-        self._wait_for_completion(run)
-        result_df = self.client.get_details(run.name, all_results=all_results)
+    def get_result_df(self, all_results=True, exclude_inputs=False):
+        self._wait_for_completion()
+        result_df = self.client.get_details(self.flow_run.name, all_results=all_results)
         if exclude_inputs:
             result_df = result_df.drop(
                 columns=[col for col in result_df.columns if col.startswith("inputs.")]
@@ -22,9 +22,9 @@ class FlowRunWrapper(object):
         result_df.rename(columns={col: col.replace("outputs", self.prefix) for col in [col for col in result_df.columns if col.startswith("outputs.")]}, inplace=True)
         return result_df
 
-    def _wait_for_completion(self, run):
+    def _wait_for_completion(self):
         from promptflow._sdk._constants import RunStatus
         while True:
-            if run.status in [RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELED]:
+            if self.run.status in [RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELED]:
                 break
             time.sleep(2)

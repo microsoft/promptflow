@@ -96,10 +96,10 @@ def evaluate(
     result_df = None
     for eval_run in evaluator_run_list:
         if result_df is None:
-            result_df = eval_run.get_result_df(run=eval_run.flow_run, all_results=True, exclude_inputs=True)
+            result_df = eval_run.get_result_df(all_results=True, exclude_inputs=True)
         else:
             result_df = pd.concat(
-                [eval_run.get_result_df(run=eval_run.flow_run, all_results=True, exclude_inputs=True), result_df],
+                [eval_run.get_result_df(all_results=True, exclude_inputs=True), result_df],
                 axis=1,
                 verify_integrity=True
             )
