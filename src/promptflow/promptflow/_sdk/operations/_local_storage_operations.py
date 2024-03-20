@@ -36,8 +36,7 @@ from promptflow._sdk._utils import (
     write_open,
 )
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._eager_flow import FlexFlow
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
@@ -76,6 +75,7 @@ class LoggerOperations(LogContext):
         with read_open(self.file_path) as f:
             return f.read()
 
+    @classmethod
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
         result = super()._get_execute_loggers_list()
         result.append(logger)

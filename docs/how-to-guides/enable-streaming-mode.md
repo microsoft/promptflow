@@ -16,10 +16,10 @@ If you want to use the streaming mode, you need to create a flow that has a node
   ```jinja
   {# Sample prompt template for LLM node #}
 
-  system:
+  # system:
   You are a helpful assistant.
 
-  user:
+  # user:
   {{question}}
   ```
 - Python tools node: This node allows you to write custom Python code that can yield string outputs. You can use this node to call external APIs or libraries that support streaming. For example, you can use this code to echo the input word by word:
@@ -45,7 +45,7 @@ To use the streaming mode, you need to deploy your flow as an online endpoint. T
 Follow [this guide](./deploy-a-flow/index.md) to deploy your flow as an online endpoint.
 
 > [!NOTE]
-> 
+>
 > You can follow this document to deploy an [online endpoint](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-deploy-for-real-time-inference?view=azureml-api-2).
 > Please deploy with runtime environment version later than version `20230816.v10`.
 > You can check your runtime version and update runtime in the run time detail page.
@@ -60,9 +60,9 @@ To understand the streaming process, consider the following steps:
 
 - First, the client constructs an HTTP request with the desired media type included in the `Accept` header. The media type tells the server what kind of data format the client expects. It's like the client saying, "Hey, I'm looking for a specific format for the data you'll send me. It could be JSON, text, or something else." For example, `application/json` indicates a preference for JSON data, `text/event-stream` indicates a desire for streaming data, and `*/*` means the client accepts any data format.
     > [!NOTE]
-    > 
+    >
     > If a request lacks an `Accept` header or has empty `Accept` header, it implies that the client will accept any media type in response. The server treats it as `*/*`.
-    
+
 - Next, the server responds based on the media type specified in the `Accept` header. It's important to note that the client may request multiple media types in the `Accept` header, and the server must consider its capabilities and format priorities to determine the appropriate response.
   - First, the server checks if `text/event-stream` is explicitly specified in the `Accept` header:
     - For a stream-enabled flow, the server returns a response with a `Content-Type` of `text/event-stream`, indicating that the data is being streamed.
@@ -92,7 +92,7 @@ Accept: text/event-stream
 }
 ```
 > [!NOTE]
-> 
+>
 > The `Accept` header is set to `text/event-stream` to request a stream response.
 
 
@@ -230,15 +230,15 @@ If the response code is "424 Model Error", it means that the error is caused by 
 In this sample usage, we are using the `SSEClient` class. This class is not a built-in Python class and needs to be installed separately. You can install it via pip:
 
 ```bash
-pip install sseclient-py  
+pip install sseclient-py
 ```
 
 A sample usage would like:
 
 ```python
-import requests  
-from sseclient import SSEClient  
-from requests.exceptions import HTTPError  
+import requests
+from sseclient import SSEClient
+from requests.exceptions import HTTPError
 
 try:
     response = requests.post(url, json=body, headers=headers, stream=stream)

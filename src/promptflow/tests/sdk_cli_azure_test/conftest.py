@@ -17,8 +17,8 @@ from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
-from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
@@ -339,11 +339,11 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     """Mock PF Azure client to avoid network traffic during replay test."""
     if not is_live():
         mocker.patch(
-            "promptflow._cli._pf_azure._run._get_azure_pf_client",
+            "promptflow.azure._cli._run._get_azure_pf_client",
             return_value=remote_client,
         )
         mocker.patch(
-            "promptflow._cli._pf_azure._flow._get_azure_pf_client",
+            "promptflow.azure._cli._flow._get_azure_pf_client",
             return_value=remote_client,
         )
     yield
