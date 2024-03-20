@@ -19,7 +19,7 @@ inputs:
     is_chat_input: false
   metrics:
     type: string
-    default: grounding,answer_relevancy,answer_quality,context_precision,answer_similarity,creativity,context_recall,answer_correctness
+    default: grounding,answer_relevance,answer_quality,context_precision,answer_similarity,creativity,context_recall,answer_correctness
     is_chat_input: false
 outputs:
   answer_correctness:
@@ -31,9 +31,9 @@ outputs:
   answer_similarity:
     type: string
     reference: ${concat_scores.output.answer_similarity}
-  answer_relevancy:
+  answer_relevance:
     type: string
-    reference: ${concat_scores.output.answer_relevancy}
+    reference: ${concat_scores.output.answer_relevance}
   context_precision:
     type: string
     reference: ${concat_scores.output.context_precision}
@@ -207,11 +207,11 @@ nodes:
     when: ${validate_input.output.context_precision}
     is: true
   use_variants: false
-- name: answer_relevancy
+- name: answer_relevance
   type: llm
   source:
     type: code
-    path: answer_relevancy.jinja2
+    path: answer_relevance.jinja2
   inputs:
     deployment_name: ''
     temperature: 0
@@ -225,7 +225,7 @@ nodes:
   api: chat
   module: promptflow.tools.aoai
   activate:
-    when: ${validate_input.output.answer_relevancy}
+    when: ${validate_input.output.answer_relevance}
     is: true
   use_variants: false
 - name: handle_generated_question
@@ -234,9 +234,9 @@ nodes:
     type: code
     path: handle_generated_question.py
   inputs:
-    llm_result: ${answer_relevancy.output}
+    llm_result: ${answer_relevance.output}
   activate:
-    when: ${validate_input.output.answer_relevancy}
+    when: ${validate_input.output.answer_relevance}
     is: true
   use_variants: false
 - name: embedding_question
@@ -249,7 +249,7 @@ nodes:
     deployment_name: text-embedding-ada-002
     input: ${inputs.question}
   activate:
-    when: ${validate_input.output.answer_relevancy}
+    when: ${validate_input.output.answer_relevance}
     is: true
   use_variants: false
 - name: embedding_generated_question
@@ -262,20 +262,20 @@ nodes:
     deployment_name: text-embedding-ada-002
     input: ${handle_generated_question.output.question}
   activate:
-    when: ${validate_input.output.answer_relevancy}
+    when: ${validate_input.output.answer_relevance}
     is: true
   use_variants: false
-- name: calculate_answer_relevancy
+- name: calculate_answer_relevance
   type: python
   source:
     type: code
-    path: calculate_answer_relevancy.py
+    path: calculate_answer_relevance.py
   inputs:
     generated_question_embedding: ${embedding_generated_question.output}
     noncommittal: ${handle_generated_question.output.noncommittal}
     question_embedding: ${embedding_question.output}
   activate:
-    when: ${validate_input.output.answer_relevancy}
+    when: ${validate_input.output.answer_relevance}
     is: true
   use_variants: false
 - name: answer_correctness
@@ -320,7 +320,7 @@ nodes:
   inputs:
     answer_correctness: ${calculate_answer_correctness.output}
     answer_quality: ${answer_quality.output}
-    answer_relevancy: ${calculate_answer_relevancy.output}
+    answer_relevance: ${calculate_answer_relevance.output}
     answer_similarity: ${answer_similarity.output}
     context_precision: ${context_precision.output}
     context_recall: ${calculate_context_recall.output}

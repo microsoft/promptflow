@@ -4,7 +4,7 @@ from promptflow import tool
 @tool
 def select_metrics(metrics: str) -> str:
     supported_metrics = ('grounding',
-                         'answer_relevancy',
+                         'answer_relevance',
                          'answer_quality',
                          'context_recall',
                          'context_precision',

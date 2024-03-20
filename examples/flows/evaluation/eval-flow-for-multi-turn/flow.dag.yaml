@@ -50,18 +50,18 @@ inputs:
     is_chat_input: false
   metrics:
     type: string
-    default: creativity,answer_quality,answer_relevancy,grounding
+    default: creativity,conversation_quality,answer_relevance,grounding
     is_chat_input: false
 outputs:
   creativity:
     type: string
     reference: ${concat_scores.output.creativity}
-  answer_relevancy:
+  answer_relevance:
     type: string
-    reference: ${concat_scores.output.answer_relevancy}
-  answer_quality:
+    reference: ${concat_scores.output.answer_relevance}
+  conversation_quality:
     type: string
-    reference: ${concat_scores.output.answer_quality}
+    reference: ${concat_scores.output.conversation_quality}
   grounding:
     type: string
     reference: ${concat_scores.output.grounding}
@@ -83,19 +83,19 @@ nodes:
     chat_history: ${inputs.chat_history}
     selected_metrics: ${select_metrics.output}
   use_variants: false
-- name: covert_chat_history_to_conversation
+- name: convert_chat_history_to_conversation
   type: python
   source:
     type: code
-    path: covert_chat_history_to_conversation.py
+    path: convert_chat_history_to_conversation.py
   inputs:
     chat_history: ${inputs.chat_history}
   use_variants: false
-- name: answer_relevancy
+- name: answer_relevance
   type: llm
   source:
     type: code
-    path: answer_relevancy.jinja2
+    path: answer_relevance.jinja2
   inputs:
     deployment_name: ''
     temperature: 0
@@ -108,10 +108,10 @@ nodes:
   api: chat
   module: promptflow.tools.aoai
   activate:
-    when: ${validate_input.output.answer_relevancy}
+    when: ${validate_input.output.answer_relevance}
     is: true
   use_variants: false
-- name: answer_quality
+- name: conversation_quality
   type: llm
   source:
     type: code
@@ -128,7 +128,7 @@ nodes:
   api: chat
   module: promptflow.tools.aoai
   activate:
-    when: ${validate_input.output.answer_quality}
+    when: ${validate_input.output.conversation_quality}
     is: true
   use_variants: false
 - name: creativity
@@ -181,8 +181,8 @@ nodes:
     type: code
     path: concat_scores.py
   inputs:
-    answer_quality: ${answer_quality.output}
-    answer_relevancy: ${answer_relevancy.output}
+    conversation_quality: ${conversation_quality.output}
+    answer_relevance: ${answer_relevance.output}
     creativity: ${creativity.output}
     grounding: ${grounding.output}
   use_variants: false

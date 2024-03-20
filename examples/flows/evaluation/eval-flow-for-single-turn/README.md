@@ -11,9 +11,9 @@ This evaluation flow allows you to assess and evaluate your model with the LLM-a
 
 grounding is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
 
-* answer_relevancy: Measure whether the answer is relevancy to the question based on provided question, context and answer.
+* answer_relevance: Measure whether the answer is relevance to the question based on provided question, context and answer.
 
-answer_relevancy is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
+answer_relevance is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
 
 * context_recall: Measures each sentence in the ground truth and classify of the sentence can be attributed to the given context or not based on provided question, context and ground_truth.
 
@@ -56,7 +56,7 @@ creativity is scored on a scale of 1 to 5, with 1 being the worst and 5 being th
 
 ## Prerequisites
 
-- Connection: suggest to use Azure OpenAI or OpenAI connection with 1106 model. If you use the 1106 chat model, then please assign {"type":"json_object"} value to response_format for these nodes: answer_quality, creativity, context_recall, context_precision, answer_relevancy, answer_correctness.
+- Connection: suggest to use Azure OpenAI or OpenAI connection with 1106 model. If you use the 1106 chat model, then please assign {"type":"json_object"} value to response_format for these nodes: answer_quality, creativity, context_recall, context_precision, answer_relevance, answer_correctness.
 
 ## Tools used in this flow
 - LLM tool

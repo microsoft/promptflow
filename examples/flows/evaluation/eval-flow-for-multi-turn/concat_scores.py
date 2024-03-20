@@ -21,12 +21,12 @@ def get_score(result):
 
 
 @tool
-def concat_results(answer_relevancy: str = None,
-                   answer_quality: str = None,
+def concat_results(answer_relevance: str = None,
+                   conversation_quality: str = None,
                    creativity: str = None,
                    grounding: str = None):
-    results = {'answer_relevancy': get_score(answer_relevancy),
-               'answer_quality': get_score(answer_quality),
+    results = {'answer_relevance': get_score(answer_relevance),
+               'conversation_quality': get_score(conversation_quality),
                'creativity': get_score(creativity),
                'grounding': grounding}
 

@@ -30,11 +30,11 @@ nodes:
   api: chat
   module: promptflow.tools.aoai
   use_variants: false
-- name: If_continue
+- name: if_continue
   type: python
   source:
     type: code
-    path: If_continue.py
+    path: if_continue.py
   inputs:
     stop_or_continue: ${verify_if_conversation_stopped.output}
   use_variants: false

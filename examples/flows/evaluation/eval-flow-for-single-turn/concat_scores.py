@@ -21,7 +21,7 @@ def get_score(result):
 
 
 @tool
-def concat_results(answer_relevancy: str = None,
+def concat_results(answer_relevance: str = None,
                    answer_quality: str = None,
                    creativity: str = None,
                    grounding: str = None,
@@ -30,7 +30,7 @@ def concat_results(answer_relevancy: str = None,
                    answer_similarity: str = None,
                    answer_correctness: str = None):
 
-    results = {'answer_relevancy': answer_relevancy,
+    results = {'answer_relevance': answer_relevance,
                'answer_quality': get_score(answer_quality),
                'creativity': get_score(creativity),
                'grounding': grounding,

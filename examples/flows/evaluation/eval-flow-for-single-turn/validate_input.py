@@ -5,7 +5,7 @@ from promptflow import tool
 def validate_input(question: str, answer: str, context: str, ground_truth: str, selected_metrics: dict) -> dict:
     input_data = {"question": question, "answer": answer, "context": context, "ground_truth": ground_truth}
     expected_input_cols = set(input_data.keys())
-    dict_metric_required_fields = {"answer_relevancy": set(["question", "answer"]),
+    dict_metric_required_fields = {"answer_relevance": set(["question", "answer"]),
                                    "answer_quality": set(["question", "answer"]),
                                    "creativity": set(["question", "answer"]),
                                    "grounding": set(["answer", "context"]),
