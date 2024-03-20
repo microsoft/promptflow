@@ -48,8 +48,7 @@ def start():
         # Get base64 for multi modal object
         multimedia_processor = BasicMultimediaProcessor()
         resolved_outputs = {
-            k: multimedia_processor.convert_multimedia_data_to_base64_dict(v, with_type=True, dict_type=True)
-            for k, v in response.output.items()
+            k: multimedia_processor.convert_multimedia_data_to_base64_dict(v) for k, v in response.output.items()
         }
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})

@@ -274,7 +274,9 @@ class BatchEngine:
 
                     # Deepcopy to avoid modifying the original object when serializing image
                     previous_run_output = deepcopy(previous_run_info.output)
-                    previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(previous_run_output, output_dir)
+                    previous_run_output_in_line_result = self._multimedia_processor.persist_multimedia_data(
+                        previous_run_output, output_dir
+                    )
 
                     # Persist previous run info and node run info
                     self._storage.persist_flow_run(previous_run_info)

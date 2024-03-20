@@ -5,7 +5,6 @@ import io
 from pathlib import Path
 
 from promptflow._constants import ICON, ICON_DARK, ICON_LIGHT
-from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import asdict_without_none
 from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import UserErrorException

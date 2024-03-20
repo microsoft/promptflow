@@ -196,8 +196,7 @@ class FlowInvoker:
 
     def _convert_multimedia_data_to_base64(self, output_dict):
         resolved_outputs = {
-            k: self._multimedia_processor.convert_multimedia_data_to_base64_dict(v, with_type=True, dict_type=True)
-            for k, v in output_dict.items()
+            k: self._multimedia_processor.convert_multimedia_data_to_base64_dict(v) for k, v in output_dict.items()
         }
         return resolved_outputs
 

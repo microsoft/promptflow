@@ -624,7 +624,9 @@ class LineExecutionProcessPool:
         # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
         # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
-            run_info.api_calls = self._multimedia_processor.convert_multimedia_data_to_string(run_info.api_calls, inplace=True)
+            run_info.api_calls = self._multimedia_processor.convert_multimedia_data_to_string(
+                run_info.api_calls, inplace=True
+            )
 
     def _generate_line_result_for_exception(
         self,

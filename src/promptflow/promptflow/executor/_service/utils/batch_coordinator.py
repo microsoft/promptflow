@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import OutputsFolderName
-from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._service._errors import UninitializedError
