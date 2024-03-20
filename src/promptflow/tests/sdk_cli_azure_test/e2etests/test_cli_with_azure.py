@@ -11,8 +11,8 @@ import pytest
 from mock.mock import patch
 
 from promptflow._constants import PF_USER_AGENT
-from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
 from promptflow.tracing._operation_context import OperationContext

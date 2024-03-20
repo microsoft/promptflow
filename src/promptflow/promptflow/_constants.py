@@ -25,6 +25,8 @@ USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
 DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
 
+CHAT_HISTORY = "chat_history"
+
 # Tool meta info
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
@@ -44,12 +46,22 @@ FLOW_TOOLS_JSON = "flow.tools.json"
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
 
+# Environment variables
+PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
+
 
 class FlowLanguage:
     """The enum of tool source type."""
 
     Python = "python"
     CSharp = "csharp"
+
+
+class FlowType:
+    """The enum of flow type."""
+
+    DAG_FLOW = "dag"
+    FLEX_FLOW = "flex"
 
 
 class AvailableIDE:
@@ -76,6 +88,7 @@ STREAMING_ANIMATION_TIME = 0.01
 OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
+OK_LINE_RUN_STATUS = "Ok"
 
 
 class TraceEnvironmentVariableName:

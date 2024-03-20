@@ -17,8 +17,8 @@ from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
-from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
