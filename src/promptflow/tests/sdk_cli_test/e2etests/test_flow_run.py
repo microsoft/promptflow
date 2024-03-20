@@ -1440,7 +1440,6 @@ class TestFlowRun:
             )
 
         # won't fail in flex flow
-        # TODO: check when did connection override happens
         run = pf.run(
             flow=flow_path,
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
