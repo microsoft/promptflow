@@ -1,3 +1,4 @@
 DIM objshell
 set objshell = wscript.createobject("wscript.shell")
-iReturn = objshell.run("pfcli.exe pfs start --force", 0, true)
+cmd = WScript.Arguments(0)
+iReturn = objshell.run(cmd, 0, false)
