@@ -936,12 +936,14 @@ class FlowExecutor:
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            # Update the run info of those running nodes to a canceled status.
+            run_tracker.cancel_node_runs(line_run_id)
             run_tracker.end_run(line_run_id, ex=ex)
             # If async execution is enabled, ignore this exception and return the partial line results.
             if not self._should_use_async():
                 raise
-        except Exception as e:
-            run_tracker.end_run(line_run_id, ex=e)
+        except Exception as ex:
+            run_tracker.end_run(line_run_id, ex=ex)
             if self._raise_ex:
                 raise
         finally:
@@ -1026,6 +1028,8 @@ class FlowExecutor:
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            # Update the run info of those running nodes to a canceled status.
+            run_tracker.cancel_node_runs(line_run_id)
             run_tracker.end_run(line_run_id, ex=ex)
             raise
         except Exception as e:
