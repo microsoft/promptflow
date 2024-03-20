@@ -64,7 +64,7 @@ class PromptflowServingApp(Flask):
 
             # ignore connections override in environment variables
             self.connections_to_ignore = get_override_connection_names(
-                flow=self.flow,
+                environment_variables=self.flow.environment_variables,
                 connection_override=environment_variables,
             )
 

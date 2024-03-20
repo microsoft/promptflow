@@ -420,10 +420,11 @@ def try_get_long_running_logging_interval(logger: logging.Logger, default_interv
     return None
 
 
-def get_override_connection_names(flow, connection_override: Dict[str, str]):
-    """Given a flow, return the overridden environment variables connection names by connection_override."""
+def get_override_connection_names(environment_variables: Dict[str, str], connection_override: Dict[str, str]):
+    """Given a flow's env var, return the overridden environment variables connection names by connection_override."""
+    environment_variables = environment_variables or {}
     connection_names = set()
-    for k, v in flow.environment_variables.items():
+    for k, v in environment_variables.items():
         if k not in connection_override or not isinstance(v, str) or not v.startswith("${"):
             continue
         connection_name, _ = _match_reference(v)

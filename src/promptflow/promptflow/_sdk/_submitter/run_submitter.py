@@ -21,6 +21,7 @@ from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
 
 from ..._utils.logger_utils import LoggerFactory
+from ..._utils.utils import get_override_connection_names
 from .._configuration import Configuration
 from .._load_functions import load_flow
 from ..entities._flow import FlexFlow
@@ -114,11 +115,14 @@ class RunSubmitter:
                 flow_file=Path(flow.path), working_dir=Path(flow.code)
             )
 
+        # ignore connections override by environment variables
+        connections_to_ignore = get_override_connection_names(
+            environment_variables=flow.environment_variables, connection_override=run.environment_variables
+        )
+
         with _change_working_dir(flow.code):
             # resolve connections with environment variables overrides to avoid getting unused connections
-            connections = SubmitterHelper.resolve_connections(
-                flow=flow, environment_variables_overrides=run.environment_variables
-            )
+            connections = SubmitterHelper.resolve_connections(flow=flow, connections_to_ignore=connections_to_ignore)
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(

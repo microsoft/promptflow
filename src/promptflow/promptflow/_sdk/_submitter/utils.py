@@ -253,12 +253,6 @@ class SubmitterHelper:
     def resolve_connections(
         flow: Flow, client=None, *, connections_to_ignore=None, connections_to_add: List[str] = None
     ) -> dict:
-        from promptflow._sdk.entities._flow import FlexFlow
-
-        if isinstance(flow, FlexFlow):
-            # TODO(2898247): support prompt flow management connection for eager flow
-            return {}
-
         from .._pf_client import PFClient
 
         client = client or PFClient()
