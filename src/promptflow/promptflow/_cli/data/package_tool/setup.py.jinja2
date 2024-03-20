@@ -9,7 +9,7 @@ PACKAGE_NAME = "{{ package_name }}"
 class ToolMetaCacheBuild(build):
 
     def run(self):
-        from promptflow import PFClient
+        from promptflow.client import PFClient
 
         pf_client = PFClient()
         tools = pf_client.tools._list_tools_in_package(PACKAGE_NAME, raise_error=False)

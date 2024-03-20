@@ -435,3 +435,15 @@ class RunOperations(TelemetryMixin):
         if isinstance(run, str):
             run = self.get(name=run)
         return LocalStorageOperations(run)
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pf.runs.create_or_update":
+                run: Run = kwargs.get("run", None) or args[0]
+                telemetry_values["flow_type"] = run._flow_type
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values

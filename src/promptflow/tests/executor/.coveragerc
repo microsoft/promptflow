@@ -4,6 +4,7 @@ omit =
     */promptflow/_sdk/*
     */promptflow/_telemetry/*
     */promptflow/azure/*
+    */promptflow/core/*
     */promptflow/entities/*
     */promptflow/operations/*
     *__init__.py*

@@ -540,7 +540,7 @@ def serve_flow_csharp(args, source):
 
 def _resolve_python_flow_additional_includes(source) -> Path:
     # Resolve flow additional includes
-    from promptflow import load_flow
+    from promptflow.client import load_flow
 
     flow = load_flow(source)
     with FlowOperations._resolve_additional_includes(flow.path) as resolved_flow_path:
@@ -556,7 +556,7 @@ def _resolve_python_flow_additional_includes(source) -> Path:
 
 
 def serve_flow_python(args, source):
-    from promptflow._sdk._serving.app import create_app
+    from promptflow.core._serving.app import create_app
 
     static_folder = args.static_folder
     if static_folder:
