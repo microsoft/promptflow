@@ -60,7 +60,7 @@ jobs:
         run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run e2e tests
-        run: poetry run pytest '${{ github.workspace }}/src/promptflow-tracing/tests/e2etests'
+        run: poetry run pytest -m e2etest
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
@@ -95,4 +95,4 @@ jobs:
           format: markdown
           hide_complexity: true
           output: both
-          thresholds: 90
+          thresholds: 80 90

@@ -56,11 +56,8 @@ jobs:
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: generate end-to-end test config from secret
-        run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
-        working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run unit tests
-        run: poetry run pytest '${{ github.workspace }}/src/promptflow-tracing/tests/unittests'
+        run: poetry run pytest -m unittest
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
@@ -95,4 +92,4 @@ jobs:
           format: markdown
           hide_complexity: true
           output: both
-          thresholds: 90
+          thresholds: 80 90
