@@ -106,7 +106,7 @@ def setup_recording_injection_if_enabled():
             patches.append(patcher)
             patcher.start()
 
-    if pytest.is_replay or pytest.is_record:
+    if is_replay() or is_record():
         from promptflow_recording.local import RecordStorage, inject_async_with_recording, inject_sync_with_recording
         from promptflow_recording.record_mode import check_pydantic_v2
 
@@ -120,7 +120,7 @@ def setup_recording_injection_if_enabled():
         }
         start_patches(patch_targets)
 
-    if pytest.is_live and pytest.is_in_ci_pipeline:
+    if is_live() and is_in_ci_pipeline():
         from promptflow_recording.local import inject_async_with_recording, inject_sync_with_recording
 
         patch_targets = {
