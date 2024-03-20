@@ -103,7 +103,6 @@ setup(
     entry_points={
         "console_scripts": [
             "pfazure = promptflow._cli._pf_azure.entry:main",
-            "pfs = promptflow._sdk._service.entry:main",
         ],
     },
     include_package_data=True,

@@ -31,15 +31,10 @@ PFAZURE_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
 {install_dir}/bin/python -m promptflow._cli._pf_azure.entry "$@"
 """
 
-PFS_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
-{install_dir}/bin/python -m promptflow._sdk._service.entry "$@"
-"""
-
 DEFAULT_INSTALL_DIR = os.path.expanduser(os.path.join('~', 'lib', 'promptflow'))
 DEFAULT_EXEC_DIR = os.path.expanduser(os.path.join('~', 'bin'))
 PF_EXECUTABLE_NAME = 'pf'
 PFAZURE_EXECUTABLE_NAME = 'pfazure'
-PFS_EXECUTABLE_NAME = 'pfs'
 
 
 USER_BASH_RC = os.path.expanduser(os.path.join('~', '.bashrc'))
@@ -111,7 +106,7 @@ def create_virtualenv(install_dir):
 
 def install_cli(install_dir, tmp_dir):
     path_to_pip = os.path.join(install_dir, 'bin', 'pip')
-    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow[azure,executable,azureml-serving]',
+    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow[azure,executable,azureml-serving,executor-service]',
            '--upgrade']
     exec_command(cmd)
     cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow-tools', '--upgrade']
@@ -124,8 +119,8 @@ def create_executable(exec_dir, install_dir):
     create_dir(exec_dir)
     exec_filepaths = []
     for filename, template in [(PF_EXECUTABLE_NAME, PF_DISPATCH_TEMPLATE),
-                               (PFAZURE_EXECUTABLE_NAME, PFAZURE_DISPATCH_TEMPLATE),
-                               (PFS_EXECUTABLE_NAME, PFS_DISPATCH_TEMPLATE)]:
+                               (PFAZURE_EXECUTABLE_NAME, PFAZURE_DISPATCH_TEMPLATE)
+                               ]:
         exec_filepath = os.path.join(exec_dir, filename)
         with open(exec_filepath, 'w') as exec_file:
             exec_file.write(template.format(install_dir=install_dir))
@@ -165,7 +160,7 @@ def get_exec_dir():
     exec_dir = None
     while not exec_dir:
         prompt_message = (f"In what directory would you like to place the "
-                          f"'{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executable?")
+                          f"'{PF_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executable?")
         exec_dir = prompt_input_with_default(prompt_message, DEFAULT_EXEC_DIR)
         exec_dir = os.path.realpath(os.path.expanduser(exec_dir))
         if ' ' in exec_dir:
@@ -240,13 +235,13 @@ def warn_other_azs_on_path(exec_dir, exec_filepath):
     conflicting_paths = []
     if env_path:
         for p in env_path.split(':'):
-            for file in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME, PFS_EXECUTABLE_NAME]:
+            for file in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME]:
                 p_to_pf = os.path.join(p, file)
                 if p != exec_dir and os.path.isfile(p_to_pf):
                     conflicting_paths.append(p_to_pf)
     if conflicting_paths:
         print_status()
-        print_status(f"** WARNING: Other '{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' "
+        print_status(f"** WARNING: Other '{PF_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' "
                      f"executables are on your $PATH. **")
         print_status("Conflicting paths: {}".format(', '.join(conflicting_paths)))
         print_status("You can run this installation of the promptflow with '{}'.".format(exec_filepath))
@@ -314,7 +309,7 @@ def _get_linux_distro():
 
 
 def verify_install_dir_exec_path_conflict(install_dir, exec_dir):
-    for exec_name in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME, PFS_EXECUTABLE_NAME]:
+    for exec_name in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME]:
         exec_path = os.path.join(exec_dir, exec_name)
         if install_dir == exec_path:
             raise CLIInstallError("The executable file '{}' would clash with the install directory of '{}'. Choose "
