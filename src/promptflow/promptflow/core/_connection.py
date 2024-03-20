@@ -13,7 +13,7 @@ from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.contracts.types import Secret
 from promptflow.core._errors import RequiredEnvironmentVariablesNotSetError
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -80,6 +80,31 @@ class _Connection:
         # raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
         # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
+
+    def _to_execution_connection_dict(self) -> dict:
+        value = {**self.configs, **self.secrets}
+        secret_keys = list(self.secrets.keys())
+        return {
+            "type": self.class_name,  # Required class name for connection in executor
+            "module": self.module,
+            "value": {k: v for k, v in value.items() if v is not None},  # Filter None value out
+            "secret_keys": secret_keys,
+        }
+
+    @classmethod
+    def _from_execution_connection_dict(cls, name, data) -> "_Connection":
+        type_str = data.get("type")[: -len("Connection")]
+        type_cls = _supported_types.get(type_str)
+        if type_cls is None:
+            raise ValidationException(
+                f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
+            )
+        value_dict = data.get("value", {})
+        if type_cls == CustomConnection:
+            secrets = {k: v for k, v in value_dict.items() if k in data.get("secret_keys", [])}
+            configs = {k: v for k, v in value_dict.items() if k not in secrets}
+            return CustomConnection(name=name, configs=configs, secrets=secrets)
+        return type_cls(name=name, **value_dict)
 
 
 class _StrongTypeConnection(_Connection):
@@ -701,3 +726,10 @@ class CustomConnection(_Connection):
         connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance
+
+
+_supported_types = {
+    v.TYPE: v
+    for v in globals().values()
+    if isinstance(v, type) and issubclass(v, _Connection) and not v.__name__.startswith("_")
+}

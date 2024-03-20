@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from abc import ABC, abstractmethod
 from dataclasses import fields, is_dataclass
 from typing import Any, Dict
 
@@ -9,15 +8,10 @@ from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KE
 from promptflow._utils.utils import try_import
 from promptflow.contracts.types import Secret
 
-
-class AbstractConnectionProvider(ABC):
-    @abstractmethod
-    def get(self, name: str) -> Any:
-        """Get connection by name."""
-        raise NotImplementedError
+from ._connection_provider import ConnectionProvider
 
 
-class DictConnectionProvider(AbstractConnectionProvider):
+class DictConnectionProvider(ConnectionProvider):
     """Connection provider based on dict, core scenario: cloud submission."""
 
     def __init__(self, _dict: Dict[str, dict]):
@@ -86,8 +80,3 @@ class DictConnectionProvider(AbstractConnectionProvider):
 
     def get(self, name: str) -> Any:
         return self._connections.get(name)
-
-
-def _init_from_env():
-    """Initialize the connection provider from environment variables."""
-    pass
