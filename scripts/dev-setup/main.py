@@ -26,7 +26,7 @@ PROMPT_FLOW_PKGS = [
 def set_up_git_hook_scripts(verbose: bool) -> None:
     run_cmd(["pip", "install", "pre-commit"], verbose=False)  # ensure pre-commit is installed
     cmd = ["pre-commit", "install"]
-    print_blue(f"Running {cmd} to set up the git hook scripts")
+    print_blue("Running `pre-commit install` to set up the git hook scripts")
     run_cmd(cmd, verbose=verbose)
 
 
@@ -49,7 +49,6 @@ def collect_and_install_from_pyproject() -> None:
             if collect_flag and line:
                 deps.append(line.split("=")[0].strip())
     cmd = ["pip", "install"] + deps
-    print_blue(f"Running {cmd}")
     run_cmd(cmd)
 
 
@@ -77,7 +76,6 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
         # pip install -e . from pyproject.toml/setup.py
         print_blue(f"- Installing {pkg} from source")
         cmd = ["pip", "install", "--editable", f".{extras}"]
-        print_blue(f"Running {cmd}")
         run_cmd(cmd, verbose=verbose)
 
         # dev and test dependencies

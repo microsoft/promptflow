@@ -37,6 +37,7 @@ def change_cwd(path):
 
 
 def run_cmd(cmd, verbose: bool = False) -> None:
+    print_blue(f"Running {' '.join(cmd)}")
     shell = platform.system() == "Windows"
     p = subprocess.Popen(
         cmd,
