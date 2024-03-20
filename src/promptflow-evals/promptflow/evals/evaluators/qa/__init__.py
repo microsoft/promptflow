@@ -9,20 +9,20 @@ from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
 
 
-def init(model_config: AzureOpenAIConnection):
+def init(model_config: AzureOpenAIConnection, deployment_name: str):
     """
     Initialize an evaluation function configured for a specific Azure OpenAI model.
 
     :param model_config: Configuration for the Azure OpenAI model.
     :type model_config: AzureOpenAIConnection
-    :return: A function that evaluates groundedness.
+    :return: A function that evaluates and generates metrics for "question-answering" scenario.
     :rtype: function
 
     **Usage**
 
     .. code-block:: python
 
-        eval_fn = qa.init(model_config)
+        eval_fn = qa.init(model_config, deployment_name="gpt-4")
         result = qa_eval(
         question="Tokyo is the capital of which country?",
         answer="Japan",
@@ -35,7 +35,7 @@ def init(model_config: AzureOpenAIConnection):
         # TODO: How to parallelize metrics calculation
         from promptflow.evals.evaluators import groundedness, f1_score
 
-        groundedness_eval = groundedness.init(model_config)
+        groundedness_eval = groundedness.init(model_config, deployment_name=deployment_name)
         f1_score_eval = f1_score.init()
 
         return{
