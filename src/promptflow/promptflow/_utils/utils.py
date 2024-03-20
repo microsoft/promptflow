@@ -429,3 +429,16 @@ def get_override_connection_names(flow, connection_override: Dict[str, str]):
         connection_name, _ = _match_reference(v)
         connection_names.add(connection_name)
     return connection_names
+
+
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value

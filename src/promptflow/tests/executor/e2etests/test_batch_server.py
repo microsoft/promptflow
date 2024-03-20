@@ -6,7 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from promptflow._constants import FlowLanguage
-from promptflow.batch import AbstractExecutorProxy, ExecutorProxyFactory, PythonExecutorProxy
+from promptflow._proxy import ProxyFactory
+from promptflow.batch import AbstractExecutorProxy, PythonExecutorProxy
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._service.app import app
@@ -22,7 +23,7 @@ class TestBatchServer:
         inputs_mapping = {"text": "${data.text}"}
         mem_run_storage = MemoryRunStorage()
         # Mock the executor proxy to use the test client
-        ExecutorProxyFactory.register_executor(FlowLanguage.Python, MockPythonAPIBasedExecutorProxy)
+        ProxyFactory.register_executor(FlowLanguage.Python, MockPythonAPIBasedExecutorProxy)
         batch_result = submit_batch_run(
             flow_folder, inputs_mapping, input_file_name="inputs.jsonl", storage=mem_run_storage
         )
@@ -32,7 +33,7 @@ class TestBatchServer:
         assert len(mem_run_storage._flow_runs) == 10
         assert len(mem_run_storage._node_runs) == 10
         # Reset the executor proxy to avoid affecting other tests
-        ExecutorProxyFactory.register_executor(FlowLanguage.Python, PythonExecutorProxy)
+        ProxyFactory.register_executor(FlowLanguage.Python, PythonExecutorProxy)
 
 
 class MockPythonAPIBasedExecutorProxy(AbstractExecutorProxy):

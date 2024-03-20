@@ -7,13 +7,14 @@ import json
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, Mapping, NoReturn, Optional
+from typing import Any, Dict, List, Mapping, NoReturn, Optional
 
 import httpx
 
 from promptflow._constants import DEFAULT_ENCODING, LINE_TIMEOUT_SEC
-from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported, UnexpectedError
+from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._sdk._constants import (
+    DAG_FILE_NAME,
     FLOW_META_JSON,
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON,
@@ -22,7 +23,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
-from promptflow._utils.flow_utils import is_flex_flow
+from promptflow._utils.flow_utils import is_flex_flow, read_json_content
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
@@ -106,6 +107,11 @@ class AbstractExecutorProxy:
         timeout: int = FLOW_META_JSON_GEN_TIMEOUT,
         load_in_subprocess: bool = True,
     ) -> Dict[str, Any]:
+        raise NotImplementedError()
+
+    @classmethod
+    def get_used_connection_names(cls, flow_file: Path, working_dir: Path) -> List[str]:
+        """Get the used connection names in the flow."""
         raise NotImplementedError()
 
     def get_inputs_definition(self):
@@ -228,10 +234,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
 
     # endregion
 
-    def _get_flow_meta(self) -> dict:
-        flow_meta_json_path = self.working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
-        return self._read_json_content(flow_meta_json_path, "meta of flow")
-
     @classmethod
     def dump_metadata(cls, flow_file: Path, working_dir: Path) -> NoReturn:
         # In abstract class, dump_metadata may redirect to generate_tools_json and generate_flow_json
@@ -246,7 +248,11 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """Get the inputs definition of an eager flow"""
         from promptflow.contracts.flow import FlowInputDefinition
 
-        flow_meta = self._get_flow_meta()
+        flow_meta = self.generate_flow_json(
+            flow_file=self.working_dir / DAG_FILE_NAME,
+            working_dir=self.working_dir,
+            dump=False,
+        )
         inputs = {}
         for key, value in flow_meta.get("inputs", {}).items():
             # TODO: update this after we determine whether to accept list here or now
@@ -267,7 +273,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         load_in_subprocess: bool = True,
     ) -> dict:
         flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-        return cls._read_json_content(flow_tools_json_path, "meta of tools")
+        return read_json_content(flow_tools_json_path, "meta of tools")
 
     @classmethod
     def _generate_flow_json(
@@ -279,27 +285,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         load_in_subprocess: bool = True,
     ) -> Dict[str, Any]:
         flow_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_META_JSON
-        return cls._read_json_content(flow_json_path, "meta of tools")
-
-    @classmethod
-    def _read_json_content(cls, file_path: Path, target: str) -> dict:
-        if file_path.is_file():
-            with open(file_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-                try:
-                    return json.load(f)
-                except json.JSONDecodeError:
-                    raise MetaFileReadError(
-                        message_format="Failed to fetch {target_obj}: {file_path} is not a valid json file.",
-                        file_path=file_path.absolute().as_posix(),
-                        target_obj=target,
-                    )
-        raise MetaFileNotFound(
-            message_format=(
-                "Failed to fetch meta of tools: cannot find {file_path}, "
-                "please build the flow project with extension first."
-            ),
-            file_path=file_path.absolute().as_posix(),
-        )
+        return read_json_content(flow_json_path, "meta of tools")
 
     @property
     def api_endpoint(self) -> str:
@@ -313,7 +299,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
     def chat_output_name(self) -> Optional[str]:
         """The name of the chat output in the line result. Return None if the bonded flow is not a chat flow."""
-        # TODO: implement this based on _get_flow_meta
+        # TODO: implement this based on _generate_flow_json
         return None
 
     def exec_line(

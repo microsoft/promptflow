@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Mapping, Optional, Type
 
 from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
+from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -36,7 +37,6 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
-from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -61,7 +61,7 @@ class BatchEngine:
         redirect the registration to the ExecutorProxyFactory.
         """
         # TODO: remove this after we migrate to multi-container
-        ExecutorProxyFactory.register_executor(
+        ProxyFactory.register_executor(
             language=language,
             executor_proxy_cls=executor_proxy_cls,
         )
@@ -163,7 +163,7 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ExecutorProxyFactory().create_executor_proxy(
+                self._executor_proxy = ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,

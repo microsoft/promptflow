@@ -62,7 +62,6 @@ from promptflow._sdk._errors import (
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import _match_reference
@@ -188,35 +187,6 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
     except ValidationError as e:
         pretty_error = json.dumps(e.normalized_messages(), indent=2)
         raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
-
-
-def strip_quotation(value):
-    """
-    To avoid escaping chars in command args, args will be surrounded in quotas.
-    Need to remove the pair of quotation first.
-    """
-    if value.startswith('"') and value.endswith('"'):
-        return value[1:-1]
-    elif value.startswith("'") and value.endswith("'"):
-        return value[1:-1]
-    else:
-        return value
-
-
-def parse_variant(variant: str) -> Tuple[str, str]:
-    variant_regex = r"\${([^.]+).([^}]+)}"
-    match = re.match(variant_regex, strip_quotation(variant))
-    if match:
-        return match.group(1), match.group(2)
-    else:
-        error = ValueError(
-            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
-        )
-        raise UserErrorException(
-            target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=str(error),
-            error=error,
-        )
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -783,29 +753,6 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(
-    executable, client, connections_to_ignore: List[str] = None, connections_to_add: List[str] = None
-):
-    """Get local connections from executable.
-
-    executable: The executable flow object.
-    client: Local client to get connections.
-    connections_to_ignore: The connection names to ignore when getting connections.
-    connections_to_add: The connection names to add when getting connections.
-    """
-
-    connection_names = executable.get_connection_names()
-    if connections_to_add:
-        connection_names.update(connections_to_add)
-    connections_to_ignore = connections_to_ignore or []
-    result = {}
-    for n in connection_names:
-        if n not in connections_to_ignore:
-            conn = client.connections.get(name=n, with_secrets=True)
-            result[n] = conn._to_execution_connection_dict()
-    return result
-
-
 def _generate_connections_dir():
     # Get Python executable path
     python_path = sys.executable
@@ -844,45 +791,6 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
                     dump_yaml(yaml_data, f)
-
-
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
-    """Dump flow result for extension.
-
-    :param flow_folder: The flow folder.
-    :param prefix: The file prefix.
-    :param flow_result: The flow result returned by exec_line.
-    :param node_result: The node result when test node returned by load_and_exec_node.
-    :param custom_path: The custom path to dump flow result.
-    """
-    if flow_result:
-        flow_serialize_result = {
-            "flow_runs": [serialize(flow_result.run_info)],
-            "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
-        }
-    else:
-        flow_serialize_result = {
-            "flow_runs": [],
-            "node_runs": [serialize(node_result)],
-        }
-
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
-    dump_folder.mkdir(parents=True, exist_ok=True)
-
-    with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
-        json.dump(flow_serialize_result, f, indent=2, ensure_ascii=False)
-    if node_result:
-        metrics = flow_serialize_result["node_runs"][0]["metrics"]
-        output = flow_serialize_result["node_runs"][0]["output"]
-    else:
-        metrics = flow_serialize_result["flow_runs"][0]["metrics"]
-        output = flow_serialize_result["flow_runs"][0]["output"]
-    if metrics:
-        with open(dump_folder / f"{prefix}.metrics.json", "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(metrics, f, indent=2, ensure_ascii=False)
-    if output:
-        with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(output, f, indent=2, ensure_ascii=False)
 
 
 def read_write_by_user():
