@@ -50,6 +50,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
+from promptflow._utils.utils import get_override_connection_names
 from promptflow.contracts.flow import EagerFlow as ExecutableFlexFlow
 from promptflow.contracts.flow import Flow as ExecutableFlow
 
@@ -262,19 +263,30 @@ class SubmitterHelper:
         from .._pf_client import PFClient
 
         client = client or PFClient()
+        connections_to_ignore = connections_to_ignore or []
+        logger.debug(f"Connections to ignore: {connections_to_ignore}")
+
         with _change_working_dir(flow.code):
             if not isinstance(flow, FlexFlow):
                 executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
             else:
                 # TODO(2898247): support prompt flow management connection for eager flow
                 executable = ExecutableFlexFlow.deserialize(data=flow._data)
+
+        # ignore connections override by environment variables
+        override_connections = get_override_connection_names(
+            flow=executable, connection_override=environment_variables_overrides
+        )
+        logger.debug(f"Override connections: {override_connections}")
+        connections_to_ignore.extend(override_connections)
+
         executable.name = str(Path(flow.code).stem)
 
+        logger.debug(f"Getting connections with ignore: {connections_to_ignore}")
         return get_local_connections_from_executable(
             executable=executable,
             client=client,
             connections_to_ignore=connections_to_ignore,
-            environment_variables_overrides=environment_variables_overrides,
         )
 
     @staticmethod

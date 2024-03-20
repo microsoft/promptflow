@@ -267,12 +267,12 @@ def eager_flow_evc_override_not_exist(mocker: MockerFixture):
 
 
 @pytest.fixture
-def eager_flow_evc_remove(mocker: MockerFixture):
+def eager_flow_evc_connection_not_exist(mocker: MockerFixture):
     return create_client_by_model(
-        "environment_variables_connection",
+        "evc_connection_not_exist",
         mocker,
         model_root=EAGER_FLOW_ROOT,
-        environment_variables={"TEST": "value"},
+        environment_variables={"TEST": "VALUE"},
     )
 
 

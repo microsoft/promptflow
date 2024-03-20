@@ -43,6 +43,8 @@ class FlowInvoker:
         Example: ``{"aoai_connection": "azure_open_ai_connection"}``
         The node with reference to connection 'aoai_connection' will be resolved to the actual connection 'azure_open_ai_connection'. # noqa: E501
     :type connections_name_overrides: dict, optional
+    :params connections_to_ignore: The connections to ignore when fetching connections from pf client, defaults to None
+    :type connections_to_ignore: list, optional
     :param raise_ex: Whether to raise exception when executing flow, defaults to True
     :type raise_ex: bool, optional
     """
@@ -54,6 +56,7 @@ class FlowInvoker:
         streaming: Union[Callable[[], bool], bool] = False,
         connections: dict = None,
         connections_name_overrides: dict = None,
+        connections_to_ignore: list = None,
         raise_ex: bool = True,
         **kwargs,
     ):
@@ -62,6 +65,7 @@ class FlowInvoker:
         self.flow = self.flow_entity._init_executable()
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
+        self.connections_to_ignore = connections_to_ignore or []
         self.raise_ex = raise_ex
         self.storage = kwargs.get("storage", None)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
@@ -81,7 +85,12 @@ class FlowInvoker:
             config = {"connection.provider": connection_provider} if connection_provider else None
             self.logger.info(f"Getting connections from pf client with provider from args: {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
+            self.logger.debug(f"Flow invoker connections: {self.connections.keys()}")
             connections_to_ignore.extend(self.connections_name_overrides.keys())
+            self.logger.debug(f"Flow invoker connections name overrides: {self.connections_name_overrides.keys()}")
+            connections_to_ignore.extend(self.connections_to_ignore)
+            self.logger.debug(f"Flow invoker connections to ignore: {self.connections_to_ignore}")
+            self.logger.debug(f"Ignoring connections: {connections_to_ignore}")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = get_local_connections_from_executable(
                 executable=self.flow,

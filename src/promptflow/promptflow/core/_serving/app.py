@@ -15,6 +15,7 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
+from promptflow._utils.utils import get_override_connection_names
 from promptflow._version import VERSION
 from promptflow.contracts.run_info import Status
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME
@@ -60,6 +61,12 @@ class PromptflowServingApp(Flask):
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)
 
+            # ignore connections override in environment variables
+            self.connections_to_ignore = get_override_connection_names(
+                flow=self.flow,
+                connection_override=environment_variables,
+            )
+
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
             conn_data_override, conn_name_override = self.extension.get_override_connections(self.flow)
@@ -100,6 +107,7 @@ class PromptflowServingApp(Flask):
             raise_ex=False,
             connections=self.connections_override,
             connections_name_overrides=self.connections_name_override,
+            connections_to_ignore=self.connections_to_ignore,
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
             credential=self.credential,
