@@ -462,8 +462,9 @@ def process_function_call(function_call):
     return param
 
 
-def post_process_chat_api_response(completion, stream, functions):
+def post_process_chat_api_response(completion, stream, functions, tools):
     if stream:
+        # TODO: test if tools is supported by stream mode.
         if functions is not None:
             error_message = "Function calling has not been supported by stream mode yet."
             raise FunctionCallNotSupportedInStreamMode(message=error_message)
@@ -478,9 +479,9 @@ def post_process_chat_api_response(completion, stream, functions):
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
         return generator()
     else:
-        # When calling function, function_call response will be returned as a field in message, so we need return
-        # message directly. Otherwise, we only return content.
-        if functions is not None:
+        # When calling function/tool, function_call/tool_call response will be returned as a field in message,
+        # so we need return message directly. Otherwise, we only return content.
+        if functions is not None or tools is not None:
             return completion.model_dump()["choices"][0]["message"]
         else:
             # chat api may return message with no content.

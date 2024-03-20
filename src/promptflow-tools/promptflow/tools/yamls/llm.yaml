@@ -15,6 +15,14 @@ promptflow.tools.llm.llm:
 
     # user:
     {{question}}
+  groups:  
+  - name: Tools
+    description: Configure interactive capabilities by selecting tools for the model to use and guiding its tool call decisions.
+    inputs:  
+    - tools
+    - tool_choice
+    ui_hints:
+      display_style: table
   inputs:
     connection:
       type:
@@ -24,34 +32,33 @@ promptflow.tools.llm.llm:
     api:
       type:
       - string
-      dynamic_list:
-        func_path: promptflow.tools.llm.list_apis
-        func_kwargs:
-        - name: connection_name
-          type: 
-          - string
-          reference: ${inputs.connection}
-        allow_manual_entry: true
-        is_multi_select: false
+      default: chat
+      enum:
+      - chat
+      - completion
       ui_hints:
         text_box_size: sm
-      default: chat
     deployment_name:
       type:
         - string
       enabled_by: connection
-      enabled_by_type: [AzureOpenAIConnection]
-      dynamic_list:
-        func_path: promptflow.tools.llm.list_deployment_names
-        func_kwargs:
-        - name: connection
-          type: 
-          - string
-          reference: ${inputs.connection}
-        - name: api_name
-          type: 
-          - string
-          reference: ${inputs.api}
+      enabled_by_type:
+      - AzureOpenAIConnection
+      filter_by:
+        input_name: api
+        values:
+          chat:
+            capabilities:
+              chat_completion: true
+              exclude:
+                model_version:
+                  - vision-preview
+          completion:
+            capabilities:
+              completion: true
+              include:
+                model_name:
+                - gpt-35-turbo-instruct
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
@@ -60,18 +67,25 @@ promptflow.tools.llm.llm:
       type:
         - string
       enabled_by: connection
-      enabled_by_type: [OpenAIConnection]
-      dynamic_list:
-        func_path: promptflow.tools.llm.list_models
-        func_kwargs:
-        - name: connection_name
-          type: 
-          - string
-          reference: ${inputs.connection}
-        - name: api_name
-          type: 
-          - string
-          reference: ${inputs.api}
+      enabled_by_type:
+      - OpenAIConnection
+      filter_by:
+        input_name: api
+        values:
+          chat:
+            enum:
+            - gpt-3.5-turbo
+            - gpt-3.5-turbo-0301
+            - gpt-3.5-turbo-16k
+            - gpt-3.5-turbo-1106
+            - gpt-4
+            - gpt-4-1106-preview
+            - gpt-4-0314
+            - gpt-4-32k
+            - gpt-4-32k-0314
+          completion:
+            enum:
+            - gpt-3.5-turbo-instruct
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
@@ -106,16 +120,16 @@ promptflow.tools.llm.llm:
       type:
         - double
       advanced: true
-    # response_format:
-    #   type:
-    #   - object
-    #   advanced: false
-    #   ui_hints:
-    #     text_box_size: lg
-    #   enum:
-    #   - type: json_object
-    #   - type: text
-    #   allow_manual_entry: true
+    response_format:
+      type:
+      - object
+      advanced: false
+      ui_hints:
+        text_box_size: lg
+      enum:
+      - type: json_object
+      - type: text
+      allow_manual_entry: true
     frequency_penalty:
       type:
       - int
@@ -130,11 +144,17 @@ promptflow.tools.llm.llm:
       advanced: true
       ui_hints:
         text_box_size: lg
-    functions:
+    seed:
+      default: ""
       type:
-      - function_list
-      advanced: false
-    function_call:
+        - int
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    tools:
       type:
-      - function_str
-      advanced: false
+      - list
+    tool_choice:
+      type:
+      - string
+      - object
