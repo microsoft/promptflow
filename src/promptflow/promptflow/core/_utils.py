@@ -139,8 +139,14 @@ def render_jinja_template_content(template_content, *, trim_blocks=True, keep_tr
 
 def get_connection(connection):
     if not isinstance(connection, (str, dict)):
-        # TODO raise error
-        error_message = ""
+        error_message = """
+        Illegal definition of connection. Need to provide connection name or connection info like below:
+        connection:
+            type: <connection_type>
+            api_key: <api_key>
+            api_base: <api_base>
+            ...
+        """
         raise InvalidConnectionError(message=error_message)
     if isinstance(connection, str):
         # Get connection by name

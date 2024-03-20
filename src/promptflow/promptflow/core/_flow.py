@@ -366,7 +366,29 @@ class FlexFlow(Flow):
 
 class Prompty(FlowBase):
     # TODO update docstring
-    """A Prompt represents an non-dag flow, which uses prompty file to define the flow."""
+    """A Prompt represents a non-dag flow, which uses prompty file to define the flow.
+    The prompty file is divided into two parts, the first part is in YAML format and contains connection
+    and model information. The second part is the prompt template.
+
+    Prompty example:
+    .. code-block:: yaml
+
+        ---
+        name: Hello Prompty
+        description: A basic prompt
+        api: chat
+        connection: connection_name
+        parameters:
+          deployment_name: gpt-35-turbo
+          max_tokens: 128
+          temperature: 0.2
+        inputs:
+          text:
+            type: string
+        ---
+        system:
+        Write a simple {{text}} program that displays the greeting message.
+    """
 
     def __init__(self, path: Union[str, PathLike], **kwargs):
         # prompty file path
@@ -379,7 +401,6 @@ class Prompty(FlowBase):
                     configs[k].update(value)
                 else:
                     configs[k] = value
-        # TODO update data
         configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
         self.connection = configs.get("connection", "")
         self.parameters = configs.get("parameters", {})
@@ -427,8 +448,11 @@ class Prompty(FlowBase):
         pattern = r"-{3,}\n(.*)-{3,}\n(.*)"
         result = re.search(pattern, prompty_content, re.DOTALL)
         if not result:
-            # TODO
-            raise UserErrorException("")
+            raise UserErrorException(
+                "Illegal formatting of prompty. The prompt file is in markdown format and can be divided into two "
+                "parts, the first part is in YAML format and contains connection and model information. The second "
+                "part is the prompt template."
+            )
         config_content, prompt_template = result.groups()
         configs = load_yaml_string(config_content)
         return configs, prompt_template
@@ -478,8 +502,8 @@ class Prompty(FlowBase):
         api_client = get_open_ai_client_by_connection(connection=connection)
 
         # 2. prepare params
+        # TODO validate function in params
         params = copy.copy(self.parameters)
-        # TODO function_call
         if isinstance(connection, AzureOpenAIConnection):
             params["model"] = params.pop("deployment_name")
             params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
