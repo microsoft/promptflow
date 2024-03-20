@@ -26,7 +26,7 @@ RUNS_DIR = "./tests/test_configs/runs"
 
 # TODO: move this to a shared utility module
 def run_pf_command(*args, pf, runtime=None, cwd=None):
-    from promptflow._cli._pf_azure.entry import main
+    from promptflow.azure._cli.entry import main
 
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:

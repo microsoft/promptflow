@@ -43,11 +43,10 @@ from promptflow._sdk._utils import (
     is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
-    parse_variant,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -70,7 +69,7 @@ logger = get_cli_sdk_logger()
 class Run(YAMLTranslatableMixin):
     """Flow run entity.
 
-    :param flow: Path of the flow directory.
+    :param flow: Path of local flow entry or remote flow.
     :type flow: Path
     :param name: Name of the run.
     :type name: str
@@ -165,7 +164,7 @@ class Run(YAMLTranslatableMixin):
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
-            self.flow = Path(flow).resolve().absolute()
+            self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
@@ -644,7 +643,7 @@ class Run(YAMLTranslatableMixin):
     def _validate_for_run_create_operation(self):
         """Validate run object for create operation."""
         # check flow value
-        if Path(self.flow).is_dir():
+        if Path(self.flow).is_dir() or Path(self.flow).is_file():
             # local flow
             pass
         elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):
