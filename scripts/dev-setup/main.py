@@ -19,6 +19,7 @@ PROMPT_FLOW_PKGS = [
     # "promptflow-devkit",
     # "promptflow-azure",
     "promptflow[azure]",
+    "promptflow-tools",
 ]
 
 
@@ -83,10 +84,17 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
         # dev and test dependencies
         print_blue(f"- Installing dev and test dependencies for {pkg}")
         # promptflow folder has "dev_requirements.txt", directly install it
-        if os.path.exists("dev_requirements.txt"):
+        if folder_name == "promptflow":
             cmd = ["pip", "install", "-r", "dev_requirements.txt"]
             run_cmd(cmd, verbose=verbose)
             inject_pth_file()
+        # promptflow-tools
+        # reference: https://github.com/microsoft/promptflow/blob/main/src/promptflow-tools/README.dev.md
+        elif pkg == "promptflow-tools":
+            cmd = ["pip", "install", "-r", "requirements.txt"]
+            run_cmd(cmd, verbose=verbose)
+            cmd = ["pip", "install", "pytest", "pytest-mock"]
+            run_cmd(cmd, verbose=verbose)
         # promptflow-* will have "pyproject.toml", parse and install
         # we can refine this leveraging `poetry export` later
         elif os.path.exists("pyproject.toml"):
