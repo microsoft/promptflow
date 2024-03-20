@@ -21,19 +21,20 @@ def init(project_scope: dict, credential: TokenCredential):
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
     """
     def eval_fn(question: str, answer: str):
+
         # Load the flow as function
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
         f = load_flow(source=flow_dir)
-        
+
         # Run the evaluation flow
         output = f(
-            metric_name=EvaluationMetrics.VIOLENCE, 
-            question=question, 
-            answer=answer, 
-            project_scope=project_scope, 
+            metric_name=EvaluationMetrics.VIOLENCE,
+            question=question,
+            answer=answer,
+            project_scope=project_scope,
             credential=credential)
-        
+
         return output["result"]
-    
+
     return eval_fn
