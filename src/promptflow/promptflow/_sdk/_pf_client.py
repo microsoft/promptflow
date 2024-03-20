@@ -14,6 +14,7 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
+from ._utils import generate_yaml_entry, is_python_flex_flow_entry
 from .entities import Run
 from .entities._flow import FlexFlow
 from .operations import RunOperations
@@ -72,6 +73,7 @@ class PFClient:
         display_name: str = None,
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
+        code: Union[str, PathLike] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -122,6 +124,8 @@ class PFClient:
         :type tags: Dict[str, str]
         :param resume_from: Create run resume from an existing run.
         :type resume_from: str
+        :param code: Path to the code directory to run.
+        :type code: Union[str, PathLike]
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
@@ -149,33 +153,38 @@ class PFClient:
             )
         if not flow:
             raise ValueError("'flow' is required to create a run.")
-        if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
+        if not os.path.exists(flow) and not is_python_flex_flow_entry(entry=flow):
+            # check if it's eager flow's entry
+            raise UserErrorException(f"Flow path {flow} does not exist and it's not a valid entry point.")
         if data and not os.path.exists(data):
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-        # load flow object for validation and early failure
-        flow_obj = load_flow(source=flow)
-        # validate param conflicts
-        if isinstance(flow_obj, FlexFlow):
-            if variant or connections:
-                logger.warning("variant and connections are not supported for eager flow, will be ignored")
-                variant, connections = None, None
-        run = Run(
-            name=name,
-            display_name=display_name,
-            tags=tags,
-            data=data,
-            column_mapping=column_mapping,
-            run=run,
-            variant=variant,
-            flow=Path(flow),
-            connections=connections,
-            environment_variables=environment_variables,
-            config=Configuration(overrides=self._config),
-        )
-        return self.runs.create_or_update(run=run, **kwargs)
+        if code and not os.path.exists(code):
+            raise FileNotFoundError(f"code path {code} does not exist")
+        code = Path(code) if code else Path(os.getcwd())
+        with generate_yaml_entry(entry=flow, code=code) as flow:
+            # load flow object for validation and early failure
+            flow_obj = load_flow(source=flow)
+            # validate param conflicts
+            if isinstance(flow_obj, FlexFlow):
+                if variant or connections:
+                    logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                    variant, connections = None, None
+            run = Run(
+                name=name,
+                display_name=display_name,
+                tags=tags,
+                data=data,
+                column_mapping=column_mapping,
+                run=run,
+                variant=variant,
+                flow=Path(flow),
+                connections=connections,
+                environment_variables=environment_variables,
+                config=Configuration(overrides=self._config),
+            )
+            return self.runs.create_or_update(run=run, **kwargs)
 
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.

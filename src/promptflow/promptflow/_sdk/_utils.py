@@ -31,7 +31,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, FlowEntryRegex
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -1020,6 +1020,49 @@ def overwrite_null_std_logger():
         sys.stdout = open(os.devnull, "w")
     if sys.stderr is None:
         sys.stderr = sys.stdout
+
+
+def is_python_flex_flow_entry(entry: str):
+    """Returns True if entry is flex flow's entry (in python)."""
+    return isinstance(entry, str) and re.match(FlowEntryRegex.Python, entry)
+
+
+@contextmanager
+def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
+    """Generate yaml entry to run."""
+    if is_python_flex_flow_entry(entry=entry):
+        with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
+            yield flow_yaml_path
+    else:
+        yield entry
+
+
+@contextmanager
+def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
+    """Create a temporary flow.dag.yaml in code folder"""
+    # directly return the entry if it's a file
+
+    flow_yaml_path = code / DAG_FILE_NAME
+    existing_content = None
+    try:
+        if flow_yaml_path.exists():
+            logger.warning(f"Found existing {flow_yaml_path.as_posix()}, will not respect it in runtime.")
+            with open(flow_yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
+                existing_content = f.read()
+        with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
+            dump_yaml({"entry": entry}, f)
+        yield flow_yaml_path
+    finally:
+        # delete the file or recover the content
+        if flow_yaml_path.exists():
+            if existing_content:
+                with open(flow_yaml_path, "w", encoding=DEFAULT_ENCODING) as f:
+                    f.write(existing_content)
+            else:
+                try:
+                    flow_yaml_path.unlink()
+                except Exception as e:
+                    logger.warning(f"Failed to delete generated: {flow_yaml_path.as_posix()}, error: {e}")
 
 
 generate_flow_meta = _generate_flow_meta

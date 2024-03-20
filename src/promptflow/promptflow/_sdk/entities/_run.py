@@ -69,7 +69,7 @@ logger = get_cli_sdk_logger()
 class Run(YAMLTranslatableMixin):
     """Flow run entity.
 
-    :param flow: Path of the flow directory.
+    :param flow: Path of local flow entry or remote flow.
     :type flow: Path
     :param name: Name of the run.
     :type name: str
@@ -643,7 +643,7 @@ class Run(YAMLTranslatableMixin):
     def _validate_for_run_create_operation(self):
         """Validate run object for create operation."""
         # check flow value
-        if Path(self.flow).is_dir():
+        if Path(self.flow).is_dir() or Path(self.flow).is_file():
             # local flow
             pass
         elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):
