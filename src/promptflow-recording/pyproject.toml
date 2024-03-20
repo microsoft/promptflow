@@ -41,11 +41,6 @@ python = "<4.0,>=3.8"
 pre-commit = "*"
 import-linter = "*"
 
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-pytest-cov = "*"
-pytest-xdist = "*"
-
 [build-system]
 requires = [
   "poetry-core>=1.5.0",
