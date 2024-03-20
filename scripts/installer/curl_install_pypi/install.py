@@ -106,8 +106,8 @@ def create_virtualenv(install_dir):
 
 def install_cli(install_dir, tmp_dir):
     path_to_pip = os.path.join(install_dir, 'bin', 'pip')
-    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow[azure,executable,azureml-serving,executor-service]',
-           '--upgrade']
+    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir,
+           'promptflow[azure,executable,azureml-serving,executor-service]', '--upgrade']
     exec_command(cmd)
     cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow-tools', '--upgrade']
     exec_command(cmd)
