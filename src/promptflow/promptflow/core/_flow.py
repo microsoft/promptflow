@@ -135,6 +135,56 @@ class Flow(FlowBase):
         return cls(code=code, path=path, data=data, **kwargs)
 
 
+class AsyncFlow(FlowBase):
+    """Async flow is based on Flow, which is used to invoke flow in async mode.
+
+    Simple Example:
+
+    .. code-block:: python
+
+        from promptflow.core import class AsyncFlow
+        flow = AsyncFlow.load(source="path/to/flow.dag.yaml")
+        result = await flow(input_a=1, input_b=2)
+
+    """
+
+    async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
+        """Calling flow as a function in async, the inputs should be provided with key word arguments.
+        Returns the output of the flow.
+        The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
+        SystemErrorException: if the flow execution failed due to unexpected executor error.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: flow inputs with key word arguments.
+        :return:
+        """
+        if args:
+            raise UserErrorException("Flow can only be called with keyword arguments.")
+
+        result = await self.invoke(inputs=kwargs)
+        return result.output
+
+    async def invoke(self, inputs: dict, *, connections: dict = None, **kwargs) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+
+        invoker = AsyncFlowInvoker(
+            flow=init_executable(flow_dag=self._data, working_dir=self.code),
+            # TODO (3027983): resolve the connections before passing to invoker
+            connections=connections,
+            streaming=True,
+            flow_path=self.path,
+            working_dir=self.code,
+        )
+        result = await invoker._invoke_async(
+            data=inputs,
+        )
+        return result
+
+    @classmethod
+    def _create(cls, data, code, path, **kwargs):
+        return cls(code=code, path=path, data=data, **kwargs)
+
+
 class Prompty(FlowBase):
     """A Prompt represents a non-dag flow, which uses prompty file to define the flow.
     The prompty file is divided into two parts, the first part is in YAML format and contains connection
@@ -158,6 +208,14 @@ class Prompty(FlowBase):
         ---
         system:
         Write a simple {{text}} program that displays the greeting message.
+
+    Prompty as function example:
+    .. code-block:: python
+
+        from promptflow.core import Prompty
+        prompty = Prompty.load(source="path/to/prompty.prompty")
+        result = prompty(input_a=1, input_b=2)
+
     """
 
     def __init__(self, path: Union[str, PathLike], **kwargs):
@@ -236,11 +294,6 @@ class Prompty(FlowBase):
                 resolved_inputs[k] = {"type": ValueType.from_value(v).value, "default": v}
         return resolved_inputs
 
-    def _init_executable(self):
-        from promptflow.contracts.flow import PromptyFlow as ExecutablePromptyFlow
-
-        return ExecutablePromptyFlow.deserialize(self._data)
-
     def _validate_inputs(self, input_values):
         resolved_inputs = {}
         missing_inputs = []
@@ -297,22 +350,22 @@ class Prompty(FlowBase):
             return getattr(completion.choices[0].message, "content", "")
 
 
-class AsyncFlow(FlowBase):
-    """Async flow is based on Flow, which is used to invoke flow in async mode.
+class AsyncPrompty(Prompty):
+    """Async prompty is based on Prompty, which is used to invoke prompty in async mode.
 
     Simple Example:
 
     .. code-block:: python
 
-        from promptflow.core import class AsyncFlow
-        flow = AsyncFlow.load(source="path/to/flow.dag.yaml")
+        from promptflow.core import class AsyncPrompty
+        flow = AsyncPrompty.load(source="path/prompty.prompty")
         result = await flow(input_a=1, input_b=2)
 
     """
 
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
-        """Calling flow as a function in async, the inputs should be provided with key word arguments.
-        Returns the output of the flow.
+        """Calling prompty as a function in async, the inputs should be provided with key word arguments.
+        Returns the output of the prompty.
         The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
         SystemErrorException: if the flow execution failed due to unexpected executor error.
 
@@ -323,25 +376,4 @@ class AsyncFlow(FlowBase):
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        result = await self.invoke(inputs=kwargs)
-        return result.output
-
-    async def invoke(self, inputs: dict, *, connections: dict = None, **kwargs) -> "LineResult":
-        """Invoke a flow and get a LineResult object."""
-
-        invoker = AsyncFlowInvoker(
-            flow=init_executable(flow_dag=self._data, working_dir=self.code),
-            # TODO (3027983): resolve the connections before passing to invoker
-            connections=connections,
-            streaming=True,
-            flow_path=self.path,
-            working_dir=self.code,
-        )
-        result = await invoker._invoke_async(
-            data=inputs,
-        )
-        return result
-
-    @classmethod
-    def _create(cls, data, code, path, **kwargs):
-        return cls(code=code, path=path, data=data, **kwargs)
+        return await super.__call__(**kwargs)

@@ -134,7 +134,7 @@ def is_flex_flow(
 
 def is_prompty_flow(file_path: Union[str, Path], raise_error: bool = False):
     """Check if the flow is a prompty flow by extension of the flow file is .prompty."""
-    if not Path(file_path).exists():
+    if not file_path or not Path(file_path).exists():
         if raise_error:
             raise UserErrorException(f"Cannot find the prompty file {file_path}.")
         else:
