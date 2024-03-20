@@ -17,7 +17,7 @@ data_dir = tests_root_dir / "test_configs/datas"
 
 
 def run_pf_command(*args, cwd=None):
-    from promptflow.azure._cli._pf_azure.entry import main
+    from promptflow.azure._cli.entry import main
 
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:

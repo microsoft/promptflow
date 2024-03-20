@@ -34,7 +34,7 @@ def mock_log_activity(*args, **kwargs):
 
 
 def run_cli_command(cmd, time_limit=3600):
-    from promptflow.azure._cli._pf_azure.entry import main
+    from promptflow.azure._cli.entry import main
 
     sys.argv = list(cmd)
     st = timeit.default_timer()
