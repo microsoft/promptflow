@@ -12,6 +12,14 @@ from unittest.mock import patch
 
 import jwt
 import pytest
+from _constants import (
+    DEFAULT_COMPUTE_INSTANCE_NAME,
+    DEFAULT_REGISTRY_NAME,
+    DEFAULT_RESOURCE_GROUP_NAME,
+    DEFAULT_RUNTIME_NAME,
+    DEFAULT_SUBSCRIPTION_ID,
+    DEFAULT_WORKSPACE_NAME,
+)
 from azure.core.exceptions import ResourceNotFoundError
 from mock import mock
 from pytest_mock import MockerFixture
@@ -63,7 +71,68 @@ def package_scope_in_live_mode() -> str:
     will request dynamic scope fixture(s), they also need to be dynamic scope.
     """
     # package-scope should be enough for Azure tests
-    return "package" if pytest.is_live else "function"
+    return "package" if is_live() else "function"
+
+
+# region pfazure constants
+@pytest.fixture(scope="session")
+def subscription_id() -> str:
+    if is_replay():
+        from promptflow_recording.azure import SanitizedValues
+
+        return SanitizedValues.SUBSCRIPTION_ID
+    else:
+        return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture(scope="session")
+def resource_group_name() -> str:
+    if is_replay():
+        from promptflow_recording.azure import SanitizedValues
+
+        return SanitizedValues.RESOURCE_GROUP_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture(scope="session")
+def workspace_name() -> str:
+    if is_replay():
+        from promptflow_recording.azure import SanitizedValues
+
+        return SanitizedValues.WORKSPACE_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+@pytest.fixture(scope="session")
+def runtime_name() -> str:
+    return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture(scope="session")
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
+
+
+@pytest.fixture
+def enable_logger_propagate():
+    """This is for test cases that need to check the log output."""
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+    original_value = logger.propagate
+    logger.propagate = True
+    yield
+    logger.propagate = original_value
+
+
+@pytest.fixture(scope="session")
+def compute_instance_name() -> str:
+    return os.getenv("PROMPT_FLOW_COMPUTE_INSTANCE_NAME", DEFAULT_COMPUTE_INSTANCE_NAME)
+
+
+# region
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
@@ -310,7 +379,7 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
 # we expect this fixture only work when running live test without recording
 # when recording, we don't want to record any application insights secrets
 # when replaying, we also don't need this
-@pytest.fixture(autouse=not pytest.is_live)
+@pytest.fixture(autouse=not is_live())
 def mock_appinsights_log_handler(mocker: MockerFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
     mocker.patch("promptflow._sdk._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
@@ -482,7 +551,7 @@ def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str
     yield run
 
 
-@pytest.fixture(autouse=not pytest.is_live)
+@pytest.fixture(autouse=not is_live())
 def mock_vcrpy_for_httpx() -> None:
     # there is a known issue in vcrpy handling httpx response: https://github.com/kevin1024/vcrpy/pull/591
     # the related code change has not been merged, so we need such a fixture for patch
@@ -501,7 +570,7 @@ def mock_vcrpy_for_httpx() -> None:
         yield
 
 
-@pytest.fixture(autouse=not pytest.is_live)
+@pytest.fixture(autouse=not is_live())
 def mock_to_thread() -> None:
     # https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread
     # to_thread actually uses a separate thread, which will break mocks
