@@ -4,12 +4,22 @@ import pytest
 from unittest.mock import patch
 
 from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._trace import TokenCollector, enrich_span_with_context, enrich_span_with_trace
+from promptflow.tracing._trace import (
+    TokenCollector,
+    enrich_span_with_context,
+    enrich_span_with_input,
+    enrich_span_with_openai_tokens,
+    enrich_span_with_prompt_info,
+    enrich_span_with_trace,
+    traced_generator,
+)
+from promptflow.tracing.contracts.trace import TraceType
 
 
 class MockSpan:
     def __init__(self, span_context, parent=None, raise_exception_for_attr=False):
         self.span_context = span_context
+        self.name = "mock_span"
         self.parent = parent
         self.raise_exception_for_attr = raise_exception_for_attr
         self.attributes = {}
@@ -28,6 +38,12 @@ class MockSpan:
             self.attributes.update(attributes)
         else:
             raise Exception("Dummy Error")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
 
 
 class MockSpanContext:
@@ -132,6 +148,88 @@ def test_enrich_span_with_trace(caplog):
 
 
 @pytest.mark.unittest
-def test_traced_generator():
-    pass
+def test_enrich_span_with_prompt_info(caplog):
+    with patch(
+        "promptflow.tracing._trace.get_prompt_param_name_from_func", return_value="prompt_tpl"), patch(
+        "promptflow.tracing._trace.get_input_names_for_prompt_template", return_value=["input_1", "input_2"]
+    ):
+        # Normal case
+        span = MockSpan(MockSpanContext(1))
+        enrich_span_with_prompt_info(
+            span, None, {"prompt_tpl": "prompt_tpl", "input_1": "value_1", "input_2": "value_2"}
+        )
+        assert span.attributes == {
+            "prompt.template": "prompt_tpl",
+            "prompt.variables": "{\n  \"input_1\": \"value_1\",\n  \"input_2\": \"value_2\"\n}",
+        }
 
+        # Raise exception when update attributes
+        span = MockSpan(MockSpanContext(1), raise_exception_for_attr=True)
+        enrich_span_with_prompt_info(
+            span, None, {"prompt_tpl": "prompt_tpl", "input_1": "value_1", "input_2": "value_2"}
+        )
+        assert caplog.records[0].levelname == "WARNING"
+        assert "Failed to enrich span with prompt info" in caplog.text
+
+
+@pytest.mark.unittest
+def test_enrich_span_with_input(caplog):
+    # Normal case
+    span = MockSpan(MockSpanContext(1))
+    enrich_span_with_input(span, "input")
+    assert span.attributes == {"inputs": "\"input\""}
+
+    # Raise exception when update attributes
+    span = MockSpan(MockSpanContext(1), raise_exception_for_attr=True)
+    enrich_span_with_input(span, "input")
+    assert caplog.records[0].levelname == "WARNING"
+    assert "Failed to enrich span with input" in caplog.text
+
+
+@pytest.mark.unittest
+def test_traced_generator():
+    def original_generator():
+        for i in range(3):
+            yield i
+
+    # Non-llm case
+    original_span = MockSpan(MockSpanContext(1))
+    original_span.attributes["span_type"] = "Dummy"
+    span = MockSpan(MockSpanContext(2))
+    with patch(
+        "promptflow.tracing._trace.open_telemetry_tracer.start_as_current_span", return_value=span), patch(
+        "promptflow.tracing._trace.Link", return_value="dummy_link"
+    ):
+        generator = traced_generator(original_generator(), original_span)
+        for _ in generator:
+            pass
+        assert span.attributes["output"] == "[\n  0,\n  1,\n  2\n]"
+
+
+@pytest.mark.unittest
+def test_enrich_span_with_openai_tokens(caplog):
+    tokens = {"prompt_tokens": 10, "completion_token": 20, "total_tokens": 30}
+    cumulative_tokens = {f"__computed__.cumulative_token_count.{k.split('_')[0]}": v for k, v in tokens.items()}
+    llm_tokens = {f"llm.usage.{k}": v for k, v in tokens.items()}
+    llm_tokens.update(cumulative_tokens)
+    with patch("promptflow.tracing._trace.token_collector.try_get_openai_tokens", return_value=tokens):
+        # Normal case
+        span = MockSpan(MockSpanContext(1))
+        enrich_span_with_openai_tokens(span, TraceType.FUNCTION)
+        assert span.attributes == cumulative_tokens
+
+        # LLM case
+        span = MockSpan(MockSpanContext(1))
+        enrich_span_with_openai_tokens(span, TraceType.LLM)
+        assert span.attributes == llm_tokens
+
+        # Embedding case
+        span = MockSpan(MockSpanContext(1))
+        enrich_span_with_openai_tokens(span, TraceType.EMBEDDING)
+        assert span.attributes == llm_tokens
+
+        # Raise exception when update attributes
+        span = MockSpan(MockSpanContext(1), raise_exception_for_attr=True)
+        enrich_span_with_openai_tokens(span, TraceType.FUNCTION)
+        assert caplog.records[0].levelname == "WARNING"
+        assert "Failed to enrich span with openai tokens" in caplog.text
