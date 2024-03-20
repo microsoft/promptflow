@@ -46,7 +46,7 @@ nodes:
   inputs:
     chat_history: ${inputs.chat_history}
   activate:
-    when: ${If_continue.output}
+    when: ${if_continue.output}
     is: true
   use_variants: false
 - name: call_llm_chat
