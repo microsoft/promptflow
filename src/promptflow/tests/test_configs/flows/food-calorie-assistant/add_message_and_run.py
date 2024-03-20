@@ -57,7 +57,7 @@ async def add_message_and_run(
 
     run = await start_run(assistant_id, thread_id, assistant_definition)
 
-    await wait_for_run_complete(thread_id, run)
+    await wait_for_run_complete(thread_id, run.id)
 
     messages = await get_message(thread_id)
 
@@ -111,13 +111,17 @@ async def wait_for_status_check():
     await asyncio.sleep(RUN_STATUS_POLLING_INTERVAL_IN_MILSEC / 1000.0)
 
 
-async def get_run_status(thread_id: str, run_id: str):
+async def get_run(thread_id: str, run_id: str):
     cli=cli_var.get()
     run = await cli.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
     print(f"Run status: {run.status}")
     return run
 
-
+async def get_run_step(thread_id: str, run_id: str, run_step_id: str):
+    cli=cli_var.get()
+    run_step = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
+    print(f"Run step status: {run_step.status}")
+    return run_step
 
 async def get_tool_calls_outputs(run):
     tool_calls = run.required_action.submit_tool_outputs.tool_calls
@@ -138,8 +142,6 @@ async def get_tool_calls_outputs(run):
         print(f"Tool output: {str(output)}")
     return tool_outputs
 
-
-
 async def submit_tool_calls_outputs(thread_id: str, run_id: str,
                                     tool_outputs: list):
     cli=cli_var.get()
@@ -154,12 +156,12 @@ async def require_actions(thread_id: str, run):
 
 
 @trace
-async def wait_for_run_complete(thread_id: str, run):
+async def wait_for_run_complete(thread_id: str, run_id: str):
     processed_steps_num= 0
-    while not is_run_terminated(run):
+    while True:
         await wait_for_status_check()
-        processed_steps_num = await get_new_run_steps(thread_id, run.id, processed_steps_num)
-        run = await get_run_status(thread_id, run.id)
+        processed_steps_num = await get_new_run_steps(thread_id, run_id, processed_steps_num)
+        run = await get_run(thread_id, run_id)
         if run.status == "requires_action":
             # We might get into this status since the run and run_step are managed separately.
             continue
@@ -172,6 +174,10 @@ async def wait_for_run_complete(thread_id: str, run):
             else:
                 error_message = f"The assistant tool runs in '{run.status}' status without a specific error message."
             raise Exception(error_message)
+        else:
+            # Run completed
+            break
+
 
 
 
@@ -182,41 +188,37 @@ async def get_new_run_steps(thread_id: str, run_id: str, processed_steps_num: in
     # Actually it might be concurrently. Do some research and change later
     for i in reversed(range(len(run_steps.data))):
         if i < len(run_steps.data) - processed_steps_num:
-            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id)
+            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id, run_steps.data[i].type)
     processed_steps_num = len(run_steps.data)
     return processed_steps_num
 
 @trace
-async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str):
+async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str, run_step_type: str):
     span = get_current_span()
-    cli=cli_var.get()
-    step_run = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
-    span.update_name(step_run.type)
-    while not is_run_terminated(step_run):
-        run = await get_run_status(thread_id, run_id)
-        if run.status == "requires_action":
-            await require_actions(thread_id, run)
+    span.update_name(run_step_type)
+    while True:
         await wait_for_status_check()
-        step_run = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
-        #todo: Research if action on other status here
-
-    # trace enrichment
-    if step_run.status == "completed":
-        if step_run.type == "message_creation":
-            msg_id = step_run.step_details.message_creation.message_id
-            await message(thread_id, msg_id)
-        elif step_run.type == "tool_calls":
-            if step_run.step_details.tool_calls[0].type == "code_interpreter":
-                await trace_code_interpreter(step_run)
-            elif step_run.step_details.type == "retrieval":
-                pass
+        run_step = await get_run_step(thread_id=thread_id, run_id=run_id, run_step_id=run_step_id)
+        if run_step.status in {"in_progress"}:
+            run = await get_run(thread_id, run_id)
+            if run.status == "requires_action":
+                await require_actions(thread_id, run)
+        elif run_step.status in {"cancelled", "failed", "expired"}:
+            raise Exception(f"Run step {run_step_id} failed with status: {run_step.status}")
         else:
-            pass
-    else:
-        #Todo: enrich this logic
-        pass
-
-    return step_run
+            # Run step completed
+            if run_step.type == "message_creation":
+                msg_id = run_step.step_details.message_creation.message_id
+                await message(thread_id, msg_id)
+            elif run_step.type == "tool_calls":
+                if run_step.step_details.tool_calls[0].type == "code_interpreter":
+                    await trace_code_interpreter(run_step)
+                elif run_step.step_details.type == "retrieval":
+                    pass
+            else:
+                raise Exception(f"Unsupported run step type: {run_step.type}")
+            break
+    return run_step
 
 @trace
 async def message(thread_id: str, msg_id: str):
