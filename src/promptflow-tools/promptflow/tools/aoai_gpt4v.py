@@ -89,4 +89,4 @@ class AzureOpenAI(ToolProvider):
             params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
-        return post_process_chat_api_response(completion, stream, None)
+        return post_process_chat_api_response(completion, stream)

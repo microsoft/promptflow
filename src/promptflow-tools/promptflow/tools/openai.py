@@ -48,7 +48,7 @@ class OpenAI(ToolProvider):
         logit_bias: dict = {},
         user: str = "",
         **kwargs,
-    ) -> str:
+    ):
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
@@ -107,31 +107,40 @@ class OpenAI(ToolProvider):
         # function_call can be of type str or dict.
         function_call: object = None,
         functions: list = None,
+        # tool_choice can be of type str or dict.
+        tool_choice: object = None,
+        tools: list = None,
         response_format: object = None,
         seed: int = None,
         **kwargs
-    ) -> [str, dict]:
+    ):
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         messages = parse_chat(chat_str)
-        # TODO: remove below type conversion after client can pass json rather than string.
         stream = to_bool(stream)
         params = {
             "model": model,
             "messages": messages,
-            "temperature": float(temperature),
-            "top_p": float(top_p),
-            "n": int(n),
+            "temperature": temperature,
+            "top_p": top_p,
+            "n": n,
             "stream": stream,
-            "max_tokens": int(max_tokens) if max_tokens is not None and str(max_tokens).lower() != "inf" else None,
-            "presence_penalty": float(presence_penalty),
-            "frequency_penalty": float(frequency_penalty),
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
             "user": user,
         }
 
-        if functions is not None:
-            validate_functions(functions)
-            params["functions"] = functions
-            params["function_call"] = process_function_call(function_call)
+        # functions and function_call are deprecated and are replaced by tools and tool_choice.
+        # if both are provided, tools and tool_choice are used and functions and function_call are ignored.
+        if tools is not None:
+            # TODO: add validate_tools
+            params["tools"] = tools
+            # TODO: add validate_tool_choice
+            params["tool_choice"] = tool_choice
+        else:
+            if functions is not None:
+                validate_functions(functions)
+                params["functions"] = functions
+                params["function_call"] = process_function_call(function_call)
 
         # to avoid vision model validation error for empty param values.
         if stop:
@@ -146,7 +155,7 @@ class OpenAI(ToolProvider):
             params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
-        return post_process_chat_api_response(completion, stream, functions)
+        return post_process_chat_api_response(completion, stream, functions, tools)
 
 
 register_apis(OpenAI)
@@ -172,7 +181,7 @@ def completion(
     logit_bias: dict = {},
     user: str = "",
     **kwargs
-) -> [str, dict]:
+):
     return OpenAI(connection).completion(
         prompt=prompt,
         model=model,
@@ -211,10 +220,12 @@ def chat(
     user: str = "",
     function_call: object = None,
     functions: list = None,
+    tool_choice: object = None,
+    tools: list = None,
     response_format: object = None,
     seed: int = None,
     **kwargs
-) -> [str, dict]:
+):
     return OpenAI(connection).chat(
         prompt=prompt,
         model=model,
@@ -230,6 +241,8 @@ def chat(
         user=user,
         function_call=function_call,
         functions=functions,
+        tool_choice=tool_choice,
+        tools=tools,
         response_format=response_format,
         seed=seed,
         **kwargs,

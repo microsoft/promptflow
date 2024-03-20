@@ -26,21 +26,21 @@ promptflow.tools.llm_vision.llm_vision:
       type:
         - string
       enabled_by: connection
-      enabled_by_type: [AzureOpenAIConnection]
-      dynamic_list:
-        func_path: promptflow.tools.aoai_gpt4v.list_deployment_names
-        func_kwargs:
-        - name: connection
-          type: 
-          - string
-          reference: ${inputs.connection}
+      enabled_by_type:
+      - AzureOpenAIConnection
+      capabilities:
+        chat_completion: true
+        include:
+          model_version:
+          - vision-preview
       allow_manual_entry: true
       is_multi_select: false
       ui_hints:
         text_box_size: lg
     model:
       enabled_by: connection
-      enabled_by_type: [OpenAIConnection]
+      enabled_by_type:
+      - OpenAIConnection
       enum:
       - gpt-4-vision-preview
       allow_manual_entry: true
@@ -60,7 +60,6 @@ promptflow.tools.llm_vision.llm_vision:
         - double
       ui_hints:
         text_box_size: xs
-      advanced: true
     stop:
       default: ""
       type:
@@ -77,11 +76,15 @@ promptflow.tools.llm_vision.llm_vision:
       default: 0
       type:
         - double
-      advanced: true
     frequency_penalty:
       type:
       - int
       default: 0
-      advanced: true
+      ui_hints:
+        text_box_size: xs
+    seed:
+      default: ""
+      type:
+        - int
       ui_hints:
         text_box_size: xs

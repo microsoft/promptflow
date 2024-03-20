@@ -55,6 +55,7 @@ def llm_vision(
             **kwargs
         )
     else:
-        error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
-                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+        error_message = f"Not Support connection type '{type(connection).__name__}' for llm. " \
+                        "Connection type should be in [AzureOpenAIConnection, OpenAIConnection" \
+                        ", ServerlessConnection]."
         raise InvalidConnectionType(message=error_message)
