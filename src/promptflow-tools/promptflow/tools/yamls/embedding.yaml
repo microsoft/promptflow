@@ -32,4 +32,4 @@ promptflow.tools.embedding.embedding:
       allow_manual_entry: true
     input:
       type:
-      - string
+      - list
