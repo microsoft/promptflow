@@ -228,11 +228,8 @@ def variant_overwrite_context(
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
-    elif isinstance(flow, FlexFlow):
-        # eager flow don't support overwrite variant
-        yield flow
-    elif isinstance(flow, Prompty):
-        # Prompty don't support overwrite variant
+    elif isinstance(flow, (FlexFlow, Prompty)):
+        # eager flow and prompty don't support overwrite variant
         yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,

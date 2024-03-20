@@ -381,7 +381,6 @@ class Prompty(FlowBase):
                     configs[k] = value
         # TODO update data
         configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
-        configs["outputs"] = {"output": {"type": ValueType.STRING.value}}
         self.connection = configs.get("connection", "")
         self.parameters = configs.get("parameters", {})
         self.api = configs["api"]

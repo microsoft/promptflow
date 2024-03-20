@@ -8,7 +8,7 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import NestedField
+from promptflow._sdk.schemas._fields import NestedField, UnionField
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -92,3 +92,12 @@ class EagerFlowSchema(BaseFlowSchema):
 
         if entry_regex is not None and not re.match(entry_regex, data["entry"]):
             raise ValidationError(field_name="entry", message=f"Entry function {data['entry']} is not valid.")
+
+
+class PromptySchema(BaseFlowSchema):
+    """Schema for prompty."""
+
+    api = fields.Str(required=True)
+    connection = UnionField([fields.Dict(required=True), fields.Str(required=True)])
+    parameters = fields.Dict()
+    inputs = fields.Dict()
