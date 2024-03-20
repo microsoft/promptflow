@@ -28,7 +28,7 @@ export PF_INSTALLER=Script
 """
 
 PFAZURE_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
-{install_dir}/bin/python -m promptflow._cli._pf_azure.entry "$@"
+{install_dir}/bin/python -m promptflow.azure._cli.entry "$@"
 """
 
 DEFAULT_INSTALL_DIR = os.path.expanduser(os.path.join('~', 'lib', 'promptflow'))

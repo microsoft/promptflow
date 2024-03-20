@@ -164,7 +164,7 @@ class Run(YAMLTranslatableMixin):
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
-            self.flow = Path(flow).resolve().absolute()
+            self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)

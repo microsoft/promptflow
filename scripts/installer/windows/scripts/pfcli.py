@@ -11,7 +11,7 @@ if __name__ == "__main__":
         from promptflow._cli._pf.entry import main as pf_main
         pf_main()
     elif command == 'pfazure':
-        from promptflow._cli._pf_azure.entry import main as pfazure_main
+        from promptflow.azure._cli.entry import main as pfazure_main
         pfazure_main()
     else:
         print(f"Invalid command {sys.argv}. Please use 'pf', 'pfazure'.")
