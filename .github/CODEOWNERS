@@ -1,7 +1,5 @@
 * @microsoft/prompt-flow-approvers
 
-/src/promptflow-tracing/ @microsoft/promptflow-tracing
-
 /src/promptflow/promptflow/_core/ @microsoft/promptflow-execution
 /src/promptflow/promptflow/_internal/ @microsoft/promptflow-execution
 /src/promptflow/promptflow/batch/ @microsoft/promptflow-execution
