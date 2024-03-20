@@ -22,11 +22,11 @@ def create_span() -> Span:
 
 
 class TracingUser(HttpUser):
-    wait_time = between(1, 5)
+    wait_time = between(0, 2)
 
-    @task
-    def heartbeat(self):
-        self.client.get("/heartbeat")
+    # @task
+    # def heartbeat(self):
+    #     self.client.get("/heartbeat")
 
     @task
     def collect_trace(self):
@@ -38,3 +38,7 @@ class TracingUser(HttpUser):
             data=serialized_data,
             headers=headers,
         )
+
+    @task
+    def list_line_runs(self):
+        self.client.get(PromptFlowServiceTracingAPI.LIST_LINE_RUNS)
