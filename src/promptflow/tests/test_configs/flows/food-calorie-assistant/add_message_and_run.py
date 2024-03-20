@@ -1,8 +1,9 @@
 import asyncio
 import json
+from contextvars import ContextVar
 from typing import Union, List
 
-from openai import AsyncAzureOpenAI, AsyncOpenAI
+
 from openai.types.beta.threads.runs.code_interpreter_tool_call import CodeInterpreterOutput
 
 from openai.types.beta.threads.runs.tool_calls_step_details import ToolCall
@@ -12,7 +13,7 @@ from get_tracer import get_tracer
 
 from openai.types.beta.threads import TextContentBlock, ImageFileContentBlock, Message
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.types import AssistantDefinition
@@ -23,6 +24,10 @@ from promptflow.tracing import trace
 
 URL_PREFIX = "https://platform.openai.com/files/"
 RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
+
+# Why we define global variable instead of function parameter? We want to keep trace input as simple as possible.
+cli_var: ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]] = ContextVar("cli_var", default=None)
+
 
 
 @tool
@@ -35,30 +40,32 @@ async def add_message_and_run(
         download_images: bool,
 ):
     cli = await get_assistant_client(conn)
+    cli_var.set(cli)
     tracer = await get_tracer()
     invoker = assistant_definition._tool_invoker
     # Check if assistant id is valid. If not, create a new assistant.
     # Note: tool registration at run creation, rather than at assistant creation.
     if not assistant_id:
-        assistant = await create_assistant(cli, assistant_definition)
+        assistant = await create_assistant(assistant_definition)
         assistant_id = assistant.id
 
-    await add_message(cli, message, thread_id)
+    await add_message(message, thread_id)
 
-    run = await start_run(cli, assistant_id, thread_id, assistant_definition, invoker)
+    run = await start_run(assistant_id, thread_id, assistant_definition, invoker)
 
-    await wait_for_run_complete(cli, thread_id, invoker, run, tracer)
+    await wait_for_run_complete(thread_id, invoker, run, tracer)
 
-    messages = await get_message(cli, thread_id)
+    messages = await get_message(thread_id)
 
-    await list_run_steps(cli, thread_id, run.id, tracer)
+    await list_run_steps(thread_id, run.id, tracer)
 
-    file_id_references = await get_openai_file_references(cli, messages.data[0].content, download_images, conn)
+    file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
 
 @trace
-async def create_assistant(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], assistant_definition: AssistantDefinition):
+async def create_assistant(assistant_definition: AssistantDefinition):
+    cli = cli_var.get()
     assistant = await cli.beta.assistants.create(
         instructions=assistant_definition.instructions, model=assistant_definition.model
     )
@@ -67,9 +74,10 @@ async def create_assistant(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], assistant_
 
 
 @trace
-async def add_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], message: list, thread_id: str):
+async def add_message(message: list, thread_id: str):
     content = extract_text_from_message(message)
-    file_ids = await extract_file_ids_from_message(cli, message)
+    file_ids = await extract_file_ids_from_message(message)
+    cli = cli_var.get()
     msg = await cli.beta.threads.messages.create(thread_id=thread_id, role="user", content=content, file_ids=file_ids)
     print(f"Created message message_id: {msg.id}, thread_id: {thread_id}")
     return msg
@@ -77,13 +85,13 @@ async def add_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], message: list, 
 
 @trace
 async def start_run(
-        cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
         assistant_id: str,
         thread_id: str,
         assistant_definition: AssistantDefinition,
         invoker: AssistantToolInvoker,
 ):
     tools = invoker.to_openai_tools()
+    cli = cli_var.get()
     run = await cli.beta.threads.runs.create(
         assistant_id=assistant_id,
         thread_id=thread_id,
@@ -99,7 +107,8 @@ async def wait_for_status_check():
     await asyncio.sleep(RUN_STATUS_POLLING_INTERVAL_IN_MILSEC / 1000.0)
 
 
-async def get_run_status(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str):
+async def get_run_status(thread_id: str, run_id: str):
+    cli=cli_var.get()
     run = await cli.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
     print(f"Run status: {run.status}")
     return run
@@ -126,27 +135,28 @@ async def get_tool_calls_outputs(invoker: AssistantToolInvoker, run):
 
 
 
-async def submit_tool_calls_outputs(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str,
+async def submit_tool_calls_outputs(thread_id: str, run_id: str,
                                     tool_outputs: list):
+    cli=cli_var.get()
     await cli.beta.threads.runs.submit_tool_outputs(thread_id=thread_id, run_id=run_id, tool_outputs=tool_outputs)
     print(f"Submitted all required resonses for run: {run_id}")
 
 
 
-async def require_actions(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run,
+async def require_actions(thread_id: str, run,
                           invoker: AssistantToolInvoker):
     tool_outputs = await get_tool_calls_outputs(invoker, run)
-    await submit_tool_calls_outputs(cli, thread_id, run.id, tool_outputs)
+    await submit_tool_calls_outputs(thread_id, run.id, tool_outputs)
 
 
 @trace
-async def wait_for_run_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str,
+async def wait_for_run_complete(thread_id: str,
                                 invoker: AssistantToolInvoker, run, tracer):
     processed_steps_num= 0
     while not is_run_terminated(run):
         await wait_for_status_check()
-        processed_steps_num = await get_new_run_steps(cli, thread_id, run.id, processed_steps_num, invoker, tracer)
-        run = await get_run_status(cli, thread_id, run.id)
+        processed_steps_num = await get_new_run_steps(thread_id, run.id, processed_steps_num, invoker, tracer)
+        run = await get_run_status(thread_id, run.id)
         if run.status == "requires_action":
             # We might get into this status since the run and run_step are managed separately.
             continue
@@ -162,25 +172,27 @@ async def wait_for_run_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], threa
 
 
 
-async def get_new_run_steps(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str, processed_steps_num: int, invoker: AssistantToolInvoker, tracer):
+async def get_new_run_steps(thread_id: str, run_id: str, processed_steps_num: int, invoker: AssistantToolInvoker, tracer):
+    cli=cli_var.get()
     run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
     # Todo: For now, assume the step are completed sequentially;
     # Actually it might be concurrently. Do some research and change later
     for i in reversed(range(len(run_steps.data))):
         if i < len(run_steps.data) - processed_steps_num:
-            await wait_for_run_step_complete(cli, thread_id, run_id, run_steps.data[i].id, invoker, tracer)
+            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id, invoker, tracer)
     processed_steps_num = len(run_steps.data)
     return processed_steps_num
 
 @trace
-async def wait_for_run_step_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str, run_step_id: str, invoker: AssistantToolInvoker, tracer):
+async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str, invoker: AssistantToolInvoker, tracer):
     span = get_current_span()
+    cli=cli_var.get()
     step_run = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
     span.update_name(step_run.type)
     while not is_run_terminated(step_run):
-        run = await get_run_status(cli, thread_id, run_id)
+        run = await get_run_status(thread_id, run_id)
         if run.status == "requires_action":
-            await require_actions(cli, thread_id, run, invoker)
+            await require_actions(thread_id, run, invoker)
         await wait_for_status_check()
         step_run = await cli.beta.threads.runs.steps.retrieve(thread_id=thread_id, run_id=run_id, step_id=run_step_id)
         #todo: Research if action on other status here
@@ -189,7 +201,7 @@ async def wait_for_run_step_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], 
     if step_run.status == "completed":
         if step_run.type == "message_creation":
             msg_id = step_run.step_details.message_creation.message_id
-            await message(cli, thread_id, msg_id)
+            await message(thread_id, msg_id)
         elif step_run.type == "tool_calls":
             if step_run.step_details.tool_calls[0].type == "code_interpreter":
                 await trace_code_interpreter(step_run, tracer)
@@ -204,7 +216,8 @@ async def wait_for_run_step_complete(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], 
     return step_run
 
 @trace
-async def message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, msg_id: str):
+async def message(thread_id: str, msg_id: str):
+    cli=cli_var.get()
     message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=thread_id)
     return convert_message_content(message.content)
 
@@ -219,16 +232,18 @@ async def trace_code_interpreter(step_run, tracer):
 
 
 @trace
-async def list_run_steps(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str, run_id: str, tracer):
+async def list_run_steps(thread_id: str, run_id: str, tracer):
+    cli = cli_var.get()
     run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
     step_runs = []
     for run_step in run_steps.data:
         step_runs.append(run_step.dict())
-        await show_run_step(cli, run_step, tracer)
+        await show_run_step(run_step, tracer)
     return step_runs
 
 
-async def show_run_step(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], run_step, tracer):
+async def show_run_step(run_step, tracer):
+    cli=cli_var.get()
     with tracer.start_as_current_span(run_step.type, start_time=_to_nano(run_step.created_at), end_on_exit=False) as span:
         if run_step.type == "message_creation":
             msg_id = run_step.step_details.message_creation.message_id
@@ -280,7 +295,8 @@ def convert_code_interpreter_outputs(logs: List[CodeInterpreterOutput]):
 
 
 @trace
-async def get_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], thread_id: str):
+async def get_message(thread_id: str):
+    cli=cli_var.get()
     messages = await cli.beta.threads.messages.list(thread_id=thread_id)
     return messages
 
@@ -297,7 +313,7 @@ def extract_text_from_message(message: list):
     return "\n".join(content)
 
 
-async def extract_file_ids_from_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], message: list):
+async def extract_file_ids_from_message(message: list):
     file_ids = []
     for m in message:
         if isinstance(m, str):
@@ -306,13 +322,13 @@ async def extract_file_ids_from_message(cli: Union[AsyncOpenAI, AsyncAzureOpenAI
         if message_type == "file_path" and "file_path" in m:
             path = m["file_path"].get("path", "")
             if path:
+                cli=cli_var.get()
                 file = await cli.files.create(file=open(path, "rb"), purpose="assistants")
                 file_ids.append(file.id)
     return file_ids
 
 
-async def get_openai_file_references(cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
-                                     content: list,
+async def get_openai_file_references(content: list,
                                      download_image: bool,
                                      conn: Union[AzureOpenAIConnection, OpenAIConnection]):
     file_id_references = {}
@@ -322,7 +338,7 @@ async def get_openai_file_references(cli: Union[AsyncOpenAI, AsyncAzureOpenAI],
             file_id = item.image_file.file_id
             if download_image:
                 file_id_references[file_id] = {
-                    "content": await download_openai_image(cli, file_id, conn),
+                    "content": await download_openai_image(file_id),
                 }
         elif isinstance(item, TextContentBlock):
             for annotation in item.text.annotations:
@@ -370,8 +386,8 @@ def to_pf_content(content: list):
     return pf_content
 
 
-async def download_openai_image(cli: Union[AsyncOpenAI, AsyncAzureOpenAI], file_id: str,
-                                conn: Union[AzureOpenAIConnection, OpenAIConnection]):
+async def download_openai_image(file_id: str):
+    cli=cli_var.get()
     image_data = await cli.files.content(file_id)
     return Image(image_data.read())
 
