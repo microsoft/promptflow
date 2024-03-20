@@ -6,6 +6,7 @@ from ruamel.yaml import YAML, YAMLError
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils._errors import YamlParseError
+from promptflow.exceptions import UserErrorException
 
 
 def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
@@ -58,8 +59,8 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
         try:
             input = open(source, "r", encoding=DEFAULT_ENCODING)
         except OSError:  # FileNotFoundError introduced in Python 3
-            msg = "No such file or directory: {}"
-            raise FileNotFoundError(msg.format(source))
+            e = FileNotFoundError("No such file or directory: {}".format(source))
+            raise UserErrorException(str(e), privacy_info=[str(source)]) from e
     # input should now be a readable file or stream. Parse it.
     try:
         yaml = YAML()

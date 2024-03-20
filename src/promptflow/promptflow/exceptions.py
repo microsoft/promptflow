@@ -6,7 +6,7 @@ import string
 import traceback
 from enum import Enum
 from functools import cached_property
-from typing import Dict
+from typing import Dict, List
 
 from azure.core.exceptions import HttpResponseError
 
@@ -46,6 +46,11 @@ class PromptflowException(Exception):
     :type target: ~promptflow.exceptions.ErrorTarget
     :param error: The original exception if any.
     :type error: Exception
+    :param privacy_info: To record messages to telemetry, it is necessary to mask private information.
+                        If set to None, messages will not be recorded to telemetry.
+                        Otherwise, it will replace the content string in messages
+                        that contain privacy_info with '{privacy_info}'.
+    :type privacy_info: List[str]
     """
 
     def __init__(
@@ -54,12 +59,14 @@ class PromptflowException(Exception):
         message_format="",
         target: ErrorTarget = ErrorTarget.UNKNOWN,
         module=None,
+        privacy_info: List[str] = None,
         **kwargs,
     ):
         self._inner_exception = kwargs.get("error")
         self._target = target
         self._module = module
         self._message_format = message_format
+        self._privacy_info = privacy_info
         self._kwargs = kwargs
         if message:
             self._message = str(message)
@@ -264,6 +271,8 @@ class _ErrorInfo:
     def _is_user_error(cls, e: BaseException):
         if isinstance(e, UserErrorException):
             return True
+        if isinstance(e, (KeyboardInterrupt,)):
+            return True
 
         return False
 
@@ -321,7 +330,15 @@ class _ErrorInfo:
 
     @classmethod
     def _error_message(cls, e: BaseException):
-        return getattr(e, "message_format", "")
+        privacy_info = e._privacy_info if isinstance(e, PromptflowException) else None
+        if privacy_info is None:
+            return getattr(e, "message_format", "")
+        message = e.message
+        for info in privacy_info:
+            info = str(info)
+            message = message.replace(info, "{privacy_info}")
+
+        return message
 
     @classmethod
     def _error_detail(cls, e: BaseException):
