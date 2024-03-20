@@ -133,7 +133,7 @@ class Flow(FlowBase):
     and the output of one step can be used as the input to the next.
     Flows can be used to build complex applications with language models.
 
-    Simple Example:
+    Example:
 
     .. code-block:: python
 
