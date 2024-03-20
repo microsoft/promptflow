@@ -102,7 +102,7 @@ nodes:
     top_p: 1
     presence_penalty: 0
     frequency_penalty: 0
-    conversation: ${covert_chat_history_to_conversation.output}
+    conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
   connection: ''
   api: chat
@@ -122,7 +122,7 @@ nodes:
     top_p: 1
     presence_penalty: 0
     frequency_penalty: 0
-    conversation: ${covert_chat_history_to_conversation.output}
+    conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
   connection: ''
   api: chat
@@ -142,7 +142,7 @@ nodes:
     top_p: 1
     presence_penalty: 0
     frequency_penalty: 0
-    conversation: ${covert_chat_history_to_conversation.output}
+    conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
   connection: ''
   api: chat
