@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import json
 import logging
 import sys
@@ -10,6 +11,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
@@ -316,6 +318,14 @@ class Node:
         :return: The node constructed from the dict.
         :rtype: ~promptflow.contracts.flow.Node
         """
+        if data.get("source", {}).get("path", None) and is_prompty_flow(data.get("source").get("path")):
+            from promptflow.core._flow import Prompty
+
+            prompty_data = copy.copy(Prompty(data.get("source").get("path"))._data)
+            prompty_data.update(data)
+            prompty_data.get("inputs", {}).update(prompty_data.pop("parameters", {}))
+            data = prompty_data
+
         node = Node(
             name=data.get("name"),
             tool=data.get("tool"),

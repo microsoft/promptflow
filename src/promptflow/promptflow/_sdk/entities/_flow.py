@@ -135,7 +135,7 @@ class Flow(FlowCore, SchemaValidatableMixin):
         from promptflow._sdk.entities._eager_flow import FlexFlow
         from promptflow._sdk.entities._prompty import Prompty
 
-        if is_prompty_flow(file_path=flow_path):
+        if is_prompty_flow(file_path=flow_path, raise_error=raise_error):
             return Prompty._load(path=flow_path)
 
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:

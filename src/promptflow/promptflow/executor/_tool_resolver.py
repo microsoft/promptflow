@@ -14,6 +14,7 @@ from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
@@ -304,7 +305,13 @@ class ToolResolver:
                 node_name=node.name,
             )
         file = self._working_dir / source.path
-        return file.read_text(encoding="utf-8")
+        if is_prompty_flow(file):
+            from promptflow.core._flow import Prompty
+
+            _, template = Prompty._parse_prompty(file)
+        else:
+            template = file.read_text(encoding="utf-8")
+        return template
 
     def _validate_duplicated_inputs(self, prompt_tpl_inputs: list, tool_params: list, msg: str):
         duplicated_inputs = set(prompt_tpl_inputs) & set(tool_params)
@@ -361,7 +368,8 @@ class ToolResolver:
         # If provider is not specified, try to resolve it from connection type
         connection_type = type(connection).__name__
         if connection_type not in connection_type_to_api_mapping:
-            from promptflow.connections import ServerlessConnection, OpenAIConnection
+            from promptflow.connections import OpenAIConnection, ServerlessConnection
+
             # This is a fallback for the case that ServerlessConnection related tool is not ready
             # in legacy versions, then we can directly use OpenAIConnection.
             if isinstance(connection, ServerlessConnection):

@@ -172,7 +172,7 @@ class Flow(FlowBase):
     @classmethod
     def _dispatch_flow_creation(cls, flow_path, raise_error=True, **kwargs):
         """Dispatch flow load to non-dag flow or async flow."""
-        if is_prompty_flow(file_path=flow_path):
+        if is_prompty_flow(file_path=flow_path, raise_error=raise_error):
             return Prompty._load(path=flow_path, **kwargs)
 
         with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:

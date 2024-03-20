@@ -38,6 +38,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._eager_flow import FlexFlow
 from promptflow._sdk.entities._flow import Flow, FlowBase
+from promptflow._sdk.entities._prompty import Prompty
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -175,7 +176,7 @@ class FlowOperations(TelemetryMixin):
             stream_output=stream_output,
             session=session,
         ) as submitter:
-            if isinstance(flow, FlexFlow):
+            if isinstance(flow, FlexFlow) or isinstance(flow, Prompty):
                 # TODO(2897153): support chat eager flow
                 # set is chat flow to True to allow generator output
                 is_chat_flow, chat_history_input_name = False, None

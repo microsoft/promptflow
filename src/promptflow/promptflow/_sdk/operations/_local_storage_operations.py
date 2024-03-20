@@ -40,6 +40,7 @@ from promptflow._sdk.entities._eager_flow import FlexFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
+from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import (
     get_file_reference_encoder,
@@ -227,6 +228,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
 
         self._dump_meta_file()
         self._eager_mode = self._calculate_eager_mode(run)
+        self._is_prompty_flow = is_prompty_flow(run.flow)
 
     @property
     def eager_mode(self) -> bool:
@@ -268,7 +270,7 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
-        if not self._eager_mode:
+        if not self._eager_mode and not self._is_prompty_flow:
             self._dag_path.unlink()
             shutil.copy(flow.path, self._dag_path)
 
