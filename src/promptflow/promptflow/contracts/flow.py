@@ -880,11 +880,10 @@ class Flow(FlowBase):
 
         return set({item for item in connection_names if item})
 
-    def get_connection_input_names_for_node(self, node_name, return_unassigned_inputs=False):
-        """Return connection input names for a node.
+    def get_connection_input_names_for_node(self, node_name):
+        """Return connection input names for a node, will also return node connection inputs without assignment.
 
         :param node_name: node name
-        :param return_unassigned_inputs: whether to return unassigned inputs for node
         """
 
         node = self.get_node(node_name)
@@ -895,10 +894,7 @@ class Flow(FlowBase):
             return []
         tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
         if tool:
-            if return_unassigned_inputs:
-                return self._get_connection_inputs_from_tool(tool)
-            else:
-                return list(self._get_connection_name_from_tool(tool, node).keys())
+            return self._get_connection_inputs_from_tool(tool)
         return []
 
     def _replace_with_variant(self, variant_node: Node, variant_tools: list):

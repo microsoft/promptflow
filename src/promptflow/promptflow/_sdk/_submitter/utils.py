@@ -158,9 +158,7 @@ def override_python_connections(
     node: dict, connection_dict: dict, tools_meta: dict, executable_flow: ExecutableFlow, node_name: str
 ):
     """apply connection override on python node."""
-    connection_inputs = executable_flow.get_connection_input_names_for_node(
-        node_name=node_name, return_unassigned_inputs=True
-    )
+    connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
     consumed_connections = set()
     for c, v in connection_dict.items():
         if c in connection_inputs:
