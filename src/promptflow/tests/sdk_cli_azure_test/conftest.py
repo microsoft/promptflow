@@ -343,7 +343,7 @@ def randstr(variable_recorder) -> Callable[[str], str]:
         random_string = str(uuid.uuid4())
         if pytest.is_live:
             return random_string
-        elif pytest.is_replay:
+        elif is_replay():
             return variable_name
         else:
             return variable_recorder.get_or_record_variable(variable_name, random_string)
@@ -359,7 +359,7 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
     If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
     based on the test file, class and function name, write to (record) or read from (replay) the file.
     """
-    if pytest.record or pytest.replay:
+    if pytest.is_record or pytest.is_replay:
         from promptflow_recording.azure import PFAzureIntegrationTestRecording
 
         recording = PFAzureIntegrationTestRecording.from_test_case(
