@@ -59,7 +59,6 @@ from promptflow.core._connection import ServerlessConnection as _CoreServerlessC
 from promptflow.core._connection import WeaviateConnection as _CoreWeaviateConnection
 from promptflow.core._connection import _Connection as _CoreConnection
 from promptflow.core._connection import _StrongTypeConnection as _CoreStrongTypeConnection
-from promptflow.core._connection import _supported_types
 from promptflow.exceptions import UserErrorException, ValidationException
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -529,3 +528,12 @@ class CustomConnection(_CoreCustomConnection, _Connection):
             created_date=mt_rest_obj.created_date,
             last_modified_date=mt_rest_obj.last_modified_date,
         )
+
+
+# Note: Do not import this from core connection.
+# As we need the class here.
+_supported_types = {
+    v.TYPE: v
+    for v in globals().values()
+    if isinstance(v, type) and issubclass(v, _Connection) and not v.__name__.startswith("_")
+}
