@@ -31,6 +31,7 @@ python-library-reference/promptflow
 :maxdepth: 1
 
 tools-reference/llm-tool
+tools-reference/llm-vision-tool
 tools-reference/prompt-tool
 tools-reference/python-tool
 tools-reference/serp-api-tool
