@@ -462,7 +462,7 @@ def process_function_call(function_call):
     return param
 
 
-def post_process_chat_api_response(completion, stream, functions, tools):
+def post_process_chat_api_response(completion, stream, functions=None, tools=None):
     if stream:
         # TODO: test if tools is supported by stream mode.
         if functions is not None:

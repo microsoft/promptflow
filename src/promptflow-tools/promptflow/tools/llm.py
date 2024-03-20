@@ -1,9 +1,6 @@
 from typing import Union
 
-from openai import AzureOpenAI as AzureOpenAIClient, OpenAI as OpenAIClient
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
-    preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
-    post_process_chat_api_response, validate_functions, process_function_call
+from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import InvalidConnectionType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.aoai import AzureOpenAI
