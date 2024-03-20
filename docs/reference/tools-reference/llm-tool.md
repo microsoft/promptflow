@@ -2,20 +2,21 @@
 
 ## Introduction
 Prompt flow LLM tool enables you to leverage widely used large language models like [OpenAI](https://platform.openai.com/) or [Azure OpenAI (AOAI)](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/overview) for natural language processing. 
+> [!NOTE]
+> Please upgrade to latest [promptflow-tools](https://pypi.org/project/promptflow-tools/) package to consume new llm tools.
 
 Prompt flow provides a few different LLM APIs:
 - **[Completion](https://platform.openai.com/docs/api-reference/completions)**: OpenAI's completion models generate text based on provided prompts.
 - **[Chat](https://platform.openai.com/docs/api-reference/chat)**: OpenAI's chat models facilitate interactive conversations with text-based inputs and responses.
-> [!NOTE]
-> We now remove the `embedding` option from LLM tool api setting. You can use embedding api with [Embedding tool](https://github.com/microsoft/promptflow/blob/main/docs/reference/tools-reference/embedding_tool.md).
 
 
 ## Prerequisite
-Create OpenAI resources:
+Create OpenAI or Azure OpenAI resources:
 
 - **OpenAI**
 
     Sign up account [OpenAI website](https://openai.com/)
+
     Login and [Find personal API key](https://platform.openai.com/account/api-keys)
 
 - **Azure OpenAI (AOAI)**
@@ -66,8 +67,8 @@ Setup connections to provisioned resources in prompt flow.
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
 | frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0.| No       |
 | logit\_bias            | dictionary  | the logit bias for the language model. Default is empty dictionary.                            | No       |
-| function\_call         | object      | value that controls which function is called by the model. Default is null.                    | No       |
-| functions              | list        | a list of functions the model may generate JSON inputs for. Default is null.                   | No       |
+| tool\_choice           | object      | value that controls which function is called by the model. Default is null.                    | No       |
+| tools                  | list        | a list of tools the model may generate JSON inputs for. Default is null.                       | No       |
 | response_format        | object      | an object specifying the format that the model must output. Default is null.                   | No       |
 
 ## Outputs
