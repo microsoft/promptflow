@@ -30,8 +30,12 @@ def _get_pf_client():
     return _client
 
 
-def add_param_template(parser):
+def add_param_template_required(parser):
     parser.add_argument("--template", type=str, required=True, help="The experiment template path.")
+
+
+def add_param_template(parser):
+    parser.add_argument("--template", type=str, help="The experiment template path.")
 
 
 def add_param_name(parser):
@@ -68,7 +72,7 @@ def add_experiment_create(subparsers):
     # Create an experiment from a template:
     pf experiment create --template flow.exp.yaml
     """
-    add_params = [add_param_template, add_param_name] + base_params
+    add_params = [add_param_template_required, add_param_name] + base_params
 
     create_parser = activate_action(
         name="create",

@@ -418,3 +418,16 @@ def try_get_long_running_logging_interval(logger: logging.Logger, default_interv
             return default_interval
     # If the environment variable is not set, return none to disable the long running logging
     return None
+
+
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value
