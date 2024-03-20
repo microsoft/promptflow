@@ -114,7 +114,6 @@ REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections
 SCRUBBED_VALUE = CONNECTION_SCRUBBED_VALUE
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
-CHAT_HISTORY = "chat_history"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
@@ -160,6 +159,7 @@ class RunTypes:
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
     COMMAND = "command"
+    CHAT_GROUP = "chat_group"
 
 
 class AzureRunTypes:
@@ -395,6 +395,13 @@ class ExperimentNodeType(object):
     FLOW = "flow"
     CHAT_GROUP = "chat_group"
     COMMAND = "command"
+
+
+EXP_NODE_TYPE_2_RUN_TYPE = {
+    ExperimentNodeType.FLOW: RunTypes.BATCH,
+    ExperimentNodeType.CHAT_GROUP: RunTypes.CHAT_GROUP,
+    ExperimentNodeType.COMMAND: RunTypes.COMMAND,
+}
 
 
 class ExperimentStatus(object):

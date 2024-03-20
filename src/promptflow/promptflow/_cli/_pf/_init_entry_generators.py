@@ -13,7 +13,7 @@ from pathlib import Path
 from jinja2 import Environment, Template, meta
 
 from promptflow._sdk._constants import DEFAULT_ENCODING
-from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.flow_utils import is_executable_chat_flow
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import UserErrorException
@@ -231,7 +231,7 @@ class StreamlitFileReplicator:
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
-        self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
+        self.is_chat_flow, self.chat_history_input_name, error_msg = is_executable_chat_flow(self.executable)
 
     @property
     def flow_inputs(self):

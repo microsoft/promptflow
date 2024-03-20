@@ -16,7 +16,6 @@ from typing import Dict, Iterable, List, Tuple, Union
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
-    CHAT_HISTORY,
     DEFAULT_ENCODING,
     FLOW_META_JSON_GEN_TIMEOUT,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
@@ -30,16 +29,14 @@ from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
-    dump_flow_result,
     generate_flow_tools_json,
     generate_random_string,
     logger,
-    parse_variant,
 )
-from promptflow._sdk.entities._eager_flow import FlexFlow
-from promptflow._sdk.entities._flow import Flow, FlowBase
+from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, parse_variant
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
@@ -159,7 +156,7 @@ class FlowOperations(TelemetryMixin):
         session = kwargs.pop("session", None)
         # Run id will be set in operation context and used for session
         run_id = kwargs.get("run_id", str(uuid.uuid4()))
-        flow: FlowBase = load_flow(flow)
+        flow = load_flow(flow)
 
         if isinstance(flow, FlexFlow):
             if variant or node:
@@ -181,7 +178,7 @@ class FlowOperations(TelemetryMixin):
                 is_chat_flow, chat_history_input_name = False, None
                 flow_inputs, dependency_nodes_outputs = inputs, None
             else:
-                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
+                is_chat_flow, chat_history_input_name, _ = is_executable_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
                     node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
                 )
@@ -197,36 +194,6 @@ class FlowOperations(TelemetryMixin):
                     allow_generator_output=allow_generator_output and is_chat_flow,
                     run_id=run_id,
                 )
-
-    @staticmethod
-    def _is_chat_flow(flow):
-        """
-        Check if the flow is chat flow.
-        Check if chat_history in the flow input and only one chat input and
-        one chat output to determine if it is a chat flow.
-        """
-        chat_inputs = [item for item in flow.inputs.values() if item.is_chat_input]
-        chat_outputs = [item for item in flow.outputs.values() if item.is_chat_output]
-        chat_history_input_name = next(
-            iter([input_name for input_name, value in flow.inputs.items() if value.is_chat_history]), None
-        )
-        if (
-            not chat_history_input_name
-            and CHAT_HISTORY in flow.inputs
-            and flow.inputs[CHAT_HISTORY].is_chat_history is not False
-        ):
-            chat_history_input_name = CHAT_HISTORY
-        is_chat_flow, error_msg = True, ""
-        if len(chat_inputs) != 1:
-            is_chat_flow = False
-            error_msg = "chat flow does not support multiple chat inputs"
-        elif len(chat_outputs) != 1:
-            is_chat_flow = False
-            error_msg = "chat flow does not support multiple chat outputs"
-        elif not chat_history_input_name:
-            is_chat_flow = False
-            error_msg = "chat_history is required in the inputs of chat flow"
-        return is_chat_flow, chat_history_input_name, error_msg
 
     @monitor_operation(activity_name="pf.flows._chat", activity_type=ActivityType.INTERNALCALL)
     def _chat(
@@ -249,14 +216,14 @@ class FlowOperations(TelemetryMixin):
         """
         from promptflow._sdk._load_functions import load_flow
 
-        flow: FlowBase = load_flow(flow)
+        flow = load_flow(flow)
         flow.context.variant = variant
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init(
             environment_variables=environment_variables,
             stream_log=False,  # no need to stream log in chat mode
         ) as submitter:
-            is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
+            is_chat_flow, chat_history_input_name, error_msg = is_executable_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
 
@@ -400,7 +367,7 @@ class FlowOperations(TelemetryMixin):
         that the flow involves no additional includes, symlink, or variant.
         :param output_dir: output directory to export connections
         """
-        flow: FlowBase = load_flow(built_flow_dag_path)
+        flow = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -531,7 +498,7 @@ class FlowOperations(TelemetryMixin):
             if not value.is_chat_history
         }
 
-        is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        is_chat_flow, chat_history_input_name, _ = is_executable_chat_flow(executable)
         chat_output_name = next(
             filter(
                 lambda key: executable.outputs[key].is_chat_output,
@@ -601,7 +568,7 @@ class FlowOperations(TelemetryMixin):
         output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow: FlowBase = load_flow(flow)
+        flow = load_flow(flow)
         is_csharp_flow = flow.language == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
@@ -690,7 +657,7 @@ class FlowOperations(TelemetryMixin):
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
-        if isinstance(flow_entity, Flow):
+        if not isinstance(flow_entity, FlexFlow):
             # only DAG flow has tools meta
             source_path_mapping = {}
             flow_tools, tools_errors = self._generate_tools_meta(
@@ -735,7 +702,7 @@ class FlowOperations(TelemetryMixin):
         This is a private interface for vscode extension, so do not change the interface unless necessary.
 
         Usage:
-        from promptflow import PFClient
+        from promptflow.client import PFClient
         PFClient().flows._generate_tools_meta(flow="flow.dag.yaml", source_name="convert_to_dict.py")
 
         :param flow: path to the flow directory or flow dag to export
@@ -750,7 +717,7 @@ class FlowOperations(TelemetryMixin):
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow: FlowBase = load_flow(source=flow)
+        flow = load_flow(source=flow)
         if not isinstance(flow, Flow):
             # No tools meta for eager flow
             return {}, {}
@@ -815,7 +782,7 @@ class FlowOperations(TelemetryMixin):
         This is a private interface for vscode extension, so do not change the interface unless necessary.
 
         Usage:
-        from promptflow import PFClient
+        from promptflow.client import PFClient
         PFClient().flows._generate_flow_meta(flow="flow.dag.yaml")
 
         :param flow: path to the flow directory or flow dag to export
@@ -836,10 +803,10 @@ class FlowOperations(TelemetryMixin):
             return {}
 
         with self._resolve_additional_includes(flow.path) as new_flow_dag_path:
-            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+            from promptflow._proxy import ProxyFactory
 
             return (
-                ExecutorProxyFactory()
+                ProxyFactory()
                 .get_executor_proxy_cls(flow.language)
                 .generate_flow_json(
                     flow_file=new_flow_dag_path,

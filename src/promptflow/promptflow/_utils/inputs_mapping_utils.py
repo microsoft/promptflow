@@ -5,8 +5,8 @@ import re
 from typing import Any, Dict, Mapping
 
 from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._utils._errors import ApplyInputMappingError
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.batch._errors import InputMappingError
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -78,7 +78,7 @@ def apply_inputs_mapping(
     # Return all not found mapping relations in one exception to provide better debug experience.
     if notfound_mapping_relations:
         invalid_relations = ", ".join(notfound_mapping_relations)
-        raise InputMappingError(
+        raise ApplyInputMappingError(
             message_format=(
                 "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data. "
