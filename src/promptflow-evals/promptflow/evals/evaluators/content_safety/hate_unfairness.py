@@ -10,14 +10,14 @@ def init(project_scope: dict, credential: TokenCredential):
 
     :param model_config: Configuration for the Azure OpenAI model.
     :type model_config: AzureOpenAIConnection
-    :return: A function that evaluates hate fairness.
+    :return: A function that evaluates hate unfairness.
     :rtype: function
 
     **Usage**
 
     .. code-block:: python
 
-        eval_fn = hate_fairness.init(model_config)
+        eval_fn = hate_unfairness.init(model_config)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
     """
 
