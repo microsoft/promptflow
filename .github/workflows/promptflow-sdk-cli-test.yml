@@ -43,6 +43,7 @@ jobs:
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
   sdk_cli_tests:
     needs: build
     strategy:
@@ -78,6 +79,7 @@ jobs:
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci ./promptflow-tracing -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install --force-reinstall $_.FullName}}
         pip freeze
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'

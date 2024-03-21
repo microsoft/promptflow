@@ -70,6 +70,7 @@ jobs:
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
   executor_e2e_tests:
     needs: build
     strategy:
@@ -104,6 +105,7 @@ jobs:
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci ./promptflow-tracing -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install --force-reinstall $_.FullName}}
         pip freeze
     - name: Azure Login
       uses: azure/login@v1
