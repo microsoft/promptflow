@@ -628,9 +628,12 @@ class FlowExecutor:
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             # Output is set as an empty dict, because the aggregation outputs story is not finalized.
             return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
-        except Exception:
+        except Exception as ex:
             if self._raise_ex:
                 raise
+            # Cancel all the running node runs if receiving KeyboardInterrupt.
+            if isinstance(ex, KeyboardInterrupt):
+                run_tracker.cancel_node_runs(run_id)
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
         finally:

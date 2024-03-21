@@ -238,20 +238,23 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
-    def cancel_node_runs(self, flow_run_id, msg: str = "Received cancel request."):
+    def cancel_node_runs(self, flow_run_id, msg):
         node_runs = self.collect_node_runs(flow_run_id)
         for node_run_info in node_runs:
-            if node_run_info.status != Status.Running:
-                continue
-            msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
-            err = ToolCanceledError(
-                message_format="Tool execution is canceled because: {msg}.",
-                msg=msg,
-                target=ErrorTarget.EXECUTOR,
-            )
-            self.end_run(node_run_info.run_id, ex=err)
-            node_run_info.status = Status.Canceled
-            self.persist_node_run(node_run_info)
+            self.cancel_node_run(node_run_info, msg)
+
+    def cancel_node_run(self, node_run_info: RunInfo, msg: str = "Received cancel request."):
+        if node_run_info.status != Status.Running:
+            return
+        msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
+        err = ToolCanceledError(
+            message_format="Tool execution is canceled because: {msg}.",
+            msg=msg,
+            target=ErrorTarget.EXECUTOR,
+        )
+        self.end_run(node_run_info.run_id, ex=err)
+        node_run_info.status = Status.Canceled
+        self.persist_node_run(node_run_info)
 
     def end_run(
         self,
