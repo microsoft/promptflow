@@ -20,14 +20,16 @@ Trigger the [workflow](https://github.com/microsoft/promptflow/actions/workflows
 5. We recommend creating a clean virtual Python environment and installing all dependencies using src/promptflow/setup.py.
    - `python -m venv venv`
    - `venv\Scripts\activate`
-   - `pip install promptflow[azure,executable] promptflow-tools`
+   - `pip install promptflow[azure,executable,azureml-serving,executor-service] promptflow-tools`
 
 
 ### Building
 1. Update the version number `$(env.CLI_VERSION)` and `$(env.FILE_VERSION)` in `product.wxs`, `promptflow.wixproj` and `version_info.txt`.
-2. `cd scripts/installer/windows/scripts` and run `pyinstaller promptflow.spec`.
-3. `cd scripts/installer/windows` and Run `msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj`.
-4. The unsigned MSI will be in the `scripts/installer/windows/out` folder.
+2. `cd scripts/installer/windows/scripts` and run `python generate_dependency.py`.
+3. run `pyinstaller promptflow.spec`.
+4. `cd scripts/installer/windows` and Run `msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj`.
+5. The unsigned MSI will be in the `scripts/installer/windows/out` folder.
 
 ## Notes
 - If you encounter "Access is denied" error when running promptflow. Please follow the [link](https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-deployment-implement?view=o365-worldwide#customize-attack-surface-reduction-rules) to add the executable to the Windows Defender Attack Surface Reduction (ASR) rule.
+Or you can add promptflow installation folder to the Windows Defender exclusion list.

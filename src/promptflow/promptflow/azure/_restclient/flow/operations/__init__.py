@@ -7,6 +7,8 @@
 from ._bulk_runs_operations import BulkRunsOperations
 from ._connection_operations import ConnectionOperations
 from ._connections_operations import ConnectionsOperations
+from ._experiments_operations import ExperimentsOperations
+from ._experiment_templates_operations import ExperimentTemplatesOperations
 from ._flow_runtimes_operations import FlowRuntimesOperations
 from ._flow_runtimes_workspace_independent_operations import FlowRuntimesWorkspaceIndependentOperations
 from ._flows_operations import FlowsOperations
@@ -19,6 +21,8 @@ __all__ = [
     'BulkRunsOperations',
     'ConnectionOperations',
     'ConnectionsOperations',
+    'ExperimentsOperations',
+    'ExperimentTemplatesOperations',
     'FlowRuntimesOperations',
     'FlowRuntimesWorkspaceIndependentOperations',
     'FlowsOperations',

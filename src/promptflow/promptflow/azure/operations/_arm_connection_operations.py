@@ -12,7 +12,7 @@ from azure.ai.ml._scope_dependent_operations import (
 )
 from azure.core.exceptions import ClientAuthenticationError
 
-from promptflow._sdk._constants import ConnectionAuthMode
+from promptflow._constants import ConnectionAuthMode
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.azure._models._models import WorkspaceConnectionPropertiesV2BasicResource
@@ -300,6 +300,8 @@ class ArmConnectionOperations(_ScopeDependentOperations):
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+        except UserErrorException as e:  # For example: OpenURLFailedUserError
+            raise e
         except Exception as e:
             raise SystemErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
 

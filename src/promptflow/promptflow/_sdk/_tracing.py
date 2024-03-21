@@ -20,7 +20,6 @@ from promptflow._constants import (
     SpanResourceAttributesFieldName,
     TraceEnvironmentVariableName,
 )
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
@@ -32,7 +31,8 @@ from promptflow._sdk._service.entry import entry
 from promptflow._sdk._service.utils.utils import get_port_from_config, is_pfs_service_healthy, is_port_in_use
 from promptflow._sdk._utils import extract_workspace_triad_from_trace_provider
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._start_trace import _force_set_tracer_provider, _is_tracer_provider_set
 
 logger = get_cli_sdk_logger()
@@ -86,13 +86,13 @@ def _print_tracing_url_from_local(
     exp: typing.Optional[str] = None,
     run: typing.Optional[str] = None,
 ) -> None:
-    url = f"http://localhost:{pfs_port}/v1.0/ui/traces"
+    url = f"http://localhost:{pfs_port}/v1.0/ui/traces/"
     if run is not None:
-        url += f"?run={run}"
+        url += f"?#run={run}"
     elif exp is not None:
-        url += f"?experiment={exp}"
+        url += f"?#experiment={exp}"
     elif session_id is not None:
-        url += f"?session={session_id}"
+        url += f"?#session={session_id}"
     print(f"You can view the traces from local: {url}")
 
 
@@ -177,7 +177,7 @@ def start_trace_with_devkit(
     ref_line_run_id = env_attrs.get(ContextAttributeKey.REFERENCED_LINE_RUN_ID, None)
     op_ctx = OperationContext.get_instance()
     # remove `referenced.line_run_id` from context to avoid stale value set by previous node
-    if ref_line_run_id:
+    if ref_line_run_id is None:
         op_ctx._remove_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID)
     else:
         op_ctx._add_otel_attributes(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, ref_line_run_id)
@@ -216,8 +216,10 @@ def setup_exporter_to_pfs() -> None:
     tracer_provider = TracerProvider(resource=res)
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
-    otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
-    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
+    if endpoint is not None:
+        # create OTLP span exporter if endpoint is set
+        otlp_span_exporter = OTLPSpanExporter(endpoint=endpoint)
+        tracer_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
     # set tracer provider
     if _is_tracer_provider_set():
         _force_set_tracer_provider(tracer_provider)

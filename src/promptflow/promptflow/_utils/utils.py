@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
-from promptflow._constants import DEFAULT_ENCODING
+from promptflow._constants import DEFAULT_ENCODING, PF_LONG_RUNNING_LOGGING_INTERVAL
 from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.types import AssistantDefinition
 
@@ -366,3 +366,68 @@ def copy_file_except(src_dir, dst_dir, exclude_file):
             src_file_path = os.path.join(root, file)
             dst_file_path = os.path.join(current_dst_dir, file)
             shutil.copy2(src_file_path, dst_file_path)
+
+
+def in_jupyter_notebook() -> bool:
+    """
+    Checks if user is using a Jupyter Notebook. This is necessary because logging is not allowed in
+    non-Jupyter contexts.
+
+    Adapted from https://stackoverflow.com/a/22424821
+    """
+    try:  # cspell:ignore ipython
+        from IPython import get_ipython
+
+        if "IPKernelApp" not in get_ipython().config:
+            return False
+    except ImportError:
+        return False
+    except AttributeError:
+        return False
+    return True
+
+
+def snake_to_camel(name):
+    return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
+
+
+def prepare_folder(path: Union[str, Path]) -> Path:
+    """Create folder if not exists and return the folder path."""
+    path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def try_get_long_running_logging_interval(logger: logging.Logger, default_interval: int):
+    logging_interval_in_env = os.environ.get(PF_LONG_RUNNING_LOGGING_INTERVAL, None)
+    if logging_interval_in_env:
+        try:
+            value = int(logging_interval_in_env)
+            if value <= 0:
+                raise ValueError
+            logger.info(
+                f"Using value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable as "
+                f"logging interval: {logging_interval_in_env}"
+            )
+            return value
+        except ValueError:
+            logger.warning(
+                f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable "
+                f"('{logging_interval_in_env}') is invalid, use default value {default_interval}"
+            )
+            return default_interval
+    # If the environment variable is not set, return none to disable the long running logging
+    return None
+
+
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value

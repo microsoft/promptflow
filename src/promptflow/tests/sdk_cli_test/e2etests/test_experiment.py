@@ -204,7 +204,6 @@ class TestExperiment:
         exp = client._experiments.get(exp.name)
         assert exp.status == ExperimentStatus.TERMINATED
 
-    @pytest.mark.skip("This test is not working currently")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_flow_test_with_experiment(self, monkeypatch):
         # set queue size to 1 to make collection faster
@@ -253,7 +252,7 @@ class TestExperiment:
             time.sleep(10)  # TODO fix this
             line_runs = client._traces.list_line_runs(session_id=session)
             if len(line_runs) > 0:
-                assert len(line_runs) > 1
+                assert len(line_runs) == 1
                 line_run = line_runs[0]
                 assert len(line_run.evaluations) == 1, "line run evaluation not exists!"
                 assert "eval_classification_accuracy" == list(line_run.evaluations.values())[0].display_name
@@ -307,3 +306,19 @@ class TestExperiment:
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+
+    @pytest.mark.skip("Enable when chat group node run is ready")
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_with_chat_group(self, pf: PFClient):
+        template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        exp = pf._experiments.create_or_update(experiment)
+
+        if is_live():
+            # Async start
+            exp = pf._experiments.start(exp)
+            exp = self.wait_for_experiment_terminated(pf, exp)
+        else:
+            exp = pf._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(pf, exp).start()

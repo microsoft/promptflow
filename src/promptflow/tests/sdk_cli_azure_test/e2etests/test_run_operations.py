@@ -18,9 +18,10 @@ import pydash
 import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
+from pytest_mock import MockFixture
 
-from promptflow._sdk._constants import DownloadedRun, RunStatus
-from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
+from promptflow._sdk._constants import DAG_FILE_NAME, DownloadedRun, RunStatus
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -1207,7 +1208,8 @@ class TestFlowRun:
                 user_assigned_identities=[
                     ManagedIdentityConfiguration(client_id="fake_client_id", resource_id="fake_resource_id")
                 ],
-            )
+            ),
+            _kind="default",  # make the mocked workspace pass the datastore check
         )
 
         def submit(*args, **kwargs):
@@ -1226,3 +1228,33 @@ class TestFlowRun:
                     params_override=[{"name": run_id}],
                 )
                 pf.runs.create_or_update(run=run)
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_eager_flow_run_without_yaml(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow="entry:my_flow",
+            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=randstr("name"),
+        )
+        run = pf.runs.stream(run)
+        assert run.status == RunStatus.COMPLETED
+
+        # test YAML is generated
+        expected_files = [
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/{DAG_FILE_NAME}",
+        ]
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run.name, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run.name, file).exists()
+
+        # the YAML file will not exist in user's folder
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+
+    def test_wrong_workspace_type(self, pf: PFClient, mocker: MockFixture):
+        # test wrong workspace type "hub"
+        mocker.patch.object(pf.runs._workspace, "_kind", "hub")
+        with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
+            datastore = pf.runs._workspace_default_datastore
+            assert datastore

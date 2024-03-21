@@ -1,4 +1,4 @@
-from promptflow.exceptions import SystemErrorException, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
 class InvalidImageInput(ValidationException):
@@ -13,3 +13,8 @@ class YamlParseError(SystemErrorException):
     """Exception raised when yaml parse failed."""
 
     pass
+
+
+class ApplyInputMappingError(ValidationException):
+    def __init__(self, target: ErrorTarget = ErrorTarget.CORE, **kwargs):
+        super().__init__(target=target, **kwargs)

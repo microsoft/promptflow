@@ -10,6 +10,8 @@ from unittest import mock
 import werkzeug
 from flask.testing import FlaskClient
 
+from promptflow._sdk._service.utils.utils import encrypt_flow_path
+
 
 @contextlib.contextmanager
 def check_activity_end_telemetry(
@@ -31,7 +33,7 @@ def check_activity_end_telemetry(
             "first_call": True,
             "activity_type": "PublicApi",
             "completion_status": "Success",
-            "user_agent": f"promptflow-sdk/0.0.1 Werkzeug/{werkzeug.__version__} local_pfs/0.0.1",
+            "user_agent": [f"Werkzeug/{werkzeug.__version__}", "local_pfs/0.0.1"],
         }
         for i, expected_activity in enumerate(expected_activities):
             temp = default_expected_call.copy()
@@ -39,6 +41,9 @@ def check_activity_end_telemetry(
             expected_activity = temp
             for key, expected_value in expected_activity.items():
                 value = actual_activities[i][key]
+                if isinstance(expected_value, list):
+                    value = list(sorted(value.split(" ")))
+                    expected_value = list(sorted(expected_value))
                 assert (
                     value == expected_value
                 ), f"{key} mismatch in {i+1}th call: expect {expected_value} but got {value}"
@@ -50,11 +55,18 @@ class PFSOperations:
     RUN_URL_PREFIX = "/v1.0/Runs"
     TELEMETRY_PREFIX = "/v1.0/Telemetries"
     LINE_RUNS_PREFIX = "/v1.0/LineRuns"
+    Flow_URL_PREFIX = "/v1.0/Flows"
+    UI_URL_PREFIX = "/v1.0/ui"
 
     def __init__(self, client: FlaskClient):
         self._client = client
 
-    def remote_user_header(self):
+    def remote_user_header(self, user_agent=None):
+        if user_agent:
+            return {
+                "X-Remote-User": getpass.getuser(),
+                "User-Agent": user_agent,
+            }
         return {"X-Remote-User": getpass.getuser()}
 
     def heartbeat(self):
@@ -67,8 +79,10 @@ class PFSOperations:
             assert status_code == response.status_code, response.text
         return response
 
-    def list_connections(self, status_code=None):
-        response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers=self.remote_user_header())
+    def list_connections(self, status_code=None, user_agent=None):
+        response = self._client.get(
+            f"{self.CONNECTION_URL_PREFIX}/", headers=self.remote_user_header(user_agent=user_agent)
+        )
         if status_code:
             assert status_code == response.status_code, response.text
         return response
@@ -222,15 +236,63 @@ class PFSOperations:
 
     # trace APIs
     # LineRuns
-    def list_line_runs(self, *, session_id: Optional[str] = None, runs: Optional[List[str]] = None):
+    def list_line_runs(
+        self,
+        *,
+        session_id: Optional[str] = None,
+        runs: Optional[List[str]] = None,
+        trace_ids: Optional[List[str]] = None,
+    ):
         query_string = {}
         if session_id is not None:
             query_string["session"] = session_id
         if runs is not None:
             query_string["run"] = ",".join(runs)
+        if trace_ids is not None:
+            query_string["trace_ids"] = ",".join(trace_ids)
         response = self._client.get(
             f"{self.LINE_RUNS_PREFIX}/list",
             query_string=query_string,
             headers=self.remote_user_header(),
         )
+        return response
+
+    def get_flow(self, flow_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.get(f"{self.Flow_URL_PREFIX}/get", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def test_flow(self, flow_path, request_body, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.post(f"{self.Flow_URL_PREFIX}/test", json=request_body, query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def get_flow_ux_inputs(self, flow_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.get(f"{self.Flow_URL_PREFIX}/ux_inputs", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def save_flow_image(self, flow_path: str, request_body, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path}
+        response = self._client.post(f"{self.UI_URL_PREFIX}/media_save", json=request_body, query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    def show_image(self, flow_path: str, image_path: str, status_code=None):
+        flow_path = encrypt_flow_path(flow_path)
+        query_string = {"flow": flow_path, "image_path": image_path}
+        response = self._client.get(f"{self.UI_URL_PREFIX}/media", query_string=query_string)
+        if status_code:
+            assert status_code == response.status_code, response.text
         return response

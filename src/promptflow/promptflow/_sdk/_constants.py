@@ -7,6 +7,13 @@ from collections import namedtuple
 from enum import Enum
 from pathlib import Path
 
+from promptflow._constants import (
+    CONNECTION_SCRUBBED_VALUE,
+    ConnectionAuthMode,
+    ConnectionType,
+    CustomStrongTypeConnectionConfigs,
+)
+
 LOGGER_NAME = "promptflow"
 
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
@@ -104,10 +111,9 @@ KEYRING_ENCRYPTION_KEY_NAME = "encryption_key"
 KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").resolve()
 REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
-SCRUBBED_VALUE = "******"
+SCRUBBED_VALUE = CONNECTION_SCRUBBED_VALUE
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
-CHAT_HISTORY = "chat_history"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
@@ -142,28 +148,11 @@ TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
+UX_INPUTS_JSON = "ux.inputs.json"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
-
-class CustomStrongTypeConnectionConfigs:
-    PREFIX = "promptflow.connection."
-    TYPE = "custom_type"
-    MODULE = "module"
-    PACKAGE = "package"
-    PACKAGE_VERSION = "package_version"
-    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
-    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
-    PROMPTFLOW_PACKAGE_KEY = PREFIX + PACKAGE
-    PROMPTFLOW_PACKAGE_VERSION_KEY = PREFIX + PACKAGE_VERSION
-
-    @staticmethod
-    def is_custom_key(key):
-        return key not in [
-            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
-            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
-            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
-            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
-        ]
+# chat group
+STOP_SIGNAL = "[STOP]"
 
 
 class RunTypes:
@@ -171,6 +160,7 @@ class RunTypes:
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
     COMMAND = "command"
+    CHAT_GROUP = "chat_group"
 
 
 class AzureRunTypes:
@@ -298,6 +288,7 @@ class LocalStorageFilenames:
     DETAIL = "detail.json"
     METRICS = "metrics.json"
     LOG = "logs.txt"
+    FLOW_LOGS_FOLDER = "flow_logs"
     EXCEPTION = "error.json"
     META = "meta.json"
 
@@ -332,25 +323,6 @@ class RunInfoSources(str, Enum):
 class ConfigValueType(str, Enum):
     STRING = "String"
     SECRET = "Secret"
-
-
-class ConnectionType(str, Enum):
-    _NOT_SET = "NotSet"
-    AZURE_OPEN_AI = "AzureOpenAI"
-    OPEN_AI = "OpenAI"
-    QDRANT = "Qdrant"
-    COGNITIVE_SEARCH = "CognitiveSearch"
-    SERP = "Serp"
-    AZURE_CONTENT_SAFETY = "AzureContentSafety"
-    FORM_RECOGNIZER = "FormRecognizer"
-    WEAVIATE = "Weaviate"
-    SERVERLESS = "Serverless"
-    CUSTOM = "Custom"
-
-
-class ConnectionAuthMode:
-    KEY = "key"
-    MEID_TOKEN = "meid_token"  # Microsoft Entra ID
 
 
 ALL_CONNECTION_TYPES = set(
@@ -427,6 +399,13 @@ class ExperimentNodeType(object):
     COMMAND = "command"
 
 
+EXP_NODE_TYPE_2_RUN_TYPE = {
+    ExperimentNodeType.FLOW: RunTypes.BATCH,
+    ExperimentNodeType.CHAT_GROUP: RunTypes.CHAT_GROUP,
+    ExperimentNodeType.COMMAND: RunTypes.COMMAND,
+}
+
+
 class ExperimentStatus(object):
     NOT_STARTED = "NotStarted"
     QUEUING = "Queuing"
@@ -478,6 +457,11 @@ class LineRunFieldName:
     EVALUATIONS = "evaluations"
 
 
+class ChatGroupSpeakOrder(str, Enum):
+    SEQUENTIAL = "sequential"
+    LLM = "llm"
+
+
 TRACE_LIST_DEFAULT_LIMIT = 1000
 
 
@@ -488,3 +472,9 @@ class IdentityKeys(str, Enum):
     USER_IDENTITY = "user_identity"
     RESOURCE_ID = "resource_id"
     CLIENT_ID = "client_id"
+
+
+# Note: Keep these for backward compatibility
+CustomStrongTypeConnectionConfigs = CustomStrongTypeConnectionConfigs
+ConnectionType = ConnectionType
+ConnectionAuthMode = ConnectionAuthMode
