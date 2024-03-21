@@ -20,7 +20,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import ErrorTarget, ValidationException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -216,6 +216,21 @@ class Configuration(object):
                     "Cannot specify flow directory as run output path; "
                     "if you want to specify run output path under flow directory, "
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
+                )
+        elif key == Configuration.TRACE_PROVIDER:
+            try:
+                from promptflow.azure._utils._tracing import validate_trace_provider
+
+                validate_trace_provider(value)
+            except ImportError:
+                msg = (
+                    '"promptflow[azure]" is required to validate trace provider, '
+                    'please install it by running "pip install promptflow[azure]" with your version.'
+                )
+                raise UserErrorException(
+                    message=msg,
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    no_personal_data_message=msg,
                 )
         return
 
