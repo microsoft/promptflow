@@ -14,11 +14,17 @@ import waitress
 from promptflow._cli._params import base_params
 from promptflow._cli._utils import activate_action
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
-from promptflow._sdk._constants import PF_SERVICE_DEBUG, PF_SERVICE_WORKER_NUM
+from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
+    PF_SERVICE_DEBUG,
+    PF_SERVICE_LOG_FILE,
+    PF_SERVICE_WORKER_NUM,
+)
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
     check_pfs_service_status,
     dump_port_to_config,
+    get_current_env_pfs_file,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
@@ -267,9 +273,14 @@ def stop_service():
 def show_service():
     port = get_port_from_config()
     status = get_started_service_info(port)
+    if is_run_from_built_binary():
+        log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
+    else:
+        log_file = get_current_env_pfs_file(PF_SERVICE_LOG_FILE)
     if status:
+        status.update({"log_file": log_file.as_posix()})
         print(status)
         return
     else:
-        logger.warning("Promptflow service is not started.")
+        logger.warning(f"Promptflow service is not started. log_file: {log_file.as_posix()}")
         sys.exit(1)
