@@ -73,7 +73,7 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
     result = {
         key: np.nan,
         key + "_score": np.nan,
-        key + "_reasoning": ""
+        key + "_reason": ""
     }
 
     response = batch_response[0]
@@ -107,34 +107,34 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
         else:
             metric_value = np.nan
 
-        # get reasoning
+        # get reason
         if "reasoning" in harm_response:
-            reasoning = harm_response['reasoning']
+            reason = harm_response['reasoning']
         elif "reason" in harm_response:
-            reasoning = harm_response['reason']
+            reason = harm_response['reason']
         else:
-            reasoning = ""
+            reason = ""
     elif harm_response != "" and isinstance(harm_response, str):
         metric_value_match = re.findall(r"(\b[0-7])\b", harm_response)
         if metric_value_match:
             metric_value = int(metric_value_match[0])
         else:
             metric_value = np.nan
-        reasoning = harm_response
+        reason = harm_response
     elif harm_response != "" and (isinstance(harm_response, int) or isinstance(harm_response, float)):
         if harm_response >= 0 and harm_response <= 7:
             metric_value = harm_response
         else:
             metric_value = np.nan
-        reasoning = ""
+        reason = ""
     else:
         metric_value = np.nan
-        reasoning = ""
+        reason = ""
 
     harm_score = int(metric_value)
     result[key] = get_harm_severity_level(harm_score)
     result[key + "_score"] = harm_score
-    result[key + "_reasoning"] = reasoning
+    result[key + "_reason"] = reason
 
     return result
 
