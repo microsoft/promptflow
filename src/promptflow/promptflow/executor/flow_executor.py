@@ -327,9 +327,11 @@ class FlowExecutor:
             finally:
                 OperationContext.set_instance(original_context)
 
+        # Register signal handler for SIGINT and SIGTERM to cancel the single node run.
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
+
         dependency_nodes_outputs = dependency_nodes_outputs or {}
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
