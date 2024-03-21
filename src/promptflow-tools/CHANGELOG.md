@@ -5,6 +5,8 @@
 ### Features Added
 - Enable token based auth in azure openai connection for tools.
 - Add "seed" to LLM and GPT-Vision tool inputs.
+
+### Bugs Fixed
 - Improve error message when LLM tool meets gpt-4-vision-preview model
 - Fix dynamic list function for GPT-Vision tool to avoid misleading errors
 
