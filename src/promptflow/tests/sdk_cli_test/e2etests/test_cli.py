@@ -2130,3 +2130,28 @@ class TestCli:
             )
         out, _ = capfd.readouterr()
         assert "More than one is provided for exclusive options" in out
+
+    def test_pf_test_interactive_with_non_string_streaming_output(self, monkeypatch, capsys):
+        flow_dir = Path(f"{FLOWS_DIR}/chat_flow_with_non_string_stream_output")
+        # mock user input with pop so make chat list reversed
+        chat_list = ["what is chat gpt?", "hi"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            flow_dir.as_posix(),
+            "--interactive",
+            "--verbose",
+        )
+        output_path = Path(flow_dir) / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
