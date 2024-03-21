@@ -70,6 +70,7 @@ from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
+
 logger = get_cli_sdk_logger()
 
 

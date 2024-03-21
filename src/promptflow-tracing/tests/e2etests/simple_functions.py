@@ -4,7 +4,7 @@ from typing import Union
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
-from promptflow.tracing import trace
+from promptflow.tracing._trace import trace
 
 
 @trace

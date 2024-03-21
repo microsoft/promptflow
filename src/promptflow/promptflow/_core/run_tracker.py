@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
@@ -24,6 +23,7 @@ from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
 from promptflow.tracing._openai_utils import OpenAIMetricsCalculator
 from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
+from promptflow.tracing._utils import serialize
 
 
 class RunTracker(ThreadLocalSingleton):
