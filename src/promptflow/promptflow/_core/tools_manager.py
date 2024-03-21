@@ -487,6 +487,7 @@ def _register(provider_cls, collection, type):
     # Get the connection type - provider name mapping for execution use
     # Tools/Providers related connection must have been imported
     api_name = provider_cls.__name__
+    should_break = False
     for param in initialize_inputs.values():
         if not param.annotation:
             continue

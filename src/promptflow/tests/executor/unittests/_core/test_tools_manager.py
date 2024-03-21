@@ -384,7 +384,7 @@ class TestToolsManager:
         from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 
         class MockAI1(ToolProvider):
-            def __init__(self, connection: Union[OpenAIConnection, ServerlessConnection]):
+            def __init__(self, input: str, connection: Union[OpenAIConnection, ServerlessConnection]):
                 super().__init__()
 
         class MockAI2(ToolProvider):
