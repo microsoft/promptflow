@@ -123,6 +123,8 @@ promptflow.tools.llm.llm:
     response_format:
       type:
       - object
+      enabled_by: api
+      enabled_by_value: [chat]
       advanced: false
       ui_hints:
         text_box_size: lg
@@ -148,7 +150,45 @@ promptflow.tools.llm.llm:
     seed:
       default: ""
       type:
-        - int
+      - int
+      enabled_by: api
+      enabled_by_value: [chat]
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    suffix:
+      default: ""
+      type:
+      - string
+      enabled_by: api
+      enabled_by_value: [completion]
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    logprobs:
+      default: ""
+      type:
+      - int
+      enabled_by: api
+      enabled_by_value: [completion]
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    echo:
+      default: false
+      type:
+      - bool
+      enabled_by: api
+      enabled_by_value: [completion]
+      advanced: true
+      ui_hints:
+        text_box_size: xs
+    best_of:
+      default: 1
+      type:
+      - int
+      enabled_by: api
+      enabled_by_value: [completion]
       advanced: true
       ui_hints:
         text_box_size: xs
