@@ -51,7 +51,7 @@ REQUIRES = [
     "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
     "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
     "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
-    "promptflow-tracing",  # tracing capabilities
+    "promptflow-tracing==1.0.0",  # tracing capabilities
 ]
 
 setup(
