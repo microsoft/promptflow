@@ -8,3 +8,5 @@ omit =
     */promptflow/azure/_models/*
     */promptflow/core/_connection_provider/_models/*
     *__init__.py*
+    */promptflow/executor/*
+    */promptflow/tracing/*
