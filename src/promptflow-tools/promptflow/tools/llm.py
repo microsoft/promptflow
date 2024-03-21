@@ -33,7 +33,10 @@ def llm(
     tools: list = None,
     response_format: object = None,
     seed: int = None,
-    # TODO: add only completion available params
+    suffix: str = None,
+    logprobs: int = None,
+    echo: bool = False,
+    best_of: int = 1,
     **kwargs,
 ):
     if isinstance(connection, AzureOpenAIConnection):
@@ -49,6 +52,10 @@ def llm(
                 presence_penalty=presence_penalty,
                 frequency_penalty=frequency_penalty,
                 logit_bias=logit_bias,
+                suffix=suffix,
+                logprobs=logprobs,
+                echo=echo,
+                best_of=best_of,
                 **kwargs
             )
         else:
@@ -82,6 +89,10 @@ def llm(
                 presence_penalty=presence_penalty,
                 frequency_penalty=frequency_penalty,
                 logit_bias=logit_bias,
+                suffix=suffix,
+                logprobs=logprobs,
+                echo=echo,
+                best_of=best_of,
                 **kwargs
             )
         else:
