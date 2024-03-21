@@ -13,6 +13,7 @@ import sys
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 from typing import List, Optional
 
 from promptflow._constants import LINE_NUMBER_WIDTH, PF_LOGGING_LEVEL
@@ -134,8 +135,9 @@ class FileHandlerConcurrentWrapper(logging.Handler):
     A logger instance can write different log to different files in different contexts.
     """
 
-    def __init__(self):
+    def __init__(self, is_batch_run_flow_logs=False):
         super().__init__()
+        self.is_batch_run_flow_logs = is_batch_run_flow_logs
         self._context_var = ContextVar("handler", default=None)
 
     @property
@@ -168,16 +170,6 @@ class FileHandlerConcurrentWrapper(logging.Handler):
         self._context_var.set(None)
 
 
-class LineFileHandlerConcurrentWrapper(FileHandlerConcurrentWrapper):
-    """
-    Inherit FileHandlerConcurrentWrapper and use different context variable.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self._context_var = ContextVar("batch_flow_logs_folder_handler", default=None)
-
-
 valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", "DEBUG", "NOTSET"}
 
 
@@ -194,6 +186,9 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.Logger(name)
     logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
+    # Another FileHandlerConcurrentWrapper for batch run mode's single line log.
+    # Will assign different log file path for each line execution.
+    logger.addHandler(FileHandlerConcurrentWrapper(is_batch_run_flow_logs=True))
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
     logger.addHandler(stdout_handler)
@@ -260,7 +255,7 @@ class LogContext:
 
     def __enter__(self):
         self._set_log_path()
-        self._set_batch_run_flow_logs_handler()
+        self._set_batch_run_flow_logs_path()
         self._set_credential_list()
         LogContext.set_current(self)
 
@@ -284,21 +279,22 @@ class LogContext:
         logger_list = self._get_loggers_to_set_path()
         for logger_ in logger_list:
             for log_handler in logger_.handlers:
-                if isinstance(log_handler, FileHandlerConcurrentWrapper):
+                if isinstance(log_handler, FileHandlerConcurrentWrapper) and not log_handler.is_batch_run_flow_logs:
                     handler = FileHandler(self.file_path)
                     log_handler.handler = handler
 
-    def _set_batch_run_flow_logs_handler(self):
+    # During __enter__ method, set FileHandlerConcurrentWrapper for batch run mode's single line execution log.
+    def _set_batch_run_flow_logs_path(self):
         if self.run_mode != RunMode.Batch or self.flow_logs_folder is None or self.line_number is None:
             return
-        from pathlib import Path
 
         file_name = f"{str(self.line_number).zfill(LINE_NUMBER_WIDTH)}.log"
         path = Path(self.flow_logs_folder) / file_name
-        for logger in self._get_batch_run_flow_loggers_list():
-            handler = LineFileHandlerConcurrentWrapper()
-            handler.handler = FileHandler(path)
-            logger.addHandler(handler)
+        for logger_ in self._get_batch_run_flow_loggers_list():
+            for log_handler in logger_.handlers:
+                if isinstance(log_handler, FileHandlerConcurrentWrapper) and log_handler.is_batch_run_flow_logs:
+                    handler = FileHandler(path)
+                    log_handler.handler = handler
 
     def _set_credential_list(self):
         # Set credential list to all loggers.

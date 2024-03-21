@@ -741,6 +741,7 @@ def _exec_line_for_queue(
         try:
             data = input_queue.get(timeout=1)
             if data == ProcessPoolConstants.TERMINATE_SIGNAL:
+                # Set logger context for terminate signal without line_number.
                 with log_context_initialization_func() if log_context_initialization_func else nullcontext():
                     bulk_logger.info(f"The process [{os.getpid()}] has received a terminate signal.")
                     # Add try catch in case of shutdown method is not implemented in the tracer provider.
