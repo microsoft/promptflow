@@ -1,7 +1,5 @@
 # Release History
 
-## 1.5.0 (Upcoming)
-
 ## 1.4.0 (2024.03.22)
 
 ### Features Added
