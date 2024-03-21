@@ -18,32 +18,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Python Setup
-      uses: "./.github/actions/step_create_python_environment"
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: ${{ env.packageSetupType }}
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Wheel
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheel
-        path: |
-          ${{ github.workspace }}/src/promptflow/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
-
   build_doc_job:
-    needs: build
     runs-on: windows-latest
     name: Build Doc
     steps:
@@ -55,21 +30,17 @@ jobs:
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v3
+      - name: Dev setup
+        uses: "./.github/actions/step_sdk_setup"
         with:
-          name: wheel
-          path: artifacts
+          setupType: ${{ env.packageSetupType }}
+          scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Install wheel
+      - name: Install tracing
         shell: pwsh
-        working-directory: artifacts
         run: |
-          Set-PSDebug -Trace 1
-          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executable,azureml-serving,executor-service]"}}
-          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-          gci ./promptflow-tracing -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install --force-reinstall $_.FullName}}
+          pip uninstall -y promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
           pip freeze
 
       - name: Build doc with reference doc
