@@ -19,21 +19,11 @@ class TestArmConnectionOperations:
     def test_get_connection(self, connection_ops):
         # Note: Secrets will be returned by arm api
         result = connection_ops.get(name="azure_open_ai_connection")
-        assert (
-            result._to_dict().items()
-            > {
-                "api_type": "azure",
-                "module": "promptflow.connections",
-                "name": "azure_open_ai_connection",
-            }.items()
-        )
+        assert result.name == "azure_open_ai_connection"
+        assert result.api_type == "azure"
+        assert result.module == "promptflow.connections"
 
         result = connection_ops.get(name="custom_connection")
-        assert (
-            result._to_dict().items()
-            > {
-                "name": "custom_connection",
-                "module": "promptflow.connections",
-                "configs": {},
-            }.items()
-        )
+        assert result.name == "azure_open_ai_connection"
+        assert result.configs == {}
+        assert result.module == "promptflow.connections"
