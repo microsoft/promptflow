@@ -23,7 +23,7 @@ from promptflow.tracing import trace
 URL_PREFIX = "https://platform.openai.com/files/"
 RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
 
-# Why we define global variable instead of function parameter? We want to keep trace input as simple as possible.
+
 cli_var: ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]] = \
     ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]]("cli_var", default=None)
 tool_invoker_var: ContextVar[AssistantToolInvoker] = ContextVar[AssistantToolInvoker]("tool_invoker_var", default=None)
@@ -162,10 +162,10 @@ async def wait_for_run_complete(thread_id: str, run_id: str):
             continue
         elif run.status in {"failed", "cancelled", "expired"}:
             if run.last_error is not None:
-                error_message = f"The assistant tool runs in '{run.status}' status. " \
+                error_message = f"The run {run.id} is in '{run.status}' status. " \
                                 f"Error code: {run.last_error.code}. Message: {run.last_error.message}"
             else:
-                error_message = f"The assistant tool runs in '{run.status}' status without a specific error message."
+                error_message = f"The run {run.id} is in '{run.status}' status without a specific error message."
             raise Exception(error_message)
         else:
             # Run completed
@@ -198,20 +198,26 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
             if run.status == "requires_action":
                 await require_actions(thread_id, run)
         elif run_step.status in {"cancelled", "failed", "expired"}:
-            raise Exception(f"Run step {run_step_id} failed with status: {run_step.status}")
+            if run_step.last_error is not None:
+                error_message = f"The run step {run_step.id} is in '{run_step.status}' status. " \
+                                f"Error code: {run_step.last_error.code}. Message: {run_step.last_error.message}"
+            else:
+                error_message = f"The run step {run_step.id} is in '{run_step.status}' " \
+                                f"status without a specific error message."
+            raise Exception(error_message)
         else:
             # Run step completed
             break
-    return await update_run_step_trace(run_step, thread_id)
+    return await update_run_step_trace(run_step)
 
-async def update_run_step_trace(run_step, thread_id):
+async def update_run_step_trace(run_step):
     """Custom trace with run_step details"""
     # update trace name with run_step type
     span = get_current_span()
     cli = cli_var.get()
     if run_step.type == "message_creation":
         msg_id = run_step.step_details.message_creation.message_id
-        message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=thread_id)
+        message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=run_step.thread_id)
         return convert_message_content(message.content)
     elif run_step.type == "tool_calls":
         if run_step.step_details.tool_calls[0].type == "code_interpreter":

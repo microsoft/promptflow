@@ -208,16 +208,16 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
         else:
             # Run step completed
             break
-    return await update_run_step_trace(run_step, thread_id)
+    return await update_run_step_trace(run_step)
 
-async def update_run_step_trace(run_step, thread_id):
+async def update_run_step_trace(run_step):
     """Custom trace with run_step details"""
     # update trace name with run_step type
     span = get_current_span()
     cli = cli_var.get()
     if run_step.type == "message_creation":
         msg_id = run_step.step_details.message_creation.message_id
-        message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=thread_id)
+        message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=run_step.thread_id)
         return convert_message_content(message.content)
     elif run_step.type == "tool_calls":
         if run_step.step_details.tool_calls[0].type == "code_interpreter":
