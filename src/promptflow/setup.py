@@ -80,9 +80,9 @@ setup(
     extras_require={
         "azure": [
             "azure-core>=1.26.4,<2.0.0",
-            "azure-storage-blob[aio]>=12.13.0,<13.0.0",  # add [aio] for async run download feature
+            "azure-storage-blob[aio]>=12.17.0,<13.0.0",  # add [aio] for async run download feature
             "azure-identity>=1.12.0,<2.0.0",
-            "azure-ai-ml>=1.11.0,<2.0.0",
+            "azure-ai-ml>=1.14.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
             "azure-cosmos>=4.5.1,<5.0.0",  # used to upload trace to cloud
         ],
@@ -90,7 +90,7 @@ setup(
         "azureml-serving": [
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
-            "azure-ai-ml>=1.11.0,<2.0.0",
+            "azure-ai-ml>=1.14.0,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],

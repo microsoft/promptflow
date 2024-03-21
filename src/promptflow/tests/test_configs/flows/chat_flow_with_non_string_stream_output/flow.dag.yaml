@@ -1,0 +1,21 @@
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+  text:
+    type: string
+    is_chat_input: true
+    default: What is ChatGPT?
+outputs:
+  output_echo:
+    type: string
+    reference: ${echo_my_input.output}
+    is_chat_output: true
+nodes:
+- name: echo_my_input
+  type: python
+  source:
+    type: code
+    path: echo_input.py
+  inputs:
+    input: ${inputs.text}

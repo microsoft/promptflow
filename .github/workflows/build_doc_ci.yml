@@ -36,6 +36,13 @@ jobs:
           setupType: ${{ env.packageSetupType }}
           scriptPath: ${{ env.testWorkingDirectory }}
 
+      - name: Install tracing
+        shell: pwsh
+        run: |
+          pip uninstall -y promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip freeze
+
       - name: Build doc with reference doc
         shell: powershell
         working-directory: scripts/docs/
