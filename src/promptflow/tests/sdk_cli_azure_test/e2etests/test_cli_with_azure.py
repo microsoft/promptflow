@@ -11,11 +11,11 @@ import pytest
 from mock.mock import patch
 
 from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
+from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -27,7 +27,7 @@ RUNS_DIR = "./tests/test_configs/runs"
 
 # TODO: move this to a shared utility module
 def run_pf_command(*args, pf, runtime=None, cwd=None):
-    from promptflow._cli._pf_azure.entry import main
+    from promptflow.azure._cli.entry import main
 
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:

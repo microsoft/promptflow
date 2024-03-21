@@ -300,6 +300,8 @@ class ArmConnectionOperations(_ScopeDependentOperations):
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+        except UserErrorException as e:  # For example: OpenURLFailedUserError
+            raise e
         except Exception as e:
             raise SystemErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
 

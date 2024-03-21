@@ -20,15 +20,15 @@ import pytest
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
-from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow.tracing._operation_context import OperationContext
 
 from ..recording_utilities import is_live
 
@@ -2132,3 +2132,28 @@ class TestCli:
             )
         out, _ = capfd.readouterr()
         assert "More than one is provided for exclusive options" in out
+
+    def test_pf_test_interactive_with_non_string_streaming_output(self, monkeypatch, capsys):
+        flow_dir = Path(f"{FLOWS_DIR}/chat_flow_with_non_string_stream_output")
+        # mock user input with pop so make chat list reversed
+        chat_list = ["what is chat gpt?", "hi"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            flow_dir.as_posix(),
+            "--interactive",
+            "--verbose",
+        )
+        output_path = Path(flow_dir) / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()

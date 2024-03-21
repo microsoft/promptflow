@@ -34,6 +34,8 @@ from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
@@ -224,7 +226,7 @@ class TestFlowRun:
 
     def test_run_bulk_error(self, pf):
         # path not exist
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{MODEL_ROOT}/not_exist",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
@@ -359,7 +361,7 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 connections={"print_env": {"new_connection": "test_custom_connection"}},
             )
-        assert "Connection with name new_connection not found" in str(e.value)
+        assert "Unsupported llm connection overwrite keys" in str(e.value)
 
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
@@ -1249,15 +1251,63 @@ class TestFlowRun:
 
         monkeypatch.delenv("PF_BATCH_METHOD")
 
-    @pytest.mark.skip("Won't support this kind of usage.")
     def test_eager_flow_run_without_yaml(self, pf):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
         run = pf.run(
-            flow=flow_path,
-            entry="my_flow",
+            flow="entry:my_flow",
+            code=f"{EAGER_FLOWS_DIR}/simple_without_yaml",
             data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
         )
         assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # the YAML file will not exist in user's folder
+        assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
+
+    def test_eager_flow_yaml_override(self, pf):
+        run = pf.run(
+            flow="entry2:my_flow2",
+            code=f"{EAGER_FLOWS_DIR}/multiple_entries",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # original YAMl content not changed
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        assert original_dict["entry"] == "entry1:my_flow1"
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow2"]}
+
+    def test_eager_flow_run_in_working_dir(self, pf):
+        working_dir = f"{EAGER_FLOWS_DIR}/multiple_entries"
+        with _change_working_dir(working_dir):
+            run = pf.run(
+                flow="entry2:my_flow1",
+                data="../../datas/simple_eager_flow_data.jsonl",
+            )
+            assert run.status == "Completed"
+            assert "error" not in run._to_dict()
+
+        # will create a YAML in run snapshot
+        local_storage = LocalStorageOperations(run=run)
+        assert local_storage._dag_path.exists()
+        # original YAMl content not changed
+        original_dict = load_yaml(f"{EAGER_FLOWS_DIR}/multiple_entries/flow.dag.yaml")
+        assert original_dict["entry"] == "entry1:my_flow1"
+
+        # actual result will be entry2:my_flow2
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["entry2flow1"]}
 
     def test_eager_flow_run_with_yaml(self, pf):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
@@ -1359,3 +1409,90 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+
+    def test_run_with_deployment_overwrite(self, pf):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/python_tool_deployment_name",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"deployment_name": "my_deployment_name", "model": "my_model"}],
+        }
+
+        # TODO(3021931): this should fail.
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/deployment_name_not_enabled",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"env": "${data.key}"},
+            connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+
+    def test_deployment_overwrite_failure(self, local_client, local_aoai_connection, pf):
+        # deployment name not exist
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            connections={"classify_with_llm": {"deployment_name": "not_exist"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert "The API deployment for this resource does not exist." in run_dict["error"]["message"]
+
+        # deployment name not a param
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            connections={"print_env": {"deployment_name": "not_exist"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]
+
+    def test_run_with_non_provided_connection_override(self, pf, local_custom_connection):
+        # override non-provided connection when submission
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
+        }
+
+    def test_run_with_non_provided_connection_override_list_annotation(self, pf, local_custom_connection):
+        # override non-provided connection when submission
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/list_connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
+        }

@@ -20,10 +20,13 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._service.apis.connection import api as connection_api
+from promptflow._sdk._service.apis.experiment import api as experiment_api
+from promptflow._sdk._service.apis.flow import api as flow_api
 from promptflow._sdk._service.apis.line_run import api as line_run_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.span import api as span_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
+from promptflow._sdk._service.apis.ui import api as ui_api
 from promptflow._sdk._service.apis.ui import serve_trace_ui
 from promptflow._sdk._service.utils.utils import (
     FormattedException,
@@ -58,7 +61,7 @@ def create_app():
     app.add_url_rule("/v1.0/ui/traces/", defaults={"path": ""}, view_func=serve_trace_ui, methods=["GET"])
     app.add_url_rule("/v1.0/ui/traces/<path:path>", view_func=serve_trace_ui, methods=["GET"])
     with app.app_context():
-        api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
+        api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0", template_folder="static")
 
         # Registers resources from namespace for current instance of api
         api = Api(api_v1, title="Prompt Flow Service", version="1.0")
@@ -67,6 +70,9 @@ def create_app():
         api.add_namespace(telemetry_api)
         api.add_namespace(span_api)
         api.add_namespace(line_run_api)
+        api.add_namespace(ui_api)
+        api.add_namespace(flow_api)
+        api.add_namespace(experiment_api)
         app.register_blueprint(api_v1)
 
         # Disable flask-restx set X-Fields in header. https://flask-restx.readthedocs.io/en/latest/mask.html#usage
@@ -136,11 +142,13 @@ def create_app():
                         "last_request_time"
                     ] > timedelta(hours=PF_SERVICE_HOUR_TIMEOUT):
                         # Todo: check if we have any not complete work? like persist all traces.
-                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made 1h ago")
+                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made "
+                                           f"{PF_SERVICE_HOUR_TIMEOUT}h ago")
                         port = get_port_from_config()
                         if port:
                             app.logger.info(
-                                f"Try auto stop pfs service in port {port} since no request to app within 1h"
+                                f"Try auto stop pfs service in port {port} since no request to app within "
+                                f"{PF_SERVICE_HOUR_TIMEOUT}h"
                             )
                             kill_exist_service(port)
                         break

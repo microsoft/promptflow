@@ -59,12 +59,13 @@ def _bfs_dir(dir_path: List[str]) -> Tuple[List[str], List[str]]:
     """BFS traverse directory with depth 1, returns files and directories"""
     files, dirs = [], []
     for path in dir_path:
-        for filename in os.listdir(path):
-            file = Path(path, filename).resolve()
-            if file.is_file():
-                files.append(str(file))
-            else:
-                dirs.append(str(file))
+        if os.path.exists(path):
+            for filename in os.listdir(path):  # Path does not exist and will throw FileNotFoundError
+                file = Path(path, filename).resolve()
+                if file.is_file():
+                    files.append(str(file))
+                else:
+                    dirs.append(str(file))
     return files, dirs
 
 

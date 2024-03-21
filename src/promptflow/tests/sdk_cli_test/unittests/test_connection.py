@@ -250,7 +250,7 @@ secrets:
 
     def test_connection_load_from_env_file_bad_case(self):
         # Test file not found
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(UserErrorException) as e:
             _load_env_to_connection(source=CONNECTION_ROOT / "mock.env", params_override=[{"name": "env_conn"}])
         assert "not found" in str(e.value)
         # Test file empty
