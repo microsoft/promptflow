@@ -229,8 +229,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         On the other hand, the subprocess for execution service is not started in detach mode;
         it wll exit when parent process exit. So we simply skip the destruction here.
         """
-        if await self._all_generators_exhausted():
-            await self.destroy()
+
+        # TODO 3033484: update this after executor service support graceful shutdown
+        if not await self._all_generators_exhausted():
+            raise UnexpectedError(
+                message_format="The executor service is still handling a stream request "
+                "whose response is not fully consumed yet."
+            )
+        await self.destroy()
 
     # endregion
 
@@ -320,8 +326,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         :type index: Optional[int]
         :param run_id: The id of the run.
         :type run_id: Optional[str]
-        :param enable_stream_output: Whether to enable the stream output.
-        :type enable_stream_output: bool
         :return: The line result.
         :rtype: LineResult
         """

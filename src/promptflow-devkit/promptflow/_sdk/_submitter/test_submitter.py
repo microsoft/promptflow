@@ -283,8 +283,9 @@ class TestSubmitter:
                 try:
                     yield self
                 finally:
+                    # TODO: this is dangerous as we may not release resources
                     if self.executor_proxy:
-                        async_run_allowing_running_loop(self.executor_proxy.destroy_if_all_generators_exhausted)
+                        async_run_allowing_running_loop(self.executor_proxy.destroy)
 
             self._within_init_context = False
 

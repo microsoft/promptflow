@@ -146,6 +146,9 @@ class Flow(FlowBase):
         from promptflow._sdk._submitter import TestSubmitter
 
         if self.language == FlowLanguage.CSharp:
+            # TODO: we shouldn't use context manager here for stream_output, as resource need to be released
+            #  after the returned generator is fully consumed. If we use context manager here, the resource must be
+            #  released before the generator is consumed.
             with TestSubmitter(flow=self, flow_context=self.context).init(
                 stream_output=self.context.streaming
             ) as submitter:
