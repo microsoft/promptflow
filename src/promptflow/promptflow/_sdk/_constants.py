@@ -114,7 +114,6 @@ REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections
 SCRUBBED_VALUE = CONNECTION_SCRUBBED_VALUE
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
-CHAT_HISTORY = "chat_history"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
@@ -149,6 +148,7 @@ TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
+UX_INPUTS_JSON = "ux.inputs.json"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 # chat group
@@ -288,6 +288,7 @@ class LocalStorageFilenames:
     DETAIL = "detail.json"
     METRICS = "metrics.json"
     LOG = "logs.txt"
+    FLOW_LOGS_FOLDER = "flow_logs"
     EXCEPTION = "error.json"
     META = "meta.json"
 
