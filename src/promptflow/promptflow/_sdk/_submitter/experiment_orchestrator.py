@@ -515,7 +515,7 @@ class ExperimentNodeRun(Run):
             # Use node name as prefix for run name?
             type=EXP_NODE_TYPE_2_RUN_TYPE[node.type],
             name=self.context.node_name_to_id[node.name],
-            display_name=getattr(node, "display_name", node.name),
+            display_name=getattr(node, "display_name", None) or node.name,
             column_mapping=getattr(node, "inputs", None),
             variant=getattr(node, "variant", None),
             flow=self._get_node_path(),
