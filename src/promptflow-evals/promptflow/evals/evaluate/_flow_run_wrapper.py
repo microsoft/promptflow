@@ -25,6 +25,6 @@ class FlowRunWrapper(object):
     def _wait_for_completion(self):
         from promptflow._sdk._constants import RunStatus
         while True:
-            if self.run.status in [RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELED]:
+            if self.flow_run.status in [RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELED]:
                 break
             time.sleep(2)

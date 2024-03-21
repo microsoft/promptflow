@@ -9,30 +9,34 @@ from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
 
 
-def init(model_config: AzureOpenAIConnection, deployment_name: str):
+class GroundednessEvaluator:
     """
-    Initialize an evaluation function configured for a specific Azure OpenAI model.
+        Initialize an evaluation function configured for a specific Azure OpenAI model.
 
-    :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIConnection
-    :param deployment_name: Deployment to be used which has Azure OpenAI model.
-    :type deployment_name: AzureOpenAIConnection
-    :return: A function that evaluates groundedness.
-    :rtype: function
+        :param model_config: Configuration for the Azure OpenAI model.
+        :type model_config: AzureOpenAIConnection
+        :param deployment_name: Deployment to be used which has Azure OpenAI model.
+        :type deployment_name: AzureOpenAIConnection
+        :return: A function that evaluates groundedness.
+        :rtype: function
 
-    **Usage**
+        **Usage**
 
-    .. code-block:: python
+        .. code-block:: python
 
-        eval_fn = groundedness.init(model_config, deployment_name="gpt-4")
-        result = eval_fn(
-            answer="The capital of Japan is Tokyo.", 
-            context="Tokyo is Japan's capital, known for its blend of traditional culture \
-                and technological advancements.")
-    """
+            eval_fn = GroundednessEvaluator(model_config, deployment_name="gpt-4")
+            result = eval_fn(
+                answer="The capital of Japan is Tokyo.",
+                context="Tokyo is Japan's capital, known for its blend of traditional culture \
+                    and technological advancements.")
+        """
+    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
+        self.model_config = model_config
+        self.deployment_name = deployment_name
+        self._flow = self._init_flow(model_config, deployment_name)
 
-    def eval_fn(answer: str, context: str):
-        # Load the flow as function
+    @staticmethod
+    def _init_flow(model_config: AzureOpenAIConnection, deployment_name: str):
         current_dir = Path(__file__).resolve().parent
         flow_dir = current_dir / "flow"
         f = load_flow(source=flow_dir)
@@ -49,7 +53,7 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
             }
         }
 
-        # Run the evaluation flow
-        return f(answer=answer, context=context)
+        return f
 
-    return eval_fn
+    def __call__(self, *, answer: str, context: str):
+        return self._flow(answer=answer, context=context)
