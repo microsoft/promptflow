@@ -26,6 +26,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
+        fetch-depth: 0
+    - name: merge main to current branch
+      uses: "./.github/actions/step_merge_main"
+    - name: Python Setup
+      uses: "./.github/actions/step_create_python_environment"
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
