@@ -60,7 +60,7 @@ def add_service_parser(subparsers):
     service_parser.set_defaults(action="service")
 
 
-def dispatch_flow_commands(args: argparse.Namespace):
+def dispatch_service_commands(args: argparse.Namespace):
     if args.sub_action == "start":
         start_service(args)
     elif args.sub_action == "stop":
