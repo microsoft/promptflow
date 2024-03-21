@@ -26,7 +26,7 @@ def init(project_scope: dict, credential: TokenCredential):
     flow_dir = current_dir / "flow"
     f = load_flow(source=flow_dir)
 
-    def eval_fn(question: str, answer: str):
+    def eval_fn(*, question: str, answer: str, **kwargs):
 
         # Run the evaluation flow
         output = f(

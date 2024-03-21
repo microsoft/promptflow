@@ -50,7 +50,7 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
         }
     }
 
-    def eval_fn(question: str, answer: str, context: str):
+    def eval_fn(*, question: str, answer: str, context: str, **kwargs):
 
         # Run the evaluation flow
         return f(question=question, answer=answer, context=context)

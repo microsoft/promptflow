@@ -49,7 +49,7 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
         }
     }
 
-    def eval_fn(answer: str, context: str):
+    def eval_fn(*, answer: str, context: str, **kwargs):
         """Evaluate groundedness of the answer in the context.
 
         :param answer: The answer to be evaluated.

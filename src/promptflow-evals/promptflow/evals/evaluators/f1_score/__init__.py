@@ -5,7 +5,6 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 from promptflow import load_flow
-from promptflow.entities import AzureOpenAIConnection
 from pathlib import Path
 
 
@@ -32,7 +31,7 @@ def init():
     flow_dir = current_dir / "flow"
     f = load_flow(source=flow_dir)
 
-    def eval_fn(answer: str, ground_truth: str):
+    def eval_fn(*, answer: str, ground_truth: str, **kwargs):
 
         # Run the evaluation flow
         return f(answer=answer, ground_truth=ground_truth)

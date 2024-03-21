@@ -4,9 +4,7 @@
 
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-from promptflow import load_flow
 from promptflow.entities import AzureOpenAIConnection
-from pathlib import Path
 
 
 def init(model_config: AzureOpenAIConnection, deployment_name: str):
@@ -25,11 +23,11 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
     .. code-block:: python
 
         eval_fn = qa.init(model_config, deployment_name="gpt-4")
-        result = qa_eval(
-        question="Tokyo is the capital of which country?",
-        answer="Japan",
-        context="Tokyo is the capital of Japan.",
-        ground_truth="Japan",
+            result = qa_eval(
+            question="Tokyo is the capital of which country?",
+            answer="Japan",
+            context="Tokyo is the capital of Japan.",
+            ground_truth="Japan",
     )
     """
 
