@@ -101,6 +101,7 @@ jobs:
       shell: pwsh
       working-directory: ${{ env.TRACING_PATH }}
       run: |
+        pip uninstall -y promptflow-tracing
         poetry install --only main
     - name: Run SDK CLI Test
       shell: pwsh
@@ -247,6 +248,7 @@ jobs:
       shell: pwsh
       working-directory: ${{ env.TRACING_PATH }}
       run: |
+        pip uninstall -y promptflow-tracing
         poetry install --only main
     - name: Run Executor Test
       shell: pwsh
