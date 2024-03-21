@@ -8,6 +8,16 @@ import requests
 from promptflow._constants import ConnectionAuthMode
 from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.core._connection import CustomConnection, _Connection
+from promptflow.core._errors import (
+    AccessDeniedError,
+    BuildConnectionError,
+    MissingRequiredPackage,
+    OpenURLFailed,
+    OpenURLFailedUserError,
+    OpenURLUserAuthenticationError,
+    UnknownConnectionType,
+    UnsupportedConnectionAuthType,
+)
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 from ._connection_provider import ConnectionProvider
@@ -226,6 +236,10 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             ws=workspace_name,
             name=name,
         )
+        # Note: There is a try-catch in get arm token. It requires azure-ai-ml.
+        # TODO: Remove the azure-ai-ml dependency.
+        from ._utils import get_arm_token
+
         try:
             from azure.core.exceptions import ClientAuthenticationError
 
@@ -235,8 +249,6 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 message="Please install 'azure-identity>=1.12.0,<2.0.0' and 'msrest' to use workspace connection."
             ) from e
         try:
-            from promptflow.azure._utils.general import get_arm_token
-
             rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
                 get_arm_token(credential=credential),
                 url=url,
@@ -289,51 +301,3 @@ class WorkspaceConnectionProvider(ConnectionProvider):
             credential=self.credential,
         )
         return _Connection._from_execution_connection_dict(name=name, data=connection_dict)
-
-
-class AccessDeniedError(UserErrorException):
-    """Exception raised when run info can not be found in storage"""
-
-    def __init__(self, operation: str, target: ErrorTarget):
-        super().__init__(message=f"Access is denied to perform operation {operation!r}", target=target)
-
-
-class OpenURLFailed(SystemErrorException):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)
-
-
-class BuildConnectionError(SystemErrorException):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)
-
-
-class MissingRequiredPackage(UserErrorException):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)
-
-
-class UserAuthenticationError(UserErrorException):
-    """Exception raised when user authentication failed"""
-
-    pass
-
-
-class OpenURLUserAuthenticationError(UserAuthenticationError):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)
-
-
-class OpenURLFailedUserError(UserErrorException):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)
-
-
-class UnknownConnectionType(UserErrorException):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)
-
-
-class UnsupportedConnectionAuthType(UserErrorException):
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.CORE, **kwargs)

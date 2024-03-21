@@ -66,6 +66,8 @@ PROMPTFLOW_CONNECTIONS = "promptflow.connections"
 
 
 class _Connection(_CoreConnection, YAMLTranslatableMixin):
+    SUPPORTED_TYPES = {}
+
     @classmethod
     def _casting_type(cls, typ):
         type_dict = {
@@ -133,10 +135,11 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         if type_str is None:
             raise ValidationException("type is required for connection.")
         type_str = cls._casting_type(type_str)
-        type_cls = _supported_types.get(type_str)
+        type_cls = cls.SUPPORTED_TYPES.get(type_str)
         if type_cls is None:
             raise ValidationException(
-                f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
+                f"Connection type {type_str!r} is not supported. "
+                f"Supported types are: {list(cls.SUPPORTED_TYPES.keys())}"
             )
         return type_cls, type_str
 
@@ -532,7 +535,7 @@ class CustomConnection(_CoreCustomConnection, _Connection):
 
 # Note: Do not import this from core connection.
 # As we need the class here.
-_supported_types = {
+_Connection.SUPPORTED_TYPES = {
     v.TYPE: v
     for v in globals().values()
     if isinstance(v, type) and issubclass(v, _Connection) and not v.__name__.startswith("_")

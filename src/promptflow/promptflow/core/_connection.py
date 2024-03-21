@@ -34,6 +34,7 @@ class _Connection:
     :type secrets: Dict[str, str]
     """
 
+    SUPPORTED_TYPES = {}
     TYPE = ConnectionType._NOT_SET.value
 
     def __init__(
@@ -94,16 +95,18 @@ class _Connection:
     @classmethod
     def _from_execution_connection_dict(cls, name, data) -> "_Connection":
         type_str = data.get("type")[: -len("Connection")]
-        type_cls = _supported_types.get(type_str)
+        type_cls = cls.SUPPORTED_TYPES.get(type_str)
         if type_cls is None:
             raise ValidationException(
-                f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
+                f"Connection type {type_str!r} is not supported. "
+                f"Supported types are: {list(cls.SUPPORTED_TYPES.keys())}"
             )
         value_dict = data.get("value", {})
-        if type_cls == CustomConnection:
+        # Use class name instead of class here, because the class may be _sdk entity.
+        if type_cls.__name__ == "CustomConnection":
             secrets = {k: v for k, v in value_dict.items() if k in data.get("secret_keys", [])}
             configs = {k: v for k, v in value_dict.items() if k not in secrets}
-            return CustomConnection(name=name, configs=configs, secrets=secrets)
+            return type_cls(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
 
 
@@ -728,7 +731,7 @@ class CustomConnection(_Connection):
         return connection_instance
 
 
-_supported_types = {
+_Connection.SUPPORTED_TYPES = {
     v.TYPE: v
     for v in globals().values()
     if isinstance(v, type) and issubclass(v, _Connection) and not v.__name__.startswith("_")
