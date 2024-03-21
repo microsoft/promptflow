@@ -102,7 +102,6 @@ class FlowExecutor:
         working_dir=None,
         line_timeout_sec=None,
         flow_file=None,
-        multimedia_processor: MultimediaProcessor = None,
     ):
         """Initialize a FlowExecutor object.
 
@@ -159,7 +158,8 @@ class FlowExecutor:
         self._completed_idx = None
         # TODO: Improve the experience about configuring node concurrency.
         self._node_concurrency = DEFAULT_CONCURRENCY_BULK
-        self._multimedia_processor = multimedia_processor or MultimediaProcessor.create(flow.message_format)
+        self._message_format = flow.message_format
+        self._multimedia_processor = MultimediaProcessor.create(flow.message_format)
 
     @classmethod
     def create(
@@ -235,11 +235,8 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
 
-        multimedia_processor = MultimediaProcessor.create(flow.message_format)
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(
-            working_dir, connections, package_tool_keys, multimedia_processor=multimedia_processor
-        )
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
 
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
@@ -259,7 +256,6 @@ class FlowExecutor:
 
         if storage is None:
             storage = DefaultRunStorage()
-        storage.multimedia_processor = multimedia_processor
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -274,7 +270,6 @@ class FlowExecutor:
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
-            multimedia_processor=multimedia_processor,
         )
         logger.debug("The flow executor is initialized successfully.")
         return executor
@@ -367,9 +362,7 @@ class FlowExecutor:
         inputs = multimedia_processor.load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = multimedia_processor.load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        tool_resolver = ToolResolver(
-            working_dir, connections, package_tool_keys, multimedia_processor=multimedia_processor
-        )
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, message_format=flow.message_format)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
@@ -395,7 +388,6 @@ class FlowExecutor:
             sub_dir = "." if output_sub_dir is None else output_sub_dir
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
 
-        storage.multimedia_processor = multimedia_processor
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager, update_operation_context():
             # Will generate node run in context
@@ -403,6 +395,7 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
+                message_format=flow.message_format,
             )
 
             try:
@@ -610,7 +603,7 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         nodes = [copy.deepcopy(node) for node in self._flow.nodes if node.aggregation]
         # Load multimedia data from aggregation_inputs
-        aggregation_inputs = self.multimedia_processor.load_multimedia_data_recursively(aggregation_inputs)
+        aggregation_inputs = self._multimedia_processor.load_multimedia_data_recursively(aggregation_inputs)
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {
@@ -627,6 +620,7 @@ class FlowExecutor:
             cache_manager=self._cache_manager,
             run_id=run_id,
             flow_id=self._flow_id,
+            message_format=self._message_format,
         )
         metrics = {}
 
@@ -922,6 +916,7 @@ class FlowExecutor:
             run_id=line_run_id,
             parent_run_id=run_id,
             index=line_number,
+            message_format=self._message_format,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -930,6 +925,7 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
+            message_format=self._message_format,
         )
         output = {}
         aggregation_inputs = {}
@@ -1001,6 +997,7 @@ class FlowExecutor:
             parent_run_id=run_id,
             inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
             index=line_number,
+            message_format=self._message_format,
         )
         context = FlowExecutionContext(
             name=self._flow.name,
@@ -1009,6 +1006,7 @@ class FlowExecutor:
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
+            message_format=self._message_format,
         )
         output = {}
         aggregation_inputs = {}
@@ -1016,7 +1014,7 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             # TODO: Consider async implementation for load_multimedia_data
-            inputs = self.multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
+            inputs = self._multimedia_processor.load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = await self._traverse_nodes_async(inputs, context)
@@ -1206,13 +1204,6 @@ class FlowExecutor:
         for node in self._flow.nodes:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
-    @property
-    def multimedia_processor(self):
-        """Return the multimedia processor."""
-        if not self._multimedia_processor:
-            self._multimedia_processor = MultimediaProcessor.create(self._flow.message_format)
-        return self._multimedia_processor
-
 
 def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):
     """Inject the stream options to the decorated function.
@@ -1331,7 +1322,7 @@ def execute_flow(
             inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
         )
         # persist the output to the output directory
-        line_result.output = flow_executor.multimedia_processor.persist_multimedia_data(
+        line_result.output = flow_executor._multimedia_processor.persist_multimedia_data(
             line_result.output, base_dir=working_dir, sub_dir=output_dir
         )
         if run_aggregation and line_result.aggregation_inputs:

@@ -81,6 +81,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id="",
         inputs=None,
         index=None,
+        message_format="",
     ) -> FlowRunInfo:
         """Create a flow run and save to run storage on demand."""
         run_info = FlowRunInfo(
@@ -98,6 +99,7 @@ class RunTracker(ThreadLocalSingleton):
             start_time=datetime.utcnow(),
             end_time=None,
             index=index,
+            message_format=message_format,
         )
         self.persist_flow_run(run_info)
         self._flow_runs[run_id] = run_info
@@ -111,6 +113,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
+        message_format="",
     ):
         run_info = RunInfo(
             node=node,
@@ -124,6 +127,7 @@ class RunTracker(ThreadLocalSingleton):
             parent_run_id=parent_run_id,
             start_time=datetime.utcnow(),
             end_time=None,
+            message_format=message_format,
         )
         self._node_runs[run_id] = run_info
         self._current_run_id = run_id
@@ -138,6 +142,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
+        message_format="",
     ):
         run_info = RunInfo(
             node=node,
@@ -154,6 +159,7 @@ class RunTracker(ThreadLocalSingleton):
             result=None,
             index=index,
             api_calls=[],
+            message_format=message_format,
         )
         self._node_runs[run_id] = run_info
         return run_info

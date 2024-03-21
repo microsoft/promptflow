@@ -14,7 +14,7 @@ from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
-from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
@@ -50,7 +50,7 @@ class ToolResolver:
         working_dir: Path,
         connections: Optional[dict] = None,
         package_tool_keys: Optional[List[str]] = None,
-        multimedia_processor: MultimediaProcessor = None,
+        message_format: str = "",
     ):
         try:
             # Import openai and aoai for llm tool
@@ -60,7 +60,7 @@ class ToolResolver:
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
-        self._multimedia_processor = multimedia_processor or BasicMultimediaProcessor()
+        self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     @classmethod
     def start_resolver(

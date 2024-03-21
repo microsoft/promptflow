@@ -130,7 +130,7 @@ class LineExecutionProcessPool:
         }
         # Will set to True if the batch run is timeouted.
         self._is_timeout = False
-        self._multimedia_processor = flow_executor.multimedia_processor
+        self._multimedia_processor = flow_executor._multimedia_processor
 
     def __enter__(self):
         self.start()
@@ -787,13 +787,14 @@ def _exec_line(
         bulk_logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
         flow_id = executor._flow_id
         line_run_id = run_id if index is None else f"{run_id}_{index}"
+        message_format = executor._message_format
         # If line execution failed before start, there is no flow information in the run_tracker.
         # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
         if isinstance(executor, ScriptExecutor):
             run_tracker = RunTracker(executor._storage)
         else:
             run_tracker = executor._run_tracker
-        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id, index=index)
+        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id, index=index, message_format=message_format)
         run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(

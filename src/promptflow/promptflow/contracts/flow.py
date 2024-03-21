@@ -731,6 +731,15 @@ class Flow(FlowBase):
             environment_variables_overrides=environment_variables_overrides
         )
 
+    @staticmethod
+    def load_message_format_from_yaml(flow_file: Path, working_dir=None) -> str:
+        if flow_file and Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            flow_file = working_dir / flow_file if working_dir else flow_file
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            return flow_dag.get("message_format", MessageFormatType.BASIC)
+        return MessageFormatType.BASIC
+
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
         from promptflow._core.tools_manager import ToolLoader

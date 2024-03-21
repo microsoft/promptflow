@@ -5,26 +5,12 @@
 from pathlib import Path
 from typing import Union
 
-from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 
 
 class AbstractRunStorage:
-    _multimedia_processor = None
-
-    @property
-    def multimedia_processor(self):
-        """Return the multimedia processor."""
-        if not self._multimedia_processor:
-            self._multimedia_processor = BasicMultimediaProcessor()
-        return self._multimedia_processor
-
-    @multimedia_processor.setter
-    def multimedia_processor(self, multimedia_processor: MultimediaProcessor):
-        """Set the multimedia processor."""
-        self._multimedia_processor = multimedia_processor
-
     def persist_node_run(self, run_info: NodeRunInfo):
         """Write the node run info to somewhere immediately after the node is executed.
 
@@ -73,7 +59,7 @@ class DummyRunStorage(AbstractRunStorage):
 
 
 class DefaultRunStorage(AbstractRunStorage):
-    def __init__(self, base_dir: Path = None, sub_dir: Path = None, multimedia_processor: MultimediaProcessor = None):
+    def __init__(self, base_dir: Path = None, sub_dir: Path = None):
         """Initialize the default run storage.
 
         :param base_dir: The base directory to store the multimedia data.
@@ -83,7 +69,6 @@ class DefaultRunStorage(AbstractRunStorage):
         """
         self._base_dir = base_dir
         self._sub_dir = sub_dir
-        self._multimedia_processor = multimedia_processor
 
     def persist_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         """Persist the multimedia data in run info after execution.
@@ -91,15 +76,16 @@ class DefaultRunStorage(AbstractRunStorage):
         :param run_info: The run info of the node or flow.
         :type run_info: ~promptflow.contracts.run_info.RunInfo or ~promptflow.contracts.run_info.FlowRunInfo
         """
+        multimedia_processor = MultimediaProcessor.create(run_info.message_format)
         # Persist and convert images in inputs to path dictionaries.
         # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.inputs:
-            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
+            run_info.inputs = self._persist_and_convert_images_to_path_dicts(multimedia_processor, run_info.inputs)
 
         # Persist and convert images in output to path dictionaries.
         # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.output:
-            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
+            serialized_output = self._persist_and_convert_images_to_path_dicts(multimedia_processor, run_info.output)
             run_info.output = serialized_output
             run_info.result = serialized_output
 
@@ -109,7 +95,9 @@ class DefaultRunStorage(AbstractRunStorage):
         # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
         # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
-            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
+            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(
+                multimedia_processor, run_info.api_calls, inplace=True
+            )
 
     def persist_node_run(self, run_info: NodeRunInfo):
         """Persist the multimedia data in node run info after the node is executed.
@@ -129,7 +117,9 @@ class DefaultRunStorage(AbstractRunStorage):
         """
         self.persist_run_info(run_info)
 
-    def _persist_and_convert_images_to_path_dicts(self, value, inplace=False):
+    def _persist_and_convert_images_to_path_dicts(
+        self, multimedia_processor: MultimediaProcessor, value, inplace=False
+    ):
         """Persist image objects within a Python object to disk and convert them to path dictionaries.
 
         This function recursively processes a given Python object, which can be a list, a dictionary, or a nested
@@ -151,6 +141,6 @@ class DefaultRunStorage(AbstractRunStorage):
                  the conversions.
         :rtype: Any
         """
-        return self.multimedia_processor.persist_multimedia_data(
+        return multimedia_processor.persist_multimedia_data(
             value, base_dir=self._base_dir, sub_dir=self._sub_dir, inplace=inplace
         )

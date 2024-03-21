@@ -76,6 +76,8 @@ class RunInfo:
     :type system_metrics: Optional[Dict[str, Any]]
     :param result: Result of the run
     :type result: Optional[object]
+    :param message_format: The message format type to represent different multimedia contracts.
+    :type message_format: str
     """
 
     node: str
@@ -96,6 +98,7 @@ class RunInfo:
     logs: Optional[Dict[str, str]] = None
     system_metrics: Dict[str, Any] = None
     result: object = None
+    message_format: str = ""
 
     @staticmethod
     def deserialize(data: dict) -> "RunInfo":
@@ -121,6 +124,7 @@ class RunInfo:
             logs=data.get("logs", None),
             system_metrics=data.get("system_metrics", None),
             result=data.get("result", None),
+            message_format=data.get("message_format", ""),
         )
         return run_info
 
@@ -171,6 +175,8 @@ class FlowRunInfo:
     :type result: Optional[object]
     :param upload_metrics: Flag indicating whether to upload metrics for the flow run
     :type upload_metrics: Optional[bool]
+    :param message_format: The message format type to represent different multimedia contracts.
+    :type message_format: str
     """
 
     run_id: str
@@ -194,6 +200,7 @@ class FlowRunInfo:
     system_metrics: Dict[str, Any] = None
     result: object = None
     upload_metrics: bool = False  # only set as true for root runs in bulk test mode and evaluation mode
+    message_format: str = ""
 
     @staticmethod
     def deserialize(data: dict) -> "FlowRunInfo":
@@ -220,6 +227,7 @@ class FlowRunInfo:
             system_metrics=data.get("system_metrics", None),
             result=data.get("result", None),
             upload_metrics=data.get("upload_metrics", False),
+            message_format=data.get("message_format", ""),
         )
         return flow_run_info
 

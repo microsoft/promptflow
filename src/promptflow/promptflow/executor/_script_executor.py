@@ -23,6 +23,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 
+from .._constants import MessageFormatType
 from .flow_executor import FlowExecutor
 
 
@@ -45,6 +46,7 @@ class ScriptExecutor(FlowExecutor):
         self._flow_id = "default_flow_id"
         self._log_interval = 60
         self._line_timeout_sec = 600
+        self._message_format = MessageFormatType.BASIC
         self._multimedia_processor = BasicMultimediaProcessor()
 
     def exec_line(
@@ -76,6 +78,7 @@ class ScriptExecutor(FlowExecutor):
             parent_run_id=run_id,
             inputs=inputs,
             index=index,
+            message_format=self._message_format,
         )
         # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
         # which should be removed, so, we only preserve the inputs that are contained in self._inputs.

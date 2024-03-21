@@ -10,7 +10,7 @@ from promptflow._core._errors import UnexpectedError
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
-from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import resolve_dir_to_absolute
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
@@ -22,13 +22,13 @@ class BatchInputsProcessor:
         working_dir: Path,
         flow_inputs: Mapping[str, FlowInputDefinition],
         max_lines_count: Optional[int] = None,
-        multimedia_processor: MultimediaProcessor = None,
+        message_format: str = "",
     ):
         self._working_dir = working_dir
         self._max_lines_count = max_lines_count
         self._flow_inputs = flow_inputs
         self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}
-        self._multimedia_processor = multimedia_processor or BasicMultimediaProcessor()
+        self._multimedia_processor = MultimediaProcessor.create(message_format)
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
         input_dicts = self._resolve_input_data(input_dirs)

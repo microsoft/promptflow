@@ -6,6 +6,7 @@ from multiprocessing import Queue
 from pathlib import Path
 
 from promptflow._constants import OutputsFolderName
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.storage import AbstractRunStorage
@@ -38,9 +39,11 @@ class ServiceQueueRunStorage(QueueRunStorage):
     def persist_node_run(self, run_info: NodeRunInfo):
         super().persist_node_run(run_info)
         node_folder = self._node_artifacts_path / str(run_info.index) / run_info.node
-        self.multimedia_processor.process_multimedia_in_run_info(run_info, node_folder)
+        multimedia_processor = MultimediaProcessor.create(run_info.message_format)
+        multimedia_processor.process_multimedia_in_run_info(run_info, node_folder)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         super().persist_flow_run(run_info)
         flow_folder = self._flow_artifacts_path / str(run_info.index)
-        self.multimedia_processor.process_multimedia_in_run_info(run_info, flow_folder)
+        multimedia_processor = MultimediaProcessor.create(run_info.message_format)
+        multimedia_processor.process_multimedia_in_run_info(run_info, flow_folder)

@@ -46,6 +46,8 @@ def start():
     def post_process_dump_result(response, session_state_history, *, generator_record):
         response = resolve_generator(response, generator_record)
         # Get base64 for multi modal object
+        # Just use BasicMultimediaProcessor to keep the original logic here.
+        # TODO: Add support for other multimedia types
         multimedia_processor = BasicMultimediaProcessor()
         resolved_outputs = {
             k: multimedia_processor.convert_multimedia_data_to_base64_dict(v) for k, v in response.output.items()

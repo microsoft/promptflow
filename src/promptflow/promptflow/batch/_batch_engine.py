@@ -25,7 +25,7 @@ from promptflow._utils.execution_utils import (
 )
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.multimedia_utils import BasicMultimediaProcessor, MultimediaProcessor
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import (
     dump_list_to_jsonl,
     get_int_env_var,
@@ -110,15 +110,11 @@ class BatchEngine:
 
             # eager flow does not support multimedia contract currently
 
-        self._multimedia_processor = (
-            MultimediaProcessor.create(self._flow.message_format)
-            if not self._is_eager_flow
-            else BasicMultimediaProcessor()
-        )
+        self._message_format = self._flow.message_format if not self._is_eager_flow else ""
+        self._multimedia_processor = MultimediaProcessor.create(self._message_format)
 
         self._connections = connections
         self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
-        self._storage.multimedia_processor = self._multimedia_processor
         self._kwargs = kwargs
 
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
@@ -201,7 +197,7 @@ class BatchEngine:
 
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(
-                        self._working_dir, inputs, max_lines_count, multimedia_processor=self._multimedia_processor
+                        self._working_dir, inputs, max_lines_count, message_format=self._message_format
                     )
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     # resolve output dir

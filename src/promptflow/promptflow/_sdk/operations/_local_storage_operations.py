@@ -40,6 +40,7 @@ from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow._utils.utils import prepare_folder
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
@@ -402,9 +403,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 new_runs = self._load_info_from_file(node_run_record_file, parse_const_as_str)
                 node_run_infos.extend(new_runs)
                 for new_run in new_runs:
-                    new_run = self.multimedia_processor.resolve_multimedia_data_recursively(
-                        node_run_record_file, new_run
-                    )
+                    multimedia_processor = MultimediaProcessor.create(new_run.get("message_format", ""))
+                    new_run = multimedia_processor.resolve_multimedia_data_recursively(node_run_record_file, new_run)
         return node_run_infos
 
     def load_node_run_info_for_line(self, line_number: int = None) -> List[NodeRunInfo]:
@@ -419,10 +419,11 @@ class LocalStorageOperations(AbstractBatchRunStorage):
                 runs = self._load_info_from_file(node_run_record_file)
                 if runs:
                     run = runs[0]
-                run = self.multimedia_processor.resolve_multimedia_data_recursively(node_run_record_file, run)
-                run = self.multimedia_processor.load_multimedia_data_recursively(run)
-                run_info = NodeRunInfo.deserialize(run)
-                node_run_infos.append(run_info)
+                    multimedia_processor = MultimediaProcessor.create(run.get("message_format", ""))
+                    run = multimedia_processor.resolve_multimedia_data_recursively(node_run_record_file, run)
+                    run = multimedia_processor.load_multimedia_data_recursively(run)
+                    run_info = NodeRunInfo.deserialize(run)
+                    node_run_infos.append(run_info)
         return node_run_infos
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
@@ -441,7 +442,8 @@ class LocalStorageOperations(AbstractBatchRunStorage):
             new_runs = self._load_info_from_file(line_run_record_file, parse_const_as_str)
             flow_run_infos.extend(new_runs)
             for new_run in new_runs:
-                new_run = self.multimedia_processor.resolve_multimedia_data_recursively(line_run_record_file, new_run)
+                multimedia_processor = MultimediaProcessor.create(new_run.get("message_format", ""))
+                new_run = multimedia_processor.resolve_multimedia_data_recursively(line_run_record_file, new_run)
         return flow_run_infos
 
     def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
@@ -454,8 +456,9 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         if not run:
             return None
 
-        run = self.multimedia_processor.resolve_multimedia_data_recursively(self._run_infos_folder, run)
-        run = self.multimedia_processor.load_multimedia_data_recursively(run)
+        multimedia_processor = MultimediaProcessor.create(run.get("message_format", ""))
+        run = multimedia_processor.resolve_multimedia_data_recursively(self._run_infos_folder, run)
+        run = multimedia_processor.load_multimedia_data_recursively(run)
         run_info = FlowRunInfo.deserialize(run)
         return run_info
 
@@ -467,16 +470,17 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         self.dump_metrics(result.metrics)
 
     def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):
+        multimedia_processor = MultimediaProcessor.create(run_info.message_format)
         if run_info.inputs:
-            run_info.inputs = self._serialize_multimedia(run_info.inputs, folder_path)
+            run_info.inputs = self._serialize_multimedia(multimedia_processor, run_info.inputs, folder_path)
         if run_info.output:
-            run_info.output = self._serialize_multimedia(run_info.output, folder_path)
+            run_info.output = self._serialize_multimedia(multimedia_processor, run_info.output, folder_path)
             run_info.result = None
         if run_info.api_calls:
-            run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
+            run_info.api_calls = self._serialize_multimedia(multimedia_processor, run_info.api_calls, folder_path)
 
-    def _serialize_multimedia(self, value, folder_path: Path, relative_path: Path = None):
-        pfbytes_file_reference_encoder = self.multimedia_processor.get_file_reference_encoder(
+    def _serialize_multimedia(self, multimedia_processor, value, folder_path: Path, relative_path: Path = None):
+        pfbytes_file_reference_encoder = multimedia_processor.get_file_reference_encoder(
             folder_path, relative_path, use_absolute_path=True
         )
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
