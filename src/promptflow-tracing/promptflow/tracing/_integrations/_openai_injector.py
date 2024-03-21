@@ -21,16 +21,16 @@ PROMPTFLOW_HEADER = "ms-azure-ai-promptflow"
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
-def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
+def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM, name=None):
     def decorator(func):
-        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+        return _traced_async(func, args_to_ignore=args_to_ignore, trace_type=trace_type, name=name)
 
     return decorator
 
 
-def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
+def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM, name=None):
     def decorator(func):
-        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type)
+        return _traced_sync(func, args_to_ignore=args_to_ignore, trace_type=trace_type, name=name)
 
     return decorator
 
@@ -90,60 +90,67 @@ def inject_operation_headers(f):
     return wrapper
 
 
-def inject_async(f, trace_type):
+def inject_async(f, trace_type, name):
     wrapper_fun = inject_operation_headers(
-        (inject_function_async(["api_key", "headers", "extra_headers"], trace_type)(f))
+        (inject_function_async(["api_key", "headers", "extra_headers"], trace_type, name)(f))
     )
     wrapper_fun._original = f
     return wrapper_fun
 
 
-def inject_sync(f, trace_type):
+def inject_sync(f, trace_type, name):
     wrapper_fun = inject_operation_headers(
-        (inject_function_sync(["api_key", "headers", "extra_headers"], trace_type)(f))
+        (inject_function_sync(["api_key", "headers", "extra_headers"], trace_type, name)(f))
     )
     wrapper_fun._original = f
     return wrapper_fun
+
+
+def _legacy_openai_apis():
+    sync_apis = (
+        ("openai", "Completion", "create", TraceType.LLM, "openai_completion_legacy"),
+        ("openai", "ChatCompletion", "create", TraceType.LLM, "openai_chat_legacy"),
+        ("openai", "Embedding", "create", TraceType.EMBEDDING, "openai_embedding_legacy"),
+    )
+    async_apis = (
+        ("openai", "Completion", "acreate", TraceType.LLM, "openai_completion_legacy"),
+        ("openai", "ChatCompletion", "acreate", TraceType.LLM, "openai_chat_legacy"),
+        ("openai", "Embedding", "acreate", TraceType.EMBEDDING, "openai_embedding_legacy"),
+    )
+    return sync_apis, async_apis
+
+
+def _openai_apis():
+    sync_apis = (
+        ("openai.resources.chat", "Completions", "create", TraceType.LLM, "openai_chat"),
+        ("openai.resources", "Completions", "create", TraceType.LLM, "openai_completion"),
+        ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING, "openai_embeddings"),
+    )
+    async_apis = (
+        ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM, "openai_chat_async"),
+        ("openai.resources", "AsyncCompletions", "create", TraceType.LLM, "openai_completion_async"),
+        ("openai.resources", "AsyncEmbeddings", "create", TraceType.EMBEDDING, "openai_embeddings_async"),
+    )
+    return sync_apis, async_apis
 
 
 def _openai_api_list():
     if IS_LEGACY_OPENAI:
-        sync_apis = (
-            ("openai", "Completion", "create", TraceType.LLM),
-            ("openai", "ChatCompletion", "create", TraceType.LLM),
-            ("openai", "Embedding", "create", TraceType.EMBEDDING),
-        )
-
-        async_apis = (
-            ("openai", "Completion", "acreate", TraceType.LLM),
-            ("openai", "ChatCompletion", "acreate", TraceType.LLM),
-            ("openai", "Embedding", "acreate", TraceType.EMBEDDING),
-        )
+        sync_apis, async_apis = _legacy_openai_apis()
     else:
-        sync_apis = (
-            ("openai.resources.chat", "Completions", "create", TraceType.LLM),
-            ("openai.resources", "Completions", "create", TraceType.LLM),
-            ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING),
-        )
-
-        async_apis = (
-            ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM),
-            ("openai.resources", "AsyncCompletions", "create", TraceType.LLM),
-            ("openai.resources", "AsyncEmbeddings", "create", TraceType.EMBEDDING),
-        )
-
+        sync_apis, async_apis = _openai_apis()
     yield sync_apis, inject_sync
     yield async_apis, inject_async
 
 
 def _generate_api_and_injector(apis):
     for apis, injector in apis:
-        for module_name, class_name, method_name, trace_type in apis:
+        for module_name, class_name, method_name, trace_type, name in apis:
             try:
                 module = importlib.import_module(module_name)
                 api = getattr(module, class_name)
                 if hasattr(api, method_name):
-                    yield api, method_name, trace_type, injector
+                    yield api, method_name, trace_type, injector, name
             except AttributeError as e:
                 # Log the attribute exception with the missing class information
                 logging.warning(
@@ -176,10 +183,10 @@ def inject_openai_api():
     2. Updates the openai api configs from environment variables.
     """
 
-    for api, method, trace_type, injector in available_openai_apis_and_injectors():
+    for api, method, trace_type, injector, name in available_openai_apis_and_injectors():
         # Check if the create method of the openai_api class has already been modified
         if not hasattr(getattr(api, method), "_original"):
-            setattr(api, method, injector(getattr(api, method), trace_type))
+            setattr(api, method, injector(getattr(api, method), trace_type, name))
 
     if IS_LEGACY_OPENAI:
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
@@ -198,6 +205,6 @@ def recover_openai_api():
     """This function restores the original create methods of the OpenAI API classes
     by assigning them back from the _original attributes of the modified methods.
     """
-    for api, method, _, _ in available_openai_apis_and_injectors():
+    for api, method, _, _, _ in available_openai_apis_and_injectors():
         if hasattr(getattr(api, method), "_original"):
             setattr(api, method, getattr(getattr(api, method), "_original"))
