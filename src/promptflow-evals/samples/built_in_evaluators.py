@@ -5,7 +5,7 @@ import os
 # [Quality] Groundedness
 # Note: The model_config will be changed to type `AzureOpenAIModelConfiguration` after 
 # migrated to V2 SDK from Gen AI SDK
-from promptflow.evals.evaluators import groundedness
+from promptflow.evals.evaluators import GroundednessEvaluator
 from promptflow.entities import AzureOpenAIConnection
 
 model_config = AzureOpenAIConnection(
@@ -14,7 +14,7 @@ model_config = AzureOpenAIConnection(
     api_type="azure",
 )
 
-groundedness_eval = groundedness.init(model_config, deployment_name="gpt-4")
+groundedness_eval = GroundednessEvaluator(model_config, deployment_name="gpt-4")
 score = groundedness_eval(
     answer="The Alpine Explorer Tent is the most waterproof.",
     context="From the our product list, the alpine explorer tent is the most waterproof. The Adventure Dining Table has higher weight."
@@ -24,9 +24,9 @@ print(score)
 
 
 # [Quality] F1 Score
-from promptflow.evals.evaluators import f1_score
+from promptflow.evals.evaluators import F1ScoreEvaluator
 
-f1_score_eval = f1_score.init()
+f1_score_eval = F1ScoreEvaluator()
 score = f1_score_eval(
     answer="The capital of Japan is Tokyo.",
     ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture and technological advancements."
@@ -51,9 +51,9 @@ print(score)
 # information about geography. There is no mention or implication of violence.'}
 
 # QA Evaluator
-from promptflow.evals.evaluators import qa
+from promptflow.evals.evaluators import QAEvaluator
 
-qa_eval = qa.init(model_config=model_config, deployment_name="gpt-4-32k")
+qa_eval = QAEvaluator(model_config=model_config, deployment_name="gpt-4-32k")
 
 result = qa_eval(
     question="Tokyo is the capital of which country?",
