@@ -377,6 +377,22 @@ class TestToolsManager:
             _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
         assert expected in str(e.value)
 
+    def test_register_apis(self):
+            from typing import Union
+            from promptflow._core.tools_manager import register_apis, connection_type_to_api_mapping
+            from promptflow._core.tool import ToolProvider
+            from promptflow.connections import OpenAIConnection, ServerlessConnection
+
+            class MockAI(ToolProvider):
+                def __init__(self, connection: Union[OpenAIConnection, ServerlessConnection]):
+                    super().__init__()
+
+            register_apis(MockAI)
+
+            assert len(connection_type_to_api_mapping) == 2
+            assert "OpenAIConnection" in connection_type_to_api_mapping, "OpenAIConnection is not in connection_type_to_api_mapping"
+            assert "ServerlessConnection" in connection_type_to_api_mapping, "ServerlessConnection is not in connection_type_to_api_mapping"
+
 
 @pytest.mark.unittest
 class TestBuiltinsManager:

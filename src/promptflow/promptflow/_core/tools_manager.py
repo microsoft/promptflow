@@ -460,6 +460,7 @@ connection_type_to_api_mapping = {}
 
 
 def get_all_supported_types(param_annotation) -> list:
+    types = []
     origin = get_origin(param_annotation)
     if origin != Union:
         types.append(param_annotation.__name__)
