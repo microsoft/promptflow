@@ -81,7 +81,7 @@ class ExperimentOrchestrator:
         self._node_runs = {}
 
     def test(
-        self, flow: Union[str, Path], template: ExperimentTemplate, inputs=None, environment_variables=None, **kwargs
+        self, template: ExperimentTemplate, flow: Union[str, Path]=None, inputs=None, environment_variables=None, **kwargs
     ):
         """Test flow in experiment.
 
@@ -94,17 +94,23 @@ class ExperimentOrchestrator:
         :param environment_variables: Environment variables for flow.
         :type environment_variables: dict
         """
-        flow_path = Path(flow).resolve().absolute()
-        logger.info(f"Testing flow {flow_path.as_posix()} in experiment {template._base_path.absolute().as_posix()}.")
+        if flow is not None:
+            flow_path = Path(flow).resolve().absolute()
+            logger.info(f"Testing flow {flow_path.as_posix()} in experiment {template._base_path.absolute().as_posix()}.")
+            # Find start nodes, must be flow nodes
+            start_nodes = [
+                node
+                for node in template.nodes
+                if node.type == ExperimentNodeType.FLOW and resolve_flow_path(node.path) == resolve_flow_path(flow_path)
+            ]
+            if not start_nodes:
+                raise ExperimentValueError(
+                    f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")
+        else:
+            logger.info(f"Testing experiment {template._base_path.absolute().as_posix()}.")
+            start_nodes = [node for node in template.nodes if len(ExperimentHelper._prepare_single_node_edges(node)) == 0]
+
         inputs, environment_variables = inputs or {}, environment_variables or {}
-        # Find start nodes, must be flow nodes
-        start_nodes = [
-            node
-            for node in template.nodes
-            if node.type == ExperimentNodeType.FLOW and resolve_flow_path(node.path) == resolve_flow_path(flow_path)
-        ]
-        if not start_nodes:
-            raise ExperimentValueError(f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")
         logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")

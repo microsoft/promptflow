@@ -280,6 +280,16 @@ class TestExperiment:
                 )
             assert "not found in experiment" in str(error.value)
 
+    def test_experiment_test(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            client._experiments.test(
+                experiment=template_path,
+            )
+            print("haha")
+
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_eager_flow_test_with_experiment(self, monkeypatch):
 

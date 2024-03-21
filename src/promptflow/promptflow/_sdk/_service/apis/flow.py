@@ -14,8 +14,6 @@ from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, U
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
 from promptflow._sdk._utils import json_load, read_write_by_user
-from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("Flows", description="Flows Management")
@@ -96,21 +94,6 @@ class FlowTest(Resource):
         return result
 
 
-@api.route("/get")
-class FlowGet(Resource):
-    @api.response(code=200, description="Return flow yaml as json", model=dict_field)
-    @api.doc(description="Return flow yaml as json")
-    def get(self):
-        args = flow_path_parser.parse_args()
-        flow_path = args.flow
-        flow_path = decrypt_flow_path(flow_path)
-        if not os.path.exists(flow_path):
-            raise UserErrorException(f"The flow doesn't exist: {flow_path}")
-        flow_path_dir, flow_path_file = resolve_flow_path(Path(flow_path))
-        flow_info = load_yaml(flow_path_dir / flow_path_file)
-        return flow_info
-
-
 @api.route("/ux_inputs")
 class FlowUxInputs(Resource):
     @api.response(code=200, description="Get the file content of file UX_INPUTS_JSON", model=dict_field)
@@ -121,7 +104,11 @@ class FlowUxInputs(Resource):
         flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
             raise UserErrorException(f"The flow doesn't exist: {flow_path}")
-        flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        if os.path.isdir(flow_path):
+            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        else:
+            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+
         if not flow_ux_inputs_path.exists():
             flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         try:
@@ -138,7 +125,10 @@ class FlowUxInputs(Resource):
         args = flow_path_parser.parse_args()
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
-        flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        if os.path.isdir(flow_path):
+            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        else:
+            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(content, f, ensure_ascii=False, indent=2)

@@ -13,6 +13,8 @@ from werkzeug.utils import safe_join
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
+from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("ui", description="UI")
@@ -26,11 +28,17 @@ media_save_model = api.model(
     },
 )
 
+dict_field = api.schema_model("FlowDict", {"additionalProperties": True, "type": "object"})
+
 flow_path_parser = reqparse.RequestParser()
 flow_path_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
 
 image_path_parser = reqparse.RequestParser()
 image_path_parser.add_argument("image_path", type=str, required=True, location="args", help="Path of image.")
+
+yaml_parser = reqparse.RequestParser()
+yaml_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
+yaml_parser.add_argument("experiment", type=str, required=False, location="json", help="Path to experiment.")
 
 
 @api.route("/chat")
@@ -61,6 +69,8 @@ class MediaSave(Resource):
         args = flow_path_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
+        if os.path.isfile(flow):
+            flow = os.path.dirname(flow)
         base64_data = api.payload["base64_data"]
         extension = api.payload["extension"]
         safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
@@ -80,7 +90,8 @@ class MediaView(Resource):
         args = flow_path_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
-
+        if os.path.isfile(flow):
+            flow = os.path.dirname(flow)
         args = image_path_parser.parse_args()
         image_path = args.image_path
         safe_path = safe_join(flow, image_path)
@@ -93,6 +104,38 @@ class MediaView(Resource):
 
         directory, filename = os.path.split(safe_path)
         return send_from_directory(directory, filename)
+
+
+@api.route("/get")
+class YamlGet(Resource):
+    @api.response(code=200, description="Return flow yaml as json", model=dict_field)
+    @api.doc(description="Return flow yaml as json")
+    def get(self):
+        args = yaml_parser.parse_args()
+        flow = args.flow
+        flow = decrypt_flow_path(flow)
+        experiment = args.experiment
+        if experiment:
+            if os.path.isabs(experiment):
+                if not os.path.exists(experiment):
+                    raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
+                flow_path = experiment
+            else:
+                if os.path.isfile(flow):
+                    flow = os.path.dirname(flow)
+                flow_path = safe_join(flow, experiment)
+                if flow_path is None:
+                    message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
+                    raise UserErrorException(message)
+                if not os.path.exists(flow_path):
+                    raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
+        else:
+            if not os.path.exists(flow):
+                raise UserErrorException(f"The flow doesn't exist: {flow}")
+            flow_path = flow
+        flow_path_dir, flow_path_file = resolve_flow_path(Path(flow_path))
+        flow_info = load_yaml(flow_path_dir / flow_path_file)
+        return flow_info
 
 
 def serve_trace_ui(path):

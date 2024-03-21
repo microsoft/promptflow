@@ -2,16 +2,28 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from flask import jsonify, request
+import uuid
+import os
+from pathlib import Path
+import shutil
 
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow.exceptions import UserErrorException
 
 api = Namespace("Experiments", description="Experiments Management")
 
 # Response model of experiment operation
 dict_field = api.schema_model("ExperimentDict", {"additionalProperties": True, "type": "object"})
 list_field = api.schema_model("ExperimentList", {"type": "array", "items": {"$ref": "#/definitions/ExperimentDict"}})
+
+# Define start experiments request parsing
+test_experiment = api.parser()
+test_experiment.add_argument("template", type=str, location="json", required=False)
+test_experiment.add_argument("inputs", type=list, location="json", required=False)
+test_experiment.add_argument("environment_variables", type=str, location="json", required=False)
+test_experiment.add_argument("output_path", type=str, location="json", required=False)
 
 
 @api.route("/")
@@ -30,3 +42,46 @@ class ExperimentList(Resource):
         )
         experiments_dict = [experiment._to_dict() for experiment in experiments]
         return jsonify(experiments_dict)
+
+
+@api.route("/test")
+class ExperimentTest(Resource):
+    @api.doc(description="Start experiment")
+    @api.response(code=200, description="Experiment execution details.")
+    @api.produces(["text/plain", "application/json"])
+    @api.expect(test_experiment)
+    def post(self):
+        args = test_experiment.parse_args()
+        client = get_client_from_request()
+        template = args.template
+        inputs = args.inputs
+        environment_variables = args.environment_variables
+        output_path = args.output_path
+        if template:
+            api.logger.debug(f"Testing an anonymous experiment {args.template}.")
+        else:
+            raise UserErrorException("To test an experiment, template must be specified.")
+
+        remove_dir = False
+
+        if output_path is None:
+            filename = str(uuid.uuid4())
+            if os.path.isdir(template):
+                output_path = Path(template) / filename
+            else:
+                output_path = Path(os.path.dirname(template)) / filename
+            os.makedirs(output_path, exist_ok=True)
+            remove_dir = True
+        output_path = Path(output_path).resolve()
+
+        try:
+            result = client._experiments._test_with_ui(
+                experiment=template,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                output_path=output_path
+            )
+        finally:
+            if remove_dir:
+                shutil.rmtree(output_path)
+        return result

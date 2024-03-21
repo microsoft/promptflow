@@ -10,7 +10,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, L
 from promptflow._sdk._errors import ExperimentExistsError, RunOperationError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import safe_parse_object_list
+from promptflow._sdk._utils import safe_parse_object_list, json_load
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
@@ -151,6 +151,59 @@ class ExperimentOperations(TelemetryMixin):
         ExperimentOrchestrator(self._client, experiment).stop()
         return self.get(experiment.name)
 
+    @monitor_operation(activity_name="pf.experiment.test", activity_type=ActivityType.PUBLICAPI)
+    def test(self, experiment: Experiment, inputs=None, environment_variables=None, **kwargs) -> Experiment:
+        """Test an experiment.
+
+        :param experiment: Experiment yaml file path.
+        :type experiment: Union[Path, str]
+        :param inputs: Input parameters for flow.
+        :type inputs: dict
+        :param environment_variables: Environment variables for flow.
+        :type environment_variables: dict
+        """
+        from .._load_functions import _load_experiment_template
+        from .._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        experiment_template = _load_experiment_template(experiment)
+        output_path = kwargs.get("output_path", None)
+        session = kwargs.get("session", None)
+        return ExperimentOrchestrator(client=self._client, experiment=None).test(
+            experiment_template,
+            None,
+            inputs,
+            environment_variables,
+            output_path=output_path,
+            session=session,
+        )
+
+    def _test_with_ui(self, experiment: Experiment, inputs=None, environment_variables=None, **kwargs) -> Experiment:
+        """Test an experiment by http reuwest.
+
+        :param experiment: Experiment yaml file path.
+        :type experiment: Union[Path, str]
+        :param inputs: Input parameters for flow.
+        :type inputs: dict
+        :param environment_variables: Environment variables for flow.
+        :type environment_variables: dict
+        """
+        output_path = kwargs.get("output_path", None)
+        result = self.test(
+            experiment=experiment,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            **kwargs
+        )
+        return_output = {}
+        for key in result:
+            detail_path = output_path / key / "flow.detail.json"
+            log_path = output_path / key / "flow.log"
+            detail_content = json_load(detail_path)
+            with open(log_path, "r") as file:
+                log_content = file.read()
+            return_output[key] = {"detail": detail_content, "log": log_content}
+        return return_output
+
     def _test(
         self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs
     ):
@@ -172,8 +225,8 @@ class ExperimentOperations(TelemetryMixin):
         output_path = kwargs.get("output_path", None)
         session = kwargs.get("session", None)
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
-            flow,
             experiment_template,
+            flow,
             inputs,
             environment_variables,
             output_path=output_path,

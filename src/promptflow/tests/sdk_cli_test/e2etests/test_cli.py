@@ -2023,6 +2023,18 @@ class TestCli:
                 path = Path(tmpdir) / node_name / filename
                 assert path.is_file()
 
+    @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
+    def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
+            run_pf_command(
+                "experiment",
+                "test",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
+            out, _ = capfd.readouterr()
+            assert "main" in out
+            assert "eval" in out
+
     def test_run_list(self, local_client):
         from promptflow._sdk.entities import Run
 
