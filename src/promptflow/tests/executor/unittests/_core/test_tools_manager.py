@@ -381,17 +381,20 @@ class TestToolsManager:
             from typing import Union
             from promptflow._core.tools_manager import register_apis, connection_type_to_api_mapping
             from promptflow._core.tool import ToolProvider
-            from promptflow.connections import OpenAIConnection, ServerlessConnection
+            from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
 
-            class MockAI(ToolProvider):
+            class MockAI1(ToolProvider):
                 def __init__(self, connection: Union[OpenAIConnection, ServerlessConnection]):
                     super().__init__()
 
-            register_apis(MockAI)
+            class MockAI2(ToolProvider):
+                def __init__(self, connection: AzureOpenAIConnection):
+                    super().__init__()
 
-            assert len(connection_type_to_api_mapping) == 2
-            assert "OpenAIConnection" in connection_type_to_api_mapping, "OpenAIConnection is not in connection_type_to_api_mapping"
-            assert "ServerlessConnection" in connection_type_to_api_mapping, "ServerlessConnection is not in connection_type_to_api_mapping"
+            register_apis(MockAI1)
+            register_apis(MockAI2)
+
+            assert len(connection_type_to_api_mapping) == 3
 
 
 @pytest.mark.unittest
