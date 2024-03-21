@@ -9,8 +9,6 @@ from openai.types.beta.threads.runs.code_interpreter_tool_call import CodeInterp
 from openai.types.beta.threads.runs.tool_calls_step_details import ToolCall
 from opentelemetry.trace import get_current_span
 
-from get_tracer import get_tracer
-
 from openai.types.beta.threads import TextContentBlock, ImageFileContentBlock, Message
 
 from promptflow.core import tool
@@ -28,7 +26,6 @@ RUN_STATUS_POLLING_INTERVAL_IN_MILSEC = 1000
 # Why we define global variable instead of function parameter? We want to keep trace input as simple as possible.
 cli_var: ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]] = \
     ContextVar[Union[AzureOpenAIConnection, OpenAIConnection]]("cli_var", default=None)
-tracer_var: ContextVar = ContextVar("tracer_var", default=None)
 tool_invoker_var: ContextVar[AssistantToolInvoker] = ContextVar[AssistantToolInvoker]("tool_invoker_var", default=None)
 
 
@@ -43,8 +40,6 @@ async def add_message_and_run(
 ):
     cli = await get_assistant_client(conn)
     cli_var.set(cli)
-    tracer = await get_tracer()
-    tracer_var.set(tracer)
     invoker = assistant_definition._tool_invoker
     tool_invoker_var.set(invoker)
     # Check if assistant id is valid. If not, create a new assistant.
@@ -192,10 +187,12 @@ async def get_new_run_steps(thread_id: str, run_id: str, processed_steps_num: in
 
 @trace
 async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str):
-    span = get_current_span()
     while True:
         await wait_for_status_check()
         run_step = await get_run_step(thread_id=thread_id, run_id=run_id, run_step_id=run_step_id)
+        # Update the span name eargerly to make sure span dynamic exhibition
+        span = get_current_span()
+        span.update_name(run_step.type)
         if run_step.status in {"in_progress"}:
             run = await get_run(thread_id, run_id)
             if run.status == "requires_action":
@@ -205,11 +202,12 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
         else:
             # Run step completed
             break
-    return await update_run_step_trace(span, run_step, thread_id)
+    return await update_run_step_trace(run_step, thread_id)
 
-async def update_run_step_trace(span, run_step, thread_id):
+async def update_run_step_trace(run_step, thread_id):
+    """Custom trace with run_step details"""
     # update trace name with run_step type
-    span.update_name(run_step.type)
+    span = get_current_span()
     cli = cli_var.get()
     if run_step.type == "message_creation":
         msg_id = run_step.step_details.message_creation.message_id
