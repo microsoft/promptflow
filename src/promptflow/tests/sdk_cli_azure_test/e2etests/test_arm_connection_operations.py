@@ -24,6 +24,6 @@ class TestArmConnectionOperations:
         assert result.module == "promptflow.connections"
 
         result = connection_ops.get(name="custom_connection")
-        assert result.name == "azure_open_ai_connection"
+        assert result.name == "custom_connection"
         assert result.configs == {}
         assert result.module == "promptflow.connections"
