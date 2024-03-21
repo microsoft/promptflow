@@ -61,8 +61,6 @@ async def add_message_and_run(
 
     messages = await get_output_message(thread_id)
 
-    await list_run_steps(thread_id, run.id)
-
     file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
     return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
@@ -233,84 +231,11 @@ async def update_run_step_trace(span, run_step, thread_id):
             return convert_tool_calls(run_step.step_details.tool_calls)
 
 
-
-@trace
-async def message(thread_id: str, msg_id: str):
-    cli=cli_var.get()
-    message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=thread_id)
-    return convert_message_content(message.content)
-
-async def trace_code_interpreter(step_run):
-    tool_call = step_run.step_details.tool_calls[0]
-    tracer = tracer_var.get()
-    with tracer.start_as_current_span(tool_call.type, start_time=_to_nano(step_run.created_at), end_on_exit=False) as span:
-        span.set_attribute("inputs", json.dumps(tool_call.code_interpreter.input))
-        span.set_attribute("output", json.dumps(convert_code_interpreter_outputs(tool_call.code_interpreter.outputs)))
-        span.end(end_time=_to_nano(step_run.completed_at))
-    return tool_call
-
-
-
-@trace
-async def list_run_steps(thread_id: str, run_id: str):
-    cli = cli_var.get()
-    run_steps = await cli.beta.threads.runs.steps.list(thread_id=thread_id, run_id=run_id)
-    step_runs = []
-    for run_step in run_steps.data:
-        step_runs.append(run_step.dict())
-        await show_run_step(run_step)
-    return step_runs
-
-
-async def show_run_step(run_step):
-    cli=cli_var.get()
-    tracer=tracer_var.get()
-    with tracer.start_as_current_span(run_step.type, start_time=_to_nano(run_step.created_at), end_on_exit=False) as span:
-        if run_step.type == "message_creation":
-            msg_id = run_step.step_details.message_creation.message_id
-            message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=run_step.thread_id)
-            span.set_attribute("output", json.dumps(convert_message_content(message.content)))
-            span.set_attribute("msg_id", msg_id)
-            span.set_attribute("role", message.role)
-            span.set_attribute("created_at", message.created_at)
-        elif run_step.type == "tool_calls":
-            for tool_call in run_step.step_details.tool_calls:
-                await show_tool_call(tool_call)
-            span.set_attribute("output", json.dumps(convert_tool_calls(run_step.step_details.tool_calls)))
-        span.set_attribute("thread_id", run_step.thread_id)
-        span.end(end_time=_to_nano(run_step.completed_at))
-    return run_step
-
 def convert_message_content(contents: List[Message]):
     return [content.dict() for content in contents]
 
 def convert_tool_calls(calls: List[ToolCall]):
     return [call.dict() for call in calls]
-
-
-def _to_nano(unix_time_in_sec: int):
-    """Convert Unix timestamp from seconds to nanoseconds."""
-    return unix_time_in_sec*1000000000
-
-async def show_tool_call(tool_call):
-    #Todo: start_time and end_time are not avaliable in tool_call. Shall fullfill it later.
-    tracer=tracer_var.get()
-    if tool_call.type == "code_interpreter":
-        span_name = "code_interpreter"
-        with tracer.start_as_current_span(span_name) as span:
-            span.set_attribute("inputs", json.dumps(tool_call.code_interpreter.input))
-            span.set_attribute("output", json.dumps(convert_code_interpreter_outputs(tool_call.code_interpreter.outputs)))
-    elif tool_call.type == "function":
-        span_name=tool_call.function.name
-        with tracer.start_as_current_span(span_name) as span:
-            span.set_attribute("inputs", tool_call.function.arguments)
-            span.set_attribute("output", json.dumps(tool_call.function.output))
-    else:
-        span_name = "retrieval"
-        with tracer.start_as_current_span(span_name) as span:
-            # todo: fulfill after retrieval tool enabled in aoai
-            pass
-    return tool_call
 
 
 def convert_code_interpreter_outputs(logs: List[CodeInterpreterOutput]):
