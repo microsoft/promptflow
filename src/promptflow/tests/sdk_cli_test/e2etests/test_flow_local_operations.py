@@ -495,3 +495,11 @@ class TestFlowLocalOperations:
             pf.flows.validate(flow=source, raise_error=True)
 
         assert "Entry function my_func is not valid." in str(e.value)
+
+    def test_flow_generate_tools_meta_for_flex_flow(self, pf) -> None:
+        source = f"{EAGER_FLOWS_DIR}/simple_with_yaml"
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source)
+        assert tools_error == {}
+        assert tools_meta["package"] == {}
+        assert tools_meta["code"] == {}

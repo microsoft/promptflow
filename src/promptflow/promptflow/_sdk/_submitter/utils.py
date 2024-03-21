@@ -49,6 +49,7 @@ from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -366,7 +367,7 @@ def show_node_log_and_output(node_run_infos, show_node_output, generator_record)
             # TODO executor return a type string of generator
             node_output = node_result.output
             if isinstance(node_result.output, GeneratorType):
-                node_output = "".join(
+                node_output = _safe_join(
                     resolve_generator_output_with_cache(
                         node_output, generator_record, generator_key=f"nodes.{node_name}.output"
                     )
@@ -418,11 +419,26 @@ def resolve_generator_output_with_cache(
     return output
 
 
+def _safe_join(generator_output):
+    items = []
+    for item in generator_output:
+        if isinstance(item, str):
+            items.append(item)
+        else:
+            try:
+                items.append(str(item))
+            except Exception as e:
+                raise UserErrorException(
+                    message=f"Failed to convert generator output to string: {e}",
+                )
+    return "".join(items)
+
+
 def resolve_generator(flow_result, generator_record):
     # resolve generator in flow result
     for k, v in flow_result.run_info.output.items():
         if isinstance(v, GeneratorType):
-            flow_output = "".join(
+            flow_output = _safe_join(
                 resolve_generator_output_with_cache(v, generator_record, generator_key=f"run.outputs.{k}")
             )
             flow_result.run_info.output[k] = flow_output
@@ -432,7 +448,7 @@ def resolve_generator(flow_result, generator_record):
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():
         if isinstance(node.output, GeneratorType):
-            node_output = "".join(
+            node_output = _safe_join(
                 resolve_generator_output_with_cache(
                     node.output, generator_record, generator_key=f"nodes.{node_name}.output"
                 )
