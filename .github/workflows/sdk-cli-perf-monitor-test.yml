@@ -28,15 +28,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: snok/install-poetry@v1
-    - name: build
-      run: poetry build
-      working-directory: ${{ github.workspace }}/src/promptflow-tracing
-    - uses: actions/upload-artifact@v4
+    - name: Build wheel
+      uses: "./.github/actions/step_sdk_setup"
       with:
-        name: promptflow-tracing
-        path: ${{ github.workspace }}/src/promptflow-tracing/dist/promptflow_tracing-*.whl
+        setupType: promptflow_with_extra
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Upload Wheel
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheel
+        path: |
+          ${{ github.workspace }}/src/promptflow/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
 
   sdk_cli_perf_monitor_test:
     strategy:
@@ -67,18 +72,16 @@ jobs:
         with:
           pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
 
-      - name: Build wheel
-        uses: "./.github/actions/step_sdk_setup"
-        with:
-          setupType: ${{ env.packageSetupType }}
-          scriptPath: ${{ env.testWorkingDirectory }}
-
-      - name: install promptflow-tracing from wheel
+      - name: Install wheel
         shell: pwsh
         working-directory: artifacts
-        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
         run: |
+          Set-PSDebug -Trace 1
+          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
+          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
           gci ./promptflow-tracing -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install --force-reinstall $_.FullName}}
+          pip freeze
 
       - name: Generate (mock) connections.json
         shell: pwsh
