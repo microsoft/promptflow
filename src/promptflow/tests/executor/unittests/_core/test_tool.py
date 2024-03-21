@@ -67,7 +67,7 @@ class TestTool:
         assert len(traces) == 1
         trace = traces[0]
         assert trace["name"] == func.__qualname__
-        assert trace["type"] == TraceType.TOOL
+        assert trace["type"] == TraceType.FUNCTION
         assert trace["inputs"] == {"a": 1}
         assert trace["output"] == 1
         assert trace["error"] is None

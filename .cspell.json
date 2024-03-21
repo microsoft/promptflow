@@ -16,6 +16,8 @@
   ],
   "ignorePaths": [
     "**/*.js",
+    "**/*.mjs",
+    "**/*.css",
     "**/*.pyc",
     "**/*.log",
     "**/*.jsonl",
@@ -26,13 +28,17 @@
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/promptflow/azure/_restclient/swagger.json",
     "src/promptflow/promptflow/azure/_models/**",
+    "src/promptflow/promptflow/core/_connection_provider/_models/**",
     "src/promptflow/tests/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py",
     "scripts/installer/curl_install_pypi/**",
     "scripts/installer/windows/**",
-    "src/promptflow/promptflow/_sdk/_service/pfsvc.py"
+    "src/promptflow/promptflow/_sdk/_service/pfsvc.py",
+    ".github/workflows/**",
+    ".github/actions/**",
+    ".github/pipelines/**"
   ],
   "words": [
     "aoai",

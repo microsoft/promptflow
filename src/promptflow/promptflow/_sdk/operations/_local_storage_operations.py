@@ -37,7 +37,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import FlexFlow, Flow
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import MultimediaProcessor
@@ -51,6 +50,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.storage import AbstractBatchRunStorage
+from promptflow.tracing._utils import serialize
 
 logger = get_cli_sdk_logger()
 
@@ -71,6 +71,7 @@ class LoggerOperations(LogContext):
         with read_open(self.file_path) as f:
             return f.read()
 
+    @classmethod
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
         result = super()._get_execute_loggers_list()
         result.append(logger)
@@ -83,6 +84,7 @@ class LoggerOperations(LogContext):
             run_mode=self.run_mode,
             credential_list=self.credential_list,
             stream=self.stream,
+            flow_logs_folder=self.flow_logs_folder,
         )
 
     def __enter__(self):
@@ -90,6 +92,8 @@ class LoggerOperations(LogContext):
         log_path.parent.mkdir(parents=True, exist_ok=True)
         if self.run_mode == RunMode.Batch:
             log_path.touch(exist_ok=True)
+            line_folder_path = Path(self.flow_logs_folder)
+            line_folder_path.mkdir(parents=True, exist_ok=True)
         else:
             if log_path.exists():
                 # for non batch run, clean up previous log content
@@ -191,7 +195,10 @@ class LocalStorageOperations(AbstractBatchRunStorage):
         self.path = prepare_folder(self._run._output_path)
 
         self.logger = LoggerOperations(
-            file_path=self.path / LocalStorageFilenames.LOG, stream=stream, run_mode=run_mode
+            file_path=self.path / LocalStorageFilenames.LOG,
+            stream=stream,
+            run_mode=run_mode,
+            flow_logs_folder=self.path / LocalStorageFilenames.FLOW_LOGS_FOLDER,
         )
         # snapshot
         self._snapshot_folder_path = prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
