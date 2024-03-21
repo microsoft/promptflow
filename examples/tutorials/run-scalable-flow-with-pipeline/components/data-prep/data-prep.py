@@ -11,14 +11,11 @@ parser.add_argument("--output_data_folder", type=str)
 
 args, _ = parser.parse_known_args()
 
-try:
-    input_df = pd.read_json(args.input_data_file, lines=True)
-except:
-    raise Exception("Can not load input jsonl data.")
+input_df = pd.read_json(args.input_data_file, lines=True)
 
 # data preparation, e.g. data sampling, data cleaning, etc.
 processed_data = input_df.sample(n=200, replace=True, random_state=1)
 
 # export data into output folder
-output_file_path = os.path.join(args.output_data_folder, "processed_data.csv")  
+output_file_path = os.path.join(args.output_data_folder, "processed_data.csv")
 processed_data.to_csv(output_file_path, index=False, header=True)

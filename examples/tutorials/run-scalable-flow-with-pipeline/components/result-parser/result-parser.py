@@ -29,7 +29,7 @@ pf_output_df.sort_values(by="line_number", inplace=True, ignore_index=True)
 if len(source_data_df) != len(pf_output_df):
     raise Exception("Index mismatch between data source and pf result")
 
-source_data_df.loc[:, "line_number"] = pf_output_df.loc [:, "line_number"]
+source_data_df.loc[:, "line_number"] = pf_output_df.loc[:, "line_number"]
 source_data_df.loc[:, "pred_category"] = pf_output_df.loc[:, "category"]
 source_data_df.loc[:, "pred_evidence"] = pf_output_df.loc[:, "evidence"]
 
