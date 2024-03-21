@@ -37,7 +37,7 @@ jobs:
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
-        setupType: promptflow_with_extra
+        setupType: ${{ env.packageSetupType }}
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Upload Wheel
       if: always()
@@ -50,6 +50,7 @@ jobs:
           ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
 
   sdk_cli_perf_monitor_test:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -78,13 +79,19 @@ jobs:
         with:
           pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
 
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: artifacts
+
       - name: Install wheel
         shell: pwsh
         working-directory: artifacts
         run: |
           Set-PSDebug -Trace 1
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
+          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executable,azureml-serving,executor-service]"}}
           gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
           gci ./promptflow-tracing -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install --force-reinstall $_.FullName}}
           pip freeze

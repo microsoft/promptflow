@@ -50,7 +50,7 @@ jobs:
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tracing/dist/*.whl
   sdk_cli_global_config_tests:
-    needs: authorize
+    needs: [ authorize, build ]
     strategy:
       fail-fast: false
       matrix:
@@ -81,6 +81,11 @@ jobs:
       uses: "./.github/actions/step_create_python_environment"
       with:
         pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
+    - name: Download Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: wheel
+        path: artifacts
     - name: Install wheel
       shell: pwsh
       working-directory: artifacts
