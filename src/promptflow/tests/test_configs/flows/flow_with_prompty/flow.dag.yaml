@@ -8,9 +8,10 @@ outputs:
     reference: ${echo_my_prompt.output}
 nodes:
 - name: hello_prompt
-  type: llm
+  type: custom_llm
   source:
     type: code
+    package: promptflow.tools.llm.llm
     path: hello.prompty
   inputs:
     text: ${inputs.text}

@@ -9,7 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Mapping, Union
 
-from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, PROMPTY_EXTENSION, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
@@ -29,7 +29,7 @@ from promptflow.exceptions import UserErrorException
 
 class FlowBase(abc.ABC):
     def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
-        # flow.dag.yaml's content if provided
+        # yaml content if provided
         self._data = data
         # working directory of the flow
         self._code = Path(code).resolve()
@@ -66,13 +66,21 @@ class FlowBase(abc.ABC):
         flow_path = flow_dir / flow_filename
         if is_prompty_flow(flow_path):
             return Prompty.load(source=flow_path, **kwargs)
-        else:
-            with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-                flow_content = f.read()
-                data = load_yaml_string(flow_content)
-            if is_flex_flow(yaml_dict=data, working_dir=flow_dir):
-                raise UserErrorException("Please call entry directly for flex flow.")
-            return cls._create(code=flow_dir, path=flow_path, data=data)
+
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            data = load_yaml_string(flow_content)
+        flow_language = data.get(LANGUAGE_KEY, FlowLanguage.Python)
+        if flow_language != FlowLanguage.Python:
+            raise UserErrorException(
+                message_format="Only python flows are allowed to be loaded with "
+                "promptflow-core but got a {language} flow",
+                language=flow_language,
+            )
+
+        if is_flex_flow(yaml_dict=data, working_dir=flow_dir):
+            raise UserErrorException("Please call entry directly for flex flow.")
+        return cls._create(code=flow_dir, path=flow_path, data=data)
 
     @classmethod
     def _create(cls, data, code, path, **kwargs):
@@ -85,12 +93,12 @@ class Flow(FlowBase):
     and the output of one step can be used as the input to the next.
     Flows can be used to build complex applications with language models.
 
-    Simple Example:
+    Example:
 
     .. code-block:: python
 
         from promptflow.core import Flow
-        flow = Flow.load(source="path/to/flow.dag.yaml")
+        flow = Flow.load(source="path/to/flow.yaml")
         result = flow(input_a=1, input_b=2)
 
     """
@@ -137,12 +145,12 @@ class Flow(FlowBase):
 class AsyncFlow(FlowBase):
     """Async flow is based on Flow, which is used to invoke flow in async mode.
 
-    Simple Example:
+    Example:
 
     .. code-block:: python
 
         from promptflow.core import class AsyncFlow
-        flow = AsyncFlow.load(source="path/to/flow.dag.yaml")
+        flow = AsyncFlow.load(source="path/to/flow.yaml")
         result = await flow(input_a=1, input_b=2)
 
     """

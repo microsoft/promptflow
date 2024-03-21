@@ -17,12 +17,12 @@ from promptflow._constants import (
     PROMPTY_EXTENSION,
 )
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import strip_quotation
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.tracing._utils import serialize
 
 logger = LoggerFactory.get_logger(name=__name__)
 

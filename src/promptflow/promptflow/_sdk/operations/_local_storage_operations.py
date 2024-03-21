@@ -37,7 +37,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import FlexFlow, Flow
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.flow_utils import is_prompty_flow
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
@@ -56,6 +55,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.storage import AbstractBatchRunStorage
+from promptflow.tracing._utils import serialize
 
 logger = get_cli_sdk_logger()
 
