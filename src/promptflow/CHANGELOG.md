@@ -1,6 +1,6 @@
 # Release History
 
-## 1.7.0 (Upcoming)
+## 1.7.0 (2024.03.22)
 
 ### NOTICES
 - Import warnings will be printed when importing from `promptflow` namespace, please use imports from new namespaces
