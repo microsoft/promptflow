@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 import abc
-import copy
+import json
 import re
 from os import PathLike
 from pathlib import Path
@@ -15,15 +15,13 @@ from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
 from promptflow.core._prompty_utils import (
-    convert_to_chat_list,
-    find_referenced_image_set,
+    convert_prompt_template,
     get_connection,
     get_open_ai_client_by_connection,
-    parse_chat,
-    preprocess_template_string,
+    prepare_open_ai_request_params,
 )
 from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
-from promptflow.core._utils import init_executable, render_jinja_template_content
+from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
 
@@ -337,38 +335,30 @@ class Prompty(FlowBase):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow.core._connection import AzureOpenAIConnection
-
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
-        # 1. init client
+        # 1. Get connection
         connection = get_connection(self._connection)
-        api_client = get_open_ai_client_by_connection(connection=connection)
 
-        # 2. prepare params
-        # TODO validate function in params
-        params = copy.copy(self._parameters)
-        if isinstance(connection, AzureOpenAIConnection):
-            params["model"] = params.pop("deployment_name")
-            params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
-
-        # 3.deal with prompt
+        # 2.deal with prompt
         inputs = self._validate_inputs(kwargs)
-        prompt = preprocess_template_string(self._template)
-        referenced_images = find_referenced_image_set(inputs)
+        template = convert_prompt_template(self._template, inputs, self._api)
 
-        # convert list type into ChatInputList type
-        converted_kwargs = convert_to_chat_list(inputs)
-        rendered_prompt = render_jinja_template_content(
-            template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
-        )
+        # 3. prepare params
+        params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
+
+        # 4. send request to open ai
+        api_client = get_open_ai_client_by_connection(connection=connection)
         if self._api == "completion":
-            params["prompt"] = rendered_prompt
-            return api_client.completions.create(**params).choices[0].text
+            result = api_client.completions.create(**params).choices[0].text
         else:
-            params["messages"] = parse_chat(rendered_prompt, list(referenced_images))
             completion = api_client.chat.completions.create(**params)
-            return getattr(completion.choices[0].message, "content", "")
+            result = getattr(completion.choices[0].message, "content", "")
+        if params.get("response_format", None) == "json_object":
+            # response_format is one of text or json_object.
+            # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+            result = json.loads(result)
+        return result
 
 
 class AsyncPrompty(Prompty):
@@ -378,9 +368,10 @@ class AsyncPrompty(Prompty):
 
     .. code-block:: python
 
-        from promptflow.core import class AsyncPrompty
-        flow = AsyncPrompty.load(source="path/prompty.prompty")
-        result = await flow(input_a=1, input_b=2)
+        import asyncio
+        from promptflow.core import AsyncPrompty
+        prompty = AsyncPrompty.load(source="path/prompty.prompty")
+        result = asyncio.run(prompty(input_a=1, input_b=2))
 
     """
 
@@ -395,6 +386,26 @@ class AsyncPrompty(Prompty):
         :return:
         """
         if args:
-            raise UserErrorException("Flow can only be called with keyword arguments.")
+            raise UserErrorException("Prompty can only be called with keyword arguments.")
+        # 1. Get connection
+        connection = get_connection(self._connection)
 
-        return await super.__call__(**kwargs)
+        # 2.deal with prompt
+        inputs = self._validate_inputs(kwargs)
+        template = convert_prompt_template(self._template, inputs, self._api)
+
+        # 3. prepare params
+        params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
+
+        # 4. send request to open ai
+        api_client = get_open_ai_client_by_connection(connection=connection, is_async=True)
+        if self._api == "completion":
+            result = await api_client.completions.create(**params).choices[0].text
+        else:
+            completion = await api_client.chat.completions.create(**params)
+            result = getattr(completion.choices[0].message, "content", "")
+        if params.get("response_format", None) == "json_object":
+            # response_format is one of text or json_object.
+            # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+            result = json.loads(result)
+        return result

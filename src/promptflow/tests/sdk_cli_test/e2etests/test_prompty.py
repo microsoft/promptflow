@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -5,7 +6,7 @@ import pytest
 from promptflow._sdk._pf_client import PFClient
 from promptflow.core import Flow
 from promptflow.core._errors import MissingRequiredInputError
-from promptflow.core._flow import Prompty
+from promptflow.core._flow import AsyncPrompty, Prompty
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = TEST_ROOT / "test_configs/datas"
@@ -86,13 +87,21 @@ class TestPrompty:
         with pytest.raises(MissingRequiredInputError) as e:
             prompty(firstName="mock_name")
         assert "Missing required inputs: ['question']" == e.value.message
-        result = prompty(question="What is the meaning of life?")
-        assert result
+        result = prompty(question="what is the result of 1+1?")
+        assert "2" in result
 
         # Test prompty with image input
         image_prompty = Prompty.load(source=f"{PROMPTY_DIR}/prompty_with_image_input.prompty")
         result = image_prompty(image_input={"data:image/png;path": ""})
         assert result
+
+    def test_prompty_async_call(self):
+        async_prompty = AsyncPrompty.load(source=f"{PROMPTY_DIR}/prompty_example.prompty")
+        with pytest.raises(MissingRequiredInputError) as e:
+            asyncio.run(async_prompty(firstName="mock_name"))
+        assert "Missing required inputs: ['question']" == e.value.message
+        result = asyncio.run(async_prompty(question="what is the result of 1+1?"))
+        assert "2" in result
 
     def test_prompty_batch_run(self, pf: PFClient):
         run = pf.run(flow=f"{PROMPTY_DIR}/prompty_example.prompty", data=f"{DATA_DIR}/prompty_inputs.jsonl")

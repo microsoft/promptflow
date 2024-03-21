@@ -1,3 +1,5 @@
+import copy
+import os
 import re
 from typing import List, Mapping
 
@@ -9,6 +11,18 @@ from promptflow.core._errors import (
     InvalidConnectionError,
     InvalidConnectionTypeError,
 )
+from promptflow.core._utils import render_jinja_template_content
+
+
+def parse_environment_variable(value):
+    """Get environment variable from ${ENV_NAME}. If not found, return original value."""
+    pattern = r"^\$\{(.*)\}$"
+    result = re.match(pattern, value)
+    if result:
+        env_name = result.groups()[0]
+        return os.environ.get(env_name, value)
+    else:
+        return result
 
 
 def get_connection(connection):
@@ -31,6 +45,8 @@ def get_connection(connection):
         connection_type = connection_obj.TYPE
     else:
         connection_type = connection.pop("type", None)
+        # Get value from environment
+        connection = {k: parse_environment_variable(v) for k, v in connection.items()}
     if connection_type == AzureOpenAIConnection.TYPE:
         return AzureOpenAIConnection(**connection)
     elif connection_type == OpenAIConnection.TYPE:
@@ -40,6 +56,60 @@ def get_connection(connection):
         f"Connection type should be in [{AzureOpenAIConnection.TYPE}, {OpenAIConnection.TYPE}]."
     )
     raise InvalidConnectionTypeError(message=error_message)
+
+
+def convert_prompt_template(template, inputs, api):
+    prompt = preprocess_template_string(template)
+
+    # convert list type into ChatInputList type
+    converted_kwargs = convert_to_chat_list(inputs)
+    rendered_prompt = render_jinja_template_content(
+        template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
+    )
+    if api == "completion":
+        return rendered_prompt
+    else:
+        referenced_images = find_referenced_image_set(inputs)
+        return parse_chat(rendered_prompt, list(referenced_images))
+
+
+def prepare_open_ai_request_params(params, template, api, connection):
+    # TODO validate function in params
+    params = copy.copy(params)
+    if isinstance(connection, AzureOpenAIConnection):
+        params["model"] = params.pop("deployment_name")
+        params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
+
+    if api == "completion":
+        params["prompt"] = template
+    else:
+        params["messages"] = template
+    return params
+
+
+def get_open_ai_client_by_connection(connection, is_async=False):
+    from openai import AsyncAzureOpenAI as AsyncAzureOpenAIClient
+    from openai import AsyncOpenAI as AsyncOpenAIClient
+    from openai import AzureOpenAI as AzureOpenAIClient
+    from openai import OpenAI as OpenAIClient
+
+    if isinstance(connection, AzureOpenAIConnection):
+        if is_async:
+            client = AsyncAzureOpenAIClient(**normalize_connection_config(connection))
+        else:
+            client = AzureOpenAIClient(**normalize_connection_config(connection))
+    elif isinstance(connection, OpenAIConnection):
+        if is_async:
+            client = AsyncOpenAIClient(**normalize_connection_config(connection))
+        else:
+            client = OpenAIClient(**normalize_connection_config(connection))
+    else:
+        error_message = (
+            f"Not Support connection type '{type(connection).__name__}' for embedding api. "
+            f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+        )
+        raise InvalidConnectionTypeError(message=error_message)
+    return client
 
 
 # region: Copied from promptflow-tools
@@ -82,23 +152,6 @@ def normalize_connection_config(connection):
             f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         )
         raise InvalidConnectionTypeError(message=error_message)
-
-
-def get_open_ai_client_by_connection(connection):
-    from openai import AzureOpenAI as AzureOpenAIClient
-    from openai import OpenAI as OpenAIClient
-
-    if isinstance(connection, AzureOpenAIConnection):
-        client = AzureOpenAIClient(**normalize_connection_config(connection))
-    elif isinstance(connection, OpenAIConnection):
-        client = OpenAIClient(**normalize_connection_config(connection))
-    else:
-        error_message = (
-            f"Not Support connection type '{type(connection).__name__}' for embedding api. "
-            f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
-        )
-        raise InvalidConnectionTypeError(message=error_message)
-    return client
 
 
 def preprocess_template_string(template_string: str) -> str:
