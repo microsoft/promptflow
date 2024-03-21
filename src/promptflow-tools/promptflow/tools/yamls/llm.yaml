@@ -156,6 +156,8 @@ promptflow.tools.llm.llm:
       type:
       - list
       default: []
+      ui_hints:
+        display_style: reusable_tool
     tool_choice:
       type:
       - string
