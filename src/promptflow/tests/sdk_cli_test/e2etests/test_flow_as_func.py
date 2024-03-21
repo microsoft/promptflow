@@ -1,18 +1,21 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import shutil
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import GeneratorType
 
+import mock
 import pytest
 
 from promptflow import load_flow
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
-from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
+from promptflow.core._flow_context_resolver import FlowContextResolver
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
@@ -27,11 +30,85 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self):
-        f = load_flow(f"{FLOWS_DIR}/print_env_var")
+    @pytest.mark.parametrize(
+        "test_folder",
+        [
+            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/print_env_var_async",
+        ],
+    )
+    def test_flow_as_a_func(self, test_folder):
+        f = load_flow(test_folder)
         result = f(key="unknown")
         assert result["output"] is None
         assert "line_number" not in result
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "async_call_folder",
+        [
+            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/print_env_var_async",
+        ],
+    )
+    async def test_flow_as_a_func_asynckw(self, async_call_folder):
+        from promptflow.core._flow import AsyncFlow
+
+        f = AsyncFlow.load(async_call_folder)
+        result = await f(key="PATH")
+        assert result["output"] is not None
+
+    @pytest.mark.asyncio
+    async def test_flow_as_a_func_real_async(self):
+        from promptflow.core._flow import AsyncFlow
+
+        original_async_func = AsyncFlow.invoke_async
+
+        # Modify the original function and retrieve the time info.
+        run_info_group = []
+        node_run_infos_group = []
+
+        async def parse_invoke_async(*args, **kwargs):
+            nonlocal run_info_group, node_run_infos_group
+            obj = await original_async_func(*args, **kwargs)
+            run_info_group.append(obj.run_info)
+            node_run_infos_group.append(obj.node_run_infos)
+            return obj
+
+        with mock.patch("promptflow.core._flow.AsyncFlow.invoke_async", parse_invoke_async):
+            f_async_tools = AsyncFlow.load(f"{FLOWS_DIR}/async_tools")
+            f_env_var_async = AsyncFlow.load(f"{FLOWS_DIR}/print_env_var_async")
+
+            time_start = datetime.now()
+            results = await asyncio.gather(
+                f_async_tools(input_str="Hello"), f_async_tools(input_str="World"), f_env_var_async(key="PATH")
+            )
+            assert len(results) == 3
+            time_spent_flows = datetime.now() - time_start
+
+            # async_tools dag structure:
+            # Node1(3 seconds) -> Node2(3 seconds)
+            #                  -> Node3(3 seconds)
+            # print_env_var_async dag structure:
+            # get_env_var(1 second)
+            # Time assertion: flow running time should be quite less than sum of all node running time.
+            # The time spent of get_env_var is far less than the time spent of async_tools.
+
+            # Here is the time assertion of async_tools:
+            # Flow running time should be quite less than sum of all node running time.
+            time_spent_run = run_info_group[1].end_time - run_info_group[1].start_time
+            time_spent_nodes = []
+            for _, node_run_info in node_run_infos_group[1].items():
+                time_spent = node_run_info.end_time - node_run_info.start_time
+                time_spent_nodes.append(time_spent)
+            # All three node running time should be less than the total flow running time
+            sum_time_nodes = time_spent_nodes[0] + time_spent_nodes[1] + time_spent_nodes[2]
+            assert time_spent_run < sum_time_nodes
+
+            # Here is the time assertion of all flows:
+            # Group running time should less than the total flow running time
+            sum_running_time = [run_info.end_time - run_info.start_time for run_info in run_info_group]
+            assert time_spent_flows < sum_running_time[0] + sum_running_time[1] + sum_running_time[2]
 
     def test_flow_as_a_func_with_connection_overwrite(self):
         from promptflow._sdk._errors import ConnectionNotFoundError

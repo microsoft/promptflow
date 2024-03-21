@@ -6,7 +6,6 @@ import json
 import logging
 import mimetypes
 import os
-from pathlib import Path
 from typing import Dict
 
 from flask import Flask, g, jsonify, request
@@ -15,6 +14,7 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving.extension.extension_factory import ExtensionFactory
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
+from promptflow._sdk._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME
 from promptflow._sdk._serving.utils import (
     enable_monitoring,
     get_output_fields_to_remove,
@@ -22,6 +22,9 @@ from promptflow._sdk._serving.utils import (
     handle_error_to_response,
     load_request_data,
     streaming_response_required,
+    try_extract_trace_context,
+    serialize_attribute_value,
+    load_feedback_swagger,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._utils.exception_utils import ErrorResponse
@@ -30,11 +33,11 @@ from promptflow._version import VERSION
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import SystemErrorException
 from promptflow.storage._run_storage import DummyRunStorage
+from opentelemetry import context, baggage
 
 from .swagger import generate_swagger
 
 logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
-DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
 
@@ -56,26 +59,6 @@ class PromptflowServingApp(Flask):
             os.environ.update(environment_variables)
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)
-
-            # load trace exporters
-            trace_exporters = self.extension.get_trace_exporters(self.project_path)
-            if trace_exporters:
-                logger.info(f"Enable {len(trace_exporters)} trace exporters.")
-                from opentelemetry import trace
-                from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-                from opentelemetry.sdk.trace import TracerProvider
-                from opentelemetry.sdk.trace.export import (
-                    BatchSpanProcessor,
-                )
-                resource = Resource(
-                    attributes={
-                        SERVICE_NAME: "promptflow",
-                    }
-                )
-                trace.set_tracer_provider(TracerProvider(resource=resource))
-                provider = trace.get_tracer_provider()
-                for exporter in trace_exporters:
-                    provider.add_span_processor(BatchSpanProcessor(exporter))
 
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
@@ -130,6 +113,8 @@ class PromptflowServingApp(Flask):
     def init_swagger(self):
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
         self.swagger = generate_swagger(self.flow, self.sample, self.response_fields_to_remove)
+        data = load_feedback_swagger()
+        self.swagger['paths']['/feedback'] = data
 
     def set_default_environment_variables(self, default_environment_variables: Dict[str, str] = None):
         if default_environment_variables is None:
@@ -165,8 +150,16 @@ def add_default_routes(app: PromptflowServingApp):
         run_id = g.get("req_id", None)
         # TODO: refine this once we can directly set the input/output log level to DEBUG in flow_invoker.
         disable_data_logging = logger.level >= logging.INFO
-        flow_result = app.flow_invoker.invoke(data, run_id=run_id, disable_input_output_logging=disable_data_logging)
-        g.flow_result = flow_result
+        # try parse trace context and attach it as current context if exist
+        ctx = try_extract_trace_context(logger)
+        token = context.attach(ctx) if ctx else None
+        try:
+            flow_result = app.flow_invoker.invoke(data, run_id=run_id, disable_input_output_logging=disable_data_logging) # noqa
+            g.flow_result = flow_result
+        finally:
+            # detach trace context if exist
+            if token:
+                context.detach(token)
 
         # check flow result, if failed, return error response
         if flow_result.run_info.status != Status.Completed:
@@ -186,6 +179,7 @@ def add_default_routes(app: PromptflowServingApp):
         response_creator = ResponseCreator(
             flow_run_result=result_output,
             accept_mimetypes=request.accept_mimetypes,
+            response_original_value=flow_result.response_original_value,
         )
         app.flow_monitor.setup_streaming_monitor_if_needed(response_creator, data, intermediate_output)
         return response_creator.create_response()
@@ -210,6 +204,37 @@ def add_default_routes(app: PromptflowServingApp):
         except Exception:
             version = VERSION
         return {"status": "Healthy", "build_info": build_info, "version": version}
+
+    @app.route("/feedback", methods=["POST"])
+    def feedback():
+        ctx = try_extract_trace_context(logger)
+        from opentelemetry import trace
+        open_telemetry_tracer = trace.get_tracer_provider().get_tracer("promptflow")
+        token = context.attach(ctx) if ctx else None
+        try:
+            with open_telemetry_tracer.start_as_current_span(FEEDBACK_TRACE_SPAN_NAME) as span:
+                data = request.get_data(as_text=True)
+                should_flatten = request.args.get('flatten', 'false').lower() == 'true'
+                if should_flatten:
+                    try:
+                        # try flatten the data to avoid data too big issue (especially for app insights scenario)
+                        data = json.loads(data)
+                        for k in data:
+                            span.set_attribute(k, serialize_attribute_value(data[k]))
+                    except Exception as e:
+                        logger.warning(f"Failed to flatten the feedback, fall back to non-flattern mode. Error: {e}.")
+                        span.set_attribute(FEEDBACK_TRACE_FIELD_NAME, data)
+                else:
+                    span.set_attribute(FEEDBACK_TRACE_FIELD_NAME, data)
+                # add baggage data if exist
+                data = baggage.get_all()
+                if data:
+                    for k, v in data.items():
+                        span.set_attribute(k, v)
+        finally:
+            if token:
+                context.detach(token)
+        return {"status": "Feedback received."}
 
 
 def create_app(**kwargs):

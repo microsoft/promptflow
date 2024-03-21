@@ -62,6 +62,16 @@ Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
 ProcessFiles
 
+function ForceOverwrite {
+    param (
+        [string] $Module
+    )
+    $FileName = "promptflow.{0}.rst" -f $Module
+    $TargetRst = [System.IO.Path]::Combine($RepoRootPath, ("scripts\docs\{0}" -f $FileName))
+    $AutoGenConnectionRst = [System.IO.Path]::Combine($RefDocPath, $FileName)
+    Copy-Item -Path $TargetRst -Destination $AutoGenConnectionRst -Force
+}
+
 if($WithReferenceDoc){
     $RefDocRelativePath = "reference\python-library-reference"
     $RefDocPath = [System.IO.Path]::Combine($TempDocPath, $RefDocRelativePath)
@@ -76,9 +86,9 @@ if($WithReferenceDoc){
     Write-Host "=============== Overwrite promptflow.connections.rst ==============="
     # We are doing this overwrite because the connection entities are also defined in the promptflow.entities module
     # and it will raise duplicate object description error if we don't do so when we run sphinx-build later.
-    $ConnectionRst = [System.IO.Path]::Combine($RepoRootPath, "scripts\docs\promptflow.connections.rst")
-    $AutoGenConnectionRst = [System.IO.Path]::Combine($RefDocPath, "promptflow.connections.rst")
-    Copy-Item -Path $ConnectionRst -Destination $AutoGenConnectionRst -Force
+    ForceOverwrite "connections"
+    ForceOverwrite "core"
+    ForceOverwrite "client"
 }
 
 

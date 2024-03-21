@@ -22,6 +22,7 @@ import psutil
 
 from promptflow._sdk._constants import (
     PF_TRACE_CONTEXT,
+    PF_TRACE_CONTEXT_ATTR,
     PROMPT_FLOW_DIR_NAME,
     ContextAttributeKey,
     ExperimentNodeRunStatus,
@@ -53,7 +54,7 @@ from promptflow._sdk._submitter.utils import (
 from promptflow._sdk._utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations import RunOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
@@ -101,7 +102,7 @@ class ExperimentOrchestrator:
             node
             for node in template.nodes
             if node.type == ExperimentNodeType.FLOW
-            and ProtectedFlow._get_flow_definition(node.path) == ProtectedFlow._get_flow_definition(flow_path)
+            and Flow._get_flow_definition(node.path) == Flow._get_flow_definition(flow_path)
         ]
         if not start_nodes:
             raise ExperimentValueError(f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")
@@ -714,9 +715,9 @@ class ExperimentTemplateContext:
             return node_context
         # Return the full json context for test
         global_context = os.environ.get(PF_TRACE_CONTEXT)
-        # Expected global context: {"endpoint": "..", "attributes": {..}}
-        global_context = json.loads(global_context) if global_context else {"endpoint": "", "attributes": {}}
-        global_context["attributes"].update(node_context)
+        # Expected global context: {"endpoint": "..", PF_TRACE_CONTEXT_ATTR: {..}}
+        global_context = json.loads(global_context) if global_context else {"endpoint": "", PF_TRACE_CONTEXT_ATTR: {}}
+        global_context[PF_TRACE_CONTEXT_ATTR].update(node_context)
         return {PF_TRACE_CONTEXT: json.dumps(global_context)}
 
 

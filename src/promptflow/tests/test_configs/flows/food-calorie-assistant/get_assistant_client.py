@@ -1,6 +1,6 @@
 from typing import Union
 from openai import AsyncAzureOpenAI, AsyncOpenAI
-from promptflow import trace
+from promptflow.tracing import trace
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 @trace

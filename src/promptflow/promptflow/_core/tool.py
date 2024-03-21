@@ -9,8 +9,8 @@ from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
 
-from promptflow._core.tracer import _traced
-from promptflow.contracts.trace import TraceType
+from promptflow.tracing._trace import _traced
+from promptflow.tracing.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"

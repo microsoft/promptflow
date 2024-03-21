@@ -8,15 +8,16 @@ from unittest.mock import patch
 
 import pytest
 
+from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow._core.operation_context import OperationContext
-from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from ..process_utils import enable_mock_in_process
+from ..process_utils import override_process_pool_targets
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -116,7 +117,7 @@ class TestExecutorTelemetry:
             assert "ms-azure-ai-promptflow-scenario" not in promptflow_headers
             assert promptflow_headers.get("run_mode") == RunMode.SingleNode.name
 
-    def test_executor_openai_telemetry_with_batch_run(self, dev_connections):
+    def test_executor_openai_telemetry_with_batch_run(self, dev_connections, recording_injection):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking chat api method. The mock method will return a generator that yields a
         namedtuple with a json string of the headers passed to the method.
@@ -131,7 +132,7 @@ class TestExecutorTelemetry:
         operation_context._tracking_keys = OperationContext._DEFAULT_TRACKING_KEYS
         operation_context._tracking_keys.add("dummy_key")
 
-        with enable_mock_in_process(mock_process_wrapper, mock_process_manager):
+        with override_process_pool_targets(mock_process_wrapper, mock_process_manager):
             run_id = str(uuid.uuid4())
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections

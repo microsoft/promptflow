@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._constants import FlowLanguage
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
 from promptflow._sdk._utils import parse_variant
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -22,7 +23,7 @@ from promptflow.exceptions import UserErrorException, ValidationException
 from ..._utils.logger_utils import LoggerFactory
 from .._configuration import Configuration
 from .._load_functions import load_flow
-from ..entities._eager_flow import EagerFlow
+from ..entities._eager_flow import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -62,13 +63,16 @@ class RunSubmitter:
         return required_run
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
-        attributes = kwargs.get("attributes", {})
+        attributes: dict = kwargs.get("attributes", {})
         # validate & resolve variant
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
         else:
             tuning_node, variant = None, None
 
+        # always remove reference.batch_run_id from operation context to avoid mis-inheritance
+        operation_context = OperationContext.get_instance()
+        operation_context._remove_otel_attributes(ContextAttributeKey.REFERENCED_BATCH_RUN_ID)
         if run.run is not None:
             # Set for flow test against run and no experiment scenario
             if ContextAttributeKey.REFERENCED_BATCH_RUN_ID not in attributes:
@@ -80,7 +84,7 @@ class RunSubmitter:
             run._resume_from = self._ensure_run_completed(run._resume_from)
         # Start trace
         if Configuration(overrides=self._client._config).is_internal_features_enabled():
-            from promptflow._trace._start_trace import start_trace
+            from promptflow.tracing._start_trace import start_trace
 
             logger.debug("Starting trace for flow run...")
             start_trace(session=kwargs.get("session", None), attributes=attributes, run=run.name)
@@ -98,9 +102,7 @@ class RunSubmitter:
             error = ValidationException("Either run or data or resume from run must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
-    def _submit_bulk_run(
-        self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
-    ) -> dict:
+    def _submit_bulk_run(self, flow: Union[Flow, FlexFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
@@ -137,7 +139,7 @@ class RunSubmitter:
                 flow.path,
                 flow.code,
                 connections=connections,
-                entry=flow.entry if isinstance(flow, EagerFlow) else None,
+                entry=flow.entry if isinstance(flow, FlexFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
                 resume_from_run_storage=resume_from_run_storage,

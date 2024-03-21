@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import time
+from typing import Dict
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
 from promptflow._sdk._serving.monitor.streaming_monitor import StreamingMonitor
 from promptflow._sdk._serving.monitor.metrics import MetricsRecorder, ResponseType
@@ -15,11 +16,56 @@ from flask import request, g
 class FlowMonitor:
     """FlowMonitor is used to collect metrics & data for promptflow serving."""
 
-    def __init__(self, logger, default_flow_name, data_collector: FlowDataCollector, metrics_recorder: MetricsRecorder):
+    def __init__(self,
+                 logger,
+                 default_flow_name,
+                 data_collector: FlowDataCollector,
+                 custom_dimensions: Dict[str, str],
+                 metric_exporters=None,
+                 trace_exporters=None):
         self.data_collector = data_collector
-        self.metrics_recorder = metrics_recorder
         self.logger = logger
+        self.metrics_recorder = self.setup_metrics_recorder(custom_dimensions, metric_exporters)
         self.flow_name = default_flow_name
+        self.setup_trace_exporters(trace_exporters)
+
+    def setup_metrics_recorder(self, custom_dimensions, metric_exporters):
+        if metric_exporters:
+            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+            exporter_names = [n.__class__.__name__ for n in metric_exporters]
+            self.logger.info(f"Enable {len(metric_exporters)} metric exporters: {exporter_names}.")
+            readers = []
+            for exporter in metric_exporters:
+                reader = PeriodicExportingMetricReader(exporter=exporter, export_interval_millis=60000)
+                readers.append(reader)
+            return MetricsRecorder(self.logger, readers=readers, common_dimensions=custom_dimensions)
+        else:
+            self.logger.warning("No metric exporter enabled.")
+        return None
+
+    def setup_trace_exporters(self, trace_exporters):
+        if not trace_exporters:
+            self.logger.warning("No trace exporter enabled.")
+            return
+        try:
+            exporter_names = [n.__class__.__name__ for n in trace_exporters]
+            self.logger.info(f"Enable {len(trace_exporters)} trace exporters: {exporter_names}.")
+            from opentelemetry import trace
+            from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+            from opentelemetry.sdk.trace import TracerProvider
+            from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+            resource = Resource(
+                attributes={
+                    SERVICE_NAME: "promptflow",
+                }
+            )
+            trace.set_tracer_provider(TracerProvider(resource=resource))
+            provider = trace.get_tracer_provider()
+            for exporter in trace_exporters:
+                provider.add_span_processor(BatchSpanProcessor(exporter))
+        except Exception as e:
+            self.logger.error(f"Setup trace exporters failed: {e}")
 
     def setup_streaming_monitor_if_needed(self, response_creator, data, output):
         g.streaming = response_creator.has_stream_field and response_creator.text_stream_specified_explicitly

@@ -92,7 +92,6 @@ setup(
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
-            "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],

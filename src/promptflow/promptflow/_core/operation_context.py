@@ -25,6 +25,11 @@ class OperationContext(Dict):
     _DEFAULT_TRACKING_KEYS = {"run_mode", "root_run_id", "flow_id", "batch_input_source"}
     _TRACKING_KEYS = "_tracking_keys"
 
+    def copy(self):
+        ctx = OperationContext(self)
+        ctx[OperationContext._OTEL_ATTRIBUTES] = copy.copy(self._get_otel_attributes())
+        return ctx
+
     def _add_otel_attributes(self, key, value):
         attributes = self.get(OperationContext._OTEL_ATTRIBUTES, {})
         attributes[key] = value
@@ -63,6 +68,10 @@ class OperationContext(Dict):
         if cls._TRACKING_KEYS not in instance:
             instance[cls._TRACKING_KEYS] = copy.copy(cls._DEFAULT_TRACKING_KEYS)
         return instance
+
+    @classmethod
+    def set_instance(cls, instance):
+        cls._current_context.set(instance)
 
     def __setattr__(self, name, value):
         """Set the attribute.
@@ -144,6 +153,9 @@ class OperationContext(Dict):
             user_agent (str): The user agent information to append.
         """
         if OperationContext.USER_AGENT_KEY in self:
+            # TODO: this judgement can be wrong when an user agent is a substring of another,
+            #  e.g. "Mozilla/5.0" and "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            #  however, changing this code may impact existing logic, so won't change it now
             if user_agent not in self.user_agent:
                 self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:

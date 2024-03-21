@@ -9,6 +9,7 @@ from types import GeneratorType
 from flask import Response, jsonify
 from werkzeug.datastructures import MIMEAccept
 
+from promptflow._constants import DEFAULT_OUTPUT_NAME
 from promptflow._sdk._serving._errors import MultipleStreamOutputFieldsNotSupported, NotAcceptable
 
 
@@ -22,6 +23,8 @@ class ResponseCreator:
         stream_start_callback_func=None,
         stream_end_callback_func=None,
         stream_event_callback_func=None,
+        # if return the response original value, only will set to true when eager flow returns non dict value.
+        response_original_value=False,
     ):
         # Fields that are with GeneratorType are streaming outputs.
         stream_fields = [k for k, v in flow_run_result.items() if isinstance(v, GeneratorType)]
@@ -42,6 +45,7 @@ class ResponseCreator:
         self._on_stream_start = stream_start_callback_func
         self._on_stream_end = stream_end_callback_func
         self._on_stream_event = stream_event_callback_func
+        self.response_original_value = response_original_value
 
     @property
     def has_stream_field(self):
@@ -92,8 +96,12 @@ class ResponseCreator:
         if self.stream_iterator is not None:
             merged_text = "".join(self.stream_iterator)
             self.non_stream_fields[self.stream_field_name] = merged_text
-
-        return jsonify(self.non_stream_fields)
+        if self.response_original_value:
+            response = self.non_stream_fields.get(DEFAULT_OUTPUT_NAME)
+        else:
+            response = self.non_stream_fields
+        # TODO: check non json dumpable results
+        return jsonify(response)
 
     def create_response(self):
         if self.has_stream_field:

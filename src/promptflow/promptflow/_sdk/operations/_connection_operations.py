@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
+from promptflow._sdk._errors import ConnectionNameNotSetError
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
@@ -76,6 +77,8 @@ class ConnectionOperations(TelemetryMixin):
         :param connection: Run object to create or update.
         :type connection: ~promptflow.sdk.entities._connection._Connection
         """
+        if not connection.name:
+            raise ConnectionNameNotSetError("Name is required to create or update connection.")
         orm_object = connection._to_orm_object()
         now = datetime.now().isoformat()
         if orm_object.createdDate is None:

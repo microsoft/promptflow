@@ -1,0 +1,21 @@
+inputs:
+  topic:
+    type: string
+  persona:
+    type: string
+  conversation_history:
+    type: list
+outputs:
+  result:
+    type: string
+    reference: ${simulator.output}
+nodes:
+- name: simulator
+  type: python
+  source:
+    type: code
+    path: simulator.py
+  inputs:
+    topic: ${inputs.topic}
+    persona: ${inputs.persona}
+    conversation_history: ${inputs.conversation_history}

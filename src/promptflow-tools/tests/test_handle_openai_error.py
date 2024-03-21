@@ -1,5 +1,6 @@
 import httpx
 import pytest
+from unittest.mock import patch
 from jinja2.exceptions import TemplateSyntaxError
 from openai import (
     APIConnectionError,
@@ -17,6 +18,7 @@ from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 from pytest_mock import MockerFixture
 
 from promptflow.exceptions import UserErrorException
+from tests.utils import Deployment
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -301,3 +303,33 @@ class TestHandleOpenAIError:
             )
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
+
+    @pytest.mark.skip("Skip this before we figure out how to make token provider work on github action")
+    def test_authentication_fail_for_aoai_meid_token_connection(self, azure_open_ai_connection_meid):
+        prompt_template = "please complete this sentence: world war II "
+        raw_message = (
+            "please make sure you have proper role assignment on your azure openai resource"
+        )
+        error_codes = "UserError/OpenAIError/AuthenticationError"
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(azure_open_ai_connection_meid, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
+        assert raw_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_aoai_with_vision_model_extra_fields_error(self, azure_open_ai_connection):
+        with (
+            patch('promptflow.tools.common.get_workspace_triad') as mock_get,
+            patch('promptflow.tools.common.list_deployment_connections') as mock_list,
+            pytest.raises(LLMError) as exc_info
+        ):
+            mock_get.return_value = ("sub", "rg", "ws")
+            mock_list.return_value = {
+                Deployment("gpt-4v", "model1", "vision-preview"),
+                Deployment("deployment2", "model2", "version2")
+            }
+
+            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-4v",
+                 response_format={"type": "text"})
+
+        assert "extra fields not permitted" in exc_info.value.message
+        assert "Please kindly avoid using vision model in LLM tool" in exc_info.value.message

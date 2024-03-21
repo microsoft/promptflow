@@ -189,6 +189,12 @@ class BatchExecutionTimeoutError(UserErrorException):
         )
 
 
+class ThreadCrashError(SystemErrorException):
+    """Exception raised when thread crashed."""
+
+    pass
+
+
 class ProcessCrashError(UserErrorException):
     """Exception raised when process crashed."""
 

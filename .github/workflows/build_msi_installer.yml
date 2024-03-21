@@ -109,6 +109,12 @@ jobs:
           scriptPath: ${{ env.testWorkingDirectory }}
 
 
+      - name: Generate promptflow spec file to config pyinstaller
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
+        run: |
+          python generate_dependency.py
+          Get-Content promptflow.spec
+
       - name: Build Pyinstaller project
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
         run: |
