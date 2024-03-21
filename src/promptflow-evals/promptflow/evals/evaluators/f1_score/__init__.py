@@ -36,5 +36,5 @@ class F1ScoreEvaluator:
         f = load_flow(source=flow_dir)
         return f
 
-    def __call__(self, answer: str, ground_truth: str):
+    def __call__(self, answer: str, ground_truth: str, **kwargs):
         return self._flow(answer=answer, ground_truth=ground_truth)

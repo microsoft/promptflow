@@ -67,18 +67,25 @@ class QAEvaluator:
             ground_truth="Japan",
         )
         """
+
     def __init__(self, *, model_config: AzureOpenAIConnection, deployment_name: str):
         self.model_config = model_config
         self.deployment_name = deployment_name
+        self._evaluators = self._init_evaluators()
+
+    def _init_evaluators(self):
+        from promptflow.evals.evaluators import GroundednessEvaluator, F1ScoreEvaluator
+        return [
+            GroundednessEvaluator(model_config=self.model_config, deployment_name=self.deployment_name),
+            F1ScoreEvaluator()
+        ]
 
     def __call__(self, *, answer: str, question: str = None, context: str = None, ground_truth: str = None, **kwargs):
         # TODO: How to parallelize metrics calculation
-        from promptflow.evals.evaluators import GroundednessEvaluator, F1ScoreEvaluator
-
-        groundedness_eval = GroundednessEvaluator(model_config=self.model_config, deployment_name=self.deployment_name)
-        f1_score_eval = F1ScoreEvaluator()
 
         return {
-            **groundedness_eval(answer=answer, context=context),
-            **f1_score_eval(answer=answer, ground_truth=ground_truth)
+            k: v for d in
+            [evaluator(answer=answer, context=context, ground_truth=ground_truth, question=question) for evaluator in
+             self._evaluators]
+            for k, v in d.items()
         }

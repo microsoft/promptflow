@@ -55,5 +55,5 @@ class GroundednessEvaluator:
 
         return f
 
-    def __call__(self, *, answer: str, context: str):
+    def __call__(self, *, answer: str, context: str, **kwargs):
         return self._flow(answer=answer, context=context)
