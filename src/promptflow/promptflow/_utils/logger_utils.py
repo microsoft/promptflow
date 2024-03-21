@@ -135,9 +135,8 @@ class FileHandlerConcurrentWrapper(logging.Handler):
     A logger instance can write different log to different files in different contexts.
     """
 
-    def __init__(self, is_batch_run_flow_logs=False):
+    def __init__(self):
         super().__init__()
-        self.is_batch_run_flow_logs = is_batch_run_flow_logs
         self._context_var = ContextVar("handler", default=None)
 
     @property
@@ -186,9 +185,6 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.Logger(name)
     logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
-    # Another FileHandlerConcurrentWrapper for batch run mode's single line log.
-    # Will assign different log file path for each line execution.
-    logger.addHandler(FileHandlerConcurrentWrapper(is_batch_run_flow_logs=True))
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
     logger.addHandler(stdout_handler)
@@ -225,6 +221,12 @@ class LogContext:
     flow_logs_folder: Optional[str] = None  # Used in batch mode to specify the folder for flow logs.
     line_number: Optional[int] = None  # Used in batch mode to specify the line log file name.
 
+    # Before, we only have one FileHandlerConcurrentWrapper for any run mode.
+    # Now, we have two for batch run mode, one for whole run log, one for single line log.
+    # For single line log handlers, we create and remove them in __enter__ and __exit__ method,
+    # to avoid setting same logger path for 2 handlers.
+    temporary_flow_log_handlers = []
+
     def get_initializer(self):
         return partial(
             LogContext,
@@ -255,7 +257,7 @@ class LogContext:
 
     def __enter__(self):
         self._set_log_path()
-        self._set_batch_run_flow_logs_path()
+        self._add_batch_run_flow_logs_handler()
         self._set_credential_list()
         LogContext.set_current(self)
 
@@ -270,6 +272,9 @@ class LogContext:
                     handler.clear()
                 elif isinstance(handler.formatter, CredentialScrubberFormatter):
                     handler.formatter.clear()
+            for handlers_to_remove in self.temporary_flow_log_handlers:
+                logger_.removeHandler(handlers_to_remove)
+        self.temporary_flow_log_handlers.clear()
         LogContext.clear_current()
 
     def _set_log_path(self):
@@ -279,22 +284,24 @@ class LogContext:
         logger_list = self._get_loggers_to_set_path()
         for logger_ in logger_list:
             for log_handler in logger_.handlers:
-                if isinstance(log_handler, FileHandlerConcurrentWrapper) and not log_handler.is_batch_run_flow_logs:
+                if isinstance(log_handler, FileHandlerConcurrentWrapper):
                     handler = FileHandler(self.file_path)
                     log_handler.handler = handler
 
-    # During __enter__ method, set FileHandlerConcurrentWrapper for batch run mode's single line execution log.
-    def _set_batch_run_flow_logs_path(self):
+    # During __enter__ method, add FileHandlerConcurrentWrapper for batch run mode's single line execution log.
+    # And remove it during __exit__ method.
+    def _add_batch_run_flow_logs_handler(self):
         if self.run_mode != RunMode.Batch or self.flow_logs_folder is None or self.line_number is None:
             return
 
         file_name = f"{str(self.line_number).zfill(LINE_NUMBER_WIDTH)}.log"
         path = Path(self.flow_logs_folder) / file_name
         for logger_ in self._get_batch_run_flow_loggers_list():
-            for log_handler in logger_.handlers:
-                if isinstance(log_handler, FileHandlerConcurrentWrapper) and log_handler.is_batch_run_flow_logs:
-                    handler = FileHandler(path)
-                    log_handler.handler = handler
+            flow_log_handler = FileHandlerConcurrentWrapper()
+            handler = FileHandler(path)
+            flow_log_handler.handler = handler
+            logger_.addHandler(flow_log_handler)
+            self.temporary_flow_log_handlers.append(flow_log_handler)
 
     def _set_credential_list(self):
         # Set credential list to all loggers.
