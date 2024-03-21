@@ -26,12 +26,13 @@ def init():
             ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
                 and technological advancements.")
     """
-    def eval_fn(answer: str, ground_truth: str):
 
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        f = load_flow(source=flow_dir)
+    # Load the flow as function
+    current_dir = Path(__file__).resolve().parent
+    flow_dir = current_dir / "flow"
+    f = load_flow(source=flow_dir)
+
+    def eval_fn(answer: str, ground_truth: str):
 
         # Run the evaluation flow
         return f(answer=answer, ground_truth=ground_truth)

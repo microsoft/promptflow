@@ -30,25 +30,26 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
             answer="The capital of Japan is Tokyo.",
             ground_truth="Tokyo is Japan's capital.")
     """
-    def eval_fn(question: str, answer: str, ground_truth: str):
 
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        f = load_flow(source=flow_dir)
+    # Load the flow as function
+    current_dir = Path(__file__).resolve().parent
+    flow_dir = current_dir / "flow"
+    f = load_flow(source=flow_dir)
 
-        # Override the connection
-        f.context.connections = {
-            "query_llm": {
-                "connection": AzureOpenAIConnection(
-                    api_base=model_config.api_base,
-                    api_key=model_config.api_key,
-                    api_version=model_config.api_version,
-                    api_type="azure"
-                ),
-                "deployment_name": deployment_name,
-            }
+    # Override the connection
+    f.context.connections = {
+        "query_llm": {
+            "connection": AzureOpenAIConnection(
+                api_base=model_config.api_base,
+                api_key=model_config.api_key,
+                api_version=model_config.api_version,
+                api_type="azure"
+            ),
+            "deployment_name": deployment_name,
         }
+    }
+
+    def eval_fn(question: str, answer: str, ground_truth: str):
 
         # Run the evaluation flow
         return f(question=question, answer=answer, ground_truth=ground_truth)

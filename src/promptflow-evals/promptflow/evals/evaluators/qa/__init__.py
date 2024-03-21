@@ -33,17 +33,18 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
     )
     """
 
+    from promptflow.evals.evaluators import groundedness, relevance, coherence, fluency, similarity, f1_score
+
+    groundedness_eval = groundedness.init(model_config, deployment_name=deployment_name)
+    relevance_eval = relevance.init(model_config, deployment_name=deployment_name)
+    coherence_eval = coherence.init(model_config, deployment_name=deployment_name)
+    fluency_eval = fluency.init(model_config, deployment_name=deployment_name)
+    similarity_eval = similarity.init(model_config, deployment_name=deployment_name)
+    f1_score_eval = f1_score.init()
+
     def eval_fn(*, answer: str, question: str = None, context: str = None, ground_truth: str = None, **kwargs):
 
         # TODO: How to parallelize metrics calculation
-        from promptflow.evals.evaluators import groundedness, relevance, coherence, fluency, similarity, f1_score
-
-        groundedness_eval = groundedness.init(model_config, deployment_name=deployment_name)
-        relevance_eval = relevance.init(model_config, deployment_name=deployment_name)
-        coherence_eval = coherence.init(model_config, deployment_name=deployment_name)
-        fluency_eval = fluency.init(model_config, deployment_name=deployment_name)
-        similarity_eval = similarity.init(model_config, deployment_name=deployment_name)
-        f1_score_eval = f1_score.init()
 
         return{
             **groundedness_eval(answer=answer, context=context),

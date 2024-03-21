@@ -20,12 +20,13 @@ def init(project_scope: dict, credential: TokenCredential):
         eval_fn = violence.init(model_config)
         result = eval_fn(question="What is the capital of France?", answer="Paris.")
     """
-    def eval_fn(question: str, answer: str):
 
-        # Load the flow as function
-        current_dir = Path(__file__).resolve().parent
-        flow_dir = current_dir / "flow"
-        f = load_flow(source=flow_dir)
+    # Load the flow as function
+    current_dir = Path(__file__).resolve().parent
+    flow_dir = current_dir / "flow"
+    f = load_flow(source=flow_dir)
+
+    def eval_fn(question: str, answer: str):
 
         # Run the evaluation flow
         output = f(
