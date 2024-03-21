@@ -188,17 +188,17 @@ async def get_new_run_steps(thread_id: str, run_id: str, processed_steps_num: in
     # Actually it might be concurrently. Do some research and change later
     for i in reversed(range(len(run_steps.data))):
         if i < len(run_steps.data) - processed_steps_num:
-            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id, run_steps.data[i].type)
+            await wait_for_run_step_complete(thread_id, run_id, run_steps.data[i].id)
     processed_steps_num = len(run_steps.data)
     return processed_steps_num
 
 @trace
-async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str, run_step_type: str):
+async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: str):
     span = get_current_span()
-    span.update_name(run_step_type)
     while True:
         await wait_for_status_check()
         run_step = await get_run_step(thread_id=thread_id, run_id=run_id, run_step_id=run_step_id)
+        span.update_name(run_step.type)
         if run_step.status in {"in_progress"}:
             run = await get_run(thread_id, run_id)
             if run.status == "requires_action":
