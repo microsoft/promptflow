@@ -1,6 +1,7 @@
+from promptflow._core.operation_context import OperationContext
 from .file_clients.file_client_factory import FileClientFactory
 from .utils.yaml_parser import YamlParser
-from .contracts.entities import ExperimentConfig
+from .contracts.entities import ExperimentConfig, ExperimentConfigCache, ExpContext
 from .contracts.entities import GroupType, Step
 from .contracts.entities import Experiment
 from .contracts.entities import Variant
@@ -22,23 +23,32 @@ CACHE_EXPIRATION_SECONDS = 300
 class Exp:
 
     # cache mock
-    _cached_exp: Dict[str, ExperimentConfig] = {}
+    _cached_exp: Dict[str, ExperimentConfigCache] = {}
     _cached_exp_lock = threading.Lock()
 
+    _context_vars_lock = threading.Lock()
     _exp_variants = contextvars.ContextVar("exp_variants")
     _exp_variants.set(None)
-    _variants_lock = threading.Lock()
-
     _exp_ruid = contextvars.ContextVar("exp_ruid")
     _exp_ruid.set(None)
 
-    @staticmethod
-    def init(file_identifier: str):
-        global _file_identifier
-        _file_identifier = file_identifier
+    _context_dict_lock = threading.Lock()
+    _id_2_context: Dict[str, ExpContext] = {}
+
+    def __init__(self, file_identifier: str):
+        context_dict = OperationContext.get_instance()._get_tracking_info()
+
+        print('----------------')
+        print(context_dict)
+        print('----------------')
+
+        self._file_identifier = file_identifier
 
         if not Exp._is_cache_valid(file_identifier):
             Exp._update_cache(file_identifier)
+
+    def get_variant(self, rand_unit_id: str, experiment_name: str) -> Tuple[int, Variant]:
+        return Exp.get_variant_for_config(self._file_identifier, rand_unit_id, experiment_name)
 
     # Get variant based on given randonmization unit ID and experiment name
     # Extra Requirement: add extra columns into all the upcoming spans under
@@ -48,17 +58,18 @@ class Exp:
     #     name of all experiments
     # 2. "_exp.ruid" column, the value is the input rand_unit_id
     @staticmethod
-    def get_variant(
+    def get_variant_for_config(
+        file_identifier: str,
         rand_unit_id: str,
         experiment_name: str
     ) -> Tuple[int, Variant]:
         bucket = Exp._get_bucket(rand_unit_id)
-        for exp in Exp._cached_exp[_file_identifier].experiments:
+        for exp in Exp._cached_exp[file_identifier].experiment_config.experiments:
             if exp.name == experiment_name:
                 variant = Exp._get_variant(exp, bucket)
 
-                Exp._exp_ruid.set(rand_unit_id)
-                with Exp._variants_lock:
+                with Exp._context_vars_lock:
+                    Exp._exp_ruid.set(rand_unit_id)
                     existing_variants = Exp._exp_variants.get()
                     if existing_variants:
                         variant_list = set(existing_variants.split(","))
@@ -68,6 +79,18 @@ class Exp:
                         Exp._exp_variants.set(variant.name)
                 return bucket, variant
         return bucket, None
+
+    @staticmethod
+    def map_context_with_id(id: str, context: ExpContext):
+        with Exp._context_dict_lock:
+            Exp._id_2_context[id] = context
+
+    @staticmethod
+    def get_context_by_id(id: str) -> ExpContext:
+        if id not in Exp._id_2_context:
+            return None
+        with Exp._context_dict_lock:
+            return Exp._id_2_context[id]
 
     @staticmethod
     def get_variants() -> str:
@@ -120,7 +143,10 @@ class Exp:
     @staticmethod
     def _is_cache_valid(file_identifier: str) -> bool:
         with Exp._cached_exp_lock:
-            return file_identifier in Exp._cached_exp
+            if file_identifier not in Exp._cached_exp:
+                return False
+            diff = datetime.now() - Exp._cached_exp[file_identifier].last_updated
+            return diff.total_seconds() < CACHE_EXPIRATION_SECONDS
 
     @staticmethod
     def _load_config(file_identifier: str) -> ExperimentConfig:

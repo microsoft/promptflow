@@ -62,10 +62,11 @@ from promptflow.tracing._trace import (
     enrich_span_with_context,
     enrich_span_with_input,
     enrich_span_with_trace_type,
+    enrich_span_with_exp_info,
     open_telemetry_tracer,
 )
 from promptflow.tracing.contracts.trace import TraceType
-from promptflow.exp_poc.exp import Exp
+
 
 class FlowExecutor:
     """This class is used to execute a single flow for different inputs.
@@ -853,7 +854,7 @@ class FlowExecutor:
             )
             # enrich span with trace type
             enrich_span_with_trace_type(span, inputs, output, trace_type=TraceType.FLOW)
-            
+
             enrich_span_with_exp_info(span)
             # set status
             span.set_status(StatusCode.OK)
@@ -1241,14 +1242,6 @@ def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_p
 
     return stream_option_decorator
 
-def enrich_span_with_exp_info(span):
-    variant = Exp.get_variants()
-    if variant:
-        span.set_attribute("exp.variant", variant)
-
-    ruid = Exp.get_ruid()
-    if ruid:
-        span.set_attribute("exp.ruid", ruid)
 
 def enable_streaming_for_llm_tool(f):
     """Enable the stream mode for LLM tools that support it.

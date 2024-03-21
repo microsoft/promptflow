@@ -34,3 +34,15 @@ class Experiment:
 @dataclass
 class ExperimentConfig:
     experiments: List[Experiment] = None
+
+
+@dataclass
+class ExperimentConfigCache:
+    experiment_config: ExperimentConfig = None
+    last_updated: datetime = None
+
+
+@dataclass
+class ExpContext:
+    exp_ruid: str = None
+    exp_variants: str = None
