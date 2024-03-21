@@ -1,4 +1,4 @@
-from promptflow._core.operation_context import OperationContext
+import os
 from .file_clients.file_client_factory import FileClientFactory
 from .utils.yaml_parser import YamlParser
 from .contracts.entities import ExperimentConfig, ExperimentConfigCache, ExpContext
@@ -36,16 +36,14 @@ class Exp:
     _id_2_context: Dict[str, ExpContext] = {}
 
     def __init__(self, file_identifier: str):
-        context_dict = OperationContext.get_instance()._get_tracking_info()
-
-        print('----------------')
-        print(context_dict)
-        print('----------------')
 
         self._file_identifier = file_identifier
 
         if not Exp._is_cache_valid(file_identifier):
-            Exp._update_cache(file_identifier)
+            if Exp._is_serving_mode():
+                Exp._update_cache_passively(file_identifier)
+            else:
+                Exp._update_cache_actively(file_identifier)
 
     def get_variant(self, rand_unit_id: str, experiment_name: str) -> Tuple[int, Variant]:
         return Exp.get_variant_for_config(self._file_identifier, rand_unit_id, experiment_name)
@@ -63,6 +61,10 @@ class Exp:
         rand_unit_id: str,
         experiment_name: str
     ) -> Tuple[int, Variant]:
+
+        if not Exp._is_serving_mode():
+            Exp._update_cache_actively(file_identifier)
+
         bucket = Exp._get_bucket(rand_unit_id)
         for exp in Exp._cached_exp[file_identifier].experiment_config.experiments:
             if exp.name == experiment_name:
@@ -99,14 +101,23 @@ class Exp:
     @staticmethod
     def get_ruid() -> str:
         return Exp._exp_ruid.get()
+    
+    @staticmethod
+    def _update_cache_actively(file_identifier: str):
+        if not Exp._is_cache_valid(file_identifier):
+            Exp._do_update_cache(file_identifier)
 
     @staticmethod
-    def _update_cache(file_identifier: str):
+    def _update_cache_passively(file_identifier: str):
+        Exp._do_update_cache(file_identifier)
+        threading.Timer(CACHE_EXPIRATION_SECONDS, Exp._update_cache_passively, [file_identifier]).start()
+
+    @staticmethod
+    def _do_update_cache(file_identifier: str):
         experiment_config = Exp._load_config(file_identifier)
         if experiment_config:
             with Exp._cached_exp_lock:
-                Exp._cached_exp[file_identifier] = experiment_config
-        threading.Timer(CACHE_EXPIRATION_SECONDS, Exp._update_cache, [file_identifier]).start()
+                Exp._cached_exp[file_identifier] = ExperimentConfigCache(experiment_config, datetime.now())
 
     @staticmethod
     def _get_bucket(rand_unit_id: str) -> int:
@@ -152,3 +163,8 @@ class Exp:
     def _load_config(file_identifier: str) -> ExperimentConfig:
         client = FileClientFactory.get_file_client(file_identifier)
         return YamlParser.load_to_dataclass(ExperimentConfig, client.load())
+    
+    @staticmethod
+    def _is_serving_mode() -> bool:
+        run_mode = os.environ.get("PROMPTFLOW_RUN_MODE")
+        return run_mode and run_mode.lower() == "serving"
