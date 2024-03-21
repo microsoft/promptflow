@@ -1,0 +1,51 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json
+
+description: Basic experiment without script node
+
+data:
+  - name: my_data
+    path: ../../flows/web_classification/data.jsonl
+
+inputs:
+  - name: count
+    type: int
+    default: 3
+
+nodes:
+  - name: gen_data
+    type: command
+    command: python generate_data.py --input-path ${inputs.input_path} --count ${inputs.count} --output-path ${outputs.output_path}
+    code: ./generate_data
+    inputs:
+      input_path: ${data.my_data}
+      count: ${inputs.count}
+    outputs:
+      output_path:
+    environment_variables:
+      CONNECTION_KEY: ${azure_open_ai_connection.api_key}
+
+  - name: main
+    type: flow
+    path: ../../flows/web_classification/flow.dag.yaml
+    inputs:
+      url: ${gen_data.outputs.output_path.url}
+    variant: ${summarize_text_content.variant_0}
+    environment_variables: {}
+    connections: {}
+
+  - name: eval
+    type: flow
+    path: ../../flows/eval-classification-accuracy
+    inputs:
+      groundtruth: ${data.my_data.answer}  # No node can be named with "data"
+      prediction: ${main.outputs.category}
+    environment_variables: {}
+    connections: {}
+
+  - name: echo
+    type: command
+    command: echo ${inputs.input_path} > ${outputs.output_path}/output.txt
+    inputs:
+      input_path: ${main.outputs}
+    outputs:
+      output_path:

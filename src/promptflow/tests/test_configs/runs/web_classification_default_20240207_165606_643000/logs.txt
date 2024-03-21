@@ -1,0 +1,12 @@
+2024-02-07 16:56:21 +0800    3344 execution.bulk     INFO     Current system's available memory is 17577.15234375MB, memory consumption of current process is 181.7734375MB, estimated available worker count is 17577.15234375/181.7734375 = 96
+2024-02-07 16:56:21 +0800    3344 execution.bulk     INFO     Set process count to 3 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 3, 'estimated_worker_count_based_on_memory_usage': 96}.
+2024-02-07 16:56:26 +0800    3344 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(26300)-Line number(0) start execution.
+2024-02-07 16:56:26 +0800    3344 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(1724)-Line number(1) start execution.
+2024-02-07 16:56:26 +0800    3344 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(23332)-Line number(2) start execution.
+2024-02-07 16:56:43 +0800    3344 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(23332)-Line number(2) completed.
+2024-02-07 16:56:43 +0800    3344 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(26300)-Line number(0) completed.
+2024-02-07 16:56:44 +0800    3344 execution.bulk     INFO     Finished 2 / 3 lines.
+2024-02-07 16:56:44 +0800    3344 execution.bulk     INFO     Average execution time for completed lines: 8.57 seconds. Estimated time for incomplete lines: 8.57 seconds.
+2024-02-07 16:56:44 +0800    3344 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(1724)-Line number(1) completed.
+2024-02-07 16:56:45 +0800    3344 execution.bulk     INFO     Finished 3 / 3 lines.
+2024-02-07 16:56:45 +0800    3344 execution.bulk     INFO     Average execution time for completed lines: 6.05 seconds. Estimated time for incomplete lines: 0.0 seconds.

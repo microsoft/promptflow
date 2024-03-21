@@ -1,0 +1,21 @@
+{
+  "chat_history": [
+    {
+      "inputs": {
+        "question": "What is the weather like in Boston?"
+      },
+      "outputs": {
+        "answer": "{\"forecast\":[\"sunny\",\"windy\"],\"location\":\"Boston\",\"temperature\":\"72\",\"unit\":\"fahrenheit\"}",
+        "llm_output": {
+          "content": null,
+          "function_call": {
+            "arguments": "{\n  \"location\": \"Boston\"\n}",
+            "name": "get_current_weather"
+          },
+          "role": "assistant"
+        }
+      }
+    }
+  ],
+  "question": "How about London next week?"
+}

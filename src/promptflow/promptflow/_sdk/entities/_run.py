@@ -19,8 +19,8 @@ from promptflow._sdk._constants import (
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
+    HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
-    PROMPT_FLOW_DIR_NAME,
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -29,6 +29,7 @@ from promptflow._sdk._constants import (
     AzureRunTypes,
     DownloadedRun,
     FlowRunProperties,
+    IdentityKeys,
     RestRunTypes,
     RunDataKeys,
     RunInfoSources,
@@ -39,13 +40,13 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
+    is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
-    parse_variant,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -68,7 +69,7 @@ logger = get_cli_sdk_logger()
 class Run(YAMLTranslatableMixin):
     """Flow run entity.
 
-    :param flow: Path of the flow directory.
+    :param flow: Path of local flow entry or remote flow.
     :type flow: Path
     :param name: Name of the run.
     :type name: str
@@ -127,8 +128,9 @@ class Run(YAMLTranslatableMixin):
         source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
+        # !!! Caution !!!: Please update self._copy() if you add new fields to init
         # TODO: remove when RUN CRUD don't depend on this
-        self.type = RunTypes.BATCH
+        self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
         self.column_mapping = column_mapping
         self.display_name = display_name
@@ -136,6 +138,7 @@ class Run(YAMLTranslatableMixin):
         self.tags = tags
         self.variant = variant
         self.run = run
+        self._resume_from = kwargs.get("resume_from", None)
         self._created_on = created_on or datetime.datetime.now()
         self._status = status or RunStatus.NOT_STARTED
         self.environment_variables = environment_variables or {}
@@ -161,7 +164,7 @@ class Run(YAMLTranslatableMixin):
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
-            self.flow = Path(flow).resolve().absolute()
+            self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
@@ -181,6 +184,9 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
+        self._identity = kwargs.get("identity", {})
+        self._outputs = kwargs.get("outputs", None)
+        self._command = kwargs.get("command", None)
 
     @property
     def created_on(self) -> str:
@@ -204,6 +210,15 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.RUN] = run_name
             if self.variant:
                 result[FlowRunProperties.NODE_VARIANT] = self.variant
+            if self._command:
+                result[FlowRunProperties.COMMAND] = self._command
+            if self._outputs:
+                result[FlowRunProperties.OUTPUTS] = self._outputs
+            if self._resume_from:
+                resume_from_name = self._resume_from.name if isinstance(self._resume_from, Run) else self._resume_from
+                result[FlowRunProperties.RESUME_FROM] = resume_from_name
+            if self.column_mapping:
+                result[FlowRunProperties.COLUMN_MAPPING] = self.column_mapping
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             result = {
                 FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
@@ -227,12 +242,14 @@ class Run(YAMLTranslatableMixin):
             source = properties_json[FlowRunProperties.OUTPUT_PATH]
 
         return Run(
+            type=obj.type,
             name=str(obj.name),
             flow=Path(flow) if flow else None,
             source=Path(source) if source else None,
             output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
+            resume_from=properties_json.get(FlowRunProperties.RESUME_FROM, None),
             display_name=obj.display_name,
             description=str(obj.description) if obj.description else None,
             tags=json.loads(str(obj.tags)) if obj.tags else None,
@@ -245,6 +262,10 @@ class Run(YAMLTranslatableMixin):
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
+            # experiment command node only fields
+            command=properties_json.get(FlowRunProperties.COMMAND, None),
+            outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
+            column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
         )
 
     @classmethod
@@ -324,6 +345,7 @@ class Run(YAMLTranslatableMixin):
         """Convert current run entity to ORM object."""
         display_name = self._format_display_name()
         return ORMRun(
+            type=self.type,
             name=self.name,
             created_on=self.created_on,
             status=self.status,
@@ -536,12 +558,13 @@ class Run(YAMLTranslatableMixin):
             if not isinstance(self._resources, dict):
                 raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
             vm_size = self._resources.get("instance_type", None)
-            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
-            # change to seconds
-            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
+            compute_name = self._resources.get("compute", None)
         else:
             vm_size = None
-            max_idle_time_seconds = None
+            compute_name = None
+
+        # parse identity resource id
+        identity_resource_id = self._identity.get(IdentityKeys.RESOURCE_ID, None)
 
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
@@ -563,8 +586,10 @@ class Run(YAMLTranslatableMixin):
             flow_lineage_id=self._lineage_id,
             run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             vm_size=vm_size,
-            max_idle_time_seconds=max_idle_time_seconds,
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
+            compute_name=compute_name,
+            identity=identity_resource_id,
+            enable_multi_container=is_multi_container_enabled(),
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
@@ -618,7 +643,7 @@ class Run(YAMLTranslatableMixin):
     def _validate_for_run_create_operation(self):
         """Validate run object for create operation."""
         # check flow value
-        if Path(self.flow).is_dir():
+        if Path(self.flow).is_dir() or Path(self.flow).is_file():
             # local flow
             pass
         elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):
@@ -643,7 +668,7 @@ class Run(YAMLTranslatableMixin):
         config = config or Configuration.get_instance()
         path = config.get_run_output_path()
         if path is None:
-            path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+            path = HOME_PROMPT_FLOW_DIR / ".runs"
         else:
             try:
                 flow_posix_path = self.flow.resolve().as_posix()
@@ -654,7 +679,7 @@ class Run(YAMLTranslatableMixin):
                     raise Exception(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
-                path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+                path = HOME_PROMPT_FLOW_DIR / ".runs"
                 warning_message = (
                     "Got unexpected error when parsing specified output path: "
                     f"{config.get_run_output_path()!r}; "
@@ -692,3 +717,43 @@ class Run(YAMLTranslatableMixin):
             end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
             **kwargs,
         )
+
+    def _copy(self, **kwargs):
+        """Copy a new run object.
+
+        This is used for resume run scenario, a new run will be created with the same properties as the original run.
+        Allowed to override some properties with kwargs. Supported properties are:
+        Meta: name, display_name, description, tags.
+        Run setting: runtime, resources, identity.
+        """
+        init_params = {
+            "flow": self.flow,
+            "data": self.data,
+            "variant": self.variant,
+            "run": self.run,
+            "column_mapping": self.column_mapping,
+            "display_name": self.display_name,
+            "description": self.description,
+            "tags": self.tags,
+            "environment_variables": self.environment_variables,
+            "connections": self.connections,
+            # "properties": self._properties,  # Do not copy system metrics
+            "source": self.source,
+            "identity": self._identity,
+            **kwargs,
+        }
+        logger.debug(f"Run init params: {init_params}")
+        return Run(**init_params)
+
+    @functools.cached_property
+    def _flow_type(self) -> str:
+        """Get flow type of run."""
+
+        from promptflow._constants import FlowType
+        from promptflow._sdk._load_functions import load_flow
+        from promptflow._sdk.entities._flow import FlexFlow
+
+        flow_obj = load_flow(source=self.flow)
+        if isinstance(flow_obj, FlexFlow):
+            return FlowType.FLEX_FLOW
+        return FlowType.DAG_FLOW

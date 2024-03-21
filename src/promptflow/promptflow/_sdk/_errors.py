@@ -81,6 +81,12 @@ class ConnectionNotFoundError(SDKError):
     pass
 
 
+class ConnectionNameNotSetError(SDKError):
+    """Exception raised if connection not set when create or update."""
+
+    pass
+
+
 class InvalidRunError(SDKError):
     """Exception raised if run name is not legal."""
 
@@ -89,6 +95,12 @@ class InvalidRunError(SDKError):
 
 class GenerateFlowToolsJsonError(SDKError):
     """Exception raised if flow tools json generation failed."""
+
+    pass
+
+
+class GenerateFlowMetaJsonError(SDKError):
+    """Exception raised if flow json generation failed."""
 
     pass
 
@@ -145,6 +157,18 @@ class ExperimentNotFoundError(SDKError):
     pass
 
 
+class MultipleExperimentTemplateError(SDKError):
+    """Exception raised if multiple experiment template yaml found."""
+
+    pass
+
+
+class NoExperimentTemplateError(SDKError):
+    """Exception raised if no experiment template yaml found."""
+
+    pass
+
+
 class ExperimentValidationError(SDKError):
     """Exception raised if experiment validation failed."""
 
@@ -165,5 +189,41 @@ class ExperimentHasCycle(SDKError):
 
 class DownloadInternalError(SDKInternalError):
     """Exception raised if download internal error."""
+
+    pass
+
+
+class ExperimentNodeRunFailedError(SDKError):
+    """Orchestrator raised if node run failed."""
+
+    pass
+
+
+class ExperimentNodeRunNotFoundError(SDKError):
+    """ExpNodeRun raised if node run cannot be found."""
+
+    pass
+
+
+class ExperimentCommandRunError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ChatGroupError(SDKError):
+    """Exception raised if chat group operation failed."""
+
+    pass
+
+
+class ChatRoleError(SDKError):
+    """Exception raised if chat agent operation failed."""
+
+    pass
+
+
+class UnexpectedAttributeError(SDKError):
+    """Exception raised if unexpected attribute is found."""
 
     pass

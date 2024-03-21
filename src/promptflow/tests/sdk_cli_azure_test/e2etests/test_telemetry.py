@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import contextlib
 import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -17,7 +18,6 @@ import pytest
 
 from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._telemetry import (
@@ -28,10 +28,14 @@ from promptflow._sdk._telemetry import (
     is_telemetry_enabled,
     log_activity,
 )
-from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
+from promptflow._sdk._telemetry.logging_handler import get_promptflow_sdk_log_handler
+from promptflow._sdk._utils import call_from_extension
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow.tracing._operation_context import OperationContext
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -80,11 +84,14 @@ class TestTelemetry:
         with cli_consent_config_overwrite(False):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
+            assert handler._is_telemetry_enabled is True
+
+            get_promptflow_sdk_log_handler.cache_clear()
+            handler = get_appinsights_log_handler()
+            assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is False
 
     def test_call_from_extension(self):
-        from promptflow._core.operation_context import OperationContext
-
         assert call_from_extension() is False
         with environment_variable_overwrite(PF_USER_AGENT, "prompt-flow-extension/1.0.0"):
             assert call_from_extension() is True
@@ -93,19 +100,32 @@ class TestTelemetry:
         context.user_agent = context.user_agent.replace("prompt-flow-extension/1.0.0", "")
 
     def test_custom_event(self, pf):
-        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+        from promptflow._sdk._configuration import Configuration
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
 
-        def log_event(*args, **kwargs):
-            record = args[0]
-            assert record.custom_dimensions is not None
+        envelope = None
+        config = Configuration.get_instance()
+        custom_dimensions = {
+            "python_version": platform.python_version(),
+            "installation_id": config.get_or_set_installation_id(),
+        }
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",
+            custom_dimensions=custom_dimensions,
+        )._log_to_envelope
+
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
+
+        def check_evelope():
             logger = get_telemetry_logger()
             handler = logger.handlers[0]
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            envelope = handler.log_record_to_envelope(record)
-            custom_dimensions = pydash.get(envelope, "data.baseData.properties")
+            custom_dimensions = pydash.get(envelope, "data.base_data.properties")
             assert isinstance(custom_dimensions, dict)
             # Note: need privacy review if we add new fields.
-            if "start" in record.message:
+            if "start" in envelope.data.base_data.name:
                 assert custom_dimensions.keys() == {
                     "request_id",
                     "activity_name",
@@ -119,8 +139,13 @@ class TestTelemetry:
                     "installation_id",
                     "first_call",
                     "from_ci",
+                    "error_category",
+                    "error_type",
+                    "error_target",
+                    "error_message",
+                    "error_detail",
                 }
-            elif "complete" in record.message:
+            elif "complete" in envelope.data.base_data.name:
                 assert custom_dimensions.keys() == {
                     "request_id",
                     "activity_name",
@@ -136,18 +161,27 @@ class TestTelemetry:
                     "installation_id",
                     "first_call",
                     "from_ci",
+                    "error_category",
+                    "error_type",
+                    "error_target",
+                    "error_message",
+                    "error_detail",
                 }
             else:
-                raise ValueError("Invalid message: {}".format(record.message))
-            assert record.message.startswith("pfazure.runs.get")
+                raise ValueError("Invalid message: {}".format(envelope.data.base_data.name))
+            assert envelope.data.base_data.name.startswith("pfazure.runs.get")
 
-        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger, patch(
+            "promptflow._sdk._telemetry.telemetry.get_telemetry_logger", side_effect=get_telemetry_logger
+        ):
             mock_logger.side_effect = log_event
-            # mock_error_logger.side_effect = log_event
             try:
                 pf.runs.get("not_exist")
             except RunNotFoundError:
                 pass
+            logger = get_telemetry_logger()
+            logger.handlers[0].flush()
+            check_evelope()
 
     def test_default_logging_behavior(self):
         assert is_telemetry_enabled() is True
@@ -306,32 +340,38 @@ class TestTelemetry:
         assert first_sdk_calls[-1] is True
 
     def test_scrub_fields(self):
-        from promptflow import PFClient
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
 
-        pf = PFClient()
+        envelope = None
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000", custom_dimensions={}
+        )._log_to_envelope
 
-        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
 
-        def log_event(*args, **kwargs):
-            record = args[0]
-            assert record.custom_dimensions is not None
+        def check_evelope():
             logger = get_telemetry_logger()
             handler = logger.handlers[0]
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            envelope = handler.log_record_to_envelope(record)
+
+            assert "message" == envelope.data.base_data.name
+            assert "key" in envelope.data.base_data.properties
+            assert "test" == envelope.data.base_data.properties["key"]
+
             # device name removed
             assert "ai.cloud.roleInstance" not in envelope.tags
             assert "ai.device.id" not in envelope.tags
             # role name should be scrubbed or kept in whitelist
             assert envelope.tags["ai.cloud.role"] in [os.path.basename(sys.argv[0]), "***"]
 
-        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope") as mock_logger:
             mock_logger.side_effect = log_event
-            # mock_error_logger.side_effect = log_event
-            try:
-                pf.runs.get("not_exist")
-            except RunNotFoundError:
-                pass
+            logger = get_telemetry_logger()
+            logger.info("message", extra={"custom_dimensions": {"key": "test"}})
+            logger.handlers[0].flush()
+            check_evelope()
 
     def test_different_event_for_node_run(self):
         from promptflow import PFClient
@@ -342,13 +382,17 @@ class TestTelemetry:
 
         def assert_node_run(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.node_test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            assert record.msg.startswith("pf.flows.node_test"), f"'pf.flows.node_test' not found in {record.msg!r}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+            ), f"'pf.flows.node_test' not found in {record.custom_dimensions['activity_name']}"
 
         def assert_flow_test(*args, **kwargs):
             record = args[0]
-            assert record.msg.startswith("pf.flows.test")
-            assert record.custom_dimensions["activity_name"] == "pf.flows.test"
+            assert record.msg.startswith("pf.flows.test"), f"'pf.flows.test' not found in {record.msg!r}"
+            assert (
+                record.custom_dimensions["activity_name"] == "pf.flows.test"
+            ), f"'pf.flows.test' not found in {record.custom_dimensions['activity_name']}"
 
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
@@ -361,3 +405,56 @@ class TestTelemetry:
                 mock_logger.side_effect = assert_flow_test
 
                 pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
+
+    @pytest.mark.skipif(
+        condition=not is_live(), reason="Live mode can run successfully, but an error will be reported when recording."
+    )
+    def test_run_yaml_type(self, pf, randstr: Callable[[str], str]):
+        from promptflow._constants import FlowType
+        from promptflow._sdk._configuration import Configuration
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKExporter
+
+        envelope = None
+        flow_type = None
+        config = Configuration.get_instance()
+        custom_dimensions = {
+            "python_version": platform.python_version(),
+            "installation_id": config.get_or_set_installation_id(),
+        }
+        log_to_envelope = PromptFlowSDKExporter(
+            connection_string="InstrumentationKey=00000000-0000-0000-0000-000000000000",
+            custom_dimensions=custom_dimensions,
+        )._log_to_envelope
+
+        def log_event(log_data):
+            nonlocal envelope
+            envelope = log_to_envelope(log_data)
+
+        def check_evelope():
+            assert envelope.data.base_data.name.startswith("pfazure.runs.create_or_update")
+            custom_dimensions = pydash.get(envelope, "data.base_data.properties")
+            assert isinstance(custom_dimensions, dict)
+            assert "flow_type" in custom_dimensions
+            assert custom_dimensions["flow_type"] == flow_type
+
+        with patch.object(PromptFlowSDKExporter, "_log_to_envelope", side_effect=log_event), patch(
+            "promptflow._sdk._telemetry.telemetry.get_telemetry_logger", side_effect=get_telemetry_logger
+        ):
+            flow_type = FlowType.DAG_FLOW
+            pf.run(
+                flow="./tests/test_configs/flows/print_input_flow",
+                data="./tests/test_configs/datas/print_input_flow.jsonl",
+                name=randstr("name"),
+            )
+            logger = get_telemetry_logger()
+            logger.handlers[0].flush()
+            check_evelope()
+
+            flow_type = FlowType.FLEX_FLOW
+            pf.run(
+                flow="./tests/test_configs/eager_flows/simple_with_req",
+                data="./tests/test_configs/datas/simple_eager_flow_data.jsonl",
+                name=randstr("name"),
+            )
+            logger.handlers[0].flush()
+            check_evelope()

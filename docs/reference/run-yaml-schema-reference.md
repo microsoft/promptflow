@@ -18,7 +18,7 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `runtime`               | string        | The runtime for the run. Only supported for cloud run.                                                                                                                                                                                                                  |
 | `data`                  | string        | Input data for the run. Local path or remote uri(starts with azureml: or public URL) are supported. Note: remote uri is only supported for cloud run.                                                                                                                   |
 | `run`                   | string        | Referenced flow run name. For example, you can run an evaluation flow against an existing run.                                                                                                                                                                          |
-| `column_mapping`        | object        | Inputs column mapping, use `${data.xx}` to refer to data columns, use `${run.inputs.xx}` to refer to referenced run's data columns, and `${run.outputs.xx}` to refer to run outputs columns.                                                                                                                 |
+| `column_mapping`        | object        | Inputs column mapping, use `${data.xx}` to refer to data columns, use `${run.inputs.xx}` to refer to referenced run's data columns, and `${run.outputs.xx}` to refer to run outputs columns.                                                                            |
 | `connections`           | object        | Overwrite node level connections with provided value. Example: --connections node1.connection=test_llm_connection node1.deployment_name=gpt-35-turbo                                                                                                                    |
 | `environment_variables` | object/string | Environment variables to set by specifying a property path and value. Example: `{"key1"="${my_connection.api_key}"}`. The value reference to connection keys will be resolved to the actual value, and all environment variables specified will be set into os.environ. |
 | `properties`            | object        | Dictionary of properties of the run.                                                                                                                                                                                                                                    |
@@ -26,13 +26,23 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `resources`             | object        | Dictionary of resources used for automatic runtime. Only supported for cloud run. See [Resources Schema](#resources-schema) for the set of configurable properties.                                                                                                     |
 | `variant`               | string        | The variant for the run.                                                                                                                                                                                                                                                |
 | `status`                | string        | The status of the run. Only available for when getting an existing run. Won't take affect if set when creating a run.                                                                                                                                                   |
+|`identity`| object | Dictionary of identity configuration for automatic runtime. Only supported for cloud run. See [Identity Schema](#identity-schema) for the set of configurable properties.
+
 
 ### Resources Schema  
 
-| Key                                 | Type    | Description                                                 |
-|-------------------------------------|---------|-------------------------------------------------------------|
-| `instance_type`                     | string  | The instance type for automatic runtime of the run.         |
-| `idle_time_before_shutdown_minutes` | integer | The idle time before automatic runtime shutdown in minutes. |
+| Key             | Type   | Description                                         |
+|-----------------|--------|-----------------------------------------------------|
+| `instance_type` | string | The instance type for automatic runtime of the run. |
+| `compute`       | string | The compute instance for automatic runtime session. |
+
+
+### Identity Schema
+
+| Key         | Type   | Description                                                          |
+|-------------|--------|----------------------------------------------------------------------|
+| `type`      | string | Identity type, currently only support `managed` and `user_identity`. |
+| `client_id` | string | Client id for managed identity, only avaible on managed identity.    |
 
 ## Examples
 
@@ -41,3 +51,20 @@ Run examples are available in the [GitHub repository](https://github.com/microso
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic/run.yml)
 - [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/run.yml)
 - [flow-with-additional-includes](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/flow-with-additional-includes/run.yml)
+
+### Run with identity examples
+
+```yaml
+# default value
+identity:
+  type: user_identity 
+
+# use workspace primary UAI
+identity:
+  type: managed
+  
+# use specified client_id's UAI
+identity:
+  type: managed
+  client_id: xxx
+```

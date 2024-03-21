@@ -45,8 +45,7 @@ class OpenAIMetricsCalculator:
             if isinstance(usage, dict):
                 return usage
             self._log_warning(
-                "Cannot find openai metrics in output, "
-                "will calculate metrics from response data directly."
+                "Cannot find openai metrics in output, " "will calculate metrics from response data directly."
             )
 
         name = api_call.get("name")
@@ -99,10 +98,7 @@ class OpenAIMetricsCalculator:
         metrics = {}
         enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
-            inputs["messages"],
-            enc,
-            tokens_per_message,
-            tokens_per_name
+            inputs["messages"], enc, tokens_per_message, tokens_per_name
         )
         if isinstance(output, list):
             if IS_LEGACY_OPENAI:

@@ -1,3 +1,2 @@
-entry: my_func
-path: ./entry.py
+entry: entry:my_func
 nodes: []

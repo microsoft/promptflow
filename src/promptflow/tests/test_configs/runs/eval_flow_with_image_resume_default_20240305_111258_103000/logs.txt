@@ -1,0 +1,12 @@
+2024-03-05 11:13:21 +0800    8444 execution.bulk     INFO     Current system's available memory is 16398.80859375MB, memory consumption of current process is 150.72265625MB, estimated available worker count is 16398.80859375/150.72265625 = 108
+2024-03-05 11:13:21 +0800    8444 execution.bulk     INFO     Set process count to 3 by taking the minimum value among the factors of {'default_worker_count': 4, 'row_count': 3, 'estimated_worker_count_based_on_memory_usage': 108}.
+2024-03-05 11:13:21 +0800    8444 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(28052)-Line number(0) start execution.
+2024-03-05 11:13:21 +0800    8444 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(2192)-Line number(1) start execution.
+2024-03-05 11:13:21 +0800    8444 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(29344)-Line number(2) start execution.
+2024-03-05 11:13:24 +0800    8444 execution.bulk     INFO     Process name(SpawnProcess-2)-Process id(28052)-Line number(0) completed.
+2024-03-05 11:13:24 +0800    8444 execution.bulk     INFO     Process name(SpawnProcess-4)-Process id(29344)-Line number(2) completed.
+2024-03-05 11:13:24 +0800    8444 execution.bulk     INFO     Process name(SpawnProcess-3)-Process id(2192)-Line number(1) completed.
+2024-03-05 11:13:24 +0800    8444 execution.bulk     INFO     Finished 3 / 3 lines.
+2024-03-05 11:13:24 +0800    8444 execution.bulk     INFO     Average execution time for completed lines: 1.01 seconds. Estimated time for incomplete lines: 0.0 seconds.
+2024-03-05 11:13:25 +0800    8444 execution.bulk     INFO     Executing aggregation nodes...
+2024-03-05 11:13:25 +0800    8444 execution.bulk     INFO     Finish executing aggregation nodes.

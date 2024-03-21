@@ -17,8 +17,8 @@ from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
-from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
@@ -35,6 +35,7 @@ from .recording_utilities import (
 )
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
@@ -107,7 +108,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
             workspace_name=workspace_name,
         )
     assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
-    assert "promptflow/" not in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow-test" not in ClientUserAgentUtil.get_user_agent()
     yield client
 
 
@@ -149,7 +150,7 @@ MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
 @pytest.fixture
 def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspace_resource_id):
-    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow.core._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -215,7 +216,7 @@ def serving_client_with_connection_data_override(mocker: MockerFixture, remote_w
 
 
 def create_serving_client_with_connections(model_name, mocker: MockerFixture, connections: dict = {}):
-    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow.core._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -227,7 +228,7 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
     )
     # Set credential to None for azureml extension type
     # As we mock app in github workflow, which do not have managed identity credential
-    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    func = "promptflow.core._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
     with mock.patch(func) as mock_cred_func:
         mock_cred_func.return_value = None
         app = create_serving_app(
@@ -338,11 +339,11 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     """Mock PF Azure client to avoid network traffic during replay test."""
     if not is_live():
         mocker.patch(
-            "promptflow._cli._pf_azure._run._get_azure_pf_client",
+            "promptflow.azure._cli._run._get_azure_pf_client",
             return_value=remote_client,
         )
         mocker.patch(
-            "promptflow._cli._pf_azure._flow._get_azure_pf_client",
+            "promptflow.azure._cli._flow._get_azure_pf_client",
             return_value=remote_client,
         )
     yield
@@ -406,6 +407,20 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )
     run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def simple_eager_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
+    """Create a simple eager run."""
+    run = pf.run(
+        flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+        data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        name=randstr("name"),
+    )
+    pf.runs.stream(run)
+    run = pf.runs.get(run)
     assert run.status == RunStatus.COMPLETED
     yield run
 

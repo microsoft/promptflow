@@ -13,13 +13,16 @@ import json
 import logging
 import os
 import re
+import shutil
 import time
 import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
-from promptflow._constants import DEFAULT_ENCODING
+from promptflow._constants import DEFAULT_ENCODING, PF_LONG_RUNNING_LOGGING_INTERVAL
+from promptflow.contracts.multimedia import PFBytes
+from promptflow.contracts.types import AssistantDefinition
 
 T = TypeVar("T")
 
@@ -66,6 +69,14 @@ def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
         for data in list_data:
             json.dump(data, jsonl_file, ensure_ascii=False)
             jsonl_file.write("\n")
+
+
+def load_list_from_jsonl(file: Union[str, Path]):
+    content = []
+    with open(file, "r", encoding=DEFAULT_ENCODING) as fin:
+        for line in fin:
+            content.append(json.loads(line))
+    return content
 
 
 def transpose(values: List[Dict[str, Any]], keys: Optional[List] = None) -> Dict[str, List]:
@@ -296,3 +307,127 @@ def prompt_y_n(msg, default=None):
 
 def prompt_input(msg):
     return input("\n===> " + msg)
+
+
+def _normalize_identifier_name(name):
+    normalized_name = name.lower()
+    normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
+    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
+    if re.match(r"\d", normalized_name):
+        normalized_name = "n" + normalized_name  # No leading digits
+    return normalized_name
+
+
+def _sanitize_python_variable_name(name: str):
+    return _normalize_identifier_name(name).replace(" ", "_")
+
+
+def default_json_encoder(obj):
+    if isinstance(obj, PFBytes):
+        return str(obj)
+    if isinstance(obj, AssistantDefinition):
+        return obj.serialize()
+    else:
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _match_reference(env_val: str):
+    env_val = env_val.strip()
+    m = re.match(r"^\$\{([^.]+)\.([^.]+)}$", env_val)
+    if not m:
+        return None, None
+    name, key = m.groups()
+    return name, key
+
+
+def copy_file_except(src_dir, dst_dir, exclude_file):
+    """
+    Copy all files from src_dir to dst_dir recursively, excluding a specific file
+    directly under the root of src_dir.
+
+    :param src_dir: Source directory path
+    :type src_dir: str
+    :param dst_dir: Destination directory path
+    :type dst_dir: str
+    :param exclude_file: Name of the file to exclude from copying
+    :type exclude_file: str
+    """
+    os.makedirs(dst_dir, exist_ok=True)
+
+    for root, dirs, files in os.walk(src_dir):
+        rel_path = os.path.relpath(root, src_dir)
+        current_dst_dir = os.path.join(dst_dir, rel_path)
+
+        os.makedirs(current_dst_dir, exist_ok=True)
+
+        for file in files:
+            if rel_path == "." and file == exclude_file:
+                continue  # Skip the excluded file
+            src_file_path = os.path.join(root, file)
+            dst_file_path = os.path.join(current_dst_dir, file)
+            shutil.copy2(src_file_path, dst_file_path)
+
+
+def in_jupyter_notebook() -> bool:
+    """
+    Checks if user is using a Jupyter Notebook. This is necessary because logging is not allowed in
+    non-Jupyter contexts.
+
+    Adapted from https://stackoverflow.com/a/22424821
+    """
+    try:  # cspell:ignore ipython
+        from IPython import get_ipython
+
+        if "IPKernelApp" not in get_ipython().config:
+            return False
+    except ImportError:
+        return False
+    except AttributeError:
+        return False
+    return True
+
+
+def snake_to_camel(name):
+    return re.sub(r"(?:^|_)([a-z])", lambda x: x.group(1).upper(), name)
+
+
+def prepare_folder(path: Union[str, Path]) -> Path:
+    """Create folder if not exists and return the folder path."""
+    path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def try_get_long_running_logging_interval(logger: logging.Logger, default_interval: int):
+    logging_interval_in_env = os.environ.get(PF_LONG_RUNNING_LOGGING_INTERVAL, None)
+    if logging_interval_in_env:
+        try:
+            value = int(logging_interval_in_env)
+            if value <= 0:
+                raise ValueError
+            logger.info(
+                f"Using value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable as "
+                f"logging interval: {logging_interval_in_env}"
+            )
+            return value
+        except ValueError:
+            logger.warning(
+                f"Value of {PF_LONG_RUNNING_LOGGING_INTERVAL} in environment variable "
+                f"('{logging_interval_in_env}') is invalid, use default value {default_interval}"
+            )
+            return default_interval
+    # If the environment variable is not set, return none to disable the long running logging
+    return None
+
+
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value

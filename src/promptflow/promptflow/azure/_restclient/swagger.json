@@ -75,6 +75,56 @@
         }
       }
     },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/resume": {
+      "post": {
+        "tags": [
+          "BulkRuns"
+        ],
+        "operationId": "BulkRuns_ResumeBulkRun",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumeBulkRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/{flowRunId}/cancel": {
       "post": {
         "tags": [
@@ -107,64 +157,6 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/{flowRunId}/clone": {
-      "post": {
-        "tags": [
-          "BulkRuns"
-        ],
-        "operationId": "BulkRuns_CloneFlowFromFlowRun",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlowRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FlowDto"
                 }
               }
             }
@@ -1201,12 +1193,12 @@
         }
       }
     },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/submit": {
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Experiments/{experimentId}": {
       "post": {
         "tags": [
-          "FlowRunsAdmin"
+          "Experiments"
         ],
-        "operationId": "FlowRunsAdmin_SubmitBulkRunAsync",
+        "operationId": "Experiments_SubmitExperiment",
         "parameters": [
           {
             "$ref": "#/components/parameters/subscriptionIdParameter"
@@ -1218,7 +1210,7 @@
             "$ref": "#/components/parameters/workspaceNameParameter"
           },
           {
-            "name": "flowId",
+            "name": "experimentId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1226,85 +1218,36 @@
             }
           },
           {
-            "name": "bulkRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "errorHandlingMode",
+            "name": "experimentName",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/ErrorHandlingMode"
+              "type": "string"
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitExperimentRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SubmitBulkRunResponse"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/policy": {
-      "post": {
-        "tags": [
-          "FlowRunsAdmin"
-        ],
-        "operationId": "FlowRunsAdmin_SendPolicyValidationAsync",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "bulkRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PolicyValidationResponse"
+                  "$ref": "#/components/schemas/FlowDto"
                 }
               }
             }
@@ -1323,9 +1266,9 @@
       },
       "get": {
         "tags": [
-          "FlowRunsAdmin"
+          "Experiments"
         ],
-        "operationId": "FlowRunsAdmin_CheckPolicyValidationAsync",
+        "operationId": "Experiments_GetExperiment",
         "parameters": [
           {
             "$ref": "#/components/parameters/subscriptionIdParameter"
@@ -1337,15 +1280,7 @@
             "$ref": "#/components/parameters/workspaceNameParameter"
           },
           {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "bulkRunId",
+            "name": "experimentId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1359,7 +1294,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PolicyValidationResponse"
+                  "$ref": "#/components/schemas/ExperimentDefinition"
                 }
               }
             }
@@ -1377,12 +1312,12 @@
         }
       }
     },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/LogResult": {
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/ExperimentTemplates/{experimentTemplateId}": {
       "post": {
         "tags": [
-          "FlowRunsAdmin"
+          "ExperimentTemplates"
         ],
-        "operationId": "FlowRunsAdmin_LogResultForBulkRun",
+        "operationId": "ExperimentTemplates_CreateExperimentTemplate",
         "parameters": [
           {
             "$ref": "#/components/parameters/subscriptionIdParameter"
@@ -1394,15 +1329,7 @@
             "$ref": "#/components/parameters/workspaceNameParameter"
           },
           {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "bulkRunId",
+            "name": "experimentTemplateId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1410,16 +1337,22 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExperimentTemplateRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/KeyValuePairStringObject"
-                  }
+                  "$ref": "#/components/schemas/ExperimentTemplateDto"
                 }
               }
             }
@@ -1435,55 +1368,12 @@
             }
           }
         }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/storageInfo": {
+      },
       "get": {
         "tags": [
-          "FlowRunsAdmin"
+          "ExperimentTemplates"
         ],
-        "operationId": "FlowRunsAdmin_GetStorageInfo",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StorageInfo"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/flowRuns/{flowRunId}/runtime/{runtimeVersion}/logEvent": {
-      "post": {
-        "tags": [
-          "FlowRunsAdmin"
-        ],
-        "operationId": "FlowRunsAdmin_LogFlowRunEvent",
+        "operationId": "ExperimentTemplates_GetExperimentTemplate",
         "parameters": [
           {
             "$ref": "#/components/parameters/subscriptionIdParameter"
@@ -1495,23 +1385,7 @@
             "$ref": "#/components/parameters/workspaceNameParameter"
           },
           {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "runtimeVersion",
+            "name": "experimentTemplateId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1525,271 +1399,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/flowRuns/{flowRunId}/logEvent": {
-      "post": {
-        "tags": [
-          "FlowRunsAdmin"
-        ],
-        "operationId": "FlowRunsAdmin_LogFlowRunEventV2",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "runtimeVersion",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/flowRuns/{flowRunId}/logTerminatedEvent": {
-      "post": {
-        "tags": [
-          "FlowRunsAdmin"
-        ],
-        "operationId": "FlowRunsAdmin_LogFlowRunTerminatedEvent",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "lastCheckedTime",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LogRunTerminatedEventDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/serviceLogs": {
-      "post": {
-        "tags": [
-          "FlowRunsAdmin"
-        ],
-        "operationId": "FlowRunsAdmin_UpdateServiceLogs",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "bulkRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ServiceLogRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Task"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/serviceLogs/batch": {
-      "post": {
-        "tags": [
-          "FlowRunsAdmin"
-        ],
-        "operationId": "FlowRunsAdmin_BatchUpdateServiceLogs",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "bulkRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ServiceLogRequest"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/ExperimentTemplateDto"
                 }
               }
             }
@@ -2533,129 +2143,6 @@
         }
       }
     },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/clone": {
-      "post": {
-        "tags": [
-          "Flows"
-        ],
-        "operationId": "Flows_CloneFlow",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "experimentId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlowRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FlowDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/fromsample": {
-      "post": {
-        "tags": [
-          "Flows"
-        ],
-        "operationId": "Flows_CreateFlowFromSample",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "experimentId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlowFromSampleRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FlowDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}": {
       "put": {
         "tags": [
@@ -3280,80 +2767,6 @@
         }
       }
     },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/runs/{flowRunId}/clone": {
-      "post": {
-        "tags": [
-          "Flows"
-        ],
-        "operationId": "Flows_CloneFlowFromFlowRun",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "flowId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowRunId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "experimentId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateFlowRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FlowDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/bulkTests": {
       "get": {
         "tags": [
@@ -3453,110 +2866,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BulkTestDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/samples": {
-      "get": {
-        "tags": [
-          "Flows"
-        ],
-        "operationId": "Flows_GetSamples",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "useSnapshot",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "$ref": "#/components/schemas/FlowSampleDto"
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/evaluateSamples": {
-      "get": {
-        "tags": [
-          "Flows"
-        ],
-        "operationId": "Flows_GetEvaluateFlowSamples",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "useSnapshot",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "$ref": "#/components/schemas/FlowSampleDto"
-                  }
                 }
               }
             }
@@ -4372,6 +3681,63 @@
         }
       }
     },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Flows/{flowId}/sessions/pipPackages": {
+      "get": {
+        "tags": [
+          "Flows"
+        ],
+        "operationId": "Flows_ListFlowSessionPipPackages",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "flowId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "experimentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/{sessionId}": {
       "post": {
         "tags": [
@@ -4527,6 +3893,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/{sessionId}/pipPackages": {
+      "get": {
+        "tags": [
+          "FlowSessions"
+        ],
+        "operationId": "FlowSessions_ListFlowSessionPipPackages",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4816,137 +4231,6 @@
         }
       }
     },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/samples": {
-      "get": {
-        "tags": [
-          "Tools"
-        ],
-        "operationId": "Tools_GetSamples",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "$ref": "#/components/schemas/Tool"
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta": {
-      "post": {
-        "tags": [
-          "Tools"
-        ],
-        "operationId": "Tools_GetToolMeta",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/subscriptionIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/resourceGroupNameParameter"
-          },
-          {
-            "$ref": "#/components/parameters/workspaceNameParameter"
-          },
-          {
-            "name": "toolName",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "toolType",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endpointName",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowRuntimeName",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "flowId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "text/plain": {
-              "schema": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response describing why the operation failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta-v2": {
       "post": {
         "tags": [
@@ -5181,6 +4465,288 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ToolFuncResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/initialize": {
+      "post": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_InitTraceSessionAsync",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "overwrite",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceCosmosResourceDtos"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/cleanup": {
+      "post": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_CleanupTraceSessionAsync",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/operation/{operationType}/{operationId}": {
+      "get": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_PollTraceSessionStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "operationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operationType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/attachDb": {
+      "post": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_AttachCosmosAccount",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "overwrite",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachCosmosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IActionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response describing why the operation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/TraceSessions/container/{containerName}/resourceToken": {
+      "get": {
+        "tags": [
+          "TraceSessions"
+        ],
+        "operationId": "TraceSessions_GetCosmosResourceToken",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/subscriptionIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/resourceGroupNameParameter"
+          },
+          {
+            "$ref": "#/components/parameters/workspaceNameParameter"
+          },
+          {
+            "name": "containerName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "acquireWrite",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -5575,6 +5141,19 @@
           "aetherModuleType": {
             "type": "string",
             "nullable": true
+          },
+          "allowOverwrite": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "destinationExpirationDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "shouldRespectLineBoundaries": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5585,7 +5164,8 @@
           "GetValidationStatus",
           "SubmitBulkRun",
           "LogRunResult",
-          "LogRunTerminatedEvent"
+          "LogRunTerminatedEvent",
+          "SubmitFlowRun"
         ],
         "type": "string"
       },
@@ -5664,6 +5244,19 @@
           },
           "aetherModuleType": {
             "type": "string",
+            "nullable": true
+          },
+          "allowOverwrite": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "destinationExpirationDays": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "shouldRespectLineBoundaries": {
+            "type": "boolean",
             "nullable": true
           }
         },
@@ -10325,10 +9918,8 @@
           "Dataset",
           "DataStore",
           "SampleGraph",
-          "FlowTool",
           "FlowToolSetting",
           "FlowConnection",
-          "FlowSample",
           "FlowRuntimeSpec"
         ],
         "type": "string"
@@ -10397,6 +9988,24 @@
             "nullable": true
           },
           "tenantId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AttachCosmosRequest": {
+        "type": "object",
+        "properties": {
+          "accountEndpoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceArmId": {
+            "type": "string",
+            "nullable": true
+          },
+          "databaseName": {
             "type": "string",
             "nullable": true
           }
@@ -11009,6 +10618,86 @@
         },
         "additionalProperties": false
       },
+      "ChatGroupRole": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "stop_signal": {
+            "type": "string",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          },
+          "variant": {
+            "type": "string",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environment_variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "resources": {
+            "$ref": "#/components/schemas/SessionRuntimeResources"
+          },
+          "inputs": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CloudError": {
         "type": "object",
         "properties": {
@@ -11100,6 +10789,25 @@
           },
           "dataTransferV2CloudSetting": {
             "$ref": "#/components/schemas/DataTransferV2CloudSetting"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CollieRunSettings": {
+        "type": "object",
+        "properties": {
+          "amlComputeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "nodeCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "managedIdentityClientId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12093,6 +11801,13 @@
         ],
         "type": "string"
       },
+      "ConnectionAuthMode": {
+        "enum": [
+          "Key",
+          "MeidToken"
+        ],
+        "type": "string"
+      },
       "ConnectionCategory": {
         "enum": [
           "PythonFeed",
@@ -12191,7 +11906,11 @@
           "WebTable",
           "Xero",
           "Zoho",
-          "GenericContainerRegistry"
+          "GenericContainerRegistry",
+          "OpenAI",
+          "Serp",
+          "BingLLMSearch",
+          "Serverless"
         ],
         "type": "string"
       },
@@ -12226,6 +11945,13 @@
           },
           "isOptional": {
             "type": "boolean"
+          },
+          "supportedAuthModes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionAuthMode"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12431,7 +12157,8 @@
           "Pinecone",
           "Qdrant",
           "Weaviate",
-          "FormRecognizer"
+          "FormRecognizer",
+          "Serverless"
         ],
         "type": "string"
       },
@@ -12581,31 +12308,11 @@
         },
         "additionalProperties": false
       },
-      "CreateFlowFromSampleRequest": {
+      "CreateExperimentTemplateRequest": {
         "type": "object",
         "properties": {
-          "flowName": {
-            "type": "string",
-            "nullable": true
-          },
-          "sampleResourceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "flowDefinitionFilePath": {
-            "type": "string",
-            "nullable": true
-          },
-          "tags": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string",
-              "nullable": true
-            },
-            "nullable": true
-          },
-          "isArchived": {
-            "type": "boolean"
+          "experimentDefinitionSource": {
+            "$ref": "#/components/schemas/ExperimentDefinitionSource"
           }
         },
         "additionalProperties": false
@@ -12732,6 +12439,9 @@
             "type": "string",
             "nullable": true
           },
+          "action": {
+            "$ref": "#/components/schemas/SetupFlowSessionAction"
+          },
           "vmSize": {
             "type": "string",
             "nullable": true
@@ -12741,12 +12451,16 @@
             "format": "int64",
             "nullable": true
           },
-          "action": {
-            "$ref": "#/components/schemas/SetupFlowSessionAction"
-          },
           "identity": {
             "type": "string",
             "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -14635,6 +14349,10 @@
             "description": "This is a dictionary",
             "nullable": true
           },
+          "enablePublicNetworkAccess": {
+            "type": "boolean",
+            "nullable": true
+          },
           "connectionOverrides": {
             "type": "array",
             "items": {
@@ -14679,9 +14397,6 @@
             "type": "boolean"
           },
           "enableStreamingResponse": {
-            "type": "boolean"
-          },
-          "useFlowSnapshotToDeploy": {
             "type": "boolean"
           },
           "instanceType": {
@@ -15084,6 +14799,17 @@
         ],
         "type": "string"
       },
+      "EntityUsage": {
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "EntrySetting": {
         "type": "object",
         "properties": {
@@ -15322,7 +15048,71 @@
             "type": "string",
             "nullable": true
           },
+          "upstreamVariantRunVariants": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/VariantIdentifier"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "batch_inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": { },
+              "description": "This is a dictionary"
+            },
+            "nullable": true
+          },
+          "inputUniversalLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataInputs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "flowRunOutputDirectory": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOverrideSetting"
+            },
+            "nullable": true
+          },
           "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "runtimeName": {
             "type": "string",
             "nullable": true
           },
@@ -15337,7 +15127,19 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "dataInputs": {
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environmentVariables": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
@@ -15345,27 +15147,31 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "connectionOverrides": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConnectionOverrideSetting"
-            },
-            "nullable": true
-          },
-          "runtimeName": {
+          "outputDataStore": {
             "type": "string",
             "nullable": true
           },
-          "amlComputeName": {
-            "type": "string",
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
-          "properties": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "experimentNodeName": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -15555,6 +15361,78 @@
         },
         "additionalProperties": false
       },
+      "ExperimentData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentDefinition": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlowInputDefinition"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentData"
+            },
+            "nullable": true
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentNode"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentDefinitionSource": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "$ref": "#/components/schemas/ExperimentDefinitionSourceType"
+          },
+          "experimentDefinitionDataUri": {
+            "type": "string",
+            "nullable": true
+          },
+          "experimentDefinition": {
+            "$ref": "#/components/schemas/ExperimentDefinition"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentDefinitionSourceType": {
+        "enum": [
+          "DataUri",
+          "Definition"
+        ],
+        "type": "string"
+      },
       "ExperimentInfo": {
         "type": "object",
         "properties": {
@@ -15564,6 +15442,152 @@
           },
           "experimentId": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentNode": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/ExperimentNodeType"
+          },
+          "max_turns": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatGroupRole"
+            },
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          },
+          "variant": {
+            "type": "string",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environment_variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "resources": {
+            "$ref": "#/components/schemas/SessionRuntimeResources"
+          },
+          "inputs": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExperimentNodeType": {
+        "enum": [
+          "Flow",
+          "ChatGroup"
+        ],
+        "type": "string"
+      },
+      "ExperimentTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastModifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "owner": {
+            "$ref": "#/components/schemas/SchemaContractsCreatedBy"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlowInputDefinition"
+            },
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentData"
+            },
+            "nullable": true
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExperimentNode"
+            },
             "nullable": true
           }
         },
@@ -15905,6 +15929,35 @@
           "identity": {
             "type": "string",
             "nullable": true
+          },
+          "flowDiagnostics": {
+            "$ref": "#/components/schemas/FlowDiagnostics"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlowDiagnostics": {
+        "type": "object",
+        "properties": {
+          "datastore": {
+            "type": "string",
+            "nullable": true
+          },
+          "artifactOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "container": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionLogRelativePath": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionArtifactId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16004,6 +16057,9 @@
           "identity": {
             "type": "string",
             "nullable": true
+          },
+          "flowDiagnostics": {
+            "$ref": "#/components/schemas/FlowDiagnostics"
           }
         },
         "additionalProperties": false
@@ -16165,6 +16221,9 @@
           "referenceResourceId": {
             "type": "string",
             "nullable": true
+          },
+          "variant": {
+            "$ref": "#/components/schemas/VariantIdentifier"
           }
         },
         "additionalProperties": false
@@ -16230,6 +16289,16 @@
           "assetId": {
             "type": "string",
             "nullable": true
+          },
+          "usage": {
+            "$ref": "#/components/schemas/EntityUsage"
+          },
+          "isAFragment": {
+            "type": "boolean"
+          },
+          "fragmentId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16264,7 +16333,9 @@
       "FlowLanguage": {
         "enum": [
           "Python",
-          "CSharp"
+          "CSharp",
+          "TypeScript",
+          "JavaScript"
         ],
         "type": "string"
       },
@@ -16288,11 +16359,11 @@
             },
             "nullable": true
           },
-          "use_variants": {
-            "type": "boolean"
-          },
           "activate": {
             "$ref": "#/components/schemas/Activate"
+          },
+          "use_variants": {
+            "type": "boolean"
           },
           "comment": {
             "type": "string",
@@ -16541,7 +16612,9 @@
           "FromNode",
           "BulkTest",
           "Eval",
-          "PairwiseEval"
+          "PairwiseEval",
+          "ExperimentTest",
+          "ExperimentEval"
         ],
         "type": "string"
       },
@@ -16668,44 +16741,8 @@
       "FlowRunSettings": {
         "type": "object",
         "properties": {
-          "flowRunDisplayName": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "tags": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "properties": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
           "runMode": {
             "$ref": "#/components/schemas/FlowRunMode"
-          },
-          "batch_inputs": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": { },
-              "description": "This is a dictionary"
-            },
-            "nullable": true
-          },
-          "batchDataInput": {
-            "$ref": "#/components/schemas/BatchDataInput"
           },
           "tuningNodeNames": {
             "type": "array",
@@ -16741,23 +16778,34 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "variantsTools": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Tool"
-            },
-            "nullable": true
-          },
-          "variantsCodes": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
           "nodeName": {
             "type": "string",
+            "nullable": true
+          },
+          "isDefaultVariant": {
+            "type": "boolean"
+          },
+          "nodeVariantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "nodeOutputPaths": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "baseFlowRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowTestInfos": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FlowTestInfo"
+            },
             "nullable": true
           },
           "bulkTestId": {
@@ -16768,22 +16816,6 @@
             "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/EvaluationFlowRunSettings"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "inputsMapping": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "dataInputs": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
             },
             "description": "This is a dictionary",
             "nullable": true
@@ -16799,17 +16831,286 @@
             },
             "nullable": true
           },
-          "amlComputeName": {
+          "batch_inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": { },
+              "description": "This is a dictionary"
+            },
+            "nullable": true
+          },
+          "inputUniversalLink": {
             "type": "string",
+            "nullable": true
+          },
+          "dataInputs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "flowRunOutputDirectory": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOverrideSetting"
+            },
+            "nullable": true
+          },
+          "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
             "nullable": true
           },
           "runtimeName": {
             "type": "string",
             "nullable": true
           },
+          "batchDataInput": {
+            "$ref": "#/components/schemas/BatchDataInput"
+          },
+          "inputsMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlowRunSettingsBase": {
+        "type": "object",
+        "properties": {
+          "batch_inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": { },
+              "description": "This is a dictionary"
+            },
+            "nullable": true
+          },
+          "inputUniversalLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataInputs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
           "flowRunOutputDirectory": {
             "type": "string",
             "nullable": true
+          },
+          "connectionOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOverrideSetting"
+            },
+            "nullable": true
+          },
+          "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "runtimeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "batchDataInput": {
+            "$ref": "#/components/schemas/BatchDataInput"
+          },
+          "inputsMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FlowRunStatusEnum": {
+        "enum": [
+          "Started",
+          "Completed",
+          "Failed",
+          "Cancelled",
+          "NotStarted",
+          "Running",
+          "Queued",
+          "Paused",
+          "Unapproved",
+          "Starting",
+          "Preparing",
+          "CancelRequested",
+          "Pausing",
+          "Finalizing",
+          "Canceled",
+          "Bypassed"
+        ],
+        "type": "string"
+      },
+      "FlowRunStatusResponse": {
+        "type": "object",
+        "properties": {
+          "flowRunStatus": {
+            "$ref": "#/components/schemas/FlowRunStatusEnum"
+          },
+          "lastCheckedTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "flowRunCreatedTime": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -16934,80 +17235,6 @@
         },
         "additionalProperties": false
       },
-      "FlowRuntimeSubmissionApiVersion": {
-        "enum": [
-          "Version1",
-          "Version2"
-        ],
-        "type": "string"
-      },
-      "FlowSampleDto": {
-        "type": "object",
-        "properties": {
-          "sampleResourceId": {
-            "type": "string",
-            "nullable": true
-          },
-          "section": {
-            "$ref": "#/components/schemas/Section"
-          },
-          "indexNumber": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "flowName": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "details": {
-            "type": "string",
-            "nullable": true
-          },
-          "tags": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string",
-              "nullable": true
-            },
-            "nullable": true
-          },
-          "flow": {
-            "$ref": "#/components/schemas/Flow"
-          },
-          "flowDefinitionFilePath": {
-            "type": "string",
-            "nullable": true
-          },
-          "flowType": {
-            "$ref": "#/components/schemas/FlowType"
-          },
-          "flowRunSettings": {
-            "$ref": "#/components/schemas/FlowRunSettings"
-          },
-          "isArchived": {
-            "type": "boolean"
-          },
-          "vmSize": {
-            "type": "string",
-            "nullable": true
-          },
-          "maxIdleTimeSeconds": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
-          "identity": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "FlowSessionDto": {
         "type": "object",
         "properties": {
@@ -17033,6 +17260,10 @@
           "maxIdleTimeSeconds": {
             "type": "integer",
             "format": "int64",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
             "nullable": true
           },
           "flowFeatures": {
@@ -17181,6 +17412,10 @@
           },
           "language": {
             "$ref": "#/components/schemas/FlowLanguage"
+          },
+          "entry": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -17194,44 +17429,8 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "flowRunDisplayName": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "tags": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "properties": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
           "runMode": {
             "$ref": "#/components/schemas/FlowRunMode"
-          },
-          "batch_inputs": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": { },
-              "description": "This is a dictionary"
-            },
-            "nullable": true
-          },
-          "batchDataInput": {
-            "$ref": "#/components/schemas/BatchDataInput"
           },
           "tuningNodeNames": {
             "type": "array",
@@ -17267,23 +17466,34 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "variantsTools": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Tool"
-            },
-            "nullable": true
-          },
-          "variantsCodes": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
           "nodeName": {
             "type": "string",
+            "nullable": true
+          },
+          "isDefaultVariant": {
+            "type": "boolean"
+          },
+          "nodeVariantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "nodeOutputPaths": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "baseFlowRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "flowTestInfos": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FlowTestInfo"
+            },
             "nullable": true
           },
           "bulkTestId": {
@@ -17294,22 +17504,6 @@
             "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/EvaluationFlowRunSettings"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "inputsMapping": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "This is a dictionary",
-            "nullable": true
-          },
-          "dataInputs": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
             },
             "description": "This is a dictionary",
             "nullable": true
@@ -17325,15 +17519,121 @@
             },
             "nullable": true
           },
-          "amlComputeName": {
+          "batch_inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": { },
+              "description": "This is a dictionary"
+            },
+            "nullable": true
+          },
+          "inputUniversalLink": {
             "type": "string",
+            "nullable": true
+          },
+          "dataInputs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "flowRunOutputDirectory": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOverrideSetting"
+            },
+            "nullable": true
+          },
+          "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
             "nullable": true
           },
           "runtimeName": {
             "type": "string",
             "nullable": true
           },
-          "flowRunOutputDirectory": {
+          "batchDataInput": {
+            "$ref": "#/components/schemas/BatchDataInput"
+          },
+          "inputsMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "experimentNodeName": {
             "type": "string",
             "nullable": true
           }
@@ -17343,12 +17643,39 @@
       "FlowTestInfo": {
         "type": "object",
         "properties": {
+          "variantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tuningNodeName": {
+            "type": "string",
+            "nullable": true
+          },
           "flowRunId": {
             "type": "string",
             "nullable": true
           },
           "flowTestStorageSetting": {
             "$ref": "#/components/schemas/FlowTestStorageSetting"
+          },
+          "flowRunType": {
+            "$ref": "#/components/schemas/FlowRunTypeEnum"
+          },
+          "variantRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "evaluationName": {
+            "type": "string",
+            "nullable": true
+          },
+          "outputUniversalLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -17412,16 +17739,17 @@
             },
             "nullable": true
           },
-          "text_box_size": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "capabilities": {
             "$ref": "#/components/schemas/AzureOpenAIModelCapabilities"
           },
           "allow_manual_entry": {
             "type": "boolean",
+            "nullable": true
+          },
+          "ui_hints": {
+            "type": "object",
+            "additionalProperties": { },
+            "description": "This is a dictionary",
             "nullable": true
           }
         },
@@ -19000,9 +19328,7 @@
           },
           "enum": {
             "type": "array",
-            "items": {
-              "type": "string"
-            },
+            "items": { },
             "nullable": true
           },
           "enabled_by": {
@@ -19433,7 +19759,8 @@
           "Data",
           "AutoML",
           "Spark",
-          "Base"
+          "Base",
+          "FineTuning"
         ],
         "type": "string"
       },
@@ -21095,6 +21422,9 @@
           },
           "activate": {
             "$ref": "#/components/schemas/Activate"
+          },
+          "use_variants": {
+            "type": "boolean"
           },
           "comment": {
             "type": "string",
@@ -24072,6 +24402,13 @@
         },
         "additionalProperties": false
       },
+      "PromptflowEngineType": {
+        "enum": [
+          "FastEngine",
+          "ScalableEngine"
+        ],
+        "type": "string"
+      },
       "ProviderEntity": {
         "type": "object",
         "properties": {
@@ -25542,6 +25879,60 @@
         },
         "additionalProperties": false
       },
+      "ResumeBulkRunRequest": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "resumeFromRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "runtimeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "RetrieveToolFuncResultRequest": {
         "type": "object",
         "properties": {
@@ -25742,6 +26133,35 @@
             "nullable": true
           }
         }
+      },
+      "RunCommandsCommandResult": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "nullable": true
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "exit_code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stdout": {
+            "type": "string",
+            "nullable": true
+          },
+          "stderr": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "RunConfiguration": {
         "type": "object",
@@ -26615,6 +27035,16 @@
             "nullable": true
           },
           "assetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "usage": {
+            "$ref": "#/components/schemas/EntityUsage"
+          },
+          "isAFragment": {
+            "type": "boolean"
+          },
+          "fragmentId": {
             "type": "string",
             "nullable": true
           }
@@ -27629,13 +28059,6 @@
         },
         "additionalProperties": false
       },
-      "Section": {
-        "enum": [
-          "Gallery",
-          "Template"
-        ],
-        "type": "string"
-      },
       "SegmentedResult`1": {
         "type": "object",
         "properties": {
@@ -27683,6 +28106,14 @@
       "SessionApplication": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
           "image": {
             "type": "string",
             "nullable": true
@@ -27702,11 +28133,23 @@
             },
             "nullable": true
           },
+          "volumes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Volume"
+            },
+            "nullable": true
+          },
           "setupResults": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SessionApplicationRunCommandResult"
             },
+            "nullable": true
+          },
+          "port": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -27741,6 +28184,14 @@
         },
         "additionalProperties": false
       },
+      "SessionConfigModeEnum": {
+        "enum": [
+          "Default",
+          "ForceInstallPackage",
+          "ForceReset"
+        ],
+        "type": "string"
+      },
       "SessionProperties": {
         "type": "object",
         "properties": {
@@ -27760,6 +28211,10 @@
             "type": "string",
             "nullable": true
           },
+          "existingUserComputeInstanceName": {
+            "type": "string",
+            "nullable": true
+          },
           "userObjectId": {
             "type": "string",
             "nullable": true
@@ -27776,12 +28231,45 @@
             "type": "integer",
             "format": "int64"
           },
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionApplication"
+            },
+            "nullable": true
+          },
           "application": {
             "$ref": "#/components/schemas/SessionApplication"
           },
           "lastAliveTime": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SessionRuntimeResources": {
+        "type": "object",
+        "properties": {
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -27820,6 +28308,13 @@
           "identity": {
             "type": "string",
             "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -29143,6 +29638,56 @@
             "type": "string",
             "nullable": true
           },
+          "nodeVariant": {
+            "type": "string",
+            "nullable": true
+          },
+          "variantRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "baselineRunId": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionSetupMode": {
+            "$ref": "#/components/schemas/SessionSetupModeEnum"
+          },
+          "sessionConfigMode": {
+            "$ref": "#/components/schemas/SessionConfigModeEnum"
+          },
+          "flowLineageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "vmSize": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxIdleTimeSeconds": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "identity": {
+            "type": "string",
+            "nullable": true
+          },
+          "computeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "enableMultiContainer": {
+            "type": "boolean"
+          },
+          "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
           "description": {
             "type": "string",
             "nullable": true
@@ -29163,15 +29708,7 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "nodeVariant": {
-            "type": "string",
-            "nullable": true
-          },
-          "variantRunId": {
-            "type": "string",
-            "nullable": true
-          },
-          "baselineRunId": {
+          "runtimeName": {
             "type": "string",
             "nullable": true
           },
@@ -29206,40 +29743,32 @@
             "description": "This is a dictionary",
             "nullable": true
           },
-          "amlComputeName": {
-            "type": "string",
-            "nullable": true
-          },
-          "runtimeName": {
-            "type": "string",
-            "nullable": true
-          },
-          "sessionId": {
-            "type": "string",
-            "nullable": true
-          },
-          "vmSize": {
-            "type": "string",
-            "nullable": true
-          },
-          "maxIdleTimeSeconds": {
-            "type": "integer",
-            "format": "int64",
-            "nullable": true
-          },
-          "sessionSetupMode": {
-            "$ref": "#/components/schemas/SessionSetupModeEnum"
-          },
           "outputDataStore": {
-            "type": "string",
-            "nullable": true
-          },
-          "flowLineageId": {
             "type": "string",
             "nullable": true
           },
           "runDisplayNameGenerationType": {
             "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -29372,6 +29901,19 @@
         },
         "additionalProperties": false
       },
+      "SubmitExperimentRequest": {
+        "type": "object",
+        "properties": {
+          "experimentTemplateId": {
+            "type": "string",
+            "nullable": true
+          },
+          "experimentDefinitionSource": {
+            "$ref": "#/components/schemas/ExperimentDefinitionSource"
+          }
+        },
+        "additionalProperties": false
+      },
       "SubmitFlowRequest": {
         "type": "object",
         "properties": {
@@ -29399,17 +29941,8 @@
           "useWorkspaceConnection": {
             "type": "boolean"
           },
-          "useFlowSnapshotToSubmit": {
-            "type": "boolean"
-          },
-          "enableBlobRunArtifacts": {
-            "type": "boolean"
-          },
           "enableAsyncFlowTest": {
             "type": "boolean"
-          },
-          "flowRuntimeSubmissionApiVersion": {
-            "$ref": "#/components/schemas/FlowRuntimeSubmissionApiVersion"
           },
           "runDisplayNameGenerationType": {
             "$ref": "#/components/schemas/RunDisplayNameGenerationType"
@@ -30258,7 +30791,8 @@
         "enum": [
           "Stable",
           "Preview",
-          "Deprecated"
+          "Deprecated",
+          "Archived"
         ],
         "type": "string"
       },
@@ -30269,7 +30803,8 @@
           "action",
           "prompt",
           "custom_llm",
-          "csharp"
+          "csharp",
+          "typescript"
         ],
         "type": "string"
       },
@@ -30279,6 +30814,49 @@
           "processCountPerNode": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TraceCosmosResourceDto": {
+        "type": "object",
+        "properties": {
+          "accountEndpoint": {
+            "type": "string",
+            "nullable": true
+          },
+          "databaseName": {
+            "type": "string",
+            "nullable": true
+          },
+          "containerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissionMode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TraceCosmosResourceDtos": {
+        "type": "object",
+        "properties": {
+          "resourceTokens": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TraceCosmosResourceDto"
+            },
             "nullable": true
           }
         },
@@ -30423,6 +31001,136 @@
         ],
         "type": "string"
       },
+      "TuningNodeRunSetting": {
+        "type": "object",
+        "properties": {
+          "simulationFlow": {
+            "$ref": "#/components/schemas/FlowGraphReference"
+          },
+          "simulationFlowRunSetting": {
+            "$ref": "#/components/schemas/FlowRunSettingsBase"
+          },
+          "batch_inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": { },
+              "description": "This is a dictionary"
+            },
+            "nullable": true
+          },
+          "inputUniversalLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataInputs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "flowRunOutputDirectory": {
+            "type": "string",
+            "nullable": true
+          },
+          "connectionOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConnectionOverrideSetting"
+            },
+            "nullable": true
+          },
+          "flowRunDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "runtimeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "batchDataInput": {
+            "$ref": "#/components/schemas/BatchDataInput"
+          },
+          "inputsMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "connections": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "This is a dictionary"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "environmentVariables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "This is a dictionary",
+            "nullable": true
+          },
+          "outputDataStore": {
+            "type": "string",
+            "nullable": true
+          },
+          "runDisplayNameGenerationType": {
+            "$ref": "#/components/schemas/RunDisplayNameGenerationType"
+          },
+          "collieRunSettings": {
+            "$ref": "#/components/schemas/CollieRunSettings"
+          },
+          "workerCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "timeoutInSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "promptflowEngineType": {
+            "$ref": "#/components/schemas/PromptflowEngineType"
+          },
+          "experimentNodeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "TuningNodeSetting": {
         "type": "object",
         "properties": {
@@ -30431,6 +31139,17 @@
             "items": {
               "type": "string"
             },
+            "nullable": true
+          },
+          "tuningNodeRunSettings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/components/schemas/TuningNodeRunSetting"
+              }
+            },
+            "description": "This is a dictionary",
             "nullable": true
           }
         },
@@ -30928,6 +31647,18 @@
         },
         "additionalProperties": false
       },
+      "UpdateFlowStatusRequest": {
+        "type": "object",
+        "properties": {
+          "flowRunStatus": {
+            "$ref": "#/components/schemas/FlowRunStatusEnum"
+          },
+          "errorResponse": {
+            "$ref": "#/components/schemas/ErrorResponse"
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateRegistryComponentRequest": {
         "type": "object",
         "properties": {
@@ -31123,9 +31854,25 @@
           "function_str",
           "FormRecognizerConnection",
           "file_path",
-          "image"
+          "image",
+          "assistant_definition",
+          "ServerlessConnection"
         ],
         "type": "string"
+      },
+      "VariantIdentifier": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tuningNodeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "VariantNode": {
         "type": "object",
@@ -31146,6 +31893,24 @@
           "Lowpriority"
         ],
         "type": "string"
+      },
+      "Volume": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "target": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "WebServiceComputeMetaInfo": {
         "type": "object",

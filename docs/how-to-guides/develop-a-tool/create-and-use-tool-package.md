@@ -145,7 +145,7 @@ Alternatively, you can test your tool package using the script below to ensure t
           {'module': 'module_name', 'package': 'package_name', 'package_version': 'package_version', ...}
           """
           entry_points = importlib.metadata.entry_points()
-          if isinstance(entry_points, list):
+          if hasattr(entry_points, "select"):
               entry_points = entry_points.select(group=PACKAGE_TOOLS_ENTRY)
           else:
               entry_points = entry_points.get(PACKAGE_TOOLS_ENTRY, [])

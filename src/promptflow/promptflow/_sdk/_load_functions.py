@@ -9,8 +9,11 @@ from dotenv import dotenv_values
 
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
+from ..exceptions import UserErrorException
+from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
+from .entities._experiment import Experiment, ExperimentTemplate
 from .entities._flow import Flow
 
 logger = get_cli_sdk_logger()
@@ -61,13 +64,11 @@ def load_common(
             **kwargs,
         )
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-    *,
-    entry: str = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
@@ -76,12 +77,10 @@ def load_flow(
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
-    :param entry: The entry function, only works when source is a code file.
-    :type entry: str
     :return: A Flow object
     :rtype: Flow
     """
-    return Flow.load(source, entry=entry, **kwargs)
+    return Flow.load(source, **kwargs)
 
 
 def load_run(
@@ -109,6 +108,15 @@ def load_connection(
     source: Union[str, PathLike, IO[AnyStr]],
     **kwargs,
 ):
+    """Load connection from YAML file or .env file.
+
+    :param source: The local yaml source of a connection or .env file. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: A Connection object
+    :rtype: Connection
+    """
     if Path(source).name.endswith(".env"):
         return _load_env_to_connection(source, **kwargs)
     return load_common(_Connection, source, **kwargs)
@@ -122,17 +130,77 @@ def _load_env_to_connection(
     source = Path(source)
     name = next((_dct["name"] for _dct in params_override if "name" in _dct), None)
     if not name:
-        raise Exception("Please specify --name when creating connection from .env.")
+        raise UserErrorException(message_format="Please specify --name when creating connection from .env.")
     if not source.exists():
-        raise FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        e = FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
     try:
         data = dict(dotenv_values(source))
         if not data:
             # Handle some special case dotenv returns empty with no exception raised.
-            raise ValueError(
+            e = ValueError(
                 f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
                 "please make sure the file is not empty and readable."
             )
+            raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
         return CustomConnection(name=name, secrets=data)
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
+
+
+def _load_experiment_template(
+    source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
+):
+    """Load experiment template from YAML file.
+
+    :param source: The local yaml source of an experiment template. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: An ExperimentTemplate object
+    :rtype: ExperimentTemplate
+    """
+    source_path = Path(source)
+    if source_path.is_dir():
+        target_yaml_list = []
+        for item in list(source_path.iterdir()):
+            if item.name.endswith(".exp.yaml"):
+                target_yaml_list.append(item)
+        if len(target_yaml_list) > 1:
+            raise MultipleExperimentTemplateError(
+                f"Multiple experiment template files found in {source_path.resolve().absolute().as_posix()}, "
+                f"please specify one."
+            )
+        if not target_yaml_list:
+            raise NoExperimentTemplateError(
+                f"Experiment template file not found in {source_path.resolve().absolute().as_posix()}."
+            )
+        source_path = target_yaml_list[0]
+    if not source_path.exists():
+        raise NoExperimentTemplateError(
+            f"Experiment template file {source_path.resolve().absolute().as_posix()} not found."
+        )
+    return load_common(ExperimentTemplate, source=source_path)
+
+
+def _load_experiment(
+    source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
+):
+    """
+    Load experiment from YAML file.
+
+    :param source: The local yaml source of an experiment. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: An Experiment object
+    :rtype: Experiment
+    """
+    source = Path(source)
+    absolute_path = source.resolve().absolute().as_posix()
+    if not source.exists():
+        raise NoExperimentTemplateError(f"Experiment file {absolute_path} not found.")
+    experiment = load_common(Experiment, source, **kwargs)
+    return experiment

@@ -31,6 +31,10 @@ def is_replay() -> bool:
     return get_test_mode_from_environ() == TestMode.REPLAY
 
 
+def is_recording_enabled() -> bool:
+    return is_record() or is_replay() or is_live()
+
+
 class FakeTokenCredential:
     """Refer from Azure SDK for Python repository.
 
@@ -206,6 +210,8 @@ def sanitize_pfs_request_body(body: str) -> str:
         body_dict["runtimeName"] = SanitizedValues.RUNTIME_NAME
     if "sessionId" in body_dict:
         body_dict["sessionId"] = SanitizedValues.SESSION_ID
+    if "computeName" in body_dict:
+        body_dict["computeName"] = SanitizedValues.COMPUTE_NAME
     if "flowLineageId" in body:
         body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
     if "flowDefinitionResourceId" in body_dict:

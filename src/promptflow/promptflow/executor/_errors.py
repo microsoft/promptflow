@@ -189,6 +189,12 @@ class BatchExecutionTimeoutError(UserErrorException):
         )
 
 
+class ThreadCrashError(SystemErrorException):
+    """Exception raised when thread crashed."""
+
+    pass
+
+
 class ProcessCrashError(UserErrorException):
     """Exception raised when process crashed."""
 
@@ -208,6 +214,13 @@ class ProcessInfoObtainedTimeout(SystemErrorException):
 
     def __init__(self, timeout):
         super().__init__(message=f"Failed to get process info after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
+class SpawnedForkProcessManagerStartFailure(SystemErrorException):
+    """Exception raised when failed to start spawned fork process manager."""
+
+    def __init__(self):
+        super().__init__(message="Failed to start spawned fork process manager", target=ErrorTarget.EXECUTOR)
 
 
 class EmptyLLMApiMapping(UserErrorException):
@@ -278,5 +291,11 @@ class UnsupportedAssistantToolType(ValidationException):
     pass
 
 
-class InvalidFlowFileError(UserErrorException):
-    pass
+class FailedToParseAssistantTool(UserErrorException):
+    """Exception raised when failed to parse assistant tool from docstring."""
+
+    def __init__(self, func_name):
+        super().__init__(
+            message_format="Failed to get assistant tool by parsing the docstring of function '{func_name}'.",
+            func_name=func_name,
+        )

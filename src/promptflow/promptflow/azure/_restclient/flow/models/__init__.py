@@ -168,6 +168,7 @@ try:
     from ._models_py3 import AssetTypeMetaInfo
     from ._models_py3 import AssetVersionPublishRequest
     from ._models_py3 import AssignedUser
+    from ._models_py3 import AttachCosmosRequest
     from ._models_py3 import AuthKeys
     from ._models_py3 import AutoClusterComputeSpecification
     from ._models_py3 import AutoDeleteSetting
@@ -193,9 +194,11 @@ try:
     from ._models_py3 import BatchGetComponentRequest
     from ._models_py3 import Binding
     from ._models_py3 import BulkTestDto
+    from ._models_py3 import ChatGroupRole
     from ._models_py3 import CloudError
     from ._models_py3 import CloudPrioritySetting
     from ._models_py3 import CloudSettings
+    from ._models_py3 import CollieRunSettings
     from ._models_py3 import ColumnTransformer
     from ._models_py3 import CommandJob
     from ._models_py3 import CommandJobLimits
@@ -237,7 +240,7 @@ try:
     from ._models_py3 import ControlInput
     from ._models_py3 import ControlOutput
     from ._models_py3 import CopyDataTask
-    from ._models_py3 import CreateFlowFromSampleRequest
+    from ._models_py3 import CreateExperimentTemplateRequest
     from ._models_py3 import CreateFlowRequest
     from ._models_py3 import CreateFlowRuntimeRequest
     from ._models_py3 import CreateFlowSessionRequest
@@ -303,6 +306,7 @@ try:
     from ._models_py3 import EPRPipelineRunErrorClassificationRequest
     from ._models_py3 import EndpointSetting
     from ._models_py3 import EntityInterface
+    from ._models_py3 import EntityUsage
     from ._models_py3 import EntrySetting
     from ._models_py3 import EnumParameterRule
     from ._models_py3 import EnvironmentConfiguration
@@ -318,7 +322,12 @@ try:
     from ._models_py3 import ExecutionDataPath
     from ._models_py3 import ExecutionGlobsOptions
     from ._models_py3 import ExperimentComputeMetaInfo
+    from ._models_py3 import ExperimentData
+    from ._models_py3 import ExperimentDefinition
+    from ._models_py3 import ExperimentDefinitionSource
     from ._models_py3 import ExperimentInfo
+    from ._models_py3 import ExperimentNode
+    from ._models_py3 import ExperimentTemplateDto
     from ._models_py3 import ExportComponentMetaInfo
     from ._models_py3 import ExportDataTask
     from ._models_py3 import FeaturizationSettings
@@ -328,6 +337,7 @@ try:
     from ._models_py3 import Flow
     from ._models_py3 import FlowAnnotations
     from ._models_py3 import FlowBaseDto
+    from ._models_py3 import FlowDiagnostics
     from ._models_py3 import FlowDto
     from ._models_py3 import FlowEnvironment
     from ._models_py3 import FlowFeature
@@ -347,9 +357,10 @@ try:
     from ._models_py3 import FlowRunInfo
     from ._models_py3 import FlowRunResult
     from ._models_py3 import FlowRunSettings
+    from ._models_py3 import FlowRunSettingsBase
+    from ._models_py3 import FlowRunStatusResponse
     from ._models_py3 import FlowRuntimeCapability
     from ._models_py3 import FlowRuntimeDto
-    from ._models_py3 import FlowSampleDto
     from ._models_py3 import FlowSessionDto
     from ._models_py3 import FlowSnapshot
     from ._models_py3 import FlowSubmitRunSettings
@@ -551,10 +562,12 @@ try:
     from ._models_py3 import ResourceConfig
     from ._models_py3 import ResourceConfiguration
     from ._models_py3 import ResourcesSetting
+    from ._models_py3 import ResumeBulkRunRequest
     from ._models_py3 import RetrieveToolFuncResultRequest
     from ._models_py3 import RetryConfiguration
     from ._models_py3 import RootError
     from ._models_py3 import RunAnnotations
+    from ._models_py3 import RunCommandsCommandResult
     from ._models_py3 import RunConfiguration
     from ._models_py3 import RunDatasetReference
     from ._models_py3 import RunDefinition
@@ -588,6 +601,7 @@ try:
     from ._models_py3 import SessionApplication
     from ._models_py3 import SessionApplicationRunCommandResult
     from ._models_py3 import SessionProperties
+    from ._models_py3 import SessionRuntimeResources
     from ._models_py3 import SetupFlowSessionRequest
     from ._models_py3 import SharingScope
     from ._models_py3 import Snapshot
@@ -629,6 +643,7 @@ try:
     from ._models_py3 import SubStatusPeriod
     from ._models_py3 import SubmitBulkRunRequest
     from ._models_py3 import SubmitBulkRunResponse
+    from ._models_py3 import SubmitExperimentRequest
     from ._models_py3 import SubmitFlowRequest
     from ._models_py3 import SubmitPipelineRunRequest
     from ._models_py3 import SweepEarlyTerminationPolicy
@@ -654,10 +669,13 @@ try:
     from ._models_py3 import ToolSetting
     from ._models_py3 import ToolSourceMeta
     from ._models_py3 import TorchDistributedConfiguration
+    from ._models_py3 import TraceCosmosResourceDto
+    from ._models_py3 import TraceCosmosResourceDtos
     from ._models_py3 import TrainingDiagnosticConfiguration
     from ._models_py3 import TrainingOutput
     from ._models_py3 import TrainingSettings
     from ._models_py3 import TriggerAsyncOperationStatus
+    from ._models_py3 import TuningNodeRunSetting
     from ._models_py3 import TuningNodeSetting
     from ._models_py3 import TypedAssetReference
     from ._models_py3 import UIAzureOpenAIDeploymentNameSelector
@@ -678,13 +696,16 @@ try:
     from ._models_py3 import UpdateComponentRequest
     from ._models_py3 import UpdateFlowRequest
     from ._models_py3 import UpdateFlowRuntimeRequest
+    from ._models_py3 import UpdateFlowStatusRequest
     from ._models_py3 import UpdateRegistryComponentRequest
     from ._models_py3 import UploadOptions
     from ._models_py3 import UriReference
     from ._models_py3 import User
     from ._models_py3 import UserAssignedIdentity
     from ._models_py3 import ValidationDataSettings
+    from ._models_py3 import VariantIdentifier
     from ._models_py3 import VariantNode
+    from ._models_py3 import Volume
     from ._models_py3 import WebServiceComputeMetaInfo
     from ._models_py3 import WebServicePort
     from ._models_py3 import Webhook
@@ -853,6 +874,7 @@ except (SyntaxError, ImportError):
     from ._models import AssetTypeMetaInfo  # type: ignore
     from ._models import AssetVersionPublishRequest  # type: ignore
     from ._models import AssignedUser  # type: ignore
+    from ._models import AttachCosmosRequest  # type: ignore
     from ._models import AuthKeys  # type: ignore
     from ._models import AutoClusterComputeSpecification  # type: ignore
     from ._models import AutoDeleteSetting  # type: ignore
@@ -878,9 +900,11 @@ except (SyntaxError, ImportError):
     from ._models import BatchGetComponentRequest  # type: ignore
     from ._models import Binding  # type: ignore
     from ._models import BulkTestDto  # type: ignore
+    from ._models import ChatGroupRole  # type: ignore
     from ._models import CloudError  # type: ignore
     from ._models import CloudPrioritySetting  # type: ignore
     from ._models import CloudSettings  # type: ignore
+    from ._models import CollieRunSettings  # type: ignore
     from ._models import ColumnTransformer  # type: ignore
     from ._models import CommandJob  # type: ignore
     from ._models import CommandJobLimits  # type: ignore
@@ -922,7 +946,7 @@ except (SyntaxError, ImportError):
     from ._models import ControlInput  # type: ignore
     from ._models import ControlOutput  # type: ignore
     from ._models import CopyDataTask  # type: ignore
-    from ._models import CreateFlowFromSampleRequest  # type: ignore
+    from ._models import CreateExperimentTemplateRequest  # type: ignore
     from ._models import CreateFlowRequest  # type: ignore
     from ._models import CreateFlowRuntimeRequest  # type: ignore
     from ._models import CreateFlowSessionRequest  # type: ignore
@@ -988,6 +1012,7 @@ except (SyntaxError, ImportError):
     from ._models import EPRPipelineRunErrorClassificationRequest  # type: ignore
     from ._models import EndpointSetting  # type: ignore
     from ._models import EntityInterface  # type: ignore
+    from ._models import EntityUsage  # type: ignore
     from ._models import EntrySetting  # type: ignore
     from ._models import EnumParameterRule  # type: ignore
     from ._models import EnvironmentConfiguration  # type: ignore
@@ -1003,7 +1028,12 @@ except (SyntaxError, ImportError):
     from ._models import ExecutionDataPath  # type: ignore
     from ._models import ExecutionGlobsOptions  # type: ignore
     from ._models import ExperimentComputeMetaInfo  # type: ignore
+    from ._models import ExperimentData  # type: ignore
+    from ._models import ExperimentDefinition  # type: ignore
+    from ._models import ExperimentDefinitionSource  # type: ignore
     from ._models import ExperimentInfo  # type: ignore
+    from ._models import ExperimentNode  # type: ignore
+    from ._models import ExperimentTemplateDto  # type: ignore
     from ._models import ExportComponentMetaInfo  # type: ignore
     from ._models import ExportDataTask  # type: ignore
     from ._models import FeaturizationSettings  # type: ignore
@@ -1013,6 +1043,7 @@ except (SyntaxError, ImportError):
     from ._models import Flow  # type: ignore
     from ._models import FlowAnnotations  # type: ignore
     from ._models import FlowBaseDto  # type: ignore
+    from ._models import FlowDiagnostics  # type: ignore
     from ._models import FlowDto  # type: ignore
     from ._models import FlowEnvironment  # type: ignore
     from ._models import FlowFeature  # type: ignore
@@ -1032,9 +1063,10 @@ except (SyntaxError, ImportError):
     from ._models import FlowRunInfo  # type: ignore
     from ._models import FlowRunResult  # type: ignore
     from ._models import FlowRunSettings  # type: ignore
+    from ._models import FlowRunSettingsBase  # type: ignore
+    from ._models import FlowRunStatusResponse  # type: ignore
     from ._models import FlowRuntimeCapability  # type: ignore
     from ._models import FlowRuntimeDto  # type: ignore
-    from ._models import FlowSampleDto  # type: ignore
     from ._models import FlowSessionDto  # type: ignore
     from ._models import FlowSnapshot  # type: ignore
     from ._models import FlowSubmitRunSettings  # type: ignore
@@ -1236,10 +1268,12 @@ except (SyntaxError, ImportError):
     from ._models import ResourceConfig  # type: ignore
     from ._models import ResourceConfiguration  # type: ignore
     from ._models import ResourcesSetting  # type: ignore
+    from ._models import ResumeBulkRunRequest  # type: ignore
     from ._models import RetrieveToolFuncResultRequest  # type: ignore
     from ._models import RetryConfiguration  # type: ignore
     from ._models import RootError  # type: ignore
     from ._models import RunAnnotations  # type: ignore
+    from ._models import RunCommandsCommandResult  # type: ignore
     from ._models import RunConfiguration  # type: ignore
     from ._models import RunDatasetReference  # type: ignore
     from ._models import RunDefinition  # type: ignore
@@ -1273,6 +1307,7 @@ except (SyntaxError, ImportError):
     from ._models import SessionApplication  # type: ignore
     from ._models import SessionApplicationRunCommandResult  # type: ignore
     from ._models import SessionProperties  # type: ignore
+    from ._models import SessionRuntimeResources  # type: ignore
     from ._models import SetupFlowSessionRequest  # type: ignore
     from ._models import SharingScope  # type: ignore
     from ._models import Snapshot  # type: ignore
@@ -1314,6 +1349,7 @@ except (SyntaxError, ImportError):
     from ._models import SubStatusPeriod  # type: ignore
     from ._models import SubmitBulkRunRequest  # type: ignore
     from ._models import SubmitBulkRunResponse  # type: ignore
+    from ._models import SubmitExperimentRequest  # type: ignore
     from ._models import SubmitFlowRequest  # type: ignore
     from ._models import SubmitPipelineRunRequest  # type: ignore
     from ._models import SweepEarlyTerminationPolicy  # type: ignore
@@ -1339,10 +1375,13 @@ except (SyntaxError, ImportError):
     from ._models import ToolSetting  # type: ignore
     from ._models import ToolSourceMeta  # type: ignore
     from ._models import TorchDistributedConfiguration  # type: ignore
+    from ._models import TraceCosmosResourceDto  # type: ignore
+    from ._models import TraceCosmosResourceDtos  # type: ignore
     from ._models import TrainingDiagnosticConfiguration  # type: ignore
     from ._models import TrainingOutput  # type: ignore
     from ._models import TrainingSettings  # type: ignore
     from ._models import TriggerAsyncOperationStatus  # type: ignore
+    from ._models import TuningNodeRunSetting  # type: ignore
     from ._models import TuningNodeSetting  # type: ignore
     from ._models import TypedAssetReference  # type: ignore
     from ._models import UIAzureOpenAIDeploymentNameSelector  # type: ignore
@@ -1363,13 +1402,16 @@ except (SyntaxError, ImportError):
     from ._models import UpdateComponentRequest  # type: ignore
     from ._models import UpdateFlowRequest  # type: ignore
     from ._models import UpdateFlowRuntimeRequest  # type: ignore
+    from ._models import UpdateFlowStatusRequest  # type: ignore
     from ._models import UpdateRegistryComponentRequest  # type: ignore
     from ._models import UploadOptions  # type: ignore
     from ._models import UriReference  # type: ignore
     from ._models import User  # type: ignore
     from ._models import UserAssignedIdentity  # type: ignore
     from ._models import ValidationDataSettings  # type: ignore
+    from ._models import VariantIdentifier  # type: ignore
     from ._models import VariantNode  # type: ignore
+    from ._models import Volume  # type: ignore
     from ._models import WebServiceComputeMetaInfo  # type: ignore
     from ._models import WebServicePort  # type: ignore
     from ._models import Webhook  # type: ignore
@@ -1441,6 +1483,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     ComputeTargetType,
     ComputeType,
     ConfigValueType,
+    ConnectionAuthMode,
     ConnectionCategory,
     ConnectionScope,
     ConnectionSourceType,
@@ -1474,13 +1517,15 @@ from ._azure_machine_learning_designer_service_client_enums import (
     EntityStatus,
     ErrorHandlingMode,
     ExecutionPhase,
+    ExperimentDefinitionSourceType,
+    ExperimentNodeType,
     FeaturizationMode,
     FlowFeatureStateEnum,
     FlowLanguage,
     FlowPatchOperationType,
     FlowRunMode,
+    FlowRunStatusEnum,
     FlowRunTypeEnum,
-    FlowRuntimeSubmissionApiVersion,
     FlowTestMode,
     FlowType,
     ForecastHorizonMode,
@@ -1532,6 +1577,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     PipelineType,
     PortAction,
     PrimaryMetrics,
+    PromptflowEngineType,
     ProvisioningState,
     RealTimeEndpointInternalStepCode,
     RealTimeEndpointOpCode,
@@ -1551,7 +1597,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     ScopeType,
     ScriptType,
     SeasonalityMode,
-    Section,
+    SessionConfigModeEnum,
     SessionSetupModeEnum,
     SetupFlowSessionAction,
     SeverityLevel,
@@ -1753,6 +1799,7 @@ __all__ = [
     'AssetTypeMetaInfo',
     'AssetVersionPublishRequest',
     'AssignedUser',
+    'AttachCosmosRequest',
     'AuthKeys',
     'AutoClusterComputeSpecification',
     'AutoDeleteSetting',
@@ -1778,9 +1825,11 @@ __all__ = [
     'BatchGetComponentRequest',
     'Binding',
     'BulkTestDto',
+    'ChatGroupRole',
     'CloudError',
     'CloudPrioritySetting',
     'CloudSettings',
+    'CollieRunSettings',
     'ColumnTransformer',
     'CommandJob',
     'CommandJobLimits',
@@ -1822,7 +1871,7 @@ __all__ = [
     'ControlInput',
     'ControlOutput',
     'CopyDataTask',
-    'CreateFlowFromSampleRequest',
+    'CreateExperimentTemplateRequest',
     'CreateFlowRequest',
     'CreateFlowRuntimeRequest',
     'CreateFlowSessionRequest',
@@ -1888,6 +1937,7 @@ __all__ = [
     'EPRPipelineRunErrorClassificationRequest',
     'EndpointSetting',
     'EntityInterface',
+    'EntityUsage',
     'EntrySetting',
     'EnumParameterRule',
     'EnvironmentConfiguration',
@@ -1903,7 +1953,12 @@ __all__ = [
     'ExecutionDataPath',
     'ExecutionGlobsOptions',
     'ExperimentComputeMetaInfo',
+    'ExperimentData',
+    'ExperimentDefinition',
+    'ExperimentDefinitionSource',
     'ExperimentInfo',
+    'ExperimentNode',
+    'ExperimentTemplateDto',
     'ExportComponentMetaInfo',
     'ExportDataTask',
     'FeaturizationSettings',
@@ -1913,6 +1968,7 @@ __all__ = [
     'Flow',
     'FlowAnnotations',
     'FlowBaseDto',
+    'FlowDiagnostics',
     'FlowDto',
     'FlowEnvironment',
     'FlowFeature',
@@ -1932,9 +1988,10 @@ __all__ = [
     'FlowRunInfo',
     'FlowRunResult',
     'FlowRunSettings',
+    'FlowRunSettingsBase',
+    'FlowRunStatusResponse',
     'FlowRuntimeCapability',
     'FlowRuntimeDto',
-    'FlowSampleDto',
     'FlowSessionDto',
     'FlowSnapshot',
     'FlowSubmitRunSettings',
@@ -2136,10 +2193,12 @@ __all__ = [
     'ResourceConfig',
     'ResourceConfiguration',
     'ResourcesSetting',
+    'ResumeBulkRunRequest',
     'RetrieveToolFuncResultRequest',
     'RetryConfiguration',
     'RootError',
     'RunAnnotations',
+    'RunCommandsCommandResult',
     'RunConfiguration',
     'RunDatasetReference',
     'RunDefinition',
@@ -2173,6 +2232,7 @@ __all__ = [
     'SessionApplication',
     'SessionApplicationRunCommandResult',
     'SessionProperties',
+    'SessionRuntimeResources',
     'SetupFlowSessionRequest',
     'SharingScope',
     'Snapshot',
@@ -2214,6 +2274,7 @@ __all__ = [
     'SubStatusPeriod',
     'SubmitBulkRunRequest',
     'SubmitBulkRunResponse',
+    'SubmitExperimentRequest',
     'SubmitFlowRequest',
     'SubmitPipelineRunRequest',
     'SweepEarlyTerminationPolicy',
@@ -2239,10 +2300,13 @@ __all__ = [
     'ToolSetting',
     'ToolSourceMeta',
     'TorchDistributedConfiguration',
+    'TraceCosmosResourceDto',
+    'TraceCosmosResourceDtos',
     'TrainingDiagnosticConfiguration',
     'TrainingOutput',
     'TrainingSettings',
     'TriggerAsyncOperationStatus',
+    'TuningNodeRunSetting',
     'TuningNodeSetting',
     'TypedAssetReference',
     'UIAzureOpenAIDeploymentNameSelector',
@@ -2263,13 +2327,16 @@ __all__ = [
     'UpdateComponentRequest',
     'UpdateFlowRequest',
     'UpdateFlowRuntimeRequest',
+    'UpdateFlowStatusRequest',
     'UpdateRegistryComponentRequest',
     'UploadOptions',
     'UriReference',
     'User',
     'UserAssignedIdentity',
     'ValidationDataSettings',
+    'VariantIdentifier',
     'VariantNode',
+    'Volume',
     'WebServiceComputeMetaInfo',
     'WebServicePort',
     'Webhook',
@@ -2339,6 +2406,7 @@ __all__ = [
     'ComputeTargetType',
     'ComputeType',
     'ConfigValueType',
+    'ConnectionAuthMode',
     'ConnectionCategory',
     'ConnectionScope',
     'ConnectionSourceType',
@@ -2372,13 +2440,15 @@ __all__ = [
     'EntityStatus',
     'ErrorHandlingMode',
     'ExecutionPhase',
+    'ExperimentDefinitionSourceType',
+    'ExperimentNodeType',
     'FeaturizationMode',
     'FlowFeatureStateEnum',
     'FlowLanguage',
     'FlowPatchOperationType',
     'FlowRunMode',
+    'FlowRunStatusEnum',
     'FlowRunTypeEnum',
-    'FlowRuntimeSubmissionApiVersion',
     'FlowTestMode',
     'FlowType',
     'ForecastHorizonMode',
@@ -2430,6 +2500,7 @@ __all__ = [
     'PipelineType',
     'PortAction',
     'PrimaryMetrics',
+    'PromptflowEngineType',
     'ProvisioningState',
     'RealTimeEndpointInternalStepCode',
     'RealTimeEndpointOpCode',
@@ -2449,7 +2520,7 @@ __all__ = [
     'ScopeType',
     'ScriptType',
     'SeasonalityMode',
-    'Section',
+    'SessionConfigModeEnum',
     'SessionSetupModeEnum',
     'SetupFlowSessionAction',
     'SeverityLevel',

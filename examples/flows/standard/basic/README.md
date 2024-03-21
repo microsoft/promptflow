@@ -1,5 +1,5 @@
 # Basic standard flow
-A basic standard flow using custom python tool that calls Azure OpenAI with connection info stored in environment variables. 
+A basic standard flow using custom python tool that calls Azure OpenAI with connection info stored in environment variables.
 
 Tools used in this flow：
 - `prompt` tool
@@ -36,7 +36,7 @@ pf flow test --flow .
 pf flow test --flow . --inputs text="Java Hello World!"
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World program that displays the greeting message when executed."
+pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World program that displays the greeting message."
 ```
 
 - Create run with multiple lines data
@@ -83,7 +83,7 @@ pf connection show -n open_ai_connection
 **Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
 
 ```bash
-# test with default input value in flow.dag.yaml 
+# test with default input value in flow.dag.yaml
 pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}'
 ```
 
@@ -109,7 +109,7 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 
 - Create run
 ```bash
-# run with environment variable reference connection in azureml workspace 
+# run with environment variable reference connection in azureml workspace
 pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}' --column-mapping text='${data.text}' --stream
 # run using yaml file
 pfazure run create --file run.yml --stream

@@ -64,7 +64,7 @@ Note that all dependent connections must be created before exporting as docker.
 
 ### Build Docker image
 
-Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
+Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `web-classification-serve`.
 
 Run the command below to build image:
 

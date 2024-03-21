@@ -1,0 +1,20 @@
+[
+  {
+    "line_number": 0,
+    "variant_id": "variant_0",
+    "groundtruth": "App",
+    "prediction": "App"
+  },
+  {
+    "line_number": 1,
+    "variant_id": "variant_0",
+    "groundtruth": "Pdf",
+    "prediction": "PDF"
+  },
+  {
+    "line_number": 2,
+    "variant_id": "variant_0",
+    "groundtruth": "App",
+    "prediction": "Pdf"
+  }
+]

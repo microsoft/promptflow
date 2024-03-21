@@ -1,0 +1,17 @@
+John (Manager): Good morning everyone, hope you all had a fine weekend. We have a lot of work ahead of us to target the Q3 release. What is everyone's status?
+
+Bob (Engineer): Most issues from last week are resolved now. We had a few errors due to a bug in the server implementation. Our logs are still showing high latencies though.
+
+John (Manager): Have you investigated the latency issues yet?
+
+Bob (Engineer): Yes, I think the issue lies in our routing logic. I created a work item and aim to have a fix merged by the end of this week.
+
+John (Manager): Great, keep me updated on that task. Gretchen, what are the updates on the architecture migrations?
+
+Gretchen (Engineer): Still waiting to hear back from the hosting team, but we have a general timeline for the migration, it should take about 2 weeks, but we won't have any service outages.
+
+John (Manager): Let me know when they get back to you, great work on the planning phase for this. This project should help greatly in maintaining our services. Finance, any news on the Q3 budget?
+
+Jill (Finance): The Q3 budget is just about complete. Will send out a confirmation email by the end of today to everyone.
+
+John (Manager): Nice work everyone, our company should have a great Q3 release ahead of us. Any other topics to discuss? Great, feel free to ping with me any status updates or questions. Have a great day.

@@ -32,6 +32,22 @@ class TestConnectionAPIs:
 
         assert len(connections) >= 1
 
+    def test_list_connections_with_different_user_agent(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
+        create_custom_connection(pf_client)
+        base_user_agent = ["local_pfs/0.0.1"]
+        for _, extra_user_agent in enumerate(
+            [
+                ["another_test_user_agent/0.0.1"],
+                ["test_user_agent/0.0.1"],
+                ["another_test_user_agent/0.0.1"],
+                ["test_user_agent/0.0.1"],
+            ]
+        ):
+            with check_activity_end_telemetry(
+                activity_name="pf.connections.list", user_agent=base_user_agent + extra_user_agent
+            ):
+                pfs_op.list_connections(user_agent=extra_user_agent)
+
     def test_get_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         name = create_custom_connection(pf_client)
         with check_activity_end_telemetry(activity_name="pf.connections.get"):
@@ -44,6 +60,19 @@ class TestConnectionAPIs:
         with check_activity_end_telemetry(activity_name="pf.connections.get"):
             conn_from_pfs = pfs_op.get_connection_with_secret(name=name, status_code=200).json
         assert not conn_from_pfs["secrets"]["api_key"].startswith("*")
+
+    def test_delete_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
+        len_connections = len(pfs_op.list_connections().json)
+
+        name = create_custom_connection(pf_client)
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.delete", "first_call": True},
+            ]
+        ):
+            pfs_op.delete_connection(name=name, status_code=204)
+        len_connections_after = len(pfs_op.list_connections().json)
+        assert len_connections_after == len_connections
 
     def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
         # TODO: should we record telemetry for this case?

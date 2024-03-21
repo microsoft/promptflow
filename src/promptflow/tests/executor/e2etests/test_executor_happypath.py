@@ -16,12 +16,14 @@ from promptflow.executor._errors import ConnectionNotFound, InputTypeError, Reso
 from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
+from ..conftest import MockSpawnProcess, setup_recording
+from ..process_utils import MockForkServerProcess, override_process_class
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutor:
     def get_line_inputs(self, flow_folder=""):
@@ -95,8 +97,9 @@ class TestExecutor:
         from promptflow._utils.logger_utils import flow_logger
 
         flow_logger.addHandler(logging.StreamHandler(sys.stdout))
-        os.environ["PF_TASK_PEEKING_INTERVAL"] = "1"
 
+        # Test long running tasks with log
+        os.environ["PF_LONG_RUNNING_LOGGING_INTERVAL"] = "1"
         executor = FlowExecutor.create(get_yaml_file("async_tools"), dev_connections)
         executor.exec_line(self.get_line_inputs())
         captured = capsys.readouterr()
@@ -108,8 +111,19 @@ class TestExecutor:
         assert re.match(
             expected_long_running_str_2, captured.out, re.DOTALL
         ), "flow_logger should contain long running async tool log"
+        os.environ.pop("PF_LONG_RUNNING_LOGGING_INTERVAL")
+
+        # Test long running tasks without log
+        executor.exec_line(self.get_line_inputs())
+        captured = capsys.readouterr()
+        assert not re.match(
+            expected_long_running_str_1, captured.out, re.DOTALL
+        ), "flow_logger should not contain long running async tool log"
+        assert not re.match(
+            expected_long_running_str_2, captured.out, re.DOTALL
+        ), "flow_logger should not contain long running async tool log"
+
         flow_logger.handlers.pop()
-        os.environ.pop("PF_TASK_PEEKING_INTERVAL")
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -177,7 +191,7 @@ class TestExecutor:
                 raise_ex=True,
             )
         assert isinstance(e.value.inner_exception, ConnectionNotFound)
-        assert "Connection 'dummy_connection' not found" in str(e.value)
+        assert "Connection 'dummy_connection' of LLM node 'classify_with_llm' is not found." in str(e.value)
 
     @pytest.mark.parametrize(
         "flow_folder",
@@ -314,6 +328,11 @@ class TestExecutor:
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
     try:
+        process_class_dict = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+        override_process_class(process_class_dict)
+
+        # recording injection again since this method is running in a new process
+        setup_recording()
         result = FlowExecutor.load_and_exec_node(
             flow_file=get_yaml_file(flow_file),
             node_name=node_name,

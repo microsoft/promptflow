@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import logging
 import os.path
-import uuid
 from itertools import product
 from os import PathLike
 from pathlib import Path
@@ -18,10 +17,10 @@ from promptflow._sdk._constants import (
     SERVICE_CONFIG_FILE,
     ConnectionProvider,
 )
-from promptflow._sdk._utils import call_from_extension, read_write_by_user
+from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-from promptflow.exceptions import ErrorTarget, ValidationException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
 
@@ -39,7 +38,6 @@ class InvalidConfigValue(ValidationException):
 
 
 class Configuration(object):
-
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
     COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
@@ -48,6 +46,7 @@ class Configuration(object):
     RUN_OUTPUT_PATH = "run.output_path"
     USER_AGENT = "user_agent"
     ENABLE_INTERNAL_FEATURES = "enable_internal_features"
+    TRACE_PROVIDER = "trace.provider"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -116,7 +115,6 @@ class Configuration(object):
         if path.is_file():
             found_path = path
         else:
-
             # Based on priority
             # Look in config dirs like .azureml or plain directory
             # with None
@@ -169,6 +167,9 @@ class Configuration(object):
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
         return self.resolve_connection_provider(provider, path=path)
 
+    def get_trace_provider(self) -> Optional[str]:
+        return self.get_config(key=self.TRACE_PROVIDER)
+
     @classmethod
     def resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
         if provider is None:
@@ -192,13 +193,13 @@ class Configuration(object):
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""
-        user_id = self.get_config(key=self.INSTALLATION_ID)
-        if user_id:
-            return user_id
-        else:
-            user_id = str(uuid.uuid4())
-            self.set_config(key=self.INSTALLATION_ID, value=user_id)
-            return user_id
+        installation_id = self.get_config(key=self.INSTALLATION_ID)
+        if installation_id:
+            return installation_id
+
+        installation_id = gen_uuid_by_compute_info()
+        self.set_config(key=self.INSTALLATION_ID, value=installation_id)
+        return installation_id
 
     def get_run_output_path(self) -> Optional[str]:
         """Get the run output path in local."""
@@ -215,6 +216,21 @@ class Configuration(object):
                     "Cannot specify flow directory as run output path; "
                     "if you want to specify run output path under flow directory, "
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
+                )
+        elif key == Configuration.TRACE_PROVIDER:
+            try:
+                from promptflow.azure._utils._tracing import validate_trace_provider
+
+                validate_trace_provider(value)
+            except ImportError:
+                msg = (
+                    '"promptflow[azure]" is required to validate trace provider, '
+                    'please install it by running "pip install promptflow[azure]" with your version.'
+                )
+                raise UserErrorException(
+                    message=msg,
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    no_personal_data_message=msg,
                 )
         return
 

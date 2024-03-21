@@ -1,0 +1,3 @@
+entry: evc:evc_flow
+environment_variables:
+  TEST: ${azure_open_ai_connection.api_type}

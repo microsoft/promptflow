@@ -11,6 +11,7 @@ import servicemanager  # Simple setup and logging
 
 class PromptFlowService:
     """Silly little application stub"""
+
     def stop(self):
         """Stop the service"""
         self.running = False
@@ -24,9 +25,8 @@ class PromptFlowService:
 
 
 class PromptFlowServiceFramework(win32serviceutil.ServiceFramework):
-
-    _svc_name_ = 'PromptFlowService'
-    _svc_display_name_ = 'Prompt Flow Service'
+    _svc_name_ = "PromptFlowService"
+    _svc_display_name_ = "Prompt Flow Service"
 
     def SvcStop(self):
         """Stop the service"""
@@ -52,5 +52,5 @@ def init():
         win32serviceutil.HandleCommandLine(PromptFlowServiceFramework)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     init()

@@ -1,5 +1,6 @@
 from time import sleep
-from promptflow import tool, trace
+from promptflow import tool
+from promptflow.tracing import trace
 
 
 @trace

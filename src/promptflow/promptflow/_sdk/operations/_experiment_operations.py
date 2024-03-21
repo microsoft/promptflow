@@ -1,10 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import List, Optional
+import copy
+import shutil
+from pathlib import Path
+from typing import List, Optional, Union
 
-from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ListViewType
-from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError, ExperimentValueError
+from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, ListViewType
+from promptflow._sdk._errors import ExperimentExistsError, RunOperationError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
@@ -54,10 +57,10 @@ class ExperimentOperations(TelemetryMixin):
         :return: experiment object retrieved from the database.
         :rtype: ~promptflow.entities.Experiment
         """
-        try:
-            return Experiment._from_orm_object(ORMExperiment.get(name))
-        except ExperimentNotFoundError as e:
-            raise e
+        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        ExperimentOrchestrator.get_status(name)
+        return Experiment._from_orm_object(ORMExperiment.get(name))
 
     @monitor_operation(activity_name="pf.experiment.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, experiment: Experiment, **kwargs) -> Experiment:
@@ -81,20 +84,98 @@ class ExperimentOperations(TelemetryMixin):
                 last_start_time=orm_experiment.last_start_time,
                 last_end_time=orm_experiment.last_end_time,
                 node_runs=orm_experiment.node_runs,
+                inputs=orm_experiment.inputs,
+                data=orm_experiment.data,
             )
             return self.get(experiment.name)
 
     @monitor_operation(activity_name="pf.experiment.start", activity_type=ActivityType.PUBLICAPI)
-    def start(self, name: str, **kwargs) -> Experiment:
-        """Start an experiment.
+    def start(self, experiment: Experiment, stream=False, inputs=None, **kwargs) -> Experiment:
+        """
+        Start an experiment.
 
-        :param name: Experiment name.
-        :type name: str
+        :param experiment: Experiment object.
+        :type experiment: ~promptflow.entities.Experiment
+        :param stream: Indicates whether to stream the experiment execution logs to the console.
+        :type stream: bool
+        :param inputs: Input dict to override.
+        :type inputs: Dict[str, str]
         :return: Experiment object started.
         :rtype: ~promptflow.entities.Experiment
         """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
-        if not isinstance(name, str):
-            raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        return ExperimentOrchestrator(self._client.runs, self).start(self.get(name), **kwargs)
+        if experiment._source_path:
+            # Update snapshot for anonymous experiment
+            logger.debug("Start saving snapshot and update node.")
+            snapshots = experiment._output_dir / "snapshots"
+            if snapshots.exists():
+                shutil.rmtree(snapshots)
+            experiment._save_snapshot_and_update_node()
+
+        # Update experiment inputs
+        experiment = copy.deepcopy(experiment)
+        inputs = inputs or {}
+        for name, value in inputs.items():
+            exp_input = next(filter(lambda exp_input: exp_input.name == name, experiment.inputs), None)
+            if exp_input:
+                exp_input.default = value
+                continue
+            exp_data = next(filter(lambda exp_data: exp_data.name == name, experiment.data), None)
+            if exp_data:
+                exp_data.path = Path(value).absolute().as_posix()
+                continue
+            logger.warning(f"Input {name} doesn't exist in experiment.")
+        experiment = self.create_or_update(experiment)
+
+        if experiment.status in [ExperimentStatus.QUEUING, ExperimentStatus.IN_PROGRESS]:
+            raise RunOperationError(
+                f"Experiment {experiment.name} is {experiment.status}, cannot be started repeatedly."
+            )
+        if stream:
+            return ExperimentOrchestrator(self._client, experiment).start(**kwargs)
+        else:
+            return ExperimentOrchestrator(self._client, experiment).async_start(**kwargs)
+
+    @monitor_operation(activity_name="pf.experiment.stop", activity_type=ActivityType.PUBLICAPI)
+    def stop(self, experiment: Experiment, **kwargs) -> Experiment:
+        """Stop an experiment.
+
+        :param experiment: Experiment name.
+        :type experiment: ~promptflow.entities.Experiment
+        :return: Experiment object started.
+        :rtype: ~promptflow.entities.Experiment
+        """
+        from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        ExperimentOrchestrator(self._client, experiment).stop()
+        return self.get(experiment.name)
+
+    def _test(
+        self, flow: Union[Path, str], experiment: Union[Path, str], inputs=None, environment_variables=None, **kwargs
+    ):
+        """Test flow in experiment.
+
+        :param flow: Flow dag yaml file path.
+        :type flow: Union[Path, str]
+        :param experiment: Experiment yaml file path.
+        :type experiment: Union[Path, str]
+        :param inputs: Input parameters for flow.
+        :type inputs: dict
+        :param environment_variables: Environment variables for flow.
+        :type environment_variables: dict
+        """
+        from .._load_functions import _load_experiment_template
+        from .._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+        experiment_template = _load_experiment_template(experiment)
+        output_path = kwargs.get("output_path", None)
+        session = kwargs.get("session", None)
+        return ExperimentOrchestrator(client=self._client, experiment=None).test(
+            flow,
+            experiment_template,
+            inputs,
+            environment_variables,
+            output_path=output_path,
+            session=session,
+        )

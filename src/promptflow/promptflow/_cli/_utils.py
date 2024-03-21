@@ -9,7 +9,6 @@ import os
 import shutil
 import sys
 import traceback
-from collections import namedtuple
 from configparser import ConfigParser
 from functools import wraps
 from pathlib import Path
@@ -19,14 +18,13 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._constants import CLIListOutputFormat
+from promptflow._sdk._constants import AzureMLWorkspaceTriad, CLIListOutputFormat, EnvironmentVariables
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
-
-AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 logger = get_cli_sdk_logger()
 
@@ -102,12 +100,15 @@ def get_credentials_for_cli():
     from azure.identity import AzureCliCredential, DefaultAzureCredential, ManagedIdentityCredential
 
     # May return a different one if executing in local
-    # credential priority: OBO > managed identity > default
+    # credential priority: OBO > azure cli > managed identity > default
     # check OBO via environment variable, the referenced code can be found from below search:
     # https://msdata.visualstudio.com/Vienna/_search?text=AZUREML_OBO_ENABLED&type=code&pageSize=25&filters=ProjectFilters%7BVienna%7D&action=contents
     if os.getenv(IdentityEnvironmentVariable.OBO_ENABLED_FLAG):
         logger.debug("User identity is configured, use OBO credential.")
         credential = AzureMLOnBehalfOfCredential()
+    elif _use_azure_cli_credential():
+        logger.debug("Use azure cli credential since specified in environment variable.")
+        credential = AzureCliCredential()
     else:
         client_id_from_env = os.getenv(IdentityEnvironmentVariable.DEFAULT_IDENTITY_CLIENT_ID)
         if client_id_from_env:
@@ -118,7 +119,7 @@ def get_credentials_for_cli():
             credential = ManagedIdentityCredential(client_id=client_id_from_env)
         elif is_in_ci_pipeline():
             # use managed identity when executing in CI pipeline.
-            logger.debug("Use azure cli credential.")
+            logger.debug("Use azure cli credential since in CI pipeline.")
             credential = AzureCliCredential()
         else:
             # use default Azure credential to handle other cases.
@@ -350,30 +351,34 @@ def is_format_exception():
     return False
 
 
-def exception_handler(command: str):
+def cli_exception_and_telemetry_handler(func, activity_name, custom_dimensions=None):
     """Catch known cli exceptions."""
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            telemetry_logger = get_telemetry_logger()
+            with log_activity(
+                telemetry_logger,
+                activity_name,
+                activity_type=ActivityType.PUBLICAPI,
+                custom_dimensions=custom_dimensions,
+            ):
                 return func(*args, **kwargs)
-            except Exception as e:
-                if is_format_exception():
-                    # When the flag format_exception is set in command,
-                    # it will write a json with exception info and command to stderr.
-                    error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
-                    error_msg["command"] = " ".join(sys.argv)
-                    sys.stderr.write(json.dumps(error_msg))
-                if isinstance(e, PromptflowException):
-                    print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
-                    exit(1)
-                else:
-                    raise e
+        except Exception as e:
+            if is_format_exception():
+                # When the flag format_exception is set in command,
+                # it will write a json with exception info and command to stderr.
+                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                error_msg["command"] = " ".join(sys.argv)
+                sys.stderr.write(json.dumps(error_msg))
+            if isinstance(e, PromptflowException):
+                print_red_error(f"{activity_name} failed with {e.__class__.__name__}: {str(e)}")
+                sys.exit(1)
+            else:
+                raise e
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 def get_secret_input(prompt, mask="*"):
@@ -384,11 +389,14 @@ def get_secret_input(prompt, mask="*"):
     - Ignore control characters and print warning message.
     """
     if not isinstance(prompt, str):
-        raise TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
+        e = TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
+        raise UserErrorException(message_format=str(e)) from e
     if not isinstance(mask, str):
-        raise TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
+        e = TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
+        raise UserErrorException(message_format=str(e)) from e
     if len(mask) != 1:
-        raise ValueError("mask argument must be a one-character str")
+        e = ValueError("mask argument must be a one-character str")
+        raise UserErrorException(message_format=str(e)) from e
 
     if sys.platform == "win32":
         # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:
@@ -484,3 +492,7 @@ def _try_delete_existing_run_record(run_name: str):
         ORMRun.delete(run_name)
     except RunNotFoundError:
         pass
+
+
+def _use_azure_cli_credential():
+    return os.environ.get(EnvironmentVariables.PF_USE_AZURE_CLI_CREDENTIAL, "false").lower() == "true"

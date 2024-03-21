@@ -11,18 +11,19 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
-from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
-from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
+from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
+from promptflow._utils.utils import default_json_encoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
+from promptflow.tracing._utils import serialize
 
 
 class RunTracker(ThreadLocalSingleton):
@@ -80,7 +81,6 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id="",
         inputs=None,
         index=None,
-        variant_id="",
     ) -> FlowRunInfo:
         """Create a flow run and save to run storage on demand."""
         run_info = FlowRunInfo(
@@ -98,7 +98,6 @@ class RunTracker(ThreadLocalSingleton):
             start_time=datetime.utcnow(),
             end_time=None,
             index=index,
-            variant_id=variant_id,
         )
         self.persist_flow_run(run_info)
         self._flow_runs[run_id] = run_info
@@ -139,7 +138,6 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
-        variant_id,
     ):
         run_info = RunInfo(
             node=node,
@@ -155,7 +153,6 @@ class RunTracker(ThreadLocalSingleton):
             end_time=datetime.utcnow(),
             result=None,
             index=index,
-            variant_id=variant_id,
             api_calls=[],
         )
         self._node_runs[run_id] = run_info
@@ -177,11 +174,21 @@ class RunTracker(ThreadLocalSingleton):
         # TODO: Refactor Tracer to support flow level tracing,
         # then we can remove the hard-coded root level api_calls here.
         # It has to be a list for UI backward compatibility.
-        # TODO: Add input, output, error to top level. Adding them would require
-        # the same technique of handingling image and generator in Tracer,
-        # which introduces duplicated logic. We should do it in the refactoring.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        # This implementation deep copies the inputs and output of the flow run, and extracts items from GeneratorProxy.
+        # So that both image and generator will be supported.
+        # It's a short term solution, while the long term one will be implemented in the next generation of Tracer.
+        inputs = None
+        output = None
+        try:
+            inputs = _deep_copy_and_extract_items_from_generator_proxy(run_info.inputs)
+            output = _deep_copy_and_extract_items_from_generator_proxy(run_info.output)
+        except Exception as e:
+            flow_logger.warning(
+                f"Failed to serialize inputs or output for flow run because of {e}."
+                "The inputs and output field in api_calls will be None."
+            )
         run_info.api_calls = [
             {
                 "name": "flow",
@@ -191,6 +198,9 @@ class RunTracker(ThreadLocalSingleton):
                 "end_time": end_timestamp,
                 "children": self._collect_traces_from_nodes(run_id),
                 "system_metrics": run_info.system_metrics,
+                "inputs": inputs,
+                "output": output,
+                "error": run_info.error,
             }
         ]
 

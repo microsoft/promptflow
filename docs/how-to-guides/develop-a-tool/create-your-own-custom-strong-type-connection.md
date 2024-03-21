@@ -86,7 +86,7 @@ Once you create a custom strong type connection, here are two ways to use it in 
 ## Local to cloud
 When creating the necessary connections in Azure AI, you will need to create a `CustomConnection`. In the node interface of your flow, this connection will be displayed as the `CustomConnection` type.
 
-Please refer to [Run prompt flow in Azure AI](https://microsoft.github.io/promptflow/cloud/azureai/quick-start.html) for more details.
+Please refer to [Run prompt flow in Azure AI](../../cloud/azureai/quick-start/index.md) for more details.
 
 Here is an example command:
 ```

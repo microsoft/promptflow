@@ -1,29 +1,42 @@
-try:
-    from openai import AzureOpenAI as AzureOpenAIClient
-except Exception:
-    raise Exception(
-        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
+from typing import List, Dict
+
+from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
+    preprocess_template_string, find_referenced_image_set, convert_to_chat_list, init_azure_openai_client, \
+    post_process_chat_api_response, list_deployment_connections, build_deployment_dict, GPT4V_VERSION
 
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
-    preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
-    post_process_chat_api_response
+
+def list_deployment_names(
+    subscription_id=None,
+    resource_group_name=None,
+    workspace_name=None,
+    connection=""
+) -> List[Dict[str, str]]:
+    res = []
+    deployment_collection = list_deployment_connections(subscription_id, resource_group_name, workspace_name,
+                                                        connection)
+    if not deployment_collection:
+        return res
+
+    for item in deployment_collection:
+        deployment = build_deployment_dict(item)
+        if deployment.version == GPT4V_VERSION:
+            cur_item = {
+                "value": deployment.name,
+                "display_value": deployment.name,
+            }
+            res.append(cur_item)
+
+    return res
 
 
 class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
-        self.connection = connection
-        self._connection_dict = normalize_connection_config(self.connection)
-
-        azure_endpoint = self._connection_dict.get("azure_endpoint")
-        api_version = self._connection_dict.get("api_version")
-        api_key = self._connection_dict.get("api_key")
-
-        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
+        self._client = init_azure_openai_client(connection)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
@@ -39,6 +52,7 @@ class AzureOpenAI(ToolProvider):
         max_tokens: int = None,
         presence_penalty: float = 0,
         frequency_penalty: float = 0,
+        seed: int = None,
         **kwargs,
     ) -> str:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
@@ -71,6 +85,8 @@ class AzureOpenAI(ToolProvider):
             params["stop"] = stop
         if max_tokens is not None:
             params["max_tokens"] = max_tokens
+        if seed is not None:
+            params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, None)

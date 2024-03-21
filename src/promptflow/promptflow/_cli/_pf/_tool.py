@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import shutil
+import sys
 from pathlib import Path
 
 from promptflow._cli._params import add_param_set_tool_extra_info, base_params
@@ -16,7 +17,7 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolPackageUtilsGenerator,
     ToolReadmeGenerator,
 )
-from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
+from promptflow._cli._utils import activate_action, list_of_dict_to_dict
 from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -136,7 +137,6 @@ def dispatch_tool_commands(args: argparse.Namespace):
         validate_tool(args)
 
 
-@exception_handler("Tool init")
 def init_tool(args):
     # Validate package/tool name
     pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*$"
@@ -190,14 +190,12 @@ def init_tool(args):
     print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
 
 
-@exception_handler("Tool list")
 def list_tool(args):
     pf_client = PFClient()
     package_tools = pf_client._tools.list(args.flow)
     print(json.dumps(package_tools, indent=4))
 
 
-@exception_handler("Tool validate")
 def validate_tool(args):
     import importlib
 
@@ -220,4 +218,4 @@ def validate_tool(args):
     validation_result = pf_client._tools.validate(source)
     print(repr(validation_result))
     if not validation_result.passed:
-        exit(1)
+        sys.exit(1)

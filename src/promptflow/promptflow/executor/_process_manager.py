@@ -1,17 +1,29 @@
 import multiprocessing
 import queue
 import signal
+import sys
+import time
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from multiprocessing import Queue
-from typing import List
+from multiprocessing import Process, Queue
+from pathlib import Path
+from typing import Dict, List
 
 import psutil
 
-from promptflow._core.operation_context import OperationContext
+from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.logger_utils import LogContext, bulk_logger
+from promptflow._utils.process_utils import get_manager_process_log_path, get_subprocess_log_path, log_errors_from_file
+from promptflow.executor._errors import (
+    ProcessInfoObtainedTimeout,
+    ProcessTerminatedTimeout,
+    SpawnedForkProcessManagerStartFailure,
+)
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
+from promptflow.storage import AbstractRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 
 @dataclass
@@ -21,10 +33,18 @@ class ProcessInfo:
     process_name: str
 
 
+class ProcessPoolConstants:
+    PROCESS_LOG_PATH = Path("process_log")
+    PROCESS_LOG_NAME = "process_stderr"
+    MANAGER_PROCESS_LOG_NAME = "manager_process_stderr.log"
+    TERMINATE_SIGNAL = "terminate"
+
+
 class ProcessControlSignal(str, Enum):
     START = "start"
     RESTART = "restart"
     END = "end"
+    SPAWNED_MANAGER_END = "spawned_manager_end"
 
 
 class AbstractProcessManager:
@@ -46,21 +66,29 @@ class AbstractProcessManager:
     :type raise_ex: bool
     """
 
+    _PROCESS_TERMINATED_TIMEOUT = 60
+    _PROCESS_INFO_OBTAINED_TIMEOUT = 60
+
     def __init__(
         self,
         input_queues: List[Queue],
         output_queues: List[Queue],
         process_info: dict,
         process_target_func,
-        *args, **kwargs,
+        output_dir: Path = None,
+        serialize_multimedia: bool = False,
+        *args,
+        **kwargs,
     ) -> None:
         self._input_queues = input_queues
         self._output_queues = output_queues
-        self._process_info = process_info
+        self._process_info: Dict[int, ProcessInfo] = process_info
         self._process_target_func = process_target_func
         current_log_context = LogContext.get_current()
         self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
+        self._output_dir = output_dir
+        self._serialize_multimedia = serialize_multimedia
 
     def new_process(self, i):
         """
@@ -78,7 +106,8 @@ class AbstractProcessManager:
         :param i: Index of the process to restart.
         :type i: int
         """
-        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for restart_process.")
+        self.end_process(i)
+        self.new_process(i)
 
     def end_process(self, i):
         """
@@ -87,7 +116,75 @@ class AbstractProcessManager:
         :param i: Index of the process to terminate.
         :type i: int
         """
+        try:
+            pid = self._process_info[i].process_id
+            self._terminate_process(i, pid)
+        finally:
+            self._process_info.pop(i)
+
+    def ensure_healthy(self):
+        """
+        Checks the health of the managed processes.
+
+        This method should be implemented in subclasses to provide specific health check mechanisms.
+        """
         raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
+
+    def get_process_info(self, index):
+        start_time = time.time()
+        while True:
+            self.ensure_healthy()
+            try:
+                if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
+                    log_path = get_subprocess_log_path(index)
+                    if not log_errors_from_file(log_path):
+                        log_path = get_manager_process_log_path()
+                        log_errors_from_file(log_path)
+                    raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
+                # Try to get process id and name from the process_info
+                process_id = self._process_info[index].process_id
+                process_name = self._process_info[index].process_name
+                return (index, process_id, process_name)
+            except KeyError:
+                # If the process_info does not exist for the given index, it means the process have not ready yet,
+                # try again.
+                time.sleep(1)
+                continue
+            except Exception as e:
+                raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
+
+    def ensure_process_terminated_within_timeout(self, process_id):
+        start_time = time.time()
+        while psutil.pid_exists(process_id):
+            if time.time() - start_time > self._PROCESS_TERMINATED_TIMEOUT:
+                raise ProcessTerminatedTimeout(self._PROCESS_TERMINATED_TIMEOUT)
+            time.sleep(1)
+
+    def ensure_all_processes_terminated(self):
+        for i, info in self._process_info.items():
+            self._terminate_process(i, info.process_id)
+
+    def is_process_alive(self, process_id):
+        return psutil.pid_exists(process_id)
+
+    def _terminate_process(self, i, pid):
+        warning_msg = "Unexpected error occurred while end process for index {i} and process id {pid}. Exception: {e}"
+        try:
+            process = psutil.Process(pid)
+            # The subprocess will get terminate signal from input queue, so we need to wait for the process to exit.
+            # If the process is still running after 10 seconds, it will raise psutil.TimeoutExpired exception.
+            process.wait(timeout=10)
+        except psutil.NoSuchProcess:
+            bulk_logger.warning(f"Process {pid} had been terminated.")
+        except psutil.TimeoutExpired:
+            try:
+                # If the process is still running after waiting 10 seconds, terminate it.
+                process.terminate()
+                process.wait()
+            except Exception as e:
+                bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
+        except Exception as e:
+            bulk_logger.warning(warning_msg.format(i=i, pid=pid, e=e))
 
 
 class SpawnProcessManager(AbstractProcessManager):
@@ -123,10 +220,13 @@ class SpawnProcessManager(AbstractProcessManager):
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
                 self._current_operation_context,
+                i,
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
@@ -147,36 +247,15 @@ class SpawnProcessManager(AbstractProcessManager):
             )
         return process
 
-    def restart_process(self, i):
+    def ensure_healthy(self):
         """
-        Restarts a specified process by first terminating it then creating a new one.
+        Checks the health of the managed processes.
 
-        :param i: Index of the process to restart.
-        :type i: int
+        Note:
+        Health checks for spawn mode processes are currently not performed.
+        Add detailed checks in this function if needed in the future.
         """
-        self.end_process(i)
-        self.new_process(i)
-
-    def end_process(self, i):
-        """
-        Terminates a specified process.
-
-        :param i: Index of the process to terminate.
-        :type i: int
-        """
-        try:
-            pid = self._process_info[i].process_id
-            process = psutil.Process(pid)
-            process.terminate()
-            process.wait()
-            self._process_info.pop(i)
-        except psutil.NoSuchProcess:
-            bulk_logger.warning(f"Process {pid} had been terminated")
-        except Exception as e:
-            bulk_logger.warning(
-                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
-                f"Exception: {e}"
-            )
+        pass
 
 
 class ForkProcessManager(AbstractProcessManager):
@@ -205,6 +284,8 @@ class ForkProcessManager(AbstractProcessManager):
         super().__init__(*args, **kwargs)
         self._control_signal_queue = control_signal_queue
         self._flow_create_kwargs = flow_create_kwargs
+        # Use _kwargs to temporarily store all common kwargs and pass them to SpawnedForkProcessManager
+        self._kwargs = kwargs
 
     def start_processes(self):
         """
@@ -216,15 +297,13 @@ class ForkProcessManager(AbstractProcessManager):
             args=(
                 self._log_context_initialization_func,
                 self._current_operation_context,
-                self._input_queues,
-                self._output_queues,
                 self._control_signal_queue,
                 self._flow_create_kwargs,
-                self._process_info,
-                self._process_target_func,
             ),
+            kwargs=self._kwargs,
         )
         process.start()
+        self._spawned_fork_process_manager_pid = process.pid
 
     def restart_process(self, i):
         """
@@ -252,6 +331,23 @@ class ForkProcessManager(AbstractProcessManager):
         :type i: int
         """
         self._control_signal_queue.put((ProcessControlSignal.START, i))
+
+    def ensure_healthy(self):
+        # A 'zombie' process is a process that has finished running but still remains in
+        # the process table, waiting for its parent process to collect and handle its exit status.
+        # The normal state of the spawned process is 'running'. If the process does not start successfully
+        # or exit unexpectedly, its state will be 'zombie'.
+        if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
+            log_path = get_manager_process_log_path()
+            try:
+                with open(log_path, "r") as f:
+                    error_logs = "".join(f.readlines())
+                    bulk_logger.error(error_logs)
+            except FileNotFoundError:
+                pass
+            bulk_logger.error("The spawned fork process manager failed to start.")
+            ex = SpawnedForkProcessManagerStartFailure()
+            raise ex
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):
@@ -293,14 +389,17 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         :param i: Index of the input and output queue for the new process.
         :type i: int
         """
-        process = self.context.Process(
+        process: Process = self.context.Process(
             target=self._process_target_func,
             args=(
                 self._executor_creation_func,
+                self._output_dir,
+                self._serialize_multimedia,
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
                 self._current_operation_context,
+                i,
             ),
             daemon=True,
         )
@@ -317,37 +416,6 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 f"Exception: {e}"
             )
         return process
-
-    def end_process(self, i):
-        """
-        Terminates a specified process.
-
-        :param i: Index of the process to terminate.
-        :type i: int
-        """
-        try:
-            pid = self._process_info[i].process_id
-            process = psutil.Process(pid)
-            process.terminate()
-            process.wait()
-            self._process_info.pop(i)
-        except psutil.NoSuchProcess:
-            bulk_logger.warning(f"Process {pid} had been terminated")
-        except Exception as e:
-            bulk_logger.warning(
-                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
-                f"Exception: {e}"
-            )
-
-    def restart_process(self, i):
-        """
-        Restarts a specified process by first terminating it then creating a new one.
-
-        :param i: Index of the process to restart.
-        :type i: int
-        """
-        self.end_process(i)
-        self.new_process(i)
 
     def handle_signals(self, control_signal, i):
         """
@@ -371,19 +439,20 @@ class SpawnedForkProcessManager(AbstractProcessManager):
 def create_spawned_fork_process_manager(
     log_context_initialization_func,
     current_operation_context,
-    input_queues,
-    output_queues,
     control_signal_queue,
     flow_create_kwargs,
-    process_info,
-    process_target_func,
+    **kwargs,
 ):
+    ProcessPoolConstants.PROCESS_LOG_PATH.mkdir(parents=True, exist_ok=True)
+    log_path = get_manager_process_log_path()
+    sys.stderr = open(log_path, "w")
+
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
     # Set up signal handling for process interruption.
 
-    from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
+    from promptflow.executor._line_execution_process_pool import signal_handler
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -392,29 +461,24 @@ def create_spawned_fork_process_manager(
 
     # When using fork, we use this method to create the executor to avoid reloading the flow
     # which will introduce a lot more memory.
-    executor_creation_func = partial(create_executor_fork, flow_executor=executor)
+    executor_creation_func = partial(_create_executor_fork, flow_executor=executor)
 
     manager = SpawnedForkProcessManager(
         log_context_initialization_func,
         current_operation_context,
         control_signal_queue,
         executor_creation_func,
-        input_queues,
-        output_queues,
-        process_info,
-        process_target_func,
+        **kwargs,
     )
 
     # Initialize processes.
-    for i in range(len(input_queues)):
+    for i in range(len(manager._input_queues)):
         manager.new_process(i)
 
     # Main loop to handle control signals and manage process lifecycle.
     while True:
-        all_processes_stopped = True
-
         try:
-            process_info_list = process_info.items()
+            process_info_list = manager._process_info.items()
         except Exception as e:
             bulk_logger.warning(f"Unexpected error occurred while get process info list. Exception: {e}")
             break
@@ -424,20 +488,40 @@ def create_spawned_fork_process_manager(
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
                 process = psutil.Process(pid)
-                if process.status() != "zombie":
-                    all_processes_stopped = False
-                else:
+                if process.status() == "zombie":
                     # If do not call wait(), the child process may become a zombie process,
                     # and psutil.pid_exists(pid) is always true, which will cause spawn proces
                     # never exit.
                     process.wait()
 
-        # If all fork child processes exit, exit the loop.
-        if all_processes_stopped:
-            break
         try:
             control_signal, i = control_signal_queue.get(timeout=1)
-            manager.handle_signals(control_signal, i)
+            # Exit the spawned process manager.
+            if control_signal == ProcessControlSignal.SPAWNED_MANAGER_END and i is True:
+                break
+            else:
+                manager.handle_signals(control_signal, i)
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass
+
+
+def _create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
+    if isinstance(flow_executor, ScriptExecutor):
+        return ScriptExecutor(
+            flow_file=flow_executor._flow_file,
+            connections=flow_executor._connections,
+            working_dir=flow_executor._working_dir,
+            storage=storage,
+        )
+    else:
+        run_tracker = RunTracker(run_storage=storage)
+        return FlowExecutor(
+            flow=flow_executor._flow,
+            connections=flow_executor._connections,
+            run_tracker=run_tracker,
+            cache_manager=flow_executor._cache_manager,
+            loaded_tools=flow_executor._loaded_tools,
+            raise_ex=False,
+            line_timeout_sec=flow_executor._line_timeout_sec,
+        )

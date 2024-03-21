@@ -13,7 +13,7 @@ class TestMultimediaContract:
             (b"test", "image/png", None),
             (b"test", None, None),
             (b"test", "image/*", "mock_url"),
-        ]
+        ],
     )
     def test_image_contract(self, value, mime_type, source_url):
         image = Image(value, mime_type, source_url)
@@ -38,7 +38,7 @@ class TestMultimediaContract:
             (b"test", "image/jpg", None),
             (b"test", "image/png", None),
             (b"test", "image/*", "mock_url"),
-        ]
+        ],
     )
     def test_pfbytes_contract(self, value, mime_type, source_url):
         pfBytes = PFBytes(value, mime_type, source_url)

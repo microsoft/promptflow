@@ -9,6 +9,7 @@ If specified, the flow will be executed with provided value for specified inputs
 The following types of values in column mapping are supported:
 
 - `${data.<column_name>}` to reference from your test dataset.
+- `${run.inputs.<input_name>}` to reference from referenced run's input. **Note**: this only supported when `--run` is provided for `pf run`.
 - `${run.outputs.<output_name>}` to reference from referenced run's output. **Note**: this only supported when `--run` is provided for `pf run`.
 - `STATIC_VALUE` to create static value for all lines for specified column.
 

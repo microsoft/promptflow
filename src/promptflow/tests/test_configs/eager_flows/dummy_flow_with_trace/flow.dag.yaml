@@ -1,2 +1,1 @@
-path: ./entry.py
-entry: my_flow
+entry: flow_with_trace:my_flow

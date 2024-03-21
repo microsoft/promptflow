@@ -1,4 +1,5 @@
 azure-identity
+azure-ai-ml
 azure-keyvault
 beautifulsoup4==4.12.2
 coverage
@@ -29,3 +30,6 @@ httpx
 # test dummy flow run in notebook, give a minimal version for vulnerability issue
 ipykernel>=6.27.1
 papermill>=2.5.0
+
+# test executor server in local
+uvicorn>=0.27.0

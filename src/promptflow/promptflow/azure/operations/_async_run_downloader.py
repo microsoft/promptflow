@@ -51,7 +51,6 @@ class AsyncRunDownloader:
             # pass verify=False to client to disable SSL verification.
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
-
                 tasks = [
                     # put async functions in tasks to run in coroutines
                     self._download_artifacts_and_snapshot(client),

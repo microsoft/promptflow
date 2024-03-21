@@ -13,13 +13,15 @@ from promptflow._core.tool_meta_generator import (
     NoToolDefined,
     PythonLoadError,
     PythonParsingError,
+    generate_flow_meta_dict_by_file,
     generate_prompt_meta,
     generate_python_meta,
     generate_tool_meta_dict_by_file,
 )
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.exception_utils import ExceptionPresenter
 
-from ...utils import FLOW_ROOT, load_json
+from ...utils import EAGER_FLOW_ROOT, FLOW_ROOT, load_json
 
 TEST_ROOT = Path(__file__).parent.parent.parent.parent
 TOOLS_ROOT = TEST_ROOT / "test_configs/wrong_tools"
@@ -32,6 +34,14 @@ def cd_and_run(working_dir, source_path, tool_type):
         return generate_tool_meta_dict_by_file(source_path, tool_type)
     except Exception as e:
         return f"({e.__class__.__name__}) {e}"
+
+
+def cd_and_run_generate_flow_meta(working_dir, entry, source=None, path=None):
+    with _change_working_dir(working_dir), inject_sys_path(working_dir):
+        try:
+            return generate_flow_meta_dict_by_file(entry, source, path)
+        except Exception as e:
+            return f"({e.__class__.__name__}) {e}"
 
 
 def cd_and_run_with_read_text_error(working_dir, source_path, tool_type):
@@ -85,6 +95,23 @@ class TestToolMetaUtils:
         expected_dict = load_json(target_file)
         if tool_type == "llm":
             expected_dict["type"] = "llm"  # We use prompt as default for jinja2
+        assert meta_dict == expected_dict
+
+    @pytest.mark.parametrize(
+        "flow_dir, entry, path",
+        [
+            ("dummy_flow_with_trace", "flow_with_trace:my_flow", "flow_with_trace.py"),
+            ("dummy_flow_with_trace", "flow_with_trace:my_flow", None),
+            ("flow_with_dataclass_output", "flow_with_dataclass:my_flow", "flow_with_dataclass.py"),
+        ]
+    )
+    def test_generate_flow_meta(self, flow_dir, entry, path):
+        wd = str((EAGER_FLOW_ROOT / flow_dir).resolve())
+        source = entry.split(":")[0] + ".py"
+        meta_dict = cd_and_run_generate_flow_meta(wd, entry, source=source, path=path)
+        assert isinstance(meta_dict, dict), "Call cd_and_run_generate_flow_meta failed:\n" + meta_dict
+        target_file = wd / Path(entry.split(":")[0] + ".meta.json")
+        expected_dict = load_json(target_file)
         assert meta_dict == expected_dict
 
     @pytest.mark.parametrize(

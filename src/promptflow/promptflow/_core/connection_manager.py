@@ -9,8 +9,12 @@ from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
+from promptflow._constants import (
+    CONNECTION_NAME_PROPERTY,
+    CONNECTION_SECRET_KEYS,
+    PROMPTFLOW_CONNECTIONS,
+    CustomStrongTypeConnectionConfigs,
+)
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
@@ -55,7 +59,7 @@ class ConnectionManager:
                 secret_keys = connection_dict.get("secret_keys", [])
                 secrets = {k: v for k, v in value.items() if k in secret_keys}
                 configs = {k: v for k, v in value.items() if k not in secrets}
-                connection_value = connection_class(configs=configs, secrets=secrets)
+                connection_value = connection_class(configs=configs, secrets=secrets, name=key)
                 if CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in configs:
                     connection_value.custom_type = configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
             else:
@@ -70,6 +74,8 @@ class ConnectionManager:
                     secret_keys = [f.name for f in cls_fields.values() if f.type == Secret]
                 else:
                     connection_value = connection_class(**{k: v for k, v in value.items()})
+                    if hasattr(connection_value, "name"):
+                        connection_value.name = key
                     secrets = getattr(connection_value, "secrets", {})
                     secret_keys = list(secrets.keys()) if isinstance(secrets, dict) else []
             # Set secret keys for log scrubbing

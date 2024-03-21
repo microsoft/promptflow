@@ -1,5 +1,7 @@
 import logging
+import sys
 import tempfile
+from dataclasses import is_dataclass
 from pathlib import Path
 from types import GeneratorType
 
@@ -9,6 +11,7 @@ from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -21,6 +24,13 @@ EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().
 FLOW_RESULT_KEYS = ["category", "evidence"]
 
 _client = PFClient()
+
+
+def clear_module_cache(module_name):
+    try:
+        del sys.modules[module_name]
+    except Exception:
+        pass
 
 
 @pytest.mark.usefixtures(
@@ -163,7 +173,7 @@ class TestFlowTest:
             "connection": "azure_open_ai_connection",
             "hello_prompt.output": "system:\n Your task is to write python program for me\nuser:\n"
             "Write a simple Hello World! program that displays "
-            "the greeting message when executed.",
+            "the greeting message.",
         }
         result = _client.test(
             flow=flow_path,
@@ -205,7 +215,7 @@ class TestFlowTest:
 
         inputs = {
             "val": result.node_run_infos["get_dict_val"].output,
-            "origin_val": result.node_run_infos["get_dict_val"].output
+            "origin_val": result.node_run_infos["get_dict_val"].output,
         }
         node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert node_result.status.value == "Completed"
@@ -242,38 +252,156 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
+    @pytest.mark.skip("Won't support flow test with entry now.")
     def test_eager_flow_test(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
         result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_with_yaml(self):
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_with_primitive_output(self):
+        clear_module_cache("entry")
         flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_output/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
     def test_eager_flow_test_invalid_cases(self):
-        # no entry provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
-        with pytest.raises(UserErrorException) as e:
-            _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "Entry function is not specified" in str(e.value)
-
-        # no path provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/").absolute()
+        # wrong entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
         with pytest.raises(ValidationError) as e:
             _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
-        assert "'path': ['Missing data for required field.']" in str(e.value)
+        assert "Entry function my_func is not valid." in str(e.value)
 
-        # dup entries provided
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
-        with pytest.raises(UserErrorException) as e:
-            _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
-        assert "Specifying entry function is not allowed" in str(e.value)
-        # wrong entry provided
         # required inputs not provided
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/required_inputs/").absolute()
+
+        result = _client._flows._test(flow=flow_path)
+        assert result.run_info.status.value == "Failed"
+        assert "my_flow() missing 1 required positional argument: 'input_val'" in str(result.run_info.error)
+
+    def test_eager_flow_test_with_additional_includes(self):
+        # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
+        # but working dir will be temp dir which includes additional included files
+        clear_module_cache("flow")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+
+    def test_eager_flow_with_nested_entry(self):
+        clear_module_cache("my_module.entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/nested_entry/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! val1"
+
+    def test_eager_flow_with_environment_variables(self):
+        clear_module_cache("env_var")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! VAL"
+
+    def test_eager_flow_with_evc(self):
+        clear_module_cache("evc")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/environment_variables_connection/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        assert result.output == "Hello world! azure"
+
+    @pytest.mark.parametrize(
+        "flow_path, expected_meta",
+        [
+            (
+                "simple_with_yaml",
+                {
+                    "entry": "entry:my_flow",
+                    "function": "my_flow",
+                    "inputs": {"input_val": {"default": "gpt", "type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+            (
+                "nested_entry",
+                {
+                    "entry": "my_module.entry:my_flow",
+                    "function": "my_flow",
+                    "inputs": {"input_val": {"default": "gpt", "type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+            (
+                "flow_with_additional_includes",
+                {
+                    "entry": "flow:my_flow_entry",
+                    "function": "my_flow_entry",
+                    "inputs": {"input_val": {"default": "gpt", "type": "string"}},
+                    "outputs": {"output": {"type": "string"}},
+                },
+            ),
+        ],
+    )
+    def test_generate_flow_meta(self, flow_path, expected_meta):
+        clear_module_cache("flow")
+        clear_module_cache("my_module.entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/{flow_path}").absolute()
+        flow_meta = _client._flows._generate_flow_meta(flow_path)
+        assert flow_meta == expected_meta
+
+    def test_generate_flow_meta_exception(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/incorrect_entry/").absolute()
+        with pytest.raises(ValidationError) as e:
+            _client._flows._generate_flow_meta(flow=flow_path)
+        assert "Entry function my_func is not valid." in str(e.value)
+
+    def test_init_executable(self):
+        from promptflow.contracts.flow import FlowInputDefinition, FlowOutputDefinition
+
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml").absolute()
+        executable = init_executable(flow_path=flow_path)
+        # call values in executable.inputs are FlowInputDefinitions
+        assert all([isinstance(value, FlowInputDefinition) for value in executable.inputs.values()])
+        # call values in executable.outputs are FlowOutputDefinitions
+        assert all([isinstance(value, FlowOutputDefinition) for value in executable.outputs.values()])
+
+    def test_eager_flow_stream_output(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/stream_output/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert result.output == "Hello world! "
+
+    def test_stream_output_with_builtin_llm(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/builtin_llm/").absolute()
+        result = _client._flows._test(
+            flow=flow_path,
+            inputs={"stream": True},
+            environment_variables={
+                "OPENAI_API_KEY": "${azure_open_ai_connection.api_key}",
+                "AZURE_OPENAI_ENDPOINT": "${azure_open_ai_connection.api_base}",
+            },
+        )
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert isinstance(result.output, str)
+
+    def test_eager_flow_multiple_stream_outputs(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/multiple_stream_outputs/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert result.output == {"output1": "0123456789", "output2": "0123456789"}
+
+    def test_eager_flow_multiple_stream_outputs_dataclass(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/multiple_stream_outputs_dataclass/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={})
+        assert result.run_info.status.value == "Completed", result.run_info.error
+        # directly return the consumed generator to align with the behavior of DAG flow test
+        assert is_dataclass(result.output)
+        assert result.output.output1 == "0123456789"
+        assert result.output.output2 == "0123456789"

@@ -7,15 +7,17 @@ from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.tool_utils import (
     DynamicListError,
     ListFunctionResponseError,
+    RetrieveToolFuncResultValidationError,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_interface,
     load_function_from_function_path,
     param_to_definition,
     validate_dynamic_list_func_response_type,
+    validate_tool_func_result,
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
-from promptflow.contracts.tool import ValueType, Tool, ToolType
+from promptflow.contracts.tool import Tool, ToolFuncCallScenario, ToolType, ValueType
 
 
 # mock functions for dynamic list function testing
@@ -312,8 +314,7 @@ class TestToolUtils:
     @pytest.mark.parametrize(
         "res, err_msg",
         [
-            (None, "mock_func response can not be empty."),
-            ([], "mock_func response can not be empty."),
+            (None, "mock_func response can not be None."),
             (["a", "b"], "mock_func response must be a list of dict. a is not a dict."),
             ({"a": "b"}, "mock_func response must be a list."),
             ([{"a": "b"}], "mock_func response dict must have 'value' key."),
@@ -330,7 +331,13 @@ class TestToolUtils:
 
     def test_load_function_from_function_path(self, mock_module_with_list_func):
         func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
-        load_function_from_function_path(func_path)
+        tool_func = load_function_from_function_path(func_path)
+        assert callable(tool_func)
+
+    def test_load_function_from_script(self):
+        func_path = f"{__file__}:mock_dynamic_list_func1"
+        tool_func = load_function_from_function_path(func_path)
+        assert callable(tool_func)
 
     def test_load_function_from_function_path_with_error(self, mock_module_with_list_func):
         func_path = "mock_func_path"
@@ -363,12 +370,40 @@ class TestToolUtils:
         ):
             load_function_from_function_path(func_path)
 
+    @pytest.mark.parametrize(
+        "func_call_scenario, result, err_msg",
+        [
+            (
+                ToolFuncCallScenario.REVERSE_GENERATED_BY,
+                "dummy_result",
+                f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. "
+                f"dummy_result is not a dict.",
+            ),
+            (
+                "dummy_scenario",
+                "dummy_result",
+                f"Invalid tool func call scenario: dummy_scenario. "
+                f"Available scenarios are {list(ToolFuncCallScenario)}",
+            ),
+        ],
+    )
+    def test_validate_tool_func_result(self, func_call_scenario, result, err_msg):
+        error_message = (
+            f"Unable to retrieve tool func result due to '{err_msg}'. \nPlease contact the tool author/support team "
+            f"for troubleshooting assistance."
+        )
+        with pytest.raises(RetrieveToolFuncResultValidationError) as e:
+            validate_tool_func_result(func_call_scenario, result)
+        assert error_message == str(e.value)
+
     def test_find_deprecated_tools(self):
         package_tools = {
             "new_tool_1": Tool(
-                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
             "new_tool_2": Tool(
-                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
         }
         with pytest.raises(DuplicateToolMappingError, match="secure operation"):
             _find_deprecated_tools(package_tools)

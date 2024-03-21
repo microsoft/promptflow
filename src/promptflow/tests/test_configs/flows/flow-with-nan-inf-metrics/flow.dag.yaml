@@ -1,0 +1,23 @@
+inputs:
+  number:
+    type: int
+outputs:
+  output:
+    type: object
+    reference: ${nan_inf.output}
+nodes:
+- name: nan_inf
+  type: python
+  source:
+    type: code
+    path: nan_inf.py
+  inputs:
+    number: ${inputs.number}
+- name: log_metrics
+  type: python
+  source:
+    type: code
+    path: log_metrics.py
+  inputs:
+    numbers: ${nan_inf.output}
+  aggregation: true

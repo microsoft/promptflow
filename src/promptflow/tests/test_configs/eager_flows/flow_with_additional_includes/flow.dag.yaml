@@ -1,0 +1,3 @@
+entry: flow:my_flow_entry
+additional_includes:
+  - ../simple_with_yaml/entry.py

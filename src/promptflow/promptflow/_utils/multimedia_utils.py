@@ -4,7 +4,7 @@ import re
 import uuid
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union
 from urllib.parse import urlparse
 
 import requests
@@ -12,6 +12,8 @@ import requests
 from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
@@ -127,9 +129,7 @@ def create_image(value: any):
             )
     elif isinstance(value, str):
         if not value:
-            raise InvalidImageInput(
-                message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR
-            )
+            raise InvalidImageInput(message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR)
         return _create_image_from_string(value)
     else:
         raise InvalidImageInput(
@@ -155,7 +155,7 @@ def _save_image_to_file(
     return image_reference
 
 
-def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
+def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if obj.source_url:
@@ -169,15 +169,8 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
     return pfbytes_file_reference_encoder
 
 
-def default_json_encoder(obj):
-    if isinstance(obj, PFBytes):
-        return str(obj)
-    else:
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-
-def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
-    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
+def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None, use_absolute_path=False):
+    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir, use_absolute_path=use_absolute_path)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return _process_recursively(value, process_funcs=serialization_funcs)
 
@@ -185,6 +178,11 @@ def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
 def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=False):
     to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type, "dict_type": dict_type})}
     return _process_recursively(value, process_funcs=to_base64_funcs)
+
+
+def convert_multimedia_data_to_string(value: Any, inplace=False):
+    serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
+    return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
@@ -262,3 +260,20 @@ def resolve_image_path(input_dir: Path, image_dict: dict):
             if resource == "path":
                 image_dict[key] = str(input_dir / image_dict[key])
     return image_dict
+
+
+def process_multimedia_in_run_info(
+    run_info: Union[FlowRunInfo, NodeRunInfo], base_dir: Path, sub_dir: Path = None, use_absolute_path=False
+):
+    """Persist multimedia data in run info to file and update the run info with the file path.
+
+    If sub_dir is not None, the multimedia file path will be sub_dir/file_name, otherwise file_name.
+    If use_absolute_path is True, the multimedia file path will be absolute path.
+    """
+    if run_info.inputs:
+        run_info.inputs = persist_multimedia_data(run_info.inputs, base_dir, sub_dir, use_absolute_path)
+    if run_info.output:
+        run_info.output = persist_multimedia_data(run_info.output, base_dir, sub_dir, use_absolute_path)
+        run_info.result = None
+    if run_info.api_calls:
+        run_info.api_calls = persist_multimedia_data(run_info.api_calls, base_dir, sub_dir, use_absolute_path)

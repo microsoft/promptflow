@@ -14,26 +14,26 @@ from marshmallow import Schema
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_EXP_DIR_NAME,
     ExperimentNodeType,
     ExperimentStatus,
 )
 from promptflow._sdk._errors import ExperimentValidationError, ExperimentValueError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
-from promptflow._sdk._submitter import remove_additional_includes
 from promptflow._sdk._utils import _merge_local_code_and_additional_includes, _sanitize_python_variable_name
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._experiment import (
+    ChatGroupSchema,
+    CommandNodeSchema,
     ExperimentDataSchema,
     ExperimentInputSchema,
     ExperimentSchema,
     ExperimentTemplateSchema,
     FlowNodeSchema,
-    ScriptNodeSchema,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.tool import ValueType
@@ -105,7 +105,7 @@ class FlowNode(YAMLTranslatableMixin):
     ):
         self.type = ExperimentNodeType.FLOW
         self.data = data
-        self.inputs = inputs
+        self.inputs = inputs or {}
         self.display_name = display_name
         self.description = description
         self.tags = tags
@@ -114,7 +114,6 @@ class FlowNode(YAMLTranslatableMixin):
         self.environment_variables = environment_variables or {}
         self.connections = connections or {}
         self._properties = properties or {}
-        self._creation_context = kwargs.get("creation_context", None)
         # init here to make sure those fields initialized in all branches.
         self.path = path
         # default run name: flow directory name + timestamp
@@ -129,7 +128,8 @@ class FlowNode(YAMLTranslatableMixin):
     def _save_snapshot(self, target):
         """Save flow source to experiment snapshot."""
         # Resolve additional includes in flow
-        from promptflow import load_flow
+        from .._load_functions import load_flow
+        from .._submitter import remove_additional_includes
 
         Path(target).mkdir(parents=True, exist_ok=True)
         flow = load_flow(source=self.path)
@@ -141,29 +141,98 @@ class FlowNode(YAMLTranslatableMixin):
         self.path = saved_flow_path.resolve().absolute().as_posix()
 
 
-class ScriptNode(YAMLTranslatableMixin):
-    def __init__(self, source, inputs, name, display_name=None, runtime=None, environment_variables=None, **kwargs):
-        self.type = ExperimentNodeType.CODE
-        self.display_name = display_name
+class CommandNode(YAMLTranslatableMixin):
+    def __init__(
+        self,
+        command,
+        name,
+        inputs=None,
+        outputs=None,
+        runtime=None,
+        environment_variables=None,
+        code=None,
+        display_name=None,
+        **kwargs,
+    ):
+        self.type = ExperimentNodeType.COMMAND
         self.name = name
-        self.source = source
-        self.inputs = inputs
+        self.display_name = display_name
+        self.code = code
+        self.command = command
+        self.inputs = inputs or {}
+        self.outputs = outputs or {}
         self.runtime = runtime
         self.environment_variables = environment_variables or {}
 
     @classmethod
     def _get_schema_cls(cls):
-        return ScriptNodeSchema
+        return CommandNodeSchema
 
     def _save_snapshot(self, target):
-        # Do nothing for script node for now
-        pass
+        """Save command source to experiment snapshot."""
+        Path(target).mkdir(parents=True, exist_ok=True)
+        saved_path = Path(target) / self.name
+        if not self.code:
+            # Create an empty folder
+            saved_path.mkdir(parents=True, exist_ok=True)
+            self.code = saved_path.resolve().absolute().as_posix()
+            return
+        code = Path(self.code)
+        if not code.exists():
+            raise ExperimentValueError(f"Command node code {code} does not exist.")
+        if code.is_dir():
+            shutil.copytree(src=self.code, dst=saved_path)
+        else:
+            saved_path.mkdir(parents=True, exist_ok=True)
+            shutil.copy(src=self.code, dst=saved_path)
+        logger.debug(f"Command node source saved to {saved_path}.")
+        self.code = saved_path.resolve().absolute().as_posix()
+
+
+class ChatGroupNode(YAMLTranslatableMixin):
+    def __init__(
+        self,
+        name,
+        roles: List[Dict[str, Any]],
+        max_turns: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        max_time: Optional[int] = None,
+        stop_signal: Optional[str] = None,
+        **kwargs,
+    ):
+        self.type = ExperimentNodeType.CHAT_GROUP
+        self.name = name
+        self.roles = roles
+        self.max_turns = max_turns
+        self.max_tokens = max_tokens
+        self.max_time = max_time
+        self.stop_signal = stop_signal
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ChatGroupSchema
+
+    def _save_snapshot(self, target):
+        """Save chat group source to experiment snapshot."""
+        target = Path(target).resolve()
+        logger.debug(f"Saving chat group node {self.name!r} snapshot to {target.as_posix()!r}.")
+        saved_path = target / self.name
+        saved_path.mkdir(parents=True, exist_ok=True)
+        for role in self.roles:
+            role_path = Path(role["path"]).resolve()
+            if not role_path.exists():
+                raise ExperimentValueError(f"Chat role path {role_path.as_posix()!r} does not exist.")
+
+            if role_path.is_dir():
+                shutil.copytree(src=role_path, dst=saved_path / role["role"])
+            else:
+                shutil.copytree(src=role_path.parent, dst=saved_path / role["role"])
 
 
 class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
-    def __init__(self, nodes, name=None, description=None, data=None, inputs=None, **kwargs):
+    def __init__(self, nodes, description=None, data=None, inputs=None, **kwargs):
         self._base_path = kwargs.get(BASE_PATH_CONTEXT_KEY, Path("."))
-        self.name = name or self._generate_name()
+        self.dir_name = self._get_directory_name()
         self.description = description
         self.nodes = nodes
         self.data = data or []
@@ -204,11 +273,11 @@ class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
             exp._source_path = yaml_path
         return exp
 
-    def _generate_name(self) -> str:
-        """Generate a template name."""
+    def _get_directory_name(self) -> str:
+        """Get experiment template directory name."""
         try:
             folder_name = Path(self._base_path).resolve().absolute().name
-            return _sanitize_python_variable_name(folder_name)
+            return folder_name
         except Exception as e:
             logger.debug(f"Failed to generate template name, error: {e}, use uuid.")
             return str(uuid.uuid4())
@@ -267,7 +336,7 @@ class Experiment(ExperimentTemplate):
         self.last_start_time = kwargs.get("last_start_time", None)
         self.last_end_time = kwargs.get("last_end_time", None)
         self.is_archived = kwargs.get("is_archived", False)
-        self._output_dir = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_EXP_DIR_NAME / self.name
+        self._output_dir = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_EXP_DIR_NAME / self.name
         super().__init__(nodes, name=self.name, data=data, inputs=inputs, **kwargs)
 
     @classmethod
@@ -334,9 +403,13 @@ class Experiment(ExperimentTemplate):
                 nodes.append(
                     FlowNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
-            elif node_dict["type"] == ExperimentNodeType.CODE:
+            elif node_dict["type"] == ExperimentNodeType.COMMAND:
                 nodes.append(
-                    ScriptNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
+                    CommandNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
+                )
+            elif node_dict["type"] == ExperimentNodeType.CHAT_GROUP:
+                nodes.append(
+                    ChatGroupNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
             else:
                 raise Exception(f"Unknown node type {node_dict['type']}")
@@ -370,7 +443,7 @@ class Experiment(ExperimentTemplate):
     def from_template(cls, template: ExperimentTemplate, name=None):
         """Create a experiment object from template."""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        exp_name = name or f"{template.name}_{timestamp}"
+        exp_name = name or f"{template.dir_name}_{timestamp}"
         experiment = cls(
             name=exp_name,
             description=template.description,

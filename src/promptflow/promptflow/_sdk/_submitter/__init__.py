@@ -1,3 +1,6 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
 from .run_submitter import RunSubmitter
 from .test_submitter import TestSubmitter
 from .utils import (

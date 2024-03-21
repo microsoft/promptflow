@@ -10,6 +10,7 @@ from traceback import TracebackException, format_tb
 from types import TracebackType, FrameType
 
 from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException, ValidationException
+from promptflow.tracing._operation_context import OperationContext
 
 ADDITIONAL_INFO_USER_EXECUTION_ERROR = "ToolExecutionErrorDetails"
 ADDITIONAL_INFO_USER_CODE_STACKTRACE = "UserCodeStackTrace"
@@ -107,8 +108,6 @@ class ErrorResponse:
         return user_execution_error_info
 
     def to_dict(self):
-        from promptflow._core.operation_context import OperationContext
-
         return {
             "error": self._error_dict,
             "correlation": None,  # TODO: to be implemented
@@ -384,6 +383,7 @@ def infer_error_code_from_class(cls):
 def is_pf_core_frame(frame: FrameType):
     """Check if the frame is from promptflow core code."""
     from promptflow import _core
+
     folder_of_core = os.path.dirname(_core.__file__)
     return folder_of_core in frame.f_code.co_filename
 
@@ -409,4 +409,4 @@ def remove_suffix(text: str, suffix: str = None):
     if not text.endswith(suffix):
         return text
 
-    return text[:-len(suffix)]
+    return text[: -len(suffix)]

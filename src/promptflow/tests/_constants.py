@@ -11,5 +11,6 @@ ENV_FILE = (PROMOTFLOW_ROOT / ".env").resolve().absolute().as_posix()
 DEFAULT_SUBSCRIPTION_ID = "96aede12-2f73-41cb-b983-6d11a904839b"
 DEFAULT_RESOURCE_GROUP_NAME = "promptflow"
 DEFAULT_WORKSPACE_NAME = "promptflow-eastus2euap"
+DEFAULT_COMPUTE_INSTANCE_NAME = "ci-lin-cpu-sp"
 DEFAULT_RUNTIME_NAME = "test-runtime-ci"
 DEFAULT_REGISTRY_NAME = "promptflow-preview"

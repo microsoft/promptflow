@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -11,13 +12,15 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
-from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
+from promptflow._sdk._utils import generate_yaml_entry
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.azure.operations._trace_operations import TraceOperations
 from promptflow.exceptions import UserErrorException
 
 
@@ -106,6 +109,12 @@ class PFClient:
             service_caller=self._service_caller,
             **kwargs,
         )
+        self._traces = TraceOperations(
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            service_caller=self._service_caller,
+            **kwargs,
+        )
 
     @staticmethod
     def _validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs):
@@ -177,7 +186,7 @@ class PFClient:
 
     def run(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
         *,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
@@ -188,6 +197,8 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        resume_from: Union[str, Run] = None,
+        code: Union[str, PathLike] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -241,23 +252,53 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param resume_from: Create run resume from an existing run.
+        :type resume_from: str
+        :param code: Path to the code directory to run.
+        :type code: Union[str, PathLike]
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        # TODO(2887134): support cloud eager Run CRUD
-        run = Run(
-            name=name,
-            display_name=display_name,
-            tags=tags,
-            data=data,
-            column_mapping=column_mapping,
-            run=run,
-            variant=variant,
-            flow=flow,
-            connections=connections,
-            environment_variables=environment_variables,
-        )
-        return self.runs.create_or_update(run=run, **kwargs)
+        if resume_from:
+            unsupported = {
+                k: v
+                for k, v in {
+                    "flow": flow,
+                    "data": data,
+                    "run": run,
+                    "column_mapping": column_mapping,
+                    "variant": variant,
+                    "connections": connections,
+                    "environment_variables": environment_variables,
+                }.items()
+                if v
+            }
+            if any(unsupported):
+                raise ValueError(
+                    f"'resume_from' is not supported to be used with the with following parameters: {unsupported}. "
+                )
+            resume_from = resume_from.name if isinstance(resume_from, Run) else resume_from
+            return self.runs._create_by_resume_from(
+                resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
+            )
+
+        if code and not os.path.exists(code):
+            raise FileNotFoundError(f"code path {code} does not exist")
+        code = Path(code) if code else Path(os.getcwd())
+        with generate_yaml_entry(entry=flow, code=code) as flow:
+            run = Run(
+                name=name,
+                display_name=display_name,
+                tags=tags,
+                data=data,
+                column_mapping=column_mapping,
+                run=run,
+                variant=variant,
+                flow=flow,
+                connections=connections,
+                environment_variables=environment_variables,
+            )
+            return self.runs.create_or_update(run=run, **kwargs)
 
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.

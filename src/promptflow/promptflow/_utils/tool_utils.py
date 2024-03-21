@@ -6,21 +6,38 @@ import importlib
 import inspect
 import logging
 import re
+from dataclasses import asdict, fields, is_dataclass
 from enum import Enum, EnumMeta
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._constants import PF_MAIN_MODULE_NAME
 from promptflow._core._errors import DuplicateToolMappingError
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ValueType
+from ..contracts.tool import (
+    ConnectionType,
+    InputDefinition,
+    OutputDefinition,
+    Tool,
+    ToolFuncCallScenario,
+    ToolType,
+    ValueType,
+)
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
 
 _DEPRECATED_TOOLS = "deprecated_tools"
+UI_HINTS = "ui_hints"
+
+
+def asdict_without_none(obj):
+    return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
 def value_to_str(val):
@@ -141,8 +158,22 @@ def function_to_interface(
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
-    outputs = {}
-    # Note: We don't have output definition now
+    # Resolve output to definition
+    typ = resolve_annotation(sign.return_annotation)
+    if typ is inspect.Signature.empty:
+        outputs = {"output": OutputDefinition(type=[ValueType.OBJECT])}
+    elif is_dataclass(typ):
+        outputs = {}
+        for field in fields(typ):
+            outputs[field.name] = OutputDefinition(type=[ValueType.from_type(field.type)])
+    else:
+        # If the output annotation is a union type, then it should be a list.
+        outputs = {
+            "output": OutputDefinition(
+                type=[ValueType.from_type(t) for t in typ] if isinstance(typ, list) else [ValueType.from_type(typ)]
+            )
+        }
+
     return input_defs, outputs, connection_types, enable_kwargs
 
 
@@ -225,10 +256,10 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
         - display_value: for UI display. Optional.
         - hyperlink: external link. Optional.
         - description: information icon tip. Optional.
-    The response can not be empty.
+    The response can not be None.
     """
-    if not response:
-        raise ListFunctionResponseError(f"{f} response can not be empty.")
+    if response is None:
+        raise ListFunctionResponseError(f"{f} response can not be None.")
     if not isinstance(response, List):
         raise ListFunctionResponseError(f"{f} response must be a list.")
     for item in response:
@@ -248,6 +279,11 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
 
 
 def validate_tool_func_result(func_call_scenario: str, result):
+    if func_call_scenario not in list(ToolFuncCallScenario):
+        raise RetrieveToolFuncResultValidationError(
+            f"Invalid tool func call scenario: {func_call_scenario}. "
+            f"Available scenarios are {list(ToolFuncCallScenario)}"
+        )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(
@@ -288,11 +324,20 @@ def append_workspace_triple_to_func_input_params(
 def load_function_from_function_path(func_path: str):
     """Load a function from a function path.
 
-    The function path should be in the format of "module_name.function_name".
+    If function is in an installed package, the function path should be in the format of "module_name.function_name".
+    If function is in a script, the function path should be in the format of "function_path:function_name".
     """
     try:
-        module_name, func_name = func_path.rsplit(".", 1)
-        module = importlib.import_module(module_name)
+        if ":" in func_path:
+            script_path, func_name = func_path.rsplit(":", 1)
+            script_name = Path(script_path).stem
+            with _change_working_dir(Path(script_path).parent):
+                spec = importlib.util.spec_from_file_location(script_name, script_path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+        else:
+            module_name, func_name = func_path.rsplit(".", 1)
+            module = importlib.import_module(module_name)
         f = getattr(module, func_name)
         if callable(f):
             return f
@@ -303,6 +348,68 @@ def load_function_from_function_path(func_path: str):
             f"Failed to parse function from function path: '{func_path}'. Expected format: format 'my_module.my_func'. "
             f"Detailed error: {e}"
         )
+
+
+def assign_tool_input_index_for_ux_order_if_needed(tool):
+    """
+    Automatically adds an index to the inputs of a tool based on their order in the tool's YAML.
+    This function directly modifies the tool without returning any value.
+
+    Example:
+    - tool (dict): A dictionary representing a tool configuration. Inputs do not contain 'ui_hints':
+        {
+        'name': 'My Custom LLM Tool',
+        'type': 'custom_llm',
+        'inputs':
+            {
+                'input1': {'type': 'string'},
+                'input2': {'type': 'string'},
+                'input3': {'type': 'string'}
+            }
+        }
+
+    >>> assign_tool_input_index_for_ux_order_if_needed(tool)
+    - tool (dict): Tool inputs are modified to include 'ui_hints' with an 'index', indicating the order.
+        {
+        'name': 'My Custom LLM Tool',
+        'type': 'custom_llm',
+        'inputs':
+            {
+                'input1': {'type': 'string', 'ui_hints': {'index': 0}},
+                'input2': {'type': 'string', 'ui_hints': {'index': 1}},
+                'input3': {'type': 'string', 'ui_hints': {'index': 2}}
+            }
+        }
+    """
+    tool_type = tool.get("type")
+    if should_preserve_tool_inputs_order(tool_type) and "inputs" in tool:
+        inputs_dict = tool["inputs"]
+        input_index = 0
+        # The keys can keep order because the tool YAML is loaded by ruamel.yaml and
+        # ruamel.yaml has the feature of preserving the order of keys.
+        # For more information on ruamel.yaml's feature, please
+        # visit https://yaml.readthedocs.io/en/latest/overview/#overview.
+        for input_name, settings in inputs_dict.items():
+            # 'uionly_hidden' indicates that the inputs are not the tool's inputs.
+            # They are not displayed on the main interface but appear in a popup window.
+            # These inputs are passed to UX as a list, maintaining the same order as generated by func parameters.
+            # Skip the 'uionly_hidden' input type because the 'ui_hints: index' is not needed.
+            if "input_type" in settings.keys() and settings["input_type"] == "uionly_hidden":
+                continue
+            settings.setdefault(UI_HINTS, {})
+            settings[UI_HINTS]["index"] = input_index
+            input_index += 1
+
+
+def should_preserve_tool_inputs_order(tool_type):
+    """
+    Currently, we only automatically add input indexes for the custom_llm tool,
+    following the order specified in the tool interface or YAML.
+    As of now, only the custom_llm tool requires the order of its inputs displayed on the UI
+    to be consistent with the order in the YAML, because its inputs are shown in parameter style.
+    To avoid extensive changes, other types of tools will remain as they are.
+    """
+    return tool_type == ToolType.CUSTOM_LLM
 
 
 # Handling backward compatibility and generating a mapping between the previous and new tool IDs.
@@ -340,18 +447,21 @@ def _get_function_path(function):
         func_path = function
     elif isinstance(function, Callable):
         func = function
-        func_path = f"{function.__module__}.{function.__name__}"
+        if function.__module__ == PF_MAIN_MODULE_NAME:
+            func_path = f"{inspect.getfile(function)}:{function.__name__}"
+        else:
+            func_path = f"{function.__module__}.{function.__name__}"
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
 
 
 class RetrieveToolFuncResultError(UserErrorException):
-    """Base exception raised for retreive tool func result errors."""
+    """Base exception raised for retrieve tool func result errors."""
 
     def __init__(self, message):
         msg = (
-            f"Unable to retreive tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"Unable to retrieve tool func result due to '{message}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)

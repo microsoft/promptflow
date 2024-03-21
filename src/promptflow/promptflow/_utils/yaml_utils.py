@@ -6,6 +6,7 @@ from ruamel.yaml import YAML, YAMLError
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils._errors import YamlParseError
+from promptflow.exceptions import UserErrorException
 
 
 def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
@@ -47,7 +48,7 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
         readable = source.readable()
         if not readable:  # source is misformatted stream or file
             msg = "File Permissions Error: The already-open \n\n inputted file is not readable."
-            raise Exception(msg)
+            raise PermissionError(msg)
         # source is an already-open stream or file, we can read() from it directly.
         input = source
     except AttributeError:
@@ -58,17 +59,16 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
         try:
             input = open(source, "r", encoding=DEFAULT_ENCODING)
         except OSError:  # FileNotFoundError introduced in Python 3
-            msg = "No such file or directory: {}"
-            raise Exception(msg.format(source))
+            e = FileNotFoundError("No such file or directory: {}".format(source))
+            raise UserErrorException(str(e), privacy_info=[str(source)]) from e
     # input should now be a readable file or stream. Parse it.
-    cfg = {}
     try:
         yaml = YAML()
         yaml.preserve_quotes = True
         cfg = yaml.load(input)
     except YAMLError as e:
         msg = f"Error while parsing yaml file: {source} \n\n {str(e)}"
-        raise Exception(msg)
+        raise YAMLError(msg)
     finally:
         if must_open_file:
             input.close()

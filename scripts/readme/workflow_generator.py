@@ -58,7 +58,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_minute = name_hash % 60
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
-    if "tutorials" in gh_working_dir:
+    if "examples/tutorials" in gh_working_dir:
         notebook_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook)
         path_filter = resolve_tutorial_resource(workflow_name, notebook_path.resolve())
     elif "samples_configuration" in workflow_name:

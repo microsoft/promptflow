@@ -1,0 +1,133 @@
+# this is an exclusive workflow for pull request
+# it executes tests in src/promptflow/tests/sdk_cli_azure_test with replay mode
+
+name: sdk-cli-azure-test-pull-request
+
+on:
+  pull_request:
+    paths:
+      - src/promptflow/**
+      - scripts/building/**
+      - .github/workflows/sdk-cli-azure-test-pull-request.yml
+
+
+env:
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
+  PROMPT_FLOW_TEST_MODE: "replay"
+
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Display and Set Environment Variables
+      run: |
+        env | sort >> $GITHUB_OUTPUT
+      id: display_env
+      shell: bash -el {0}
+    - name: Python Setup - ubuntu-latest - Python Version 3.9
+      uses: "./.github/actions/step_create_python_environment"
+      with:
+        pythonVersion: 3.9
+    - name: Build wheel
+      uses: "./.github/actions/step_sdk_setup"
+      with:
+        setupType: promptflow_with_extra
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Upload Wheel
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheel
+        path: |
+          ${{ github.workspace }}/src/promptflow/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+
+  sdk_cli_azure_test_replay:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        # replay tests can cover more combinations
+        os: [ubuntu-latest]
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+  
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Display and Set Environment Variables
+        run: env | sort >> $GITHUB_OUTPUT
+
+      - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
+        uses: "./.github/actions/step_create_python_environment"
+        with:
+          pythonVersion: ${{ matrix.pythonVersion }}
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: artifacts
+
+      - name: Install wheel
+        shell: pwsh
+        working-directory: artifacts
+        run: |
+          Set-PSDebug -Trace 1
+          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
+          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+          pip freeze
+
+      - name: Run SDK CLI Azure Test (replay mode)
+        shell: pwsh
+        working-directory: ${{ env.testWorkingDirectory }}
+        run: |
+          python "../../scripts/building/run_coverage_tests.py" `
+            -p promptflow `
+            -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
+            -l eastus `
+            -m "unittest or e2etest" `
+            --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+          path: |
+            ${{ env.testWorkingDirectory }}/*.xml
+            ${{ env.testWorkingDirectory }}/htmlcov/
+
+  publish-test-results-sdk-cli-azure-test:
+    needs: sdk_cli_azure_test_replay
+    if: always()
+
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        testActionFileName: promptflow-sdk-cli-azure-e2e-test.yml
+        testResultTitle: promptflow SDK CLI Azure E2E Test Result
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 40
+        context: test/sdk_cli

@@ -198,8 +198,8 @@ class TestMultimediaUtils:
             line_inputs = {"image": 0}
             load_multimedia_data(inputs, line_inputs)
         assert (
-            "Failed to load image for input 'image': "
-            "(InvalidImageInput) Unsupported image input type") in ex.value.message
+            "Failed to load image for input 'image': " "(InvalidImageInput) Unsupported image input type"
+        ) in ex.value.message
 
     def test_resolve_multimedia_data_recursively(self):
         image_dict = {"data:image/jpg;path": "logo.jpg"}
