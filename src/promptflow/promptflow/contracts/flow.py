@@ -843,6 +843,16 @@ class Flow(FlowBase):
                 connection_names[k] = input_assignment.value
         return connection_names
 
+    @classmethod
+    def _get_connection_inputs_from_tool(cls, tool: Tool) -> list:
+        """Return tool's connection inputs."""
+        connection_inputs = []
+        for k, v in tool.inputs.items():
+            input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
+            if all(ConnectionType.is_connection_class_name(t) for t in input_type):
+                connection_inputs.append(k)
+        return connection_inputs
+
     def get_connection_names(self):
         """Return connection names."""
         connection_names = super().get_connection_names()
@@ -871,7 +881,11 @@ class Flow(FlowBase):
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):
-        """Return connection input names."""
+        """Return connection input names for a node, will also return node connection inputs without assignment.
+
+        :param node_name: node name
+        """
+
         node = self.get_node(node_name)
         if node and node.use_variants:
             node = self._apply_default_node_variant(node, self.node_variants)
@@ -880,7 +894,7 @@ class Flow(FlowBase):
             return []
         tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
         if tool:
-            return list(self._get_connection_name_from_tool(tool, node).keys())
+            return self._get_connection_inputs_from_tool(tool)
         return []
 
     def _replace_with_variant(self, variant_node: Node, variant_tools: list):
