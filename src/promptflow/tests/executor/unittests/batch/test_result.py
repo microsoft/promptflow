@@ -309,14 +309,15 @@ class TestChatGroupResult:
         line_results = get_line_results(line_dict, output={"question": "question0", "others": "others0"})
         orchestrator = ChatGroupOrchestrator([get_chat_role(role="user", flow_file=get_yaml_file("hello-world"))])
         conversation_history_len = len(conversation_history)
-        orchestrator._process_flow_outputs(chat_role, line_results[0], conversation_history)
+        outputs = {}
+        orchestrator._process_flow_outputs(0, chat_role, line_results[0], conversation_history, outputs, {})
         cur_conversation_history_len = len(conversation_history)
 
         assert cur_conversation_history_len == conversation_history_len + 1
         current_line = conversation_history[-1]
-        assert current_line["role"] == chat_role.role
-        assert current_line["question"] == "question0"
-        assert current_line["others"] == "others0"
+        assert current_line["role"] == chat_role.role == outputs[0]["role"]
+        assert current_line["question"] == "question0" == outputs[0]["question"]
+        assert current_line["others"] == "others0" == outputs[0]["others"]
 
 
 

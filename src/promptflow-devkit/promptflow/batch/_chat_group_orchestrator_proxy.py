@@ -14,11 +14,9 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
     def __init__(
         self,
         orchestrator: ChatGroupOrchestrator,
-        batch_inputs: List[List[Dict]],
         **kwargs
     ):
         self._orchestrator = orchestrator
-        self._batch_inputs = batch_inputs
         super().__init__(**kwargs)
 
     @classmethod
@@ -30,21 +28,15 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
         **kwargs
-        # chat_group_roles: Optional[List[ChatGroupRole]] = None,
-        # max_turn: Optional[int] = None,
-        # input_dirs: Optional[Dict[str, str]] = None,
-        # max_lines_count: Optional[int] = None
+
     ) -> "ChatGroupOrchestratorProxy":
         """Create a new executor"""
         chat_group_roles: List[ChatGroupRole] = kwargs.get("chat_group_roles")
         max_turn = kwargs.get("max_turn")
-        input_dirs: Dict[str, str] = kwargs.get("input_dirs")
-        max_lines_count = kwargs.get("max_lines_count", None)
 
         orchestrator = ChatGroupOrchestrator.create(chat_group_roles, max_turn, storage)
-        batch_inputs = ChatGroupOrchestratorProxy.process_batch_inputs(chat_group_roles, input_dirs, max_lines_count)
         
-        return cls(orchestrator, batch_inputs)
+        return cls(orchestrator)
     
     async def destroy(self):
         """Destroy the executor"""
@@ -59,7 +51,7 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         """schedule runs for a line, submit roleA and format its output as roleB's input.
         Then submit roleB until the max_turn.
         """
-        return await self._orchestrator._schedule_runs(index, inputs, run_id, self._batch_inputs)
+        return await self._orchestrator._schedule_runs(index, inputs, run_id)
 
     @classmethod
     def process_batch_inputs(
@@ -77,7 +69,13 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, chat_role.inputs_mapping)
             chat_group_batch_inputs.append(batch_inputs)
 
-        return chat_group_batch_inputs
+        if not chat_group_batch_inputs or not chat_group_batch_inputs[0]:
+            return chat_group_batch_inputs
+
+        rows, cols = len(chat_group_batch_inputs), len(chat_group_batch_inputs[0])
+        transposed = [[chat_group_batch_inputs[row][col] for row in range(rows)] for col in range(cols)]
+
+        return transposed
 
 
 

@@ -1,5 +1,5 @@
-from typing import Optional, List, Mapping, Any
-from promptflow.contracts.flow import ChatGroupRole
+from typing import Optional, List, Mapping, Dict, Any
+from promptflow.contracts.flow import ChatGroupRole, Flow
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
@@ -7,6 +7,7 @@ from promptflow._proxy._base_proxy_factory import BaseProxyFactory
 from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 
 class ChatGroupOrchestrator:
     def __init__(
@@ -46,6 +47,7 @@ class ChatGroupOrchestrator:
                 **kwargs
             )
             executor_proxy_list.append(executor_proxy)
+            chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
         return executor_proxy_list
     
     async def _schedule_runs(
@@ -53,27 +55,36 @@ class ChatGroupOrchestrator:
             line_index: int,
             inputs: Mapping[str, Any] = None,
             run_id: str = None,
-            chat_roles_inputs: List[List[Mapping[str, Any]]] = None,
             ) -> LineResult:
 
         """schedule runs for a line, submit roleA and format its output as roleB's input.
         Then submit roleB until the max_turn.
         """
-        line_result: LineResult = None
+
+        outputs: dict = {}
+        aggregation_inputs: dict = {}
+        current_line_result: LineResult = None
+
         total_roles = len(self._chat_group_roles)
         conversation_history: List[Mapping[str, Any]] = []
+        batch_inputs = self._process_batch_inputs(inputs)
         for turn in range(self._max_turn):
             role_index = turn % total_roles
             executor_proxy = self._executor_proxies[role_index]
             chat_role = self._chat_group_roles[role_index]
-            chat_role_input = chat_roles_inputs[role_index]
-            chat_role_input[line_index]["conversation_history"] = conversation_history
-            line_result = await executor_proxy.exec_line_async(chat_role_input[line_index], line_index, run_id)
-            self._process_flow_outputs(chat_role, line_result, conversation_history)
-            if any(value == chat_role.stop_signal for value in line_result.output.values()):
+            chat_role_input = batch_inputs[role_index]
+            chat_role_input["conversation_history"] = conversation_history
+            current_line_result = await executor_proxy.exec_line_async(chat_role_input, line_index, run_id)
+            self._process_flow_outputs(turn, chat_role, current_line_result, conversation_history, outputs, aggregation_inputs)
+            if any(value == chat_role.stop_signal for value in current_line_result.output.values()):
                 break
             
-        return line_result # or latest conversation_history?
+        return LineResult(
+            output=outputs,
+            aggregation_inputs=aggregation_inputs,
+            node_run_infos=current_line_result.node_run_infos,
+            run_info=current_line_result.run_info
+        )
         
     def _check_language_from_yaml(self, flow: ChatGroupRole):
         flow_file = flow.working_dir / flow.flow_file if flow.working_dir else flow.flow_file
@@ -84,7 +95,27 @@ class ChatGroupOrchestrator:
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
         return language
 
-    def _process_flow_outputs(self, chat_role: ChatGroupRole, line_result: LineResult, conversation_history: List[Mapping[str, Any]]):
+    def _process_flow_outputs(
+            self,
+            index: int,
+            chat_role: ChatGroupRole,
+            current_line_result: LineResult,
+            conversation_history: List[Mapping[str, Any]],
+            outputs: dict,
+            aggregation_inputs: dict):
+
         current_turn = {"role": chat_role.role}
-        current_turn.update(line_result.output)
+        current_turn.update(current_line_result.output)
         conversation_history.append(current_turn)
+
+        outputs.update({index: current_turn})
+        aggregation_inputs.update({index: current_line_result.aggregation_inputs})
+
+    def _process_batch_inputs(self, inputs: Dict[str, Any]):
+        batch_inputs: List = []
+        for chat_role in self._chat_group_roles:
+            batch_input_processor = BatchInputsProcessor(chat_role.working_dir, chat_role.flow.inputs)
+            batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role.inputs_mapping)
+            batch_inputs.append(batch_input)
+
+        return batch_inputs

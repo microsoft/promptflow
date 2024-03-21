@@ -505,15 +505,32 @@ class TestBatch:
 
     @pytest.mark.parametrize(
         "simulation_flow, copilot_flow, max_turn",
-        [("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 3)],
+        [("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 5)],
     )
     def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, dev_connections):
-        simulation_role = ChatGroupRole(flow_file=get_yaml_file(simulation_flow), role="user", stop_signal="[STOP]", working_dir=get_flow_folder(simulation_flow), connections=dev_connections, inputs_mapping={"question": "${data.question}"})
-        copilot_role = ChatGroupRole(flow_file=get_yaml_file(copilot_flow), role="assistant", stop_signal="[STOP]", working_dir=get_flow_folder(copilot_flow), connections=dev_connections, inputs_mapping={"topic": "${data.topic}"})
-        batchEngine = BatchEngine(flow_file=None, working_dir=None, chat_group_roles=[simulation_role, copilot_role], max_turn=max_turn)
+        simulation_role = ChatGroupRole(flow_file=get_yaml_file(simulation_flow), role="user", stop_signal="[STOP]", working_dir=get_flow_folder(simulation_flow), connections=dev_connections, inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"})
+        copilot_role = ChatGroupRole(flow_file=get_yaml_file(copilot_flow), role="assistant", stop_signal="[STOP]", working_dir=get_flow_folder(copilot_flow), connections=dev_connections, inputs_mapping={"question": "${data.question}"})
+        batchEngine = BatchEngine(flow_file=None, working_dir=get_flow_folder("chat_group"), chat_group_roles=[simulation_role, copilot_role], max_turn=max_turn)
         input_dirs = {"data": get_flow_inputs_file("chat_group", file_name="inputs.json")}
         output_dir = Path(mkdtemp())
-        batch_results = batchEngine.run(input_dirs, {}, output_dir)
+        batch_result = batchEngine.run(input_dirs, {}, output_dir)
 
-        assert batch_results.total_lines == 3
+        nlines = 3
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            # "line_number is the first pair in the dict"
+            assert len(output) == max_turn + 1
+            for j, line in enumerate(output):
+                if not "line_number" in output:
+                    assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+
 

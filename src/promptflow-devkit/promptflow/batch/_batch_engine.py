@@ -102,7 +102,7 @@ class BatchEngine:
         """
         
         self._flow_file = flow_file
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else None
+        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
         self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() if flow_file is not None else (None, None)
         self._flow = None
 
@@ -172,8 +172,6 @@ class BatchEngine:
         """
         try:
             self._start_time = datetime.utcnow()
-            if self._chat_group_roles is not None:
-                self._working_dir = self._chat_group_roles[0].working_dir
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
                 self._executor_proxy = ProxyFactory().create_executor_proxy(
@@ -211,8 +209,7 @@ class BatchEngine:
                         batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     else:
-                        # place holder
-                        batch_inputs = self._executor_proxy._batch_inputs[0]
+                        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs_without_inputs_mapping(input_dirs)
 
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
@@ -430,16 +427,15 @@ class BatchEngine:
             # TODO: Enable batch timeout for other api based executor proxy
             await self._exec_batch(line_results, batch_inputs, run_id)
 
-        if not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy):
-            handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-            # persist outputs to output dir
-            outputs = [
-                {LINE_NUMBER_KEY: r.run_info.index, **r.output}
-                for r in line_results
-                if r.run_info.status == Status.Completed
-            ]
-            outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
-            self._persist_outputs(outputs, output_dir)
+        handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+        # persist outputs to output dir
+        outputs = [
+            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
+            for r in line_results
+            if r.run_info.status == Status.Completed
+        ]
+        outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
+        self._persist_outputs(outputs, output_dir)
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
