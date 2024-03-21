@@ -3,7 +3,7 @@ from openai import AsyncAzureOpenAI, AsyncOpenAI
 from promptflow.tracing import trace
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
-@trace
+
 async def get_assistant_client(conn:  Union[AzureOpenAIConnection, OpenAIConnection]):
     if isinstance(conn, AzureOpenAIConnection):
         cli = AsyncAzureOpenAI(
