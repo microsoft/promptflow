@@ -8,6 +8,8 @@ import copy
 import functools
 import inspect
 import os
+import signal
+import threading
 import uuid
 from pathlib import Path
 from threading import current_thread
@@ -325,6 +327,9 @@ class FlowExecutor:
             finally:
                 OperationContext.set_instance(original_context)
 
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
         dependency_nodes_outputs = dependency_nodes_outputs or {}
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -401,6 +406,8 @@ class FlowExecutor:
                     )
                 else:
                     context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+            except KeyboardInterrupt:
+                run_tracker.cancel_node_runs()
             except Exception:
                 if raise_ex:  # Only raise exception when raise_ex is True
                     raise
@@ -1334,3 +1341,8 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+def signal_handler(sig, frame):
+    logger.info(f"Received signal {sig}({signal.Signals(sig).name}), will terminate the current process.")
+    raise KeyboardInterrupt

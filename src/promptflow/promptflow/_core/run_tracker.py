@@ -238,7 +238,7 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
-    def cancel_node_runs(self, flow_run_id, msg: str = "Received cancel request."):
+    def cancel_node_runs(self, flow_run_id: Optional[str] = None, msg: str = "Received cancel request."):
         node_runs = self.collect_node_runs(flow_run_id)
         for node_run_info in node_runs:
             if node_run_info.status != Status.Running:
