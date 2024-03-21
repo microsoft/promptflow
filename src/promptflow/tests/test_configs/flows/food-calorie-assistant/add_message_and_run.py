@@ -59,7 +59,7 @@ async def add_message_and_run(
 
     await wait_for_run_complete(thread_id, run.id)
 
-    messages = await get_message(thread_id)
+    messages = await get_output_message(thread_id)
 
     await list_run_steps(thread_id, run.id)
 
@@ -198,7 +198,6 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
     while True:
         await wait_for_status_check()
         run_step = await get_run_step(thread_id=thread_id, run_id=run_id, run_step_id=run_step_id)
-        span.update_name(run_step.type)
         if run_step.status in {"in_progress"}:
             run = await get_run(thread_id, run_id)
             if run.status == "requires_action":
@@ -207,18 +206,33 @@ async def wait_for_run_step_complete(thread_id: str, run_id: str, run_step_id: s
             raise Exception(f"Run step {run_step_id} failed with status: {run_step.status}")
         else:
             # Run step completed
-            if run_step.type == "message_creation":
-                msg_id = run_step.step_details.message_creation.message_id
-                await message(thread_id, msg_id)
-            elif run_step.type == "tool_calls":
-                if run_step.step_details.tool_calls[0].type == "code_interpreter":
-                    await trace_code_interpreter(run_step)
-                elif run_step.step_details.type == "retrieval":
-                    pass
-            else:
-                raise Exception(f"Unsupported run step type: {run_step.type}")
             break
-    return run_step
+    return await update_run_step_trace(span, run_step, thread_id)
+
+async def update_run_step_trace(span, run_step, thread_id):
+    # update trace name with run_step type
+    span.update_name(run_step.type)
+    cli = cli_var.get()
+    if run_step.type == "message_creation":
+        msg_id = run_step.step_details.message_creation.message_id
+        message = await cli.beta.threads.messages.retrieve(message_id=msg_id, thread_id=thread_id)
+        return convert_message_content(message.content)
+    elif run_step.type == "tool_calls":
+        if run_step.step_details.tool_calls[0].type == "code_interpreter":
+            span.update_name(f"{run_step.type} [code_interpreter]")
+            # assume code_interpreter only have one tool_call element
+            tool_call = run_step.step_details.tool_calls[0]
+            span.set_attribute("inputs", json.dumps(tool_call.code_interpreter.input))
+            return convert_code_interpreter_outputs(tool_call.code_interpreter.outputs)
+        elif run_step.step_details.type == "retrieval":
+            # Todo: enrich this part after retrieval tool enabled in aoai
+            span.update_name(f"{run_step.type} [retrieval]")
+            return run_step
+        else:
+            span.update_name(f"{run_step.type} [function]")
+            return convert_tool_calls(run_step.step_details.tool_calls)
+
+
 
 @trace
 async def message(thread_id: str, msg_id: str):
@@ -273,6 +287,7 @@ def convert_message_content(contents: List[Message]):
 def convert_tool_calls(calls: List[ToolCall]):
     return [call.dict() for call in calls]
 
+
 def _to_nano(unix_time_in_sec: int):
     """Convert Unix timestamp from seconds to nanoseconds."""
     return unix_time_in_sec*1000000000
@@ -303,7 +318,7 @@ def convert_code_interpreter_outputs(logs: List[CodeInterpreterOutput]):
 
 
 @trace
-async def get_message(thread_id: str):
+async def get_output_message(thread_id: str):
     cli=cli_var.get()
     messages = await cli.beta.threads.messages.list(thread_id=thread_id)
     return messages
