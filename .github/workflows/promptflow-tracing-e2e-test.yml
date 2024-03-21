@@ -1,4 +1,4 @@
-name: promptflow-tracing-test
+name: promptflow-tracing-e2e-test
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - src/promptflow-tracing/**
-      - .github/workflows/promptflow-tracing-test.yml
+      - .github/workflows/promptflow-tracing-e2e-test.yml
   workflow_dispatch:
 
 env:
@@ -59,8 +59,8 @@ jobs:
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: test
-        run: poetry run pytest
+      - name: run e2e tests
+        run: poetry run pytest -m e2etest
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
