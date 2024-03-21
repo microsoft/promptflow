@@ -10,6 +10,11 @@ from ._script_executor import ScriptExecutor
 
 
 class PromptyExecutor(ScriptExecutor):
+    """
+    This class is used to execute prompty with different inputs.
+    A callable class will be initialized with a prompty file. This callable class will be called when execute line.
+    """
+
     def __init__(
         self,
         flow_file: Path,

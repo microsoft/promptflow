@@ -3,8 +3,9 @@ from pathlib import Path
 import pytest
 
 from promptflow._sdk._pf_client import PFClient
-from promptflow.core import Flow, Prompty
+from promptflow.core import Flow
 from promptflow.core._errors import MissingRequiredInputError
+from promptflow.core._flow import Prompty
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = TEST_ROOT / "test_configs/datas"

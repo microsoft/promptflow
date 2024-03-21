@@ -14,17 +14,16 @@ from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.tool import ValueType
 from promptflow.core._errors import MissingRequiredInputError
-from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
-from promptflow.core._utils import (
+from promptflow.core._prompty_utils import (
     convert_to_chat_list,
     find_referenced_image_set,
     get_connection,
     get_open_ai_client_by_connection,
-    init_executable,
     parse_chat,
     preprocess_template_string,
-    render_jinja_template_content,
 )
+from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
+from promptflow.core._utils import init_executable, render_jinja_template_content
 from promptflow.exceptions import UserErrorException
 
 
@@ -186,9 +185,9 @@ class AsyncFlow(FlowBase):
 
 
 class Prompty(FlowBase):
-    """A Prompt represents a non-dag flow, which uses prompty file to define the flow.
-    The prompty file is divided into two parts, the first part is in YAML format and contains connection
-    and model information. The second part is the prompt template.
+    """A prompty is a prompt with predefined metadata like inputs, and can be executed directly like a flow.
+    A prompty is represented as a templated markdown file with a modified front matter.
+    The front matter is a yaml file that contains meta fields like connection, parameters, inputs, etc..
 
     Prompty example:
     .. code-block:: yaml
@@ -218,10 +217,24 @@ class Prompty(FlowBase):
 
     """
 
-    def __init__(self, path: Union[str, PathLike], **kwargs):
+    def __init__(
+        self,
+        path: Union[str, PathLike],
+        api: str = None,
+        connection: Union[str, dict] = None,
+        parameters: dict = None,
+        **kwargs,
+    ):
         # prompty file path
         path = Path(path)
-        configs, self.template = self._parse_prompty(path)
+        configs, self._template = self._parse_prompty(path)
+        configs["api"] = api or configs.get("api", "chat")
+        configs["connection"] = connection or configs.get("connection", None)
+        if parameters:
+            if configs.get("parameters", {}):
+                configs["parameters"].update(parameters)
+            else:
+                configs["parameters"] = parameters
         for k in list(kwargs.keys()):
             if k in configs:
                 value = kwargs.pop(k)
@@ -230,10 +243,10 @@ class Prompty(FlowBase):
                 else:
                     configs[k] = value
         configs["inputs"] = self._resolve_inputs(configs.get("inputs", {}))
-        self.connection = configs.get("connection", "")
-        self.parameters = configs.get("parameters", {})
-        self.api = configs["api"]
-        self.inputs = configs["inputs"]
+        self._connection = configs["connection"]
+        self._parameters = configs["parameters"]
+        self._api = configs["api"]
+        self._inputs = configs["inputs"]
         super().__init__(code=path.parent, path=path, data=configs, content_hash=None, **kwargs)
 
     @classmethod
@@ -297,7 +310,7 @@ class Prompty(FlowBase):
     def _validate_inputs(self, input_values):
         resolved_inputs = {}
         missing_inputs = []
-        for input_name, value in self.inputs.items():
+        for input_name, value in self._inputs.items():
             if input_name not in input_values and "default" not in value:
                 missing_inputs.append(input_name)
                 continue
@@ -321,19 +334,19 @@ class Prompty(FlowBase):
         if args:
             raise UserErrorException("Prompty can only be called with keyword arguments.")
         # 1. init client
-        connection = get_connection(self.connection)
+        connection = get_connection(self._connection)
         api_client = get_open_ai_client_by_connection(connection=connection)
 
         # 2. prepare params
         # TODO validate function in params
-        params = copy.copy(self.parameters)
+        params = copy.copy(self._parameters)
         if isinstance(connection, AzureOpenAIConnection):
             params["model"] = params.pop("deployment_name")
             params["extra_headers"] = {"ms-azure-ai-promptflow-called-from": "promptflow-core"}
 
         # 3.deal with prompt
         inputs = self._validate_inputs(kwargs)
-        prompt = preprocess_template_string(self.template)
+        prompt = preprocess_template_string(self._template)
         referenced_images = find_referenced_image_set(inputs)
 
         # convert list type into ChatInputList type
@@ -341,7 +354,7 @@ class Prompty(FlowBase):
         rendered_prompt = render_jinja_template_content(
             template_content=prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs
         )
-        if self.api == "completion":
+        if self._api == "completion":
             params["prompt"] = rendered_prompt
             return api_client.completions.create(**params).choices[0].text
         else:

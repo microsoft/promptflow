@@ -213,7 +213,7 @@ def variant_overwrite_context(
     """Override variant and connections in the flow."""
     flow_dag = flow._data
     flow_dir_path = Path(flow.code)
-    if flow.additional_includes:
+    if getattr(flow, "additional_includes", []):
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
             if not isinstance(flow, FlexFlow):

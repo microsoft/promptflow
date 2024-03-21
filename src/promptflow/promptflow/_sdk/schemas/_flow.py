@@ -83,7 +83,7 @@ class EagerFlowSchema(BaseFlowSchema):
 class PromptySchema(BaseFlowSchema):
     """Schema for prompty."""
 
-    api = fields.Str(required=True)
+    api = fields.Str(default="chat")
     connection = UnionField([fields.Dict(required=True), fields.Str(required=True)])
     parameters = fields.Dict()
     inputs = fields.Dict()

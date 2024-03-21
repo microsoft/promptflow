@@ -108,7 +108,7 @@ class RunSubmitter:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
         # for python, we can get metadata in-memory, so no need to dump them first
-        if flow.language != FlowLanguage.Python:
+        if getattr(flow, "language", FlowLanguage.Python) != FlowLanguage.Python:
             from promptflow._proxy import ProxyFactory
 
             # variants are resolved in the context, so we can't move this logic to Operations for now

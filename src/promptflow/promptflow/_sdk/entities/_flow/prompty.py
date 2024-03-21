@@ -5,14 +5,16 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Union
 
-from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
+from promptflow.core._flow import Prompty as CorePrompty
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .base import FlowBase
 
 
 class Prompty(FlowBase):
+    __doc__ = CorePrompty.__doc__
+
     def __init__(
         self,
         path: Union[str, PathLike],
@@ -28,18 +30,8 @@ class Prompty(FlowBase):
 
     # region overrides
 
-    @property
-    def language(self) -> str:
-        return FlowLanguage.Python
-
-    @property
-    def additional_includes(self) -> list:
-        return []
-
     @classmethod
     def _load(cls, path: Path, raise_error=True, **kwargs):
-        from promptflow.core._flow import Prompty as CorePrompty
-
         core_prompty = CorePrompty(path=path, **kwargs)
         # raise validation error on unknown fields
         if raise_error:
