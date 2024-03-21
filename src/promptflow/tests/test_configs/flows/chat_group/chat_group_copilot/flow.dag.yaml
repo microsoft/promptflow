@@ -1,0 +1,35 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    default: What's human?
+  model:
+    type: string
+    default: gpt-3.5-turbo
+  conversation_history:
+    type: list
+outputs:
+  output:
+    type: string
+    reference: ${llm.output}
+nodes:
+- name: prompt
+  type: prompt
+  inputs:
+    question: ${inputs.question}
+    conversation_history: ${inputs.conversation_history}
+  source:
+    type: code
+    path: prompt.jinja2
+- name: llm
+  type: llm
+  inputs:
+    prompt: ${prompt.output}
+    deployment_name: gpt-35-turbo
+    model: ${inputs.model}
+    max_tokens: '120'
+  source:
+    type: code
+    path: prompt.jinja2
+  connection: azure_open_ai_connection
+  api: chat

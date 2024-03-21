@@ -69,7 +69,7 @@ class BatchEngine:
 
     def __init__(
         self,
-        flow_file: Path,
+        flow_file: Optional[Path] = None,
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
@@ -112,6 +112,10 @@ class BatchEngine:
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
         self._chat_group_roles = chat_group_roles
+        if chat_group_roles is not None:
+            for chat_role in chat_group_roles:
+                chat_role.working_dir = Flow._resolve_working_dir(chat_role.flow_file, chat_role.working_dir)
+
         self._max_turn = max_turn
 
         self._connections = connections
@@ -168,6 +172,8 @@ class BatchEngine:
         """
         try:
             self._start_time = datetime.utcnow()
+            if self._chat_group_roles is not None:
+                self._working_dir = self._chat_group_roles[0].working_dir
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
                 self._executor_proxy = ProxyFactory().create_executor_proxy(
@@ -180,6 +186,7 @@ class BatchEngine:
                     chat_group_roles = self._chat_group_roles,
                     max_turn = self._max_turn,
                     run_id = run_id,
+                    input_dirs = input_dirs
                 )
                 try:
                     # register signal handler for python flow in the main thread
@@ -203,6 +210,9 @@ class BatchEngine:
                         # resolve input data from input dirs and apply inputs mapping
                         batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    else:
+                        # place holder
+                        batch_inputs = self._executor_proxy._batch_inputs[0]
 
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
@@ -386,7 +396,7 @@ class BatchEngine:
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         # if the flow is None, we don't need to apply default value for inputs.
-        if not self._is_eager_flow:
+        if not self._is_eager_flow and self._flow_file is not None:
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
@@ -419,24 +429,26 @@ class BatchEngine:
         else:
             # TODO: Enable batch timeout for other api based executor proxy
             await self._exec_batch(line_results, batch_inputs, run_id)
-        handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        # persist outputs to output dir
-        outputs = [
-            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
-            for r in line_results
-            if r.run_info.status == Status.Completed
-        ]
-        outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
-        self._persist_outputs(outputs, output_dir)
+
+        if not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy):
+            handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+            # persist outputs to output dir
+            outputs = [
+                {LINE_NUMBER_KEY: r.run_info.index, **r.output}
+                for r in line_results
+                if r.run_info.status == Status.Completed
+            ]
+            outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
+            self._persist_outputs(outputs, output_dir)
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout:
+        if not is_timeout and not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy) :
             # execute aggregation nodes
             aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
             self._update_aggr_result(aggr_result, aggr_exec_result)
-        else:
+        elif is_timeout:
             ex = BatchRunTimeoutError(
                 message_format=(
                     "The batch run failed due to timeout [{batch_timeout_sec}s]. "
@@ -467,7 +479,8 @@ class BatchEngine:
         while completed_line < total_lines:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
-            self._persist_run_info(completed_line_results)
+            if not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy):
+                self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             log_progress(
                 self._start_time,

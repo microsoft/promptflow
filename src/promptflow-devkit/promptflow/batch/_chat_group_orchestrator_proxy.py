@@ -13,12 +13,15 @@ from promptflow.storage._run_storage import AbstractRunStorage
 class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
     def __init__(
         self,
+        orchestrator: ChatGroupOrchestrator,
+        batch_inputs: List[List[Dict]],
         **kwargs
     ):
-        self._orchestrator = None
-        self._batch_inputs = None
+        self._orchestrator = orchestrator
+        self._batch_inputs = batch_inputs
         super().__init__(**kwargs)
 
+    @classmethod
     async def create(
         cls,
         flow_file: Path,
@@ -26,24 +29,29 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
-        chat_group_roles: Optional[List[ChatGroupRole]] = None,
-        max_turn: Optional[int] = None,
-        input_dirs: Optional[Dict[str, str]] = None,
-        max_lines_count: Optional[int] = None,
-    ) -> "AbstractExecutorProxy":
+        **kwargs
+        # chat_group_roles: Optional[List[ChatGroupRole]] = None,
+        # max_turn: Optional[int] = None,
+        # input_dirs: Optional[Dict[str, str]] = None,
+        # max_lines_count: Optional[int] = None
+    ) -> "ChatGroupOrchestratorProxy":
         """Create a new executor"""
+        chat_group_roles: List[ChatGroupRole] = kwargs.get("chat_group_roles")
+        max_turn = kwargs.get("max_turn")
+        input_dirs: Dict[str, str] = kwargs.get("input_dirs")
+        max_lines_count = kwargs.get("max_lines_count", None)
 
-        cls._orchestrator = ChatGroupOrchestrator(chat_group_roles, max_turn)
-        cls._batch_inputs = cls._process_batch_inputs(chat_group_roles, input_dirs, max_lines_count)
+        orchestrator = ChatGroupOrchestrator.create(chat_group_roles, max_turn, storage)
+        batch_inputs = ChatGroupOrchestratorProxy.process_batch_inputs(chat_group_roles, input_dirs, max_lines_count)
         
-        return cls(ChatGroupOrchestratorProxy)
+        return cls(orchestrator, batch_inputs)
     
     async def destroy(self):
         """Destroy the executor"""
         pass
 
     async def exec_line_async(
-        cls,
+        self,
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
@@ -51,9 +59,11 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         """schedule runs for a line, submit roleA and format its output as roleB's input.
         Then submit roleB until the max_turn.
         """
-        return cls._orchestrator._schedule_runs(index, inputs, run_id, cls._batch_inputs[index])
-    
-    def _process_batch_inputs(
+        return await self._orchestrator._schedule_runs(index, inputs, run_id, self._batch_inputs)
+
+    @classmethod
+    def process_batch_inputs(
+            cls,
             chat_group_roles: List[ChatGroupRole],
             input_dirs: Dict[str, str],
             max_lines_count: Optional[int] = None) -> List[List[Dict]]:

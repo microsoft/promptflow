@@ -16,6 +16,7 @@ from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
+from promptflow.contracts.flow import ChatGroupRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
@@ -501,3 +502,18 @@ class TestBatch:
             contents = load_jsonl(file_path)
             for content in contents:
                 assert content["run_info"]["root_run_id"] == resume_run_id
+
+    @pytest.mark.parametrize(
+        "simulation_flow, copilot_flow, max_turn",
+        [("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 3)],
+    )
+    def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, dev_connections):
+        simulation_role = ChatGroupRole(flow_file=get_yaml_file(simulation_flow), role="user", stop_signal="[STOP]", working_dir=get_flow_folder(simulation_flow), connections=dev_connections, inputs_mapping={"question": "${data.question}"})
+        copilot_role = ChatGroupRole(flow_file=get_yaml_file(copilot_flow), role="assistant", stop_signal="[STOP]", working_dir=get_flow_folder(copilot_flow), connections=dev_connections, inputs_mapping={"topic": "${data.topic}"})
+        batchEngine = BatchEngine(flow_file=None, working_dir=None, chat_group_roles=[simulation_role, copilot_role], max_turn=max_turn)
+        input_dirs = {"data": get_flow_inputs_file("chat_group", file_name="inputs.json")}
+        output_dir = Path(mkdtemp())
+        batch_results = batchEngine.run(input_dirs, {}, output_dir)
+
+        assert batch_results.total_lines == 3
+
