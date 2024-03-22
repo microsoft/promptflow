@@ -41,10 +41,6 @@ from promptflow._core.tools_manager import (
     retrieve_tool_func_result,
 )
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
-from promptflow._sdk._utils import (
-    get_used_connection_names_from_environment_variables,
-    update_environment_variables_with_connections,
-)
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.dataclass_serializer import deserialize_dataclass
@@ -105,6 +101,10 @@ from promptflow.core._serving.utils import (
     load_request_data,
     streaming_response_required,
     validate_request_data,
+)
+from promptflow.core._utils import (
+    get_used_connection_names_from_environment_variables,
+    update_environment_variables_with_connections,
 )
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
