@@ -47,13 +47,3 @@ nodes:
   activate:
     when: ${validate_inputs.output}
     is: true
-- name: aggregate
-  type: python
-  source:
-    type: code
-    path: aggregate.py
-  inputs:
-    results: ${evaluate_with_rai_service.output}
-    thresholds: ${inputs.threshold}
-    metric_names: ${inputs.metric_name}
-  aggregation: true

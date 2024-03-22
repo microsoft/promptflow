@@ -54,11 +54,3 @@ nodes:
   inputs:
     llm_output: ${query_llm.output}
   use_variants: false
-- name: aggregate
-  type: python
-  source:
-    type: code
-    path: aggregate.py
-  inputs:
-    results: ${parse_score.output}
-  aggregation: true
