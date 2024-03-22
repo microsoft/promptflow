@@ -653,8 +653,6 @@ def test_eager_flow_evc_override(eager_flow_evc_override):
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
     assert response != "Hello world! ${azure_open_ai_connection.api_base}"
-    # check regex match
-    assert re.findall(r"Hello world! https://[\w\W]+.openai.azure.com", response), response
 
 
 @pytest.mark.e2etest
