@@ -4,7 +4,6 @@ from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow._proxy._base_proxy_factory import BaseProxyFactory
-from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
@@ -39,7 +38,6 @@ class ChatGroupOrchestrator:
     def _create_executor_proxy(self, **kwargs) -> List[AbstractExecutorProxy]:
         executor_proxy_list = []
         executor_proxy_factory = BaseProxyFactory()
-        executor_proxy_factory.register_executor("python", SingleLinePythonExecutorProxy)
         for chat_role in self._chat_group_roles:
             executor_proxy = executor_proxy_factory.create_executor_proxy(
                 flow_file=chat_role.flow_file,

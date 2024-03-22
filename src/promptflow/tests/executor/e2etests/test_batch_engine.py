@@ -10,12 +10,14 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
+from promptflow._proxy._base_proxy_factory import BaseProxyFactory
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
+from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from promptflow.contracts.flow import ChatGroupRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
@@ -510,9 +512,12 @@ class TestBatch:
     def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, dev_connections):
         simulation_role = ChatGroupRole(flow_file=get_yaml_file(simulation_flow), role="user", stop_signal="[STOP]", working_dir=get_flow_folder(simulation_flow), connections=dev_connections, inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"})
         copilot_role = ChatGroupRole(flow_file=get_yaml_file(copilot_flow), role="assistant", stop_signal="[STOP]", working_dir=get_flow_folder(copilot_flow), connections=dev_connections, inputs_mapping={"question": "${data.question}"})
-        batchEngine = BatchEngine(flow_file=None, working_dir=get_flow_folder("chat_group"), chat_group_roles=[simulation_role, copilot_role], max_turn=max_turn)
         input_dirs = {"data": get_flow_inputs_file("chat_group", file_name="inputs.json")}
         output_dir = Path(mkdtemp())
+
+        # register python proxy since current python proxy cannot execute single line
+        BaseProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        batchEngine = BatchEngine(flow_file=None, working_dir=get_flow_folder("chat_group"), chat_group_roles=[simulation_role, copilot_role], max_turn=max_turn)
         batch_result = batchEngine.run(input_dirs, {}, output_dir)
 
         nlines = 3
