@@ -17,18 +17,6 @@
       },
       "function": "line_process"
     },
-    "aggregate.py": {
-      "type": "python",
-      "inputs": {
-        "results": {
-          "type": [
-            "object"
-          ]
-        }
-      },
-      "source": "aggregate.py",
-      "function": "aggregate"
-    },
     "f1_score.py": {
       "type": "python",
       "inputs": {
