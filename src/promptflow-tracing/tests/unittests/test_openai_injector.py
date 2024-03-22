@@ -18,8 +18,6 @@ from promptflow.tracing._integrations._openai_injector import (
     inject_operation_headers,
     inject_sync,
     recover_openai_api,
-    _legacy_openai_apis,
-    _openai_apis,
 )
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._tracer import Tracer
@@ -278,27 +276,43 @@ async def test_openai_generator_proxy_async():
     "is_legacy, expected_apis_with_injectors",
     [
         (
-            False,
+            True,
             [
                 (
-                    _openai_apis()[0],
+                    (
+                        ("openai", "Completion", "create", TraceType.LLM),
+                        ("openai", "ChatCompletion", "create", TraceType.LLM),
+                        ("openai", "Embedding", "create", TraceType.EMBEDDING),
+                    ),
                     inject_sync,
                 ),
                 (
-                    _openai_apis()[1],
+                    (
+                        ("openai", "Completion", "acreate", TraceType.LLM),
+                        ("openai", "ChatCompletion", "acreate", TraceType.LLM),
+                        ("openai", "Embedding", "acreate", TraceType.EMBEDDING),
+                    ),
                     inject_async,
                 ),
             ],
         ),
         (
-            True,
+            False,
             [
                 (
-                    _legacy_openai_apis()[0],
+                    (
+                        ("openai.resources.chat", "Completions", "create", TraceType.LLM),
+                        ("openai.resources", "Completions", "create", TraceType.LLM),
+                        ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING),
+                    ),
                     inject_sync,
                 ),
                 (
-                    _legacy_openai_apis()[1],
+                    (
+                        ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM),
+                        ("openai.resources", "AsyncCompletions", "create", TraceType.LLM),
+                        ("openai.resources", "AsyncEmbeddings", "create", TraceType.EMBEDDING),
+                    ),
                     inject_async,
                 ),
             ],
@@ -317,13 +331,13 @@ def test_api_list(is_legacy, expected_apis_with_injectors):
     "apis_with_injectors, expected_output, expected_logs",
     [
         (
-            [((("MockModule", "MockAPI", "create", TraceType.LLM, "Mock.create"),), inject_sync)],
-            [(MockAPI, "create", TraceType.LLM, inject_sync, "Mock.create")],
+            [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_sync)],
+            [(MockAPI, "create", TraceType.LLM, inject_sync)],
             [],
         ),
         (
-            [((("MockModule", "MockAPI", "create", TraceType.LLM, "Mock.acreate"),), inject_async)],
-            [(MockAPI, "create", TraceType.LLM, inject_async, "Mock.acreate")],
+            [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_async)],
+            [(MockAPI, "create", TraceType.LLM, inject_async)],
             [],
         ),
     ],
@@ -335,32 +349,21 @@ def test_generate_api_and_injector(apis_with_injectors, expected_output, expecte
             # Run the generator and collect the output
             result = list(_generate_api_and_injector(apis_with_injectors))
 
+        # Check if the result matches the expected output
+        assert result == expected_output
+
         # Check if the logs match the expected logs
         assert len(caplog.records) == len(expected_logs)
         for record, expected_message in zip(caplog.records, expected_logs):
             assert expected_message in record.message
-
-        # Check if the result matches the expected output
-        assert result == expected_output
 
     mock_import_module.assert_called_with("MockModule")
 
 
 def test_generate_api_and_injector_attribute_error_logging(caplog):
     apis = [
-        ((("NonExistentModule", "NonExistentAPI", "create", TraceType.LLM, "create"),), MagicMock()),
-        (
-            (
-                (
-                    "MockModuleMissingMethod",
-                    "MockAPIMissingMethod",
-                    "missing_method",
-                    "missing_trace_type",
-                    "missing_name",
-                ),
-            ),
-            MagicMock(),
-        ),
+        ((("NonExistentModule", "NonExistentAPI", "create", TraceType.LLM),), MagicMock()),
+        ((("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method", "missing_trace_type"),), MagicMock()),
     ]
 
     # Set up the side effect for the mock
@@ -404,7 +407,7 @@ def test_inject_and_recover_openai_api():
         pass
 
     # Real injector function that adds an _original attribute
-    def injector(f, trace_type, name):
+    def injector(f, trace_type):
         def wrapper_fun(*args, **kwargs):
             return f(*args, **kwargs)
 
@@ -422,8 +425,8 @@ def test_inject_and_recover_openai_api():
     with patch(
         "promptflow.tracing._integrations._openai_injector.available_openai_apis_and_injectors",
         return_value=[
-            (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector, "create"),
-            (FakeAPIWithOriginal, "create", TraceType.LLM, injector, "create"),
+            (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector),
+            (FakeAPIWithOriginal, "create", TraceType.LLM, injector),
         ],
     ):
         # Call the function to inject the APIs

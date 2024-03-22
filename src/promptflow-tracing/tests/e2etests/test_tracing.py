@@ -148,18 +148,17 @@ class TestTracing:
         self.validate_openai_tokens(span_list)
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                msg = f"Span attributes is not expected: {span.attributes}"
-                assert "ada" in span.attributes.get("llm.response.model", ""), msg
+                assert "ada" in span.attributes.get("llm.response.model", "")
                 embeddings = span.attributes.get("embedding.embeddings", "")
-                assert "embedding.vector" in embeddings, msg
-                assert "embedding.text" in embeddings, msg
+                assert "embedding.vector" in embeddings
+                assert "embedding.text" in embeddings
                 if isinstance(inputs["input"], list):
                     # If the input is a token array, which is list of int, the attribute should contains
                     # the length of the token array '<len(token_array) dimensional token>'.
-                    assert "dimensional token" in embeddings, msg
+                    assert "dimensional token" in embeddings
                 else:
                     # If the input is a string, the attribute should contains the original input string.
-                    assert inputs["input"] in embeddings, msg
+                    assert inputs["input"] in embeddings
 
     def test_otel_trace_with_multiple_functions(self):
         execute_function_in_subprocess(self.assert_otel_traces_with_multiple_functions)

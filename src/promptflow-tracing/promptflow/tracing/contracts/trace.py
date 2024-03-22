@@ -52,4 +52,3 @@ class Trace:
     node_name: Optional[str] = None  # The node name of the trace, used for flow level trace
     parent_id: str = ""  # The parent trace id of the trace
     id: str = ""  # The trace id
-    function: str = ""  # The function name of the trace
