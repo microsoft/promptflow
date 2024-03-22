@@ -10,7 +10,12 @@ from typing import Union
 import requests
 
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import TRACE_LOCAL_TO_CLOUD_EXPERIMENT_NAME, ContextAttributeKey, FlowRunProperties
+from promptflow._sdk._constants import (
+    TRACE_LOCAL_TO_CLOUD_EXPERIMENT_NAME,
+    AzureRunTypes,
+    ContextAttributeKey,
+    FlowRunProperties,
+)
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -199,7 +204,7 @@ class RunSubmitter:
                 end_time=datetime.datetime.now(),
                 system_metrics=system_metrics,
             )
-            self._create_run_record_in_azure(run)
+            self._create_run_record_in_azure(run, status)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -230,7 +235,7 @@ class RunSubmitter:
                 f"current column mapping contains all static values: {column_mapping}"
             )
 
-    def _create_run_record_in_azure(self, run: Run) -> None:
+    def _create_run_record_in_azure(self, run: Run, status: str) -> None:
         # exclusive function for local to cloud feature
         # which will be enabled when user set trace.provider in pf config
         from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
@@ -255,7 +260,10 @@ class RunSubmitter:
                 pf_client.runs._run_history_endpoint_url
                 + f"/experiments/{TRACE_LOCAL_TO_CLOUD_EXPERIMENT_NAME}/runs/{run.name}"
             )
-            payload = {"status": run.status}
+            payload = {
+                "status": status,
+                "runType": AzureRunTypes.EVALUATION if run.run else AzureRunTypes.BATCH,
+            }
             response = requests.patch(url, headers=pf_client.runs._get_headers(), json=payload)
             if response.status_code != 200:
                 raise RunRequestException(
