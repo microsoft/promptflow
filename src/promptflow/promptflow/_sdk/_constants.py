@@ -288,6 +288,7 @@ class LocalStorageFilenames:
     DETAIL = "detail.json"
     METRICS = "metrics.json"
     LOG = "logs.txt"
+    FLOW_LOGS_FOLDER = "flow_logs"
     EXCEPTION = "error.json"
     META = "meta.json"
 
