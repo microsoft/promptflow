@@ -17,18 +17,17 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
     :type model_config: AzureOpenAIConnection
     :param deployment_name: Deployment to be used which has Azure OpenAI model.
     :type deployment_name: AzureOpenAIConnection
-    :return: A function that evaluates groundedness.
+    :return: A function that evaluates fluency.
     :rtype: function
 
     **Usage**
 
     .. code-block:: python
 
-        eval_fn = groundedness.init(model_config, deployment_name="gpt-4")
+        eval_fn = fluency.init(model_config)
         result = eval_fn(
-            answer="The capital of Japan is Tokyo.",
-            context="Tokyo is Japan's capital, known for its blend of traditional culture \
-                and technological advancements.")
+            question="What is the capital of Japan?",
+            answer="The capital of Japan is Tokyo.")
     """
 
     # Load the flow as function
@@ -49,18 +48,9 @@ def init(model_config: AzureOpenAIConnection, deployment_name: str):
         }
     }
 
-    def eval_fn(*, answer: str, context: str, **kwargs):
-        """Evaluate groundedness of the answer in the context.
-
-        :param answer: The answer to be evaluated.
-        :type answer: str
-        :param context: The context in which the answer is evaluated.
-        :type context: str
-        :return: The groundedness score.
-        :rtype: dict
-        """
+    def eval_fn(*, question: str, answer: str, **kwargs):
 
         # Run the evaluation flow
-        return f(answer=answer, context=context)
+        return f(question=question, answer=answer)
 
     return eval_fn

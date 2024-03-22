@@ -2,15 +2,17 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: requirements.txt
 inputs:
+  question:
+    type: string
+    default: Which tent is the most waterproof?
   answer:
     type: string
     default: The Alpine Explorer Tent is the most waterproof.
-  context:
+  ground_truth:
     type: string
-    default: From the our product list, the alpine explorer tent is the most
-      waterproof. The Adventure Dining Table has higher weight.
+    default: From the our product list, the alpine explorer tent is the most waterproof.
 outputs:
-  gpt_groundedness:
+  gpt_similarity:
     type: string
     reference: ${parse_score.output}
 nodes:
@@ -21,7 +23,8 @@ nodes:
     path: validate_inputs.py
   inputs:
     answer: ${inputs.answer}
-    context: ${inputs.context}
+    question: ${inputs.question}
+    ground_truth: ${inputs.ground_truth}
 - name: query_llm
   type: llm
   source:
@@ -34,8 +37,9 @@ nodes:
     max_tokens: 1
     presence_penalty: 0
     frequency_penalty: 0
+    question: ${inputs.question}
     answer: ${inputs.answer}
-    context: ${inputs.context}
+    ground_truth: ${inputs.ground_truth}
   connection: open_ai_connection
   api: chat
   use_variants: false

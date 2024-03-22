@@ -32,11 +32,3 @@ nodes:
   activate:
     when: ${validate_inputs.output}
     is: true
-- name: aggregate
-  type: python
-  source:
-    type: code
-    path: aggregate.py
-  inputs:
-    results: ${compute_f1_score.output}
-  aggregation: true

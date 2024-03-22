@@ -18,8 +18,8 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
     user_text = f"<Human>{question}</><System>{answer}</>"
     normalized_user_text = user_text.replace("'", "\\\"")
     payload = {
-        "UserTextList": [normalized_user_text], 
-        "AnnotationTask": Tasks.CONTENT_HARM, 
+        "UserTextList": [normalized_user_text],
+        "AnnotationTask": Tasks.CONTENT_HARM,
         "MetricList": [metric]
     }
 
@@ -29,7 +29,7 @@ def submit_request(question: str, answer: str, metric: str, rai_svc_url: str, cr
         'Authorization': f'Bearer {bearer_token}',
         'Content-Type': 'application/json'
     }
-    
+
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 202:
         print("Fail evaluating '%s' with error message: %s" %(payload["UserTextList"], response.text))
@@ -54,7 +54,7 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response.json()
-        
+
         time_elapsed = time.time() - start
         if time_elapsed > RAIService.TIMEOUT:
             raise TimeoutError(f"Fetching annotation result times out after {time_elapsed:.2f} seconds")
@@ -64,12 +64,18 @@ def fetch_result(operation_id: str, rai_svc_url: str, credential: TokenCredentia
         time.sleep(sleep_time)
 
 def parse_response(batch_response: List[dict], metric_name: str) -> List[List[dict]]:
+    # Fix the metric name if it's "hate_fairness"
+    # Eventually we will remove this fix once the RAI service is updated
+    key = metric_name
+    if key == "hate_fairness":
+        key = "hate_unfairness"
+
     result = {
-        metric_name: np.nan,
-        metric_name + "_score": np.nan,
-        metric_name + "_reasoning": ""
+        key: np.nan,
+        key + "_score": np.nan,
+        key + "_reason": ""
     }
-    
+
     response = batch_response[0]
     if metric_name not in response:
         return result
@@ -81,13 +87,13 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
         m = re.findall(r"name '(\w+)' is not defined", str(e))
         if m:
             for word in m:
-                response[metric_name] = response[key].replace(word, word.title())
+                response[metric_name] = response[metric_name].replace(word, word.title())
             harm_response = eval(response[metric_name])
         else:
             harm_response = ""
     except:
         harm_response = response[metric_name]
-        
+
     if harm_response != "" and isinstance(harm_response, dict):
         ### check if "output" is one key in harm_response
         if "output" in harm_response:
@@ -100,50 +106,50 @@ def parse_response(batch_response: List[dict], metric_name: str) -> List[List[di
             metric_value = 0 if harm_response['valid'] else np.nan
         else:
             metric_value = np.nan
-        
-        # get reasoning
+
+        # get reason
         if "reasoning" in harm_response:
-            reasoning = harm_response['reasoning']
+            reason = harm_response['reasoning']
         elif "reason" in harm_response:
-            reasoning = harm_response['reason']
+            reason = harm_response['reason']
         else:
-            reasoning = ""
+            reason = ""
     elif harm_response != "" and isinstance(harm_response, str):
         metric_value_match = re.findall(r"(\b[0-7])\b", harm_response)
         if metric_value_match:
             metric_value = int(metric_value_match[0])
         else:
             metric_value = np.nan
-        reasoning = harm_response
+        reason = harm_response
     elif harm_response != "" and (isinstance(harm_response, int) or isinstance(harm_response, float)):
         if harm_response >= 0 and harm_response <= 7:
             metric_value = harm_response
         else:
             metric_value = np.nan
-        reasoning = ""
+        reason = ""
     else:
         metric_value = np.nan
-        reasoning = ""
+        reason = ""
 
     harm_score = int(metric_value)
-    result[metric_name] = get_harm_severity_level(harm_score)
-    result[metric_name + "_score"] = harm_score
-    result[metric_name + "_reasoning"] = reasoning
+    result[key] = get_harm_severity_level(harm_score)
+    result[key + "_score"] = harm_score
+    result[key + "_reason"] = reason
 
     return result
 
 def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
     from azure.ai.ml import MLClient
     ml_client = MLClient(
-        credential=credential, 
-        subscription_id=project_scope['subscription_id'], 
+        credential=credential,
+        subscription_id=project_scope['subscription_id'],
         resource_group_name=project_scope['resource_group_name'])
-    
+
     ws = ml_client.workspaces.get(project_scope['project_name'])
     response = requests.get(ws.discovery_url)
     if response.status_code != 200:
         raise Exception("Failed to retrieve the discovery service URL")
-    
+
     subscription_id = project_scope['subscription_id']
     resource_group_name = project_scope['resource_group_name']
     project_name = project_scope['project_name']
@@ -157,10 +163,10 @@ def get_rai_svc_url(project_scope: dict, credential: TokenCredential):
 
 @tool
 def evaluate_with_rai_service(
-    question: str, 
-    answer: str, 
-    metric_name: str, 
-    project_scope: dict, 
+    question: str,
+    answer: str,
+    metric_name: str,
+    project_scope: dict,
     credential: TokenCredential):
 
     # Get RAI service URL from discovery service and check service availability
