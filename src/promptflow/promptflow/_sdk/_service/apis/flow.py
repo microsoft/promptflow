@@ -1,20 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import json
 import os
 import shutil
 import uuid
 from pathlib import Path
-
-from flask import make_response
 from flask_restx import reqparse
 
-from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
-from promptflow._sdk._utils import json_load, read_write_by_user
-from promptflow.exceptions import UserErrorException
+
 
 api = Namespace("Flows", description="Flows Management")
 
@@ -37,14 +33,6 @@ flow_test_model = api.model(
         "experiment": fields.String(required=False, description="Path of experiment template"),
         "inputs": fields.Nested(dict_field, required=False),
         "environment_variables": fields.Nested(dict_field, required=False),
-    },
-)
-
-flow_ux_input_model = api.model(
-    "FlowUxInput",
-    {
-        "flow": fields.String(required=True, description="Path to flow directory."),
-        "ux_inputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
     },
 )
 
@@ -92,44 +80,3 @@ class FlowTest(Resource):
             if remove_dir:
                 shutil.rmtree(output_path)
         return result
-
-
-@api.route("/ux_inputs")
-class FlowUxInputs(Resource):
-    @api.response(code=200, description="Get the file content of file UX_INPUTS_JSON", model=dict_field)
-    @api.doc(description="Get the file content of file UX_INPUTS_JSON")
-    def get(self):
-        args = flow_path_parser.parse_args()
-        flow_path = args.flow
-        flow_path = decrypt_flow_path(flow_path)
-        if not os.path.exists(flow_path):
-            raise UserErrorException(f"The flow doesn't exist: {flow_path}")
-        if os.path.isdir(flow_path):
-            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-        else:
-            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-
-        if not flow_ux_inputs_path.exists():
-            flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
-        try:
-            ux_inputs = json_load(flow_ux_inputs_path)
-        except json.decoder.JSONDecodeError:
-            ux_inputs = {}
-        return ux_inputs
-
-    @api.response(code=200, description="Set the file content of file UX_INPUTS_JSON", model=dict_field)
-    @api.doc(description="Set the file content of file UX_INPUTS_JSON")
-    @api.expect(flow_ux_input_model)
-    def post(self):
-        content = api.payload["ux_inputs"]
-        args = flow_path_parser.parse_args()
-        flow_path = args.flow
-        flow_path = decrypt_flow_path(flow_path)
-        if os.path.isdir(flow_path):
-            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-        else:
-            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-        flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
-        with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(content, f, ensure_ascii=False, indent=2)
-        return make_response("UX_INPUTS_JSON content updated successfully", 200)

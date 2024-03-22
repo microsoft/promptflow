@@ -277,7 +277,7 @@ class PFSOperations:
     def get_flow_ux_inputs(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
-        response = self._client.get(f"{self.Flow_URL_PREFIX}/ux_inputs", query_string=query_string)
+        response = self._client.get(f"{self.UI_URL_PREFIX}/ux_inputs", query_string=query_string)
         if status_code:
             assert status_code == response.status_code, response.text
         return response

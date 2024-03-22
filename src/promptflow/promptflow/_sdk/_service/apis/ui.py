@@ -3,16 +3,18 @@
 # ---------------------------------------------------------
 import base64
 import hashlib
+import json
 import os
 from pathlib import Path
 
-from flask import Response, current_app, render_template, send_from_directory, url_for
+from flask import Response, current_app, render_template, send_from_directory, url_for, make_response
 from flask_restx import reqparse
 from werkzeug.utils import safe_join
 
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, DEFAULT_ENCODING, UX_INPUTS_JSON
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
+from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
@@ -33,12 +35,30 @@ dict_field = api.schema_model("FlowDict", {"additionalProperties": True, "type":
 flow_path_parser = reqparse.RequestParser()
 flow_path_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
 
+flow_ux_input_model = api.model(
+    "FlowUxInput",
+    {
+        "flow": fields.String(required=True, description="Path to flow directory."),
+        "ux_inputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
+    },
+)
+
+
 image_path_parser = reqparse.RequestParser()
 image_path_parser.add_argument("image_path", type=str, required=True, location="args", help="Path of image.")
 
 yaml_parser = reqparse.RequestParser()
 yaml_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
 yaml_parser.add_argument("experiment", type=str, required=False, location="json", help="Path to experiment.")
+
+set_yaml_model = api.model(
+    "SetYaml",
+    {
+        "flow": fields.String(required=True, description="Path to flow directory."),
+        "experiment": fields.String(required=False, description="Path to flow directory."),
+        "inputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
+    },
+)
 
 
 @api.route("/chat")
@@ -136,6 +156,79 @@ class YamlGet(Resource):
         flow_path_dir, flow_path_file = resolve_flow_path(Path(flow_path))
         flow_info = load_yaml(flow_path_dir / flow_path_file)
         return flow_info
+
+    @api.response(code=200, description="Set the flow file content", model=dict_field)
+    @api.doc(description="Set the flow file content")
+    @api.expect(set_yaml_model)
+    def post(self):
+        content = api.payload["inputs"]
+        args = yaml_parser.parse_args()
+        flow = args.flow
+        flow = decrypt_flow_path(flow)
+        experiment = args.experiment
+        if experiment:
+            if os.path.isabs(experiment):
+                if not os.path.exists(experiment):
+                    raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
+                flow_path = experiment
+            else:
+                if os.path.isfile(flow):
+                    flow = os.path.dirname(flow)
+                flow_path = safe_join(flow, experiment)
+                if flow_path is None:
+                    message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
+                    raise UserErrorException(message)
+                if not os.path.exists(flow_path):
+                    raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
+        else:
+            if not os.path.exists(flow):
+                raise UserErrorException(f"The flow doesn't exist: {flow}")
+            flow_path = flow
+        flow_path.touch(mode=read_write_by_user(), exist_ok=True)
+        with open(flow_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(content, f, ensure_ascii=False, indent=2)
+        return make_response(f"{flow_path} content updated successfully", 200)
+
+
+@api.route("/ux_inputs")
+class FlowUxInputs(Resource):
+    @api.response(code=200, description="Get the file content of file UX_INPUTS_JSON", model=dict_field)
+    @api.doc(description="Get the file content of file UX_INPUTS_JSON")
+    def get(self):
+        args = flow_path_parser.parse_args()
+        flow_path = args.flow
+        flow_path = decrypt_flow_path(flow_path)
+        if not os.path.exists(flow_path):
+            raise UserErrorException(f"The flow doesn't exist: {flow_path}")
+        if os.path.isdir(flow_path):
+            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        else:
+            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+
+        if not flow_ux_inputs_path.exists():
+            flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
+        try:
+            ux_inputs = json_load(flow_ux_inputs_path)
+        except json.decoder.JSONDecodeError:
+            ux_inputs = {}
+        return ux_inputs
+
+    @api.response(code=200, description="Set the file content of file UX_INPUTS_JSON", model=dict_field)
+    @api.doc(description="Set the file content of file UX_INPUTS_JSON")
+    @api.expect(flow_ux_input_model)
+    def post(self):
+        content = api.payload["ux_inputs"]
+        args = flow_path_parser.parse_args()
+        flow_path = args.flow
+        flow_path = decrypt_flow_path(flow_path)
+        if os.path.isdir(flow_path):
+            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        else:
+            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
+        with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(content, f, ensure_ascii=False, indent=2)
+        return make_response(f"{flow_ux_inputs_path} content updated successfully", 200)
 
 
 def serve_trace_ui(path):
