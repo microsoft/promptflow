@@ -172,3 +172,5 @@ Find example flows using the `promptflow-azure-ai-language` package [here](https
 
 ## Contact
 Please reach out to Azure AI Language (<taincidents@microsoft.com>) with any issues.
+
+---------------------------
