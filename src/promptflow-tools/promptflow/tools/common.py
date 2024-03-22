@@ -124,6 +124,7 @@ def try_parse_name_and_content(role_prompt):
 
 
 def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
+    # TODO: support role "tool" and its_properties.
     if not valid_roles:
         valid_roles = ["system", "user", "assistant", "function"]
 
