@@ -4,7 +4,6 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from itertools import chain
 from typing import Any, List, Mapping
 
 from promptflow._utils.exception_utils import ExceptionPresenter, RootErrorCode
@@ -200,8 +199,13 @@ class BatchResult:
 
 
 def _get_node_run_infos(line_results: List[LineResult], aggr_result: AggregationResult):
-    line_node_run_infos = (
-        node_run_info for line_result in line_results for node_run_info in line_result.node_run_infos.values()
-    )
-    aggr_node_run_infos = (node_run_info for node_run_info in aggr_result.node_run_infos.values())
-    return chain(line_node_run_infos, aggr_node_run_infos)
+    node_run_infos = {node_run_info.node: node_run_info for node_run_info in aggr_result.node_run_infos.values()}
+    for line_result in line_results:
+        for node, node_run_info in line_result.node_run_infos.items():
+            # For resume runs, we only want to include the latest run info for aggregation node
+            # If the node in line_results is not in node_run_infos or not an aggregation node, add it to the result
+            if node not in node_run_infos:
+                yield node_run_info
+            # Otherwise, the node run info in node_run_infos will override the record in line_results
+
+    yield from node_run_infos.values()
