@@ -7,7 +7,7 @@ import time
 from typing import List, Mapping
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
+from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, BadRequestError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
@@ -348,7 +348,7 @@ def handle_openai_error(tries: int = 100, conn_error_tries: int = 10):
     `tries`: max times for the function invocation, type is int
     `conn_error_tries`: max times for the function invocation when connection error occurs, type is int
 
-    Note: 
+    Note:
     - The retry policy for APIConnectionError is different because retrying may not be beneficial
       if there is a genuine connection issue.
     """
