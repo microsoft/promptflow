@@ -103,7 +103,7 @@ class PromptflowServingApp(Flask):
             raise_ex=False,
             connections=self.connections_override,
             connections_name_overrides=self.connections_name_override,
-            environment_variables=environment_variables,
+            environment_variables=self.environment_variables,
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
             credential=self.credential,
