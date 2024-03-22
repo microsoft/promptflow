@@ -428,7 +428,7 @@ class ToolLoader:
         )
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
-        tool = node.source.tool if node and node.source else None
+        tool = node.source.tool
         return self.load_package_tool(tool)
 
     def load_script_tool(self, path: str, node_name: str) -> Tuple[types.ModuleType, Tool]:
@@ -454,7 +454,7 @@ class ToolLoader:
 
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
         """Load tool for script node."""
-        path = node.source.path if node and node.source else None
+        path = node.source.path
         return self.load_script_tool(path, node.name)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
