@@ -43,3 +43,51 @@ class RequiredEnvironmentVariablesNotSetError(CoreError):
 
     def __init__(self, env_vars: list, cls_name: str):
         super().__init__(f"Required environment variables {env_vars} to build {cls_name} not set.")
+
+
+class OpenURLFailed(SystemErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class BuildConnectionError(SystemErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class MissingRequiredPackage(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class UserAuthenticationError(UserErrorException):
+    """Exception raised when user authentication failed"""
+
+    pass
+
+
+class OpenURLUserAuthenticationError(UserAuthenticationError):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class OpenURLFailedUserError(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class UnknownConnectionType(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class UnsupportedConnectionAuthType(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
+class AccessDeniedError(UserErrorException):
+    """Exception raised when run info can not be found in storage"""
+
+    def __init__(self, operation: str, target: ErrorTarget):
+        super().__init__(message=f"Access is denied to perform operation {operation!r}", target=target)

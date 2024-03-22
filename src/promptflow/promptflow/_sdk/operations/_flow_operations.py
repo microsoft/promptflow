@@ -37,7 +37,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, parse_variant
+from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow, is_flex_flow, parse_variant
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -803,9 +803,9 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow = load_flow(source=flow)
-        if not isinstance(flow, Flow):
+        if is_flex_flow(yaml_dict=flow._data):
             # No tools meta for eager flow
-            return {}, {}
+            return {"package": {}, "code": {}}, {}
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(

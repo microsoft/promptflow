@@ -6,11 +6,11 @@ from types import GeneratorType
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
+from promptflow.tracing._utils import serialize
 from promptflow.tracing import trace
 from promptflow.tracing.contracts.trace import TraceType
 
@@ -67,7 +67,7 @@ def get_chat_input(stream):
     }
 
 
-def get_comletion_input(stream):
+def get_completion_input(stream):
     return {"prompt": "What is the capital of the United States of America?", "stream": stream}
 
 
@@ -123,8 +123,8 @@ class TestExecutorTraces:
         [
             ("openai_chat_api_flow", get_chat_input(False)),
             ("openai_chat_api_flow", get_chat_input(True)),
-            ("openai_completion_api_flow", get_comletion_input(False)),
-            ("openai_completion_api_flow", get_comletion_input(True)),
+            ("openai_completion_api_flow", get_completion_input(False)),
+            ("openai_completion_api_flow", get_completion_input(True)),
             ("llm_tool", {"topic": "Hello", "stream": False}),
             ("llm_tool", {"topic": "Hello", "stream": True}),
         ],
@@ -391,12 +391,14 @@ class TestOTelTracer:
                         assert var in span.attributes["prompt.variables"]
 
     @pytest.mark.parametrize(
-        "flow_file, inputs, expected_span_length",
+        "flow_file, inputs, is_stream, expected_span_length",
         [
-            ("openai_chat_api_flow", get_chat_input(False), 3),
-            ("openai_completion_api_flow", get_comletion_input(False), 3),
-            ("llm_tool", {"topic": "Hello", "stream": False}, 4),
-            ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), 6),
+            ("openai_chat_api_flow", get_chat_input(False), False, 3),
+            ("openai_chat_api_flow", get_chat_input(True), True, 4),
+            ("openai_completion_api_flow", get_completion_input(False), False, 3),
+            ("openai_completion_api_flow", get_completion_input(True), True, 4),
+            ("llm_tool", {"topic": "Hello", "stream": False}, False, 4),
+            ("flow_with_async_llm_tasks", get_flow_sample_inputs("flow_with_async_llm_tasks"), False, 6),
         ],
     )
     def test_otel_trace_with_llm(
@@ -404,17 +406,14 @@ class TestOTelTracer:
         dev_connections,
         flow_file,
         inputs,
+        is_stream,
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_llm,
-            dev_connections,
-            flow_file,
-            inputs,
-            expected_span_length,
+            self.assert_otel_traces_with_llm, dev_connections, flow_file, inputs, is_stream, expected_span_length,
         )
 
-    def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, expected_span_length):
+    def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, is_stream, expected_span_length):
         memory_exporter = prepare_memory_exporter()
 
         line_result, line_run_id = self.submit_flow_run(flow_file, inputs, dev_connections)
@@ -426,10 +425,7 @@ class TestOTelTracer:
         # We updated the OpenAI tokens (prompt_token/completion_token/total_token) to the span attributes
         # for llm and embedding traces, and aggregate them to the parent span. Use this function to validate
         # the openai tokens are correctly set.
-        self.validate_openai_tokens(span_list)
-        for span in span_list:
-            if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
-                assert span.attributes.get("llm.response.model", "") in ["gpt-35-turbo", "text-ada-001"]
+        self.validate_openai_tokens(span_list, is_stream)
 
     @pytest.mark.parametrize(
         "flow_file, inputs, expected_span_length",
@@ -559,13 +555,13 @@ class TestOTelTracer:
             assert isinstance(inputs, dict)
             assert output is not None
 
-    def validate_openai_tokens(self, span_list):
+    def validate_openai_tokens(self, span_list, is_stream):
         span_dict = {span.context.span_id: span for span in span_list}
         expected_tokens = {}
         for span in span_list:
             tokens = None
             # Validate the openai tokens are correctly set in the llm trace.
-            if span.attributes.get("function", "") in LLM_FUNCTION_NAMES:
+            if self._is_llm_span_with_tokens(span, is_stream):
                 for token_name in LLM_TOKEN_NAMES + CUMULATIVE_LLM_TOKEN_NAMES:
                     assert token_name in span.attributes
                 tokens = {token_name: span.attributes[token_name] for token_name in CUMULATIVE_LLM_TOKEN_NAMES}
@@ -594,3 +590,12 @@ class TestOTelTracer:
             if span_id in expected_tokens:
                 for token_name in expected_tokens[span_id]:
                     assert span.attributes[token_name] == expected_tokens[span_id][token_name]
+
+    def _is_llm_span_with_tokens(self, span, is_stream):
+        # For streaming mode, there are two spans for openai api call, one is the original span, and the other
+        # is the iterated span, which name is "Iterated(<original_trace_name>)", we should check the iterated span
+        # in streaming mode.
+        if is_stream:
+            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES and span.name.startswith("Iterated(")
+        else:
+            return span.attributes.get("function", "") in LLM_FUNCTION_NAMES

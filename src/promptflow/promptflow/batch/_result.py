@@ -8,9 +8,9 @@ from itertools import chain
 from typing import Any, List, Mapping
 
 from promptflow._utils.exception_utils import ExceptionPresenter, RootErrorCode
-from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.tracing._openai_utils import OpenAIMetricsCalculator
 
 
 @dataclass
