@@ -95,6 +95,7 @@ def install_cli(install_dir, tmp_dir):
     cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'keyrings.alt', '--upgrade']
     exec_command(cmd)
 
+
 def get_install_dir():
     install_dir = None
     while not install_dir:
@@ -118,6 +119,7 @@ def get_install_dir():
                     install_dir = None
     print_status("We will install at '{}'.".format(install_dir))
     return install_dir
+
 
 def _backup_rc(rc_file):
     try:
@@ -229,7 +231,8 @@ def main():
     install_dir = get_install_dir()
     create_virtualenv(install_dir)
     install_cli(install_dir, tmp_dir)
-    exec_filepath = [os.path.join(install_dir, "bin", PF_EXECUTABLE_NAME), os.path.join(install_dir, "bin", PFAZURE_EXECUTABLE_NAME)]
+    exec_filepath = [os.path.join(install_dir, "bin", PF_EXECUTABLE_NAME),
+                     os.path.join(install_dir, "bin", PFAZURE_EXECUTABLE_NAME)]
     try:
         handle_path_and_tab_completion(exec_filepath, install_dir)
     except Exception as e:
@@ -250,10 +253,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
 # SIG # Begin signature block
-# SpJKso/qNM3kB7bu/NtHSyYPqHQ95B97Kb/f8tqfxKIIcnR8HdirQ3TRS3q3EpGL
-# eHSh8bJ0bBSk+4V7ThV3hw1DibjKnY2+4tjvXW+xO8vCkxMvXimDr/7T209shfzR
-# s3C9PCQEHLygM4RD9aAw2Lo/6CLUYB65J4vFcxnZHrN7yxQelXszu12bSmlmg9oQ
-# rRr74R/RyjMZT3U8djYy/xQD10H64WEpRlK8YmopTo3geZpBcVh2vVyA/037a6UR
-# JXtKPMrP9fBZNN69oZrR4T1be2V/hcPZCgMT7+B9lhUhPJR5vceO/DuilHY2CZPq
-# VVkLjY/mn5b8UU6pPrqL5Q==
+# Op0/tmmNDX4QgQefj28K91e/ClVKWeYaA1w1kb5Hi8ALJZtmvyhwvxYlCRZ9eWT+
+# wFBfSvpUIzAWYxEMfVqqWy7g9AzqHGa5vE37zQ7uGkIyR0OsmO0bkauOv5FxuCWX
+# U0u9d9sir6sRTb2nrEj2O1EXAcP2xNaW77w1fcOtMX9W6ytHXx/+v5p387+/HBnQ
+# y00GvJrrcIJeRj4MboBdDdv0VgGJAAlTJp0hxO0lt5ZQUMJvi/sM4e1cPUTcx7uB
+# djCmvSZzZrJO2ZIIWiyiP2XNYWJv4A9klJWMbWKukeZOSjxYPS0pO2mTftkKoL5U
+# sOJu9RtRWIIx/kLG/Axliw==
 # SIG # End signature block
