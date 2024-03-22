@@ -8,22 +8,10 @@ inputs:
   answer:
     type: string
     default: The Alpine Explorer Tent is the most waterproof.
-  metric_name:
-    type: string
-    default: violence
-  project_scope:
-    type: object
-    default: {}
-  credential:
-    type: object
-    default: {}
-  threshold:
-    type: int
-    default: 4
 outputs:
-  result:
+  gpt_coherence:
     type: string
-    reference: ${evaluate_with_rai_service.output}
+    reference: ${parse_score.output}
 nodes:
 - name: validate_inputs
   type: python
@@ -31,19 +19,33 @@ nodes:
     type: code
     path: validate_inputs.py
   inputs:
-    question: ${inputs.question}
     answer: ${inputs.answer}
-- name: evaluate_with_rai_service
-  type: python
+    question: ${inputs.question}
+- name: query_llm
+  type: llm
   source:
     type: code
-    path: evaluate_with_rai_service.py
+    path: prompt.jinja2
   inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
     question: ${inputs.question}
     answer: ${inputs.answer}
-    project_scope: ${inputs.project_scope}
-    credential: ${inputs.credential}
-    metric_name: ${inputs.metric_name}
+  connection: open_ai_connection
+  api: chat
+  use_variants: false
   activate:
     when: ${validate_inputs.output}
     is: true
+- name: parse_score
+  type: python
+  source:
+    type: code
+    path: parse_score.py
+  inputs:
+    llm_output: ${query_llm.output}
+  use_variants: false
