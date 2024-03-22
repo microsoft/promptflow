@@ -247,6 +247,12 @@ def add_default_routes(app: PromptflowServingApp):
 
 def create_app(**kwargs):
     app = PromptflowServingApp(__name__)
+    # enable CORS
+    try:
+        from flask_cors import CORS
+        CORS(app)
+    except ImportError:
+        logger.warning("flask-cors is not installed, CORS is not enabled.")
     if __name__ != "__main__":
         app.logger.handlers = logger.handlers
         app.logger.setLevel(logger.level)

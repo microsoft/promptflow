@@ -1,7 +1,6 @@
 import tiktoken
+from abc import ABC, abstractmethod
 from importlib.metadata import version
-
-from promptflow.exceptions import UserErrorException
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -39,6 +38,7 @@ class OpenAIMetricsCalculator:
         return True
 
     def _get_openai_metrics_for_signal_api(self, api_call: dict):
+        inputs = api_call.get("inputs")
         output = api_call.get("output")
         if isinstance(output, dict):
             usage = output.get("usage")
@@ -60,20 +60,20 @@ class OpenAIMetricsCalculator:
             name == "openai.api_resources.chat_completion.ChatCompletion.create"
             or name == "openai.resources.chat.completions.Completions.create"  # openai v1
         ):
-            return self._get_openai_metrics_for_chat_api(api_call)
+            return self.get_openai_metrics_for_chat_api(inputs, output)
         elif (
             name == "openai.api_resources.completion.Completion.create"
             or name == "openai.resources.completions.Completions.create"  # openai v1
         ):
-            return self._get_openai_metrics_for_completion_api(api_call)
+            return self.get_openai_metrics_for_completion_api(inputs, output)
         else:
-            raise CalculatingMetricsError(f"Calculating metrics for api {name} is not supported.")
+            self._log_warning(f"Calculating metrics for api {name} is not supported.")
 
     def _try_get_model(self, inputs, output):
         if IS_LEGACY_OPENAI:
             api_type = inputs.get("api_type")
             if not api_type:
-                raise CalculatingMetricsError("Cannot calculate metrics for none or empty api_type.")
+                self._log_warning("Cannot calculate metrics for none or empty api_type.")
             if api_type == "azure":
                 model = inputs.get("engine")
             else:
@@ -82,19 +82,21 @@ class OpenAIMetricsCalculator:
             if isinstance(output, dict):
                 model = output.get("model")
             else:
-                model = output[0].model if len(output) > 0 and hasattr(output[0], "model") else None
+                model = None
+                for chunk in output:
+                    if hasattr(chunk, "model"):
+                        model = chunk.model
+                        break
             if not model:
                 model = inputs.get("model")
         if not model:
-            raise CalculatingMetricsError(
+            raise self._log_warning(
                 "Cannot get a valid model to calculate metrics. "
                 "Please specify a engine for AzureOpenAI API or a model for OpenAI API."
             )
         return model
 
-    def _get_openai_metrics_for_chat_api(self, api_call):
-        inputs = api_call.get("inputs")
-        output = api_call.get("output")
+    def get_openai_metrics_for_chat_api(self, inputs, output):
         metrics = {}
         enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
@@ -124,7 +126,7 @@ class OpenAIMetricsCalculator:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
-            raise CalculatingMetricsError(f"Calculating metrics for model {model} is not supported.")
+            self._log_warning(f"Calculating metrics for model {model} is not supported.")
         return enc, tokens_per_message, tokens_per_name
 
     def _get_prompt_tokens_from_messages(self, messages, enc, tokens_per_message, tokens_per_name):
@@ -151,10 +153,8 @@ class OpenAIMetricsCalculator:
                             completion_tokens += len(enc.encode(content))
         return completion_tokens
 
-    def _get_openai_metrics_for_completion_api(self, api_call: dict):
+    def get_openai_metrics_for_completion_api(self, inputs, output):
         metrics = {}
-        inputs = api_call.get("inputs")
-        output = api_call.get("output")
         enc = self._get_encoding_for_completion_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = 0
         prompt = inputs.get("prompt")
@@ -201,7 +201,63 @@ class OpenAIMetricsCalculator:
             self._logger.warning(msg)
 
 
-class CalculatingMetricsError(UserErrorException):
-    """The exception that is raised when calculating metrics failed."""
+class OpenAIResponseParser(ABC):
+    def __init__(self, response, is_chat):
+        self._response = response
+        self._is_chat = is_chat
 
-    pass
+    @property
+    def model(self):
+        for item in self._response:
+            if hasattr(item, "model"):
+                return item.model
+        return None
+
+    @property
+    def is_chat(self):
+        return self._is_chat
+
+    @staticmethod
+    def init_parser(response):
+        if IS_LEGACY_OPENAI:
+            return None
+
+        from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+        from openai.types.completion import Completion
+
+        if response and isinstance(response[0], ChatCompletionChunk):
+            return OpenAIChatResponseParser(response, True)
+        elif response and isinstance(response[0], Completion):
+            return OpenAICompletionResponseParser(response, False)
+        else:
+            raise NotImplementedError("Only support 'ChatCompletionChunk' and 'Completion' response.")
+
+    @abstractmethod
+    def get_generated_message(self):
+        pass
+
+
+class OpenAIChatResponseParser(OpenAIResponseParser):
+    def __init__(self, response, is_chat):
+        super().__init__(response, is_chat)
+
+    def get_generated_message(self):
+        chunks = []
+        role = "assistant"
+        for item in self._response:
+            if item.choices and item.choices[0].delta.content:
+                chunks.append(item.choices[0].delta.content)
+                role = item.choices[0].delta.role or role
+        return {"content": "".join(chunks), "role": role} if chunks else None
+
+
+class OpenAICompletionResponseParser(OpenAIResponseParser):
+    def __init__(self, response, is_chat):
+        super().__init__(response, is_chat)
+
+    def get_generated_message(self):
+        chunks = []
+        for item in self._response:
+            if item.choices and item.choices[0].text:
+                chunks.append(item.choices[0].text)
+        return "".join(chunks) if chunks else None

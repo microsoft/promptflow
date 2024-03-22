@@ -62,8 +62,17 @@ jobs:
           scriptPath: ${{ env.testWorkingDirectory }}
 
       - name: install recording
-        run: poetry install
+        run:
+          pip install vcrpy
+          pip install -e .
         working-directory: ${{ env.RECORD_DIRECTORY }}
+
+      - name: Install tracing
+        shell: pwsh
+        run: |
+          pip uninstall -y promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip freeze
 
       - name: Generate (mock) connections.json
         shell: pwsh

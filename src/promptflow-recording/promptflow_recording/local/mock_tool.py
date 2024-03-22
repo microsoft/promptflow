@@ -167,7 +167,7 @@ def mock_tool(original_tool):
             from promptflow.exceptions import UserErrorException
 
             def create_trace(func, args, kwargs):
-                return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=TraceType.TOOL)
+                return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=TraceType.FUNCTION)
 
             if inspect.iscoroutinefunction(func):
 

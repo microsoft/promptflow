@@ -60,6 +60,12 @@ jobs:
       with:
         setupType: ${{ env.packageSetupType }}
         scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Install tracing
+      shell: pwsh
+      run: |
+        pip uninstall -y promptflow-tracing
+        pip install -e ${{ github.workspace }}/src/promptflow-tracing
+        pip freeze
     - name: Azure Login
       uses: azure/login@v1
       with:

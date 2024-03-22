@@ -87,10 +87,14 @@ jobs:
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
           gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
           gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+          pip uninstall -y promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
           pip freeze
 
       - name: install recording
-        run: poetry install
+        run: |
+          pip install vcrpy
+          pip install -e .
         working-directory: ${{ env.RECORD_DIRECTORY }}
 
       - name: Run SDK CLI Azure Test (replay mode)
