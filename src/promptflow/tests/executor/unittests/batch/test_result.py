@@ -4,7 +4,7 @@ from typing import List, Mapping, Any
 import pytest
 
 from promptflow.batch._result import BatchResult, ErrorSummary, LineError, SystemMetrics
-from promptflow.contracts.flow import ChatGroupRole
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -318,6 +318,3 @@ class TestChatGroupResult:
         assert current_line["role"] == chat_role.role == outputs[0]["role"]
         assert current_line["question"] == "question0" == outputs[0]["question"]
         assert current_line["others"] == "others0" == outputs[0]["others"]
-
-
-

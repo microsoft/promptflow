@@ -36,11 +36,11 @@ from promptflow._utils.utils import (
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
-from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
-from promptflow.contracts.flow import Flow, ChatGroupRole
+from promptflow.contracts.flow import Flow
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
@@ -77,8 +77,6 @@ class BatchEngine:
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
-        chat_group_roles: Optional[List[ChatGroupRole]] = None,
-        max_turn: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -111,12 +109,13 @@ class BatchEngine:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
-        self._chat_group_roles = chat_group_roles
-        if chat_group_roles is not None:
-            for chat_role in chat_group_roles:
+        self._chat_group_roles: List[ChatGroupRole] = kwargs.get("chat_group_roles")
+        if self._chat_group_roles is not None:
+            for chat_role in self._chat_group_roles:
                 chat_role.working_dir = Flow._resolve_working_dir(chat_role.flow_file, chat_role.working_dir)
+                chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
 
-        self._max_turn = max_turn
+        self._max_turn = kwargs.get("max_turn")
 
         self._connections = connections
         self._storage = storage
@@ -181,8 +180,6 @@ class BatchEngine:
                     storage=self._storage,
                     language=self._program_language,
                     **self._kwargs,
-                    chat_group_roles = self._chat_group_roles,
-                    max_turn = self._max_turn,
                     run_id = run_id,
                     input_dirs = input_dirs,
                     max_lines_count = max_lines_count
@@ -200,8 +197,7 @@ class BatchEngine:
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
 
-                    batch_inputs = None
-                    if not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy):
+                    if self._chat_group_roles is None:
                     # set batch input source from input mapping
                         set_batch_input_source_from_inputs_mapping(inputs_mapping)
                         # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
@@ -440,7 +436,7 @@ class BatchEngine:
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout and not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy) :
+        if not is_timeout and self._chat_group_roles is None:
             # execute aggregation nodes
             aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
@@ -476,7 +472,7 @@ class BatchEngine:
         while completed_line < total_lines:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
-            if not isinstance(self._executor_proxy, ChatGroupOrchestratorProxy):
+            if self._chat_group_roles is None:
                 self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             log_progress(

@@ -1,5 +1,5 @@
 from typing import Optional, List, Mapping, Dict, Any
-from promptflow.contracts.flow import ChatGroupRole, Flow
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
@@ -48,7 +48,6 @@ class ChatGroupOrchestrator:
                 **kwargs
             )
             executor_proxy_list.append(executor_proxy)
-            chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
         return executor_proxy_list
 
     async def destroy(self):

@@ -18,7 +18,7 @@ from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
 from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
-from promptflow.contracts.flow import ChatGroupRole
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 

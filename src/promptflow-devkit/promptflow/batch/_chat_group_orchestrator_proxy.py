@@ -1,9 +1,8 @@
 import asyncio
 from typing import Optional, List, Dict, Mapping, Any
 from pathlib import Path
-from promptflow.contracts.flow import ChatGroupRole, Flow
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow.contracts.flow import Flow
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
