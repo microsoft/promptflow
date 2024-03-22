@@ -140,6 +140,11 @@ class ChatAPIInvalidFunctions(ToolValidationError):
     pass
 
 
+class ChatAPIInvalidTools(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+    pass
+
+
 class FunctionCallNotSupportedInStreamMode(ToolValidationError):
     """Base exception raised when use functions parameter in stream mode when call chat api."""
 

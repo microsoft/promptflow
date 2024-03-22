@@ -10,7 +10,7 @@ from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError, BadRequestError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError
+    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, ListDeploymentsError, ParseConnectionError, ChatAPIInvalidTools
 
 from promptflow._cli._utils import get_workspace_triad_from_local
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, ServerlessConnection
@@ -61,7 +61,7 @@ def validate_role(role: str, valid_roles: List[str] = None):
         raise ChatAPIInvalidRole(message=error_message)
 
 
-def validate_functions(functions):
+def validate_functions(functions, is_tools=False):
     function_example = json.dumps({
         "name": "function_name",
         "parameters": {
@@ -111,6 +111,50 @@ def validate_functions(functions):
                 raise ChatAPIInvalidFunctions(
                     message=f"function {i} '{function['name']}' parameters 'properties' "
                             f"should be described as a JSON Schema object. {common_tsg}")
+
+
+def validate_tools(tools):
+    '''
+    tools = [
+  {
+    "type": "function",
+    "function": {
+      "name": "get_current_weather",
+      "description": "Get the current weather in a given location",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "The city and state, e.g. San Francisco, CA",
+          },
+          "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+        },
+        "required": ["location"],
+      },
+    }
+  }
+]
+    '''
+    tool_example = json.dumps({
+        "name": "function_name",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "parameter_name": {
+                    "type": "integer",
+                    "description": "parameter_description"
+                }
+            }
+        },
+        "description": "function_description"
+    })
+    common_tsg = f"Here is a valid function example: {tool_example}. See more details at " \
+                 "https://platform.openai.com/docs/api-reference/chat/create"
+
+    if len(tools) == 0:
+        raise ChatAPIInvalidTools(message=f"functions cannot be an empty list. {common_tsg}")
+    validate_functions(tools["functions"], is_tools=True)
 
 
 def try_parse_name_and_content(role_prompt):
@@ -462,6 +506,33 @@ def process_function_call(function_call):
             if "name" not in function_call:
                 raise ChatAPIInvalidFunctions(
                     message=f'function_call parameter {json.dumps(param)} must contain "name" field. {common_tsg}'
+                )
+    return param
+
+
+def process_tool_choice(tool_choice):
+    if tool_choice is None:
+        param = "auto"
+    elif tool_choice == "auto" or tool_choice == "none":
+        param = tool_choice
+    else:
+        tool_choice_example = json.dumps({"type": "function", "function": {"name": "my_function"}})
+        common_tsg = f"Here is a valid example: {tool_choice_example}. See the guide at " \
+                     "https://platform.openai.com/docs/api-reference/chat/create."
+        param = tool_choice
+        if not isinstance(param, dict):
+            raise ChatAPIInvalidTools(
+                message=f"tool_choice parameter '{param}' must be a dict, but not {type(tool_choice)}. {common_tsg}"
+            )
+        else:
+            if "type" not in tool_choice:
+                raise ChatAPIInvalidTools(
+                    message=f'tool_choice parameter {json.dumps(param)} must contain "type" field. {common_tsg}'
+                )
+
+            if "function" in tool_choice and "name" not in tool_choice["function"]:
+                raise ChatAPIInvalidTools(
+                    message=f'function parameter {json.dumps(param)} in tool_choice must contain "name" field. {common_tsg}'
                 )
     return param
 
