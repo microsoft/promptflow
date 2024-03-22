@@ -22,6 +22,7 @@ from promptflow._constants import (
 )
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
+    PF_SERVICE_HOUR_TIMEOUT,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     AzureMLWorkspaceTriad,
@@ -65,8 +66,15 @@ def _invoke_pf_svc() -> str:
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
         else:
+            print("Prompt flow Tracing Server has started...")
             return port
+    print("Starting Prompt flow Tracing Server...")
     entry(cmd_args)
+    print(
+        f"You can stop the Prompt flow Tracing Server with the following command: '\033[1m pf service stop\033[0m'\n"
+        f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} hours, it will automatically stop "
+        f"if Prompt flow is installed via pip."
+    )
     logger.debug("Prompt flow service is serving on port %s", port)
     return port
 
