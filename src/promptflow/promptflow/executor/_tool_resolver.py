@@ -21,7 +21,7 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
-from promptflow.executor._assistant_tool_invoker import AssistantTool, AssistantToolInvoker
+from promptflow.executor._assistant_tool_invoker import AssistantTool, AssistantToolInvoker, ResolvedAssistantTool
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -136,9 +136,12 @@ class ToolResolver:
         resolved_tools = {}
         for tool in assistant_definition.tools:
             if tool["type"] in ("code_interpreter", "retrieval"):
-                resolved_tools[tool["type"]] = AssistantTool(name=tool["type"], openai_definition=tool, func=None)
+                resolved_tools[tool["type"]] = ResolvedAssistantTool(
+                    name=tool["type"], openai_definition=tool, func=None
+                )
             elif tool["type"] == "function":
-                function_tool = self.resolve_function_by_definition(node_name, tool)
+                assistant_tool = AssistantTool.from_dict(tool)
+                function_tool = self.resolve_function_by_definition(node_name, assistant_tool)
                 resolved_tools[function_tool.name] = function_tool
             else:
                 raise UnsupportedAssistantToolType(
@@ -149,17 +152,19 @@ class ToolResolver:
         # Inject the resolved tools into the assistant definition
         assistant_definition._tool_invoker = AssistantToolInvoker(resolved_tools)
 
-    def _resolve_predefined_inputs_type(self, node_name: str, tool_definition: dict, tool: Tool):
+    def _resolve_predefined_inputs_type(self, node_name: str, assistant_tool: AssistantTool, tool: Tool):
         predefined_inputs = {}
-        if tool_definition.get("predefined_inputs") is not None:
-            for input_name, value in tool_definition.get("predefined_inputs").items():
+        if assistant_tool.predefined_inputs:
+            for input_name, value in assistant_tool.predefined_inputs.items():
                 predefined_inputs[input_name] = InputAssignment.deserialize(value)
 
-        source = ToolSource.deserialize(tool_definition["source"]) if "source" in tool_definition else None
+        source = assistant_tool.source
         updated_predefined_inputs = self._convert_literal_input_types(node_name, source, predefined_inputs, tool)
         return updated_predefined_inputs
 
-    def _construct_assistant_tool(self, tool: Tool, callable: Callable, predefined_inputs: dict) -> AssistantTool:
+    def _construct_assistant_tool(
+        self, tool: Tool, callable: Callable, predefined_inputs: dict
+    ) -> ResolvedAssistantTool:
         func_name = tool.function
         definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
         if predefined_inputs:
@@ -167,14 +172,13 @@ class ToolResolver:
             func = partial(callable, **inputs)
         else:
             func = callable
-        return AssistantTool(name=func_name, openai_definition=definition, func=func)
+        return ResolvedAssistantTool(name=func_name, openai_definition=definition, func=func)
 
-    def _load_package_tool_as_function(self, node_name: str, tool_definition: dict) -> AssistantTool:
+    def _load_package_tool_as_function(self, node_name: str, assistant_tool: AssistantTool) -> ResolvedAssistantTool:
         """Get assistant function from package tool definition."""
 
         # Step I: construct promptflow Tool object from the source:tool specification
-        source_tool = tool_definition.get("source", {}).get("tool")
-        if source_tool is None:
+        if assistant_tool.source is None or assistant_tool.source.tool is None:
             raise InvalidAssistantTool(
                 message_format=(
                     "The 'tool' property is missing in 'source' of the assistant package tool "
@@ -182,12 +186,13 @@ class ToolResolver:
                 ),
                 node_name=node_name,
             )
+        source_tool = assistant_tool.source.tool
         function_package_tool_keys = [source_tool]
         tool_loader = ToolLoader(self._working_dir, function_package_tool_keys)
         tool: Tool = tool_loader.load_package_tool(source_tool)
 
         # Step II: resolve the predefined_inputs if necessary
-        updated_predefined_inputs = self._resolve_predefined_inputs_type(node_name, tool_definition, tool)
+        updated_predefined_inputs = self._resolve_predefined_inputs_type(node_name, assistant_tool, tool)
 
         # Step III: import the package tool and return the callable & init_args
         callable, init_args = BuiltinsManager._load_package_tool(
@@ -198,12 +203,11 @@ class ToolResolver:
         # Step IV: construct the AssistantTool object from the updated predefined_inputs + Tool object
         return self._construct_assistant_tool(tool, callable, updated_predefined_inputs)
 
-    def _load_script_tool_as_function(self, node_name: str, tool_definition: dict) -> AssistantTool:
+    def _load_script_tool_as_function(self, node_name: str, assistant_tool: AssistantTool) -> ResolvedAssistantTool:
         """Get assistant function from script tool definition."""
 
         # Step I: construct promptflow Tool object from the source:path specification
-        source_path = tool_definition.get("source", {}).get("path")
-        if source_path is None:
+        if assistant_tool.source is None or assistant_tool.source.path is None:
             raise InvalidAssistantTool(
                 message_format=(
                     "The 'path' property is missing in 'source' of the assistant python tool "
@@ -211,10 +215,11 @@ class ToolResolver:
                 ),
                 node_name=node_name,
             )
+        source_path = assistant_tool.source.path
         m, tool = self._tool_loader.load_script_tool(source_path, node_name)
 
         # Step II: resolve the predefined_inputs if necessary
-        updated_predefined_inputs = self._resolve_predefined_inputs_type(node_name, tool_definition, tool)
+        updated_predefined_inputs = self._resolve_predefined_inputs_type(node_name, assistant_tool, tool)
 
         # Step III: import the python tool and return the callable & init_args
         callable, init_args = BuiltinsManager._load_tool_from_module(
@@ -364,16 +369,16 @@ class ToolResolver:
                 raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
             raise ResolveToolError(node_name=node.name) from e
 
-    def resolve_function_by_definition(self, node_name: str, tool: dict) -> AssistantTool:
+    def resolve_function_by_definition(self, node_name: str, tool: AssistantTool) -> ResolvedAssistantTool:
         try:
-            if tool.get("source") is None:
+            if tool.source is None:
                 raise InvalidAssistantTool(
                     message_format=("Node {node_name} does has tools without source defined in assistant definition."),
                     node_name=node_name,
                 )
-            tool_type = tool.get("tool_type")
+            tool_type = tool.tool_type
             if tool_type == ToolType.PYTHON:
-                source_type = tool["source"].get("type")
+                source_type = tool.source.type
                 if source_type == ToolSourceType.Package:
                     return self._load_package_tool_as_function(node_name, tool)
                 elif source_type == ToolSourceType.Code:
