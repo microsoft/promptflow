@@ -13,8 +13,6 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.log_manager import NodeLogManager, NodeLogWriter
 from promptflow._core.metric_logger import add_metric_logger
-from promptflow._core.openai_injector import inject_openai_api
-from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunRecordNotFound, RunTracker
 from promptflow._core.tool import ToolInvoker, ToolProvider, tool
 from promptflow._core.tool_meta_generator import (
