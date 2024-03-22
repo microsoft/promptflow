@@ -12,6 +12,7 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 jobs:
   build:
@@ -56,6 +57,9 @@ jobs:
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: run unit tests
         run: poetry run pytest -m unittest
         working-directory: ${{ env.WORKING_DIRECTORY }}
