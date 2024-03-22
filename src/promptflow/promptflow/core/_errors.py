@@ -86,8 +86,31 @@ class UnsupportedConnectionAuthType(UserErrorException):
         super().__init__(target=ErrorTarget.CORE, **kwargs)
 
 
+class MalformedConnectionProviderConfig(UserErrorException):
+    """Exception raised when connection provider config is malformed."""
+
+    def __init__(self, provider_config, **kwargs):
+        message = "Malformed connection provider config, expected azureml://subscriptions/<subscription_id>/"
+        "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
+        f"workspaces/<workspace_name>, got {provider_config}"
+        super().__init__(target=ErrorTarget.CORE, message=message, **kwargs)
+
+
 class AccessDeniedError(UserErrorException):
     """Exception raised when run info can not be found in storage"""
 
     def __init__(self, operation: str, target: ErrorTarget):
         super().__init__(message=f"Access is denied to perform operation {operation!r}", target=target)
+
+
+class AccountNotSetUp(UserErrorException):
+    """Exception raised when account is not setup"""
+
+    def __init__(self):
+        super().__init__(
+            message=(
+                "Please run 'az login' or 'az login --use-device-code' to set up account. "
+                "See https://docs.microsoft.com/cli/azure/authenticate-azure-cli for more details."
+            ),
+            target=ErrorTarget.CORE,
+        )

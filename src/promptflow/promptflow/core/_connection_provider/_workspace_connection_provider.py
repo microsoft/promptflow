@@ -10,6 +10,7 @@ from promptflow._utils.retry_utils import http_retry_wrapper
 from promptflow.core._connection import CustomConnection, _Connection
 from promptflow.core._errors import (
     AccessDeniedError,
+    AccountNotSetUp,
     BuildConnectionError,
     MissingRequiredPackage,
     OpenURLFailed,
@@ -20,7 +21,9 @@ from promptflow.core._errors import (
 )
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
+from ..._utils.credential_utils import get_default_azure_credential
 from ._connection_provider import ConnectionProvider
+from ._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces
 
 GET_CONNECTION_URL = (
     "/subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.MachineLearningServices"
@@ -66,10 +69,40 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         workspace_name: Optional[str] = None,
         credential=None,
     ):
-        self.credential = credential
+        self.credential = credential or self._get_credential()
         self.subscription_id = subscription_id
         self.resource_group_name = resource_group_name
         self.workspace_name = workspace_name
+
+    @classmethod
+    def _get_credential(cls):
+
+        # Note: There is a try-catch in get arm token. It requires azure-ai-ml.
+        # TODO: Remove the azure-ai-ml dependency.
+        from ._utils import get_arm_token
+
+        try:
+            from azure.identity import DefaultAzureCredential, DeviceCodeCredential
+        except ImportError as e:
+            raise MissingRequiredPackage(
+                message="Please install 'azure-identity>=1.12.0,<2.0.0' and 'msrest' to use workspace connection."
+            ) from e
+
+        if is_from_cli():
+            try:
+                # Try getting token for cli without interactive login
+                credential = get_default_azure_credential()
+                get_arm_token(credential=credential)
+            except Exception:
+                raise AccountNotSetUp()
+        if interactive_credential_disabled():
+            return DefaultAzureCredential(exclude_interactive_browser_credential=True)
+        if is_github_codespaces():
+            # For code spaces, append device code credential as the fallback option.
+            credential = DefaultAzureCredential()
+            credential.credentials = (*credential.credentials, DeviceCodeCredential())
+            return credential
+        return DefaultAzureCredential(exclude_interactive_browser_credential=False)
 
     @classmethod
     def open_url(cls, token, url, action, host="management.azure.com", method="GET", model=None) -> Union[Any, dict]:

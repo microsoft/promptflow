@@ -37,9 +37,9 @@ from promptflow._cli._pf._init_entry_generators import (
     copy_extra_files,
 )
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._constants import FlowLanguage
+from promptflow._constants import ConnectionProviderConfig, FlowLanguage
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._service.utils.utils import encrypt_flow_path
 from promptflow._sdk.operations._flow_operations import FlowOperations
@@ -329,7 +329,7 @@ def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
     deployment = deployment or DEFAULT_DEPLOYMENT
     ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(flow_path / "flow.dag.yaml")
     # When customer not configure the remote connection provider, create connection yaml to chat flow.
-    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProvider.LOCAL
+    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProviderConfig.LOCAL
     if is_local_connection:
         OpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "openai.yaml")
         AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "azure_openai.yaml")

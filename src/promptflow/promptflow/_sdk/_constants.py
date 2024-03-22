@@ -355,11 +355,6 @@ class RunHistoryKeys:
     HIDDEN = "hidden"
 
 
-class ConnectionProvider(str, Enum):
-    LOCAL = "local"
-    AZUREML = "azureml"
-
-
 class FlowType:
     STANDARD = "standard"
     EVALUATION = "evaluation"

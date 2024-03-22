@@ -31,7 +31,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, FlowEntryRegex
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowEntryRegex
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -714,22 +714,6 @@ def remove_empty_element_from_dict(obj: dict) -> dict:
         if value is not None:
             new_dict[key] = value
     return new_dict
-
-
-def is_github_codespaces():
-    # Ref:
-    # https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace
-    return os.environ.get("CODESPACES", None) == "true"
-
-
-def interactive_credential_disabled():
-    return os.environ.get(PF_NO_INTERACTIVE_LOGIN, "false").lower() == "true"
-
-
-def is_from_cli():
-    from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-
-    return CLI_UA in ClientUserAgentUtil.get_user_agent()
 
 
 def is_multi_container_enabled():
