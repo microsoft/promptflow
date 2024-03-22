@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 from promptflow.contracts.flow import Flow
+
+
 @dataclass
 class ChatGroupRole:
     """This class represents the chat group role properties.

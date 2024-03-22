@@ -4,11 +4,11 @@ from typing import List, Mapping, Any
 import pytest
 
 from promptflow.batch._result import BatchResult, ErrorSummary, LineError, SystemMetrics
-from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from ...utils import get_yaml_file
 
@@ -71,7 +71,6 @@ def get_line_results(line_dict: dict, api_calls=None, system_metrics=None, outpu
     ]
 
 
-
 def get_aggregation_result(aggr_dict: dict, api_calls=None, system_metrics=None):
     return AggregationResult(
         output={},
@@ -89,8 +88,10 @@ def get_batch_result(line_dict, aggr_dict, line_api_calls=None, aggr_api_calls=N
 def get_api_call(type, name, inputs={}, output={}, children=None):
     return {"type": type, "name": name, "inputs": inputs, "output": output, "children": children}
 
+
 def get_chat_role(role, flow_file=None):
     return ChatGroupRole(flow_file=flow_file, role=role, stop_signal=None)
+
 
 def get_conversation_history(empty: bool) -> List[Mapping[str, Any]]:
     if empty:
@@ -98,6 +99,7 @@ def get_conversation_history(empty: bool) -> List[Mapping[str, Any]]:
     conversation_history: List[Mapping[str, Any]] = []
     conversation_history.append({"role": "user", "question": "question0", "others" : "others0"})
     return conversation_history
+
 
 @pytest.mark.unittest
 class TestBatchResult:
@@ -292,11 +294,13 @@ class TestChatGroupResult:
     @pytest.mark.parametrize(
         "chat_role, conversation_history",
         [
-            (get_chat_role(role="user"),
-             get_conversation_history(empty=True)
+            (
+                    get_chat_role(role="user"),
+                    get_conversation_history(empty=True)
             ),
-            (get_chat_role(role="assistant"),
-             get_conversation_history(empty=False)
+            (
+                    get_chat_role(role="assistant"),
+                    get_conversation_history(empty=False)
              )
         ],
     )

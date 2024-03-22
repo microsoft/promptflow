@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage, CHAT_GROUP_EXECUTOR_PROXY_KEY
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -98,10 +98,11 @@ class BatchEngine:
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
-        
+
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
-        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() if flow_file is not None else (None, None)
+        self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() \
+            if flow_file is not None else (None, CHAT_GROUP_EXECUTOR_PROXY_KEY)
         self._flow = None
 
         # TODO: why self._flow is not initialized for eager flow?
@@ -171,18 +172,18 @@ class BatchEngine:
         """
         try:
             self._start_time = datetime.utcnow()
-            with _change_working_dir(self._working_dir):
+            with (_change_working_dir(self._working_dir)):
                 # create executor proxy instance according to the flow program language
                 self._executor_proxy = ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
-                    language=self._program_language,
+                    type=self._program_language,
                     **self._kwargs,
-                    run_id = run_id,
-                    input_dirs = input_dirs,
-                    max_lines_count = max_lines_count
+                    run_id=run_id,
+                    input_dirs=input_dirs,
+                    max_lines_count=max_lines_count
                 )
                 try:
                     # register signal handler for python flow in the main thread
@@ -198,15 +199,17 @@ class BatchEngine:
                             )
 
                     if self._chat_group_roles is None:
-                    # set batch input source from input mapping
+                        # set batch input source from input mapping
                         set_batch_input_source_from_inputs_mapping(inputs_mapping)
                         # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                        inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
+                        inputs = self._executor_proxy.get_inputs_definition()\
+                            if self._is_eager_flow else self._flow.inputs
                         # resolve input data from input dirs and apply inputs mapping
                         batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     else:
-                        batch_inputs = BatchInputsProcessor("", {}, max_lines_count).process_batch_inputs_without_inputs_mapping(input_dirs)
+                        batch_input_processor = BatchInputsProcessor("", {}, max_lines_count)
+                        batch_inputs = batch_input_processor.process_batch_inputs_without_inputs_mapping(input_dirs)
 
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)

@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Mapping, Optional
 
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
-from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
-
 
 
 class SingleLinePythonExecutorProxy(AbstractExecutorProxy):
@@ -26,12 +25,11 @@ class SingleLinePythonExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
         **kwargs,
     ) -> "SingleLinePythonExecutorProxy":
-        
+
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
         line_execution_process_pool = LineExecutionProcessPool(output_dir, flow_executor, run_id=run_id)
         line_execution_process_pool.start()
         return cls(flow_executor, line_execution_process_pool)
-    
 
     async def exec_line_async(
         self,

@@ -27,7 +27,6 @@ nodes:
     prompt: ${prompt.output}
     deployment_name: gpt-35-turbo
     model: ${inputs.model}
-    max_tokens: '120'
   source:
     type: code
     path: prompt.jinja2

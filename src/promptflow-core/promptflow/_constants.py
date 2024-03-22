@@ -52,6 +52,9 @@ LINE_TIMEOUT_SEC = 600
 # Environment variables
 PF_LONG_RUNNING_LOGGING_INTERVAL = "PF_LONG_RUNNING_LOGGING_INTERVAL"
 
+# Chat group
+CHAT_GROUP_EXECUTOR_PROXY_KEY = "chat"
+
 
 class FlowLanguage:
     """The enum of tool source type."""

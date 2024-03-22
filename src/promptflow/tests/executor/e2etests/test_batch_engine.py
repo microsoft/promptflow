@@ -10,7 +10,7 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._constants import OUTPUT_FILE_NAME
-from promptflow._proxy._base_proxy_factory import BaseProxyFactory
+from promptflow._proxy._proxy_factory import ProxyFactory
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -510,14 +510,31 @@ class TestBatch:
         [("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 5)],
     )
     def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, dev_connections):
-        simulation_role = ChatGroupRole(flow_file=get_yaml_file(simulation_flow), role="user", stop_signal="[STOP]", working_dir=get_flow_folder(simulation_flow), connections=dev_connections, inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"})
-        copilot_role = ChatGroupRole(flow_file=get_yaml_file(copilot_flow), role="assistant", stop_signal="[STOP]", working_dir=get_flow_folder(copilot_flow), connections=dev_connections, inputs_mapping={"question": "${data.question}"})
+        simulation_role = ChatGroupRole(
+            flow_file=get_yaml_file(simulation_flow),
+            role="user", stop_signal="[STOP]",
+            working_dir=get_flow_folder(simulation_flow),
+            connections=dev_connections,
+            inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
+        )
+        copilot_role = ChatGroupRole(
+            flow_file=get_yaml_file(copilot_flow),
+            role="assistant",
+            stop_signal="[STOP]",
+            working_dir=get_flow_folder(copilot_flow),
+            connections=dev_connections,
+            inputs_mapping={"question": "${data.question}"}
+        )
         input_dirs = {"data": get_flow_inputs_file("chat_group", file_name="inputs.json")}
         output_dir = Path(mkdtemp())
 
         # register python proxy since current python proxy cannot execute single line
-        BaseProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
-        batchEngine = BatchEngine(flow_file=None, working_dir=get_flow_folder("chat_group"), chat_group_roles=[simulation_role, copilot_role], max_turn=max_turn)
+        ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        batchEngine = BatchEngine(
+            flow_file=None,
+            working_dir=get_flow_folder("chat_group"),
+            chat_group_roles=[simulation_role, copilot_role],
+            max_turn=max_turn)
         batch_result = batchEngine.run(input_dirs, {}, output_dir)
 
         nlines = 3
@@ -535,7 +552,5 @@ class TestBatch:
             # "line_number is the first pair in the dict"
             assert len(output) == max_turn + 1
             for j, line in enumerate(output):
-                if not "line_number" in output:
+                if "line_number" not in output:
                     assert "role" in line, f"role is not in {i}th output {j}th line {line}"
-
-

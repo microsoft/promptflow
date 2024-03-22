@@ -26,7 +26,8 @@ class BatchInputsProcessor:
         self._working_dir = working_dir
         self._max_lines_count = max_lines_count
         self._flow_inputs = flow_inputs
-        self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs} if flow_inputs is not None else None
+        self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}\
+            if flow_inputs is not None else None
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
         input_dicts = self._resolve_input_data_and_check(input_dirs)
@@ -51,6 +52,7 @@ class BatchInputsProcessor:
             )
             raise EmptyInputsData(message_format=message_format, input_dirs=input_dirs_str)
         return input_dicts
+
     def process_batch_inputs_without_inputs_mapping(self, input_dirs: Dict[str, str]):
         input_dicts = self._resolve_input_data_and_check(input_dirs)
         merged_list = self._merge_input_dicts_by_line(input_dicts)
@@ -65,6 +67,13 @@ class BatchInputsProcessor:
         return merged_list
 
     def _process_batch_inputs_line(self, inputs: Dict[str, Any], inputs_mapping: Dict[str, str]):
+        if not inputs_mapping:
+            logger.warning(
+                msg=(
+                    "Starting run without column mapping may lead to unexpected results. "
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
+                )
+            )
         return apply_inputs_mapping(inputs, inputs_mapping)
 
     def _resolve_data_from_input_path(self, input_path: Path):

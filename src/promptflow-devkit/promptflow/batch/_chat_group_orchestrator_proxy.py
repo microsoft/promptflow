@@ -1,4 +1,3 @@
-import asyncio
 from typing import Optional, List, Dict, Mapping, Any
 from pathlib import Path
 from promptflow.contracts.flow import Flow
@@ -8,6 +7,7 @@ from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from promptflow.storage._run_storage import AbstractRunStorage
+
 
 class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
     def __init__(
@@ -35,9 +35,8 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         max_lines_count = kwargs.get("max_lines_count")
 
         orchestrator = ChatGroupOrchestrator.create(chat_group_roles, max_turn, storage, max_lines_count)
-        
         return cls(orchestrator)
-    
+
     async def destroy(self):
         """Destroy the executor"""
         await self._orchestrator.destroy()
@@ -59,9 +58,9 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
             chat_group_roles: List[ChatGroupRole],
             input_dirs: Dict[str, str],
             max_lines_count: Optional[int] = None) -> List[List[Dict]]:
-        
+
         chat_group_batch_inputs: List[List[Dict]] = []
-        
+
         for chat_role in chat_group_roles:
             chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
             flow_inputs = chat_role.flow.inputs
@@ -76,6 +75,3 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         transposed = [[chat_group_batch_inputs[row][col] for row in range(rows)] for col in range(cols)]
 
         return transposed
-
-
-
