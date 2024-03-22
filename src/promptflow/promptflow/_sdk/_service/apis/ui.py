@@ -126,8 +126,8 @@ class MediaView(Resource):
         return send_from_directory(directory, filename)
 
 
-@api.route("/get")
-class YamlGet(Resource):
+@api.route("/yaml")
+class YamlEdit(Resource):
     @api.response(code=200, description="Return flow yaml as json", model=dict_field)
     @api.doc(description="Return flow yaml as json")
     def get(self):
