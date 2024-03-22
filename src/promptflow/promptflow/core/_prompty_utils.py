@@ -9,7 +9,7 @@ from promptflow.core._errors import (
     ChatAPIInvalidRoleError,
     CoreError,
     InvalidConnectionError,
-    InvalidConnectionTypeError,
+    UnknownConnectionType,
 )
 from promptflow.core._utils import render_jinja_template_content
 
@@ -55,7 +55,7 @@ def get_connection(connection):
         f"Not Support connection type {connection_type} for embedding api. "
         f"Connection type should be in [{AzureOpenAIConnection.TYPE}, {OpenAIConnection.TYPE}]."
     )
-    raise InvalidConnectionTypeError(message=error_message)
+    raise UnknownConnectionType(message=error_message)
 
 
 def convert_prompt_template(template, inputs, api):
@@ -108,7 +108,7 @@ def get_open_ai_client_by_connection(connection, is_async=False):
             f"Not Support connection type '{type(connection).__name__}' for embedding api. "
             f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         )
-        raise InvalidConnectionTypeError(message=error_message)
+        raise UnknownConnectionType(message=error_message)
     return client
 
 
@@ -151,7 +151,7 @@ def normalize_connection_config(connection):
             f"Not Support connection type '{type(connection).__name__}'. "
             f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         )
-        raise InvalidConnectionTypeError(message=error_message)
+        raise UnknownConnectionType(message=error_message)
 
 
 def preprocess_template_string(template_string: str) -> str:

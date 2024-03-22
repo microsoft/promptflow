@@ -45,6 +45,8 @@ FLOW_TOOLS_JSON = "flow.tools.json"
 
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
+# Fill zero to the left of line number to make it 9 digits. This is to make sure the line number file name is sortable.
+LINE_NUMBER_WIDTH = 9
 LINE_TIMEOUT_SEC = 600
 
 # Environment variables

@@ -8,6 +8,8 @@ import copy
 import functools
 import inspect
 import os
+import signal
+import threading
 import uuid
 from pathlib import Path
 from threading import current_thread
@@ -333,6 +335,11 @@ class FlowExecutor:
             finally:
                 OperationContext.set_instance(original_context)
 
+        # Register signal handler for SIGINT and SIGTERM to cancel the single node run.
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+
         dependency_nodes_outputs = dependency_nodes_outputs or {}
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -409,6 +416,8 @@ class FlowExecutor:
                     )
                 else:
                     context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+            except KeyboardInterrupt:
+                run_tracker.cancel_node_runs()
             except Exception:
                 if raise_ex:  # Only raise exception when raise_ex is True
                     raise
@@ -633,16 +642,17 @@ class FlowExecutor:
         add_metric_logger(_log_metric)
         try:
             self._submit_to_scheduler(context, inputs, nodes)
-            node_run_infos = run_tracker.collect_child_node_runs(run_id)
-            # Output is set as an empty dict, because the aggregation outputs story is not finalized.
-            return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
+        except KeyboardInterrupt:
+            # Cancel all the running node runs if receiving KeyboardInterrupt.
+            run_tracker.cancel_node_runs(run_id)
         except Exception:
             if self._raise_ex:
                 raise
-            node_run_infos = run_tracker.collect_child_node_runs(run_id)
-            return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
         finally:
             remove_metric_logger(_log_metric)
+        node_run_infos = run_tracker.collect_child_node_runs(run_id)
+        # Output is set as an empty dict, because the aggregation outputs story is not finalized.
+        return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
 
     def exec(self, inputs: dict, node_concurrency=DEFAULT_CONCURRENCY_FLOW) -> dict:
         """Executes the flow with the given inputs and returns the output.
@@ -944,12 +954,14 @@ class FlowExecutor:
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            # Update the run info of those running nodes to a canceled status.
+            run_tracker.cancel_node_runs(run_id)
             run_tracker.end_run(line_run_id, ex=ex)
             # If async execution is enabled, ignore this exception and return the partial line results.
             if not self._should_use_async():
                 raise
-        except Exception as e:
-            run_tracker.end_run(line_run_id, ex=e)
+        except Exception as ex:
+            run_tracker.end_run(line_run_id, ex=ex)
             if self._raise_ex:
                 raise
         finally:
@@ -1034,6 +1046,8 @@ class FlowExecutor:
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            # Update the run info of those running nodes to a canceled status.
+            run_tracker.cancel_node_runs(run_id)
             run_tracker.end_run(line_run_id, ex=ex)
             raise
         except Exception as e:
@@ -1335,3 +1349,13 @@ def execute_flow(
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
+
+
+def signal_handler(sig, frame):
+    """Handle the terminate signal received by the process.
+
+    Currently, only the single node run use this handler. We print the log and raise a
+    KeyboardInterrupt so that external code can catch this exception and cancel the running node."
+    """
+    logger.info(f"Received signal {sig}({signal.Signals(sig).name}), will terminate the current process.")
+    raise KeyboardInterrupt

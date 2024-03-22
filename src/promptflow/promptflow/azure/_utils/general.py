@@ -4,46 +4,22 @@
 
 import jwt
 
-from promptflow.exceptions import ValidationException
+from promptflow.core._connection_provider._utils import get_arm_token, get_token
 
 
 def is_arm_id(obj) -> bool:
     return isinstance(obj, str) and obj.startswith("azureml://")
 
 
-def get_token(credential, resource) -> str:
-    from azure.ai.ml._azure_environments import _resource_to_scopes
-
-    azure_ml_scopes = _resource_to_scopes(resource)
-    token = credential.get_token(*azure_ml_scopes).token
-    # validate token has aml audience
-    decoded_token = jwt.decode(
-        token,
-        options={"verify_signature": False, "verify_aud": False},
-    )
-    if decoded_token.get("aud") != resource:
-        msg = """AAD token with aml scope could not be fetched using the credentials being used.
-            Please validate if token with {0} scope can be fetched using credentials provided to PFClient.
-            Token with {0} scope can be fetched using credentials.get_token({0})
-            """
-        raise ValidationException(
-            message=msg.format(*azure_ml_scopes),
-        )
-
-    return token
+# Add for backward compitability
+get_token = get_token
+get_arm_token = get_arm_token
 
 
 def get_aml_token(credential) -> str:
     from azure.ai.ml._azure_environments import _get_aml_resource_id_from_metadata
 
     resource = _get_aml_resource_id_from_metadata()
-    return get_token(credential, resource)
-
-
-def get_arm_token(credential) -> str:
-    from azure.ai.ml._azure_environments import _get_base_url_from_metadata
-
-    resource = _get_base_url_from_metadata()
     return get_token(credential, resource)
 
 

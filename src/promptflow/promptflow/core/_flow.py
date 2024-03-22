@@ -20,12 +20,12 @@ from promptflow.core._prompty_utils import (
     get_open_ai_client_by_connection,
     prepare_open_ai_request_params,
 )
-from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
-from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
 
-class FlowBase(abc.ABC):
+class AbstractFlowBase(abc.ABC):
+    """Abstract class for all Flow entities in both core and devkit."""
+
     def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
         # yaml content if provided
         self._data = data
@@ -33,6 +33,11 @@ class FlowBase(abc.ABC):
         self._code = Path(code).resolve()
         # flow file path, can be script file or flow definition YAML file
         self._path = Path(path).resolve()
+
+
+class FlowBase(AbstractFlowBase):
+    def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
+        super().__init__(data=data, code=code, path=path, **kwargs)
 
     @property
     def code(self) -> Path:
@@ -76,8 +81,6 @@ class FlowBase(abc.ABC):
                 language=flow_language,
             )
 
-        if is_flex_flow(yaml_dict=data, working_dir=flow_dir):
-            raise UserErrorException("Please call entry directly for flex flow.")
         return cls._create(code=flow_dir, path=flow_path, data=data)
 
     @classmethod
@@ -121,14 +124,16 @@ class Flow(FlowBase):
     def invoke(self, inputs: dict, connections: dict = None, **kwargs) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         # candidate parameters: connections, variant, overrides, streaming
+        from promptflow.core._serving.flow_invoker import FlowInvoker
+
+        if is_flex_flow(yaml_dict=self._data, working_dir=self.code):
+            raise UserErrorException("Please call entry directly for flex flow.")
 
         invoker = FlowInvoker(
-            flow=init_executable(flow_dag=self._data, working_dir=self.code),
+            flow=self,
             # TODO (3027983): resolve the connections before passing to invoker
             connections=connections,
             streaming=True,
-            flow_path=self.path,
-            working_dir=self.code,
         )
         result = invoker._invoke(
             data=inputs,
@@ -172,8 +177,10 @@ class AsyncFlow(FlowBase):
     async def invoke(self, inputs: dict, *, connections: dict = None, **kwargs) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
 
+        from promptflow.core._serving.flow_invoker import AsyncFlowInvoker
+
         invoker = AsyncFlowInvoker(
-            flow=init_executable(flow_dag=self._data, working_dir=self.code),
+            flow=self,
             # TODO (3027983): resolve the connections before passing to invoker
             connections=connections,
             streaming=True,

@@ -13,9 +13,10 @@ import sys
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 from typing import List, Optional
 
-from promptflow._constants import PF_LOGGING_LEVEL
+from promptflow._constants import LINE_NUMBER_WIDTH, PF_LOGGING_LEVEL
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
@@ -217,10 +218,22 @@ class LogContext:
     run_mode: Optional[RunMode] = RunMode.Test
     credential_list: Optional[List[str]] = None  # These credentials will be scrubbed in logs.
     input_logger: logging.Logger = None  # If set, then context will also be set for input_logger.
+    flow_logs_folder: Optional[str] = None  # Used in batch mode to specify the folder for flow logs.
+    line_number: Optional[int] = None  # Used in batch mode to specify the line log file name.
+
+    # Before, we only have one FileHandlerConcurrentWrapper for any run mode.
+    # Now, we have two for batch run mode, one for whole run log, one for single line log.
+    # For single line log handlers, we create and remove them in __enter__ and __exit__ method,
+    # to avoid setting same logger path for 2 handlers.
+    temporary_flow_log_handlers = []
 
     def get_initializer(self):
         return partial(
-            LogContext, file_path=self.file_path, run_mode=self.run_mode, credential_list=self.credential_list
+            LogContext,
+            file_path=self.file_path,
+            run_mode=self.run_mode,
+            credential_list=self.credential_list,
+            flow_logs_folder=self.flow_logs_folder,
         )
 
     @staticmethod
@@ -244,6 +257,7 @@ class LogContext:
 
     def __enter__(self):
         self._set_log_path()
+        self._add_batch_run_flow_logs_handler()
         self._set_credential_list()
         LogContext.set_current(self)
 
@@ -258,6 +272,9 @@ class LogContext:
                     handler.clear()
                 elif isinstance(handler.formatter, CredentialScrubberFormatter):
                     handler.formatter.clear()
+            for handlers_to_remove in self.temporary_flow_log_handlers:
+                logger_.removeHandler(handlers_to_remove)
+        self.temporary_flow_log_handlers.clear()
         LogContext.clear_current()
 
     def _set_log_path(self):
@@ -270,6 +287,21 @@ class LogContext:
                 if isinstance(log_handler, FileHandlerConcurrentWrapper):
                     handler = FileHandler(self.file_path)
                     log_handler.handler = handler
+
+    # During __enter__ method, add FileHandlerConcurrentWrapper for batch run mode's single line execution log.
+    # And remove it during __exit__ method.
+    def _add_batch_run_flow_logs_handler(self):
+        if self.run_mode != RunMode.Batch or self.flow_logs_folder is None or self.line_number is None:
+            return
+
+        file_name = f"{str(self.line_number).zfill(LINE_NUMBER_WIDTH)}.log"
+        path = Path(self.flow_logs_folder) / file_name
+        for logger_ in self._get_batch_run_flow_loggers_list():
+            flow_log_handler = FileHandlerConcurrentWrapper()
+            handler = FileHandler(path)
+            flow_log_handler.handler = handler
+            logger_.addHandler(flow_log_handler)
+            self.temporary_flow_log_handlers.append(flow_log_handler)
 
     def _set_credential_list(self):
         # Set credential list to all loggers.
@@ -301,6 +333,11 @@ class LogContext:
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
         # return all loggers for executor
         return [logger, flow_logger, bulk_logger]
+
+    @classmethod
+    def _get_batch_run_flow_loggers_list(cls) -> List[logging.Logger]:
+        # Exclude bulk_logger for line execution log.
+        return [logger, flow_logger]
 
 
 def update_log_path(log_path: str, input_logger: logging.Logger = None):

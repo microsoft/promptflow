@@ -13,7 +13,6 @@ from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
-from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow._utils.run_tracker_utils import _deep_copy_and_extract_items_from_generator_proxy
 from promptflow._utils.utils import default_json_encoder
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
@@ -22,6 +21,7 @@ from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.tracing._openai_utils import OpenAIMetricsCalculator
 from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
 from promptflow.tracing._utils import serialize
 
@@ -238,14 +238,14 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
-    def cancel_node_runs(self, msg: str, flow_run_id):
+    def cancel_node_runs(self, flow_run_id: Optional[str] = None, msg: str = "Received cancel request."):
         node_runs = self.collect_node_runs(flow_run_id)
         for node_run_info in node_runs:
             if node_run_info.status != Status.Running:
                 continue
             msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
             err = ToolCanceledError(
-                message_format="Tool execution is canceled because of the error: {msg}.",
+                message_format="Tool execution is canceled because: {msg}.",
                 msg=msg,
                 target=ErrorTarget.EXECUTOR,
             )

@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import abc
 import json
 from os import PathLike
 from pathlib import Path
@@ -11,6 +10,7 @@ from promptflow._constants import DEFAULT_ENCODING, PROMPTY_EXTENSION
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import is_flex_flow, is_prompty_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
+from promptflow.core._flow import AbstractFlowBase
 from promptflow.exceptions import UserErrorException
 
 
@@ -80,18 +80,12 @@ class FlowContext:
         return hash(json.dumps(self._to_dict(), sort_keys=True))
 
 
-class FlowBase(abc.ABC, SchemaValidatableMixin):
+class FlowBase(AbstractFlowBase, SchemaValidatableMixin):
     def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
         self._context = FlowContext()
-        # flow.dag.yaml's content if provided
-        self._data = data
-        # working directory of the flow
-        self._code = Path(code).resolve()
-        # flow file path, can be script file or flow definition YAML file
-        self._path = Path(path).resolve()
+        AbstractFlowBase.__init__(self, data=data, code=code, path=path, **kwargs)
         # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
-        super().__init__(**kwargs)
 
     @property
     def context(self) -> FlowContext:
