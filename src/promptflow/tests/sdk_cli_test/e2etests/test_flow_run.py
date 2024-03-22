@@ -1501,3 +1501,41 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
+
+    def test_run_with_non_provided_connection_override(self, pf, local_custom_connection):
+        # override non-provided connection when submission
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
+        }
+
+    def test_run_with_non_provided_connection_override_list_annotation(self, pf, local_custom_connection):
+        # override non-provided connection when submission
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/list_connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
+        }

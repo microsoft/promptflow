@@ -17,11 +17,11 @@ import argparse  # noqa: E402
 import logging  # noqa: E402
 import sys  # noqa: E402
 
-from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
-from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version  # noqa: E402
 from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context  # noqa: E402
+from promptflow.azure._cli._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
+from promptflow.azure._cli._run import add_parser_run, dispatch_run_commands  # noqa: E402
 
 # get logger for CLI
 logger = get_cli_sdk_logger()

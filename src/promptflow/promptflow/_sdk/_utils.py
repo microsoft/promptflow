@@ -68,7 +68,8 @@ from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+
 
 logger = get_cli_sdk_logger()
 
@@ -186,7 +187,7 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         return schema(context=context).load(data, **kwargs)
     except ValidationError as e:
         pretty_error = json.dumps(e.normalized_messages(), indent=2)
-        raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
+        raise ValidationException(decorate_validation_error(schema, pretty_error, additional_message))
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
@@ -383,7 +384,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(code_path.resolve().as_posix(), temp_dir, dirs_exist_ok=True)
         for item in _get_additional_includes(yaml_path):
-            src_path = Path(item)
+            src_path = Path(str(item))
             if not src_path.is_absolute():
                 src_path = (code_path / item).resolve()
 
@@ -395,9 +396,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             if not src_path.exists():
                 error = ValueError(f"Unable to find additional include {item}")
                 raise UserErrorException(
-                    target=ErrorTarget.CONTROL_PLANE_SDK,
-                    message=str(error),
-                    error=error,
+                    target=ErrorTarget.CONTROL_PLANE_SDK, message=str(error), error=error, privacy_info=[item]
                 )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)

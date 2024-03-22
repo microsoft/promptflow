@@ -9,11 +9,12 @@ from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_
 from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_flow
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
-from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.core._connection import _Connection
+from promptflow.core._flow import AbstractFlowBase
 from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow.core._serving.flow_result import FlowResult
 from promptflow.core._serving.utils import validate_request_data
+from promptflow.core._utils import init_executable
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -22,8 +23,8 @@ class FlowInvoker:
     """
     The invoker of a flow.
 
-    :param flow: The path of the flow.
-    :type flow: [str, Path]
+    :param flow: A loaded Flow object.
+    :type flow: Flow
     :param connection_provider: The connection provider, defaults to None
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
@@ -42,20 +43,18 @@ class FlowInvoker:
 
     def __init__(
         self,
-        flow: ExecutableFlow,
+        flow: AbstractFlowBase,
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
         connections: dict = None,
         connections_name_overrides: dict = None,
         environment_variables: dict = None,
         raise_ex: bool = True,
-        *,
-        flow_path: Path,
-        working_dir: Path,
         **kwargs,
     ):
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
-        self.flow = flow
+        # TODO: avoid to use private attribute after we finalize the inheritance
+        self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
         self.environment_variables = environment_variables or {}
@@ -69,7 +68,8 @@ class FlowInvoker:
         self._credential = kwargs.get("credential", None)
 
         self._init_connections(connection_provider)
-        self._init_executor(flow_path, working_dir)
+        # TODO: avoid to use private attribute after we finalize the inheritance
+        self._init_executor(flow._path, flow._code)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
