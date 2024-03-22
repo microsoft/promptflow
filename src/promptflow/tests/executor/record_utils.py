@@ -1,9 +1,22 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
+
+try:
+    from promptflow_recording.record_mode import is_live, is_record, is_replay
+except ImportError:
+    # Run test in empty mode if promptflow-recording is not installed
+
+    def is_live():
+        return False
+
+    def is_record():
+        return False
+
+    def is_replay():
+        return False
+
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(
@@ -21,7 +34,7 @@ def setup_recording():
             patches.append(patcher)
             patcher.start()
 
-    if pytest.is_replay or pytest.is_record:
+    if is_replay() or is_record():
         # For replay and record mode, we setup two patches:
         # 1) mocked_tool setup
         # 2) openai_injector realted mock
@@ -48,7 +61,7 @@ def setup_recording():
         start_patches(patch_targets)
         inject_openai_api()
 
-    if pytest.is_live:
+    if is_live():
         # For live mode, we setup openai_injector mock for token collection purpose
         from promptflow_recording.local import inject_async_with_recording, inject_sync_with_recording
 

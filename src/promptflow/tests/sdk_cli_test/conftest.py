@@ -286,11 +286,11 @@ def recording_injection(mocker: MockerFixture):
     try:
         yield
     finally:
-        if pytest.is_replay or pytest.is_record:
+        if is_replay() or is_record():
             from promptflow_recording.local import RecordStorage
 
             RecordStorage.get_instance().delete_lock_file()
-        if pytest.is_live:
+        if is_live():
             from promptflow_recording.local import delete_count_lock_file
 
             delete_count_lock_file()
@@ -313,7 +313,7 @@ def setup_recording_injection_if_enabled():
             patches.append(patcher)
             patcher.start()
 
-    if pytest.is_replay or pytest.is_record:
+    if is_replay() or is_record():
         from promptflow_recording.local import (
             RecordStorage,
             inject_async_with_recording,
@@ -338,7 +338,7 @@ def setup_recording_injection_if_enabled():
         }
         start_patches(patch_targets)
 
-    if pytest.is_live and pytest.is_in_ci_pipeline:
+    if is_live() and is_in_ci_pipeline():
         from promptflow_recording.local import inject_async_with_recording, inject_sync_with_recording
 
         patch_targets = {
