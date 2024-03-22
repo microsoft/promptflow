@@ -493,7 +493,9 @@ def generate_tool_meta_in_subprocess(
 
 
 def generate_flow_meta_dict_by_file(data: dict, source: str = None, path: str = None):
-    """Generate flow meta for eager flow file."""
+    """Generate flow meta for eager flow data.
+    Original flow configuration like environment variables will be generated in meta.
+    """
 
     entry = data.get("entry")
     if path:

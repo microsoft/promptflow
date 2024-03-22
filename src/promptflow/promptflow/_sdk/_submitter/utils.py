@@ -251,7 +251,12 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(
-        flow: Flow, client=None, *, connections_to_ignore=None, connections_to_add: List[str] = None
+        flow: Flow,
+        client=None,
+        *,
+        connections_to_ignore=None,
+        connections_to_add: List[str] = None,
+        environment_variables_overrides: Dict[str, str] = None,
     ) -> dict:
         from .._pf_client import PFClient
 
@@ -263,6 +268,7 @@ class SubmitterHelper:
             .get_used_connection_names(
                 flow_file=flow.path,
                 working_dir=flow.code,
+                environment_variables_overrides=environment_variables_overrides,
             )
         )
 
