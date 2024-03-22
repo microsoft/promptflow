@@ -35,8 +35,11 @@ class SingleLinePythonExecutorProxy(AbstractExecutorProxy):
 
     async def exec_line_async(
         self,
-        inputs: dict[str, Any],
+        inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
         return await self._line_execution_process_pool.submit(run_id, index, inputs)
+
+    async def destroy(self):
+        self._line_execution_process_pool.close()

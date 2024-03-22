@@ -15,11 +15,13 @@ class ChatGroupOrchestrator:
         chat_group_roles: List[ChatGroupRole],
         max_turn: Optional[int] = None,
         storage: Optional[AbstractRunStorage] = None,
+        max_lines_count: Optional[int] = None,
         **kwargs
     ):
         self._storage = storage
         self._max_turn = max_turn
         self._chat_group_roles = chat_group_roles
+        self._max_lines_count = max_lines_count
 
         self._executor_proxies: List[AbstractExecutorProxy] = self._create_executor_proxy(**kwargs)
 
@@ -29,9 +31,10 @@ class ChatGroupOrchestrator:
         chat_group_roles: List[ChatGroupRole],
         max_turn: Optional[int] = None,
         storage: Optional[AbstractRunStorage] = None,
+        max_lines_count: Optional[int] = None,
     ) -> "ChatGroupOrchestrator":
 
-        return ChatGroupOrchestrator(chat_group_roles, max_turn, storage)
+        return ChatGroupOrchestrator(chat_group_roles, max_turn, storage, max_lines_count)
 
     def _create_executor_proxy(self, **kwargs) -> List[AbstractExecutorProxy]:
         executor_proxy_list = []
@@ -49,6 +52,10 @@ class ChatGroupOrchestrator:
             executor_proxy_list.append(executor_proxy)
             chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
         return executor_proxy_list
+
+    async def destroy(self):
+        for executor_proxy in self._executor_proxies:
+            await executor_proxy.destroy()
     
     async def _schedule_runs(
             self,
@@ -114,7 +121,7 @@ class ChatGroupOrchestrator:
     def _process_batch_inputs(self, inputs: Dict[str, Any]):
         batch_inputs: List = []
         for chat_role in self._chat_group_roles:
-            batch_input_processor = BatchInputsProcessor(chat_role.working_dir, chat_role.flow.inputs)
+            batch_input_processor = BatchInputsProcessor(chat_role.working_dir, chat_role.flow.inputs, self._max_lines_count)
             batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role.inputs_mapping)
             batch_inputs.append(batch_input)
 

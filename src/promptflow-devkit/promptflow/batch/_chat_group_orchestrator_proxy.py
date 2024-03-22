@@ -33,14 +33,15 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         """Create a new executor"""
         chat_group_roles: List[ChatGroupRole] = kwargs.get("chat_group_roles")
         max_turn = kwargs.get("max_turn")
+        max_lines_count = kwargs.get("max_lines_count")
 
-        orchestrator = ChatGroupOrchestrator.create(chat_group_roles, max_turn, storage)
+        orchestrator = ChatGroupOrchestrator.create(chat_group_roles, max_turn, storage, max_lines_count)
         
         return cls(orchestrator)
     
     async def destroy(self):
         """Destroy the executor"""
-        pass
+        await self._orchestrator.destroy()
 
     async def exec_line_async(
         self,

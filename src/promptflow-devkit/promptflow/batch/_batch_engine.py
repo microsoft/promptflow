@@ -184,7 +184,8 @@ class BatchEngine:
                     chat_group_roles = self._chat_group_roles,
                     max_turn = self._max_turn,
                     run_id = run_id,
-                    input_dirs = input_dirs
+                    input_dirs = input_dirs,
+                    max_lines_count = max_lines_count
                 )
                 try:
                     # register signal handler for python flow in the main thread
@@ -209,7 +210,7 @@ class BatchEngine:
                         batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     else:
-                        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs_without_inputs_mapping(input_dirs)
+                        batch_inputs = BatchInputsProcessor("", {}, max_lines_count).process_batch_inputs_without_inputs_mapping(input_dirs)
 
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
