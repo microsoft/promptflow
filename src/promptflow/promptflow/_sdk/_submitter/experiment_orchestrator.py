@@ -81,7 +81,7 @@ class ExperimentOrchestrator:
         self._node_runs = {}
 
     def test(
-        self, template: ExperimentTemplate, flow: Union[str, Path] = None, inputs = None, environment_variables = None,
+        self, template: ExperimentTemplate, flow: Union[str, Path] = None, inputs=None, environment_variables=None,
             **kwargs
     ):
         """Test flow in experiment.

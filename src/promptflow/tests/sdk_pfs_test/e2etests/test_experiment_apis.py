@@ -17,9 +17,6 @@ EXPERIMENT_PATH = (
 @pytest.mark.e2etest
 class TestExperimentAPIs:
     def test_experiment_test(self, pfs_op: PFSOperations) -> None:
-        name = str(uuid.uuid4())
-
-        # Create experiment
         with check_activity_end_telemetry(
             expected_activities=[
                 {"activity_name": "pf.connections.get", "first_call": False},
@@ -36,7 +33,9 @@ class TestExperimentAPIs:
 
     def test_get_experiment_yaml(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            experiment_yaml_from_pfs = pfs_op.get_experiment(flow_path=FLOW_PATH, experiment_path=EXPERIMENT_PATH.absolute().as_posix()).json
+            experiment_yaml_from_pfs = pfs_op.get_experiment(
+                flow_path=FLOW_PATH,
+                experiment_path=EXPERIMENT_PATH.absolute().as_posix()).json
         assert experiment_yaml_from_pfs == {
             '$schema': 'https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json',
             'description': 'Basic experiment without script node',
