@@ -2,9 +2,6 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: requirements.txt
 inputs:
-  chat_history:
-    type: list
-    is_chat_history: true
   utterance:
     type: string
     is_chat_input: true
@@ -21,11 +18,11 @@ nodes:
     type: code
     path: chat.jinja2
   inputs:
-    deployment_name: cluGPTTurbo
+    deployment_name: ''
     max_tokens: 256
     temperature: 0.7
     question: ${inputs.utterance}
-  connection: CLUGPTModel
+  connection: azure_openai
   api: chat
 - name: Conversational_Language_Understanding
   type: python
@@ -33,9 +30,9 @@ nodes:
     type: package
     tool: language_tools.tools.conversational_language_understanding.get_conversational_language_understanding
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     language: en-us
     utterances: ${LLM_Rewrite.output}
     project_name: MediaPlayer
-    deployment_name: adv
-    parse_response: false
+    deployment_name: ''
+    parse_response: true

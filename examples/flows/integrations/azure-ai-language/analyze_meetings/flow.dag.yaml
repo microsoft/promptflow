@@ -4,7 +4,7 @@ environment:
 inputs:
   meeting_path:
     type: string
-    default: ./meeting.txt
+    default: ./transcript.txt
 outputs:
   narrative_summary:
     type: string
@@ -38,9 +38,17 @@ nodes:
     type: package
     tool: language_tools.tools.language_detection.get_language_detection
   inputs:
-    connection: azure_ai_language_connection
-    text: ${Read_File.output}
+    connection: azure_ai_language
+    text: ${Peek_Text.output}
     parse_response: true
+- name: Peek_Text
+  type: python
+  source:
+    type: code
+    path: peek_text.py
+  inputs:
+    text: ${Read_File.output}
+    length: 5120
 - name: Extract_Language_Code
   type: python
   source:
@@ -73,7 +81,7 @@ nodes:
     type: package
     tool: language_tools.tools.key_phrase_extraction.get_key_phrase_extraction
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     document: ${Create_Document.output}
     parse_response: true
 - name: Conversational_PII
@@ -82,7 +90,7 @@ nodes:
     type: package
     tool: language_tools.tools.conversational_pii.get_conversational_pii
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     parse_response: true
     conversation: ${Create_Conversation.output}
 - name: Create_Redacted_Conversation
@@ -99,7 +107,7 @@ nodes:
     type: package
     tool: language_tools.tools.conversation_summarization.get_conversation_summarization
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     conversation: ${Create_Redacted_Conversation.output}
     summary_aspect: narrative
     parse_response: true
@@ -109,7 +117,7 @@ nodes:
     type: package
     tool: language_tools.tools.conversation_summarization.get_conversation_summarization
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     conversation: ${Create_Redacted_Conversation.output}
     summary_aspect: recap
     parse_response: true
@@ -119,7 +127,7 @@ nodes:
     type: package
     tool: language_tools.tools.conversation_summarization.get_conversation_summarization
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     conversation: ${Create_Redacted_Conversation.output}
     summary_aspect: follow-up tasks
     parse_response: true
@@ -129,7 +137,7 @@ nodes:
     type: package
     tool: language_tools.tools.conversation_summarization.get_conversation_summarization
   inputs:
-    connection: azure_ai_language_connection
+    connection: azure_ai_language
     conversation: ${Create_Redacted_Conversation.output}
     summary_aspect: chapterTitle
     parse_response: true
