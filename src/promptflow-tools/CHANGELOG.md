@@ -7,10 +7,10 @@
 - Add "seed" to LLM and GPT-Vision tool inputs.
 
 ### Improvements
-- Improve error message when LLM tool meets gpt-4-vision-preview model
+- Improve error message when LLM tool meets gpt-4-vision-preview model.
 
 ### Bugs Fixed
-- Fix dynamic list function for GPT-Vision tool to avoid misleading errors
+- Set default values to workspace triad parameters of dynamic list function to avoid misleading errors when clicking tool input.
 
 ## 1.3.0 (2024.03.01)
 
