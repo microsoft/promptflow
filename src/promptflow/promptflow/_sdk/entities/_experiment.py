@@ -198,6 +198,7 @@ class ChatGroupNode(YAMLTranslatableMixin):
         max_tokens: Optional[int] = None,
         max_time: Optional[int] = None,
         stop_signal: Optional[str] = None,
+        code: Union[Path, str] = None,
         **kwargs,
     ):
         self.type = ExperimentNodeType.CHAT_GROUP
@@ -207,6 +208,7 @@ class ChatGroupNode(YAMLTranslatableMixin):
         self.max_tokens = max_tokens
         self.max_time = max_time
         self.stop_signal = stop_signal
+        self.code = code
 
     @classmethod
     def _get_schema_cls(cls):
@@ -218,6 +220,7 @@ class ChatGroupNode(YAMLTranslatableMixin):
         logger.debug(f"Saving chat group node {self.name!r} snapshot to {target.as_posix()!r}.")
         saved_path = target / self.name
         saved_path.mkdir(parents=True, exist_ok=True)
+
         for role in self.roles:
             role_path = Path(role["path"]).resolve()
             if not role_path.exists():
@@ -227,6 +230,8 @@ class ChatGroupNode(YAMLTranslatableMixin):
                 shutil.copytree(src=role_path, dst=saved_path / role["role"])
             else:
                 shutil.copytree(src=role_path.parent, dst=saved_path / role["role"])
+
+        self.code = saved_path.resolve().as_posix()
 
 
 class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
