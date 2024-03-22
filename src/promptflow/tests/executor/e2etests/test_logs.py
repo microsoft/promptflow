@@ -13,6 +13,9 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
 from ..utils import (
+    EAGER_FLOW_ROOT,
+    FLOW_ROOT,
+    count_lines,
     get_batch_inputs_line,
     get_bulk_inputs_from_jsonl,
     get_flow_folder,
@@ -43,9 +46,11 @@ class TestExecutorLogs:
         for node_run_info in flow_result.node_run_infos.values():
             self.assert_node_run_info(node_run_info, content)
 
-    def submit_bulk_run(self, folder_name):
-        batch_engine = BatchEngine(get_yaml_file(folder_name), get_flow_folder(folder_name), connections={})
-        input_dirs = {"data": get_flow_inputs_file(folder_name)}
+    def submit_bulk_run(self, folder_name, root=FLOW_ROOT):
+        batch_engine = BatchEngine(
+            get_yaml_file(folder_name, root=root), get_flow_folder(folder_name, root=root), connections={}
+        )
+        input_dirs = {"data": get_flow_inputs_file(folder_name, root=root)}
         inputs_mapping = {"text": "${data.text}"}
         output_dir = Path(mkdtemp())
         return batch_engine.run(input_dirs, inputs_mapping, output_dir)
@@ -90,6 +95,7 @@ class TestExecutorLogs:
             log_content = load_content(flow_run_log_path)
             loggers_name_list = ["execution", "execution.flow"]
             assert all(logger in log_content for logger in loggers_name_list)
+            assert 6 == count_lines(flow_run_log_path)
 
         # bulk run: test batch_engine.run
         # setting run_mode to BulkTest is a requirement to use bulk_logger
@@ -101,6 +107,32 @@ class TestExecutorLogs:
             bulk_logs_keywords = ["Average execution time for completed lines", "Estimated time for incomplete lines"]
             assert all(logger in log_content for logger in loggers_name_list)
             assert all(keyword in log_content for keyword in bulk_logs_keywords)
+            # Customer facing log is really important, so we pay the effort to make change
+            # about test wehen line count change a lot in the future.
+            line_count = count_lines(bulk_run_log_path)
+            assert 40 <= line_count <= 50
+
+    @pytest.mark.parametrize(
+        "root,folder_name, line_number", [[FLOW_ROOT, "print_input_flow", 8], [EAGER_FLOW_ROOT, "print_input_flex", 2]]
+    )
+    def test_batch_run_flow_logs(self, root, folder_name, line_number):
+        logs_directory = Path(mkdtemp())
+        bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
+        bulk_run_flow_logs_folder = str(logs_directory / "test_bulk_run_flow_logs_folder")
+        Path(bulk_run_flow_logs_folder).mkdir()
+        with LogContext(bulk_run_log_path, run_mode=RunMode.Batch, flow_logs_folder=bulk_run_flow_logs_folder):
+            self.submit_bulk_run(folder_name, root=root)
+            nlines = len(get_bulk_inputs_from_jsonl(folder_name, root=root))
+            for i in range(nlines):
+                file_name = f"{str(i).zfill(LINE_NUMBER_WIDTH)}.log"
+                flow_log_file = Path(bulk_run_flow_logs_folder) / file_name
+                assert flow_log_file.is_file()
+                log_content = load_content(flow_log_file)
+                # Assert flow log file contains expected logs
+                assert "execution          WARNING" in log_content
+                assert "execution.flow     INFO" in log_content
+                assert f"in line {i} (index starts from 0)" in log_content
+                assert line_number == count_lines(flow_log_file)
 
     @pytest.mark.parametrize(
         "folder_name",
@@ -205,30 +237,6 @@ class TestExecutorLogs:
                 assert isinstance(output, dict)
                 assert "line_number" in output, f"line_number is not in {i}th output {output}"
                 assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-
-    def test_batch_run_flow_logs(self, dev_connections):
-        flow_folder = "print_input_flow"
-        logs_directory = Path(mkdtemp())
-        bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
-        bulk_run_flow_logs_folder = str(logs_directory / "test_bulk_run_flow_logs_folder")
-        Path(bulk_run_flow_logs_folder).mkdir()
-        with LogContext(bulk_run_log_path, run_mode=RunMode.Batch, flow_logs_folder=bulk_run_flow_logs_folder):
-            submit_batch_run(
-                flow_folder,
-                inputs_mapping={"text": "${data.text}"},
-                connections=dev_connections,
-                input_file_name="inputs.jsonl",
-            )
-            nlines = len(get_bulk_inputs_from_jsonl(flow_folder))
-            for i in range(nlines):
-                file_name = f"{str(i).zfill(LINE_NUMBER_WIDTH)}.log"
-                flow_log_file = Path(bulk_run_flow_logs_folder) / file_name
-                assert flow_log_file.is_file()
-                log_content = load_content(flow_log_file)
-                # Assert flow log file contains expected logs
-                assert "execution          WARNING" in log_content
-                assert "execution.flow     INFO" in log_content
-                assert f"in line {i} (index starts from 0)" in log_content
 
     def test_activate_config_log(self):
         logs_directory = Path(mkdtemp())

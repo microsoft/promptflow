@@ -9,6 +9,7 @@ from types import GeneratorType
 from typing import Any, Callable, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
@@ -54,8 +55,12 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
-        with self._update_operation_context(run_id, index):
-            return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
+        log_manager = NodeLogManager()
+        # Not need to clear node context, since log_manger will be cleared after the with block.
+        log_manager.set_node_context(run_id, "Flex", index)
+        with log_manager:
+            with self._update_operation_context(run_id, index):
+                return self._exec_line(inputs, index, run_id, allow_generator_output=allow_generator_output)
 
     def _exec_line(
         self,
