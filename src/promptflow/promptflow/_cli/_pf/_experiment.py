@@ -251,8 +251,6 @@ def show_experiment(args: argparse.Namespace):
 
 def test_experiment(args: argparse.Namespace):
     if args.template:
-        from promptflow._sdk._load_functions import _load_experiment
-
         logger.debug(f"Testing an anonymous experiment {args.template}.")
         inputs = list_of_dict_to_dict(args.inputs)
         result = _get_pf_client()._experiments.test(experiment=args.template, inputs=inputs)

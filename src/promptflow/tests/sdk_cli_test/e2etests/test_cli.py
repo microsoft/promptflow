@@ -2024,7 +2024,7 @@ class TestCli:
                 assert path.is_file()
 
     @pytest.mark.usefixtures("setup_experiment_table", "recording_injection")
-    def test_experiment_test(self, monkeypatch, capfd, local_client, tmpdir):
+    def test_experiment_direct_test(self, monkeypatch, capfd, local_client, tmpdir):
             run_pf_command(
                 "experiment",
                 "test",

@@ -178,7 +178,7 @@ class ExperimentOperations(TelemetryMixin):
         )
 
     def _test_with_ui(self, experiment: Experiment, inputs=None, environment_variables=None, **kwargs) -> Experiment:
-        """Test an experiment by http reuwest.
+        """Test an experiment by http request.
 
         :param experiment: Experiment yaml file path.
         :type experiment: Union[Path, str]

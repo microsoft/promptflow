@@ -288,7 +288,6 @@ class TestExperiment:
             client._experiments.test(
                 experiment=template_path,
             )
-            print("haha")
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_eager_flow_test_with_experiment(self, monkeypatch):
