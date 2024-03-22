@@ -12,7 +12,7 @@ from openai import (
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
-    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
+    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat, ExceedMaxRetryTimes
 from promptflow.tools.openai import chat as openai_chat
 from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 from pytest_mock import MockerFixture
@@ -135,6 +135,18 @@ class TestHandleOpenAIError:
                 mocker.call(4),
             ]
             mock_sleep.assert_has_calls(expected_calls)
+
+    def test_retriable_api_connection_error(self, mocker: MockerFixture):
+        # for below exception sequence, consecutive_conn_error_count changes 0 -> 1 -> 0 -> 1 -> 2.
+        exception_sequence = [APIConnectionError, BadRequestError, APITimeoutError, APIConnectionError]
+        # Patch the test_method to throw the desired exception
+        patched_test_method = mocker.patch("promptflow.tools.aoai.AzureOpenAI.chat", side_effect=exception_sequence)
+
+        # Apply the retry decorator to the patched test_method
+        decorated_test_method = handle_openai_error(conn_error_tries=2)(patched_test_method)
+        with pytest.raises(ExceedMaxRetryTimes):
+            decorated_test_method()
+        assert patched_test_method.call_count == 4
 
     @pytest.mark.parametrize(
         "dummyExceptionList",
