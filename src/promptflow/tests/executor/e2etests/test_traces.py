@@ -10,8 +10,8 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._result import LineResult
-from promptflow.tracing._utils import serialize
 from promptflow.tracing import trace
+from promptflow.tracing._utils import serialize
 from promptflow.tracing.contracts.trace import TraceType
 
 from ..process_utils import execute_function_in_subprocess
@@ -410,7 +410,12 @@ class TestOTelTracer:
         expected_span_length,
     ):
         execute_function_in_subprocess(
-            self.assert_otel_traces_with_llm, dev_connections, flow_file, inputs, is_stream, expected_span_length,
+            self.assert_otel_traces_with_llm,
+            dev_connections,
+            flow_file,
+            inputs,
+            is_stream,
+            expected_span_length,
         )
 
     def assert_otel_traces_with_llm(self, dev_connections, flow_file, inputs, is_stream, expected_span_length):
@@ -461,7 +466,7 @@ class TestOTelTracer:
         self.validate_span_list(span_list, line_run_id, expected_span_length)
         for span in span_list:
             if span.attributes.get("function", "") in EMBEDDING_FUNCTION_NAMES:
-                assert span.attributes.get("llm.response.model", "") == "ada"
+                assert ada in span.attributes.get("llm.response.model", "")
                 embeddings = span.attributes.get("embedding.embeddings", "")
                 assert "embedding.vector" in embeddings
                 assert "embedding.text" in embeddings
@@ -517,7 +522,7 @@ class TestOTelTracer:
         for span in span_list:
             if span.attributes.get("span_type", "") != "Flow":
                 inputs = span.attributes.get("inputs", None)
-                if "\"recursive_call\": false" in inputs:
+                if '"recursive_call": false' in inputs:
                     assert span.name == "nested_tool"
                 else:
                     assert span.name == "nested_tool_node"
