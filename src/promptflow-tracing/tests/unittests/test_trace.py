@@ -70,8 +70,8 @@ class MockUsage:
 
 
 class MockTrace:
-    def __init__(self, name, type):
-        self.name = name
+    def __init__(self, function, type):
+        self.function = function
         self.type = type
 
 
