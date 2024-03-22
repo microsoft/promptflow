@@ -153,6 +153,8 @@ AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "reso
 
 # chat group
 STOP_SIGNAL = "[STOP]"
+CHAT_GROUP_REFERENCE_NAME = "parent"
+CONVERSATION_HISTORY = "conversation_history"
 
 
 class RunTypes:
