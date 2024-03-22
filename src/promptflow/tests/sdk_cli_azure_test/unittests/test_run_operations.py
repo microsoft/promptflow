@@ -4,8 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockFixture
 
+from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 from promptflow.exceptions import UserErrorException
@@ -79,3 +80,20 @@ class TestRunOperations:
             with pytest.raises(UserErrorException) as e:
                 pf.runs._resolve_identity(run)
             assert error_msg in str(e)
+
+    def test_wrong_workspace_type(
+        self, mocker: MockFixture, subscription_id: str, resource_group_name: str, workspace_name: str
+    ):
+        from sdk_cli_azure_test._azure_utils import get_cred
+
+        pf = PFClient(
+            credential=get_cred(),
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+        )
+        # test wrong workspace type "hub"
+        mocker.patch.object(pf.runs._workspace, "_kind", "hub")
+        with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
+            datastore = pf.runs._workspace_default_datastore
+            assert datastore
