@@ -66,6 +66,8 @@ PROMPTFLOW_CONNECTIONS = "promptflow.connections"
 
 
 class _Connection(_CoreConnection, YAMLTranslatableMixin):
+    SUPPORTED_TYPES = {}
+
     @classmethod
     def _casting_type(cls, typ):
         type_dict = {
@@ -133,10 +135,11 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         if type_str is None:
             raise ValidationException("type is required for connection.")
         type_str = cls._casting_type(type_str)
-        type_cls = _supported_types.get(type_str)
+        type_cls = cls.SUPPORTED_TYPES.get(type_str)
         if type_cls is None:
             raise ValidationException(
-                f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
+                f"Connection type {type_str!r} is not supported. "
+                f"Supported types are: {list(cls.SUPPORTED_TYPES.keys())}"
             )
         return type_cls, type_str
 
@@ -207,26 +210,6 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
             **kwargs,
         )
         return connection
-
-    def _to_execution_connection_dict(self) -> dict:
-        value = {**self.configs, **self.secrets}
-        secret_keys = list(self.secrets.keys())
-        return {
-            "type": self.class_name,  # Required class name for connection in executor
-            "module": self.module,
-            "value": {k: v for k, v in value.items() if v is not None},  # Filter None value out
-            "secret_keys": secret_keys,
-        }
-
-    @classmethod
-    def _from_execution_connection_dict(cls, name, data) -> "_Connection":
-        type_cls, _ = cls._resolve_cls_and_type(data={"type": data.get("type")[: -len("Connection")]})
-        value_dict = data.get("value", {})
-        if type_cls == CustomConnection:
-            secrets = {k: v for k, v in value_dict.items() if k in data.get("secret_keys", [])}
-            configs = {k: v for k, v in value_dict.items() if k not in secrets}
-            return CustomConnection(name=name, configs=configs, secrets=secrets)
-        return type_cls(name=name, **value_dict)
 
     def _get_scrubbed_secrets(self):
         """Return the scrubbed secrets of connection."""
@@ -550,7 +533,9 @@ class CustomConnection(_CoreCustomConnection, _Connection):
         )
 
 
-_supported_types = {
+# Note: Do not import this from core connection.
+# As we need the class here.
+_Connection.SUPPORTED_TYPES = {
     v.TYPE: v
     for v in globals().values()
     if isinstance(v, type) and issubclass(v, _Connection) and not v.__name__.startswith("_")

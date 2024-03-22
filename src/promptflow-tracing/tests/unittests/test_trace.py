@@ -11,7 +11,6 @@ from promptflow.tracing._trace import (
     enrich_span_with_openai_tokens,
     enrich_span_with_prompt_info,
     enrich_span_with_trace,
-    traced_generator,
 )
 from promptflow.tracing.contracts.trace import TraceType
 
@@ -184,26 +183,6 @@ def test_enrich_span_with_input(caplog):
     enrich_span_with_input(span, "input")
     assert caplog.records[0].levelname == "WARNING"
     assert "Failed to enrich span with input" in caplog.text
-
-
-@pytest.mark.unittest
-def test_traced_generator():
-    def original_generator():
-        for i in range(3):
-            yield i
-
-    # Non-llm case
-    original_span = MockSpan(MockSpanContext(1))
-    original_span.attributes["span_type"] = "Dummy"
-    span = MockSpan(MockSpanContext(2))
-    with patch(
-        "promptflow.tracing._trace.open_telemetry_tracer.start_as_current_span", return_value=span), patch(
-        "promptflow.tracing._trace.Link", return_value="dummy_link"
-    ):
-        generator = traced_generator(original_generator(), original_span)
-        for _ in generator:
-            pass
-        assert span.attributes["output"] == "[\n  0,\n  1,\n  2\n]"
 
 
 @pytest.mark.unittest
