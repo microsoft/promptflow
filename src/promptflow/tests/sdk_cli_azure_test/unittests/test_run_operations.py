@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
-from pytest_mock import MockerFixture, MockFixture
+from pytest_mock import MockerFixture
 
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk.entities import Run
@@ -82,7 +82,7 @@ class TestRunOperations:
             assert error_msg in str(e)
 
     def test_wrong_workspace_type(
-        self, mocker: MockFixture, subscription_id: str, resource_group_name: str, workspace_name: str
+        self, mocker: MockerFixture, subscription_id: str, resource_group_name: str, workspace_name: str
     ):
         from sdk_cli_azure_test._azure_utils import get_cred
 
