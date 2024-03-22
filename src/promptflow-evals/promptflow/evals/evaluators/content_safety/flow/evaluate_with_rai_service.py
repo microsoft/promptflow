@@ -6,6 +6,7 @@ import numpy as np
 import re
 from utils import get_harm_severity_level
 from azure.core.credentials import TokenCredential
+from azure.identity import DefaultAzureCredential
 import requests
 
 def ensure_service_availability(rai_svc_url: str):
@@ -168,6 +169,11 @@ def evaluate_with_rai_service(
     metric_name: str,
     project_scope: dict,
     credential: TokenCredential):
+
+    # Use DefaultAzureCredential if no credential is provided
+    # This is for the for batch run scenario as the credential cannot be serialized by promoptflow
+    if credential is None or credential == {}:
+        credential = DefaultAzureCredential()
 
     # Get RAI service URL from discovery service and check service availability
     rai_svc_url = get_rai_svc_url(project_scope, credential)
