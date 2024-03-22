@@ -554,12 +554,16 @@ def _resolve_python_flow_additional_includes(source) -> Path:
 
 
 def serve_flow_python(args, source):
+    from promptflow._sdk._configuration import Configuration
     from promptflow.core._serving.app import create_app
 
     static_folder = args.static_folder
     if static_folder:
         static_folder = Path(static_folder).absolute().as_posix()
     config = list_of_dict_to_dict(args.config)
+    pf_config = Configuration(overrides=config)
+    logger.info(f"Promptflow config: {pf_config}")
+    connection_provider = pf_config.get_connection_provider()
     source = _resolve_python_flow_additional_includes(source)
     os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     logger.info(f"Change working directory to model dir {source}")
@@ -567,7 +571,7 @@ def serve_flow_python(args, source):
     app = create_app(
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
-        config=config,
+        connection_provider=connection_provider,
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

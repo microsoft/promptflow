@@ -7,7 +7,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Mapping, Union
 
-from promptflow._constants import DEFAULT_ENCODING, FlowLanguage, LANGUAGE_KEY
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
@@ -59,8 +59,8 @@ class FlowBase(abc.ABC):
         if flow_language != FlowLanguage.Python:
             raise UserErrorException(
                 message_format="Only python flows are allowed to be loaded with "
-                               "promptflow-core but got a {language} flow",
-                language=flow_language
+                "promptflow-core but got a {language} flow",
+                language=flow_language,
             )
 
         if is_flex_flow(yaml_dict=data, working_dir=flow_dir):
@@ -111,7 +111,6 @@ class Flow(FlowBase):
 
         invoker = FlowInvoker(
             flow=init_executable(flow_dag=self._data, working_dir=self.code),
-            # TODO (3027983): resolve the connections before passing to invoker
             connections=connections,
             streaming=True,
             flow_path=self.path,
@@ -161,7 +160,6 @@ class AsyncFlow(FlowBase):
 
         invoker = AsyncFlowInvoker(
             flow=init_executable(flow_dag=self._data, working_dir=self.code),
-            # TODO (3027983): resolve the connections before passing to invoker
             connections=connections,
             streaming=True,
             flow_path=self.path,
