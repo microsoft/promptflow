@@ -7,8 +7,10 @@ import datetime
 from pathlib import Path
 from typing import Union
 
+import requests
+
 from promptflow._constants import FlowLanguage
-from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
+from promptflow._sdk._constants import TRACE_LOCAL_TO_CLOUD_EXPERIMENT_NAME, ContextAttributeKey, FlowRunProperties
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -197,6 +199,7 @@ class RunSubmitter:
                 end_time=datetime.datetime.now(),
                 system_metrics=system_metrics,
             )
+            self._create_run_record_in_azure(run)
 
     def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
@@ -226,3 +229,42 @@ class RunSubmitter:
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )
+
+    def _create_run_record_in_azure(self, run: Run) -> None:
+        # exclusive function for local to cloud feature
+        # which will be enabled when user set trace.provider in pf config
+        from promptflow._sdk._tracing import _get_ws_triad_from_pf_config
+
+        ws_triad = _get_ws_triad_from_pf_config()
+        if ws_triad is None:
+            return
+
+        try:
+            from azure.identity import AzureCliCredential
+
+            from promptflow.azure import PFClient
+            from promptflow.azure.operations._run_operations import RunRequestException
+
+            pf_client = PFClient(
+                credential=AzureCliCredential(),
+                subscription_id=ws_triad.subscription_id,
+                resource_group_name=ws_triad.resource_group_name,
+                workspace_name=ws_triad.workspace_name,
+            )
+            url = (
+                pf_client.runs._run_history_endpoint_url
+                + f"/experiments/{TRACE_LOCAL_TO_CLOUD_EXPERIMENT_NAME}/runs/{run.name}"
+            )
+            payload = {"status": run.status}
+            response = requests.patch(url, headers=pf_client.runs._get_headers(), json=payload)
+            if response.status_code != 200:
+                raise RunRequestException(
+                    f"Failed to create run record. Code: {response.status_code}, text: {response.text}"
+                )
+
+        except ImportError:
+            error = ImportError(
+                '"promptflow[azure]" is required for local to cloud tracing experience, '
+                'please install it by running "pip install promptflow[azure]" with your version.'
+            )
+            raise UserErrorException(message=str(error), error=error)

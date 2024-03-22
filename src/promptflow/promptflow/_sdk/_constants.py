@@ -465,6 +465,7 @@ class ChatGroupSpeakOrder(str, Enum):
 
 
 TRACE_LIST_DEFAULT_LIMIT = 1000
+TRACE_LOCAL_TO_CLOUD_EXPERIMENT_NAME = "local_to_cloud"
 
 
 class IdentityKeys(str, Enum):
