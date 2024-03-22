@@ -15,21 +15,10 @@
 import os
 import sys
 import platform
-import stat
 import tempfile
 import shutil
 import subprocess
-import hashlib
 
-
-PF_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
-export PF_INSTALLER=Script
-{install_dir}/bin/python -m promptflow._cli._pf.entry "$@"
-"""
-
-PFAZURE_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
-{install_dir}/bin/python -m promptflow.azure._cli.entry "$@"
-"""
 
 DEFAULT_INSTALL_DIR = os.path.expanduser(os.path.join('~', 'lib', 'promptflow'))
 DEFAULT_EXEC_DIR = os.path.expanduser(os.path.join('~', 'bin'))
@@ -91,14 +80,6 @@ def create_dir(dir):
         os.makedirs(dir)
 
 
-def is_valid_sha256sum(a_file, expected_sum):
-    sha256 = hashlib.sha256()
-    with open(a_file, 'rb') as f:
-        sha256.update(f.read())
-    computed_hash = sha256.hexdigest()
-    return expected_sum == computed_hash
-
-
 def create_virtualenv(install_dir):
     cmd = [sys.executable, '-m', 'venv', install_dir]
     exec_command(cmd)
@@ -113,23 +94,6 @@ def install_cli(install_dir, tmp_dir):
     exec_command(cmd)
     cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'keyrings.alt', '--upgrade']
     exec_command(cmd)
-
-
-def create_executable(exec_dir, install_dir):
-    create_dir(exec_dir)
-    exec_filepaths = []
-    for filename, template in [(PF_EXECUTABLE_NAME, PF_DISPATCH_TEMPLATE),
-                               (PFAZURE_EXECUTABLE_NAME, PFAZURE_DISPATCH_TEMPLATE)
-                               ]:
-        exec_filepath = os.path.join(exec_dir, filename)
-        with open(exec_filepath, 'w') as exec_file:
-            exec_file.write(template.format(install_dir=install_dir))
-        cur_stat = os.stat(exec_filepath)
-        os.chmod(exec_filepath, cur_stat.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-        print_status("The executable is available at '{}'.".format(exec_filepath))
-        exec_filepaths.append(exec_filepath)
-    return exec_filepaths
-
 
 def get_install_dir():
     install_dir = None
@@ -154,22 +118,6 @@ def get_install_dir():
                     install_dir = None
     print_status("We will install at '{}'.".format(install_dir))
     return install_dir
-
-
-def get_exec_dir():
-    exec_dir = None
-    while not exec_dir:
-        prompt_message = (f"In what directory would you like to place the "
-                          f"'{PF_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executable?")
-        exec_dir = prompt_input_with_default(prompt_message, DEFAULT_EXEC_DIR)
-        exec_dir = os.path.realpath(os.path.expanduser(exec_dir))
-        if ' ' in exec_dir:
-            print_status("The executable directory '{}' cannot contain spaces.".format(exec_dir))
-            exec_dir = None
-    create_dir(exec_dir)
-    print_status("The executable will be in '{}'.".format(exec_dir))
-    return exec_dir
-
 
 def _backup_rc(rc_file):
     try:
@@ -247,16 +195,16 @@ def warn_other_azs_on_path(exec_dir, exec_filepath):
         print_status("You can run this installation of the promptflow with '{}'.".format(exec_filepath))
 
 
-def handle_path_and_tab_completion(exec_filepath, exec_dir):
+def handle_path_and_tab_completion(exec_filepath, install_dir):
     ans_yes = prompt_y_n('Modify profile to update your $PATH now?', 'y')
     if ans_yes:
         rc_file_path = get_rc_file_path()
         if not rc_file_path:
             raise CLIInstallError('No suitable profile file found.')
         _backup_rc(rc_file_path)
-        line_to_add = "export PATH=$PATH:{}".format(exec_dir)
+        line_to_add = "export PATH=$PATH:{}".format(os.path.join(install_dir, "bin"))
         _modify_rc(rc_file_path, line_to_add)
-        warn_other_azs_on_path(exec_dir, exec_filepath)
+        warn_other_azs_on_path(install_dir, exec_filepath)
         print_status()
         print_status('** Run `exec -l $SHELL` to restart your shell. **')
         print_status()
@@ -275,59 +223,15 @@ def verify_python_version():
     print_status('Python version {}.{}.{} okay.'.format(v.major, v.minor, v.micro))
 
 
-def _native_dependencies_for_dist(verify_cmd_args, install_cmd_args, dep_list):
-    try:
-        print_status("Executing: '{} {}'".format(' '.join(verify_cmd_args), ' '.join(dep_list)))
-        subprocess.check_output(verify_cmd_args + dep_list, stderr=subprocess.STDOUT)
-        print_status('Native dependencies okay.')
-    except subprocess.CalledProcessError:
-        err_msg = 'One or more of the following native dependencies are not currently installed and may be required.\n'
-        err_msg += '"{}"'.format(' '.join(install_cmd_args + dep_list))
-        print_status(err_msg)
-        ans_yes = prompt_y_n('Missing native dependencies. Attempt to continue anyway?', 'n')
-        if not ans_yes:
-            raise CLIInstallError('Please install the native dependencies and try again.')
-
-
-def _get_linux_distro():
-    if platform.system() != 'Linux':
-        return None, None
-
-    try:
-        with open('/etc/os-release') as lines:
-            tokens = [line.strip() for line in lines]
-    except Exception:
-        return None, None
-
-    release_info = {}
-    for token in tokens:
-        if '=' in token:
-            k, v = token.split('=', 1)
-            release_info[k.lower()] = v.strip('"')
-
-    return release_info.get('name', None), release_info.get('version_id', None)
-
-
-def verify_install_dir_exec_path_conflict(install_dir, exec_dir):
-    for exec_name in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME]:
-        exec_path = os.path.join(exec_dir, exec_name)
-        if install_dir == exec_path:
-            raise CLIInstallError("The executable file '{}' would clash with the install directory of '{}'. Choose "
-                                  "either a different install directory or directory to place the "
-                                  "executable.".format(exec_path, install_dir))
-
-
 def main():
     verify_python_version()
     tmp_dir = create_tmp_dir()
     install_dir = get_install_dir()
-    exec_dir = get_exec_dir()
-    verify_install_dir_exec_path_conflict(install_dir, exec_dir)
     create_virtualenv(install_dir)
     install_cli(install_dir, tmp_dir)
-    exec_filepath = create_executable(exec_dir, install_dir)
+    exec_filepath = [os.path.join(install_dir, "bin", PF_EXECUTABLE_NAME), os.path.join(install_dir, "bin", PFAZURE_EXECUTABLE_NAME)]
     try:
-        handle_path_and_tab_completion(exec_filepath, exec_dir)
+        handle_path_and_tab_completion(exec_filepath, install_dir)
     except Exception as e:
         print_status("Unable to set up PATH. ERROR: {}".format(str(e)))
     shutil.rmtree(tmp_dir)
@@ -346,10 +250,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
 # SIG # Begin signature block
-# L3qNBqW3CtECFEu92/WQ7XNii4SWo8mtmVevtx+X7K5ptGmYS3xiBil2AXZDQMTf
-# 5FDAO0rjTNnVKuvnesURsYNrXE9b1GVLkB71gomAQTg+W3SW4px/IdopM16gCQRM
-# EJsvaR0EkTxsNYm8dNS8vcSFtO844oIkroWgdFAD4ULePnekM2QtgjI/JHHKLNpm
-# Wj1178feuGMffy3xGLhhLOnPVrIEWBaPuwmAzQ6qAY0DI5mdAsS6WG4jOVx7HwGM
-# rdl8sDOedSLf7GPp63HEO7OAHyL2itIvIDrJ9gWCdbaV1PRL3NsFysyPBWiSfL4t
-# xMp590kqYDnABA+NzPrz8g==
+# SpJKso/qNM3kB7bu/NtHSyYPqHQ95B97Kb/f8tqfxKIIcnR8HdirQ3TRS3q3EpGL
+# eHSh8bJ0bBSk+4V7ThV3hw1DibjKnY2+4tjvXW+xO8vCkxMvXimDr/7T209shfzR
+# s3C9PCQEHLygM4RD9aAw2Lo/6CLUYB65J4vFcxnZHrN7yxQelXszu12bSmlmg9oQ
+# rRr74R/RyjMZT3U8djYy/xQD10H64WEpRlK8YmopTo3geZpBcVh2vVyA/037a6UR
+# JXtKPMrP9fBZNN69oZrR4T1be2V/hcPZCgMT7+B9lhUhPJR5vceO/DuilHY2CZPq
+# VVkLjY/mn5b8UU6pPrqL5Q==
 # SIG # End signature block
