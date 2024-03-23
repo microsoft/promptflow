@@ -1338,8 +1338,9 @@ def execute_flow(
             )
             line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
             line_result.run_info.metrics = aggregation_results.metrics
-            # In the flow test, the multimedia data in the aggregation inputs of line results is not used.
-            # So, to save memory space, we convert it into strings.
+            # In the flow test, the multimedia data within the aggregation inputs of line results is not utilized.
+            # Additionally, the JSON response from the executor server API cannot return multimedia data objects.
+            # So, we convert it into strings.
             line_result.aggregation_inputs = convert_multimedia_data_to_string(line_result.aggregation_inputs)
         if isinstance(line_result.output, dict):
             # remove line_number from output
