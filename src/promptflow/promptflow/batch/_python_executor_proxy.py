@@ -23,8 +23,9 @@ from promptflow.tracing._operation_context import OperationContext
 
 
 class PythonExecutorProxy(AbstractExecutorProxy):
-    def __init__(self, flow_executor: FlowExecutor):
+    def __init__(self, flow_executor: FlowExecutor, process_pool: LineExecutionProcessPool):
         self._flow_executor = flow_executor
+        self._process_pool = process_pool
 
     @classmethod
     def _generate_flow_json(
@@ -54,10 +55,29 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        output_dir: Optional[Path] = None,
+        worker_count: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
-        return cls(flow_executor)
+        process_pool = LineExecutionProcessPool(
+            output_dir,
+            flow_executor,
+            worker_count=worker_count,
+            line_timeout_sec=line_timeout_sec,
+        )
+        process_pool.start()
+        return cls(flow_executor, process_pool)
+
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ) -> LineResult:
+        """Execute a line"""
+        return await self._process_pool.submit(run_id, index, inputs)
 
     async def exec_aggregation_async(
         self,
@@ -67,6 +87,10 @@ class PythonExecutorProxy(AbstractExecutorProxy):
     ) -> AggregationResult:
         with self._flow_executor._run_tracker.node_log_manager:
             return self._flow_executor._exec_aggregation(batch_inputs, aggregation_inputs, run_id=run_id)
+
+    async def destroy(self):
+        """Destroy the executor"""
+        self._process_pool.close()
 
     async def _exec_batch(
         self,

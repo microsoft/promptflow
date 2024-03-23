@@ -169,6 +169,7 @@ class BatchEngine:
                     connections=self._connections,
                     storage=self._storage,
                     language=self._program_language,
+                    output_dir=output_dir,
                     **self._kwargs,
                 )
                 try:
@@ -380,22 +381,8 @@ class BatchEngine:
             inputs_to_run = batch_inputs
 
         run_id = run_id or str(uuid.uuid4())
-
-        # execute lines
-        is_timeout = False
-        if isinstance(self._executor_proxy, PythonExecutorProxy):
-            results, is_timeout = await self._executor_proxy._exec_batch(
-                inputs_to_run,
-                output_dir,
-                run_id,
-                batch_timeout_sec=self._batch_timeout_sec,
-                line_timeout_sec=self._line_timeout_sec,
-                worker_count=self._worker_count,
-            )
-            line_results.extend(results)
-        else:
-            # TODO: Enable batch timeout for other api based executor proxy
-            await self._exec_batch(line_results, batch_inputs, run_id)
+        # TODO: Enable batch timeout for other api based executor proxy
+        await self._exec_batch(line_results, inputs_to_run, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
         outputs = [
