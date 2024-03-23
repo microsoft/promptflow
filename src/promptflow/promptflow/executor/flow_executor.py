@@ -36,6 +36,7 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import (
+    convert_multimedia_data_to_string,
     load_multimedia_data,
     load_multimedia_data_recursively,
     persist_multimedia_data,
@@ -1320,16 +1321,16 @@ def execute_flow(
     flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
-        # execute nodes in the flow except the aggregation nodes
+        # Execute nodes in the flow except the aggregation nodes
         # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
         # (run_id_index, eg. xxx_0) for displaying the interface
         line_result = flow_executor.exec_line(
             inputs, index=0, allow_generator_output=allow_generator_output, run_id=run_id
         )
-        # persist the output to the output directory
+        # Persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if run_aggregation and line_result.aggregation_inputs:
-            # convert inputs of aggregation to list type
+            # Convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}
             aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
             aggregation_results = flow_executor.exec_aggregation(
@@ -1337,10 +1338,9 @@ def execute_flow(
             )
             line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
             line_result.run_info.metrics = aggregation_results.metrics
-            # TODO: How to process?????
-            line_result.aggregation_inputs = persist_multimedia_data(
-                line_result.aggregation_inputs, output_dir, use_absolute_path=True
-            )
+            # In the flow test, the multimedia data in the aggregation inputs of line results is not used.
+            # So, to save memory space, we convert it into strings.
+            line_result.aggregation_inputs = convert_multimedia_data_to_string(line_result.aggregation_inputs)
         if isinstance(line_result.output, dict):
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
