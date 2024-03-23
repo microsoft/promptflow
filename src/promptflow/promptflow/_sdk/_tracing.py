@@ -203,7 +203,7 @@ def setup_exporter_to_pfs() -> None:
     # get resource attributes from environment
     # TODO: Rename session_id, local trace should hide id and name.
     # For local trace, collection is the only identifier for name and id
-    # For cloud trace, we use collection is name and collection_id for id
+    # For cloud trace, we use collection as name and collection_id for id
     session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID, None)
     # Only used for runtime
     collection_id = os.getenv(TraceEnvironmentVariableName.COLLECTION_ID, None)

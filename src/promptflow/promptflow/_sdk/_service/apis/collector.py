@@ -158,11 +158,7 @@ def _try_write_trace_to_cosmosdb(
             span_client = get_client(
                 CosmosDBContainerName.SPAN, subscription_id, resource_group_name, workspace_name, credential
             )
-            if not is_cloud_trace:
-                # Update collection id in Span for local trace.
-                resource_attributes = span._content[SpanFieldName.RESOURCE][SpanResourceFieldName.ATTRIBUTES]
-                resource_attributes[SpanResourceAttributesFieldName.COLLECTION_ID] = collection_id
-            result = SpanCosmosDB(span, created_by).persist(span_client)
+            result = SpanCosmosDB(span, collection_id, created_by).persist(span_client)
             # None means the span already exists, then we don't need to persist the summary also.
             if result is not None:
                 line_summary_client = get_client(

@@ -40,7 +40,15 @@ class TestCollectionCosmosDB:
             self.collection.create_collection_if_not_exist(client)
             mock_safe_write.assert_called_once()
 
-    def test_create_collection_if_not_exist_batch_run(self):
+    def test_update_collection_updated_at(self):
+        client = mock.Mock()
+        self.span._content = {"attributes": {}, "resource": {"collection.id": "test_collection_id"}}
+
+        self.collection.update_collection_updated_at_info(client)
+
+        client.patch_item.assert_called_once()
+
+    def test_batch_run_operation(self):
         client = mock.Mock()
         self.span._content = {
             "attributes": {"batch_run_id": "test_batch_run_id"},
@@ -50,21 +58,6 @@ class TestCollectionCosmosDB:
         with mock.patch("promptflow.azure._storage.cosmosdb.summary.safe_create_cosmosdb_item") as mock_safe_write:
             self.collection.create_collection_if_not_exist(client)
             mock_safe_write.assert_not_called()
-
-    def test_update_collection_updated_at(self):
-        client = mock.Mock()
-        self.span._content = {"attributes": {}, "resource": {"collection.id": "test_collection_id"}}
-
-        self.collection.update_collection_updated_at_info(client)
-
-        client.patch_item.assert_called_once()
-
-    def test_batch_run_update_collection_updated_at(self):
-        client = mock.Mock()
-        self.span._content = {
-            "attributes": {"batch_run_id": "test_batch_run_id"},
-            "resource": {"collection.id": "test_collection_id"},
-        }
 
         self.collection.create_collection_if_not_exist(client)
         client.patch_item.assert_not_called()

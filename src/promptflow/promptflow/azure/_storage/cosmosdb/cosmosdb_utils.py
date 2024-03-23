@@ -9,7 +9,7 @@ def safe_create_cosmosdb_item(client: ContainerProxy, dataclass_item):
         # Attempt to read the item using its ID and partition key
         client.read_item(item=dataclass_item.id, partition_key=dataclass_item.partition_key)
     except CosmosResourceNotFoundError:
-        # Only create when for not exist situation.
+        # Only create for not exist situation.
         try:
             client.create_item(body=asdict(dataclass_item))
         except CosmosResourceExistsError:
