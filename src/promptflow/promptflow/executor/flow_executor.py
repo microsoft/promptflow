@@ -1337,6 +1337,10 @@ def execute_flow(
             )
             line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
             line_result.run_info.metrics = aggregation_results.metrics
+            # TODO: How to process?????
+            line_result.aggregation_inputs = persist_multimedia_data(
+                line_result.aggregation_inputs, output_dir, use_absolute_path=True
+            )
         if isinstance(line_result.output, dict):
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
