@@ -290,7 +290,7 @@ class TestExperiment:
             )
             assert len(result) == 2
 
-    def test_experiment_test_with_ski_node(self):
+    def test_experiment_test_with_skip_node(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:

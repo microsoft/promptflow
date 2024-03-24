@@ -31,8 +31,8 @@ class TestFlowAPIs:
 
     def test_get_eager_flow_yaml(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).json
-        assert flow_yaml_from_pfs == {"entry": "builtin_call:flow_entry"}
+            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).data.decode("utf-8")
+        assert flow_yaml_from_pfs == 'entry: builtin_call:flow_entry\n'
 
     def test_flow_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(activity_name="pf.flows.test"):
