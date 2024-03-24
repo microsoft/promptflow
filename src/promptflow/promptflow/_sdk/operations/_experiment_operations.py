@@ -13,6 +13,7 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import safe_parse_object_list, json_load
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -168,6 +169,22 @@ class ExperimentOperations(TelemetryMixin):
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)
         session = kwargs.get("session", None)
+        skip_flow = kwargs.get("skip_flow", None)
+        skip_flow_output = kwargs.get("skip_flow_output", None)
+        skip_flow_run_id = kwargs.get("skip_flow_run_id", None)
+
+        def is_all_none_or_all_not_none(variables):
+            return all(variables) or not any(variables)
+
+        if not is_all_none_or_all_not_none([skip_flow, skip_flow_output, skip_flow_run_id]):
+            error = ValueError("Either all --skip_flow, --skip_flow_output, and --skip_flow_run_id should be "
+                               "specified, or should be none.")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
+
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
             experiment_template,
             None,
@@ -175,6 +192,9 @@ class ExperimentOperations(TelemetryMixin):
             environment_variables,
             output_path=output_path,
             session=session,
+            skip_flow=skip_flow,
+            skip_flow_output=skip_flow_output,
+            skip_flow_run_id=skip_flow_run_id,
         )
 
     def _test_with_ui(self, experiment: Experiment, inputs=None, environment_variables=None, **kwargs) -> Experiment:

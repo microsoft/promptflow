@@ -285,9 +285,23 @@ class TestExperiment:
         client = PFClient()
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
             mock_func.return_value = True
-            client._experiments.test(
+            result = client._experiments.test(
                 experiment=template_path,
             )
+            assert len(result) == 2
+
+    def test_experiment_test_with_ski_node(self):
+        template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
+        client = PFClient()
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            result = client._experiments.test(
+                experiment=template_path,
+                skip_flow=FLOW_ROOT / "web_classification" / "flow.dag.yaml",
+                skip_flow_output={"category": "Channel", "evidence": "Both"},
+                skip_flow_run_id="123"
+            )
+            assert len(result) == 1
 
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_eager_flow_test_with_experiment(self, monkeypatch):

@@ -118,15 +118,28 @@ class ExperimentOrchestrator:
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
         # If inputs, use the inputs as experiment data, else read the first line in template data
+        skip_flow = kwargs.get("skip_flow")
+        skip_flow_run_id = kwargs.get("skip_flow_run_id")
+        skip_node_name = None
+        if skip_flow:
+            for node in nodes_to_test:
+                if Path(skip_flow).as_posix() == Path(node.path).as_posix():
+                    skip_node_name = node.name
+                    break
         test_context = ExperimentTemplateTestContext(
             template,
             inputs=inputs,
             environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
+            skip_flow_run_id=skip_flow_run_id,
+            skip_node_name=skip_node_name,
         )
 
         for node in nodes_to_test:
+            if skip_flow and Path(skip_flow).as_posix() == Path(node.path).as_posix():
+                test_context.add_node_result(node.name, kwargs.get("skip_flow_output"))
+                continue
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
                 # Start nodes inputs should be updated, as original value could be a constant without data reference.
@@ -135,6 +148,8 @@ class ExperimentOrchestrator:
             node_result = self._test_node(node, test_context)
             test_context.add_node_result(node.name, node_result)
         logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
+        if skip_node_name and skip_node_name in test_context.node_results:
+            test_context.node_results.pop(skip_node_name)
         return test_context.node_results
 
     def _test_node(self, node, test_context) -> Run:
@@ -649,7 +664,7 @@ class ExperimentNodeRun(Run):
 
 
 class ExperimentTemplateContext:
-    def __init__(self, template: ExperimentTemplate, environment_variables=None, session=None):
+    def __init__(self, template: ExperimentTemplate, environment_variables=None, session=None, **kwargs):
         """Context for experiment template.
         :param template: Template object to get definition of experiment.
         :param environment_variables: Environment variables specified for test.
@@ -661,6 +676,10 @@ class ExperimentTemplateContext:
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
+        skip_node_name = kwargs.get("skip_node_name")
+        skip_flow_run_id = kwargs.get("skip_flow_run_id")
+        if skip_flow_run_id and skip_node_name:
+            self.node_name_to_id[skip_node_name] = skip_flow_run_id
         self.node_name_to_referenced_id = self._prepare_referenced_ids()
         # All run/line run in experiment should use same session
         self.session = session or str(uuid.uuid4())
@@ -726,7 +745,7 @@ class ExperimentTemplateContext:
 
 class ExperimentTemplateTestContext(ExperimentTemplateContext):
     def __init__(
-        self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None, session=None
+        self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None, session=None, **kwargs
     ):
         """
         Test context for experiment template.
@@ -736,7 +755,7 @@ class ExperimentTemplateTestContext(ExperimentTemplateContext):
         :param output_path: The custom output path.
         :param session: The session id for the test trace.
         """
-        super().__init__(template, environment_variables=environment_variables, session=session)
+        super().__init__(template, environment_variables=environment_variables, session=session, **kwargs)
         self.node_results = {}  # E.g. {'main': {'category': 'xx', 'evidence': 'xx'}}
         self.node_inputs = {}  # E.g. {'main': {'url': 'https://abc'}}
         self.test_data = ExperimentHelper.prepare_test_data(inputs, template)
