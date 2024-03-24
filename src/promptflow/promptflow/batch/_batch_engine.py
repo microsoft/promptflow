@@ -388,7 +388,6 @@ class BatchEngine:
             inputs_to_run = batch_inputs
 
         run_id = run_id or str(uuid.uuid4())
-        # TODO: Enable batch timeout for other api based executor proxy
         await self._exec_batch(line_results, inputs_to_run, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # persist outputs to output dir
