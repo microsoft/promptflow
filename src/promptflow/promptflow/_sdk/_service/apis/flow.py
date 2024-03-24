@@ -10,6 +10,7 @@ from flask_restx import reqparse
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
+from promptflow._utils.flow_utils import resolve_flow_path
 
 
 api = Namespace("Flows", description="Flows Management")
@@ -49,6 +50,7 @@ class FlowTest(Resource):
         args = flow_path_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
+        flow, _ = resolve_flow_path(flow)
         inputs = api.payload.get("inputs", None)
         environment_variables = api.payload.get("environment_variables", None)
         variant = api.payload.get("variant", None)
@@ -59,10 +61,7 @@ class FlowTest(Resource):
 
         if output_path is None:
             filename = str(uuid.uuid4())
-            if os.path.isdir(flow):
-                output_path = Path(flow) / PROMPT_FLOW_DIR_NAME / filename
-            else:
-                output_path = Path(os.path.dirname(flow)) / PROMPT_FLOW_DIR_NAME / filename
+            output_path = flow / PROMPT_FLOW_DIR_NAME / filename
             os.makedirs(output_path, exist_ok=True)
             remove_dir = True
         output_path = Path(output_path).resolve()

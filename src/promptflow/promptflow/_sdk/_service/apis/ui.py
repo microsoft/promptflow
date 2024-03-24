@@ -133,9 +133,8 @@ def get_flow_path(flow, experiment):
                 raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
             flow_path = experiment
         else:
-            if os.path.isfile(flow):
-                flow = os.path.dirname(flow)
-            flow_path = safe_join(flow, experiment)
+            flow, _ = resolve_flow_path(flow)
+            flow_path = safe_join(str(flow), experiment)
             if flow_path is None:
                 message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
                 raise UserErrorException(message)
@@ -158,7 +157,7 @@ class YamlEdit(Resource):
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
         flow_path = get_flow_path(flow, experiment)
-        flow_path_dir, flow_path_file = resolve_flow_path(Path(flow_path))
+        flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
         return flow_info
 
@@ -188,11 +187,8 @@ class FlowUxInputs(Resource):
         flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
             raise UserErrorException(f"The flow doesn't exist: {flow_path}")
-        if os.path.isdir(flow_path):
-            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-        else:
-            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-
+        flow_path, _ = resolve_flow_path(flow_path)
+        flow_ux_inputs_path = flow_path / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         if not flow_ux_inputs_path.exists():
             flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         try:
@@ -209,10 +205,8 @@ class FlowUxInputs(Resource):
         args = flow_path_parser.parse_args()
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
-        if os.path.isdir(flow_path):
-            flow_ux_inputs_path = Path(flow_path) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
-        else:
-            flow_ux_inputs_path = Path(os.path.dirname(flow_path)) / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
+        flow_path, _ = resolve_flow_path(flow_path)
+        flow_ux_inputs_path = flow_path / PROMPT_FLOW_DIR_NAME / UX_INPUTS_JSON
         flow_ux_inputs_path.touch(mode=read_write_by_user(), exist_ok=True)
         with open(flow_ux_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(content, f, ensure_ascii=False, indent=2)
