@@ -423,7 +423,8 @@ class BatchEngine:
         while completed_line < total_lines:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
-            self._persist_run_info(completed_line_results)
+            if not isinstance(self._executor_proxy, PythonExecutorProxy):
+                self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             log_progress(
                 self._start_time,
