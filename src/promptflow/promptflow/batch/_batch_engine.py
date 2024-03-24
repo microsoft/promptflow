@@ -326,6 +326,13 @@ class BatchEngine:
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
                 )
+            if self._batch_timeout_expired():
+                ex = BatchRunTimeoutError(
+                    message="The batch run failed due to timeout. Please adjust the timeout to a higher value.",
+                    target=ErrorTarget.BATCH,
+                )
+                # summary some infos from line results and aggr results to batch result
+                return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
         return task.result()
 
     async def _exec(
@@ -393,20 +400,11 @@ class BatchEngine:
         outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
         self._persist_outputs(outputs, output_dir)
 
-        # if the batch runs with errors, we should update the errors to ex
-        ex = None
-        if not is_timeout:
-            # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-            self._update_aggr_result(aggr_result, aggr_exec_result)
-        else:
-            ex = BatchRunTimeoutError(
-                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
-                target=ErrorTarget.BATCH,
-            )
-        # summary some infos from line results and aggr results to batch result
-        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
+        # execute aggregation nodes
+        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+        # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+        self._update_aggr_result(aggr_result, aggr_exec_result)
+        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
 
     async def _exec_batch(
         self,
@@ -499,6 +497,11 @@ class BatchEngine:
                 ),
                 error_type_and_message=error_type_and_message,
             ) from e
+
+    def _batch_timeout_expired(self) -> bool:
+        if self._batch_timeout_sec is None:
+            return False
+        return (datetime.utcnow() - self._start_time).total_seconds() > self._batch_timeout_sec
 
     def _persist_run_info(self, line_results: List[LineResult]):
         """Persist node run infos and flow run info in line result to storage"""
