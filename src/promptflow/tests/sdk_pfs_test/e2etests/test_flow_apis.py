@@ -6,15 +6,16 @@ import base64
 import os
 from io import BytesIO
 from pathlib import Path
-
 import pytest
 from PIL import Image
 
 from ..utils import PFSOperations, check_activity_end_telemetry
 
+TEST_ROOT = Path(__file__).parent.parent.parent
 FLOW_PATH = "./tests/test_configs/flows/print_env_var"
 IMAGE_PATH = "./tests/test_configs/datas/logo.jpg"
 FLOW_WITH_IMAGE_PATH = "./tests/test_configs/flows/chat_flow_with_image"
+EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
@@ -22,19 +23,16 @@ FLOW_WITH_IMAGE_PATH = "./tests/test_configs/flows/chat_flow_with_image"
 class TestFlowAPIs:
     def test_get_flow_yaml(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=FLOW_PATH).json
-        assert flow_yaml_from_pfs == {
-            "inputs": {"key": {"type": "string"}},
-            "outputs": {"output": {"type": "string", "reference": "${print_env.output.value}"}},
-            "nodes": [
-                {
-                    "name": "print_env",
-                    "type": "python",
-                    "source": {"type": "code", "path": "print_env.py"},
-                    "inputs": {"key": "${inputs.key}"},
-                }
-            ],
-        }
+            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=FLOW_PATH).data.decode("utf-8")
+        assert flow_yaml_from_pfs == ('inputs:\n  key:\n    type: string\noutputs:\n  output:\n    type: string\n    '
+                                      'reference: ${print_env.output.value}\nnodes:\n- name: print_env\n  '
+                                      'type: python\n  source:\n    type: code\n    path: print_env.py\n  inputs:\n    '
+                                      'key: ${inputs.key}\n')
+
+    def test_get_eager_flow_yaml(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(expected_activities=[]):
+            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).json
+        assert flow_yaml_from_pfs == {"entry": "builtin_call:flow_entry"}
 
     def test_flow_test(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(activity_name="pf.flows.test"):

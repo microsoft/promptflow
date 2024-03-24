@@ -5,6 +5,9 @@ import base64
 import hashlib
 import json
 import os
+import io
+import yaml
+from ruamel.yaml import YAML
 from pathlib import Path
 
 from flask import Response, current_app, render_template, send_from_directory, url_for, make_response
@@ -15,7 +18,7 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, DEFAULT_ENCODING, U
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
 from promptflow._sdk._utils import json_load, read_write_by_user
-from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.flow_utils import resolve_flow_path, is_flex_flow
 from promptflow._utils.yaml_utils import load_yaml, dump_yaml
 from promptflow.exceptions import UserErrorException
 
@@ -56,7 +59,7 @@ set_yaml_model = api.model(
     {
         "flow": fields.String(required=True, description="Path to flow directory."),
         "experiment": fields.String(required=False, description="Path to flow directory."),
-        "inputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
+        "inputs": fields.String(required=True, description='The raw YAML content'),
     },
 )
 
@@ -151,6 +154,7 @@ def get_flow_path(flow, experiment):
 class YamlEdit(Resource):
     @api.response(code=200, description="Return flow yaml as json", model=dict_field)
     @api.doc(description="Return flow yaml as json")
+    @api.produces(['text/yaml'])
     def get(self):
         args = yaml_parser.parse_args()
         flow = args.flow
@@ -159,7 +163,16 @@ class YamlEdit(Resource):
         flow_path = get_flow_path(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
-        return flow_info
+        if is_flex_flow(file_path=flow_path_dir / flow_path_file):
+            # call api provided by han to get flow input
+            flow_input = {}
+            flow_info.update(flow_input)
+        yaml = YAML()
+        string_stream = io.StringIO()  # Create a string stream
+        yaml.dump(flow_info, string_stream)  # Use ruamel.yaml to dump YAML data into the string stream
+        flow_info = string_stream.getvalue()
+        string_stream.close()
+        return Response(flow_info, mimetype='text/yaml')
 
     @api.response(code=200, description="Set the flow file content", model=dict_field)
     @api.doc(description="Set the flow file content")
