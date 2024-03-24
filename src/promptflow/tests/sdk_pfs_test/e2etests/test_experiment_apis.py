@@ -34,27 +34,17 @@ class TestExperimentAPIs:
         with check_activity_end_telemetry(expected_activities=[]):
             experiment_yaml_from_pfs = pfs_op.get_experiment(
                 flow_path=FLOW_PATH,
-                experiment_path=EXPERIMENT_PATH.absolute().as_posix()).json
-        assert experiment_yaml_from_pfs == {
-            '$schema': 'https://azuremlschemas.azureedge.net/promptflow/latest/Experiment.schema.json',
-            'description': 'Basic experiment without script node',
-            'data': [{'name': 'my_data', 'path': '../../flows/web_classification/data.jsonl'}],
-            'inputs': [{'name': 'my_input', 'type': 'int', 'default': 1}],
-            'nodes': [
-                {
-                    'name': 'main',
-                    'type': 'flow',
-                    'path': '../../flows/web_classification/flow.dag.yaml',
-                    'inputs': {'url': '${data.my_data.url}'},
-                    'variant': '${summarize_text_content.variant_0}',
-                    'environment_variables': {},
-                    'connections': {}
-                },
-                {
-                    'name': 'eval',
-                    'type': 'flow',
-                    'path': '../../flows/eval-classification-accuracy',
-                    'inputs': {'groundtruth': '${data.my_data.answer}', 'prediction': '${main.outputs.category}'},
-                    'environment_variables': {},
-                    'connections': {}}]
-        }
+                experiment_path=EXPERIMENT_PATH.absolute().as_posix()).data.decode("utf-8")
+        assert experiment_yaml_from_pfs == ('$schema: https://azuremlschemas.azureedge.net/promptflow/latest/'
+                                            'Experiment.schema.json\n\ndescription: Basic experiment without script '
+                                            'node\n\ndata:\n- name: my_data\n  path: ../../flows/web_classification/'
+                                            'data.jsonl\n\ninputs:\n- name: my_input\n  type: int\n  default: 1\n\n'
+                                            'nodes:\n- name: main\n  type: flow\n  path: ../../flows/web_classification'
+                                            '/flow.dag.yaml\n  inputs:\n    url: ${data.my_data.url}\n  '
+                                            'variant: ${summarize_text_content.variant_0}\n  environment_variables: {}'
+                                            '\n  connections: {}\n\n- name: eval\n  type: flow\n  '
+                                            'path: ../../flows/eval-classification-accuracy\n  inputs:\n    '
+                                            'groundtruth: ${data.my_data.answer}    '
+                                            '# No node can be named with "data"\n    '
+                                            'prediction: ${main.outputs.category}\n  environment_variables: {}\n  '
+                                            'connections: {}\n')
