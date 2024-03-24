@@ -16,7 +16,7 @@ from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
 from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow._utils.yaml_utils import load_yaml, dump_yaml
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("ui", description="UI")
@@ -126,6 +126,28 @@ class MediaView(Resource):
         return send_from_directory(directory, filename)
 
 
+def get_flow_path(flow, experiment):
+    if experiment:
+        if os.path.isabs(experiment):
+            if not os.path.exists(experiment):
+                raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
+            flow_path = experiment
+        else:
+            if os.path.isfile(flow):
+                flow = os.path.dirname(flow)
+            flow_path = safe_join(flow, experiment)
+            if flow_path is None:
+                message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
+                raise UserErrorException(message)
+            if not os.path.exists(flow_path):
+                raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
+    else:
+        if not os.path.exists(flow):
+            raise UserErrorException(f"The flow doesn't exist: {flow}")
+        flow_path = flow
+    return flow_path
+
+
 @api.route("/yaml")
 class YamlEdit(Resource):
     @api.response(code=200, description="Return flow yaml as json", model=dict_field)
@@ -135,24 +157,7 @@ class YamlEdit(Resource):
         flow = args.flow
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
-        if experiment:
-            if os.path.isabs(experiment):
-                if not os.path.exists(experiment):
-                    raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
-                flow_path = experiment
-            else:
-                if os.path.isfile(flow):
-                    flow = os.path.dirname(flow)
-                flow_path = safe_join(flow, experiment)
-                if flow_path is None:
-                    message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
-                    raise UserErrorException(message)
-                if not os.path.exists(flow_path):
-                    raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
-        else:
-            if not os.path.exists(flow):
-                raise UserErrorException(f"The flow doesn't exist: {flow}")
-            flow_path = flow
+        flow_path = get_flow_path(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(Path(flow_path))
         flow_info = load_yaml(flow_path_dir / flow_path_file)
         return flow_info
@@ -166,27 +171,10 @@ class YamlEdit(Resource):
         flow = args.flow
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
-        if experiment:
-            if os.path.isabs(experiment):
-                if not os.path.exists(experiment):
-                    raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
-                flow_path = experiment
-            else:
-                if os.path.isfile(flow):
-                    flow = os.path.dirname(flow)
-                flow_path = safe_join(flow, experiment)
-                if flow_path is None:
-                    message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
-                    raise UserErrorException(message)
-                if not os.path.exists(flow_path):
-                    raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
-        else:
-            if not os.path.exists(flow):
-                raise UserErrorException(f"The flow doesn't exist: {flow}")
-            flow_path = flow
+        flow_path = get_flow_path(flow, experiment)
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
-        with open(flow_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(content, f, ensure_ascii=False, indent=2)
+        with open(flow_path, 'w') as outfile:
+           dump_yaml(content, outfile)
         return make_response(f"{flow_path} content updated successfully", 200)
 
 
