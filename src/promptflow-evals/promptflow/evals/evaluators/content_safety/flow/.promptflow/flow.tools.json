@@ -1,28 +1,6 @@
 {
   "package": {},
   "code": {
-    "aggregate.py": {
-      "type": "python",
-      "inputs": {
-        "results": {
-          "type": [
-            "object"
-          ]
-        },
-        "thresholds": {
-          "type": [
-            "object"
-          ]
-        },
-        "metric_names": {
-          "type": [
-            "object"
-          ]
-        }
-      },
-      "source": "aggregate.py",
-      "function": "aggregate"
-    },
     "evaluate_with_rai_service.py": {
       "type": "python",
       "inputs": {
