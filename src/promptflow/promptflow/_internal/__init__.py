@@ -40,7 +40,7 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
-from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
 from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._sdk._utils import (
     get_used_connection_names_from_environment_variables,
