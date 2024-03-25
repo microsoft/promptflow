@@ -145,7 +145,12 @@ FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 TRACE_DEFAULT_SESSION_ID = "default"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
-SPAN_TABLENAME = "span"
+EVENT_TABLENAME = "events"
+EVENT_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_events_trace_id_span_id"
+SPAN_TABLENAME = "spans"
+SPAN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_spans_trace_id_span_id"
+LINE_RUN_TABLENAME = "line_runs"
+LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_line_runs_trace_id_span_id"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
 UX_INPUTS_JSON = "ux.inputs.json"
