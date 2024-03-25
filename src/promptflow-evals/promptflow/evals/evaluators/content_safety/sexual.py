@@ -2,9 +2,10 @@ from promptflow import load_flow
 from pathlib import Path
 from azure.core.credentials import TokenCredential
 from promptflow.evals._constants import EvaluationMetrics
+from typing import Optional
 
 
-def init(project_scope: dict, credential: TokenCredential):
+def init(project_scope: dict, credential: Optional[TokenCredential] = None):
     """
     Initialize an evaluation function configured for a specific Azure OpenAI model.
 
