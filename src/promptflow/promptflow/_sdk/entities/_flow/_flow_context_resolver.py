@@ -125,20 +125,15 @@ class FlowContextResolver:
                 dump_yaml(self.flow_dag, fp)
             resolved_flow._path = flow_file.absolute().as_posix()
 
-            executable_flow = resolved_flow._init_executable()
             if is_async_call:
                 return AsyncFlowInvoker(
-                    flow=executable_flow,
+                    flow=resolved_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
-                    flow_path=resolved_flow.path,
-                    working_dir=resolved_flow.code,
                 )
             else:
                 return FlowInvoker(
-                    flow=executable_flow,
+                    flow=resolved_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
-                    flow_path=resolved_flow.path,
-                    working_dir=resolved_flow.code,
                 )
