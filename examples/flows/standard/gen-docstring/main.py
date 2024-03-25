@@ -2,7 +2,7 @@ import argparse
 from file import File
 from diff import show_diff
 from load_code_tool import load_code
-from promptflow import PFClient
+from promptflow.client import PFClient
 from pathlib import Path
 
 
