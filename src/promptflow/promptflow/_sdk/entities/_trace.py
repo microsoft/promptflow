@@ -13,15 +13,12 @@ from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
-    DEFAULT_SPAN_TYPE,
     RUNNING_LINE_RUN_STATUS,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanEventFieldName,
     SpanFieldName,
     SpanLinkFieldName,
-    SpanResourceAttributesFieldName,
-    SpanResourceFieldName,
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import CumulativeTokenCountFieldName
@@ -39,86 +36,70 @@ class Span:
 
     def __init__(
         self,
+        trace_id: str,
+        span_id: str,
         name: str,
         context: typing.Dict[str, str],
         kind: str,
-        start_time: str,
-        end_time: str,
+        start_time: datetime.datetime,
+        end_time: datetime.datetime,
         status: str,
-        attributes: typing.Dict[str, str],
         resource: typing.Dict,
-        # should come from attributes
-        span_type: str,
-        session_id: str,
-        # optional fields
-        parent_span_id: typing.Optional[str] = None,
-        events: typing.Optional[typing.List] = None,
+        parent_id: typing.Optional[str] = None,
+        attributes: typing.Optional[typing.Dict[str, str]] = None,
         links: typing.Optional[typing.List] = None,
-        # prompt flow concepts
-        path: typing.Optional[str] = None,
-        run: typing.Optional[str] = None,
-        experiment: typing.Optional[str] = None,
+        events: typing.Optional[typing.List] = None,
     ):
+        self.trace_id = trace_id
+        self.span_id = span_id
         self.name = name
-        self.span_id = context[SpanContextFieldName.SPAN_ID]
-        self.trace_id = context[SpanContextFieldName.TRACE_ID]
-        self.span_type = span_type
-        self.parent_span_id = parent_span_id
-        self.session_id = session_id
-        self.path = path
-        self.run = run
-        self.experiment = experiment
-        self._content = {
-            SpanFieldName.NAME: self.name,
-            SpanFieldName.CONTEXT: copy.deepcopy(context),
-            SpanFieldName.KIND: kind,
-            SpanFieldName.PARENT_ID: self.parent_span_id,
-            SpanFieldName.START_TIME: start_time,
-            SpanFieldName.END_TIME: end_time,
-            SpanFieldName.STATUS: status,
-            SpanFieldName.ATTRIBUTES: copy.deepcopy(attributes),
-            SpanFieldName.EVENTS: copy.deepcopy(events),
-            SpanFieldName.LINKS: copy.deepcopy(links),
-            SpanFieldName.RESOURCE: copy.deepcopy(resource),
-        }
+        self.context = copy.deepcopy(context)
+        self.kind = kind
+        self.parent_id = parent_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.status = status
+        self.attributes = copy.deepcopy(attributes) if attributes is not None else dict()
+        self.links = copy.deepcopy(links) if links is not None else list()
+        self.events = copy.deepcopy(events) if events is not None else list()
+        self.resource = copy.deepcopy(resource)
 
     def _persist(self) -> None:
         self._to_orm_object().persist()
 
     @staticmethod
     def _from_orm_object(obj: ORMSpan) -> "Span":
-        content = json.loads(obj.content)
         return Span(
+            trace_id=obj.trace_id,
+            span_id=obj.span_id,
             name=obj.name,
-            context=content[SpanFieldName.CONTEXT],
-            kind=content[SpanFieldName.KIND],
-            start_time=content[SpanFieldName.START_TIME],
-            end_time=content[SpanFieldName.END_TIME],
-            status=content[SpanFieldName.STATUS],
-            attributes=content[SpanFieldName.ATTRIBUTES],
-            resource=content[SpanFieldName.RESOURCE],
-            span_type=obj.span_type,
-            session_id=obj.session_id,
-            parent_span_id=obj.parent_span_id,
-            events=content[SpanFieldName.EVENTS],
-            links=content[SpanFieldName.LINKS],
-            path=obj.path,
-            run=obj.run,
-            experiment=obj.experiment,
+            context=copy.deepcopy(obj.context),
+            kind=obj.kind,
+            parent_id=obj.parent_id,
+            start_time=obj.start_time,
+            end_time=obj.end_time,
+            status=obj.status,
+            attributes=copy.deepcopy(obj.attributes),
+            links=copy.deepcopy(obj.links),
+            events=copy.deepcopy(obj.events),
+            resource=copy.deepcopy(obj.resource),
         )
 
     def _to_orm_object(self) -> ORMSpan:
         return ORMSpan(
-            name=self.name,
             trace_id=self.trace_id,
             span_id=self.span_id,
-            parent_span_id=self.parent_span_id,
-            span_type=self.span_type,
-            session_id=self.session_id,
-            content=json.dumps(self._content),
-            path=self.path,
-            run=self.run,
-            experiment=self.experiment,
+            name=self.name,
+            context=copy.deepcopy(self.context),
+            kind=self.kind,
+            parent_id=self.parent_id,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            status=self.status,
+            attributes=copy.deepcopy(self.attributes) if len(self.attributes) > 0 else None,
+            links=copy.deepcopy(self.links) if len(self.links) > 0 else None,
+            events=copy.deepcopy(self.events) if len(self.events) > 0 else None,
+            resource=copy.deepcopy(self.resource),
         )
 
     @staticmethod
@@ -130,7 +111,8 @@ class Span:
             event_dict: dict = json.loads(MessageToJson(pb_event))
             event = {
                 SpanEventFieldName.NAME: pb_event.name,
-                SpanEventFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano),
+                # .isoformat() here to make this dumpable to JSON
+                SpanEventFieldName.TIMESTAMP: convert_time_unix_nano_to_timestamp(pb_event.time_unix_nano).isoformat(),
                 SpanEventFieldName.ATTRIBUTES: flatten_pb_attributes(
                     event_dict.get(SpanEventFieldName.ATTRIBUTES, dict())
                 ),
@@ -160,55 +142,39 @@ class Span:
 
     @staticmethod
     def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
+        # Open Telemetry does not provide official way to parse Protocol Buffer Span object
+        # so we need to parse it manually relying on `MessageToJson`
+        # reference: https://github.com/open-telemetry/opentelemetry-python/issues/3700#issuecomment-2010704554
         span_dict: dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
-        context = {
-            SpanContextFieldName.TRACE_ID: trace_id,
-            SpanContextFieldName.SPAN_ID: span_id,
-            SpanContextFieldName.TRACE_STATE: obj.trace_state,
-        }
-        parent_span_id = obj.parent_span_id.hex()
-        start_time = convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano)
-        end_time = convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano)
-        status = {
-            SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
-            SpanStatusFieldName.DESCRIPTION: obj.status.message,
-        }
+        parent_id = obj.parent_span_id.hex()
         # we have observed in some scenarios, there is not `attributes` field
         attributes = flatten_pb_attributes(span_dict.get(SpanFieldName.ATTRIBUTES, dict()))
-        # `span_type` are not standard fields in OpenTelemetry attributes
-        # for example, LangChain instrumentation, as we do not inject this;
-        # so we need to get it with default value to avoid KeyError
-        span_type = attributes.get(SpanAttributeFieldName.SPAN_TYPE, DEFAULT_SPAN_TYPE)
-
-        # parse from resource.attributes: session id, experiment
-        resource_attributes: dict = resource[SpanResourceFieldName.ATTRIBUTES]
-        session_id = resource_attributes[SpanResourceAttributesFieldName.SESSION_ID]
-        experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
-
-        events = Span._from_protobuf_events(obj.events)
         links = Span._from_protobuf_links(obj.links)
-
-        # if `batch_run_id` exists, record the run
-        run = attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
+        events = Span._from_protobuf_events(obj.events)
 
         return Span(
+            trace_id=trace_id,
+            span_id=span_id,
             name=obj.name,
-            context=context,
+            context={
+                SpanContextFieldName.TRACE_ID: trace_id,
+                SpanContextFieldName.SPAN_ID: span_id,
+                SpanContextFieldName.TRACE_STATE: obj.trace_state,
+            },
             kind=obj.kind,
-            start_time=start_time,
-            end_time=end_time,
-            status=status,
+            parent_id=parent_id if parent_id else None,
+            start_time=convert_time_unix_nano_to_timestamp(obj.start_time_unix_nano),
+            end_time=convert_time_unix_nano_to_timestamp(obj.end_time_unix_nano),
+            status={
+                SpanStatusFieldName.STATUS_CODE: parse_otel_span_status_code(obj.status.code),
+                SpanStatusFieldName.DESCRIPTION: obj.status.message,
+            },
             attributes=attributes,
-            resource=resource,
-            span_type=span_type,
-            session_id=session_id,
-            parent_span_id=parent_span_id,
-            events=events,
             links=links,
-            run=run,
-            experiment=experiment,
+            events=events,
+            resource=resource,
         )
 
 

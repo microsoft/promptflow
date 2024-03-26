@@ -69,8 +69,8 @@ class Span(Base):
     end_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
     status: Mapped[typing.Dict] = mapped_column(JSON)
     attributes: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
-    links: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
-    events: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
+    links: Mapped[typing.Optional[typing.List]] = mapped_column(JSON, nullable=True)
+    events: Mapped[typing.Optional[typing.List]] = mapped_column(JSON, nullable=True)
     resource: Mapped[typing.Dict] = mapped_column(JSON)
 
     __table_args__ = (
