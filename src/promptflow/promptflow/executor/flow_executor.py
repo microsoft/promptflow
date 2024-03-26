@@ -36,7 +36,6 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import (
-    convert_multimedia_data_to_string,
     load_multimedia_data,
     load_multimedia_data_recursively,
     persist_multimedia_data,
@@ -1338,10 +1337,8 @@ def execute_flow(
             )
             line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
             line_result.run_info.metrics = aggregation_results.metrics
-            # In the flow test, the multimedia data within the aggregation inputs of line results is not utilized.
-            # Additionally, the JSON response from the executor server API cannot return multimedia data objects.
-            # So, we convert it into strings.
-            line_result.aggregation_inputs = convert_multimedia_data_to_string(line_result.aggregation_inputs)
+            # The aggregation inputs of line results is not utilized in the flow test. So we set it into None.
+            line_result.aggregation_inputs = None
         if isinstance(line_result.output, dict):
             # remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)
