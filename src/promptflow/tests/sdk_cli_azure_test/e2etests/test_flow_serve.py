@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from sdk_cli_azure_test.recording_utilities import is_live
 
 testdata = """The event sourcing pattern involves using an append-only store to record the full series
 of actions on that data. The Azure Cosmos DB change feed is a great choice as a central data store in
@@ -12,6 +13,9 @@ version mode, you can replay all past events by reading from the beginning of yo
 change feed. You can even have multiple change feed consumers subscribe to the same container's change feed."""
 
 
+@pytest.mark.skipif(
+    condition=not is_live(), reason="serving tests, only run in live mode as replay do not have az login."
+)
 @pytest.mark.usefixtures("flow_serving_client_remote_connection")
 @pytest.mark.e2etest
 def test_local_serving_api_with_remote_connection(flow_serving_client_remote_connection):
@@ -24,6 +28,7 @@ def test_local_serving_api_with_remote_connection(flow_serving_client_remote_con
     assert "output_prompt" in json.loads(response.data.decode())
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("flow_serving_client_with_prt_config_env")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_prt_config_env(flow_serving_client_with_prt_config_env):
@@ -38,6 +43,7 @@ def test_azureml_serving_api_with_prt_config_env(flow_serving_client_with_prt_co
     assert b"Welcome to promptflow app" in response.data
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("flow_serving_client_with_connection_provider_env")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_conn_provider_env(flow_serving_client_with_connection_provider_env):
@@ -52,6 +58,7 @@ def test_azureml_serving_api_with_conn_provider_env(flow_serving_client_with_con
     assert b"Welcome to promptflow app" in response.data
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("flow_serving_client_with_connection_provider_env")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_aml_resource_id_env(flow_serving_client_with_aml_resource_id_env):
@@ -64,6 +71,7 @@ def test_azureml_serving_api_with_aml_resource_id_env(flow_serving_client_with_a
     assert "output_prompt" in json.loads(response.data.decode())
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("serving_client_with_connection_name_override")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_connection_name_override(serving_client_with_connection_name_override):
