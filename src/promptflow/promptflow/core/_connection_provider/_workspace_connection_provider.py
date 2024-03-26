@@ -69,10 +69,18 @@ class WorkspaceConnectionProvider(ConnectionProvider):
         workspace_name: Optional[str] = None,
         credential=None,
     ):
-        self.credential = credential or self._get_credential()
+        self._credential = credential
         self.subscription_id = subscription_id
         self.resource_group_name = resource_group_name
         self.workspace_name = workspace_name
+
+    @property
+    def credential(self):
+        """Get the credential."""
+        # Note: Add this to postpone credential requirement until calling get()
+        if not self._credential:
+            self._credential = self._get_credential()
+        return self._credential
 
     @classmethod
     def _get_credential(cls):
