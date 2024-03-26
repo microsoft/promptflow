@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     PF_SERVICE_HOUR_TIMEOUT,
     PF_SERVICE_LOG_FILE,
     PF_SERVICE_MONITOR_SECOND,
+    CreatedByFieldName,
 )
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.collector import trace_collector
@@ -142,8 +143,10 @@ def create_app():
                         "last_request_time"
                     ] > timedelta(hours=PF_SERVICE_HOUR_TIMEOUT):
                         # Todo: check if we have any not complete work? like persist all traces.
-                        app.logger.warning(f"Last http request time: {app.config['last_request_time']} was made "
-                                           f"{PF_SERVICE_HOUR_TIMEOUT}h ago")
+                        app.logger.warning(
+                            f"Last http request time: {app.config['last_request_time']} was made "
+                            f"{PF_SERVICE_HOUR_TIMEOUT}h ago"
+                        )
                         port = get_port_from_config()
                         if port:
                             app.logger.info(
@@ -182,13 +185,14 @@ def get_created_by_info_with_cache():
             decoded_token = jwt.decode(token, options={"verify_signature": False})
             created_by_for_local_to_cloud_trace.update(
                 {
-                    "object_id": decoded_token["oid"],
-                    "tenant_id": decoded_token["tid"],
+                    CreatedByFieldName.OBJECT_ID: decoded_token["oid"],
+                    CreatedByFieldName.TENANT_ID: decoded_token["tid"],
                     # Use appid as fallback for service principal scenario.
-                    "name": decoded_token.get("name", decoded_token.get("appid", "")),
+                    CreatedByFieldName.NAME: decoded_token.get("name", decoded_token.get("appid", "")),
                 }
             )
         except Exception as e:
             # This function is only target to be used in Flask app.
-            current_app.logger.error(f"Failed to get created_by info, ignore it: {e}")
+            current_app.logger.error(f"Failed to get created_by info, stop writing span. Exception: {e}")
+            raise e  # Created_by info is critical for local trace, so we should stop writing span if failed to get it.
     return created_by_for_local_to_cloud_trace

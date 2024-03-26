@@ -459,6 +459,12 @@ class LineRunFieldName:
     EVALUATIONS = "evaluations"
 
 
+class CreatedByFieldName:
+    OBJECT_ID = "object_id"
+    TENANT_ID = "tenant_id"
+    NAME = "name"
+
+
 class ChatGroupSpeakOrder(str, Enum):
     SEQUENTIAL = "sequential"
     LLM = "llm"
