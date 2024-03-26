@@ -72,7 +72,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     # these workflows require config.json to init PF/ML client
     workflows_require_config_json = [
         "configuration",
-        "flowinpipeline",
+        "runscalableflowwithpipeline",
         "quickstartazure",
         "cloudrunmanagement",
     ]
