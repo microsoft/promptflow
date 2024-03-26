@@ -549,6 +549,9 @@ class FlowBase:
     def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names with environment variables overrides.
         Note: only environment variables exist in flow.environment_variables will be considered.
+
+        :param environment_variables_overrides: used to override flow's environment variables.
+        :return: connection names used in this flow.
         """
         environment_variables_overrides = environment_variables_overrides or {}
         connection_names = set({})
