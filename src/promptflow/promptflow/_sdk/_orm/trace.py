@@ -111,7 +111,7 @@ class LineRun(Base):
     start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
     end_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
     status: Mapped[str] = mapped_column(TEXT)
-    latency: Mapped[float] = mapped_column(REAL)
+    duration: Mapped[float] = mapped_column(REAL)
     name: Mapped[str] = mapped_column(TEXT)
     kind: Mapped[str] = mapped_column(TEXT)
     cumulative_token_count: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)

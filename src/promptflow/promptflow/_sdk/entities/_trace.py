@@ -236,7 +236,7 @@ class LineRun:
     start_time: datetime.datetime
     end_time: typing.Optional[datetime.datetime]
     status: str
-    latency: typing.Optional[float]
+    duration: typing.Optional[float]
     name: typing.Optional[str]
     kind: str
     collection: str
@@ -298,7 +298,7 @@ class LineRun:
             outputs=None,
             end_time=None,
             status=RUNNING_LINE_RUN_STATUS,
-            latency=None,
+            duration=None,
             name=None,
             kind=None,
             **common_args,
@@ -325,7 +325,7 @@ class LineRun:
             outputs=json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
             end_time=span.end_time,
             status=RUNNING_LINE_RUN_STATUS,
-            latency=(span.end_time - span.start_time).total_seconds(),
+            duration=(span.end_time - span.start_time).total_seconds(),
             name=span.name,
             kind=span.attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.kind),
             cumulative_token_count=cumulative_token_count,
@@ -342,7 +342,7 @@ class LineRun:
             start_time=self.start_time,
             end_time=self.end_time,
             status=self.status,
-            latency=self.latency,
+            duration=self.duration,
             name=self.name,
             kind=self.kind,
             cumulative_token_count=copy.deepcopy(self.cumulative_token_count) if self.cumulative_token_count else None,
