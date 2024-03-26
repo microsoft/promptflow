@@ -1,6 +1,6 @@
 # Release History
 
-## 1.4.0 (2024.03.22)
+## 1.4.0 (2024.03.26)
 
 ### Features Added
 - Enable token based auth in azure openai connection for tools.
