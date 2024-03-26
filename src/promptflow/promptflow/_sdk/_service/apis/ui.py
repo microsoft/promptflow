@@ -184,6 +184,8 @@ class YamlEdit(Resource):
         experiment = args.experiment
         flow_path = get_flow_path(flow, experiment)
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
+        yaml = YAML()
+        content = yaml.load(content)
         with open(flow_path, 'w') as outfile:
            dump_yaml(content, outfile)
         return make_response(f"{flow_path} content updated successfully", 200)
