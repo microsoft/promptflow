@@ -5,7 +5,6 @@ from typing import Callable
 from unittest import mock
 
 import pytest
-from sdk_cli_azure_test.recording_utilities import is_replay
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 from promptflow._sdk._telemetry import log_activity
@@ -49,7 +48,7 @@ def run_cli_command(cmd, time_limit=3600):
     ed = timeit.default_timer()
 
     print(f"{cmd}, \nTotal time: {ed - st}s")
-    if is_replay():
+    if pytest.is_replay:
         assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
 

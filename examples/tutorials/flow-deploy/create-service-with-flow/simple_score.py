@@ -3,7 +3,7 @@ import logging
 
 from flask import Flask, jsonify, request
 
-from promptflow import load_flow
+from promptflow.client import load_flow
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import SystemErrorException, UserErrorException

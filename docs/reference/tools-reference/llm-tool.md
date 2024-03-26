@@ -83,3 +83,71 @@ Setup connections to provisioned resources in prompt flow.
 1. Setup and select the connections to OpenAI resources
 2. Configure LLM model api and its parameters
 3. Prepare the Prompt with [guidance](./prompt-tool.md#how-to-write-prompt).
+
+## How to write a chat prompt?
+
+_To grasp the fundamentals of creating a chat prompt, begin with [this section](./prompt-tool.md#how-to-write-prompt) for an introductory understanding of jinja._
+
+We offer a method to distinguish between different roles in a chat prompt, such as "system", "user", "assistant". Each role can have "name" and "content" properties.
+
+### Sample 1
+```jinja
+# system:
+You are a helpful assistant.
+
+{% for item in chat_history %}
+# user:
+{{item.inputs.question}}
+# assistant:
+{{item.outputs.answer}}
+{% endfor %}
+
+# user:
+{{question}}
+```
+
+In LLM tool, the prompt is transformed to match the [openai messages](https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages) structure before sending to openai chat API.
+
+```
+[
+    {
+        "role": "system",
+        "content": "You are a helpful assistant."
+    },
+    {
+        "role": "user",
+        "content": "<question-of-chat-history-round-1>"
+    },
+    {
+        "role": "assistant",
+        "content": "<answer-of-chat-history-round-1>"
+    },
+    ...
+    {
+        "role": "user",
+        "content": "<question>"
+    }
+]
+```
+
+### Sample 2
+```jinja
+# system:
+{# For role naming customization, the following syntax is used #}
+## name:
+Alice
+## content:
+You are a bot can tell good jokes.
+```
+
+In LLM tool, the prompt is transformed to match the [openai messages](https://platform.openai.com/docs/api-reference/chat/create#chat-create-messages) structure before sending to openai chat API.
+
+```
+[
+    {
+        "role": "system",
+        "name": "Alice",
+        "content": "You are a bot can tell good jokes."
+    }
+]
+```

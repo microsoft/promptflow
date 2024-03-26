@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - src/promptflow/**
+      - src/promptflow-tracing/**
       - scripts/building/**
       - .github/workflows/promptflow-sdk-cli-test.yml
   workflow_dispatch:
@@ -13,6 +14,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
   build:
     strategy:
@@ -81,6 +83,11 @@ jobs:
         pip uninstall -y promptflow-tracing
         pip install -e ${{ github.workspace }}/src/promptflow-tracing
         pip freeze
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
       uses: azure/login@v1

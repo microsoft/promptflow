@@ -130,11 +130,13 @@ class ExperimentOrchestrator:
         logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
         return test_context.node_results
 
-    def _test_node(self, node, test_context) -> Run:
+    def _test_node(self, node, test_context):
         if node.type == ExperimentNodeType.FLOW:
             return self._test_flow_node(node, test_context)
         elif node.type == ExperimentNodeType.COMMAND:
             return self._test_command_node(node, test_context)
+        elif node.type == ExperimentNodeType.CHAT_GROUP:
+            return self._test_chat_group_node(node, test_context)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
     def _test_flow_node(self, node, test_context):
@@ -165,6 +167,14 @@ class ExperimentOrchestrator:
 
     def _test_command_node(self, *args, **kwargs):
         raise NotImplementedError
+
+    def _test_chat_group_node(self, node, test_context):
+        from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
+
+        chat_group = ChatGroup._from_node(node, test_context)
+        logger.debug(f"Invoking chat group node {node.name!r}.")
+        chat_group.invoke()
+        return chat_group.conversation_history
 
     def start(self, nodes=None, from_nodes=None, attempt=None, **kwargs):
         """Start an execution of nodes.

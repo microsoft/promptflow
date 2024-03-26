@@ -10,12 +10,12 @@ from typing import Optional, Union
 
 import pydash
 
+from promptflow._constants import ConnectionProviderConfig
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
-    ConnectionProvider,
 )
 from promptflow._sdk._utils import call_from_extension, gen_uuid_by_compute_info, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -173,8 +173,8 @@ class Configuration(object):
     @classmethod
     def resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
         if provider is None:
-            return ConnectionProvider.LOCAL
-        if provider == ConnectionProvider.AZUREML.value:
+            return ConnectionProviderConfig.LOCAL
+        if provider == ConnectionProviderConfig.AZUREML:
             # Note: The below function has azure-ai-ml dependency.
             return "azureml:" + cls._get_workspace_from_config(path=path)
         # If provider not None and not Azure, return it directly.

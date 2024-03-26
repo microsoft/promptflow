@@ -16,6 +16,7 @@ env:
   testWorkingDirectory: src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
 jobs:
   id:
@@ -73,6 +74,11 @@ jobs:
       with:
         name: wheel
         path: artifacts
+    - name: install recording
+      run:
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       if: env.PROMPT_FLOW_TEST_MODE == 'live'
@@ -97,11 +103,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
-    - name: Install tracing
-      shell: pwsh
-      working-directory: ${{ env.TRACING_PATH }}
-      run: |
-        poetry install --only main
     - name: Run SDK CLI Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
@@ -162,6 +163,11 @@ jobs:
       with:
         name: wheel
         path: artifacts
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       if: env.PROMPT_FLOW_TEST_MODE == 'live'
@@ -180,11 +186,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
-    - name: Install tracing
-      shell: pwsh
-      working-directory: ${{ env.TRACING_PATH }}
-      run: |
-        poetry install --only main
     - name: Run SDK CLI Azure Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
@@ -226,6 +227,11 @@ jobs:
       with:
         name: wheel
         path: artifacts
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -242,11 +248,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
-    - name: Install tracing
-      shell: pwsh
-      working-directory: ${{ env.TRACING_PATH }}
-      run: |
-        poetry install --only main
     - name: Run Executor Test
       shell: pwsh
       working-directory: ${{ github.workspace }}
