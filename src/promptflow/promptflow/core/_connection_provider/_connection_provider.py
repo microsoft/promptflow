@@ -26,7 +26,7 @@ class ConnectionProvider(ABC):
         from promptflow.core._connection_provider._local_connection_provider import LocalConnectionProvider
         from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 
-        if provider_config == ConnectionProviderConfig.LOCAL:
+        if not provider_config or provider_config == ConnectionProviderConfig.LOCAL:
             return LocalConnectionProvider()
         if provider_config.startswith(ConnectionProviderConfig.AZUREML):
             subscription_id, resource_group, workspace_name = extract_workspace(provider_config)
