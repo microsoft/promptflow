@@ -152,10 +152,10 @@ def encode_dict(data: dict) -> str:
 def try_extract_trace_context(logger) -> Context:
     """Try to extract trace context from request headers."""
     # reference: https://www.w3.org/TR/trace-context/
-    context = extract(request.headers)
-    if context:
-        logger.info(f"Received trace context: {context}")
-    return context
+    ctx = extract(request.headers)
+    if ctx:
+        logger.info(f"Received trace context: {ctx}")
+    return ctx
 
 
 def serialize_attribute_value(v):
