@@ -106,11 +106,11 @@ class ChatRole:
                 if value.startswith(data_prefix):
                     stripped_value = value.replace(data_prefix, "").replace("}", "")
                     data_name, col_name = stripped_value.split(".")
-                    if data_name in data:
+                    if data_name in data and col_name in data[data_name]:
                         current_input["value"] = data[data_name][col_name]
                 elif value.startswith(inputs_prefix):
                     input_name = value.replace(inputs_prefix, "").replace("}", "")
-                    if input_name in inputs:
+                    if input_name in inputs and input_name in inputs:
                         current_input["value"] = inputs[input_name]
 
     def invoke(self, *args, **kwargs):

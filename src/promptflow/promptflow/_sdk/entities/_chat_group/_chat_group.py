@@ -119,6 +119,7 @@ class ChatGroup:
         chat_round = 0
         chat_token = 0
         chat_start_time = time.time()
+        self._conversation_history = []
         while True:
             chat_round += 1
 
@@ -160,6 +161,8 @@ class ChatGroup:
             # initializing the chat role.
             if value == "${parent.conversation_history}":
                 value = self._conversation_history
+            elif isinstance(value, str) and value.startswith("${"):
+                raise ChatGroupError(f"Unresolved input value {value!r} for role {role.role!r}.")
             input_values[key] = value
         logger.debug(f"Input values for role {role.role!r}: {input_values!r}")
         return input_values
