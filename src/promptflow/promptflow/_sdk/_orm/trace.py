@@ -11,6 +11,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from promptflow._sdk._constants import (
     EVENT_TABLENAME,
     EVENT_TRACE_ID_SPAN_ID_INDEX_NAME,
+    LINE_RUN_PARENT_ID_INDEX_NAME,
     LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME,
     LINE_RUN_TABLENAME,
     LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME,
@@ -126,6 +127,7 @@ class LineRun(Base):
     __table_args__ = (
         Index(LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
         Index(LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME, "run", "line_number"),
+        Index(LINE_RUN_PARENT_ID_INDEX_NAME, "parent_id"),
     )
 
     @staticmethod
