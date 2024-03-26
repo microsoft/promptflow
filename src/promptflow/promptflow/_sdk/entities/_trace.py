@@ -334,8 +334,7 @@ class LineRun:
         )
 
     def _try_create(self) -> None:
-        # try to get via line run id first
-        # if not found, create a new line run
+        # try to get via line run id first; if not found, create a new line run
         try:
             ORMLineRun.get(line_run_id=self.line_run_id)
         except LineRunNotFoundError:
