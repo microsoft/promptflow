@@ -154,6 +154,9 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
         links=[link],
     ) as span:
         enrich_span_with_original_attributes(span, original_span.attributes)
+        # Enrich the new span with input before generator iteration to prevent loss of input information.
+        # The input is as an event within this span.
+        enrich_span_with_input(span, inputs)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
         generator_output = generator_proxy.items
