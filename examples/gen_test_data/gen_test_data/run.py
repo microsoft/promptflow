@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import shutil
 import time
 from datetime import datetime
 from pathlib import Path
@@ -17,7 +16,6 @@ os.sys.path.insert(0, os.path.abspath(Path(__file__).parent))
 from common import (  # noqa: E402
     clean_data,
     convert_to_abs_path,
-    copy_flow_folder_and_set_node_inputs,
     count_non_blank_lines,
     local_path_exists,
     non_padding_path,
@@ -30,20 +28,22 @@ from constants import DETAILS_FILE_NAME, SUMMARY_FILE_NAME, TEST_DATA_FILE_NAME,
 logger = get_logger("data.gen")
 
 
-def batch_run_flow(
-    flow_folder: str,
-    flow_input_data: str,
-    flow_batch_run_size: int,
-):
+def batch_run_flow(flow_folder: str, flow_input_data: str, flow_batch_run_size: int, node_inputs_override: dict):
     logger.info("Step 2: Start to batch run 'generate_test_data_flow'...")
     import subprocess
 
     run_name = f"test_data_gen_{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}"
     # TODO: replace the separate process to submit batch run with batch run async method when it's available.
+    connections_str = ""
+    for node_name, node_val in node_inputs_override.items():
+        for k, v in node_val.items():
+            connections_str += f"{node_name}.{k}={v} "
+    connections_str = connections_str.rstrip()
+
     cmd = (
         f"pf run create --flow {flow_folder} --data {flow_input_data} --name {run_name} "
         f"--environment-variables PF_WORKER_COUNT='{flow_batch_run_size}' PF_BATCH_METHOD='spawn' "
-        f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}' --debug"
+        f"--column-mapping {TEXT_CHUNK}='${{data.text_chunk}}' --connections {connections_str} --debug"
     )
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     logger.info(
@@ -87,6 +87,7 @@ def run_local(
     flow_batch_run_size: int,
     output_folder: str,
     should_skip_split: bool,
+    node_inputs_override: dict,
 ):
     text_chunks_path = document_nodes_file
     output_folder = Path(output_folder) / datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
@@ -96,7 +97,7 @@ def run_local(
     if not should_skip_split:
         text_chunks_path = split_document(document_chunk_size, document_chunk_overlap, documents_folder, output_folder)
 
-    run_name, process = batch_run_flow(flow_folder, text_chunks_path, flow_batch_run_size)
+    run_name, process = batch_run_flow(flow_folder, text_chunks_path, flow_batch_run_size, node_inputs_override)
 
     run_folder_path = Path.home() / f".promptflow/.runs/{run_name}"
     print_progress(run_folder_path / "logs.txt", process)
@@ -140,6 +141,7 @@ def run_cloud(
     prs_run_invocation_time: int,
     prs_allowed_failed_count: int,
     should_skip_split: bool,
+    node_inputs_override: dict,
 ):
     # lazy import azure dependencies
     try:
@@ -188,7 +190,7 @@ def run_cloud(
             ).outputs.document_node_output
         )
         flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_flow"}])(
-            data=data, text_chunk="${data.text_chunk}"
+            data=data, text_chunk="${data.text_chunk}", connections=node_inputs_override
         )
         flow_node.mini_batch_size = mini_batch_size
         flow_node.max_concurrency_per_instance = max_concurrency_per_instance
@@ -254,68 +256,64 @@ if __name__ == "__main__":
             + "Please check if you are under the wrong directory or the file is missing."
         )
 
-    copied_flow_folder = config["flow_folder"] + "_" + time.strftime("%b-%d-%Y-%H-%M-%S") + "_temp"
-    try:
-        should_skip_split_documents = False
-        document_nodes_file = convert_to_abs_path(config.get("document_nodes_file", None))
-        documents_folder = convert_to_abs_path(config.get("documents_folder", None))
-        flow_folder = convert_to_abs_path(config.get("flow_folder", None))
-        output_folder = convert_to_abs_path(config.get("output_folder", None))
-        validate_path_func = non_padding_path if args.cloud else local_path_exists
+    should_skip_split_documents = False
+    document_nodes_file = convert_to_abs_path(config.get("document_nodes_file", None))
+    documents_folder = convert_to_abs_path(config.get("documents_folder", None))
+    flow_folder = convert_to_abs_path(config.get("flow_folder", None))
+    output_folder = convert_to_abs_path(config.get("output_folder", None))
+    validate_path_func = non_padding_path if args.cloud else local_path_exists
+    node_inputs_override = config.get("node_inputs_override", None)
 
-        if document_nodes_file and validate_path_func(document_nodes_file):
-            should_skip_split_documents = True
-        elif not documents_folder or not validate_path_func(documents_folder):
-            raise Exception(
-                "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
-                f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
-            )
+    if document_nodes_file and validate_path_func(document_nodes_file):
+        should_skip_split_documents = True
+    elif not documents_folder or not validate_path_func(documents_folder):
+        raise Exception(
+            "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
+            f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
+        )
 
-        if args.cloud:
-            logger.info("Start to generate test data at cloud...")
-        else:
-            logger.info("Start to generate test data at local...")
+    if args.cloud:
+        logger.info("Start to generate test data at cloud...")
+    else:
+        logger.info("Start to generate test data at local...")
 
-        if should_skip_split_documents:
-            logger.info(
-                "Skip step 1 'Split documents to document nodes' as received document nodes from "
-                f"input file path '{document_nodes_file}'."
-            )
-            if Path(document_nodes_file).is_file():
-                logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
+    if should_skip_split_documents:
+        logger.info(
+            "Skip step 1 'Split documents to document nodes' as received document nodes from "
+            f"input file path '{document_nodes_file}'."
+        )
+        if Path(document_nodes_file).is_file():
+            logger.info(f"Collected {count_non_blank_lines(document_nodes_file)} document nodes.")
 
-        copy_flow_folder_and_set_node_inputs(copied_flow_folder, flow_folder, config.get("node_inputs_override", None))
-
-        if args.cloud:
-            run_cloud(
-                documents_folder,
-                config.get("document_chunk_size", 512),
-                config.get("document_chunk_overlap", 100),
-                document_nodes_file,
-                copied_flow_folder,
-                config["subscription_id"],
-                config["resource_group"],
-                config["workspace_name"],
-                config["aml_cluster"],
-                config.get("prs_instance_count", 2),
-                config.get("prs_mini_batch_size", 1),
-                config.get("prs_max_concurrency_per_instance", 4),
-                config.get("prs_max_retry_count", 3),
-                config.get("prs_run_invocation_time", 800),
-                config.get("prs_allowed_failed_count", -1),
-                should_skip_split_documents,
-            )
-        else:
-            run_local(
-                documents_folder,
-                config.get("document_chunk_size", 512),
-                config.get("document_chunk_overlap", 100),
-                document_nodes_file,
-                copied_flow_folder,
-                config.get("flow_batch_run_size", 16),
-                output_folder,
-                should_skip_split_documents,
-            )
-    finally:
-        if os.path.exists(copied_flow_folder):
-            shutil.rmtree(copied_flow_folder)
+    if args.cloud:
+        run_cloud(
+            documents_folder,
+            config.get("document_chunk_size", 512),
+            config.get("document_chunk_overlap", 100),
+            document_nodes_file,
+            flow_folder,
+            config["subscription_id"],
+            config["resource_group"],
+            config["workspace_name"],
+            config["aml_cluster"],
+            config.get("prs_instance_count", 2),
+            config.get("prs_mini_batch_size", 1),
+            config.get("prs_max_concurrency_per_instance", 4),
+            config.get("prs_max_retry_count", 3),
+            config.get("prs_run_invocation_time", 800),
+            config.get("prs_allowed_failed_count", -1),
+            should_skip_split_documents,
+            node_inputs_override,
+        )
+    else:
+        run_local(
+            documents_folder,
+            config.get("document_chunk_size", 512),
+            config.get("document_chunk_overlap", 100),
+            document_nodes_file,
+            flow_folder,
+            config.get("flow_batch_run_size", 16),
+            output_folder,
+            should_skip_split_documents,
+            node_inputs_override,
+        )

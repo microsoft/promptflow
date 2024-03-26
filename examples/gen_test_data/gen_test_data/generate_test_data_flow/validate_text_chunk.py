@@ -3,15 +3,26 @@ from typing import Union
 from utils import ErrorMsg, ResponseFormat, get_text_chunk_score
 
 from promptflow import tool
+from promptflow._core.tool import InputSetting
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
-@tool
+@tool(
+    input_settings={
+        "deployment_name": InputSetting(
+            enabled_by="connection",
+            enabled_by_type=["AzureOpenAIConnection"],
+            capabilities={"completion": False, "chat_completion": True, "embeddings": False},
+        ),
+        "model": InputSetting(enabled_by="connection", enabled_by_type=["OpenAIConnection"]),
+    }
+)
 def validate_text_chunk(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    model_or_deployment_name: str,
     score_text_chunk_prompt: str,
     score_threshold: float,
+    deployment_name: str = "",
+    model: str = "",
     context: str = None,
     response_format: str = ResponseFormat.TEXT,
     temperature: float = 0.2,
@@ -24,7 +35,8 @@ def validate_text_chunk(
     """
     text_chunk_score_res = get_text_chunk_score(
         connection,
-        model_or_deployment_name,
+        model,
+        deployment_name,
         score_text_chunk_prompt,
         response_format,
         score_threshold,

@@ -3,15 +3,26 @@ from typing import Union
 from utils import ErrorMsg, QuestionType, ResponseFormat, get_question_validation_res
 
 from promptflow import tool
+from promptflow._core.tool import InputSetting
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
-@tool
+@tool(
+    input_settings={
+        "deployment_name": InputSetting(
+            enabled_by="connection",
+            enabled_by_type=["AzureOpenAIConnection"],
+            capabilities={"completion": False, "chat_completion": True, "embeddings": False},
+        ),
+        "model": InputSetting(enabled_by="connection", enabled_by_type=["OpenAIConnection"]),
+    }
+)
 def validate_question(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    model_or_deployment_name: str,
     generated_question: str,
     validate_question_prompt: str,
+    deployment_name: str = "",
+    model: str = "",
     response_format: str = ResponseFormat.TEXT,
     temperature: float = 0.2,
 ):
@@ -28,7 +39,8 @@ def validate_question(
 
     validation_res = get_question_validation_res(
         connection,
-        model_or_deployment_name,
+        model,
+        deployment_name,
         validate_question_prompt,
         generated_question,
         response_format,

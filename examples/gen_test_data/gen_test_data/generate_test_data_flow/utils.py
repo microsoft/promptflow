@@ -37,7 +37,7 @@ ScoreResult = namedtuple("ScoreResult", ["score", "reason", "pass_validation"])
 
 
 def llm_call(
-    connection, model_or_deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=None
+    connection, model, deployment_name, prompt, response_format=ResponseFormat.TEXT, temperature=1.0, max_tokens=None
 ):
     response_format = "json_object" if response_format.lower() == "json" else response_format
     # avoid unnecessary jinja2 template re-rendering and potential error.
@@ -46,7 +46,7 @@ def llm_call(
         return aoai_chat(
             connection=connection,
             prompt=prompt,
-            deployment_name=model_or_deployment_name,
+            deployment_name=deployment_name,
             temperature=temperature,
             max_tokens=max_tokens,
             response_format={"type": response_format},
@@ -55,7 +55,7 @@ def llm_call(
         return openai_chat(
             connection=connection,
             prompt=prompt,
-            model=model_or_deployment_name,
+            model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             response_format={"type": response_format},
@@ -72,11 +72,24 @@ def get_question_type(testset_distribution) -> str:
 
 
 def get_suggested_answer_validation_res(
-    connection, model_or_deployment_name, prompt, suggested_answer: str, temperature: float,
-    max_tokens: int=None, response_format: ResponseFormat = ResponseFormat.TEXT
+    connection,
+    model,
+    deployment_name,
+    prompt,
+    suggested_answer: str,
+    temperature: float,
+    max_tokens: int = None,
+    response_format: ResponseFormat = ResponseFormat.TEXT,
 ):
-    rsp = llm_call(connection, model_or_deployment_name, prompt, temperature=temperature, max_tokens=max_tokens,
-                   response_format=response_format)
+    rsp = llm_call(
+        connection,
+        model,
+        deployment_name,
+        prompt,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        response_format=response_format,
+    )
     return retrieve_verdict_and_print_reason(
         rsp=rsp, validate_obj_name=ValidateObj.SUGGESTED_ANSWER, validate_obj=suggested_answer
     )
@@ -84,27 +97,29 @@ def get_suggested_answer_validation_res(
 
 def get_question_validation_res(
     connection,
-    model_or_deployment_name,
+    model,
+    deployment_name,
     prompt,
     question: str,
     response_format: ResponseFormat,
     temperature: float,
     max_tokens: int = None,
 ):
-    rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
+    rsp = llm_call(connection, model, deployment_name, prompt, response_format, temperature, max_tokens)
     return retrieve_verdict_and_print_reason(rsp=rsp, validate_obj_name=ValidateObj.QUESTION, validate_obj=question)
 
 
 def get_text_chunk_score(
     connection,
-    model_or_deployment_name,
+    model,
+    deployment_name,
     prompt,
     response_format: ResponseFormat,
     score_threshold: float,
     temperature: float,
     max_tokens: int = None,
 ):
-    rsp = llm_call(connection, model_or_deployment_name, prompt, response_format, temperature, max_tokens)
+    rsp = llm_call(connection, model, deployment_name, prompt, response_format, temperature, max_tokens)
     data = _load_json_rsp(rsp)
     score_float = 0
     reason = ""

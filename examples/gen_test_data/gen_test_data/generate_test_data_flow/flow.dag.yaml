@@ -5,9 +5,11 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
-    default: Albert Einstein (14 March 1879 - 18 April 1955) was a German-born
-      theoretical physicist who is widely held to be one of the greatest and
-      most influential scientists of all time.
+    default: Prompt flow is a suite of development tools designed to streamline the
+      end-to-end development cycle of LLM-based AI applications, from ideation,
+      prototyping, testing, evaluation to production deployment and monitoring.
+      It makes prompt engineering much easier and enables you to build LLM apps
+      with production quality.
 outputs:
   question:
     type: string
@@ -60,7 +62,6 @@ nodes:
     path: generate_question.py
   inputs:
     connection: ""
-    model_or_deployment_name: ""
     context: ${validate_text_chunk.output.context}
     temperature: 0.2
     generate_question_prompt: ${generate_question_prompt.output}
@@ -72,7 +73,6 @@ nodes:
     path: validate_question.py
   inputs:
     connection: ""
-    model_or_deployment_name: ""
     temperature: 0.2
     generated_question: ${generate_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
@@ -87,7 +87,6 @@ nodes:
     context: ${inputs.text_chunk}
     generate_suggested_answer_prompt: ${generate_suggested_answer_prompt.output}
     question: ${validate_question.output.question}
-    model_or_deployment_name: ""
     temperature: 0.2
   use_variants: false
 - name: generate_debug_info
@@ -114,7 +113,6 @@ nodes:
     path: validate_suggested_answer.py
   inputs:
     connection: ""
-    model_or_deployment_name: ""
     suggested_answer: ${generate_suggested_answer.output}
     validate_suggested_answer_prompt: ${validate_suggested_answer_prompt.output}
     temperature: 0.2
@@ -128,5 +126,4 @@ nodes:
     score_text_chunk_prompt: ${score_text_chunk_prompt.output}
     context: ${inputs.text_chunk}
     score_threshold: 4
-    model_or_deployment_name: ""
     temperature: 0.2

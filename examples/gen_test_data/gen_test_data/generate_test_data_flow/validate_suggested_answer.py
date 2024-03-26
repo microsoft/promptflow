@@ -3,18 +3,27 @@ from typing import Union
 from utils import ErrorMsg, get_suggested_answer_validation_res
 
 from promptflow import tool
+from promptflow._core.tool import InputSetting
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
-# The inputs section will change based on the arguments of the tool function, after you save the code
-# Adding type to arguments and return value will help the system show the types properly
-# Please update the function name/signature per need
+@tool(
+    input_settings={
+        "deployment_name": InputSetting(
+            enabled_by="connection",
+            enabled_by_type=["AzureOpenAIConnection"],
+            capabilities={"completion": False, "chat_completion": True, "embeddings": False},
+        ),
+        "model": InputSetting(enabled_by="connection", enabled_by_type=["OpenAIConnection"]),
+    }
+)
 @tool
 def validate_suggested_answer(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    model_or_deployment_name: str,
     suggested_answer: str,
     validate_suggested_answer_prompt: str,
+    deployment_name: str = "",
+    model: str = "",
     temperature: float = 0.2,
     response_format: str = "text",
 ):
@@ -29,7 +38,8 @@ def validate_suggested_answer(
 
     validation_res = get_suggested_answer_validation_res(
         connection,
-        model_or_deployment_name,
+        model,
+        deployment_name,
         validate_suggested_answer_prompt,
         suggested_answer,
         temperature,
