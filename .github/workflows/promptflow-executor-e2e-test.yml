@@ -25,6 +25,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
   authorize:
     environment:
@@ -107,6 +108,11 @@ jobs:
         pip uninstall -y promptflow-tracing
         pip install -e ${{ github.workspace }}/src/promptflow-tracing
         pip freeze
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       with:

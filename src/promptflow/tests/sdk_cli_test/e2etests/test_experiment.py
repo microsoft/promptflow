@@ -19,8 +19,6 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
-from ..recording_utilities import is_live
-
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
@@ -89,7 +87,7 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         session = str(uuid.uuid4())
-        if is_live():
+        if pytest.is_live:
             # Async start
             exp = client._experiments.start(exp, session=session)
             # Test the experiment in progress cannot be started.
@@ -140,7 +138,7 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        if is_live():
+        if pytest.is_live:
             # Async start
             exp = client._experiments.start(exp)
             exp = self.wait_for_experiment_terminated(client, exp)
@@ -154,7 +152,7 @@ class TestExperiment:
         run = client.runs.get(name=exp.node_runs["echo"][0]["name"])
         assert run.type == RunTypes.COMMAND
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start_from_nodes(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -189,7 +187,7 @@ class TestExperiment:
         assert len(exp.node_runs["main"]) == 3
         assert len(exp.node_runs["echo"]) == 2
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
         # Load template and create experiment
@@ -315,7 +313,7 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         exp = pf._experiments.create_or_update(experiment)
 
-        if is_live():
+        if pytest.is_live:
             # Async start
             exp = pf._experiments.start(exp)
             exp = self.wait_for_experiment_terminated(pf, exp)
