@@ -37,4 +37,5 @@ azureai/deploy-to-azure-appservice
 azureai/use-flow-in-azure-ml-pipeline.md
 azureai/faq
 azureai/runtime-change-log.md
+azureai/generate-test-data-cloud.md
 ```
