@@ -30,8 +30,6 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.tracing._operation_context import OperationContext
 
-from ..recording_utilities import is_live
-
 FLOWS_DIR = "./tests/test_configs/flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -1942,7 +1940,7 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
         def wait_for_experiment_terminated(experiment_name):
@@ -1982,7 +1980,7 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:

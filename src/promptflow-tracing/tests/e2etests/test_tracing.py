@@ -47,7 +47,7 @@ CUMULATIVE_EMBEDDING_TOKEN_NAMES = [
 ]
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestTracing:
     @pytest.mark.parametrize(

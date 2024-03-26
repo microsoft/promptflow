@@ -12,6 +12,7 @@ on:
 env:
   IS_IN_CI_PIPELINE: "true"
   WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 jobs:
   build:
@@ -41,6 +42,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: set test mode
+        run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -56,11 +59,14 @@ jobs:
       - name: install test dependency group
         run: poetry install --only test
         working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
       - name: generate end-to-end test config from secret
         run: echo '${{ secrets.PF_TRACING_E2E_TEST_CONFIG }}' >> connections.json
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: run e2e tests
-        run: poetry run pytest -m e2etest
+        run: poetry run pytest -m e2etest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: upload coverage report
         uses: actions/upload-artifact@v4
