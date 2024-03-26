@@ -16,7 +16,7 @@ from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunSt
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import _load_experiment, load_common
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -320,3 +320,17 @@ class TestExperiment:
         else:
             exp = pf._experiments.get(exp.name)
             exp = ExperimentOrchestrator(pf, exp).start()
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_chat_group_node(self, pf: PFClient):
+        template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        template = load_common(ExperimentTemplate, source=template_path)
+        orchestrator = ExperimentOrchestrator(pf)
+        test_context = ExperimentTemplateTestContext(template=template)
+        chat_group_node = template.nodes[0]
+        assert chat_group_node.name == "multi_turn_chat"
+
+        history = orchestrator._test_node(chat_group_node, test_context)
+        assert len(history) == 4
+        assert history[0][0] == history[2][0] == "assistant"
+        assert history[1][0] == history[3][0] == "user"
