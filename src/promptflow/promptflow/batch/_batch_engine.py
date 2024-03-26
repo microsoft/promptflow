@@ -325,6 +325,17 @@ class BatchEngine:
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
                 )
+            if self._batch_timeout_expired():
+                ex = BatchRunTimeoutError(
+                    message_format=(
+                        "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                        "Please adjust the timeout to a higher value."
+                    ),
+                    batch_timeout_sec=self._batch_timeout_sec,
+                    target=ErrorTarget.BATCH,
+                )
+                # summary some infos from line results and aggr results to batch result
+                return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
         return task.result()
 
     async def _exec(
@@ -540,3 +551,9 @@ class BatchEngine:
             flow_dag = load_yaml(fin)
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
         return is_flex_flow(yaml_dict=flow_dag), language
+
+    def _batch_timeout_expired(self) -> bool:
+        # Currently, local PythonExecutorProxy will handle the batch timeout by itself.
+        if self._batch_timeout_sec is None or isinstance(self._executor_proxy, PythonExecutorProxy):
+            return False
+        return (datetime.utcnow() - self._start_time).total_seconds() > self._batch_timeout_sec
