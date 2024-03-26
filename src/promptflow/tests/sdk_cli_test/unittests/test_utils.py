@@ -40,14 +40,16 @@ from promptflow._sdk._utils import (
     generate_flow_tools_json,
     get_mac_address,
     get_system_info,
-    override_connection_config_with_environment_variable,
     refresh_connections_dir,
-    resolve_connections_environment_variable_reference,
 )
 from promptflow._utils.load_data import load_data
 from promptflow._utils.retry_utils import http_retry_wrapper, retry
 from promptflow._utils.utils import snake_to_camel
 from promptflow._utils.version_hint_utils import check_latest_version
+from promptflow.core._utils import (
+    override_connection_config_with_environment_variable,
+    resolve_connections_environment_variable_reference,
+)
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
