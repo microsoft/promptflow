@@ -555,11 +555,11 @@ class FlowBase:
         # Add connection names from environment variable reference
         if self.environment_variables:
             for k, v in self.environment_variables.items():
-                if not isinstance(v, str) or not v.startswith("${"):
-                    continue
                 if k in environment_variables_overrides:
                     # Apply environment variables overrides
                     v = environment_variables_overrides[k]
+                if not isinstance(v, str) or not v.startswith("${"):
+                    continue
                 connection_name, _ = _match_reference(v)
                 connection_names.add(connection_name)
         return connection_names

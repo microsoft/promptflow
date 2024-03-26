@@ -1511,7 +1511,7 @@ class TestFlowRun:
             environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
         )
         assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
@@ -1529,7 +1529,7 @@ class TestFlowRun:
             environment_variables={"NEW_KEY": "${not_exist.api_type}"},
         )
         assert run.status == "Completed"
-        assert "error" not in run._to_dict()
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
