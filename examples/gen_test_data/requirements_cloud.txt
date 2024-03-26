@@ -1,4 +1,4 @@
-promptflow>=1.4.0
+promptflow>=1.7.0
 promptflow-tools
 azure-ai-ml
 mldesigner
