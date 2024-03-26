@@ -119,6 +119,7 @@ class ChatGroup:
         chat_round = 0
         chat_token = 0
         chat_start_time = time.time()
+        self._conversation_history = []
         while True:
             chat_round += 1
 
@@ -160,6 +161,8 @@ class ChatGroup:
             # initializing the chat role.
             if value == "${parent.conversation_history}":
                 value = self._conversation_history
+            elif isinstance(value, str) and value.startswith("${"):
+                raise ChatGroupError(f"Unresolved input value {value!r} for role {role.role!r}.")
             input_values[key] = value
         logger.debug(f"Input values for role {role.role!r}: {input_values!r}")
         return input_values
@@ -210,3 +213,24 @@ class ChatGroup:
     def _predict_next_role_with_llm(self) -> ChatRole:
         """Predict next role for non-deterministic speak order."""
         raise NotImplementedError(f"Speak order {self._speak_order} is not supported yet.")
+
+    @classmethod
+    def _from_node(cls, node: "ChatGroupNode", context: "ExperimentTemplateTestContext"):
+        """Create a chat group from a chat group node."""
+        logger.debug(f"Creating chat group instance from chat group node {node.name!r}...")
+        roles = [ChatRole(flow=role.pop("path"), **role) for role in node.roles]
+        chat_group = cls(
+            roles=roles,
+            max_turns=node.max_turns,
+            max_tokens=node.max_tokens,
+            max_time=node.max_time,
+            stop_signal=node.stop_signal,
+        )
+        logger.debug(f"Updating role inputs for chat group {node.name!r}.")
+        chat_group._update_role_inputs(context)
+        return chat_group
+
+    def _update_role_inputs(self, context: "ExperimentTemplateTestContext"):
+        """Update role inputs with context."""
+        for role in self._roles:
+            role._update_inputs_from_data_and_inputs(data=context.test_data, inputs=context.test_inputs)

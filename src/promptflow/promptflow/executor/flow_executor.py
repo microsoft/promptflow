@@ -435,7 +435,7 @@ class FlowExecutor:
         :return: A dictionary containing updated environment variables.
         :rtype: dict
         """
-        from promptflow._sdk._utils import update_environment_variables_with_connections
+        from promptflow.core._utils import update_environment_variables_with_connections
 
         return update_environment_variables_with_connections(connections)
 

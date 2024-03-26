@@ -30,6 +30,7 @@
     "src/promptflow/promptflow/azure/_models/**",
     "src/promptflow/promptflow/core/_connection_provider/_models/**",
     "src/promptflow/tests/**",
+    "src/promptflow-recording/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py",

@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import json
-import os
 import re
 from dataclasses import dataclass
 from typing import Dict
@@ -12,27 +11,7 @@ import jwt
 from azure.core.credentials import AccessToken
 from vcr.request import Request
 
-from .constants import ENVIRON_TEST_MODE, SanitizedValues, TestMode
-
-
-def get_test_mode_from_environ() -> str:
-    return os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE)
-
-
-def is_live() -> bool:
-    return get_test_mode_from_environ() == TestMode.LIVE
-
-
-def is_record() -> bool:
-    return get_test_mode_from_environ() == TestMode.RECORD
-
-
-def is_replay() -> bool:
-    return get_test_mode_from_environ() == TestMode.REPLAY
-
-
-def is_recording_enabled() -> bool:
-    return is_record() or is_replay() or is_live()
+from .constants import SanitizedValues
 
 
 class FakeTokenCredential:

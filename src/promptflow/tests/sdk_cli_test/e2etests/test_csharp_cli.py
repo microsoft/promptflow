@@ -141,3 +141,6 @@ class TestCSharpCli:
         outerr = capsys.readouterr()
         # Check node output
         assert "language model" in outerr.out
+
+    def test_flow_run_from_resume(self):
+        run_pf_command("run", "create", "--resume-from", "net6_0_variant_0_20240326_163600_356909")

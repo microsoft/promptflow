@@ -7,6 +7,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Union
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import NODES
 from promptflow._sdk.entities import FlowContext
 from promptflow._sdk.entities._flow import Flow
@@ -136,4 +137,5 @@ class FlowContextResolver:
                     flow=resolved_flow,
                     connections=connections,
                     streaming=flow_context.streaming,
+                    connection_provider=Configuration.get_instance().get_connection_provider(),
                 )
