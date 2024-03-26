@@ -6,7 +6,7 @@ from typing import Any
 
 from promptflow._constants import ConnectionProviderConfig
 from promptflow.core._connection_provider._utils import extract_workspace
-from promptflow.core._errors import UnsupportedConnectionProviderConfig
+from promptflow.core._errors import MissingRequiredPackage, UnsupportedConnectionProviderConfig
 
 
 class ConnectionProvider(ABC):
@@ -24,12 +24,17 @@ class ConnectionProvider(ABC):
         - azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/
             providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>
         """
-        from promptflow.core._connection_provider._local_connection_provider import LocalConnectionProvider
-        from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
-
         if not provider_config or provider_config == ConnectionProviderConfig.LOCAL:
+            try:
+                from promptflow._sdk._connection_provider._local_connection_provider import LocalConnectionProvider
+            except ImportError as e:
+                raise MissingRequiredPackage(
+                    message="Please install 'promptflow-devkit' to use local connection."
+                ) from e
             return LocalConnectionProvider()
         if provider_config.startswith(ConnectionProviderConfig.AZUREML):
+            from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+
             subscription_id, resource_group, workspace_name = extract_workspace(provider_config)
             return WorkspaceConnectionProvider(subscription_id, resource_group, workspace_name, credential)
         raise UnsupportedConnectionProviderConfig(
