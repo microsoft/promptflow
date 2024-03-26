@@ -21,8 +21,8 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 try:
-    from promptflow.promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
     from promptflow.recording.local import recording_array_reset
+    from promptflow.recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 except ImportError:
     # Run test in empty mode if promptflow-recording is not installed
     def recording_array_reset():
