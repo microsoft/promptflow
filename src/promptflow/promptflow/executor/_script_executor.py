@@ -16,6 +16,8 @@ from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
+from promptflow.exceptions import ErrorTarget
+from promptflow.executor._errors import InvalidFlowEntry
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -148,5 +150,12 @@ class ScriptExecutor(FlowExecutor):
         with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         entry = flow_dag.get("entry", "")
-        module_name, func_name = entry.split(":")
+        try:
+            module_name, func_name = entry.split(":")
+        except Exception as e:
+            raise InvalidFlowEntry(
+                message_format="Invalid entry '{entry}'.The entry should be in the format of '<module>:<function>'.",
+                entry=entry,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
         return module_name, func_name
