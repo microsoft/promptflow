@@ -86,7 +86,7 @@ class TestRunOperations:
     ):
         from sdk_cli_azure_test._azure_utils import get_cred
 
-        from promptflow_recording.azure import get_pf_client_for_replay
+        from promptflow.recording.azure import get_pf_client_for_replay
 
         # the test target "_workspace_default_datastore" is a cached property so the pf client needs to be recreated
         # otherwise the test may fail due to the cached value
