@@ -242,6 +242,7 @@ class BatchEngine:
         """
         try:
             previous_run_results = []
+            aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
             for i in range(len(batch_inputs)):
                 previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
@@ -250,8 +251,12 @@ class BatchEngine:
                     # Thus the root_run_id needs to be the current batch run id.
                     previous_run_info.root_run_id = run_id
                     previous_run_info.parent_run_id = run_id
-                    # Load previous node run info
+
+                    # Load previous node run info and remove aggregation nodes in case it is loaded into node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
+                    for node_run_info in previous_node_run_infos:
+                        if node_run_info.node in aggregation_nodes:
+                            previous_node_run_infos.remove(node_run_info)
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
                     previous_node_run_outputs = {
                         node_info.node: node_info.output for node_info in previous_node_run_infos
