@@ -366,6 +366,29 @@ class LineRun:
         except json.decoder.JSONDecodeError:
             return span.attributes.get(SpanAttributeFieldName.OUTPUT)
 
+    @staticmethod
+    def _from_orm_object(obj: ORMLineRun) -> "LineRun":
+        return LineRun(
+            line_run_id=obj.line_run_id,
+            trace_id=obj.trace_id,
+            root_span_id=obj.root_span_id,
+            inputs=copy.deepcopy(obj.inputs),
+            outputs=copy.deepcopy(obj.outputs),
+            start_time=obj.start_time,
+            end_time=obj.end_time,
+            status=obj.status,
+            duration=obj.duration,
+            name=obj.name,
+            kind=obj.kind,
+            cumulative_token_count=copy.deepcopy(obj.cumulative_token_count),
+            parent_id=obj.parent_id,
+            run=obj.run,
+            line_number=obj.line_number,
+            experiment=obj.experiment,
+            session_id=obj.session_id,
+            collection=obj.collection,
+        )
+
     def _to_orm_object(self) -> ORMLineRun:
         return ORMLineRun(
             line_run_id=self.line_run_id,
