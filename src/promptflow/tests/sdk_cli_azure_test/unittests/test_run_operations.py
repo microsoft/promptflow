@@ -85,11 +85,12 @@ class TestRunOperations:
         self, mocker: MockerFixture, subscription_id: str, resource_group_name: str, workspace_name: str
     ):
         from sdk_cli_azure_test._azure_utils import get_cred
-        from sdk_cli_azure_test.recording_utilities import get_pf_client_for_replay, is_replay
+
+        from promptflow_recording.azure import get_pf_client_for_replay
 
         # the test target "_workspace_default_datastore" is a cached property so the pf client needs to be recreated
         # otherwise the test may fail due to the cached value
-        if is_replay():
+        if pytest.is_replay:
             pf = get_pf_client_for_replay()
         else:
             pf = PFClient(
