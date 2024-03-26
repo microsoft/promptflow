@@ -259,7 +259,7 @@ def create_app(**kwargs):
         CORS(app)
     except ImportError:
         logger.warning("flask-cors is not installed, CORS is not enabled.")
-    # enable auto-instrumentation
+    # enable auto-instrumentation if customer installed opentelemetry-instrumentation-flask
     try:
         from opentelemetry.instrumentation.flask import FlaskInstrumentor
 
