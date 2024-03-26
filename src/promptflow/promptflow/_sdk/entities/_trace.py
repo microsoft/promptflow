@@ -7,6 +7,7 @@ import datetime
 import heapq
 import json
 import typing
+import uuid
 from dataclasses import dataclass
 
 from google.protobuf.json_format import MessageToJson
@@ -14,6 +15,7 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 
 from promptflow._constants import (
     RUNNING_LINE_RUN_STATUS,
+    SPAN_EVENTS_ATTRIBUTES_EVENT_ID,
     SpanAttributeFieldName,
     SpanContextFieldName,
     SpanEventFieldName,
@@ -22,6 +24,8 @@ from promptflow._constants import (
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import CumulativeTokenCountFieldName
+from promptflow._sdk._orm.trace import Event as ORMEvent
+from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
@@ -65,7 +69,48 @@ class Span:
         self.resource = copy.deepcopy(resource)
 
     def _persist(self) -> None:
+        # persist events to table `events`
+        # NOTE that this operation will update `events.attributes` inplace
+        self._persist_events()
+        # persist span
         self._to_orm_object().persist()
+        # persist (create or update) line run
+        self._persist_line_run()
+
+    def _persist_events(self) -> None:
+        # persist events to table `events` and update `events.attributes` inplace
+        event_id = str(uuid.uuid4())
+        for i in range(len(self.events)):
+            event = self.events[i]
+            ORMEvent(
+                event_id=event_id,
+                trace_id=self.trace_id,
+                span_id=self.span_id,
+                data=json.dumps(event),
+            ).persist()
+            self.events[i][SpanEventFieldName.ATTRIBUTES] = {SPAN_EVENTS_ATTRIBUTES_EVENT_ID: event_id}
+
+    def _load_events(self) -> None:
+        # load events from table `events` and update `events.attributes` inplace
+        for i in range(len(self.events)):
+            event_id = self.events[i][SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTES_EVENT_ID]
+            orm_event = ORMEvent.get(event_id)
+            self.events[i] = json.loads(orm_event.data)
+
+    def _persist_line_run(self) -> None:
+        # within a trace id, the line run will be created/updated in two cases:
+        #   1. first span: create, as we cannot identify the first span, so will use a try-catch
+        #   2. root span: update
+        if self.parent_id is None:
+            self._update_line_run()
+        else:
+            self._try_create_line_run()
+
+    def _try_create_line_run(self) -> None:
+        ...
+
+    def _update_line_run(self) -> None:
+        ...
 
     @staticmethod
     def _from_orm_object(obj: ORMSpan) -> "Span":
@@ -179,6 +224,18 @@ class Span:
 
 
 @dataclass
+class LineRun:
+    line_run_id: str
+
+    @staticmethod
+    def _from_root_span(span: Span) -> "LineRun":
+        ...
+
+    def _to_orm_object(self) -> ORMLineRun:
+        ...
+
+
+@dataclass
 class _LineRunData:
     """Basic data structure for line run, no matter if it is a main or evaluation."""
 
@@ -233,7 +290,7 @@ class _LineRunData:
 
 
 @dataclass
-class LineRun:
+class XLineRun:
     """Line run is an abstraction of spans related to prompt flow."""
 
     line_run_id: str

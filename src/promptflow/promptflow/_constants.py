@@ -98,6 +98,7 @@ OTEL_RESOURCE_SERVICE_NAME = "promptflow"
 DEFAULT_SPAN_TYPE = "default"
 RUNNING_LINE_RUN_STATUS = "Running"
 OK_LINE_RUN_STATUS = "Ok"
+SPAN_EVENTS_ATTRIBUTES_EVENT_ID = "event.id"
 
 
 class TraceEnvironmentVariableName:
