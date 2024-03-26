@@ -180,6 +180,18 @@ def mock_reverse_generated_by_func():
     return my_reverse_generated_by_func
 
 
+@pytest.fixture
+def enable_logger_propagate():
+    """This is for test cases that need to check the log output."""
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+    original_value = logger.propagate
+    logger.propagate = True
+    yield
+    logger.propagate = original_value
+
+
 @pytest.fixture(scope="session")
 def mock_module_with_for_retrieve_tool_func_result(
     mock_list_func, mock_generated_by_func, mock_reverse_generated_by_func
