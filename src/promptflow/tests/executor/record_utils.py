@@ -4,7 +4,7 @@ from unittest.mock import patch
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 try:
-    from recordings.record_mode import is_live, is_record, is_replay
+    from promptflow_recording.record_mode import is_live, is_record, is_replay
 except ImportError:
     # Run test in empty mode if promptflow-recording is not installed
 
@@ -19,7 +19,7 @@ except ImportError:
 
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
-RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local/recordings").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "../promptflow-recording/recordings/local").resolve()
 
 
 def setup_recording():
@@ -36,7 +36,12 @@ def setup_recording():
         # For replay and record mode, we setup two patches:
         # 1) mocked_tool setup
         # 2) openai_injector realted mock
-        from recordings.local import RecordStorage, inject_async_with_recording, inject_sync_with_recording, mock_tool
+        from promptflow_recording.local import (
+            RecordStorage,
+            inject_async_with_recording,
+            inject_sync_with_recording,
+            mock_tool,
+        )
 
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
         RecordStorage.get_instance(file_path)
@@ -56,7 +61,7 @@ def setup_recording():
 
     if is_live():
         # For live mode, we setup openai_injector mock for token collection purpose
-        from recordings.local import inject_async_with_recording, inject_sync_with_recording
+        from promptflow_recording.local import inject_async_with_recording, inject_sync_with_recording
 
         patch_targets = {
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,

@@ -19,8 +19,8 @@ from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from .record_utils import setup_recording
 
 try:
-    from recordings.local import recording_array_reset
-    from recordings.record_mode import is_live, is_record, is_recording_enabled, is_replay
+    from promptflow_recording.local import recording_array_reset
+    from promptflow_recording.record_mode import is_live, is_record, is_recording_enabled, is_replay
 except ImportError:
     # Run test in empty mode if promptflow-recording is not installed
     def recording_array_reset():
@@ -101,11 +101,11 @@ def recording_injection(recording_setup, process_override):
         yield
     finally:
         if pytest.is_replay or pytest.is_record:
-            from recordings.local import RecordStorage
+            from promptflow_recording.local import RecordStorage
 
             RecordStorage.get_instance().delete_lock_file()
         if pytest.is_live:
-            from recordings.local import delete_count_lock_file
+            from promptflow_recording.local import delete_count_lock_file
 
             delete_count_lock_file()
         recording_array_reset()

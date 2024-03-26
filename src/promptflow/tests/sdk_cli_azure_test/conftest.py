@@ -31,7 +31,7 @@ from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
 try:
-    from recordings.record_mode import is_live, is_record, is_replay
+    from promptflow_recording.record_mode import is_live, is_record, is_replay
 except ImportError:
 
     def is_live():
@@ -78,7 +78,7 @@ def package_scope_in_live_mode() -> str:
 @pytest.fixture(scope="session")
 def subscription_id() -> str:
     if is_replay():
-        from recordings.azure import SanitizedValues
+        from promptflow_recording.azure import SanitizedValues
 
         return SanitizedValues.SUBSCRIPTION_ID
     else:
@@ -88,7 +88,7 @@ def subscription_id() -> str:
 @pytest.fixture(scope="session")
 def resource_group_name() -> str:
     if is_replay():
-        from recordings.azure import SanitizedValues
+        from promptflow_recording.azure import SanitizedValues
 
         return SanitizedValues.RESOURCE_GROUP_NAME
     else:
@@ -98,7 +98,7 @@ def resource_group_name() -> str:
 @pytest.fixture(scope="session")
 def workspace_name() -> str:
     if is_replay():
-        from recordings.azure import SanitizedValues
+        from promptflow_recording.azure import SanitizedValues
 
         return SanitizedValues.WORKSPACE_NAME
     else:
@@ -126,7 +126,7 @@ def compute_instance_name() -> str:
 @pytest.fixture(scope=package_scope_in_live_mode())
 def user_object_id() -> str:
     if pytest.is_replay:
-        from recordings.azure import SanitizedValues
+        from promptflow_recording.azure import SanitizedValues
 
         return SanitizedValues.USER_OBJECT_ID
     credential = get_cred()
@@ -138,7 +138,7 @@ def user_object_id() -> str:
 @pytest.fixture(scope=package_scope_in_live_mode())
 def tenant_id() -> str:
     if pytest.is_replay:
-        from recordings.azure import SanitizedValues
+        from promptflow_recording.azure import SanitizedValues
 
         return SanitizedValues.TENANT_ID
     credential = get_cred()
@@ -170,7 +170,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
     from promptflow.azure import PFClient
 
     if pytest.is_replay:
-        from recordings.azure import get_pf_client_for_replay
+        from promptflow_recording.azure import get_pf_client_for_replay
 
         client = get_pf_client_for_replay()
     else:
@@ -318,7 +318,7 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
 
 @pytest.fixture(scope=package_scope_in_live_mode())
 def variable_recorder():
-    from recordings.azure import VariableRecorder
+    from promptflow_recording.azure import VariableRecorder
 
     yield VariableRecorder()
 
@@ -348,7 +348,7 @@ def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id
     based on the test file, class and function name, write to (record) or read from (replay) the file.
     """
     if pytest.is_record or pytest.is_replay:
-        from recordings.azure import PFAzureIntegrationTestRecording
+        from promptflow_recording.azure import PFAzureIntegrationTestRecording
 
         recording = PFAzureIntegrationTestRecording.from_test_case(
             test_class=request.cls,
@@ -461,7 +461,7 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder)
     # so extract this during record test
     if pytest.is_record:
         flow_name_const = "flow_name"
-        from recordings.azure import get_created_flow_name_from_flow_path
+        from promptflow_recording.azure import get_created_flow_name_from_flow_path
 
         flow_name = get_created_flow_name_from_flow_path(result.path)
         variable_recorder.get_or_record_variable(flow_name_const, flow_name)
@@ -585,8 +585,7 @@ def mock_isinstance_for_mock_datastore() -> None:
         yield
     else:
         from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
-
-        from recordings.azure.utils import MockDatastore
+        from promptflow_recording.azure.utils import MockDatastore
 
         original_isinstance = isinstance
 

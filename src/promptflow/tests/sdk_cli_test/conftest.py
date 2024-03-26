@@ -21,8 +21,8 @@ from promptflow.executor._process_manager import create_spawned_fork_process_man
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 
 try:
-    from recordings.local import recording_array_reset
-    from recordings.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
+    from promptflow_recording.local import recording_array_reset
+    from promptflow_recording.record_mode import is_in_ci_pipeline, is_live, is_record, is_replay
 except ImportError:
     # Run test in empty mode if promptflow-recording is not installed
     def recording_array_reset():
@@ -48,7 +48,7 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 EAGER_FLOW_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/eager_flows")
 
 SRC_ROOT = PROMOTFLOW_ROOT / ".."
-RECORDINGS_TEST_CONFIGS_ROOT = Path(SRC_ROOT / "promptflow-recording/recordings/local/recordings").resolve()
+RECORDINGS_TEST_CONFIGS_ROOT = Path(SRC_ROOT / "promptflow-recording/recordings/local").resolve()
 
 
 def pytest_configure():
@@ -287,11 +287,11 @@ def recording_injection(mocker: MockerFixture):
         yield
     finally:
         if is_replay() or is_record():
-            from recordings.local import RecordStorage
+            from promptflow_recording.local import RecordStorage
 
             RecordStorage.get_instance().delete_lock_file()
         if is_live():
-            from recordings.local import delete_count_lock_file
+            from promptflow_recording.local import delete_count_lock_file
 
             delete_count_lock_file()
         recording_array_reset()
@@ -314,8 +314,13 @@ def setup_recording_injection_if_enabled():
             patcher.start()
 
     if is_replay() or is_record():
-        from recordings.local import RecordStorage, inject_async_with_recording, inject_sync_with_recording, mock_tool
-        from recordings.record_mode import check_pydantic_v2
+        from promptflow_recording.local import (
+            RecordStorage,
+            inject_async_with_recording,
+            inject_sync_with_recording,
+            mock_tool,
+        )
+        from promptflow_recording.record_mode import check_pydantic_v2
 
         check_pydantic_v2()
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
@@ -334,7 +339,7 @@ def setup_recording_injection_if_enabled():
         start_patches(patch_targets)
 
     if is_live() and is_in_ci_pipeline():
-        from recordings.local import inject_async_with_recording, inject_sync_with_recording
+        from promptflow_recording.local import inject_async_with_recording, inject_sync_with_recording
 
         patch_targets = {
             "promptflow.tracing._integrations._openai_injector.inject_sync": inject_sync_with_recording,
