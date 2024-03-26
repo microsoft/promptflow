@@ -336,7 +336,7 @@ class LineRun:
         return ORMLineRun(
             line_run_id=self.line_run_id,
             trace_id=self.trace_id,
-            span_id=self.span_id,
+            root_span_id=self.root_span_id,
             inputs=copy.deepcopy(self.inputs),
             outputs=copy.deepcopy(self.outputs),
             start_time=self.start_time,
