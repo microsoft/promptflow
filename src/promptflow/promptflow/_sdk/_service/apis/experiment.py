@@ -22,7 +22,7 @@ list_field = api.schema_model("ExperimentList", {"type": "array", "items": {"$re
 # Define start experiments request parsing
 test_experiment = api.parser()
 test_experiment.add_argument("template", type=str, location="json", required=False)
-test_experiment.add_argument("inputs", type=list, location="json", required=False)
+test_experiment.add_argument("inputs", type=dict, location="json", required=False)
 test_experiment.add_argument("environment_variables", type=str, location="json", required=False)
 test_experiment.add_argument("output_path", type=str, location="json", required=False)
 test_experiment.add_argument("skip_flow", type=str, location="json", required=False)

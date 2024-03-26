@@ -151,7 +151,7 @@ def get_flow_path(flow, experiment):
 
 @api.route("/yaml")
 class YamlEdit(Resource):
-    @api.response(code=200, description="Return flow yaml as json", model=dict_field)
+    @api.response(code=200, description="Return flow yam", model=dict_field)
     @api.doc(description="Return flow yaml as json")
     @api.produces(['text/yaml'])
     def get(self):
@@ -173,7 +173,7 @@ class YamlEdit(Resource):
         string_stream.close()
         return Response(flow_info, mimetype='text/yaml')
 
-    @api.response(code=200, description="Set the flow file content", model=dict_field)
+    @api.response(code=200, description="Set the flow yaml content", model=dict_field)
     @api.doc(description="Set the flow file content")
     @api.expect(set_yaml_model)
     def post(self):
