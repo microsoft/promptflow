@@ -23,7 +23,6 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 REQUIRES = [
     "psutil",  # get process information when bulk run
     "httpx>=0.25.1",  # used to send http requests asynchronously
-    "flask>=2.2.3,<4.0.0",  # Serving endpoint requirements
     "sqlalchemy>=1.4.48,<3.0.0",  # sqlite requirements
     # note that pandas 1.5.3 is the only version to test in ci before promptflow 0.1.0b7 is released
     # and pandas 2.x.x will be the only version to test in ci after that.
@@ -42,16 +41,13 @@ REQUIRES = [
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
-    "ruamel.yaml>=0.17.10,<1.0.0",  # used to generate connection templates with preserved comments
     "pyarrow>=14.0.1,<15.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
-    "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
-    "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
-    "docutils",  # used to generate description for tools
     "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
     "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
     "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
     "promptflow-tracing>=1.0.0",  # tracing capabilities
+    "promptflow-core",  # tracing capabilities
 ]
 
 setup(

@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from enum import Enum
 from traceback import TracebackException, format_tb
-from types import TracebackType, FrameType
+from types import FrameType, TracebackType
 
 from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
