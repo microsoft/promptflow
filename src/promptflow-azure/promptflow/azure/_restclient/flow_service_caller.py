@@ -7,20 +7,18 @@ import os
 import sys
 import time
 import uuid
-from functools import wraps, cached_property
+from functools import cached_property, wraps
 
 import pydash
-
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._sdk._telemetry import request_id_context
-from promptflow._sdk._telemetry import TelemetryMixin
+from promptflow._sdk._telemetry import TelemetryMixin, request_id_context
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.azure._utils.general import get_authorization, get_arm_token, get_aml_token
-from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
+from promptflow.azure._utils.general import get_aml_token, get_arm_token, get_authorization
+from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException
 
 logger = LoggerFactory.get_logger(__name__)
 
@@ -67,7 +65,7 @@ def _request_wrapper():
                     f"Status code: {e.status_code} \n"
                     f"Reason: {e.reason} \n"
                     f"Error message: {e.message} \n",
-                    privacy_info=[e.reason, e.message]
+                    privacy_info=[e.reason, e.message],
                 )
 
         return wrapper
@@ -479,13 +477,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
             ResourceNotFoundError,
             map_error,
         )
-        from promptflow.azure._restclient.flow.operations._flow_sessions_operations import (
-            build_create_flow_session_request,
-            _convert_request,
-            _models,
-        )
+
         from promptflow.azure._constants._flow import SESSION_CREATION_TIMEOUT_SECONDS
         from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
+        from promptflow.azure._restclient.flow.operations._flow_sessions_operations import (
+            _convert_request,
+            _models,
+            build_create_flow_session_request,
+        )
 
         headers = self._get_headers()
         # pass user aml token to session create so user don't need to do authentication again in CI
@@ -600,7 +599,6 @@ class FlowServiceCaller(RequestTelemetryMixin):
     def poll_operation_status(
         self, url, **kwargs  # type: Any
     ):
-        from azure.core.rest import HttpRequest
         from azure.core.exceptions import (
             ClientAuthenticationError,
             HttpResponseError,
@@ -608,6 +606,8 @@ class FlowServiceCaller(RequestTelemetryMixin):
             ResourceNotFoundError,
             map_error,
         )
+        from azure.core.rest import HttpRequest
+
         from promptflow.azure._restclient.flow.operations._flow_sessions_operations import _models
 
         headers = self._get_headers()
