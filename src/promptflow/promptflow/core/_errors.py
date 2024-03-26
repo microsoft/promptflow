@@ -86,6 +86,11 @@ class UnsupportedConnectionAuthType(UserErrorException):
         super().__init__(target=ErrorTarget.CORE, **kwargs)
 
 
+class UnsupportedConnectionProviderConfig(UserErrorException):
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.CORE, **kwargs)
+
+
 class MalformedConnectionProviderConfig(UserErrorException):
     """Exception raised when connection provider config is malformed."""
 
