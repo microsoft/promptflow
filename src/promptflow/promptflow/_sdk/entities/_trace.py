@@ -26,6 +26,7 @@ from promptflow._constants import (
     SpanStatusFieldName,
 )
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, CumulativeTokenCountFieldName
+from promptflow._sdk._errors import LineRunNotFoundError
 from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
@@ -105,15 +106,9 @@ class Span:
         #   1. first span: create, as we cannot identify the first span, so will use a try-catch
         #   2. root span: update
         if self.parent_id is None:
-            self._update_line_run()
+            LineRun._from_non_root_span(self)._update()
         else:
-            self._try_create_line_run()
-
-    def _try_create_line_run(self) -> None:
-        ...
-
-    def _update_line_run(self) -> None:
-        ...
+            LineRun._from_non_root_span(self)._try_create()
 
     @staticmethod
     def _from_orm_object(obj: ORMSpan) -> "Span":
@@ -334,6 +329,17 @@ class LineRun:
             cumulative_token_count=cumulative_token_count,
             **common_args,
         )
+
+    def _try_create(self) -> None:
+        # try to get via line run id first
+        # if not found, create a new line run
+        try:
+            ORMLineRun.get(line_run_id=self.line_run_id)
+        except LineRunNotFoundError:
+            self._to_orm_object().persist()
+
+    def _update(self) -> None:
+        self._to_orm_object()._update()
 
     def _to_orm_object(self) -> ORMLineRun:
         return ORMLineRun(

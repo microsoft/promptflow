@@ -18,6 +18,7 @@ from promptflow._sdk._constants import (
     SPAN_TRACE_ID_INDEX_NAME,
     SPAN_TRACE_ID_SPAN_ID_INDEX_NAME,
 )
+from promptflow._sdk._errors import LineRunNotFoundError
 
 from .retry import sqlite_retry
 from .session import trace_mgmt_db_session
@@ -132,7 +133,8 @@ class LineRun(Base):
     def get(line_run_id: str) -> "LineRun":
         with trace_mgmt_db_session() as session:
             line_run = session.query(LineRun).filter(LineRun.line_run_id == line_run_id).first()
-            # TODO: validate line_run is None
+            if line_run is None:
+                raise LineRunNotFoundError(f"Line run {line_run_id!r} cannot found.")
             return line_run
 
     @staticmethod
@@ -149,3 +151,20 @@ class LineRun(Base):
                 .first()
             )
             return line_run
+
+    @sqlite_retry
+    def _update(self) -> None:
+        update_dict = {
+            "root_span_id": self.root_span_id,
+            "inputs": self.inputs,
+            "outputs": self.outputs,
+            "end_time": self.end_time,
+            "status": self.status,
+            "duration": self.duration,
+            "name": self.name,
+            "kind": self.kind,
+            "cumulative_token_count": self.cumulative_token_count,
+        }
+        with trace_mgmt_db_session() as session:
+            session.query(LineRun).filter(LineRun.line_run_id == self.line_run_id).update(update_dict)
+            session.commit()
