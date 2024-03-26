@@ -5,7 +5,6 @@ import typing
 from dataclasses import asdict, dataclass, field
 
 from azure.cosmos import ContainerProxy
-from azure.cosmos.exceptions import CosmosResourceExistsError, CosmosResourceNotFoundError
 
 from promptflow._constants import (
     OK_LINE_RUN_STATUS,
@@ -16,6 +15,7 @@ from promptflow._constants import (
 )
 from promptflow._sdk._utils import json_loads_parse_const_as_str
 from promptflow._sdk.entities._trace import Span
+from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
 
 
 @dataclass
@@ -28,6 +28,7 @@ class SummaryLine:
     partition_key: str
     session_id: str
     trace_id: str
+    collection_id: str
     root_span_id: str = ""
     inputs: typing.Dict = field(default_factory=dict)
     outputs: typing.Dict = field(default_factory=dict)
@@ -59,6 +60,7 @@ class LineEvaluation:
     root_span_id: str
     name: str
     created_by: typing.Dict
+    collection_id: str
     flow_id: str = None
     # Only for batch run
     batch_run_id: str = None
@@ -68,10 +70,11 @@ class LineEvaluation:
 
 
 class Summary:
-    def __init__(self, span: Span, created_by: typing.Dict, logger: logging.Logger) -> None:
+    def __init__(self, span: Span, collection_id: str, created_by: typing.Dict, logger: logging.Logger) -> None:
         self.span = span
         self.created_by = created_by
         self.logger = logger
+        self.collection_id = collection_id
 
     def persist(self, client: ContainerProxy):
         if self.span.parent_span_id:
@@ -110,6 +113,7 @@ class Summary:
             session_id=session_id,
             trace_id=trace_id,
             status=RUNNING_LINE_RUN_STATUS,
+            collection_id=self.collection_id,
             created_by=self.created_by,
             start_time=self.span._content[SpanFieldName.START_TIME],
         )
@@ -119,15 +123,7 @@ class Summary:
         elif SpanAttributeFieldName.BATCH_RUN_ID in attributes and SpanAttributeFieldName.LINE_NUMBER in attributes:
             item.batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
             item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
-        try:
-            client.read_item(item.id, item.partition_key)
-        except CosmosResourceNotFoundError:
-            # Only create when for not exist situation.
-            try:
-                client.create_item(body=asdict(item))
-            except CosmosResourceExistsError:
-                # Ignore conflict error.
-                return
+        safe_create_cosmosdb_item(client, item)
 
     def _persist_line_run(self, client: ContainerProxy):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
@@ -159,6 +155,7 @@ class Summary:
             partition_key=session_id,
             session_id=session_id,
             trace_id=self.span.trace_id,
+            collection_id=self.collection_id,
             root_span_id=self.span.span_id,
             inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
             outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
@@ -202,6 +199,7 @@ class Summary:
         item = LineEvaluation(
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
+            collection_id=self.collection_id,
             outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
             name=name,
             created_by=self.created_by,

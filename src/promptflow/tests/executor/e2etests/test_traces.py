@@ -97,11 +97,11 @@ class TestExecutorTraces:
         """
         get_trace = False
         if apicall.get("name", "") in (
-            "openai.api_resources.chat_completion.ChatCompletion.create",
-            "openai.api_resources.completion.Completion.create",
-            "openai.api_resources.embedding.Embedding.create",
-            "openai.resources.completions.Completions.create",  # openai>=1.0.0
-            "openai.resources.chat.completions.Completions.create",  # openai>=1.0.0
+            "openai_completion_legacy",
+            "openai_chat_legacy",
+            "openai_embedding_legacy",
+            "openai_chat",  # openai>=1.0.0
+            "openai_completion",  # openai>=1.0.0
         ):
             get_trace = True
             output = apicall.get("output")
