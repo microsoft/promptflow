@@ -60,12 +60,12 @@ async def invoke_sync_function_in_process(
 
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
-                # If process is None, it indicates that the process has been terminated by cancel request.
-                if run_id and not ProcessManager().get_process(run_id):
-                    raise ExecutionCanceledError(run_id)
                 # If process is not None, it indicates that the process has been terminated by other errors.
                 exception = error_dict.get("error", None)
                 if exception is None:
+                    # If process is None, it indicates that the process has been terminated by cancel request.
+                    if run_id and not ProcessManager().get_process(run_id):
+                        raise ExecutionCanceledError(run_id)
                     raise UnexpectedError(
                         message="Unexpected error occurred while executing the request",
                         target=ErrorTarget.EXECUTOR,

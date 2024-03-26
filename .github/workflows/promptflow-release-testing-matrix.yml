@@ -103,11 +103,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
-    - name: Install tracing
-      shell: pwsh
-      working-directory: ${{ env.TRACING_PATH }}
-      run: |
-        poetry install --only main
     - name: Run SDK CLI Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
@@ -191,11 +186,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
-    - name: Install tracing
-      shell: pwsh
-      working-directory: ${{ env.TRACING_PATH }}
-      run: |
-        poetry install --only main
     - name: Run SDK CLI Azure Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
@@ -258,11 +248,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure,executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
-    - name: Install tracing
-      shell: pwsh
-      working-directory: ${{ env.TRACING_PATH }}
-      run: |
-        poetry install --only main
     - name: Run Executor Test
       shell: pwsh
       working-directory: ${{ github.workspace }}

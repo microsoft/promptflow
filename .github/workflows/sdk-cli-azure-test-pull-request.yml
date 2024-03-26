@@ -8,6 +8,7 @@ on:
     paths:
       - src/promptflow/**
       - scripts/building/**
+      - src/promptflow-tracing/**
       - .github/workflows/sdk-cli-azure-test-pull-request.yml
 
 
