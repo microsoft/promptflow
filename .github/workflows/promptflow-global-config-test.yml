@@ -61,11 +61,12 @@ jobs:
       with:
         setupType: ${{ env.packageSetupType }}
         scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Install tracing
+    - name: Install dependency
       shell: pwsh
       run: |
         pip uninstall -y promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-tracing
+        echo "Installed promptflow-tracing"
         pip uninstall -y promptflow-core
         pip install ${{ github.workspace }}/src/promptflow-core
         pip freeze
