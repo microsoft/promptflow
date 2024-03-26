@@ -238,12 +238,13 @@ class LineRun:
     name: typing.Optional[str]
     kind: str
     collection: str
-    cumulative_token_count: typing.Optional[typing.Dict] = None
+    cumulative_token_count: typing.Optional[typing.Dict[str, int]] = None
     parent_id: typing.Optional[str] = None
     run: typing.Optional[str] = None
     line_number: typing.Optional[int] = None
     experiment: typing.Optional[str] = None
     session_id: typing.Optional[str] = None
+    evaluations: typing.Optional[typing.Dict[str, "LineRun"]] = None
 
     @staticmethod
     def _determine_line_run_id(span: Span) -> str:
