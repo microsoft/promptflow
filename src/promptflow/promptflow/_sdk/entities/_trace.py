@@ -409,3 +409,9 @@ class LineRun:
             session_id=self.session_id,
             collection=self.collection,
         )
+
+    def _append_evaluations(self, evaluations: typing.List["LineRun"]) -> None:
+        for evaluation in evaluations:
+            if self.evaluations is None:
+                self.evaluations = dict()
+            self.evaluations[evaluation.name] = evaluation
