@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 packages = [
-  { include = "recordings" }
+  { include = "promptflow_recording" }
 ]
 
 [tool.poetry.urls]
