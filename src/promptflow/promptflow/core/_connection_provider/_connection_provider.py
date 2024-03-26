@@ -10,7 +10,7 @@ from promptflow.core._connection_provider._utils import extract_workspace
 
 class ConnectionProvider(ABC):
     @abstractmethod
-    def get(self, name: str) -> Any:
+    def get(self, name: str, **kwargs) -> Any:
         """Get connection by name."""
         raise NotImplementedError
 

@@ -333,7 +333,7 @@ class WorkspaceConnectionProvider(ConnectionProvider):
                 name=conn_name,
             )
 
-    def get(self, name: str):
+    def get(self, name: str, **kwargs) -> _Connection:
         connection_dict = self._build_connection_dict(
             name,
             subscription_id=self.subscription_id,
