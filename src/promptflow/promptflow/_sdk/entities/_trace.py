@@ -21,9 +21,11 @@ from promptflow._constants import (
     SpanEventFieldName,
     SpanFieldName,
     SpanLinkFieldName,
+    SpanResourceAttributesFieldName,
+    SpanResourceFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._constants import CumulativeTokenCountFieldName
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, CumulativeTokenCountFieldName
 from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
@@ -69,13 +71,14 @@ class Span:
         self.resource = copy.deepcopy(resource)
 
     def _persist(self) -> None:
+        # persist (create or update) line run
+        # line run should be persisted before events, where `events.attributes` will be updated inplace
+        self._persist_line_run()
         # persist events to table `events`
-        # NOTE that this operation will update `events.attributes` inplace
+        # this operation will update `events.attributes` inplace
         self._persist_events()
         # persist span
         self._to_orm_object().persist()
-        # persist (create or update) line run
-        self._persist_line_run()
 
     def _persist_events(self) -> None:
         # persist events to table `events` and update `events.attributes` inplace
@@ -226,13 +229,129 @@ class Span:
 @dataclass
 class LineRun:
     line_run_id: str
+    trace_id: str
+    root_span_id: typing.Optional[str]
+    inputs: typing.Optional[typing.Dict]
+    outputs: typing.Optional[typing.Dict]
+    start_time: datetime.datetime
+    end_time: typing.Optional[datetime.datetime]
+    status: str
+    latency: typing.Optional[float]
+    name: typing.Optional[str]
+    kind: str
+    collection: str
+    cumulative_token_count: typing.Optional[typing.Dict] = None
+    parent_id: typing.Optional[str] = None
+    run: typing.Optional[str] = None
+    line_number: typing.Optional[int] = None
+    experiment: typing.Optional[str] = None
+    session_id: typing.Optional[str] = None
+
+    @staticmethod
+    def _determine_line_run_id(span: Span) -> str:
+        # for test, use `attributes.line_run_id`
+        # for batch run and others, directly use `trace_id`
+        if SpanAttributeFieldName.LINE_RUN_ID in span.attributes:
+            return span.attributes[SpanAttributeFieldName.LINE_RUN_ID]
+        else:
+            return span.trace_id
+
+    @staticmethod
+    def _determine_parent_id(span: Span) -> typing.Optional[str]:
+        if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in span.attributes:
+            return span.attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
+        elif SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in span.attributes:
+            line_run = ORMLineRun._get_with_run_and_line_number(
+                run=span.attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID],
+                line_number=span.attributes[SpanAttributeFieldName.LINE_NUMBER],
+            )
+            return line_run.line_run_id if line_run is not None else None
+        else:
+            return None
+
+    @staticmethod
+    def _parse_common_args(span: Span) -> typing.Dict:
+        line_run_id = LineRun._determine_line_run_id(span)
+        resource_attributes = dict(span.resource.get(SpanResourceFieldName.ATTRIBUTES, dict()))
+        collection = resource_attributes.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
+        experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
+        run = span.attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
+        session_id = span.attributes.get(SpanAttributeFieldName.SESSION_ID, None)
+        parent_id = LineRun._determine_parent_id(span)
+        return {
+            "line_run_id": line_run_id,
+            "trace_id": span.trace_id,
+            "start_time": span.start_time,
+            "collection": collection,
+            "parent_id": parent_id,
+            "run": run,
+            "experiment": experiment,
+            "session_id": session_id,
+        }
+
+    @staticmethod
+    def _from_non_root_span(span: Span) -> "LineRun":
+        common_args = LineRun._parse_common_args(span)
+        return LineRun(
+            root_span_id=None,
+            inputs=None,
+            outputs=None,
+            end_time=None,
+            status=RUNNING_LINE_RUN_STATUS,
+            latency=None,
+            name=None,
+            kind=None,
+            **common_args,
+        )
 
     @staticmethod
     def _from_root_span(span: Span) -> "LineRun":
-        ...
+        common_args = LineRun._parse_common_args(span)
+        # calculate `cumulative_token_count`
+        completion_token_count = int(span.attributes.get(SpanAttributeFieldName.COMPLETION_TOKEN_COUNT, 0))
+        prompt_token_count = int(span.attributes.get(SpanAttributeFieldName.PROMPT_TOKEN_COUNT, 0))
+        total_token_count = int(span.attributes.get(SpanAttributeFieldName.TOTAL_TOKEN_COUNT, 0))
+        if total_token_count > 0:
+            cumulative_token_count = {
+                CumulativeTokenCountFieldName.COMPLETION: completion_token_count,
+                CumulativeTokenCountFieldName.PROMPT: prompt_token_count,
+                CumulativeTokenCountFieldName.TOTAL: total_token_count,
+            }
+        else:
+            cumulative_token_count = None
+        return LineRun(
+            root_span_id=span.span_id,
+            inputs=json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
+            outputs=json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            end_time=span.end_time,
+            status=RUNNING_LINE_RUN_STATUS,
+            latency=(span.end_time - span.start_time).total_seconds(),
+            name=span.name,
+            kind=span.attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.kind),
+            cumulative_token_count=cumulative_token_count,
+            **common_args,
+        )
 
     def _to_orm_object(self) -> ORMLineRun:
-        ...
+        return ORMLineRun(
+            line_run_id=self.line_run_id,
+            trace_id=self.trace_id,
+            span_id=self.span_id,
+            inputs=copy.deepcopy(self.inputs),
+            outputs=copy.deepcopy(self.outputs),
+            start_time=self.start_time,
+            end_time=self.end_time,
+            status=self.status,
+            latency=self.latency,
+            name=self.name,
+            kind=self.kind,
+            cumulative_token_count=copy.deepcopy(self.cumulative_token_count) if self.cumulative_token_count else None,
+            parent_id=self.parent_id,
+            run=self.run,
+            experiment=self.experiment,
+            session_id=self.session_id,
+            collection=self.collection,
+        )
 
 
 @dataclass

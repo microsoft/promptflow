@@ -5,12 +5,13 @@
 import datetime
 import typing
 
-from sqlalchemy import JSON, REAL, TEXT, TIMESTAMP, Index
+from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from promptflow._sdk._constants import (
     EVENT_TABLENAME,
     EVENT_TRACE_ID_SPAN_ID_INDEX_NAME,
+    LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME,
     LINE_RUN_TABLENAME,
     LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME,
     SPAN_TABLENAME,
@@ -104,7 +105,7 @@ class LineRun(Base):
 
     line_run_id: Mapped[str] = mapped_column(TEXT, primary_key=True)
     trace_id: Mapped[str] = mapped_column(TEXT)
-    span_id: Mapped[str] = mapped_column(TEXT)
+    root_span_id: Mapped[str] = mapped_column(TEXT)
     inputs: Mapped[typing.Dict] = mapped_column(JSON)
     outputs: Mapped[typing.Dict] = mapped_column(JSON)
     start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
@@ -116,11 +117,15 @@ class LineRun(Base):
     cumulative_token_count: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
     parent_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
     run: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
+    line_number: Mapped[typing.Optional[int]] = mapped_column(INTEGER, nullable=True)
     experiment: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
     session_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
     collection: Mapped[str] = mapped_column(TEXT)
 
-    __table_args__ = (Index(LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),)
+    __table_args__ = (
+        Index(LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
+        Index(LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME, "run", "line_number"),
+    )
 
     @staticmethod
     @sqlite_retry
@@ -128,4 +133,19 @@ class LineRun(Base):
         with trace_mgmt_db_session() as session:
             line_run = session.query(LineRun).filter(LineRun.line_run_id == line_run_id).first()
             # TODO: validate line_run is None
+            return line_run
+
+    @staticmethod
+    @sqlite_retry
+    def _get_with_run_and_line_number(run: str, line_number: int) -> typing.Optional["LineRun"]:
+        # this function is currently exclusively used to query parent line run
+        with trace_mgmt_db_session() as session:
+            line_run = (
+                session.query(LineRun)
+                .filter(
+                    LineRun.run == run,
+                    LineRun.line_number == line_number,
+                )
+                .first()
+            )
             return line_run

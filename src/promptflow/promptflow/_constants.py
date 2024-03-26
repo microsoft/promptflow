@@ -162,10 +162,12 @@ class SpanAttributeFieldName:
     PROMPT_TOKEN_COUNT = "__computed__.cumulative_token_count.prompt"
     TOTAL_TOKEN_COUNT = "__computed__.cumulative_token_count.total"
 
+    SESSION_ID = "session_id"
+
 
 class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
-    SESSION_ID = "session.id"
+    COLLECTION = "collection"
     EXPERIMENT_NAME = "experiment.name"
     # local to cloud
     SUBSCRIPTION_ID = "subscription.id"
