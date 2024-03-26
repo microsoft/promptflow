@@ -5,12 +5,6 @@
 ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
 
 
-class TestMode:
-    LIVE = "live"
-    RECORD = "record"
-    REPLAY = "replay"
-
-
 FILTER_HEADERS = [
     "aml-user-token",
     "authorization",
