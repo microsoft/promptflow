@@ -8,6 +8,7 @@ from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 from promptflow.core._connection_provider._utils import extract_workspace
+from promptflow.core._errors import MalformedConnectionProviderConfig
 from promptflow.exceptions import UserErrorException
 
 from ..recording_utilities import is_live
@@ -69,11 +70,11 @@ class TestPFClient:
         res = extract_workspace("azureml://subscriptions/123/resourcegroups/456/workspaces/789")
         assert res == ("123", "456", "789")
 
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(MalformedConnectionProviderConfig) as e:
             extract_workspace("azureml:xx")
         assert "Malformed connection provider config" in str(e.value)
 
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(MalformedConnectionProviderConfig) as e:
             extract_workspace(
                 "azureml://subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/"
             )
