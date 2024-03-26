@@ -324,6 +324,7 @@ class BatchEngine:
                     self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
                 )
             if self._batch_timeout_expired():
+                task.cancel()
                 ex = BatchRunTimeoutError(
                     message_format=(
                         "The batch run failed due to timeout [{batch_timeout_sec}s]. "
