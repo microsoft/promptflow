@@ -379,7 +379,7 @@ class LineRun:
             duration=self.duration,
             name=self.name,
             kind=self.kind,
-            cumulative_token_count=copy.deepcopy(self.cumulative_token_count) if self.cumulative_token_count else None,
+            cumulative_token_count=copy.deepcopy(self.cumulative_token_count),
             parent_id=self.parent_id,
             run=self.run,
             experiment=self.experiment,
