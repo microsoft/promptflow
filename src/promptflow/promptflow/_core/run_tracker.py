@@ -7,7 +7,7 @@ import json
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from types import GeneratorType
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union, AsyncIterator
 
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
@@ -286,6 +286,8 @@ class RunTracker(ThreadLocalSingleton):
     def _ensure_serializable_value(self, val, warning_msg: Optional[str] = None):
         if ConnectionType.is_connection_value(val):
             return ConnectionType.serialize_conn(val)
+        if self.allow_generator_types and isinstance(val, AsyncIterator):
+            return str(val)
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
         try:

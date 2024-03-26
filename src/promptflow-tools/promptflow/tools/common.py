@@ -462,6 +462,29 @@ def process_function_call(function_call):
     return param
 
 
+def post_process_async_chat_api_response(completion, functions):
+    from openai.types.chat.chat_completion import ChatCompletion
+    from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+    from typing import AsyncIterable, cast
+    if isinstance(completion, ChatCompletion):
+        # When calling function, function_call response will be returned as a field in message, so we need return
+        # message directly. Otherwise, we only return content.
+        if functions is not None:
+            return completion.model_dump()["choices"][0]["message"]
+        else:
+            # chat api may return message with no content.
+            return getattr(completion.choices[0].message, "content", "")
+    # Streaming scenario
+    completion = cast(AsyncIterable[ChatCompletionChunk], completion)
+
+    async def async_generator():
+        async for chunk in completion:
+            if chunk.choices:
+                yield chunk.choices[0].delta.content if hasattr(chunk.choices[0].delta, 'content') and \
+                                                        chunk.choices[0].delta.content is not None else ""
+    return async_generator()
+
+
 def post_process_chat_api_response(completion, stream, functions):
     if stream:
         if functions is not None:
@@ -599,3 +622,9 @@ def init_azure_openai_client(connection: AzureOpenAIConnection):
 
     conn_dict = normalize_connection_config(connection)
     return AzureOpenAIClient(**conn_dict)
+
+
+def init_async_azure_openai_client(connection: AzureOpenAIConnection):
+    from openai import AsyncAzureOpenAI
+    conn_dict = normalize_connection_config(connection)
+    return AsyncAzureOpenAI(**conn_dict)
