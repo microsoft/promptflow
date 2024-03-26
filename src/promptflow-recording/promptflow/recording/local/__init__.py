@@ -6,9 +6,6 @@ from .record_storage import (
     RecordItemMissingException,
     RecordStorage,
     check_pydantic_v2,
-    is_live,
-    is_record,
-    is_replay,
 )
 
 __all__ = [
@@ -21,9 +18,6 @@ __all__ = [
     "recording_array_reset",
     "inject_async_with_recording",
     "inject_sync_with_recording",
-    "is_live",
-    "is_record",
-    "is_replay",
     "delete_count_lock_file",
     "check_pydantic_v2",
 ]

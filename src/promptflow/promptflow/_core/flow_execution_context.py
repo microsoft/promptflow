@@ -64,7 +64,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         )
 
     def cancel_node_runs(self, msg):
-        self._run_tracker.cancel_node_runs(msg, self._run_id)
+        self._run_tracker.cancel_node_runs(self._run_id, msg)
 
     def invoke_tool(self, node: Node, f: Callable, kwargs):
         run_info = self._prepare_node_run(node, f, kwargs)

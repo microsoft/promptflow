@@ -18,10 +18,9 @@ import pydash
 import pytest
 from azure.ai.ml import ManagedIdentityConfiguration
 from azure.ai.ml.entities import IdentityConfiguration
-from pytest_mock import MockFixture
 
 from promptflow._sdk._constants import DAG_FILE_NAME, DownloadedRun, RunStatus
-from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -38,7 +37,6 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -389,7 +387,7 @@ class TestFlowRun:
         assert "debugInfo" in default["error"]["error"] and "debugInfo" not in exclude["error"]["error"]
 
     @pytest.mark.skipif(
-        condition=not is_live(),
+        condition=not pytest.is_live,
         reason="cannot differ the two requests to run history in replay mode.",
     )
     def test_archive_and_restore_run(self, pf: PFClient, created_batch_run_without_llm: Run):
@@ -460,7 +458,7 @@ class TestFlowRun:
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
     @pytest.mark.skipif(
-        condition=not is_live(), reason="request uri contains temp folder name, need some time to sanitize."
+        condition=not pytest.is_live, reason="request uri contains temp folder name, need some time to sanitize."
     )
     def test_run_with_additional_includes(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
@@ -1251,10 +1249,3 @@ class TestFlowRun:
 
         # the YAML file will not exist in user's folder
         assert not Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/flow.dag.yaml").exists()
-
-    def test_wrong_workspace_type(self, pf: PFClient, mocker: MockFixture):
-        # test wrong workspace type "hub"
-        mocker.patch.object(pf.runs._workspace, "_kind", "hub")
-        with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
-            datastore = pf.runs._workspace_default_datastore
-            assert datastore

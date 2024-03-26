@@ -9,6 +9,7 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
@@ -19,7 +20,7 @@ LOGGER_NAME = "promptflow"
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
 # Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
 # Use HOME_PROMPT_FLOW_DIR instead
-PROMPT_FLOW_DIR_NAME = ".promptflow"
+PROMPT_FLOW_DIR_NAME = PROMPT_FLOW_DIR_NAME
 
 
 def _prepare_home_dir() -> Path:
@@ -153,6 +154,8 @@ AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "reso
 
 # chat group
 STOP_SIGNAL = "[STOP]"
+CHAT_GROUP_REFERENCE_NAME = "parent"
+CONVERSATION_HISTORY = "conversation_history"
 
 
 class RunTypes:
@@ -355,11 +358,6 @@ class RunHistoryKeys:
     HIDDEN = "hidden"
 
 
-class ConnectionProvider(str, Enum):
-    LOCAL = "local"
-    AZUREML = "azureml"
-
-
 class FlowType:
     STANDARD = "standard"
     EVALUATION = "evaluation"
@@ -455,6 +453,12 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class CreatedByFieldName:
+    OBJECT_ID = "object_id"
+    TENANT_ID = "tenant_id"
+    NAME = "name"
 
 
 class ChatGroupSpeakOrder(str, Enum):

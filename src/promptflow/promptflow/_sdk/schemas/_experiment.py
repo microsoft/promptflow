@@ -62,6 +62,7 @@ class ChatGroupSchema(YamlFileSchema):
     max_time = fields.Int()
     stop_signal = fields.Str()
     roles = fields.List(NestedField(ChatRoleSchema))
+    code = LocalPathField()  # points to a folder in which the chat group is defined
 
     @post_load
     def _validate_roles(self, data, **kwargs):

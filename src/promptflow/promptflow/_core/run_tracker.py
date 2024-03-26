@@ -244,14 +244,14 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
-    def cancel_node_runs(self, msg: str, flow_run_id):
+    def cancel_node_runs(self, flow_run_id: Optional[str] = None, msg: str = "Received cancel request."):
         node_runs = self.collect_node_runs(flow_run_id)
         for node_run_info in node_runs:
             if node_run_info.status != Status.Running:
                 continue
             msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
             err = ToolCanceledError(
-                message_format="Tool execution is canceled because of the error: {msg}.",
+                message_format="Tool execution is canceled because: {msg}.",
                 msg=msg,
                 target=ErrorTarget.EXECUTOR,
             )
@@ -343,10 +343,15 @@ class RunTracker(ThreadLocalSingleton):
         """Update exception details into run info."""
         # Update status to Cancelled the run terminates because of KeyboardInterruption or CancelledError.
         if isinstance(ex, KeyboardInterrupt) or isinstance(ex, asyncio.CancelledError):
+            ex = ToolCanceledError(
+                message_format="Tool execution is canceled because: {msg}.",
+                msg="Received cancel request.",
+                target=ErrorTarget.EXECUTOR,
+            )
             run_info.status = Status.Canceled
         else:
-            run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
             run_info.status = Status.Failed
+        run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
 
     def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
         flow_runs = self.flow_run_list
