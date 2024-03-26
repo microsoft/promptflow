@@ -113,5 +113,6 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._constants import PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import setup_exporter_from_environ
 from promptflow.tracing._tracer import Tracer
 from promptflow.tracing._utils import serialize
