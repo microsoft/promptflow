@@ -1515,21 +1515,29 @@ class TestFlowRun:
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+        assert details_dict == {
+            "inputs.key": ["TEST"],
+            "inputs.line_number": [0],
+            "outputs.output": ["Hello world! azure"],
+        }
 
-        # won't resolve evc when used same name as flow's evc
+        # won't get connection & resolve when added new env var names
         flow_path = Path(f"{EAGER_FLOWS_DIR}/print_environment_variables")
         run = pf.run(
             flow=flow_path,
-            data=f"{DATAS_DIR}/env_var_test.jsonl",
-            environment_variables={"NEW_KEY": "${azure_open_ai_connection.api_type}"},
+            data=f"{DATAS_DIR}/env_var_new_key.jsonl",
+            environment_variables={"NEW_KEY": "${not_exist.api_type}"},
         )
         assert run.status == "Completed"
         assert "error" not in run._to_dict()
         details = pf.get_details(run.name)
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
-        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+        assert details_dict == {
+            "inputs.key": ["NEW_KEY"],
+            "inputs.line_number": [0],
+            "outputs.output": ["Hello world! ${not_exist.api_type}"],
+        }
 
     def test_run_with_non_provided_connection_override(self, pf, local_custom_connection):
         # override non-provided connection when submission
