@@ -25,6 +25,9 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
+from promptflow._sdk._constants import SPAN_EVENTS_ATTRIBUTE_PAYLOAD  # noqa: F401
+from promptflow._sdk._constants import SPAN_EVENTS_NAME_PF_INPUTS  # noqa: F401
+from promptflow._sdk._constants import SPAN_EVENTS_NAME_PF_OUTPUT  # noqa: F401
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, CumulativeTokenCountFieldName
 from promptflow._sdk._errors import LineRunNotFoundError
 from promptflow._sdk._orm.trace import Event as ORMEvent
@@ -319,8 +322,8 @@ class LineRun:
             cumulative_token_count = None
         return LineRun(
             root_span_id=span.span_id,
-            inputs=json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
-            outputs=json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            inputs=LineRun._get_inputs_from_span(span),
+            outputs=LineRun._get_outputs_from_span(span),
             end_time=span.end_time,
             status=RUNNING_LINE_RUN_STATUS,
             duration=(span.end_time - span.start_time).total_seconds(),
@@ -340,6 +343,28 @@ class LineRun:
 
     def _update(self) -> None:
         self._to_orm_object()._update()
+
+    @staticmethod
+    def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
+        # for event in span.events:
+        #     if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
+        #         return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # return None
+        try:
+            return json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.INPUTS, "{}"))
+        except json.decoder.JSONDecodeError:
+            return span.attributes.get(SpanAttributeFieldName.INPUTS)
+
+    @staticmethod
+    def _get_outputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
+        # for event in span.events:
+        #     if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
+        #         return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        # return None
+        try:
+            return json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.OUTPUT, "{}"))
+        except json.decoder.JSONDecodeError:
+            return span.attributes.get(SpanAttributeFieldName.OUTPUT)
 
     def _to_orm_object(self) -> ORMLineRun:
         return ORMLineRun(
