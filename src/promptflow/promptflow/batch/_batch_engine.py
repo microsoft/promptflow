@@ -424,7 +424,11 @@ class BatchEngine:
             self._update_aggr_result(aggr_result, aggr_exec_result)
         else:
             ex = BatchRunTimeoutError(
-                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
+                message_format=(
+                    "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                    "Please adjust the timeout to a higher value."
+                ),
+                batch_timeout_sec=self._batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
         # summary some infos from line results and aggr results to batch result
