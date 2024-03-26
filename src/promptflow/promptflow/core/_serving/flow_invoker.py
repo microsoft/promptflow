@@ -10,11 +10,17 @@ from promptflow._utils.flow_utils import dump_flow_result, is_executable_chat_fl
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.core._connection import _Connection
+from promptflow.core._connection_provider._connection_provider import ConnectionProvider
 from promptflow.core._flow import AbstractFlowBase
 from promptflow.core._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow.core._serving.flow_result import FlowResult
 from promptflow.core._serving.utils import validate_request_data
-from promptflow.core._utils import init_executable
+from promptflow.core._utils import (
+    init_executable,
+    override_connection_config_with_environment_variable,
+    resolve_connections_environment_variable_reference,
+    update_environment_variables_with_connections,
+)
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -68,22 +74,42 @@ class FlowInvoker:
         self._init_executor(flow._path, flow._code)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
+    def resolve_connections(
+        self,
+        connection_names,
+        provider,
+        *,
+        raise_error=False,
+        connections_to_ignore=None,
+        connections_to_add=None,
+    ):
+        """Resolve connections required by flow, get connections from provider."""
+        connection_names = set(connection_names)
+        if connections_to_add:
+            connection_names.update(connections_to_add)
+        result = {}
+        for name in connection_names:
+            if connections_to_ignore and name in connections_to_ignore:
+                continue
+            try:
+                conn = provider.get(name=name)
+                result[name] = conn._to_execution_connection_dict()
+            except Exception as e:
+                if raise_error:
+                    raise e
+        return result
+
     def _init_connections(self, connection_provider):
         self._is_chat_flow, _, _ = is_executable_chat_flow(self.flow)
 
         if connection_provider is None or isinstance(connection_provider, str):
-            config = {"connection.provider": connection_provider} if connection_provider else None
             self.logger.info(f"Getting connections from pf client with provider from args: {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
-            # TODO (3027983): remove connection related dependency from promptflow-core
-            from promptflow import PFClient
-            from promptflow._sdk._submitter.utils import SubmitterHelper
-
-            connections = SubmitterHelper.resolve_connection_names(
+            connections = self.resolve_connections(
                 connection_names=self.flow.get_connection_names(),
-                client=PFClient(config=config, credential=self._credential),
+                provider=ConnectionProvider.init_from_provider_config(connection_provider, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),
@@ -112,13 +138,6 @@ class FlowInvoker:
             self.connections.update(connections)
         else:
             raise UnsupportedConnectionProvider(connection_provider)
-
-        # TODO (3027983): remove connection related dependency from promptflow-core
-        from promptflow._sdk._utils import (
-            override_connection_config_with_environment_variable,
-            resolve_connections_environment_variable_reference,
-            update_environment_variables_with_connections,
-        )
 
         override_connection_config_with_environment_variable(self.connections)
         resolve_connections_environment_variable_reference(self.connections)

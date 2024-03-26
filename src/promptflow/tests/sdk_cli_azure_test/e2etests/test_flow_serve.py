@@ -1,9 +1,7 @@
 import json
 
 import pytest
-
-from ..recording_utilities import is_live
-
+from sdk_cli_azure_test.recording_utilities import is_live
 
 testdata = """The event sourcing pattern involves using an append-only store to record the full series
 of actions on that data. The Azure Cosmos DB change feed is a great choice as a central data store in
@@ -15,7 +13,9 @@ version mode, you can replay all past events by reading from the beginning of yo
 change feed. You can even have multiple change feed consumers subscribe to the same container's change feed."""
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
+@pytest.mark.skipif(
+    condition=not is_live(), reason="serving tests, only run in live mode as replay do not have az login."
+)
 @pytest.mark.usefixtures("flow_serving_client_remote_connection")
 @pytest.mark.e2etest
 def test_local_serving_api_with_remote_connection(flow_serving_client_remote_connection):

@@ -248,3 +248,8 @@ class CustomStrongTypeConnectionConfigs:
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
         ]
+
+
+class ConnectionProviderConfig:
+    LOCAL = "local"
+    AZUREML = "azureml"
