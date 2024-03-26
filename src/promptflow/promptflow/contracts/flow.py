@@ -547,18 +547,21 @@ class FlowBase:
         return environment_variables
 
     def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
-        """Return connection names with environment variables overrides."""
+        """Return connection names with environment variables overrides.
+        Note: only environment variables exist in flow.environment_variables will be considered.
+        """
+        environment_variables_overrides = environment_variables_overrides or {}
         connection_names = set({})
-        # Apply environment variables overrides
-        environment_variables = self.get_environment_variables_with_overrides(
-            environment_variables_overrides=environment_variables_overrides
-        )
         # Add connection names from environment variable reference
-        for k, v in environment_variables.items():
-            if not isinstance(v, str) or not v.startswith("${"):
-                continue
-            connection_name, _ = _match_reference(v)
-            connection_names.add(connection_name)
+        if self.environment_variables:
+            for k, v in self.environment_variables.items():
+                if not isinstance(v, str) or not v.startswith("${"):
+                    continue
+                if k in environment_variables_overrides:
+                    # Apply environment variables overrides
+                    v = environment_variables_overrides[k]
+                connection_name, _ = _match_reference(v)
+                connection_names.add(connection_name)
         return connection_names
 
 

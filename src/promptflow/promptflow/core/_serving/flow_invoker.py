@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import dataclasses
+import os
 from pathlib import Path
 from typing import Callable, Union
 
@@ -35,8 +36,6 @@ class FlowInvoker:
         Example: ``{"aoai_connection": "azure_open_ai_connection"}``
         The node with reference to connection 'aoai_connection' will be resolved to the actual connection 'azure_open_ai_connection'. # noqa: E501
     :type connections_name_overrides: dict, optional
-    :param environment_variables: The environment variables used when executing, defaults to None
-    :type environment_variables: dict, optional
     :param raise_ex: Whether to raise exception when executing flow, defaults to True
     :type raise_ex: bool, optional
     """
@@ -48,7 +47,6 @@ class FlowInvoker:
         streaming: Union[Callable[[], bool], bool] = False,
         connections: dict = None,
         connections_name_overrides: dict = None,
-        environment_variables: dict = None,
         raise_ex: bool = True,
         **kwargs,
     ):
@@ -57,7 +55,6 @@ class FlowInvoker:
         self.flow = init_executable(working_dir=flow._code, flow_path=flow._path)
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
-        self.environment_variables = environment_variables or {}
         self.raise_ex = raise_ex
         self.storage = kwargs.get("storage", None)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
@@ -88,10 +85,11 @@ class FlowInvoker:
             from promptflow import PFClient
             from promptflow._sdk._submitter.utils import SubmitterHelper
 
-            self.logger.debug(f"Environment variables: {self.environment_variables}")
             connections = SubmitterHelper.resolve_connection_names(
+                # use os.environ to override flow definition's connection since
+                # os.environ is resolved to user's setting now
                 connection_names=self.flow.get_connection_names(
-                    environment_variables_overrides=self.environment_variables
+                    environment_variables_overrides=os.environ,
                 ),
                 client=PFClient(config=config, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,

@@ -1,0 +1,3 @@
+entry: env_var:env_var_flow
+environment_variables:
+  TEST: VAL
