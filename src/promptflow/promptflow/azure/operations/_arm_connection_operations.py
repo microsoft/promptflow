@@ -12,6 +12,7 @@ from azure.ai.ml._scope_dependent_operations import (
 
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
+from promptflow.core._errors import OpenURLFailedUserError
 
 
 class ArmConnectionOperations(_ScopeDependentOperations):
@@ -56,3 +57,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
 
     # Keep this as promptflow tools is using this method
     _build_connection_dict = WorkspaceConnectionProvider._build_connection_dict
+
+
+# Keep this for backward compatibility of promptflow-tools
+OpenURLFailedUserError = OpenURLFailedUserError
