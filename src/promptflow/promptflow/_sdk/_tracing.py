@@ -62,20 +62,22 @@ def _invoke_pf_svc() -> str:
     port = get_port_from_config(create_if_not_exists=True)
     port = str(port)
     cmd_args = ["start", "--port", port]
+    hint_stop_message = (
+        f"You can stop the Prompt flow Tracing Server with the following command: '\033[1m pf service "
+        f"stop\033[0m'\nAlternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
+        f"hours, it will automatically stop if Prompt flow is installed via pip."
+    )
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
         else:
             print("Prompt flow Tracing Server has started...")
+            print(hint_stop_message)
             return port
     print("Starting Prompt flow Tracing Server...")
     entry(cmd_args)
-    print(
-        f"You can stop the Prompt flow Tracing Server with the following command: '\033[1m pf service stop\033[0m'\n"
-        f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} hours, it will automatically stop "
-        f"if Prompt flow is installed via pip."
-    )
     logger.debug("Prompt flow service is serving on port %s", port)
+    print(hint_stop_message)
     return port
 
 
