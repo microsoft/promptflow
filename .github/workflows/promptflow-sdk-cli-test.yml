@@ -4,6 +4,7 @@ on:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request:
     paths:
+      - src/promptflow-core/**
       - src/promptflow/**
       - src/promptflow-tracing/**
       - scripts/building/**
