@@ -2,6 +2,10 @@
 name = "promptflow-core"
 version = "0.1.0b1"
 description = "Prompt flow core"
+include = [
+  "promptflow/core/_serving/static/*",
+  "promptflow/core/_serving/resources/*",
+]
 
 license = "MIT"
 
