@@ -1,0 +1,27 @@
+inputs:
+  image:
+    type: image
+    default: ../python_tool_with_simple_image/logo.jpg
+outputs:
+  answer:
+    type: string
+    reference: ${python_node_bipi.output}
+nodes:
+- name: Azure_OpenAI_GPT_4_Turbo_with_Vision_mrr4
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
+    path: Azure_OpenAI_GPT_4_Turbo_with_Vision_mrr4.jinja2
+  inputs:
+    connection: aoai_vision_connection
+    deployment_name: gpt4-vision
+    image_input: ${inputs.image}
+    max_tokens: 2000
+- name: python_node_bipi
+  type: python
+  source:
+    type: code
+    path: python_node_bipi.py
+  inputs:
+    input1: ${Azure_OpenAI_GPT_4_Turbo_with_Vision_mrr4.output}

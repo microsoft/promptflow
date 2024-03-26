@@ -6,6 +6,8 @@ import copy
 import datetime
 import json
 import typing
+import uuid
+from  pathlib import Path
 from dataclasses import dataclass
 
 from google.protobuf.json_format import MessageToJson
@@ -81,7 +83,38 @@ class Span:
         }
 
     def _persist(self) -> None:
+        self._persist_event_attribute()
         self._to_orm_object().persist()
+
+    def _persist_event_attribute(self) -> None:
+        dumped_event_attributes = []
+        # Extract event attributes and persist them
+        for event in self._content[SpanFieldName.EVENTS]:
+            event_attributes = event.get(SpanEventFieldName.ATTRIBUTES, dict())
+            event_span_id = self.span_id
+            event_trace_id = self.trace_id
+            for key, value in event_attributes.items():
+                # check value size, if it is too large, persist it as a file
+                if len(json.dumps(value)) > 1000:
+                    # generate a file name
+                    name = uuid.uuid4()
+                    filename = Path.home() / ".promptflow" /f"{event_trace_id}/{event_span_id}/{name}"
+
+                    # create the directory if not exists
+                    filename.parent.mkdir(parents=True, exist_ok=True)
+
+                    # write the value to the file
+                    with open(filename, "w") as f:
+                        f.write(json.dumps(value))
+
+                    # update the value to the file name
+                    event_attributes[key] = f"ref:{name}"
+                    
+                    dumped_event_attributes.append(f"{event.get(SpanEventFieldName.NAME)}.{key}")
+
+        # Update the span attributes
+        self._content[SpanFieldName.ATTRIBUTES]["dumped_event_attributes"] = dumped_event_attributes
+
 
     @staticmethod
     def _from_orm_object(obj: ORMSpan) -> "Span":

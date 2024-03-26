@@ -166,6 +166,13 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
 
     return pfbytes_file_reference_encoder
 
+def base64_encoder(obj):
+    """Dumps PFBytes to base64 string."""
+    if obj.source_url:
+        return {f"data:{obj._mime_type};url": obj.source_url}
+    if isinstance(obj, PFBytes):
+        return obj.to_base64(with_type=True, dict_type=True)
+
 
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)

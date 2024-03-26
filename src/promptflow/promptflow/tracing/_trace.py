@@ -10,6 +10,9 @@ from collections.abc import Iterator
 from importlib.metadata import version
 from threading import Lock
 from typing import Callable, List, Optional
+from functools import partial
+from promptflow.contracts.multimedia import Image
+from promptflow._utils.multimedia_utils import base64_encoder
 
 import opentelemetry.trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -107,11 +110,30 @@ def enrich_span_with_prompt_info(span, func, kwargs):
     except Exception as e:
         logging.warning(f"Failed to enrich span with prompt info: {e}")
 
+def to_tracable(obj):
+    """Convert an object to a tracable object."""
+    try:
+        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": base64_encoder})}
+        serializable = Tracer.to_serializable(obj)
+        serialized_value = serialize(serializable, serialization_funcs=serialization_funcs)
+        if isinstance(serialized_value, dict):
+            tracable_dict = {
+                serialized_key: json.dumps(serialized_value) if isinstance(serialized_value, (dict, list, type(None))) else serialized_value
+                for serialized_key, serialized_value in serialized_value.items()
+            }
+            return tracable_dict
+        else:
+            return serialized_value
+    except Exception as e:
+        logging.warning(f"Failed to generate tracable obj : {e}")
+        return None
 
 def enrich_span_with_input(span, input):
     try:
         serialized_input = serialize_attribute(input)
         span.set_attribute("inputs", serialized_input)
+        traceable_input = to_tracable(input)
+        span.add_event("inputs", {"value": json.dumps(traceable_input)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with input: {e}")
 
@@ -167,6 +189,8 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
+        traceable_output = to_tracable(output)
+        span.add_event("output", {"value": json.dumps(traceable_output)})
         # If the output is a generator, while the span is a valid span, we will trace the generator.
         if isinstance(output, Iterator) and not isinstance(span, NonRecordingSpan):
             output = traced_generator(output, span)
@@ -299,6 +323,7 @@ def _traced_async(
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(trace)
+                span.add_event("inputs", trace.inputs)
                 enrich_span_with_input(span, trace.inputs)
                 output = await func(*args, **kwargs)
                 output = enrich_span_with_trace_type(span, trace.inputs, output, trace_type)

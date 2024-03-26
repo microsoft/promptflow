@@ -52,6 +52,7 @@ def trace_collector(logger: logging.Logger):
                     # TODO: persist with batch
                     span = Span._from_protobuf_object(span, resource=resource)
                     span._persist()
+                    logger.error(span._content)
                     all_spans.append(span)
 
         # Create a new thread to write trace to cosmosdb to avoid blocking the main thread
