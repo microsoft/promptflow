@@ -204,9 +204,9 @@ class BatchEngine:
                     run_id = run_id or str(uuid.uuid4())
 
                     previous_run_results = None
-                    if resume_from_run_storage and resume_from_run_output_dir:
+                    if resume_from_run_storage:
                         previous_run_results = self._copy_previous_run_result(
-                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir, run_id
+                            resume_from_run_storage, batch_inputs, output_dir, run_id
                         )
 
                     # run flow in batch mode
@@ -238,13 +238,11 @@ class BatchEngine:
     def _copy_previous_run_result(
         self,
         resume_from_run_storage: AbstractBatchRunStorage,
-        resume_from_run_output_dir: Path,
         batch_inputs: List,
         output_dir: Path,
         run_id: str,
     ) -> List[LineResult]:
-        """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
-        to the storage of new run,
+        """Duplicate the previous debug_info from resume_from_run_storage to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
         try:

@@ -38,7 +38,7 @@ def greetings(user_id):
 
 @trace
 async def dummy_llm(prompt: str, model: str):
-    asyncio.sleep(0.5)
+    await asyncio.sleep(0.5)
     return "dummy_output"
 
 
