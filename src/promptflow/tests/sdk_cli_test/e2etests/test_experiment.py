@@ -313,7 +313,7 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         exp = pf._experiments.create_or_update(experiment)
 
-        if is_live():
+        if pytest.is_live:
             # Async start
             exp = pf._experiments.start(exp)
             exp = self.wait_for_experiment_terminated(pf, exp)
