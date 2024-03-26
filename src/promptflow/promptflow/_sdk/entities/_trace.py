@@ -320,12 +320,13 @@ class LineRun:
             }
         else:
             cumulative_token_count = None
+
         return LineRun(
             root_span_id=span.span_id,
             inputs=LineRun._get_inputs_from_span(span),
             outputs=LineRun._get_outputs_from_span(span),
             end_time=span.end_time,
-            status=RUNNING_LINE_RUN_STATUS,
+            status=span.status[SpanStatusFieldName.STATUS_CODE],
             duration=(span.end_time - span.start_time).total_seconds(),
             name=span.name,
             kind=span.attributes.get(SpanAttributeFieldName.SPAN_TYPE, span.kind),
