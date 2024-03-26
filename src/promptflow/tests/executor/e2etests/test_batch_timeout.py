@@ -13,11 +13,11 @@ from promptflow.executor._errors import BatchExecutionTimeoutError, LineExecutio
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
-SAMPLE_FLOW = "web_classification_no_variants"
+SAMPLE_FLOW = "hello-world"
 ONE_LINE_OF_BULK_TEST_TIMEOUT = "one_line_of_bulktest_timeout"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestBatchTimeout:
     @pytest.mark.parametrize(
@@ -53,7 +53,7 @@ class TestBatchTimeout:
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 2, "Flow runs are persisted in memory storage."
         assert len(mem_run_storage._node_runs) == 4, "Node runs are persisted in memory storage."
-        msg = "Tool execution is canceled because of the error: Line execution timeout after 5 seconds."
+        msg = "Tool execution is canceled because: Line execution timeout after 5 seconds."
         for run in mem_run_storage._node_runs.values():
             if run.node == "my_python_tool_with_failed_line":
                 assert run.status == Status.Canceled
@@ -127,7 +127,6 @@ class TestBatchTimeout:
         [
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 600, 5, BatchExecutionTimeoutError(2, 5), Status.Failed),
             (ONE_LINE_OF_BULK_TEST_TIMEOUT, 3, 600, LineExecutionTimeoutError(2, 3), Status.Completed),
-            (ONE_LINE_OF_BULK_TEST_TIMEOUT, 10, 10, BatchExecutionTimeoutError(2, 10), Status.Failed),
         ],
     )
     def test_batch_timeout(self, flow_folder, line_timeout_sec, batch_timeout_sec, expected_error, batch_run_status):

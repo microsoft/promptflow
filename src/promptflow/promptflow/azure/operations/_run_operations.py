@@ -30,14 +30,15 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
+    HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_RUNS_DIR_NAME,
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
+    IdentityKeys,
     ListViewType,
     RunDataKeys,
     RunHistoryKeys,
@@ -45,14 +46,20 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
+from promptflow._sdk._utils import (
+    incremental_print,
+    is_multi_container_enabled,
+    is_remote_uri,
+    print_red_error,
+)
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.utils import in_jupyter_notebook
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_authorization, get_user_alias_from_credential
+from promptflow.azure._utils.general import get_authorization, get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -97,10 +104,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._workspace = workspace
+        self._identity = workspace.identity
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default()
 
     @property
     def _data_operations(self):
@@ -115,6 +122,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
+
+    @cached_property
+    def _workspace_default_datastore(self):
+        kind = self._workspace._kind
+        # for a normal workspace the kind is "default", for an ai project it's "project". Except these two values, it
+        # can also be "hub" which is not a supported workspace type to get default datastore.
+        if kind not in ["default", "project"]:
+            raise RunOperationParameterError(
+                "Failed to get default workspace datastore. Please make sure you are using the right workspace which "
+                f"is either an azure machine learning studio workspace or an azure ai project. Got {kind!r} instead."
+            )
+        return self._datastore_operations.get_default()
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
@@ -837,6 +856,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         run.flow, session_id = task_results[1]
 
         runtime = self._resolve_runtime(run=run, runtime=runtime)
+        self._resolve_identity(run=run)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
@@ -928,7 +948,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         # process the output path
         if output is None:
             # default to be "~/.promptflow/.runs" folder
-            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+            output_directory = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_RUNS_DIR_NAME
         else:
             output_directory = Path(output)
 
@@ -969,3 +989,100 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             flow_run_id=run,
         )
+
+    def _build_resume_request_rest_object(
+        self,
+        name: str = None,
+        display_name: str = None,
+        description: str = None,
+        tags: Dict[str, str] = None,
+        resume_from: str = None,
+        resources: Dict[str, Any] = None,
+        identity: str = None,
+        **kwargs,
+    ):
+        """Build the resume request rest object."""
+        if kwargs:
+            logger.warning(f"Unrecognized parameters {kwargs!r} are ignored.")
+        resources = resources or {}
+        from promptflow.azure._restclient.flow.models import ResumeBulkRunRequest
+
+        rest_obj = ResumeBulkRunRequest(
+            run_id=name,
+            run_display_name=display_name,
+            description=description,
+            tags=tags,
+            resume_from_run_id=resume_from,
+            runtime_name=resources.get("runtime"),
+            vm_size=resources.get("instance_type"),
+            identity=identity,
+            compute_name=resources.get("compute"),
+            enable_multi_container=is_multi_container_enabled(),
+        )
+        return rest_obj
+
+    @monitor_operation(activity_name="pfazure.runs.resume", activity_type=ActivityType.PUBLICAPI)
+    def _create_by_resume_from(self, resume_from: str, **kwargs):
+        """Create a run by specify resume_from to an existing run."""
+        stream = kwargs.get("stream", False)
+        run_name = self._service_caller.resume_bulk_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            body=self._build_resume_request_rest_object(resume_from=resume_from, **kwargs),
+        )
+
+        if stream:
+            self.stream(run=run_name)
+        return self.get(run=run_name)
+
+    def _resolve_identity(self, run: Run):
+        """Resolve identity to resource id"""
+        if not run._identity:
+            return
+        if not isinstance(run._identity, dict):
+            raise UserErrorException(
+                f"Run's identity should be a dict, got {type(run._resources)} for {run._resources}"
+            )
+        identity_type = run._identity.get("type")
+        # default use user identity
+        if identity_type == IdentityKeys.USER_IDENTITY:
+            return
+        elif identity_type == IdentityKeys.MANAGED:
+            client_id = run._identity.get(IdentityKeys.CLIENT_ID)
+            if not client_id:
+                # use default managed identity
+                if not self._workspace.primary_user_assigned_identity:
+                    raise UserErrorException(
+                        f"Primary user assigned identity not found in workspace {self._workspace.name!r}."
+                    )
+                resource_id = self._workspace.primary_user_assigned_identity
+            else:
+                # find client id from the identity
+                resource_id = None
+                try:
+                    for identity in self._workspace.identity.user_assigned_identities or []:
+                        if identity.client_id == client_id:
+                            resource_id = identity.resource_id
+                except Exception:
+                    pass
+                if not resource_id:
+                    raise UserErrorException(
+                        f"Failed to get identities with id {client_id} from workspace {self._workspace.name!r}."
+                        f"Existing identities: {self._workspace.identity.user_assigned_identities}."
+                    )
+            run._identity[IdentityKeys.RESOURCE_ID] = resource_id
+        else:
+            raise UserErrorException(f"Identity type {identity_type!r} is not supported.")
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pfazure.runs.create_or_update":
+                run: Run = kwargs.get("run", None) or args[0]
+                telemetry_values["flow_type"] = run._flow_type
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values

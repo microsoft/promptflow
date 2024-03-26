@@ -17,14 +17,16 @@ from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import generate_elapsed_time_messages
+from promptflow._utils.utils import generate_elapsed_time_messages, try_get_long_running_logging_interval
 from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
+from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
+from promptflow.tracing._tracer import Tracer
 
 from .run_tracker import RunTracker
-from .thread_local_singleton import ThreadLocalSingleton
-from .tracer import Tracer
+
+DEFAULT_LOGGING_INTERVAL = 60
 
 
 class FlowExecutionContext(ThreadLocalSingleton):
@@ -41,7 +43,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_id=None,
         flow_id=None,
         line_number=None,
-        variant_id=None,
     ):
         self._name = name
         self._run_tracker = run_tracker
@@ -49,7 +50,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
-        self._variant_id = variant_id
 
     def copy(self):
         return FlowExecutionContext(
@@ -59,11 +59,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
             run_id=self._run_id,
             flow_id=self._flow_id,
             line_number=self._line_number,
-            variant_id=self._variant_id,
         )
 
     def cancel_node_runs(self, msg):
-        self._run_tracker.cancel_node_runs(msg, self._run_id)
+        self._run_tracker.cancel_node_runs(self._run_id, msg)
 
     def invoke_tool(self, node: Node, f: Callable, kwargs):
         run_info = self._prepare_node_run(node, f, kwargs)
@@ -85,7 +84,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
-                result = self._invoke_tool_with_timer(node, f, kwargs)
+                result = self._invoke_tool_inner(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
@@ -116,7 +115,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             index=self._line_number,
         )
         run_info.index = self._line_number
-        run_info.variant_id = self._variant_id
         self._run_tracker.set_inputs(node_run_id, {key: value for key, value in kwargs.items() if key != "self"})
         return run_info
 
@@ -170,14 +168,17 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node.name, module=module) from e
 
-    def _invoke_tool_with_timer(self, node: Node, f: Callable, kwargs):
+    def _invoke_tool_inner(self, node: Node, f: Callable, kwargs):
         module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         node_name = node.name
         try:
+            if (
+                interval_seconds := try_get_long_running_logging_interval(flow_logger, DEFAULT_LOGGING_INTERVAL)
+            ) is None:
+                return f(**kwargs)
             logging_name = node_name
             if self._line_number is not None:
                 logging_name = f"{node_name} in line {self._line_number}"
-            interval_seconds = 60
             start_time = time.perf_counter()
             thread_id = threading.current_thread().ident
             with RepeatLogTimer(
@@ -211,7 +212,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             parent_run_id=parent_run_id,
             run_id=node_run_id,
             index=self._line_number,
-            variant_id=self._variant_id,
         )
         self._run_tracker.persist_node_run(run_info)
 

@@ -14,8 +14,8 @@ from marshmallow import Schema
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
-    PROMPT_FLOW_DIR_NAME,
     PROMPT_FLOW_EXP_DIR_NAME,
     ExperimentNodeType,
     ExperimentStatus,
@@ -27,6 +27,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._experiment import (
+    ChatGroupSchema,
     CommandNodeSchema,
     ExperimentDataSchema,
     ExperimentInputSchema,
@@ -188,6 +189,51 @@ class CommandNode(YAMLTranslatableMixin):
         self.code = saved_path.resolve().absolute().as_posix()
 
 
+class ChatGroupNode(YAMLTranslatableMixin):
+    def __init__(
+        self,
+        name,
+        roles: List[Dict[str, Any]],
+        max_turns: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        max_time: Optional[int] = None,
+        stop_signal: Optional[str] = None,
+        code: Union[Path, str] = None,
+        **kwargs,
+    ):
+        self.type = ExperimentNodeType.CHAT_GROUP
+        self.name = name
+        self.roles = roles
+        self.max_turns = max_turns
+        self.max_tokens = max_tokens
+        self.max_time = max_time
+        self.stop_signal = stop_signal
+        self.code = code
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ChatGroupSchema
+
+    def _save_snapshot(self, target):
+        """Save chat group source to experiment snapshot."""
+        target = Path(target).resolve()
+        logger.debug(f"Saving chat group node {self.name!r} snapshot to {target.as_posix()!r}.")
+        saved_path = target / self.name
+        saved_path.mkdir(parents=True, exist_ok=True)
+
+        for role in self.roles:
+            role_path = Path(role["path"]).resolve()
+            if not role_path.exists():
+                raise ExperimentValueError(f"Chat role path {role_path.as_posix()!r} does not exist.")
+
+            if role_path.is_dir():
+                shutil.copytree(src=role_path, dst=saved_path / role["role"])
+            else:
+                shutil.copytree(src=role_path.parent, dst=saved_path / role["role"])
+
+        self.code = saved_path.resolve().as_posix()
+
+
 class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
     def __init__(self, nodes, description=None, data=None, inputs=None, **kwargs):
         self._base_path = kwargs.get(BASE_PATH_CONTEXT_KEY, Path("."))
@@ -295,7 +341,7 @@ class Experiment(ExperimentTemplate):
         self.last_start_time = kwargs.get("last_start_time", None)
         self.last_end_time = kwargs.get("last_end_time", None)
         self.is_archived = kwargs.get("is_archived", False)
-        self._output_dir = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_EXP_DIR_NAME / self.name
+        self._output_dir = HOME_PROMPT_FLOW_DIR / PROMPT_FLOW_EXP_DIR_NAME / self.name
         super().__init__(nodes, name=self.name, data=data, inputs=inputs, **kwargs)
 
     @classmethod
@@ -365,6 +411,10 @@ class Experiment(ExperimentTemplate):
             elif node_dict["type"] == ExperimentNodeType.COMMAND:
                 nodes.append(
                     CommandNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
+                )
+            elif node_dict["type"] == ExperimentNodeType.CHAT_GROUP:
+                nodes.append(
+                    ChatGroupNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
             else:
                 raise Exception(f"Unknown node type {node_dict['type']}")

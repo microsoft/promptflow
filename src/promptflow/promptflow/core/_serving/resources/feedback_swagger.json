@@ -1,0 +1,47 @@
+{
+    "post": {
+        "summary": "collect promptflow feedback",
+        "requestBody": {
+            "description": "promptflow feedback data",
+            "required": true,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                }
+            }
+        },
+        "responses": {
+            "200": {
+                "description": "successful operation",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    }
+                }
+            },
+            "400": {
+                "description": "Invalid input"
+            },
+            "default": {
+                "description": "unexpected error"
+            }
+        }
+    },
+    "parameters": [
+        {
+            "name": "flatten",
+            "in": "query",
+            "description": "flatten the feedback data into traced data",
+            "required": false,
+            "schema": {
+                "type": "boolean"
+            }
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: .
+data: inputs_1.jsonl
+environment_variables:
+  env1: "20"
+  env5: "test"
+column_mapping:
+  key: ${data.text}

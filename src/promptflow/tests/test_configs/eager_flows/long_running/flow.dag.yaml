@@ -1,4 +1,1 @@
-path: ./entry.py
-entry: my_flow
-environment:
-    python_requirements_txt: requirements.txt
+entry: entry:my_flow

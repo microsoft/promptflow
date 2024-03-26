@@ -189,6 +189,12 @@ class BatchExecutionTimeoutError(UserErrorException):
         )
 
 
+class ThreadCrashError(SystemErrorException):
+    """Exception raised when thread crashed."""
+
+    pass
+
+
 class ProcessCrashError(UserErrorException):
     """Exception raised when process crashed."""
 
@@ -283,3 +289,13 @@ class ResolveToolError(PromptflowException):
 
 class UnsupportedAssistantToolType(ValidationException):
     pass
+
+
+class FailedToParseAssistantTool(UserErrorException):
+    """Exception raised when failed to parse assistant tool from docstring."""
+
+    def __init__(self, func_name):
+        super().__init__(
+            message_format="Failed to get assistant tool by parsing the docstring of function '{func_name}'.",
+            func_name=func_name,
+        )

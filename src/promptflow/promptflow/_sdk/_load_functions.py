@@ -9,10 +9,11 @@ from dotenv import dotenv_values
 
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
+from ..exceptions import UserErrorException
 from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._experiment import ExperimentTemplate
+from .entities._experiment import Experiment, ExperimentTemplate
 from .entities._flow import Flow
 
 logger = get_cli_sdk_logger()
@@ -63,7 +64,7 @@ def load_common(
             **kwargs,
         )
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def load_flow(
@@ -129,20 +130,22 @@ def _load_env_to_connection(
     source = Path(source)
     name = next((_dct["name"] for _dct in params_override if "name" in _dct), None)
     if not name:
-        raise Exception("Please specify --name when creating connection from .env.")
+        raise UserErrorException(message_format="Please specify --name when creating connection from .env.")
     if not source.exists():
-        raise FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        e = FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
     try:
         data = dict(dotenv_values(source))
         if not data:
             # Handle some special case dotenv returns empty with no exception raised.
-            raise ValueError(
+            e = ValueError(
                 f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
                 "please make sure the file is not empty and readable."
             )
+            raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
         return CustomConnection(name=name, secrets=data)
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def _load_experiment_template(
@@ -179,3 +182,25 @@ def _load_experiment_template(
             f"Experiment template file {source_path.resolve().absolute().as_posix()} not found."
         )
     return load_common(ExperimentTemplate, source=source_path)
+
+
+def _load_experiment(
+    source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
+):
+    """
+    Load experiment from YAML file.
+
+    :param source: The local yaml source of an experiment. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :return: An Experiment object
+    :rtype: Experiment
+    """
+    source = Path(source)
+    absolute_path = source.resolve().absolute().as_posix()
+    if not source.exists():
+        raise NoExperimentTemplateError(f"Experiment file {absolute_path} not found.")
+    experiment = load_common(Experiment, source, **kwargs)
+    return experiment

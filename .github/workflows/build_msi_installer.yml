@@ -1,4 +1,4 @@
-name: Build and Package MSI
+name: Build and Package MSI & Portable Installer
 
 on:
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
-          pip install "promptflow[azure,executable]==$env:INPUT_VERSION" promptflow-tools
+          pip install "promptflow[azure,executable,azureml-serving,executor-service]==$env:INPUT_VERSION" promptflow-tools
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
@@ -108,6 +108,11 @@ jobs:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
 
+      - name: Generate promptflow spec file to config pyinstaller
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
+        run: |
+          python generate_dependency.py
+          Get-Content promptflow.spec
 
       - name: Build Pyinstaller project
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
@@ -130,6 +135,11 @@ jobs:
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "version_info.txt" -Encoding utf8
           pyinstaller promptflow.spec
+        shell: pwsh
+
+      - name: Generate portable promptflow
+        run: | 
+          Compress-Archive -Path ${{ github.workspace }}/scripts/installer/windows/scripts/dist/promptflow -DestinationPath promptflow-${{ steps.get-version.outputs.version }}.zip
         shell: pwsh
 
       - name: Build WIX project
@@ -184,6 +194,13 @@ jobs:
           } else {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
+          }
+          # Upload zip file
+          if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
+            az storage blob upload --account-name promptflowartifact --container-name portable-installer --file "promptflow-${{ steps.get-version.outputs.version }}.zip" --name "promptflow.zip" --overwrite
+            az storage blob copy start --account-name promptflowartifact --destination-container portable-installer --destination-blob "promptflow-${{ steps.get-version.outputs.version }}.zip" --source-container portable-installer --source-blob "promptflow.zip"
+          } else {
+            az storage blob upload --account-name promptflowartifact --container-name portable-installer --file "promptflow-${{ steps.get-version.outputs.version }}.zip" --name "promptflow-${{ steps.get-version.outputs.version }}.zip" --overwrite
           }
         env:
           INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}

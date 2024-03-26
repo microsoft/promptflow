@@ -1,13 +1,13 @@
-system:
-You are an assistant to calculate the answer to the provided math problems. 
+# system:
+You are an assistant to calculate the answer to the provided math problems.
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
 
 {% for item in chat_history %}
-user:
+# user:
 {{item.inputs.question}}
-assistant:
+# assistant:
 {{item.outputs.answer}}
 {% endfor %}
 
-user:
+# user:
 {{question}}

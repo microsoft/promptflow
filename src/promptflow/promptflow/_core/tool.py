@@ -9,8 +9,8 @@ from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
 
-from promptflow._core.tracer import _traced
-from promptflow.contracts.trace import TraceType
+from promptflow.tracing._trace import _traced
+from promptflow.tracing.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -76,7 +76,7 @@ def tool(
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
         # Calls to tool functions should be traced automatically.
-        new_f = _traced(func, trace_type=TraceType.TOOL)
+        new_f = _traced(func, trace_type=TraceType.FUNCTION)
 
         new_f.__tool = None  # This will be set when generating the tool definition.
         new_f.__name = name

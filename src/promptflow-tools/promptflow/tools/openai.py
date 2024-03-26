@@ -1,14 +1,7 @@
 from enum import Enum
-
-try:
-    from openai import OpenAI as OpenAIClient
-except Exception:
-    raise Exception(
-        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
-
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, \
-    post_process_chat_api_response, normalize_connection_config
+    post_process_chat_api_response, init_openai_client
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -31,12 +24,7 @@ class Engine(str, Enum):
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self._connection_dict = normalize_connection_config(connection)
-        self._client = OpenAIClient(
-            # disable OpenAI's built-in retry mechanism by using our own retry
-            # for better debuggability and real-time status updates.
-            max_retries=0,
-            **self._connection_dict)
+        self._client = init_openai_client(connection)
 
     @tool
     @handle_openai_error()
@@ -120,6 +108,7 @@ class OpenAI(ToolProvider):
         function_call: object = None,
         functions: list = None,
         response_format: object = None,
+        seed: int = None,
         **kwargs
     ) -> [str, dict]:
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
@@ -133,19 +122,28 @@ class OpenAI(ToolProvider):
             "top_p": float(top_p),
             "n": int(n),
             "stream": stream,
-            "stop": stop if stop else None,
             "max_tokens": int(max_tokens) if max_tokens is not None and str(max_tokens).lower() != "inf" else None,
             "presence_penalty": float(presence_penalty),
             "frequency_penalty": float(frequency_penalty),
-            "logit_bias": logit_bias,
             "user": user,
-            "response_format": response_format
         }
 
         if functions is not None:
             validate_functions(functions)
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
+
+        # to avoid vision model validation error for empty param values.
+        if stop:
+            params["stop"] = stop
+        if max_tokens is not None and str(max_tokens).lower() != "inf":
+            params["max_tokens"] = int(max_tokens)
+        if logit_bias:
+            params["logit_bias"] = logit_bias
+        if response_format:
+            params["response_format"] = response_format
+        if seed is not None:
+            params["seed"] = seed
 
         completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions)
@@ -214,6 +212,7 @@ def chat(
     function_call: object = None,
     functions: list = None,
     response_format: object = None,
+    seed: int = None,
     **kwargs
 ) -> [str, dict]:
     return OpenAI(connection).chat(
@@ -232,5 +231,6 @@ def chat(
         function_call=function_call,
         functions=functions,
         response_format=response_format,
+        seed=seed,
         **kwargs,
     )

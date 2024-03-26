@@ -8,7 +8,6 @@ import uuid
 from pathlib import Path
 
 import pytest
-from marshmallow import ValidationError
 from mock.mock import Mock
 
 from promptflow import load_run
@@ -16,6 +15,7 @@ from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
+from promptflow.exceptions import ValidationException
 
 tests_root_dir = Path(__file__).parent.parent.parent
 FLOWS_DIR = (tests_root_dir / "test_configs/flows").resolve()
@@ -124,7 +124,7 @@ class TestFlow:
 
     def test_load_yaml_run_with_resources_unsupported_field(self):
         source = f"{RUNS_DIR}/sample_bulk_run_with_idle_time.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"name": str(uuid.uuid4())}])
         assert "Unknown field" in str(e.value)
 

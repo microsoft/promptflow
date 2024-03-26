@@ -13,10 +13,10 @@ from typing import Any, Dict, List, Optional
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
+from promptflow.tracing._utils import serialize
 
-from .._constants import LANGUAGE_KEY, FlowLanguage
+from .._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from .._sdk._constants import DEFAULT_ENCODING
-from .._utils.dataclass_serializer import serialize
 from .._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
@@ -517,7 +517,51 @@ class NodeVariants:
 
 
 @dataclass
-class Flow:
+class FlowBase:
+    """This is base class of flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    """
+
+    id: str
+    name: str
+    inputs: Dict[str, FlowInputDefinition]
+    outputs: Dict[str, FlowOutputDefinition]
+
+    def get_environment_variables_with_overrides(
+        self, environment_variables_overrides: Dict[str, str] = None
+    ) -> Dict[str, str]:
+        environment_variables = {
+            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in self.environment_variables.items()
+        }
+        if environment_variables_overrides is not None:
+            for k, v in environment_variables_overrides.items():
+                environment_variables[k] = v
+        return environment_variables
+
+    def get_connection_names(self):
+        """Return connection names."""
+        connection_names = set({})
+
+        # Add connection names from environment variable reference
+        if self.environment_variables:
+            for k, v in self.environment_variables.items():
+                if not isinstance(v, str) or not v.startswith("${"):
+                    continue
+                connection_name, _ = _match_reference(v)
+                connection_names.add(connection_name)
+        return connection_names
+
+
+@dataclass
+class Flow(FlowBase):
     """This class represents a flow.
 
     :param id: The id of the flow.
@@ -538,17 +582,16 @@ class Flow:
     :type program_language: str
     :param environment_variables: The default environment variables of the flow.
     :type environment_variables: Dict[str, object]
+    :param message_format: The message format type of the flow to represent different multimedia contracts.
+    :type message_format: str
     """
 
-    id: str
-    name: str
     nodes: List[Node]
-    inputs: Dict[str, FlowInputDefinition]
-    outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    message_format: str = MessageFormatType.BASIC
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -564,6 +607,7 @@ class Flow:
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
             "language": self.program_language,
+            "message_format": self.message_format,
         }
         return data
 
@@ -601,15 +645,16 @@ class Flow:
         outputs = data.get("outputs") or {}
         return Flow(
             # TODO: Remove this fallback.
-            data.get("id", "default_flow_id"),
-            data.get("name", "default_flow"),
-            nodes,
-            {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
-            {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            nodes=nodes,
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+            message_format=data.get("message_format", MessageFormatType.BASIC),
         )
 
     def _apply_default_node_variants(self: "Flow"):
@@ -685,17 +730,6 @@ class Flow:
         return flow.get_environment_variables_with_overrides(
             environment_variables_overrides=environment_variables_overrides
         )
-
-    def get_environment_variables_with_overrides(
-        self, environment_variables_overrides: Dict[str, str] = None
-    ) -> Dict[str, str]:
-        environment_variables = {
-            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in self.environment_variables.items()
-        }
-        if environment_variables_overrides is not None:
-            for k, v in environment_variables_overrides.items():
-                environment_variables[k] = v
-        return environment_variables
 
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
@@ -809,9 +843,19 @@ class Flow:
                 connection_names[k] = input_assignment.value
         return connection_names
 
+    @classmethod
+    def _get_connection_inputs_from_tool(cls, tool: Tool) -> list:
+        """Return tool's connection inputs."""
+        connection_inputs = []
+        for k, v in tool.inputs.items():
+            input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
+            if all(ConnectionType.is_connection_class_name(t) for t in input_type):
+                connection_inputs.append(k)
+        return connection_inputs
+
     def get_connection_names(self):
         """Return connection names."""
-        connection_names = set({})
+        connection_names = super().get_connection_names()
         nodes = [
             self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
             for node in self.nodes
@@ -834,17 +878,14 @@ class Flow:
                 logger.debug(f"Node {node.name} doesn't reference any connection.")
             connection_names.update(node_connection_names)
 
-        # Add connection names from environment variable reference
-        if self.environment_variables:
-            for k, v in self.environment_variables.items():
-                if not isinstance(v, str) or not v.startswith("${"):
-                    continue
-                connection_name, _ = _match_reference(v)
-                connection_names.add(connection_name)
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):
-        """Return connection input names."""
+        """Return connection input names for a node, will also return node connection inputs without assignment.
+
+        :param node_name: node name
+        """
+
         node = self.get_node(node_name)
         if node and node.use_variants:
             node = self._apply_default_node_variant(node, self.node_variants)
@@ -853,7 +894,7 @@ class Flow:
             return []
         tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
         if tool:
-            return list(self._get_connection_name_from_tool(tool, node).keys())
+            return self._get_connection_inputs_from_tool(tool)
         return []
 
     def _replace_with_variant(self, variant_node: Node, variant_tools: list):
@@ -862,3 +903,46 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
+
+
+@dataclass
+class EagerFlow(FlowBase):
+    """This class represents an eager flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
+    """
+
+    program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
+
+    @staticmethod
+    def deserialize(data: dict) -> "EagerFlow":
+        """Deserialize the flow from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow constructed from the dict.
+        :rtype: ~promptflow.contracts.flow.EagerFlow
+        """
+
+        inputs = data.get("inputs") or {}
+        outputs = data.get("outputs") or {}
+        return EagerFlow(
+            id=data.get("id", "default_flow_id"),
+            name=data.get("name", "default_flow"),
+            inputs={name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            outputs={name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            environment_variables=data.get("environment_variables") or {},
+        )

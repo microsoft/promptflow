@@ -51,6 +51,7 @@ cov.xml
 .hypothesis/
 .pytest_cache/
 cover/
+test-results.xml
 
 # Translations
 *.mo
@@ -189,3 +190,6 @@ config.json
 # chat-with-pdf's prebuilt index
 !.pdfs/
 !.index/
+
+# Poetry
+poetry.lock

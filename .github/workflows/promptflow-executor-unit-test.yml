@@ -78,6 +78,8 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Set test mode
+      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
     - name: checkout
       uses: actions/checkout@v4
       with:
@@ -107,6 +109,8 @@ jobs:
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip uninstall -y promptflow-tracing
+        pip install -e ${{ github.workspace }}/src/promptflow-tracing
         pip freeze
     - name: Azure Login
       uses: azure/login@v1

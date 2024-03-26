@@ -11,12 +11,13 @@ from typing import Any, Mapping, Optional, Tuple, Union
 from colorama import Fore, init
 
 from promptflow._internal import ConnectionManager
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import dump_flow_result, parse_variant
-from promptflow._sdk.entities._flow import FlowBase, FlowContext, ProtectedFlow
+from promptflow._sdk.entities._flow import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow._utils.flow_utils import parse_variant
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.exceptions import UserErrorException
@@ -26,10 +27,12 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from ..._constants import LINE_NUMBER_KEY, FlowLanguage
 from ..._core._errors import NotSupported
 from ..._utils.async_utils import async_run_allowing_running_loop
+from ..._utils.dataclass_serializer import convert_eager_flow_output_to_dict
+from ..._utils.flow_utils import dump_flow_result
 from ..._utils.logger_utils import get_cli_sdk_logger
 from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
 from .._configuration import Configuration
-from ..entities._eager_flow import EagerFlow
+from ..entities._flow import FlexFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
@@ -61,12 +64,12 @@ class TestSubmitter:
 
     def __init__(
         self,
-        flow: Union[ProtectedFlow, EagerFlow],
+        flow: Union[Flow, FlexFlow],
         flow_context: FlowContext,
         client=None,
     ):
         self._flow = flow
-        self.entry = flow.entry if isinstance(flow, EagerFlow) else None
+        self.entry = flow.entry if isinstance(flow, FlexFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -158,31 +161,7 @@ class TestSubmitter:
                 self._node_variant = None
 
     @classmethod
-    def _resolve_connections(cls, flow: FlowBase, client):
-        if flow.language == FlowLanguage.CSharp:
-            # TODO: check if this is a shared logic
-            if isinstance(flow, EagerFlow):
-                # connection overrides are not supported for eager flow for now
-                return {}
-
-            # TODO: is it possible that we resolve connections after executor proxy is created?
-            from promptflow.batch import CSharpExecutorProxy
-
-            return SubmitterHelper.resolve_used_connections(
-                flow=flow,
-                tools_meta=CSharpExecutorProxy.get_tool_metadata(
-                    flow_file=flow.flow_dag_path,
-                    working_dir=flow.code,
-                ),
-                client=client,
-            )
-        if flow.language == FlowLanguage.Python:
-            # TODO: test submitter should not interact with dataplane flow directly
-            return SubmitterHelper.resolve_connections(flow=flow, client=client)
-        raise UserErrorException(f"Unsupported flow language {flow.language}")
-
-    @classmethod
-    def _resolve_environment_variables(cls, environment_variable_overrides, flow: ProtectedFlow, client):
+    def _resolve_environment_variables(cls, environment_variable_overrides, flow: Flow, client):
         return SubmitterHelper.load_and_resolve_environment_variables(
             flow=flow, environment_variable_overrides=environment_variable_overrides, client=client
         )
@@ -234,15 +213,19 @@ class TestSubmitter:
         :return: TestSubmitter instance.
         :rtype: TestSubmitter
         """
-        from promptflow._trace._start_trace import start_trace
+        from promptflow.tracing._start_trace import start_trace
 
         with self._resolve_variant():
             # temp flow is generated, will use self.flow instead of self._origin_flow in the following context
             self._within_init_context = True
 
-            if self.flow.language == FlowLanguage.CSharp:
-                # TODO: consider move this to Operations
-                CSharpExecutorProxy.generate_metadata(self.flow.path, self.flow.code)
+            # Python flow may get metadata in-memory, so no need to dump them first
+            if self.flow.language != FlowLanguage.Python:
+                # variant is resolve in the context, so we can't move this to Operations for now
+                ProxyFactory().get_executor_proxy_cls(self.flow.language).dump_metadata(
+                    flow_file=self.flow.path,
+                    working_dir=self.flow.code,
+                )
 
             self._target_node = target_node
             self._enable_stream_output = stream_output
@@ -256,7 +239,8 @@ class TestSubmitter:
                 or {},
             )
 
-            if Configuration(overrides=self._client._config).is_internal_features_enabled():
+            # do not enable trace when test single node, as we have not determined this behavior
+            if target_node is None and Configuration(overrides=self._client._config).is_internal_features_enabled():
                 logger.debug("Starting trace for flow test...")
                 start_trace(session=session)
 
@@ -268,7 +252,7 @@ class TestSubmitter:
             self._relative_flow_output_path = output_sub / "output"
 
             # use flow instead of origin_flow here, as flow can be incomplete before resolving additional includes
-            self._connections = connections or self._resolve_connections(
+            self._connections = connections or SubmitterHelper.resolve_connections(
                 self.flow,
                 self._client,
             )
@@ -471,10 +455,7 @@ class TestSubmitter:
                 # remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
 
-        if isinstance(line_result.output, dict):
-            generator_outputs = self._get_generator_outputs(line_result.output)
-            if generator_outputs:
-                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+        self._get_generator_outputs(line_result.output)
         return line_result
 
     def node_test(
@@ -584,5 +565,9 @@ class TestSubmitter:
 
     @staticmethod
     def _get_generator_outputs(outputs):
-        outputs = outputs or {}
-        return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+        # covert output to dict to unify the log
+        outputs = convert_eager_flow_output_to_dict(outputs)
+        if isinstance(outputs, dict):
+            generator_outputs = {key: output for key, output in outputs.items() if isinstance(output, GeneratorType)}
+            if generator_outputs:
+                logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")

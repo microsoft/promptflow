@@ -1,0 +1,16 @@
+inputs:
+  key:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${print_env.output}
+nodes:
+- name: print_env
+  type: python
+  source:
+    type: code
+    path: print_env.py
+  inputs:
+    generate_question_prompt: ${inputs.key}
+    connection: azure_open_ai_connection

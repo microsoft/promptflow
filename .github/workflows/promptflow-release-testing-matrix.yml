@@ -16,6 +16,7 @@ env:
   testWorkingDirectory: src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
 jobs:
   id:
     runs-on: ubuntu-latest
@@ -44,6 +45,7 @@ jobs:
         path: |
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+
   promptflow_sdk_cli_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
     needs: build

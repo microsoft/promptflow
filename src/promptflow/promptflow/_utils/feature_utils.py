@@ -56,6 +56,11 @@ def get_feature_list():
             description="Support resuming batch run.",
             state=FeatureState.E2ETEST,
         ),
+        Feature(
+            name="LocalPfsForChat",
+            description="Support starting local http server for flow test.",
+            state=FeatureState.E2ETEST,
+        ),
     ]
 
     return feature_list

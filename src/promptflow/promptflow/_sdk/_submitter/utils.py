@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from pydash import objects
 
 from promptflow._constants import STREAMING_ANIMATION_TIME
+from promptflow._proxy import ProxyFactory
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
     DEFAULT_VAR_ID,
@@ -41,16 +42,14 @@ from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
-    get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
-from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import Flow, ProtectedFlow
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
-from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -102,6 +101,9 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
     # Load executable flow to check if connection is LLM connection
     executable_flow = ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=Path(working_dir))
 
+    # generate tool meta for deployment name, model override
+    # tools_meta = generate_flow_tools_json(flow_directory=working_dir, dump=False, used_packages_only=True)
+
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
 
     for node_name, connection_dict in connections.items():
@@ -111,30 +113,73 @@ def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLi
             raise InvalidFlowError(f"Invalid connection overwrite format: {connection_dict}, only dict is supported.")
         node = node_name_2_node[node_name]
         executable_node = executable_flow.get_node(node_name=node_name)
+
+        # override connections
         if executable_flow.is_llm_node(executable_node):
-            unsupported_keys = connection_dict.keys() - SUPPORTED_CONNECTION_FIELDS
-            if unsupported_keys:
-                raise InvalidFlowError(
-                    f"Unsupported llm connection overwrite keys: {unsupported_keys},"
-                    f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
-                )
-            try:
-                connection = connection_dict.get(ConnectionFields.CONNECTION)
-                if connection:
-                    node[ConnectionFields.CONNECTION] = connection
-                deploy_name = connection_dict.get(ConnectionFields.DEPLOYMENT_NAME)
-                if deploy_name:
-                    node[INPUTS][ConnectionFields.DEPLOYMENT_NAME] = deploy_name
-            except KeyError as e:
-                raise InvalidFlowError(
-                    f"Failed to overwrite llm node {node_name} with connections {connections}"
-                ) from e
+            override_llm_connections(
+                node=node,
+                connection_dict=connection_dict,
+                node_name=node_name,
+            )
         else:
-            connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
-            for c, v in connection_dict.items():
-                if c not in connection_inputs:
-                    raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
-                node[INPUTS][c] = v
+            override_python_connections(
+                node=node,
+                connection_dict=connection_dict,
+                tools_meta={},
+                executable_flow=executable_flow,
+                node_name=node_name,
+            )
+
+
+def override_llm_connections(node: dict, connection_dict: dict, node_name: str):
+    """apply connection override on llm node."""
+    try:
+        # override connection
+        connection = connection_dict.get(ConnectionFields.CONNECTION.value)
+        if connection:
+            logger.debug(f"Overwriting connection for node {node_name} with {connection}")
+            node[ConnectionFields.CONNECTION] = connection
+            connection_dict.pop(ConnectionFields.CONNECTION.value)
+        # override deployment_name and model
+        for field in [ConnectionFields.DEPLOYMENT_NAME.value, ConnectionFields.MODEL.value]:
+            if field in connection_dict:
+                logger.debug(f"Overwriting {field} for node {node_name} with {connection_dict[field]}")
+                node[INPUTS][field] = connection_dict[field]
+                connection_dict.pop(field)
+    except KeyError as e:
+        raise InvalidFlowError(f"Failed to overwrite llm node {node_name} with connections {connection_dict}") from e
+    if connection_dict:
+        raise InvalidFlowError(
+            f"Unsupported llm connection overwrite keys: {connection_dict.keys()},"
+            f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
+        )
+
+
+def override_python_connections(
+    node: dict, connection_dict: dict, tools_meta: dict, executable_flow: ExecutableFlow, node_name: str
+):
+    """apply connection override on python node."""
+    connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
+    consumed_connections = set()
+    for c, v in connection_dict.items():
+        if c in connection_inputs:
+            logger.debug(f"Overwriting connection for node {node_name} with {c}:{v}")
+            node[INPUTS][c] = v
+            consumed_connections.add(c)
+        else:
+            # TODO(3021931): check if input c is enabled by connection instead of hard code
+            logger.debug(f"Overwriting enabled by connection input for node {node_name} with {c}:{v}")
+            for field in [ConnectionFields.DEPLOYMENT_NAME.value, ConnectionFields.MODEL.value]:
+                if field in connection_dict:
+                    logger.debug(f"Overwriting {field} for node {node_name} with {connection_dict[field]}")
+                    node[INPUTS][field] = connection_dict[field]
+                    consumed_connections.add(field)
+    unused_connections = connection_dict.keys() - consumed_connections
+    if unused_connections:
+        raise InvalidFlowError(
+            f"Unsupported llm connection overwrite keys: {unused_connections},"
+            f" only {SUPPORTED_CONNECTION_FIELDS} are supported."
+        )
 
 
 def overwrite_flow(flow_dag: dict, params_overrides: dict):
@@ -172,7 +217,7 @@ def variant_overwrite_context(
     if flow.additional_includes:
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
-            if not isinstance(flow, EagerFlow):
+            if not isinstance(flow, FlexFlow):
                 # always overwrite variant since we need to overwrite default variant if not specified.
                 overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
                 overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
@@ -181,7 +226,7 @@ def variant_overwrite_context(
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
-    elif isinstance(flow, EagerFlow):
+    elif isinstance(flow, FlexFlow):
         # eager flow don't support overwrite variant
         yield flow
     else:
@@ -192,7 +237,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = ProtectedFlow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
@@ -206,38 +251,35 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
-        # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
-        from promptflow._sdk.entities._eager_flow import EagerFlow
+    def resolve_connections(
+        flow: Flow, client=None, *, connections_to_ignore=None, connections_to_add: List[str] = None
+    ) -> dict:
+        from promptflow._sdk.entities._flow import FlexFlow
 
-        from .._pf_client import PFClient
-
-        if isinstance(flow, EagerFlow):
+        if isinstance(flow, FlexFlow):
             # TODO(2898247): support prompt flow management connection for eager flow
             return {}
 
-        client = client or PFClient()
-        with _change_working_dir(flow.code):
-            executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
-        executable.name = str(Path(flow.code).stem)
-
-        return get_local_connections_from_executable(
-            executable=executable, client=client, connections_to_ignore=connections_to_ignore
-        )
-
-    @staticmethod
-    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()
-        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow._data)
-        connections_to_ignore = connections_to_ignore or []
-        result = {}
-        for n in connection_names:
-            if n not in connections_to_ignore:
-                conn = client.connections.get(name=n, with_secrets=True)
-                result[n] = conn._to_execution_connection_dict()
-        return result
+
+        connection_names = (
+            ProxyFactory()
+            .create_inspector_proxy(flow.language)
+            .get_used_connection_names(
+                flow_file=flow.path,
+                working_dir=flow.code,
+            )
+        )
+
+        return SubmitterHelper.resolve_connection_names(
+            connection_names=connection_names,
+            client=client,
+            connections_to_ignore=connections_to_ignore,
+            raise_error=True,
+            connections_to_add=connections_to_add,
+        )
 
     @staticmethod
     def get_used_connection_names(tools_meta: dict, flow_dag: dict):
@@ -283,9 +325,21 @@ class SubmitterHelper:
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, client, raise_error=False):
+    def resolve_connection_names(
+        connection_names,
+        client,
+        *,
+        raise_error=False,
+        connections_to_ignore=None,
+        connections_to_add=None,
+    ):
+        connection_names = set(connection_names)
+        if connections_to_add:
+            connection_names.update(connections_to_add)
         result = {}
         for n in connection_names:
+            if connections_to_ignore and n in connections_to_ignore:
+                continue
             try:
                 conn = client.connections.get(name=n, with_secrets=True)
                 result[n] = conn._to_execution_connection_dict()
@@ -313,7 +367,7 @@ def show_node_log_and_output(node_run_infos, show_node_output, generator_record)
             # TODO executor return a type string of generator
             node_output = node_result.output
             if isinstance(node_result.output, GeneratorType):
-                node_output = "".join(
+                node_output = _safe_join(
                     resolve_generator_output_with_cache(
                         node_output, generator_record, generator_key=f"nodes.{node_name}.output"
                     )
@@ -358,19 +412,33 @@ def resolve_generator_output_with_cache(
                 output = iter(generator_record[generator_key])
         else:
             if hasattr(output.gi_frame.f_locals, "proxy"):
-                proxy = output.gi_frame.f_locals["proxy"]
-                generator_record[generator_key] = proxy
+                generator_record[generator_key] = output.gi_frame.f_locals["proxy"]
             else:
                 generator_record[generator_key] = list(output)
                 output = generator_record[generator_key]
     return output
 
 
+def _safe_join(generator_output):
+    items = []
+    for item in generator_output:
+        if isinstance(item, str):
+            items.append(item)
+        else:
+            try:
+                items.append(str(item))
+            except Exception as e:
+                raise UserErrorException(
+                    message=f"Failed to convert generator output to string: {e}",
+                )
+    return "".join(items)
+
+
 def resolve_generator(flow_result, generator_record):
     # resolve generator in flow result
     for k, v in flow_result.run_info.output.items():
         if isinstance(v, GeneratorType):
-            flow_output = "".join(
+            flow_output = _safe_join(
                 resolve_generator_output_with_cache(v, generator_record, generator_key=f"run.outputs.{k}")
             )
             flow_result.run_info.output[k] = flow_output
@@ -380,7 +448,7 @@ def resolve_generator(flow_result, generator_record):
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():
         if isinstance(node.output, GeneratorType):
-            node_output = "".join(
+            node_output = _safe_join(
                 resolve_generator_output_with_cache(
                     node.output, generator_record, generator_key=f"nodes.{node_name}.output"
                 )
@@ -426,14 +494,15 @@ def _calculate_snapshot(column_mapping, input_data, flow_path):
             return file_path
         if Path(file_path).is_file():
             with open(file_path, "r") as f:
-                file_content[file_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
+                absolute_path = Path(file_path).absolute().as_posix()
+                file_content[absolute_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
         else:
             for root, dirs, files in os.walk(file_path):
                 for ignore_item in ["__pycache__"]:
                     if ignore_item in dirs:
                         dirs.remove(ignore_item)
                 for file in files:
-                    with open(os.path.join(root, file), "r") as f:
+                    with open(os.path.join(root, file), "r", encoding="utf-8") as f:
                         relative_path = (Path(root) / file).relative_to(Path(file_path)).as_posix()
                         try:
                             file_content[relative_path] = hashlib.md5(f.read().encode("utf8")).hexdigest()
@@ -483,6 +552,36 @@ def _stop_orchestrator_process(orchestrator):
             sleep(1)
     except psutil.NoSuchProcess:
         logger.debug("Experiment status has been updated.")
+
+
+def _set_up_experiment_log_handler(experiment_path, index=None):
+    """
+    Set up file handler to record experiment execution. If not set index, it will record logs in a new file.
+
+    :param experiment_path: Experiment path.
+    :type experiment_path: str
+    :param index: The number of attempt to execution experiment.
+    :type index: int
+    :return: File handler, the number of attempt to execution experiment.
+    :rtype: ~promptflow.utils.logger_utils.FileHandler, int
+    """
+    log_folder = Path(experiment_path) / "logs"
+    log_folder.mkdir(exist_ok=True, parents=True)
+    if index is None:
+        # Get max index in logs folder
+        index = 0
+        for filename in os.listdir(log_folder):
+            result = re.match(r"exp\.attempt\_(\d+)\.log", filename)
+            if result:
+                try:
+                    index = max(index, int(result.groups()[0]) + 1)
+                except Exception as e:
+                    logger.debug(f"Get index of log file failed: {e}")
+
+    log_path = Path(experiment_path) / "logs" / f"exp.attempt_{index}.log"
+    logger.info(f"Experiment execution log records in {log_path}")
+    file_handler = FileHandler(file_path=log_path)
+    return file_handler, index
 
 
 # endregion

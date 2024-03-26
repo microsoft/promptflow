@@ -26,6 +26,8 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `resources`             | object        | Dictionary of resources used for automatic runtime. Only supported for cloud run. See [Resources Schema](#resources-schema) for the set of configurable properties.                                                                                                     |
 | `variant`               | string        | The variant for the run.                                                                                                                                                                                                                                                |
 | `status`                | string        | The status of the run. Only available for when getting an existing run. Won't take affect if set when creating a run.                                                                                                                                                   |
+|`identity`| object | Dictionary of identity configuration for automatic runtime. Only supported for cloud run. See [Identity Schema](#identity-schema) for the set of configurable properties.
+
 
 ### Resources Schema  
 
@@ -34,6 +36,14 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `instance_type` | string | The instance type for automatic runtime of the run. |
 | `compute`       | string | The compute instance for automatic runtime session. |
 
+
+### Identity Schema
+
+| Key         | Type   | Description                                                          |
+|-------------|--------|----------------------------------------------------------------------|
+| `type`      | string | Identity type, currently only support `managed` and `user_identity`. |
+| `client_id` | string | Client id for managed identity, only avaible on managed identity.    |
+
 ## Examples
 
 Run examples are available in the [GitHub repository](https://github.com/microsoft/promptflow/tree/main/examples/flows).
@@ -41,3 +51,20 @@ Run examples are available in the [GitHub repository](https://github.com/microso
 - [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic/run.yml)
 - [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/run.yml)
 - [flow-with-additional-includes](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/flow-with-additional-includes/run.yml)
+
+### Run with identity examples
+
+```yaml
+# default value
+identity:
+  type: user_identity 
+
+# use workspace primary UAI
+identity:
+  type: managed
+  
+# use specified client_id's UAI
+identity:
+  type: managed
+  client_id: xxx
+```

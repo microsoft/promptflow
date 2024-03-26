@@ -1,5 +1,7 @@
 import json
+import uuid
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Dict, Union
 
 import opentelemetry
@@ -8,6 +10,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.batch import BatchEngine
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -113,6 +116,52 @@ def is_image_file(file_path: Path):
     image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"]
     file_extension = file_path.suffix.lower()
     return file_extension in image_extensions
+
+
+def construct_flow_execution_request_json(flow_folder, root=FLOW_ROOT, inputs=None, connections=None):
+    working_dir = get_flow_folder(flow_folder, root=root)
+    tmp_dir = Path(mkdtemp())
+    log_path = tmp_dir / "log.txt"
+    return {
+        "run_id": str(uuid.uuid4()),
+        "working_dir": working_dir.as_posix(),
+        "flow_file": "flow.dag.yaml",
+        "output_dir": tmp_dir.as_posix(),
+        "connections": connections,
+        "log_path": log_path.as_posix(),
+        "inputs": inputs,
+        "operation_context": {
+            "request_id": "test-request-id",
+            "user_agent": "test-user-agent",
+        },
+    }
+
+
+def submit_batch_run(
+    flow_folder,
+    inputs_mapping,
+    *,
+    input_dirs={},
+    input_file_name="samples.json",
+    run_id=None,
+    connections={},
+    storage=None,
+    return_output_dir=False,
+):
+    batch_engine = BatchEngine(
+        get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
+    )
+    if not input_dirs and inputs_mapping:
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
+    output_dir = Path(mkdtemp())
+    if return_output_dir:
+        return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
+    return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
+
+
+def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
+    inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
+    return len(inputs)
 
 
 class MemoryRunStorage(AbstractRunStorage):

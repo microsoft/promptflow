@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_origin, get_args
 
 from promptflow._core._errors import (
     InputTypeMismatch,
@@ -72,7 +72,7 @@ def _get_entry_points_by_group(group):
     # which allows us to select entry points by group. In the previous versions, the entry_points() method
     # returns a dictionary-like object, we can use group name directly as a key.
     entry_points = importlib.metadata.entry_points()
-    if isinstance(entry_points, list):
+    if hasattr(entry_points, "select"):
         return entry_points.select(group=group)
     else:
         return entry_points.get(group, [])
@@ -459,6 +459,18 @@ connections = {}
 connection_type_to_api_mapping = {}
 
 
+def get_all_supported_types(param_annotation) -> list:
+    types = []
+    origin = get_origin(param_annotation)
+    if origin != Union:
+        types.append(param_annotation.__name__)
+    else:
+        for arg in get_args(param_annotation):
+            types.append(arg.__name__)
+
+    return types
+
+
 def _register(provider_cls, collection, type):
     from promptflow._core.tool import ToolProvider
 
@@ -474,14 +486,18 @@ def _register(provider_cls, collection, type):
             module_logger.debug(f"Registered {name} as a builtin function")
     # Get the connection type - provider name mapping for execution use
     # Tools/Providers related connection must have been imported
+    api_name = provider_cls.__name__
+    should_break = False
     for param in initialize_inputs.values():
         if not param.annotation:
             continue
-        annotation_type_name = param.annotation.__name__
-        if annotation_type_name in connections:
-            api_name = provider_cls.__name__
-            module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
-            connection_type_to_api_mapping[annotation_type_name] = api_name
+        types = get_all_supported_types(param.annotation)
+        for type in types:
+            if type in connections:
+                module_logger.debug(f"Add connection type {type} to api {api_name} mapping")
+                connection_type_to_api_mapping[type] = api_name
+                should_break = True
+        if should_break:
             break
 
 
