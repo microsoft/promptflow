@@ -258,6 +258,9 @@ class LineRun:
 
     @staticmethod
     def _determine_parent_id(span: Span) -> typing.Optional[str]:
+        # for test, `attributes.referenced.line_run_id` should be the parent id
+        # for batch run, we need to query line run with run name and line number
+        # otherwise, there will be no parent id
         if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in span.attributes:
             return span.attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
         elif SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in span.attributes:
