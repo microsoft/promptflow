@@ -56,7 +56,7 @@ def add_service_parser(subparsers):
     """Add service parser to the pf subparsers."""
     service_parser = subparsers.add_parser(
         "service",
-        description="Manage promptflow service.",
+        description="Manage the PromptFlow service, which offers chat and trace UI functionalities.",
         help="pf service",
     )
     service_subparsers = service_parser.add_subparsers()
