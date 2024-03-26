@@ -21,7 +21,12 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
-from promptflow.executor._assistant_tool_invoker import AssistantTool, AssistantToolInvoker, ResolvedAssistantTool
+from promptflow.executor._assistant_tool_invoker import (
+    AssistantTool,
+    AssistantToolInvoker,
+    AssistantToolResolver,
+    ResolvedAssistantTool,
+)
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -32,7 +37,6 @@ from promptflow.executor._errors import (
     InvalidCustomLLMTool,
     NodeInputValidationError,
     ResolveToolError,
-    UnsupportedAssistantToolType,
     ValueTypeUnresolved,
 )
 
@@ -131,7 +135,7 @@ class ToolResolver:
         The assistant definition is initialized with a path or package to source file.
         This method loads scripts/module, parses the structure into AssistantTool instances for future invoking.
         It supports tools of types 'code_interpreter' and 'retrieval' directly and loads 'function' type tools
-        as callable functions. Unsupported tool types raise an UnsupportedAssistantToolType exception.
+        as callable functions. Unsupported tool types raise an exception.
         """
         resolved_tools = {}
         for tool in assistant_definition.tools:
@@ -140,13 +144,17 @@ class ToolResolver:
                     name=tool["type"], openai_definition=tool, func=None
                 )
             elif tool["type"] == "function":
-                assistant_tool = AssistantTool.from_dict(tool)
+                assistant_tool = AssistantToolResolver.from_dict(tool, node_name)
                 function_tool = self.resolve_function_by_definition(node_name, assistant_tool)
                 resolved_tools[function_tool.name] = function_tool
             else:
-                raise UnsupportedAssistantToolType(
-                    message_format="Unsupported assistant tool type: {tool_type}",
-                    tool_type=tool["type"],
+                raise InvalidAssistantTool(
+                    message_format=(
+                        "Unsupported assistant tool's type in node {node_name} : {type}. "
+                        "Please make sure the type is restricted within "
+                        "['code_interpreter', 'function', 'retrieval']."
+                    ),
+                    type=type,
                     target=ErrorTarget.EXECUTOR,
                 )
         # Inject the resolved tools into the assistant definition
@@ -178,14 +186,6 @@ class ToolResolver:
         """Get assistant function from package tool definition."""
 
         # Step I: construct promptflow Tool object from the source:tool specification
-        if assistant_tool.source is None or assistant_tool.source.tool is None:
-            raise InvalidAssistantTool(
-                message_format=(
-                    "The 'tool' property is missing in 'source' of the assistant package tool "
-                    "in node '{node_name}'. Please make sure the assistant definition is correct."
-                ),
-                node_name=node_name,
-            )
         source_tool = assistant_tool.source.tool
         function_package_tool_keys = [source_tool]
         tool_loader = ToolLoader(self._working_dir, function_package_tool_keys)
@@ -207,14 +207,6 @@ class ToolResolver:
         """Get assistant function from script tool definition."""
 
         # Step I: construct promptflow Tool object from the source:path specification
-        if assistant_tool.source is None or assistant_tool.source.path is None:
-            raise InvalidAssistantTool(
-                message_format=(
-                    "The 'path' property is missing in 'source' of the assistant python tool "
-                    "in node '{node_name}'. Please make sure the assistant definition is correct."
-                ),
-                node_name=node_name,
-            )
         source_path = assistant_tool.source.path
         m, tool = self._tool_loader.load_script_tool(source_path, node_name)
 
@@ -371,37 +363,20 @@ class ToolResolver:
 
     def resolve_function_by_definition(self, node_name: str, tool: AssistantTool) -> ResolvedAssistantTool:
         try:
-            if tool.source is None:
-                raise InvalidAssistantTool(
-                    message_format=("Node {node_name} does has tools without source defined in assistant definition."),
-                    node_name=node_name,
-                )
-            tool_type = tool.tool_type
-            if tool_type == ToolType.PYTHON:
-                source_type = tool.source.type
-                if source_type == ToolSourceType.Package:
-                    return self._load_package_tool_as_function(node_name, tool)
-                elif source_type == ToolSourceType.Code:
-                    return self._load_script_tool_as_function(node_name, tool)
-                raise InvalidAssistantTool(
-                    message_format=(
-                        "Tool source type {source_type} is not supported yet "
-                        "in assistant definition for node '{node_name}'. "
-                        "Please make sure the assistant definition is correct."
-                    ),
-                    node_name=node_name,
-                    source_type=source_type,
-                )
-
-            else:
-                raise InvalidAssistantTool(
-                    message_format=(
-                        "Tool type {tool_type} is not supported yet in assistant definition "
-                        "for node '{node_name}'. Please make sure the assistant definition is correct."
-                    ),
-                    node_name=node_name,
-                    tool_type=tool_type,
-                )
+            source_type = tool.source.type
+            if source_type == ToolSourceType.Package:
+                return self._load_package_tool_as_function(node_name, tool)
+            elif source_type == ToolSourceType.Code:
+                return self._load_script_tool_as_function(node_name, tool)
+            raise InvalidAssistantTool(
+                message_format=(
+                    "Tool source type {source_type} is not supported in assistant node '{node_name}'. "
+                    "Please make sure the assistant definition is correct."
+                ),
+                node_name=node_name,
+                source_type=source_type.value,
+                target=ErrorTarget.EXECUTOR,
+            )
         except Exception as e:
             if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
                 raise ResolveToolError(node_name=node_name, target=e.target, module=e.module) from e

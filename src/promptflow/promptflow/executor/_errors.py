@@ -293,10 +293,6 @@ class ResolveToolError(PromptflowException):
         return [infer_error_code_from_class(SystemErrorException), self.__class__.__name__]
 
 
-class UnsupportedAssistantToolType(ValidationException):
-    pass
-
-
 class FailedToParseAssistantTool(UserErrorException):
     """Exception raised when failed to parse assistant tool from docstring."""
 
