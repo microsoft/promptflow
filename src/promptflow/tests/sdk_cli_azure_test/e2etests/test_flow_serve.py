@@ -12,7 +12,9 @@ version mode, you can replay all past events by reading from the beginning of yo
 change feed. You can even have multiple change feed consumers subscribe to the same container's change feed."""
 
 
-@pytest.mark.skipif(condition=not pytest.is_live, reason="serving tests, only run in live mode.")
+@pytest.mark.skipif(
+    condition=not pytest.is_live, reason="serving tests, only run in live mode as replay do not have az login."
+)
 @pytest.mark.usefixtures("flow_serving_client_remote_connection")
 @pytest.mark.e2etest
 def test_local_serving_api_with_remote_connection(flow_serving_client_remote_connection):

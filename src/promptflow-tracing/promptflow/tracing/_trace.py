@@ -182,7 +182,7 @@ def enrich_span_with_original_attributes(span, attributes):
 def enrich_span_with_llm(span, model, generated_message):
     try:
         span.set_attribute("llm.response.model", model)
-        span.set_attribute("llm.generated_message", generated_message)
+        span.set_attribute("llm.generated_message", serialize_attribute(generated_message))
     except Exception as e:
         logging.warning(f"Failed to enrich span with llm: {e}")
 

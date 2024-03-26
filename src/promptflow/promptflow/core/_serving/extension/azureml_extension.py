@@ -107,7 +107,7 @@ class AzureMLExtension(AppExtension):
         return self.connections, connections_name_overrides
 
     def raise_ex_on_invoker_initialization_failure(self, ex: Exception):
-        from promptflow.azure.operations._arm_connection_operations import UserAuthenticationError
+        from promptflow.core._errors import UserAuthenticationError
 
         # allow lazy authentication for UserAuthenticationError
         return not isinstance(ex, UserAuthenticationError)
