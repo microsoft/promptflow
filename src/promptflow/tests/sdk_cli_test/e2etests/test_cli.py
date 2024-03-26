@@ -19,7 +19,7 @@ import mock
 import pytest
 
 from promptflow._cli._pf.entry import main
-from promptflow._constants import PF_USER_AGENT
+from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -2116,6 +2116,49 @@ class TestCli:
         assert run.description == description
         assert run.tags == {"A": "A", "B": "B"}
         assert run._resume_from == run_id
+
+    def test_flow_run_resume_partially_failed_run(self, capfd, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        data_path = f"{DATAS_DIR}/simple_hello_world_multi_lines.jsonl"
+        with open(data_path, "r") as f:
+            total_lines = len(f.readlines())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/simple_hello_world_random_fail",
+            "--data",
+            data_path,
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        def get_successful_lines(output_path):
+            with open(Path(output_path) / "outputs.jsonl", "r") as f:
+                return set(map(lambda x: x[LINE_NUMBER_KEY], map(json.loads, f.readlines())))
+
+        completed_line_set = set()
+        while True:
+            run = local_client.runs.get(name=run_id)
+            new_completed_line_set = get_successful_lines(run.properties["output_path"])
+            if len(new_completed_line_set) == total_lines:
+                break
+            assert new_completed_line_set.issuperset(completed_line_set), "successful lines should be increasing"
+            completed_line_set = new_completed_line_set
+
+            new_run_id = str(uuid.uuid4())
+            run_pf_command(
+                "run",
+                "create",
+                "--resume-from",
+                run_id,
+                "--name",
+                new_run_id,
+            )
+            run_id = new_run_id
 
     def test_flow_run_exclusive_param(self, capfd) -> None:
         # fetch std out
