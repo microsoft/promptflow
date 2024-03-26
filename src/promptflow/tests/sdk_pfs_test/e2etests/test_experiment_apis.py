@@ -8,9 +8,9 @@ import pytest
 from ..utils import PFSOperations, check_activity_end_telemetry
 
 FLOW_PATH = "./tests/test_configs/flows/print_env_var"
-EXPERIMENT_PATH = (
-    Path(__file__).parent.parent.parent / "test_configs/experiments/basic-no-script-template/basic.exp.yaml"
-)
+TEST_ROOT = Path(__file__).parent.parent.parent
+EXPERIMENT_ROOT = TEST_ROOT / "test_configs/experiments"
+FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 
 
 @pytest.mark.e2etest
@@ -25,9 +25,41 @@ class TestExperimentAPIs:
             ]
         ):
             experiment = pfs_op.experiment_test(
-                body={"template": EXPERIMENT_PATH.absolute().as_posix()}
+                body={"template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix()}
             ).json
         assert "main" in experiment
+        assert "eval" in experiment
+
+    def test_experiment_test_with_binding_flow_input(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.get", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={"template": (EXPERIMENT_ROOT / "basic-no-script-template/basic1.exp.yaml").as_posix()}
+            ).json
+        assert "main" in experiment
+        assert "eval" in experiment
+
+    def test_experiment_test_with_skip_node(self, pfs_op: PFSOperations):
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix(),
+                    "skip_flow": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
+                    "skip_flow_output": {"category": "Channel", "evidence": "Both"},
+                    "skip_flow_run_id": "123",
+                }
+            ).json
         assert "eval" in experiment
 
     def test_get_experiment_yaml(self, pfs_op: PFSOperations) -> None:

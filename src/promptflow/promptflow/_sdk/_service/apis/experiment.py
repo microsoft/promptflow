@@ -63,7 +63,6 @@ class ExperimentTest(Resource):
         output_path = args.output_path
         skip_flow = args.skip_flow
         if skip_flow:
-            skip_flow = decrypt_flow_path(skip_flow)
             flow_path_dir, flow_path_file = resolve_flow_path(skip_flow)
             skip_flow = (flow_path_dir / flow_path_file).as_posix()
         skip_flow_output = args.skip_flow_output

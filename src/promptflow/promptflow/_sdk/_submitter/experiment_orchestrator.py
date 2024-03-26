@@ -808,7 +808,7 @@ class ExperimentHelper:
         """Get the node referenced data and runs from dict."""
         data, run = {}, {}
         for value in column_mapping.values():
-            if not isinstance(value, str):
+            if not isinstance(value, str) or value.startswith("${inputs."):
                 continue
             if value.startswith("${data."):
                 name = value.split(".")[1].replace("}", "")
@@ -842,7 +842,7 @@ class ExperimentHelper:
                 raise ExperimentValueError(
                     f"Node {node_name!r} inputs {value!r} related experiment input {input_name!r} not found."
                 )
-            resolved_mapping[name] = experiment_inputs[input_name].default
+            resolved_mapping[name] = experiment_inputs[input_name]
         logger.debug(f"Resolved node {node_name!r} column mapping {resolved_mapping}.")
         return resolved_mapping
 

@@ -128,11 +128,12 @@ class MediaView(Resource):
         return send_from_directory(directory, filename)
 
 
-def get_flow_path(flow, experiment):
+def get_set_flow_yaml(flow, experiment, is_get=True):
     if experiment:
         if os.path.isabs(experiment):
-            if not os.path.exists(experiment):
-                raise UserErrorException(f"The experiment file {experiment} doesn't exist: {flow}")
+            if is_get is True:
+                if not os.path.exists(experiment):
+                    raise UserErrorException(f"The absolute experiment file {experiment} doesn't exist")
             flow_path = experiment
         else:
             flow, _ = resolve_flow_path(flow)
@@ -140,11 +141,13 @@ def get_flow_path(flow, experiment):
             if flow_path is None:
                 message = f"The untrusted path {experiment} relative to the base directory {flow} detected!"
                 raise UserErrorException(message)
-            if not os.path.exists(flow_path):
-                raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
+            if is_get is True:
+                if not os.path.exists(flow_path):
+                    raise UserErrorException(f"The experiment file {flow_path} doesn't exist")
     else:
-        if not os.path.exists(flow):
-            raise UserErrorException(f"The flow doesn't exist: {flow}")
+        if is_get is True:
+            if not os.path.exists(flow):
+                raise UserErrorException(f"The flow doesn't exist: {flow}")
         flow_path = flow
     return Path(flow_path)
 
@@ -159,7 +162,7 @@ class YamlEdit(Resource):
         flow = args.flow
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
-        flow_path = get_flow_path(flow, experiment)
+        flow_path = get_set_flow_yaml(flow, experiment)
         flow_path_dir, flow_path_file = resolve_flow_path(flow_path)
         flow_info = load_yaml(flow_path_dir / flow_path_file)
         if is_flex_flow(file_path=flow_path_dir / flow_path_file):
@@ -182,7 +185,7 @@ class YamlEdit(Resource):
         flow = args.flow
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
-        flow_path = get_flow_path(flow, experiment)
+        flow_path = get_set_flow_yaml(flow, experiment, is_get=False)
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
         yaml = YAML()
         content = yaml.load(content)
