@@ -25,10 +25,10 @@ class MdcExporter(SpanExporter):
             self.span_collector = Collector(name="app_traces")
             return True
         except ImportError as e:
-            self.logger.warn(f"Load mdc related module failed: {e}")
+            self.logger.warning(f"Load mdc related module failed: {e}")
             return False
         except Exception as e:
-            self.logger.warn(f"Init mdc for app_traces failed: {e}")
+            self.logger.warning(f"Init mdc for app_traces failed: {e}")
             return False
 
     def export(self, spans: Sequence[ReadableSpan]):
@@ -45,6 +45,6 @@ class MdcExporter(SpanExporter):
                 self.span_collector.collect(span_df)
 
         except ImportError as e:
-            self.logger.warn(f"Load mdc related module failed: {e}")
+            self.logger.warning(f"Load mdc related module failed: {e}")
         except Exception as e:
-            self.logger.warn(f"Collect tracing spans failed: {e}")
+            self.logger.warning(f"Collect tracing spans failed: {e}")

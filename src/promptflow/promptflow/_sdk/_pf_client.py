@@ -6,12 +6,12 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .._constants import USER_AGENT_OVERRIDE_KEY
+from .._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
-from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import generate_yaml_entry, is_python_flex_flow_entry
@@ -276,12 +276,12 @@ class PFClient:
         :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
         :type credential: object
         """
-        if connection_provider == ConnectionProvider.LOCAL.value:
+        if connection_provider == ConnectionProviderConfig.LOCAL:
             from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
             logger.debug("PFClient using local connection operations.")
             connection_operation = ConnectionOperations(**kwargs)
-        elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        elif connection_provider.startswith(ConnectionProviderConfig.AZUREML):
             from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
             logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
