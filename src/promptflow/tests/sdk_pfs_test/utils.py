@@ -268,8 +268,7 @@ class PFSOperations:
 
     def get_experiment(self, flow_path: str, experiment_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
-        query_string = {"flow": flow_path}
-        request_body = {"experiment": experiment_path}
+        query_string = {"flow": flow_path, "experiment": experiment_path}
         response = self._client.get(f"{self.UI_URL_PREFIX}/yaml", query_string=query_string, json=request_body)
         if status_code:
             assert status_code == response.status_code, response.text

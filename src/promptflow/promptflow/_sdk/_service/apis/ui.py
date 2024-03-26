@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 import io
-import yaml
 from ruamel.yaml import YAML
 from pathlib import Path
 
@@ -52,7 +51,7 @@ image_path_parser.add_argument("image_path", type=str, required=True, location="
 
 yaml_parser = reqparse.RequestParser()
 yaml_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
-yaml_parser.add_argument("experiment", type=str, required=False, location="json", help="Path to experiment.")
+yaml_parser.add_argument("experiment", type=str, required=False, location="args", help="Path to experiment.")
 
 set_yaml_model = api.model(
     "SetYaml",
@@ -147,7 +146,7 @@ def get_flow_path(flow, experiment):
         if not os.path.exists(flow):
             raise UserErrorException(f"The flow doesn't exist: {flow}")
         flow_path = flow
-    return flow_path
+    return Path(flow_path)
 
 
 @api.route("/yaml")
