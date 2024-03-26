@@ -140,7 +140,7 @@ class TestHandleOpenAIError:
         # for below exception sequence, consecutive_conn_error_count changes 0 -> 1 -> 0 -> 1 -> 2.
         api_connection_error = APIConnectionError(request=httpx.Request('GET', 'https://www.example.com'))
         api_timeout_error = APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
-        retriable_error = RateLimitError("Something went wrong", request=httpx.Request('GET', 'https://www.example.com'))
+        retriable_error = RateLimitError(request=httpx.Request('GET', 'https://www.example.com'))
         exception_sequence = [api_connection_error, retriable_error, api_timeout_error, api_connection_error]
         # Patch the test_method to throw the desired exception
         patched_test_method = mocker.patch("promptflow.tools.aoai.AzureOpenAI.chat", side_effect=exception_sequence)
