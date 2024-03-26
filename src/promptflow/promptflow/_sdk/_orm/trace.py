@@ -2,10 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import datetime
 import typing
 
-from sqlalchemy import JSON, REAL, TEXT, TIMESTAMP, ForeignKeyConstraint, Index
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import JSON, REAL, TEXT, TIMESTAMP, Index
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from promptflow._sdk._constants import (
     EVENT_TABLENAME,
@@ -36,12 +37,15 @@ class Event(Base):
     span_id: Mapped[str] = mapped_column(TEXT)
     data: Mapped[str] = mapped_column(TEXT)
 
-    span: Mapped["Span"] = relationship(back_populates="events")
+    __table_args__ = (Index(EVENT_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),)
 
-    __table_args__ = (
-        ForeignKeyConstraint([trace_id, span_id], [f"{SPAN_TABLENAME}.trace_id", f"{SPAN_TABLENAME}.span_id"]),
-        Index(EVENT_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
-    )
+    @staticmethod
+    @sqlite_retry
+    def get(event_id: str) -> "Event":
+        with trace_mgmt_db_session() as session:
+            event = session.query(Event).filter(Event.event_id == event_id).first()
+            # TODO: validate event is None
+            return event
 
 
 class Span(Base):
@@ -52,19 +56,29 @@ class Span(Base):
     name: Mapped[str] = mapped_column(TEXT)
     context: Mapped[typing.Dict] = mapped_column(JSON)
     kind: Mapped[str] = mapped_column(TEXT)
-    parent_id: Mapped[str | None] = mapped_column(TEXT, nullable=True)
-    start_time: Mapped[int] = mapped_column(TIMESTAMP)
-    end_time: Mapped[int] = mapped_column(TIMESTAMP)
+    parent_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
+    start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
+    end_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
     status: Mapped[typing.Dict] = mapped_column(JSON)
-    attributes: Mapped[typing.Dict | None] = mapped_column(JSON, nullable=True)
-    links: Mapped[typing.Dict | None] = mapped_column(JSON, nullable=True)
-    events: Mapped[typing.Dict | None] = mapped_column(JSON, nullable=True)
+    attributes: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
+    links: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
+    events: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
     resource: Mapped[typing.Dict] = mapped_column(JSON)
 
-    events: Mapped[typing.List["Event"]] = relationship(back_populates="span")
-    line_run: Mapped["LineRun"] = relationship(back_populates="span")
-
     __table_args__ = (Index(SPAN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),)
+
+    @staticmethod
+    @sqlite_retry
+    def get(span_id: str, trace_id: typing.Optional[str] = None) -> "Span":
+        with trace_mgmt_db_session() as session:
+            query = session.query(Span)
+            if trace_id is not None:
+                query = query.filter(Span.trace_id == trace_id, Span.span_id == span_id)
+            else:
+                query = query.filter(Span.span_id == span_id)
+            span = query.first()
+            # TODO: validate span is None
+            return span
 
 
 class LineRun(Base):
@@ -75,22 +89,25 @@ class LineRun(Base):
     span_id: Mapped[str] = mapped_column(TEXT)
     inputs: Mapped[typing.Dict] = mapped_column(JSON)
     outputs: Mapped[typing.Dict] = mapped_column(JSON)
-    start_time: Mapped[int] = mapped_column(TIMESTAMP)
-    end_time: Mapped[int] = mapped_column(TIMESTAMP)
+    start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
+    end_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
     status: Mapped[str] = mapped_column(TEXT)
     latency: Mapped[float] = mapped_column(REAL)
     name: Mapped[str] = mapped_column(TEXT)
     kind: Mapped[str] = mapped_column(TEXT)
-    cumulative_token_count: Mapped[typing.Dict | None] = mapped_column(JSON, nullable=True)
-    parent_id: Mapped[str | None] = mapped_column(TEXT, nullable=True)
-    run: Mapped[str | None] = mapped_column(TEXT, nullable=True)
-    experiment: Mapped[str | None] = mapped_column(TEXT, nullable=True)
-    session_id: Mapped[str | None] = mapped_column(TEXT, nullable=True)
+    cumulative_token_count: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
+    parent_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
+    run: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
+    experiment: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
+    session_id: Mapped[typing.Optional[str]] = mapped_column(TEXT, nullable=True)
     collection: Mapped[str] = mapped_column(TEXT)
 
-    span: Mapped["Span"] = relationship(back_populates="line_run")
+    __table_args__ = (Index(LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),)
 
-    __table_args__ = (
-        ForeignKeyConstraint([trace_id, span_id], [f"{SPAN_TABLENAME}.trace_id", f"{SPAN_TABLENAME}.span_id"]),
-        Index(LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
-    )
+    @staticmethod
+    @sqlite_retry
+    def get(line_run_id: str) -> "LineRun":
+        with trace_mgmt_db_session() as session:
+            line_run = session.query(LineRun).filter(LineRun.line_run_id == line_run_id).first()
+            # TODO: validate line_run is None
+            return line_run
