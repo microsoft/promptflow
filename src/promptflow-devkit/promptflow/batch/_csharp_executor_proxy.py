@@ -146,7 +146,26 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         return executor_proxy
 
     async def destroy(self):
-        """Destroy the executor"""
+        """Destroy the executor service.
+
+        client.stream api in exec_line function won't pass all response one time.
+        For API-based streaming chat flow, if executor proxy is destroyed, it will kill service process
+        and connection will close. this will result in subsequent getting generator content failed.
+
+        Besides, external caller usually wait for the destruction of executor proxy before it can continue and iterate
+        the generator content, so we can't keep waiting here.
+
+        On the other hand, the subprocess for execution service is not started in detach mode;
+        it wll exit when parent process exit. So we simply skip the destruction here.
+        """
+
+        # TODO 3033484: update this after executor service support graceful shutdown
+        if not await self._all_generators_exhausted():
+            raise UnexpectedError(
+                message_format="The executor service is still handling a stream request "
+                "whose response is not fully consumed yet."
+            )
+
         # process is not None, it means the executor service is started by the current executor proxy
         # and should be terminated when the executor proxy is destroyed if the service is still active
         if self._process and self._is_executor_active():
