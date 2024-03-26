@@ -150,6 +150,7 @@ def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_di
 
 
 # !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
+# They are using FlowExecutor.update_environment_variables_with_connections(connections)
 def update_environment_variables_with_connections(built_connections):
     """The function will result env var value ${my_connection.key} to the real connection keys."""
     return update_dict_value_with_connections(built_connections, os.environ)
@@ -202,7 +203,6 @@ def _match_env_reference(val: str):
         return None
 
 
-# !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
 def get_used_connection_names_from_environment_variables():
     """The function will get all potential related connection names from current environment variables.
     for example, if part of env var is
