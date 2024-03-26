@@ -3,7 +3,7 @@
 """Put some imports here for mlflow promptflow flavor usage.
 
 DO NOT change the module names in "all" list. If the interface has changed in source code, wrap it here and keep
-original function/module names the same as before, otherwise mldesigner will be broken by this change.
+original function/module names the same as before, otherwise mlflow will be broken by this change.
 """
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._sdk._submitter import remove_additional_includes
