@@ -14,6 +14,7 @@ from promptflow._sdk._constants import (
     LINE_RUN_TABLENAME,
     LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME,
     SPAN_TABLENAME,
+    SPAN_TRACE_ID_INDEX_NAME,
     SPAN_TRACE_ID_SPAN_ID_INDEX_NAME,
 )
 
@@ -47,6 +48,13 @@ class Event(Base):
             # TODO: validate event is None
             return event
 
+    @staticmethod
+    @sqlite_retry
+    def list(trace_id: str, span_id: str) -> typing.List["Event"]:
+        with trace_mgmt_db_session() as session:
+            events = session.query(Event).filter(Event.trace_id == trace_id, Event.span_id == span_id).all()
+            return events
+
 
 class Span(Base):
     __tablename__ = SPAN_TABLENAME
@@ -65,7 +73,10 @@ class Span(Base):
     events: Mapped[typing.Optional[typing.Dict]] = mapped_column(JSON, nullable=True)
     resource: Mapped[typing.Dict] = mapped_column(JSON)
 
-    __table_args__ = (Index(SPAN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),)
+    __table_args__ = (
+        Index(SPAN_TRACE_ID_INDEX_NAME, "trace_id"),
+        Index(SPAN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
+    )
 
     @staticmethod
     @sqlite_retry
@@ -79,6 +90,13 @@ class Span(Base):
             span = query.first()
             # TODO: validate span is None
             return span
+
+    @staticmethod
+    @sqlite_retry
+    def list(trace_id: str) -> typing.List["Span"]:
+        with trace_mgmt_db_session() as session:
+            spans = session.query(Span).filter(Span.trace_id == trace_id).all()
+            return spans
 
 
 class LineRun(Base):

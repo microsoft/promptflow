@@ -148,6 +148,7 @@ TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.
 EVENT_TABLENAME = "events"
 EVENT_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_events_trace_id_span_id"
 SPAN_TABLENAME = "spans"
+SPAN_TRACE_ID_INDEX_NAME = "idx_spans_trace_id"
 SPAN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_spans_trace_id_span_id"
 LINE_RUN_TABLENAME = "line_runs"
 LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_line_runs_trace_id_span_id"

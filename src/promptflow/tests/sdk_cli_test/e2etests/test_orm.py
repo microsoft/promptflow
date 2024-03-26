@@ -210,20 +210,31 @@ class TestRunInfo:
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestTrace:
-    def test_span_persist(self, mock_span: SpanInfo) -> None:
+    def test_span_persist_and_get(self, mock_span: SpanInfo) -> None:
         span = Span.get(span_id=mock_span.span_id)
         assert span.name == mock_span.name
         span = Span.get(trace_id=mock_span.trace_id, span_id=mock_span.span_id)
         assert span.name == mock_span.name
 
-    def test_event_persist(self) -> None:
+    def test_span_list(self, mock_span: SpanInfo) -> None:
+        spans = Span.list(trace_id=mock_span.trace_id)
+        assert len(spans) == 1
+
+    def test_event_persist_and_get(self) -> None:
         trace_id = str(uuid.uuid4())
         span_id = str(uuid.uuid4())
         event_id = persist_event(trace_id=trace_id, span_id=span_id)
         event = Event.get(event_id=event_id)
         assert event.trace_id == trace_id and event.span_id == span_id
 
-    def test_line_run_persist(self) -> None:
+    def test_event_list(self) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        persist_event(trace_id=trace_id, span_id=span_id)
+        events = Event.list(trace_id=trace_id, span_id=span_id)
+        assert len(events) == 1
+
+    def test_line_run_persist_and_get(self) -> None:
         trace_id = str(uuid.uuid4())
         span_id = str(uuid.uuid4())
         line_run_id = persist_line_run(trace_id=trace_id, span_id=span_id)
