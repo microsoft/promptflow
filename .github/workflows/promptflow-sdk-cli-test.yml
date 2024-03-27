@@ -14,6 +14,7 @@ on:
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
@@ -81,7 +82,7 @@ jobs:
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         pip install ${{ github.workspace }}/src/promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-core
-        pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
