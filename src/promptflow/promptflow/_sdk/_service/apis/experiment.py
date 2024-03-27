@@ -1,17 +1,17 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from flask import jsonify, request
-import uuid
 import os
-from pathlib import Path
 import shutil
+import uuid
+from pathlib import Path
+
+from flask import jsonify, request
 
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._service import Namespace, Resource
-from promptflow._sdk._service.utils.utils import get_client_from_request, decrypt_flow_path
+from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow.exceptions import UserErrorException
 
 api = Namespace("Experiments", description="Experiments Management")
 
@@ -21,13 +21,18 @@ list_field = api.schema_model("ExperimentList", {"type": "array", "items": {"$re
 
 # Define start experiments request parsing
 test_experiment = api.parser()
-test_experiment.add_argument("template", type=str, location="json", required=False)
-test_experiment.add_argument("inputs", type=dict, location="json", required=False)
-test_experiment.add_argument("environment_variables", type=str, location="json", required=False)
+test_experiment.add_argument(
+    "experiment_template", type=str, location="json", required=True, help="Experiment yaml file path"
+)
+test_experiment.add_argument("inputs", type=dict, location="json", required=False, help="Input parameters for flow")
+test_experiment.add_argument(
+    "environment_variables", type=str, location="json", required=False, help="Environment variables for flow"
+)
 test_experiment.add_argument("output_path", type=str, location="json", required=False)
 test_experiment.add_argument("skip_flow", type=str, location="json", required=False)
 test_experiment.add_argument("skip_flow_output", type=dict, location="json", required=False)
 test_experiment.add_argument("skip_flow_run_id", type=str, location="json", required=False)
+test_experiment.add_argument("session", type=str, required=False, location="json")
 
 
 @api.route("/")
@@ -57,42 +62,40 @@ class ExperimentTest(Resource):
     def post(self):
         args = test_experiment.parse_args()
         client = get_client_from_request()
-        template = args.template
+        experiment_template = args.experiment_template
         inputs = args.inputs
         environment_variables = args.environment_variables
         output_path = args.output_path
         skip_flow = args.skip_flow
+        session = args.session
         if skip_flow:
             flow_path_dir, flow_path_file = resolve_flow_path(skip_flow)
             skip_flow = (flow_path_dir / flow_path_file).as_posix()
         skip_flow_output = args.skip_flow_output
         skip_flow_run_id = args.skip_flow_run_id
-        if template:
-            api.logger.debug(f"Testing an anonymous experiment {args.template}.")
-        else:
-            raise UserErrorException("To test an experiment, template must be specified.")
 
         remove_dir = False
 
         if output_path is None:
             filename = str(uuid.uuid4())
-            if os.path.isdir(template):
-                output_path = Path(template) / filename
+            if os.path.isdir(experiment_template):
+                output_path = Path(experiment_template) / filename
             else:
-                output_path = Path(os.path.dirname(template)) / filename
+                output_path = Path(os.path.dirname(experiment_template)) / filename
             os.makedirs(output_path, exist_ok=True)
             remove_dir = True
         output_path = Path(output_path).resolve()
 
         try:
             result = client._experiments._test_with_ui(
-                experiment=template,
+                experiment=experiment_template,
+                output_path=output_path,
                 inputs=inputs,
                 environment_variables=environment_variables,
-                output_path=output_path,
                 skip_flow=skip_flow,
                 skip_flow_output=skip_flow_output,
-                skip_flow_run_id=skip_flow_run_id
+                skip_flow_run_id=skip_flow_run_id,
+                session=session,
             )
         finally:
             if remove_dir:

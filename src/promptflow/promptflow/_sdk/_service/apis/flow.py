@@ -5,58 +5,60 @@ import os
 import shutil
 import uuid
 from pathlib import Path
-from flask_restx import reqparse
 
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._service import Namespace, Resource, fields
+from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import decrypt_flow_path, get_client_from_request
 from promptflow._utils.flow_utils import resolve_flow_path
-
 
 api = Namespace("Flows", description="Flows Management")
 
 
 dict_field = api.schema_model("FlowDict", {"additionalProperties": True, "type": "object"})
 
-flow_test_model = api.model(
-    "FlowTest",
-    {
-        "node": fields.String(
-            required=False, description="If specified it will only test this node, else it will " "test the flow."
-        ),
-        "variant": fields.String(
-            required=False,
-            description="Node & variant name in format of ${"
-            "node_name.variant_name}, will use default variant if "
-            "not specified.",
-        ),
-        "output_path": fields.String(required=False, description="Output path of flow"),
-        "experiment": fields.String(required=False, description="Path of experiment template"),
-        "inputs": fields.Nested(dict_field, required=False),
-        "environment_variables": fields.Nested(dict_field, required=False),
-    },
-)
 
-flow_path_parser = reqparse.RequestParser()
+flow_path_parser = api.parser()
 flow_path_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
+flow_path_parser.add_argument(
+    "node",
+    type=str,
+    required=False,
+    location="json",
+    help="If specified it will only test this node, else it will test the flow.",
+)
+flow_path_parser.add_argument(
+    "variant",
+    type=str,
+    required=False,
+    location="json",
+    help="Node & variant name in format of ${node_name.variant_name}, will use default variant if not specified.",
+)
+flow_path_parser.add_argument("output_path", type=str, required=False, location="json", help="Output path of flow.")
+flow_path_parser.add_argument(
+    "experiment", type=str, required=False, location="json", help="Path of experiment template."
+)
+flow_path_parser.add_argument("inputs", type=dict, required=False, location="json")
+flow_path_parser.add_argument("environment_variables", type=dict, required=False, location="json")
+flow_path_parser.add_argument("session", type=str, required=False, location="json")
 
 
 @api.route("/test")
 class FlowTest(Resource):
     @api.response(code=200, description="Flow test", model=dict_field)
     @api.doc(description="Flow test")
-    @api.expect(flow_test_model)
+    @api.expect(flow_path_parser)
     def post(self):
         args = flow_path_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
         flow, _ = resolve_flow_path(flow)
-        inputs = api.payload.get("inputs", None)
-        environment_variables = api.payload.get("environment_variables", None)
-        variant = api.payload.get("variant", None)
-        node = api.payload.get("node", None)
-        experiment = api.payload.get("experiment", None)
-        output_path = api.payload.get("output_path", None)
+        inputs = args.inputs
+        environment_variables = args.environment_variables
+        variant = args.variant
+        node = args.node
+        experiment = args.experiment
+        output_path = args.output_path
+        session = args.session
         remove_dir = False
 
         if output_path is None:
@@ -68,12 +70,16 @@ class FlowTest(Resource):
         try:
             result = get_client_from_request().flows._test_with_ui(
                 flow=flow,
+                output_path=output_path,
                 inputs=inputs,
                 environment_variables=environment_variables,
                 variant=variant,
                 node=node,
                 experiment=experiment,
-                output_path=output_path,
+                session=session,
+                allow_generator_output=False,
+                stream_output=False,
+                dump_test_result=True,
             )
         finally:
             if remove_dir:

@@ -3,64 +3,69 @@
 # ---------------------------------------------------------
 import base64
 import hashlib
+import io
 import json
 import os
-import io
-from ruamel.yaml import YAML
 from pathlib import Path
 
-from flask import Response, current_app, render_template, send_from_directory, url_for, make_response
-from flask_restx import reqparse
+from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
+from ruamel.yaml import YAML
 from werkzeug.utils import safe_join
 
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, DEFAULT_ENCODING, UX_INPUTS_JSON
+from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
 from promptflow._sdk._utils import json_load, read_write_by_user
-from promptflow._utils.flow_utils import resolve_flow_path, is_flex_flow
-from promptflow._utils.yaml_utils import load_yaml, dump_yaml
+from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("ui", description="UI")
 
-
-media_save_model = api.model(
-    "MediaSave",
-    {
-        "base64_data": fields.String(required=True, description="Image base64 encoded data."),
-        "extension": fields.String(required=True, description="Image file extension."),
-    },
-)
-
-dict_field = api.schema_model("FlowDict", {"additionalProperties": True, "type": "object"})
-
-flow_path_parser = reqparse.RequestParser()
-flow_path_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
-
-flow_ux_input_model = api.model(
-    "FlowUxInput",
-    {
-        "flow": fields.String(required=True, description="Path to flow directory."),
-        "ux_inputs": fields.Nested(dict_field, required=True, description="Flow ux inputs"),
-    },
-)
+dict_field = api.schema_model("UIDict", {"additionalProperties": True, "type": "object"})
 
 
-image_path_parser = reqparse.RequestParser()
-image_path_parser.add_argument("image_path", type=str, required=True, location="args", help="Path of image.")
+def create_parser(*args):
+    parser = api.parser()
+    for arg in args:
+        parser.add_argument(
+            arg["name"], type=arg["type"], required=arg["required"], location=arg["location"], help=arg["help"]
+        )
+    return parser
 
-yaml_parser = reqparse.RequestParser()
-yaml_parser.add_argument("flow", type=str, required=True, location="args", help="Path to flow directory.")
-yaml_parser.add_argument("experiment", type=str, required=False, location="args", help="Path to experiment.")
 
-set_yaml_model = api.model(
-    "SetYaml",
-    {
-        "flow": fields.String(required=True, description="Path to flow directory."),
-        "experiment": fields.String(required=False, description="Path to flow directory."),
-        "inputs": fields.String(required=True, description='The raw YAML content'),
-    },
-)
+flow_arg = {"name": "flow", "type": str, "required": True, "location": "args", "help": "Path to flow directory."}
+experiment_arg = {
+    "name": "experiment",
+    "type": str,
+    "required": False,
+    "location": "args",
+    "help": "Path to experiment.",
+}
+base64_data_arg = {
+    "name": "base64_data",
+    "type": str,
+    "required": True,
+    "location": "json",
+    "help": "Image base64 encoded data.",
+}
+extension_arg = {
+    "name": "extension",
+    "type": str,
+    "required": True,
+    "location": "json",
+    "help": "Image file extension.",
+}
+image_path_arg = {"name": "image_path", "type": str, "required": True, "location": "args", "help": "Path of image."}
+inputs_arg = {"name": "inputs", "type": str, "required": True, "location": "json", "help": "The raw YAML content."}
+ux_inputs_arg = {"name": "ux_inputs", "type": dict, "required": True, "location": "json", "help": "Flow ux inputs."}
+
+media_save_parser = create_parser(flow_arg, base64_data_arg, extension_arg)
+media_get_parser = create_parser(flow_arg, image_path_arg)
+yaml_get_parser = create_parser(flow_arg, experiment_arg)
+yaml_post_parser = create_parser(flow_arg, experiment_arg, inputs_arg)
+flow_ux_input_get_parser = create_parser(flow_arg)
+flow_ux_input_post_parser = create_parser(flow_arg, ux_inputs_arg)
 
 
 @api.route("/chat")
@@ -86,15 +91,15 @@ def save_image(directory, base64_data, extension):
 class MediaSave(Resource):
     @api.response(code=200, description="Save image", model=fields.String)
     @api.doc(description="Save image")
-    @api.expect(media_save_model)
+    @api.expect(media_save_parser)
     def post(self):
-        args = flow_path_parser.parse_args()
+        args = media_save_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
         if os.path.isfile(flow):
             flow = os.path.dirname(flow)
-        base64_data = api.payload["base64_data"]
-        extension = api.payload["extension"]
+        base64_data = args.base64_data
+        extension = args.extension
         safe_path = safe_join(flow, PROMPT_FLOW_DIR_NAME)
         if safe_path is None:
             message = f"The untrusted path {PROMPT_FLOW_DIR_NAME} relative to the base directory {flow} detected!"
@@ -109,12 +114,11 @@ class MediaView(Resource):
     @api.response(code=200, description="Get image url", model=fields.String)
     @api.doc(description="Get image url")
     def get(self):
-        args = flow_path_parser.parse_args()
+        args = media_get_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
         if os.path.isfile(flow):
             flow = os.path.dirname(flow)
-        args = image_path_parser.parse_args()
         image_path = args.image_path
         safe_path = safe_join(flow, image_path)
         if safe_path is None:
@@ -154,11 +158,11 @@ def get_set_flow_yaml(flow, experiment, is_get=True):
 
 @api.route("/yaml")
 class YamlEdit(Resource):
-    @api.response(code=200, description="Return flow yam", model=dict_field)
+    @api.response(code=200, description="Return flow yam")
     @api.doc(description="Return flow yaml as json")
-    @api.produces(['text/yaml'])
+    @api.produces(["text/yaml"])
     def get(self):
-        args = yaml_parser.parse_args()
+        args = yaml_get_parser.parse_args()
         flow = args.flow
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
@@ -174,14 +178,14 @@ class YamlEdit(Resource):
         yaml.dump(flow_info, string_stream)  # Use ruamel.yaml to dump YAML data into the string stream
         flow_info = string_stream.getvalue()
         string_stream.close()
-        return Response(flow_info, mimetype='text/yaml')
+        return Response(flow_info, mimetype="text/yaml")
 
-    @api.response(code=200, description="Set the flow yaml content", model=dict_field)
+    @api.response(code=200, description="Set the flow yaml content")
     @api.doc(description="Set the flow file content")
-    @api.expect(set_yaml_model)
+    @api.expect(yaml_post_parser)
     def post(self):
-        content = api.payload["inputs"]
-        args = yaml_parser.parse_args()
+        args = yaml_post_parser.parse_args()
+        content = args.inputs
         flow = args.flow
         flow = decrypt_flow_path(flow)
         experiment = args.experiment
@@ -189,8 +193,8 @@ class YamlEdit(Resource):
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
         yaml = YAML()
         content = yaml.load(content)
-        with open(flow_path, 'w') as outfile:
-           dump_yaml(content, outfile)
+        with open(flow_path, "w") as outfile:
+            dump_yaml(content, outfile)
         return make_response(f"{flow_path} content updated successfully", 200)
 
 
@@ -199,7 +203,7 @@ class FlowUxInputs(Resource):
     @api.response(code=200, description="Get the file content of file UX_INPUTS_JSON", model=dict_field)
     @api.doc(description="Get the file content of file UX_INPUTS_JSON")
     def get(self):
-        args = flow_path_parser.parse_args()
+        args = flow_ux_input_get_parser.parse_args()
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
         if not os.path.exists(flow_path):
@@ -214,12 +218,12 @@ class FlowUxInputs(Resource):
             ux_inputs = {}
         return ux_inputs
 
-    @api.response(code=200, description="Set the file content of file UX_INPUTS_JSON", model=dict_field)
+    @api.response(code=200, description="Set the file content of file UX_INPUTS_JSON")
     @api.doc(description="Set the file content of file UX_INPUTS_JSON")
-    @api.expect(flow_ux_input_model)
+    @api.expect(flow_ux_input_post_parser)
     def post(self):
-        content = api.payload["ux_inputs"]
-        args = flow_path_parser.parse_args()
+        args = flow_ux_input_post_parser.parse_args()
+        content = args.ux_inputs
         flow_path = args.flow
         flow_path = decrypt_flow_path(flow_path)
         flow_path, _ = resolve_flow_path(flow_path)

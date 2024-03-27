@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import copy
 import shutil
+from os import PathLike
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -10,7 +11,7 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ExperimentStatus, L
 from promptflow._sdk._errors import ExperimentExistsError, RunOperationError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import safe_parse_object_list, json_load
+from promptflow._sdk._utils import json_load, safe_parse_object_list
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -177,8 +178,10 @@ class ExperimentOperations(TelemetryMixin):
             return all(variables) or not any(variables)
 
         if not is_all_none_or_all_not_none([skip_flow, skip_flow_output, skip_flow_run_id]):
-            error = ValueError("Either all --skip_flow, --skip_flow_output, and --skip_flow_run_id should be "
-                               "specified, or should be none.")
+            error = ValueError(
+                "Either all --skip_flow, --skip_flow_output, and --skip_flow_run_id should be "
+                "specified, or should be none."
+            )
             raise UserErrorException(
                 target=ErrorTarget.CONTROL_PLANE_SDK,
                 message=str(error),
@@ -197,7 +200,9 @@ class ExperimentOperations(TelemetryMixin):
             skip_flow_run_id=skip_flow_run_id,
         )
 
-    def _test_with_ui(self, experiment: Experiment, inputs=None, environment_variables=None, **kwargs) -> Experiment:
+    def _test_with_ui(
+        self, experiment: Experiment, output_path: PathLike, inputs=None, environment_variables=None, **kwargs
+    ) -> Experiment:
         """Test an experiment by http request.
 
         :param experiment: Experiment yaml file path.
@@ -207,13 +212,7 @@ class ExperimentOperations(TelemetryMixin):
         :param environment_variables: Environment variables for flow.
         :type environment_variables: dict
         """
-        output_path = kwargs.get("output_path", None)
-        result = self.test(
-            experiment=experiment,
-            inputs=inputs,
-            environment_variables=environment_variables,
-            **kwargs
-        )
+        result = self.test(experiment=experiment, inputs=inputs, environment_variables=environment_variables, **kwargs)
         return_output = {}
         for key in result:
             detail_path = output_path / key / "flow.detail.json"
