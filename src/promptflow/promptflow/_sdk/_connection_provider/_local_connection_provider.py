@@ -13,4 +13,6 @@ class LocalConnectionProvider(ConnectionProvider):
         self._operations = ConnectionOperations()
 
     def get(self, name: str, **kwargs):
-        return self._operations.get(name, **kwargs)
+        # Connection provider here target for execution, so we always get with secrets.
+        with_secrets = kwargs.pop("with_secrets", True)
+        return self._operations.get(name, with_secrets=with_secrets, **kwargs)
