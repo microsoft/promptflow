@@ -87,8 +87,8 @@ class Span:
 
     def _persist_events(self) -> None:
         # persist events to table `events` and update `events.attributes` inplace
-        event_id = str(uuid.uuid4())
         for i in range(len(self.events)):
+            event_id = str(uuid.uuid4())
             event = self.events[i]
             ORMEvent(
                 event_id=event_id,
