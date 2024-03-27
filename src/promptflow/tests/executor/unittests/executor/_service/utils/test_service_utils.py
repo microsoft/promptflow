@@ -11,7 +11,7 @@ from promptflow.executor._service._errors import ExecutionTimeoutError
 from promptflow.executor._service.contracts.execution_request import BaseExecutionRequest, FlowExecutionRequest
 from promptflow.executor._service.utils.service_utils import (
     generate_error_response,
-    get_executor_version,
+    get_commit_id,
     get_log_context,
     set_environment_variables,
     update_and_get_operation_context,
@@ -70,15 +70,15 @@ class TestServiceUtils:
         assert operation_context.user_agent == "dummy_user_agent promptflow-executor/20240131.v1 promptflow/0.0.1"
         assert operation_context.request_id == "dummy_request_id"
 
-    def test_get_executor_version(self, monkeypatch):
+    def test_get_commit_id(self, monkeypatch):
         # mock have the BUILD_INFO env variable
-        monkeypatch.setenv("BUILD_INFO", '{"build_number": "20240131.v1"}')
-        executor_version = get_executor_version()
-        assert executor_version == "promptflow-executor/20240131.v1"
+        monkeypatch.setenv("BUILD_INFO", '{"commit_id": "test-commit-id"}')
+        commit_id = get_commit_id()
+        assert commit_id == "test-commit-id"
         # mock do not have the BUILD_INFO env variable
         monkeypatch.setenv("BUILD_INFO", "")
-        executor_version = get_executor_version()
-        assert executor_version == "promptflow-executor/0.0.1"
+        commit_id = get_commit_id()
+        assert commit_id == "unknown"
 
     def test_generate_error_response(self):
         non_pf_ex = ValueError("Test exception")
