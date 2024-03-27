@@ -125,8 +125,8 @@ def run_qa_evaluator():
 
 if __name__ == "__main__":
 
-    #run_quality_evaluators()
+    run_quality_evaluators()
 
     run_safety_evaluators()
 
-    #run_qa_evaluator()
+    run_qa_evaluator()
