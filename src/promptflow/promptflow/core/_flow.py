@@ -7,15 +7,15 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Mapping, Union
 
-from promptflow._constants import DEFAULT_ENCODING, FlowLanguage, LANGUAGE_KEY
+from promptflow._constants import DEFAULT_ENCODING, LANGUAGE_KEY, FlowLanguage
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
 from promptflow._utils.yaml_utils import load_yaml_string
-from promptflow.core._serving.flow_invoker import AsyncFlowInvoker, FlowInvoker
-from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
 
-class FlowBase(abc.ABC):
+class AbstractFlowBase(abc.ABC):
+    """Abstract class for all Flow entities in both core and devkit."""
+
     def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
         # yaml content if provided
         self._data = data
@@ -23,6 +23,11 @@ class FlowBase(abc.ABC):
         self._code = Path(code).resolve()
         # flow file path, can be script file or flow definition YAML file
         self._path = Path(path).resolve()
+
+
+class FlowBase(AbstractFlowBase):
+    def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
+        super().__init__(data=data, code=code, path=path, **kwargs)
 
     @property
     def code(self) -> Path:
@@ -59,12 +64,10 @@ class FlowBase(abc.ABC):
         if flow_language != FlowLanguage.Python:
             raise UserErrorException(
                 message_format="Only python flows are allowed to be loaded with "
-                               "promptflow-core but got a {language} flow",
-                language=flow_language
+                "promptflow-core but got a {language} flow",
+                language=flow_language,
             )
 
-        if is_flex_flow(yaml_dict=data, working_dir=flow_dir):
-            raise UserErrorException("Please call entry directly for flex flow.")
         return cls._create(code=flow_dir, path=flow_path, data=data)
 
     @classmethod
@@ -108,14 +111,15 @@ class Flow(FlowBase):
     def invoke(self, inputs: dict, connections: dict = None, **kwargs) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         # candidate parameters: connections, variant, overrides, streaming
+        from promptflow.core._serving.flow_invoker import FlowInvoker
+
+        if is_flex_flow(yaml_dict=self._data, working_dir=self.code):
+            raise UserErrorException("Please call entry directly for flex flow.")
 
         invoker = FlowInvoker(
-            flow=init_executable(flow_dag=self._data, working_dir=self.code),
-            # TODO (3027983): resolve the connections before passing to invoker
+            flow=self,
             connections=connections,
             streaming=True,
-            flow_path=self.path,
-            working_dir=self.code,
         )
         result = invoker._invoke(
             data=inputs,
@@ -159,9 +163,10 @@ class AsyncFlow(FlowBase):
     async def invoke(self, inputs: dict, *, connections: dict = None, **kwargs) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
 
+        from promptflow.core._serving.flow_invoker import AsyncFlowInvoker
+
         invoker = AsyncFlowInvoker(
-            flow=init_executable(flow_dag=self._data, working_dir=self.code),
-            # TODO (3027983): resolve the connections before passing to invoker
+            flow=self,
             connections=connections,
             streaming=True,
             flow_path=self.path,

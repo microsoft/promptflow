@@ -21,10 +21,10 @@ class FlowDataCollector:
             self.outputs_collector = Collector(name="model_outputs")
             return True
         except ImportError as e:
-            self.logger.warn(f"Load mdc related module failed: {e}")
+            self.logger.warning(f"Load mdc related module failed: {e}")
             return False
         except Exception as e:
-            self.logger.warn(f"Init mdc failed: {e}")
+            self.logger.warning(f"Init mdc failed: {e}")
             return False
 
     def collect_flow_data(self, input: dict, output: dict, req_id: str = None, client_req_id: str = None):
@@ -47,6 +47,6 @@ class FlowDataCollector:
             # collect outputs data, pass in correlation_context so inputs and outputs data can be correlated later
             self.outputs_collector.collect(output_df, ctx)
         except ImportError as e:
-            self.logger.warn(f"Load mdc related module failed: {e}")
+            self.logger.warning(f"Load mdc related module failed: {e}")
         except Exception as e:
-            self.logger.warn(f"Collect flow data failed: {e}")
+            self.logger.warning(f"Collect flow data failed: {e}")

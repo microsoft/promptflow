@@ -13,11 +13,11 @@ from flask import Flask, g, jsonify, request
 from opentelemetry import baggage, context
 
 from promptflow._utils.exception_utils import ErrorResponse
-from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.user_agent_utils import setup_user_agent_to_operation_context
 from promptflow._version import VERSION
 from promptflow.contracts.run_info import Status
+from promptflow.core import Flow
 from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME, FEEDBACK_TRACE_SPAN_NAME
 from promptflow.core._serving.extension.extension_factory import ExtensionFactory
 from promptflow.core._serving.flow_invoker import FlowInvoker
@@ -94,9 +94,8 @@ class PromptflowServingApp(Flask):
         if self.flow_invoker:
             return
         logger.info("Promptflow executor starts initializing...")
-        working_dir, flow_file = resolve_flow_path(self.project_path)
         self.flow_invoker = FlowInvoker(
-            self.flow,
+            flow=Flow.load(source=self.project_path),
             connection_provider=self.connection_provider,
             streaming=streaming_response_required,
             raise_ex=False,
@@ -105,8 +104,6 @@ class PromptflowServingApp(Flask):
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
             credential=self.credential,
-            flow_path=working_dir / flow_file,
-            working_dir=working_dir,
         )
         # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow
@@ -250,6 +247,7 @@ def create_app(**kwargs):
     # enable CORS
     try:
         from flask_cors import CORS
+
         CORS(app)
     except ImportError:
         logger.warning("flask-cors is not installed, CORS is not enabled.")

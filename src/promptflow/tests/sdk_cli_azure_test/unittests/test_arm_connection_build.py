@@ -6,12 +6,12 @@ from promptflow._sdk._constants import ConnectionAuthMode
 
 
 def build_from_data_and_assert(data, expected):
-    from promptflow.azure._models._models import WorkspaceConnectionPropertiesV2BasicResource
-    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    from promptflow.core._connection_provider._models._models import WorkspaceConnectionPropertiesV2BasicResource
+    from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 
     data = copy.deepcopy(data)
     obj = WorkspaceConnectionPropertiesV2BasicResource.deserialize(data)
-    assert ArmConnectionOperations.build_connection_dict_from_rest_object("mock", obj) == expected
+    assert WorkspaceConnectionProvider.build_connection_dict_from_rest_object("mock", obj) == expected
 
 
 @pytest.mark.unittest

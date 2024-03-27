@@ -13,30 +13,9 @@ from typing import Dict, Iterator, Union
 from filelock import FileLock
 from openai import NotFoundError
 
-from promptflow.exceptions import PromptflowException
 from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
-from .constants import ENVIRON_TEST_MODE, RecordMode
-
-
-def get_test_mode_from_environ() -> str:
-    return os.getenv(ENVIRON_TEST_MODE, RecordMode.LIVE)
-
-
-def is_record() -> bool:
-    return get_test_mode_from_environ() == RecordMode.RECORD
-
-
-def is_replay() -> bool:
-    return get_test_mode_from_environ() == RecordMode.REPLAY
-
-
-def is_live() -> bool:
-    return get_test_mode_from_environ() == RecordMode.LIVE
-
-
-def is_recording_enabled() -> bool:
-    return is_record() or is_replay() or is_live()
+from ..record_mode import is_live, is_record, is_replay
 
 
 def check_pydantic_v2():
@@ -49,13 +28,13 @@ def check_pydantic_v2():
         raise ImportError("pydantic is not installed, this is required component for openai recording.")
 
 
-class RecordItemMissingException(PromptflowException):
+class RecordItemMissingException(Exception):
     """Exception raised when record item missing."""
 
     pass
 
 
-class RecordFileMissingException(PromptflowException):
+class RecordFileMissingException(Exception):
     """Exception raised when record file missing or invalid."""
 
     pass
@@ -205,7 +184,7 @@ class RecordCache:
     def _parse_output(output):
         """
         Special handling for generator type. Since pickle will not work for generator.
-        Returns the real list for reocrding, and create a generator for original output.
+        Returns the real list for recording, and create a generator for original output.
         Parse output has a simplified hypothesis: output is simple dict, list or generator,
         because a full schema of output is too heavy to handle.
         Example: {"answer": <generator>, "a": "b"}, <generator>
@@ -219,14 +198,14 @@ class RecordCache:
             for item in output.items():
                 k, v = item
                 if type(v).__name__ == "generator":
-                    vlist = list(v)
+                    item_list = list(v)
 
-                    def vgenerator():
-                        for vitem in vlist:
-                            yield vitem
+                    def item_generator():
+                        for internal_item in item_list:
+                            yield internal_item
 
-                    output_value[k] = vlist
-                    output_generator[k] = vgenerator()
+                    output_value[k] = item_list
+                    output_generator[k] = item_generator()
                     output_type = "dict[generator]"
                 else:
                     output_value[k] = v
@@ -272,11 +251,11 @@ class RecordCache:
             for k, v in output.items():
                 if type(v).__name__ == "list":
 
-                    def vgenerator():
+                    def item_generator():
                         for item in v:
                             yield item
 
-                    output_generator[k] = vgenerator()
+                    output_generator[k] = item_generator()
                 else:
                     output_generator[k] = v
         elif output_type == "generator":

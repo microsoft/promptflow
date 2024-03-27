@@ -90,9 +90,11 @@ class AzureMLExtension(AppExtension):
                 if data_override:
                     try:
                         # try best to convert to connection, this is only for azureml deployment.
-                        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+                        from promptflow.core._connection_provider._workspace_connection_provider import (
+                            WorkspaceConnectionProvider,
+                        )
 
-                        conn = ArmConnectionOperations._convert_to_connection_dict(connection_name, conn_data)
+                        conn = WorkspaceConnectionProvider._convert_to_connection_dict(connection_name, conn_data)
                         connections[connection_name] = conn
                     except Exception as e:
                         self.logger.warn(f"Failed to convert connection data to connection: {e}")
@@ -105,7 +107,7 @@ class AzureMLExtension(AppExtension):
         return self.connections, connections_name_overrides
 
     def raise_ex_on_invoker_initialization_failure(self, ex: Exception):
-        from promptflow.azure.operations._arm_connection_operations import UserAuthenticationError
+        from promptflow.core._errors import UserAuthenticationError
 
         # allow lazy authentication for UserAuthenticationError
         return not isinstance(ex, UserAuthenticationError)

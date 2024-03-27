@@ -22,7 +22,7 @@ from ._operation_context import OperationContext
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import GeneratorProxy
-from .contracts.trace import TraceType
+from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -85,13 +85,13 @@ def enrich_span_with_context(span):
         logging.warning(f"Failed to enrich span with context: {e}")
 
 
-def enrich_span_with_trace(span, trace):
+def enrich_span_with_trace(span, trace: Trace):
     try:
         span.set_attributes(
             {
                 "framework": "promptflow",
                 "span_type": trace.type.value,
-                "function": trace.name,
+                "function": trace.function,
             }
         )
         node_name = get_node_name_from_context()
@@ -122,6 +122,7 @@ def enrich_span_with_input(span, input):
     try:
         serialized_input = serialize_attribute(input)
         span.set_attribute("inputs", serialized_input)
+        span.add_event("promptflow.function.inputs", {"payload": serialized_input})
     except Exception as e:
         logging.warning(f"Failed to enrich span with input: {e}")
 
@@ -153,6 +154,9 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
         links=[link],
     ) as span:
         enrich_span_with_original_attributes(span, original_span.attributes)
+        # Enrich the new span with input before generator iteration to prevent loss of input information.
+        # The input is as an event within this span.
+        enrich_span_with_input(span, inputs)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
         generator_output = generator_proxy.items
@@ -182,7 +186,7 @@ def enrich_span_with_original_attributes(span, attributes):
 def enrich_span_with_llm(span, model, generated_message):
     try:
         span.set_attribute("llm.response.model", model)
-        span.set_attribute("llm.generated_message", generated_message)
+        span.set_attribute("llm.generated_message", serialize_attribute(generated_message))
     except Exception as e:
         logging.warning(f"Failed to enrich span with llm: {e}")
 
@@ -191,6 +195,7 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
+        span.add_event("promptflow.function.output", {"payload": serialized_output})
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
@@ -293,7 +298,11 @@ def _traced(
 
 
 def _traced_async(
-    func: Callable = None, *, args_to_ignore: Optional[List[str]] = None, trace_type=TraceType.FUNCTION
+    func: Callable = None,
+    *,
+    args_to_ignore: Optional[List[str]] = None,
+    trace_type=TraceType.FUNCTION,
+    name: Optional[str] = None,
 ) -> Callable:
     """
     Decorator that adds tracing to an asynchronous function.
@@ -303,6 +312,7 @@ def _traced_async(
         args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
                                                         Defaults to None.
         trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+        name (str, optional): The name of the trace, will set to func name if not provided.
 
     Returns:
         Callable: The traced function.
@@ -310,7 +320,12 @@ def _traced_async(
 
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(
-            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+            func,
+            args=args,
+            kwargs=kwargs,
+            args_to_ignore=args_to_ignore,
+            trace_type=trace_type,
+            name=name,
         )
 
     @functools.wraps(func)
@@ -343,7 +358,13 @@ def _traced_async(
     return wrapped
 
 
-def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=TraceType.FUNCTION) -> Callable:
+def _traced_sync(
+    func: Callable = None,
+    *,
+    args_to_ignore: Optional[List[str]] = None,
+    trace_type=TraceType.FUNCTION,
+    name: Optional[str] = None,
+) -> Callable:
     """
     Decorator that adds tracing to a synchronous function.
 
@@ -352,6 +373,8 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
         args_to_ignore (Optional[List[str]], optional): A list of argument names to be ignored in the trace.
                                                         Defaults to None.
         trace_type (TraceType, optional): The type of the trace. Defaults to TraceType.FUNCTION.
+        name (str, optional): The name of the trace, will set to func name if not provided.
+
 
     Returns:
         Callable: The traced function.
@@ -359,7 +382,12 @@ def _traced_sync(func: Callable = None, *, args_to_ignore=None, trace_type=Trace
 
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(
-            func, args=args, kwargs=kwargs, args_to_ignore=args_to_ignore, trace_type=trace_type
+            func,
+            args=args,
+            kwargs=kwargs,
+            args_to_ignore=args_to_ignore,
+            trace_type=trace_type,
+            name=name,
         )
 
     @functools.wraps(func)

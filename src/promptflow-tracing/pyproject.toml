@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 # poetry
 [tool.poetry]
 name = "promptflow-tracing"
-version = "1.0.0.dev0"
+version = "1.1.0.dev0"
 description = "Prompt flow tracing"
 license = "MIT"
 authors = [
@@ -61,11 +61,6 @@ markers = [
 # durations - list the slowest test durations
 addopts = """
 --junit-xml=test-results.xml \
---cov=promptflow \
---cov-config=pyproject.toml \
---cov-report=term \
---cov-report=html \
---cov-report=xml \
 --dist loadfile \
 --log-level=info \
 --log-format="%(asctime)s %(levelname)s %(message)s" \
@@ -74,6 +69,8 @@ addopts = """
 -ra \
 -vv
 """
+env = [
+]
 testpaths = ["tests"]
 
 [tool.coverage.run]

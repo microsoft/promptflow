@@ -6,7 +6,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 # flake8: noqa
 
 """Put some imports here for internal packages to minimize the effort of refactoring."""
-from promptflow._constants import PROMPTFLOW_CONNECTIONS
+from promptflow._constants import PROMPTFLOW_CONNECTIONS, SpanAttributeFieldName, TraceEnvironmentVariableName
 from promptflow._core._errors import GenerateMetaUserError, PackageToolNotFoundError, ToolExecutionError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheManager, enable_cache
 from promptflow._core.connection_manager import ConnectionManager
@@ -40,11 +40,8 @@ from promptflow._core.tools_manager import (
     register_connections,
     retrieve_tool_func_result,
 )
-from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
-from promptflow._sdk._utils import (
-    get_used_connection_names_from_environment_variables,
-    update_environment_variables_with_connections,
-)
+from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH, CreatedByFieldName
+from promptflow._sdk._service.apis.collector import trace_collector
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.dataclass_serializer import deserialize_dataclass
@@ -106,10 +103,16 @@ from promptflow.core._serving.utils import (
     streaming_response_required,
     validate_request_data,
 )
+from promptflow.core._utils import (
+    get_used_connection_names_from_environment_variables,
+    update_environment_variables_with_connections,
+)
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.tracing._constants import PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import setup_exporter_from_environ
 from promptflow.tracing._tracer import Tracer
 from promptflow.tracing._utils import serialize

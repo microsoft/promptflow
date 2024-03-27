@@ -2,8 +2,6 @@ from dataclasses import asdict
 from unittest import mock
 
 import pytest
-from azure.cosmos.exceptions import CosmosResourceExistsError, CosmosResourceNotFoundError
-from flask import Flask
 
 from promptflow._constants import OK_LINE_RUN_STATUS, SpanAttributeFieldName, SpanFieldName
 from promptflow._sdk.entities._trace import Span
@@ -18,6 +16,7 @@ from promptflow.azure._storage.cosmosdb.summary import (
 @pytest.mark.unittest
 class TestSummary:
     FAKE_CREATED_BY = {"oid": "fake_oid"}
+    FAKE_COLLECTION_ID = "fake_collection_id"
     FAKE_LOGGER = mock.Mock()
 
     @pytest.fixture(autouse=True)
@@ -40,10 +39,7 @@ class TestSummary:
             run="test_run",
             experiment="test_experiment",
         )
-        self.summary = Summary(test_span, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
-        app = Flask(__name__)
-        with app.app_context():
-            yield
+        self.summary = Summary(test_span, self.FAKE_COLLECTION_ID, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
 
     def test_non_root_span_does_not_persist(self):
         mock_client = mock.Mock()
@@ -138,6 +134,7 @@ class TestSummary:
         }
         expected_item = LineEvaluation(
             line_run_id="line_run_id",
+            collection_id=self.FAKE_COLLECTION_ID,
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
@@ -183,6 +180,7 @@ class TestSummary:
 
         expected_item = LineEvaluation(
             line_run_id="line_run_id",
+            collection_id=self.FAKE_COLLECTION_ID,
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
             outputs={"output_key": "output_value"},
@@ -226,6 +224,7 @@ class TestSummary:
 
         expected_item = LineEvaluation(
             batch_run_id="batch_run_id",
+            collection_id=self.FAKE_COLLECTION_ID,
             line_number=1,
             trace_id=self.summary.span.trace_id,
             root_span_id=self.summary.span.span_id,
@@ -260,6 +259,7 @@ class TestSummary:
         expected_item = SummaryLine(
             id="test_trace_id",
             partition_key="test_session_id",
+            collection_id=self.FAKE_COLLECTION_ID,
             session_id="test_session_id",
             line_run_id="line_run_id",
             trace_id=self.summary.span.trace_id,
@@ -303,6 +303,7 @@ class TestSummary:
             id="test_trace_id",
             partition_key="test_session_id",
             session_id="test_session_id",
+            collection_id=self.FAKE_COLLECTION_ID,
             batch_run_id="batch_run_id",
             line_number="1",
             trace_id=self.summary.span.trace_id,
@@ -352,34 +353,6 @@ class TestSummary:
 
     def test_persist_running_item_create_item(self):
         client = mock.Mock()
-        client.read_item.side_effect = CosmosResourceNotFoundError
-
-        self.summary._persist_running_item(client)
-
-        client.read_item.assert_called_once_with(self.summary.span.trace_id, self.summary.span.session_id)
-        client.create_item.assert_called_once()
-
-    def test_persist_running_item_create_item_conflict_error(self):
-        client = mock.Mock()
-        client.read_item.side_effect = CosmosResourceNotFoundError
-        client.create_item.side_effect = CosmosResourceExistsError
-
-        self.summary._persist_running_item(client)
-
-        client.read_item.assert_called_once_with(self.summary.span.trace_id, self.summary.span.session_id)
-        client.create_item.assert_called_once()
-
-    def test_persist_running_item_item_already_exists(self):
-        client = mock.Mock()
-        item = SummaryLine(
-            id=self.summary.span.trace_id,
-            partition_key=self.summary.span.session_id,
-            session_id=self.summary.span.session_id,
-            trace_id=self.summary.span.trace_id,
-        )
-        client.read_item.return_value = item
-
-        self.summary._persist_running_item(client)
-
-        client.read_item.assert_called_once_with(item.id, item.partition_key)
-        client.create_item.assert_not_called()
+        with mock.patch("promptflow.azure._storage.cosmosdb.summary.safe_create_cosmosdb_item") as mock_safe_write:
+            self.summary._persist_running_item(client)
+            mock_safe_write.assert_called_once()
