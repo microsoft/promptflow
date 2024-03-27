@@ -7,7 +7,7 @@ import datetime
 import json
 import typing
 import uuid
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
@@ -54,7 +54,7 @@ class Span:
         kind: str,
         start_time: datetime.datetime,
         end_time: datetime.datetime,
-        status: str,
+        status: typing.Dict[str, str],
         resource: typing.Dict,
         parent_id: typing.Optional[str] = None,
         attributes: typing.Optional[typing.Dict[str, str]] = None,
@@ -69,7 +69,7 @@ class Span:
         self.parent_id = parent_id
         self.start_time = start_time
         self.end_time = end_time
-        self.status = status
+        self.status = copy.deepcopy(status)
         self.attributes = copy.deepcopy(attributes) if attributes is not None else dict()
         self.links = copy.deepcopy(links) if links is not None else list()
         self.events = copy.deepcopy(events) if events is not None else list()
@@ -110,7 +110,7 @@ class Span:
         #   1. first span: create, as we cannot identify the first span, so will use a try-catch
         #   2. root span: update
         if self.parent_id is None:
-            LineRun._from_non_root_span(self)._update()
+            LineRun._from_root_span(self)._update()
         else:
             LineRun._from_non_root_span(self)._try_create()
 
@@ -125,7 +125,7 @@ class Span:
             parent_id=obj.parent_id,
             start_time=obj.start_time,
             end_time=obj.end_time,
-            status=obj.status,
+            status=copy.deepcopy(obj.status),
             attributes=copy.deepcopy(obj.attributes),
             links=copy.deepcopy(obj.links),
             events=copy.deepcopy(obj.events),
@@ -142,7 +142,7 @@ class Span:
             parent_id=self.parent_id,
             start_time=self.start_time,
             end_time=self.end_time,
-            status=self.status,
+            status=copy.deepcopy(self.status),
             attributes=copy.deepcopy(self.attributes) if len(self.attributes) > 0 else None,
             links=copy.deepcopy(self.links) if len(self.links) > 0 else None,
             events=copy.deepcopy(self.events) if len(self.events) > 0 else None,
@@ -223,6 +223,21 @@ class Span:
             events=events,
             resource=resource,
         )
+
+    def _to_rest_object(self) -> typing.Dict:
+        return {
+            "name": self.name,
+            "context": copy.deepcopy(self.context),
+            "kind": self.kind,
+            "parent_id": self.parent_id,
+            "start_time": self.start_time.isoformat(),
+            "end_time": self.end_time.isoformat(),
+            "status": copy.deepcopy(self.status),
+            "attributes": copy.deepcopy(self.attributes),
+            "links": copy.deepcopy(self.links),
+            "events": copy.deepcopy(self.events),
+            "resource": copy.deepcopy(self.resource),
+        }
 
 
 @dataclass
@@ -409,3 +424,10 @@ class LineRun:
             if self.evaluations is None:
                 self.evaluations = dict()
             self.evaluations[evaluation.name] = evaluation
+
+    def _to_rest_object(self) -> typing.Dict:
+        res = asdict(self)
+        res["start_time"] = self.start_time.isoformat()
+        res["end_time"] = self.end_time.isoformat() if self.end_time is not None else None
+        # TODO: handle evaluations
+        return res

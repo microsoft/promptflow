@@ -16,12 +16,22 @@ _logger = get_cli_sdk_logger()
 
 
 class TraceOperations:
-    def list_spans(self, trace_ids: typing.List[str]) -> typing.List[Span]:
-        orm_spans = ORMSpan.list(
-            session_id=session_id,
-            trace_ids=trace_ids,
-        )
-        return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
+    def get_span(
+        self,
+        span_id: str,
+        trace_id: typing.Optional[str] = None,
+        lazy_load: bool = True,
+    ) -> Span:
+        orm_span = ORMSpan.get(span_id=span_id, trace_id=trace_id)
+        span = Span._from_orm_object(orm_span)
+        if not lazy_load:
+            span._load_events()
+        return span
+
+    def list_spans(self, trace_ids: typing.Union[str, typing.List[str]]) -> typing.List[Span]:
+        if isinstance(trace_ids, str):
+            trace_ids = [trace_ids]
+        return [Span._from_orm_object(obj) for obj in ORMSpan.list(trace_ids=trace_ids)]
 
     def get_line_run(self, line_run_id: str) -> LineRun:
         orm_line_run = ORMLineRun.get(line_run_id=line_run_id)
@@ -32,6 +42,15 @@ class TraceOperations:
         return line_run
 
     def list_line_runs(
+        self,
+        collection: typing.Optional[str] = None,
+        runs: typing.Union[str, typing.List[str]] = None,
+        experiments: typing.Union[str, typing.List[str]] = None,
+        trace_ids: typing.Union[str, typing.List[str]] = None,
+    ) -> typing.List[LineRun]:
+        ...
+
+    def _list_line_runs(
         self,
         session_id: typing.Optional[str] = None,
         runs: typing.Optional[typing.List[str]] = None,
