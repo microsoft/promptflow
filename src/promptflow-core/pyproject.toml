@@ -46,7 +46,10 @@ docutils = "*"  # used to generate description for tools
 jsonschema = ">=4.0.0,<5.0.0"  # used to validate tool
 filetype = ">=1.2.0"  # used to detect the mime type for multi-media input
 flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
-fastapi = {extras = ["executor-service"], version = ">=0.109.0,<1.0.0"}
+fastapi = ">=0.109.0,<1.0.0" # used to build web executor server
+
+[tool.poetry.extras]
+executor-service = ["fastapi"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
