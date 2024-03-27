@@ -74,11 +74,6 @@ markers = [
 # durations - list the slowest test durations
 addopts = """
 --junit-xml=test-results.xml \
---cov=promptflow \
---cov-config=pyproject.toml \
---cov-report=term \
---cov-report=html \
---cov-report=xml \
 --dist loadfile \
 --log-level=info \
 --log-format="%(asctime)s %(levelname)s %(message)s" \

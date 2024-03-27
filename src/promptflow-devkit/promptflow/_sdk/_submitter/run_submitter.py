@@ -115,7 +115,13 @@ class RunSubmitter:
             )
 
         with _change_working_dir(flow.code):
-            connections = SubmitterHelper.resolve_connections(flow=flow)
+            # resolve connections with environment variables overrides to avoid getting unused connections
+            logger.debug(
+                f"Resolving connections for flow {flow.path} with environment variables {run.environment_variables}."
+            )
+            connections = SubmitterHelper.resolve_connections(
+                flow=flow, environment_variables_overrides=run.environment_variables
+            )
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -143,14 +149,14 @@ class RunSubmitter:
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
-                resume_from_run_storage=resume_from_run_storage,
-                resume_from_run_output_dir=resume_from_run_storage.outputs_folder if resume_from_run_storage else None,
             )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
+                resume_from_run_storage=resume_from_run_storage,
+                resume_from_run_output_dir=resume_from_run_storage.outputs_folder if resume_from_run_storage else None,
             )
             error_logs = []
             if batch_result.failed_lines > 0:

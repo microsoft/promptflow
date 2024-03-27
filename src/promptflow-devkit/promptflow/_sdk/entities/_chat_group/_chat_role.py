@@ -95,6 +95,24 @@ class ChatRole:
             )
         return ChatRoleInputs(inputs), ChatRoleOutputs(outputs)
 
+    def _update_inputs_from_data_and_inputs(self, data: Dict, inputs: Dict):
+        """Update inputs from data and inputs from experiment"""
+        data_prefix = "${data."
+        inputs_prefix = "${inputs."
+        for key in self._inputs:
+            current_input = self._inputs[key]
+            value = current_input["value"]
+            if isinstance(value, str):
+                if value.startswith(data_prefix):
+                    stripped_value = value.replace(data_prefix, "").replace("}", "")
+                    data_name, col_name = stripped_value.split(".")
+                    if data_name in data and col_name in data[data_name]:
+                        current_input["value"] = data[data_name][col_name]
+                elif value.startswith(inputs_prefix):
+                    input_name = value.replace(inputs_prefix, "").replace("}", "")
+                    if input_name in inputs and input_name in inputs:
+                        current_input["value"] = inputs[input_name]
+
     def invoke(self, *args, **kwargs):
         """Invoke chat role"""
         if args:

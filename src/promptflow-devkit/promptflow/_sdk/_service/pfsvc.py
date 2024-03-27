@@ -1,13 +1,12 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from promptflow._sdk._service.entry import main
 import sys
 
-import servicemanager  # Simple setup and logging
-import win32service  # Events
 import win32serviceutil  # ServiceFramework and commandline helper
-
-from promptflow._sdk._service.entry import main
+import win32service  # Events
+import servicemanager  # Simple setup and logging
 
 
 class PromptFlowService:
