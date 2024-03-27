@@ -35,6 +35,16 @@ def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> Operati
 
 
 def get_commit_id():
+    """Get commit id from BUILD_INFO environment variable.
+
+    BUILD_INFO is a json string in the promptflow-python image, like
+    '{
+        "build_number": "20240326.v2",
+        "date": "2024-03-27 05:12:33",
+        "commit_id": "...",
+        "branch": "main"
+    }'
+    """
     build_info = os.environ.get("BUILD_INFO", "")
     try:
         build_info_dict = json.loads(build_info)
