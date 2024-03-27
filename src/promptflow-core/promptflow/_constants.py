@@ -258,4 +258,4 @@ class ConnectionProviderConfig:
 
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
 
-EAGER_FLOW_PUBLIC_NAME = "eager"
+FLEX_FLOW_PUBLIC_NAME = "flex"
