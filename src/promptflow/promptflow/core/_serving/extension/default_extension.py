@@ -130,14 +130,7 @@ class DefaultAppExtension(AppExtension):
         static_folder = kwargs.get("static_folder", None)
         self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
         logger.info(f"Static_folder: {self.static_folder}")
-        app_config = kwargs.get("config", None) or {}
-
-        # TODO (3027983): remove this import in connection related refactor PR
-        from promptflow._sdk._configuration import Configuration
-
-        pf_config = Configuration(overrides=app_config)
-        logger.info(f"Promptflow config: {pf_config}")
-        self.connection_provider = pf_config.get_connection_provider()
+        self.connection_provider = kwargs.get("connection_provider", None) or None
 
     def get_flow_project_path(self) -> str:
         return os.getenv("PROMPTFLOW_PROJECT_PATH", ".")

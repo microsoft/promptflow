@@ -16,6 +16,7 @@ env:
   testWorkingDirectory: src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
   TRACING_PATH: ${{ github.workspace }}/src/promptflow-tracing
 jobs:
   id:
@@ -73,6 +74,11 @@ jobs:
       with:
         name: wheel
         path: artifacts
+    - name: install recording
+      run:
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       if: env.PROMPT_FLOW_TEST_MODE == 'live'
@@ -157,6 +163,11 @@ jobs:
       with:
         name: wheel
         path: artifacts
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       if: env.PROMPT_FLOW_TEST_MODE == 'live'
@@ -216,6 +227,11 @@ jobs:
       with:
         name: wheel
         path: artifacts
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       with:

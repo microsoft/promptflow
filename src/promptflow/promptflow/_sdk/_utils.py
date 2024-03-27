@@ -31,7 +31,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, FlowEntryRegex
+from promptflow._constants import ENABLE_MULTI_CONTAINER_KEY, EXTENSION_UA, FlowEntryRegex
 from promptflow._sdk._constants import (
     AZURE_WORKSPACE_REGEX_FORMAT,
     DAG_FILE_NAME,
@@ -64,10 +64,10 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil
-from promptflow._utils.utils import _match_reference
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.core._utils import generate_flow_meta as _generate_flow_meta
+from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 logger = get_cli_sdk_logger()
@@ -187,95 +187,6 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
     except ValidationError as e:
         pretty_error = json.dumps(e.normalized_messages(), indent=2)
         raise ValidationException(decorate_validation_error(schema, pretty_error, additional_message))
-
-
-# !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
-def get_used_connection_names_from_environment_variables():
-    """The function will get all potential related connection names from current environment variables.
-    for example, if part of env var is
-    {
-      "ENV_VAR_1": "${my_connection.key}",
-      "ENV_VAR_2": "${my_connection.key2}",
-      "ENV_VAR_3": "${my_connection2.key}",
-    }
-    The function will return {"my_connection", "my_connection2"}.
-    """
-    return get_used_connection_names_from_dict(os.environ)
-
-
-def get_used_connection_names_from_dict(connection_dict: dict):
-    connection_names = set()
-    for key, val in connection_dict.items():
-        connection_name, _ = _match_reference(val)
-        if connection_name:
-            connection_names.add(connection_name)
-
-    return connection_names
-
-
-# !!! Attention!!!: Please make sure you have contact with PRS team before changing the interface.
-def update_environment_variables_with_connections(built_connections):
-    """The function will result env var value ${my_connection.key} to the real connection keys."""
-    return update_dict_value_with_connections(built_connections, os.environ)
-
-
-def _match_env_reference(val: str):
-    try:
-        val = val.strip()
-        m = re.match(r"^\$\{env:(.+)}$", val)
-        if not m:
-            return None
-        name = m.groups()[0]
-        return name
-    except Exception:
-        # for exceptions when val is not a string, return
-        return None
-
-
-def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
-    """
-    The function will use relevant environment variable to override connection configurations. For instance, if there
-    is a custom connection named 'custom_connection' with a configuration key called 'chat_deployment_name,' the
-    function will attempt to retrieve 'chat_deployment_name' from the environment variable
-    'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
-    original value as a fallback.
-    """
-    for connection_name, connection in connections.items():
-        values = connection.get("value", {})
-        for key, val in values.items():
-            connection_name = connection_name.replace(" ", "_")
-            env_name = f"{connection_name}_{key}".upper()
-            if env_name not in os.environ:
-                continue
-            values[key] = os.environ[env_name]
-            logger.info(f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}")
-    return connections
-
-
-def resolve_connections_environment_variable_reference(connections: Dict[str, dict]):
-    """The function will resolve connection secrets env var reference like api_key: ${env:KEY}"""
-    for connection in connections.values():
-        values = connection.get("value", {})
-        for key, val in values.items():
-            if not _match_env_reference(val):
-                continue
-            env_name = _match_env_reference(val)
-            if env_name not in os.environ:
-                raise UserErrorException(f"Environment variable {env_name} is not found.")
-            values[key] = os.environ[env_name]
-    return connections
-
-
-def update_dict_value_with_connections(built_connections, connection_dict: dict):
-    for key, val in connection_dict.items():
-        connection_name, connection_key = _match_reference(val)
-        if connection_name is None:
-            continue
-        if connection_name not in built_connections:
-            continue
-        if connection_key not in built_connections[connection_name]["value"]:
-            continue
-        connection_dict[key] = built_connections[connection_name]["value"][connection_key]
 
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
@@ -806,22 +717,6 @@ def remove_empty_element_from_dict(obj: dict) -> dict:
     return new_dict
 
 
-def is_github_codespaces():
-    # Ref:
-    # https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace
-    return os.environ.get("CODESPACES", None) == "true"
-
-
-def interactive_credential_disabled():
-    return os.environ.get(PF_NO_INTERACTIVE_LOGIN, "false").lower() == "true"
-
-
-def is_from_cli():
-    from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-
-    return CLI_UA in ClientUserAgentUtil.get_user_agent()
-
-
 def is_multi_container_enabled():
     if ENABLE_MULTI_CONTAINER_KEY in os.environ:
         return os.environ[ENABLE_MULTI_CONTAINER_KEY].lower() == "true"
@@ -1063,3 +958,6 @@ def create_temp_eager_flow_yaml(entry: Union[str, PathLike], code: Path):
 
 
 generate_flow_meta = _generate_flow_meta
+# DO NOT remove the following line, it's used by the runtime imports from _sdk/_utils directly
+get_used_connection_names_from_dict = get_used_connection_names_from_dict
+update_dict_value_with_connections = update_dict_value_with_connections

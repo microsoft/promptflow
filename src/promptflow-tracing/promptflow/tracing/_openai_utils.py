@@ -57,13 +57,13 @@ class OpenAIMetricsCalculator:
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions.py
         #   https://github.com/openai/openai-python/blob/main/src/openai/resources/completions.py
         if (
-            name == "openai.api_resources.chat_completion.ChatCompletion.create"
-            or name == "openai.resources.chat.completions.Completions.create"  # openai v1
+            name == "openai_chat_legacy"
+            or name == "openai_chat"  # openai v1
         ):
             return self.get_openai_metrics_for_chat_api(inputs, output)
         elif (
-            name == "openai.api_resources.completion.Completion.create"
-            or name == "openai.resources.completions.Completions.create"  # openai v1
+            name == "openai_completion_legacy"
+            or name == "openai_completion"  # openai v1
         ):
             return self.get_openai_metrics_for_completion_api(inputs, output)
         else:

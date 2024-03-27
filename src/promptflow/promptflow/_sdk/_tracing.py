@@ -22,6 +22,7 @@ from promptflow._constants import (
 )
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
+    PF_SERVICE_HOUR_TIMEOUT,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     AzureMLWorkspaceTriad,
@@ -61,13 +62,22 @@ def _invoke_pf_svc() -> str:
     port = get_port_from_config(create_if_not_exists=True)
     port = str(port)
     cmd_args = ["start", "--port", port]
+    hint_stop_message = (
+        f"You can stop the Prompt flow Tracing Server with the following command:'\033[1m pf service stop\033[0m'.\n"
+        f"Alternatively, if no requests are made within {PF_SERVICE_HOUR_TIMEOUT} "
+        f"hours, it will automatically stop."
+    )
     if is_port_in_use(int(port)):
         if not is_pfs_service_healthy(port):
             cmd_args.append("--force")
         else:
+            print("Prompt flow Tracing Server has started...")
+            print(hint_stop_message)
             return port
+    print("Starting Prompt flow Tracing Server...")
     entry(cmd_args)
     logger.debug("Prompt flow service is serving on port %s", port)
+    print(hint_stop_message)
     return port
 
 
@@ -140,12 +150,15 @@ def _inject_res_attrs_to_environ(
 
 def _create_or_merge_res(
     session_id: typing.Optional[str],
+    collection_id: typing.Optional[str] = None,
     exp: typing.Optional[str] = None,
     ws_triad: typing.Optional[AzureMLWorkspaceTriad] = None,
 ) -> Resource:
     res_attrs = dict()
     if session_id is not None:
         res_attrs[SpanResourceAttributesFieldName.SESSION_ID] = session_id
+    if collection_id is not None:
+        res_attrs[SpanResourceAttributesFieldName.COLLECTION_ID] = collection_id
     if _is_tracer_provider_set():
         tracer_provider: TracerProvider = trace.get_tracer_provider()
         for attr_key, attr_value in tracer_provider.resource.attributes.items():
@@ -198,7 +211,12 @@ def start_trace_with_devkit(
 
 def setup_exporter_to_pfs() -> None:
     # get resource attributes from environment
+    # TODO: Rename session_id, local trace should hide id and name.
+    # For local trace, collection is the only identifier for name and id
+    # For cloud trace, we use collection as name and collection_id for id
     session_id = os.getenv(TraceEnvironmentVariableName.SESSION_ID, None)
+    # Only used for runtime
+    collection_id = os.getenv(TraceEnvironmentVariableName.COLLECTION_ID, None)
     exp = os.getenv(TraceEnvironmentVariableName.EXPERIMENT, None)
     # local to cloud scenario: workspace triad in resource.attributes
     workspace_triad = None
@@ -212,7 +230,7 @@ def setup_exporter_to_pfs() -> None:
             workspace_name=workspace_name,
         )
     # create resource, or merge to existing resource
-    res = _create_or_merge_res(session_id=session_id, exp=exp, ws_triad=workspace_triad)
+    res = _create_or_merge_res(session_id=session_id, collection_id=collection_id, exp=exp, ws_triad=workspace_triad)
     tracer_provider = TracerProvider(resource=res)
     # get OTLP endpoint from environment
     endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)

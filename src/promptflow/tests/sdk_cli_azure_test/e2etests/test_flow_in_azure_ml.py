@@ -8,7 +8,6 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml_string
 from promptflow.connections import AzureOpenAIConnection
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -64,7 +63,7 @@ def update_saved_spec(component, saved_spec_path: str):
 
 
 @pytest.mark.skipif(
-    condition=not is_live(),
+    condition=not pytest.is_live,
     reason="flow in pipeline tests require secrets config file, only run in live mode.",
 )
 @pytest.mark.usefixtures("use_secrets_config_file")

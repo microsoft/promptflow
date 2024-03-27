@@ -104,6 +104,7 @@ SPAN_EVENTS_ATTRIBUTES_EVENT_ID = "event.id"
 class TraceEnvironmentVariableName:
     EXPERIMENT = "PF_TRACE_EXPERIMENT"
     SESSION_ID = "PF_TRACE_SESSION_ID"
+    COLLECTION_ID = "PF_TRACE_COLLECTION_ID"
     SUBSCRIPTION_ID = "PF_TRACE_SUBSCRIPTION_ID"
     RESOURCE_GROUP_NAME = "PF_TRACE_RESOURCE_GROUP_NAME"
     WORKSPACE_NAME = "PF_TRACE_WORKSPACE_NAME"
@@ -112,6 +113,7 @@ class TraceEnvironmentVariableName:
 class CosmosDBContainerName:
     SPAN = "Span"
     LINE_SUMMARY = "LineSummary"
+    COLLECTION = "Collection"
 
 
 class SpanFieldName:
@@ -167,7 +169,9 @@ class SpanAttributeFieldName:
 
 class SpanResourceAttributesFieldName:
     SERVICE_NAME = "service.name"
-    COLLECTION = "collection"
+    SESSION_ID = "session.id"
+    COLLECTION = "collection"  # local
+    COLLECTION_ID = "collection.id"  # cloud & local to cloud
     EXPERIMENT_NAME = "experiment.name"
     # local to cloud
     SUBSCRIPTION_ID = "subscription.id"
@@ -248,3 +252,8 @@ class CustomStrongTypeConnectionConfigs:
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
         ]
+
+
+class ConnectionProviderConfig:
+    LOCAL = "local"
+    AZUREML = "azureml"
