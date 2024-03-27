@@ -2,9 +2,9 @@ name: Build Doc CI
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
 # TODO: Enable this after package separation
+#  pull_request:
+#    branches:
 #      - main
 #    paths:
 #      - 'README.md'

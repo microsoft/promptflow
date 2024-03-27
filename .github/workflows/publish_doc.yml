@@ -2,8 +2,8 @@ name: Publish Promptflow Doc
 
 on:
   workflow_dispatch:
-  push:
     # TODO: Enable this after package separation
+#  push:
 #    branches:
 #      - main
 #      - preview/docs
