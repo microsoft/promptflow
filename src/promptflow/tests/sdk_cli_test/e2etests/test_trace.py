@@ -92,7 +92,7 @@ class TestTraceEntitiesAndOperations:
         for event in lazy_load_events:
             assert SPAN_EVENTS_ATTRIBUTES_EVENT_ID in event["attributes"]
 
-    def test_spans_persist_and_line_run_get(self, pf: PFClient) -> None:
+    def test_spans_persist_and_line_run_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
         non_root_span_id = str(uuid.uuid4())
         root_span_id = str(uuid.uuid4())
