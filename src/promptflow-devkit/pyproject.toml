@@ -1,3 +1,9 @@
+[project]
+description = "What is this"
+
+[project.scripts]
+pf = 'pf:__main__'
+
 [tool.poetry]
 name = "promptflow-devkit"
 version = "0.1.0b1"
