@@ -252,9 +252,9 @@ class BatchEngine:
 
                     # Load previous node run info and remove aggregation nodes in case it is loaded into node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
-                    for node_run_info in previous_node_run_infos:
-                        if node_run_info.node in aggregation_nodes:
-                            previous_node_run_infos.remove(node_run_info)
+                    previous_node_run_infos = [
+                        run_info for run_info in previous_node_run_infos if run_info.node not in aggregation_nodes
+                    ]
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
                     previous_node_run_outputs = {
                         node_info.node: node_info.output for node_info in previous_node_run_infos
