@@ -147,6 +147,10 @@ class Flow(FlowBase):
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(data=dag, code=code, path=path, **kwargs)
 
+    @property
+    def environment_variables(self):
+        return self._data.get("environment_variables", {})
+
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
         return cls(code=path.parent, path=path, dag=dag, **kwargs)

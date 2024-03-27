@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import dataclasses
+import os
 from pathlib import Path
 from typing import Callable, Union
 
@@ -105,10 +106,17 @@ class FlowInvoker:
         if connection_provider is None or isinstance(connection_provider, str):
             self.logger.info(f"Getting connections from pf client with provider from args: {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
+            self.logger.debug(f"Flow invoker connections: {self.connections.keys()}")
             connections_to_ignore.extend(self.connections_name_overrides.keys())
+            self.logger.debug(f"Flow invoker connections name overrides: {self.connections_name_overrides.keys()}")
+            self.logger.debug(f"Ignoring connections: {connections_to_ignore}")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = self.resolve_connections(
-                connection_names=self.flow.get_connection_names(),
+                # use os.environ to override flow definition's connection since
+                # os.environ is resolved to user's setting now
+                connection_names=self.flow.get_connection_names(
+                    environment_variables_overrides=os.environ,
+                ),
                 provider=ConnectionProvider.init_from_provider_config(connection_provider, credential=self._credential),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override

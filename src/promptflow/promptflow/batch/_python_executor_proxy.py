@@ -40,7 +40,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         return generate_flow_meta(
             flow_directory=working_dir,
             source_path=resolve_entry_file(entry=flow_dag.get("entry"), working_dir=working_dir),
-            entry=flow_dag.get("entry"),
+            data=flow_dag,
             dump=dump,
             timeout=timeout,
             load_in_subprocess=load_in_subprocess,
