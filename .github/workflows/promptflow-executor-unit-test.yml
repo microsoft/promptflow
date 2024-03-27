@@ -112,6 +112,7 @@ jobs:
         pip install ${{ github.workspace }}/src/promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-core[executor-service]
         pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-azure
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze

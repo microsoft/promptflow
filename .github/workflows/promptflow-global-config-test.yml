@@ -71,6 +71,8 @@ jobs:
         pip install ${{ github.workspace }}/src/promptflow-core
         pip uninstall -y promptflow-devkit
         pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip uninstall -y promptflow-azure
+        pip install ${{ github.workspace }}/src/promptflow-azure
         pip freeze
     - name: Azure Login
       uses: azure/login@v1

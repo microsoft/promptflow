@@ -144,6 +144,7 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip uninstall -y promptflow promptflow-sdk promptflow-tools
+        pip install ${{ github.workspace }}/src/promptflow-devkit
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
