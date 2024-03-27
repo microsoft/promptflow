@@ -2,13 +2,21 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import logging
 import sys
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from io import StringIO, TextIOBase
 from typing import Dict
 
-from promptflow._utils.logger_utils import flow_logger, logger, scrub_credentials
+from promptflow._utils.logger_utils import (
+    FileHandler,
+    LogContext,
+    flow_logger,
+    get_pf_logging_level,
+    logger,
+    scrub_credentials,
+)
 
 
 class NodeInfo:
@@ -35,7 +43,8 @@ class NodeLogManager:
     def __init__(self, record_datetime=True):
         self.stdout_logger = NodeLogWriter(sys.stdout, record_datetime)
         self.stderr_logger = NodeLogWriter(sys.stderr, record_datetime, is_stderr=True)
-        self.log_handler = None
+        log_file_path = LogContext.get_current().file_path
+        self.log_handler = FileHandler(log_file_path)
 
     def __enter__(self):
         """Replace sys.stdout and sys.stderr with NodeLogWriter."""
@@ -43,12 +52,17 @@ class NodeLogManager:
         self._prev_stderr = sys.stderr
         sys.stdout = self.stdout_logger
         sys.stderr = self.stderr_logger
+
+        logging.root.setLevel(get_pf_logging_level())
+        logging.root.addHandler(self.log_handler)
         return self
 
     def __exit__(self, *args):
         """Restore sys.stdout and sys.stderr."""
         sys.stdout = self._prev_stdout
         sys.stderr = self._prev_stderr
+        logging.root.removeHandler(self.log_handler)
+        self.log_handler.close()
 
     def set_node_context(self, run_id: str, node_name: str, line_number: int):
         """Set node context."""
