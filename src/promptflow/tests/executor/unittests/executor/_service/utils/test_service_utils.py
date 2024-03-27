@@ -63,11 +63,8 @@ class TestServiceUtils:
             "user_agent": "dummy_user_agent",
             "request_id": "dummy_request_id",
         }
-        # mock the BUILD_INFO env variable
-        monkeypatch.setenv("BUILD_INFO", '{"build_number": "20240131.v1"}')
-
         operation_context = update_and_get_operation_context(context_dict)
-        assert operation_context.user_agent == "dummy_user_agent promptflow-executor/20240131.v1 promptflow/0.0.1"
+        assert operation_context.user_agent == "dummy_user_agent promptflow/0.0.1"
         assert operation_context.request_id == "dummy_request_id"
 
     def test_get_commit_id(self, monkeypatch):
