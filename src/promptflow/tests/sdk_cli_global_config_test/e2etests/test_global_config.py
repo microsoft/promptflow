@@ -4,9 +4,8 @@ import mock
 import pytest
 
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import get_local_connections_from_executable
-from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
-from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from promptflow._sdk.entities._flow._flow_context_resolver import FlowContextResolver
+from promptflow.core._connection_provider._workspace_connection_provider import WorkspaceConnectionProvider
 
 FLOWS_DIR = Path(__file__).parent.parent.parent / "test_configs" / "flows"
 DATAS_DIR = Path(__file__).parent.parent.parent / "test_configs" / "datas"
@@ -36,10 +35,14 @@ class TestGlobalConfig:
 
     def test_flow_as_func(self):
         # Assert flow as func use azure provider, honor global connection config
-        def assert_client(client, **kwargs):
-            assert isinstance(client.connections, LocalAzureConnectionOperations)
-            return get_local_connections_from_executable(client=client, **kwargs)
+        def assert_client(mock_self, provider, **kwargs):
+            assert isinstance(provider, WorkspaceConnectionProvider)
+            return {
+                "azure_open_ai_connection": provider.get(
+                    name="azure_open_ai_connection"
+                )._to_execution_connection_dict()
+            }
 
         flow = load_flow(source=f"{FLOWS_DIR}/web_classification")
-        with mock.patch("promptflow._sdk._serving.flow_invoker.get_local_connections_from_executable", assert_client):
+        with mock.patch("promptflow.core._serving.flow_invoker.FlowInvoker.resolve_connections", assert_client):
             FlowContextResolver.resolve(flow=flow)

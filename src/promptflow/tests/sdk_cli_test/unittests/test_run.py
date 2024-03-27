@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from marshmallow import ValidationError
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
 from promptflow._sdk._errors import InvalidFlowError
@@ -22,6 +21,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
@@ -112,20 +112,20 @@ class TestRun:
     def test_run_invalid_flow_path(self):
         run_id = str(uuid.uuid4())
         source = f"{RUNS_DIR}/bulk_run_invalid_flow_path.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"name": run_id}])
         assert "Can't find directory or file in resolved absolute path:" in str(e.value)
 
     def test_run_invalid_remote_flow(self):
         run_id = str(uuid.uuid4())
         source = f"{RUNS_DIR}/bulk_run_invalid_remote_flow_str.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"name": run_id}])
         assert "Invalid remote flow path. Currently only azureml:<flow-name> is supported" in str(e.value)
 
     def test_data_not_exist_validation_error(self):
         source = f"{RUNS_DIR}/sample_bulk_run.yaml"
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             load_run(source=source, params_override=[{"data": "not_exist"}])
 
         assert "Can't find directory or file" in str(e.value)
@@ -138,7 +138,7 @@ class TestRun:
         ],
     )
     def test_invalid_yaml(self, source, error_msg):
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises(ValidationException) as e:
             create_yaml_run(source=source)
         assert error_msg in str(e.value)
 

@@ -3,11 +3,11 @@ import inspect
 import pytest
 from opentelemetry.trace.status import StatusCode
 
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tracing import trace
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer, _create_trace_from_function_call
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 from promptflow.tracing.contracts.trace import Trace, TraceType
 
 from ...utils import prepare_memory_exporter
@@ -64,8 +64,8 @@ class TestTracer:
         Tracer.start_tracing("test_run_id")
         tracer = Tracer.active_instance()
 
-        trace1 = Trace("test1", inputs=[1, 2, 3], type=TraceType.TOOL)
-        trace2 = Trace("test2", inputs=[4, 5, 6], type=TraceType.TOOL)
+        trace1 = Trace("test1", inputs=[1, 2, 3], type=TraceType.FUNCTION)
+        trace2 = Trace("test2", inputs=[4, 5, 6], type=TraceType.FUNCTION)
 
         Tracer.push(trace1)
         assert tracer._traces == [trace1]
@@ -172,8 +172,8 @@ class TestCreateTraceFromFunctionCall:
         assert trace.name == "MyClass.my_method"
 
     def test_trace_type_can_be_set_correctly(self):
-        trace = _create_trace_from_function_call(func_with_no_parameters, trace_type=TraceType.TOOL)
-        assert trace.type == TraceType.TOOL
+        trace = _create_trace_from_function_call(func_with_no_parameters, trace_type=TraceType.FUNCTION)
+        assert trace.type == TraceType.FUNCTION
 
     def test_args_and_kwargs_are_filled_correctly(self):
         trace = _create_trace_from_function_call(
@@ -323,7 +323,7 @@ class TestTraced:
     @pytest.mark.parametrize("func", [sync_func, async_func])
     async def test_trace_type_can_be_set_correctly(self, func):
         Tracer.start_tracing("test_run_id")
-        traced_func = _traced(func, trace_type=TraceType.TOOL)
+        traced_func = _traced(func, trace_type=TraceType.FUNCTION)
 
         if inspect.iscoroutinefunction(traced_func):
             result = await traced_func(1)
@@ -336,7 +336,7 @@ class TestTraced:
         assert len(traces) == 1
         trace = traces[0]
         assert trace["name"] == func.__qualname__
-        assert trace["type"] == TraceType.TOOL
+        assert trace["type"] == TraceType.FUNCTION
 
 
 @trace

@@ -19,18 +19,16 @@ import mock
 import pytest
 
 from promptflow._cli._pf.entry import main
-from promptflow._constants import PF_USER_AGENT
-from promptflow._core.operation_context import OperationContext
+from promptflow._constants import LINE_NUMBER_KEY, PF_USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
-from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
-
-from ..recording_utilities import is_live
+from promptflow.tracing._operation_context import OperationContext
 
 FLOWS_DIR = "./tests/test_configs/flows"
 EXPERIMENT_DIR = "./tests/test_configs/experiments"
@@ -1942,7 +1940,7 @@ class TestCli:
                 f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
             )
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start(self, monkeypatch, capfd, local_client):
         def wait_for_experiment_terminated(experiment_name):
@@ -1982,7 +1980,7 @@ class TestCli:
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("setup_experiment_table")
     def test_experiment_start_anonymous_experiment(self, monkeypatch, local_client):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
@@ -2119,6 +2117,49 @@ class TestCli:
         assert run.tags == {"A": "A", "B": "B"}
         assert run._resume_from == run_id
 
+    def test_flow_run_resume_partially_failed_run(self, capfd, local_client) -> None:
+        run_id = str(uuid.uuid4())
+        data_path = f"{DATAS_DIR}/simple_hello_world_multi_lines.jsonl"
+        with open(data_path, "r") as f:
+            total_lines = len(f.readlines())
+        # fetch std out
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/simple_hello_world_random_fail",
+            "--data",
+            data_path,
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        def get_successful_lines(output_path):
+            with open(Path(output_path) / "outputs.jsonl", "r") as f:
+                return set(map(lambda x: x[LINE_NUMBER_KEY], map(json.loads, f.readlines())))
+
+        completed_line_set = set()
+        while True:
+            run = local_client.runs.get(name=run_id)
+            new_completed_line_set = get_successful_lines(run.properties["output_path"])
+            if len(new_completed_line_set) == total_lines:
+                break
+            assert new_completed_line_set.issuperset(completed_line_set), "successful lines should be increasing"
+            completed_line_set = new_completed_line_set
+
+            new_run_id = str(uuid.uuid4())
+            run_pf_command(
+                "run",
+                "create",
+                "--resume-from",
+                run_id,
+                "--name",
+                new_run_id,
+            )
+            run_id = new_run_id
+
     def test_flow_run_exclusive_param(self, capfd) -> None:
         # fetch std out
         with pytest.raises(SystemExit):
@@ -2132,3 +2173,28 @@ class TestCli:
             )
         out, _ = capfd.readouterr()
         assert "More than one is provided for exclusive options" in out
+
+    def test_pf_test_interactive_with_non_string_streaming_output(self, monkeypatch, capsys):
+        flow_dir = Path(f"{FLOWS_DIR}/chat_flow_with_non_string_stream_output")
+        # mock user input with pop so make chat list reversed
+        chat_list = ["what is chat gpt?", "hi"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            flow_dir.as_posix(),
+            "--interactive",
+            "--verbose",
+        )
+        output_path = Path(flow_dir) / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()

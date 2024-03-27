@@ -17,21 +17,21 @@ pip install -r requirements.txt
 
 In this flow, you will learn
 - how to compose a chat flow.
-- prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
+- prompt template format of LLM tool chat api. Message delimiter is a separate line containing "#", role name and colon: "# system:", "# user:", "# assistant:".
 See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
     ```jinja
-    system:
+    # system:
     You are a chatbot having a conversation with a human.
 
-    user:
+    # user:
     {{question}}
     ```
 - how to consume chat history in prompt.
     ```jinja
     {% for item in chat_history %}
-    user:
+    # user:
     {{item.inputs.question}}
-    assistant:
+    # assistant:
     {{item.outputs.answer}}
     {% endfor %}
     ```
@@ -50,7 +50,7 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 
 Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
 ```bash
-# show registered connection 
+# show registered connection
 pf connection show --name open_ai_connection
 ```
 
@@ -58,7 +58,7 @@ pf connection show --name open_ai_connection
 
 ```bash
 # run chat flow with default question in flow.dag.yaml
-pf flow test --flow . 
+pf flow test --flow .
 
 # run chat flow with new question
 pf flow test --flow . --inputs question="What's Azure Machine Learning?"

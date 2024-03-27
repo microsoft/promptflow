@@ -16,10 +16,8 @@ from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunSt
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import _load_experiment, load_common
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
-
-from ..recording_utilities import is_live
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 EXP_ROOT = TEST_ROOT / "test_configs/experiments"
@@ -89,7 +87,7 @@ class TestExperiment:
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
         session = str(uuid.uuid4())
-        if is_live():
+        if pytest.is_live:
             # Async start
             exp = client._experiments.start(exp, session=session)
             # Test the experiment in progress cannot be started.
@@ -140,7 +138,7 @@ class TestExperiment:
         experiment = Experiment.from_template(template)
         client = PFClient()
         exp = client._experiments.create_or_update(experiment)
-        if is_live():
+        if pytest.is_live:
             # Async start
             exp = client._experiments.start(exp)
             exp = self.wait_for_experiment_terminated(client, exp)
@@ -154,7 +152,7 @@ class TestExperiment:
         run = client.runs.get(name=exp.node_runs["echo"][0]["name"])
         assert run.type == RunTypes.COMMAND
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_start_from_nodes(self):
         template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
@@ -189,7 +187,7 @@ class TestExperiment:
         assert len(exp.node_runs["main"]) == 3
         assert len(exp.node_runs["echo"]) == 2
 
-    @pytest.mark.skipif(condition=not is_live(), reason="Injection cannot passed to detach process.")
+    @pytest.mark.skipif(condition=not pytest.is_live, reason="Injection cannot passed to detach process.")
     def test_cancel_experiment(self):
         template_path = EXP_ROOT / "command-node-exp-template" / "basic-command.exp.yaml"
         # Load template and create experiment
@@ -306,3 +304,33 @@ class TestExperiment:
         assert len(exp.node_runs) == 4
         for key, val in exp.node_runs.items():
             assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"
+
+    @pytest.mark.skip("Enable when chat group node run is ready")
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_with_chat_group(self, pf: PFClient):
+        template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        exp = pf._experiments.create_or_update(experiment)
+
+        if pytest.is_live:
+            # Async start
+            exp = pf._experiments.start(exp)
+            exp = self.wait_for_experiment_terminated(pf, exp)
+        else:
+            exp = pf._experiments.get(exp.name)
+            exp = ExperimentOrchestrator(pf, exp).start()
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_test_chat_group_node(self, pf: PFClient):
+        template_path = EXP_ROOT / "chat-group-node-exp-template" / "exp.yaml"
+        template = load_common(ExperimentTemplate, source=template_path)
+        orchestrator = ExperimentOrchestrator(pf)
+        test_context = ExperimentTemplateTestContext(template=template)
+        chat_group_node = template.nodes[0]
+        assert chat_group_node.name == "multi_turn_chat"
+
+        history = orchestrator._test_node(chat_group_node, test_context)
+        assert len(history) == 4
+        assert history[0][0] == history[2][0] == "assistant"
+        assert history[1][0] == history[3][0] == "user"

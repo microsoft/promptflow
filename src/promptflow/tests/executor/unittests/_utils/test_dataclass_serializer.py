@@ -1,11 +1,13 @@
-import pytest
-from datetime import datetime
+import sys
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Dict, List
-from promptflow._core.generator_proxy import GeneratorProxy
+
+import pytest
+from unittest.mock import patch, Mock
+
 from promptflow._utils.dataclass_serializer import (
     get_type,
-    serialize,
     deserialize_dataclass,
     deserialize_value,
     assertEqual,
@@ -13,8 +15,8 @@ from promptflow._utils.dataclass_serializer import (
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow.storage.run_records import NodeRunRecord
-from unittest.mock import patch, Mock
-import sys
+from promptflow.tracing._utils import serialize
+from promptflow.tracing.contracts.generator_proxy import GeneratorProxy
 
 
 def get_connection_dict():

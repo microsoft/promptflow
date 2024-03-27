@@ -46,7 +46,12 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import incremental_print, is_remote_uri, print_red_error
+from promptflow._sdk._utils import (
+    incremental_print,
+    is_multi_container_enabled,
+    is_remote_uri,
+    print_red_error,
+)
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -1012,6 +1017,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             vm_size=resources.get("instance_type"),
             identity=identity,
             compute_name=resources.get("compute"),
+            enable_multi_container=is_multi_container_enabled(),
         )
         return rest_obj
 
@@ -1068,3 +1074,15 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             run._identity[IdentityKeys.RESOURCE_ID] = resource_id
         else:
             raise UserErrorException(f"Identity type {identity_type!r} is not supported.")
+
+    def _get_telemetry_values(self, *args, **kwargs):
+        activity_name = kwargs.get("activity_name", None)
+        telemetry_values = super()._get_telemetry_values(*args, **kwargs)
+        try:
+            if activity_name == "pfazure.runs.create_or_update":
+                run: Run = kwargs.get("run", None) or args[0]
+                telemetry_values["flow_type"] = run._flow_type
+        except Exception as e:
+            logger.error(f"Failed to get telemetry values: {str(e)}")
+
+        return telemetry_values

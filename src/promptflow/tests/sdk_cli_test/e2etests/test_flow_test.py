@@ -11,6 +11,7 @@ from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow.core._utils import init_executable
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -62,7 +63,7 @@ class TestFlowTest:
 
     def test_pf_test_flow_with_package_tool_with_custom_connection_as_input_value(self, install_custom_tool_pkg):
         # Prepare custom connection
-        from promptflow.connections import CustomConnection
+        from promptflow._sdk.entities._connection import CustomConnection
 
         conn = CustomConnection(name="custom_connection_3", secrets={"api_key": "test"}, configs={"api_base": "test"})
         _client.connections.create_or_update(conn)
@@ -76,7 +77,7 @@ class TestFlowTest:
 
     def test_pf_test_flow_with_script_tool_with_custom_strong_type_connection(self):
         # Prepare custom connection
-        from promptflow.connections import CustomConnection
+        from promptflow._sdk.entities._connection import CustomConnection
 
         conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
         _client.connections.create_or_update(conn)
@@ -359,12 +360,10 @@ class TestFlowTest:
         assert "Entry function my_func is not valid." in str(e.value)
 
     def test_init_executable(self):
-        from promptflow import load_flow
         from promptflow.contracts.flow import FlowInputDefinition, FlowOutputDefinition
 
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml").absolute()
-        flow = load_flow(flow_path)
-        executable = flow._init_executable()
+        executable = init_executable(flow_path=flow_path)
         # call values in executable.inputs are FlowInputDefinitions
         assert all([isinstance(value, FlowInputDefinition) for value in executable.inputs.values()])
         # call values in executable.outputs are FlowOutputDefinitions

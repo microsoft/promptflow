@@ -4,6 +4,7 @@ on:
     - cron: "40 19 * * *" # Every day starting at 3:40 BJT
   pull_request_target:
     paths:
+      - src/promptflow-core/*
       - src/promptflow/*
       - src/promptflow/promptflow/*
       - src/promptflow/promptflow/_core/**
@@ -25,6 +26,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
   authorize:
     environment:
@@ -107,9 +109,16 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-core
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       with:

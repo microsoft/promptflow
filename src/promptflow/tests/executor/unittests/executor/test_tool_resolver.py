@@ -10,7 +10,7 @@ from jinja2 import TemplateSyntaxError
 from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._internal import tool
-from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
+from promptflow.connections import CustomConnection, CustomStrongTypeConnection
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
@@ -509,7 +509,7 @@ class TestToolResolver:
         m = sys.modules[__name__]
         v = InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)
         actual = tool_resolver._convert_to_custom_strong_type_connection_value(
-            "conn_name", v, node, tool, conn_types, m
+            "conn_name", v, node.name, node.source, tool, conn_types, m
         )
         assert isinstance(actual, expected_type)
         assert actual.api_base == "mock"
@@ -553,7 +553,7 @@ class TestToolResolver:
             {
                 "type": "function",
                 "tool_type": "python",
-                "source": {"type": "code", "path": "test_assistant_tool_invoker.py"},
+                "source": {"type": "code", "path": "assistant_sample_tool.py"},
                 "predefined_inputs": predefined_inputs,
             },
         ]
@@ -565,7 +565,7 @@ class TestToolResolver:
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
-        tool_resolver._resolve_assistant_tool(assistant_definitions)
+        tool_resolver._resolve_assistant_tools("node_name", assistant_definitions)
         invoker = assistant_definitions._tool_invoker
         assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
         for tool_name, assistant_tool in invoker._assistant_tools.items():

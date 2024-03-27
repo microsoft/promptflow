@@ -9,9 +9,10 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs,
+    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
 )
 
 LOGGER_NAME = "promptflow"
@@ -19,7 +20,7 @@ LOGGER_NAME = "promptflow"
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
 # Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
 # Use HOME_PROMPT_FLOW_DIR instead
-PROMPT_FLOW_DIR_NAME = ".promptflow"
+PROMPT_FLOW_DIR_NAME = PROMPT_FLOW_DIR_NAME
 
 
 def _prepare_home_dir() -> Path:
@@ -112,9 +113,8 @@ KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").re
 REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = CONNECTION_SCRUBBED_VALUE
-SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
+SCRUBBED_VALUE_NO_CHANGE = CONNECTION_SCRUBBED_VALUE_NO_CHANGE
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
-CHAT_HISTORY = "chat_history"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
@@ -149,10 +149,13 @@ TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.
 SPAN_TABLENAME = "span"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
 
+UX_INPUTS_JSON = "ux.inputs.json"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
 # chat group
 STOP_SIGNAL = "[STOP]"
+CHAT_GROUP_REFERENCE_NAME = "parent"
+CONVERSATION_HISTORY = "conversation_history"
 
 
 class RunTypes:
@@ -160,6 +163,7 @@ class RunTypes:
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
     COMMAND = "command"
+    CHAT_GROUP = "chat_group"
 
 
 class AzureRunTypes:
@@ -287,6 +291,7 @@ class LocalStorageFilenames:
     DETAIL = "detail.json"
     METRICS = "metrics.json"
     LOG = "logs.txt"
+    FLOW_LOGS_FOLDER = "flow_logs"
     EXCEPTION = "error.json"
     META = "meta.json"
 
@@ -353,11 +358,6 @@ class RunHistoryKeys:
     HIDDEN = "hidden"
 
 
-class ConnectionProvider(str, Enum):
-    LOCAL = "local"
-    AZUREML = "azureml"
-
-
 class FlowType:
     STANDARD = "standard"
     EVALUATION = "evaluation"
@@ -395,6 +395,13 @@ class ExperimentNodeType(object):
     FLOW = "flow"
     CHAT_GROUP = "chat_group"
     COMMAND = "command"
+
+
+EXP_NODE_TYPE_2_RUN_TYPE = {
+    ExperimentNodeType.FLOW: RunTypes.BATCH,
+    ExperimentNodeType.CHAT_GROUP: RunTypes.CHAT_GROUP,
+    ExperimentNodeType.COMMAND: RunTypes.COMMAND,
+}
 
 
 class ExperimentStatus(object):
@@ -446,6 +453,12 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class CreatedByFieldName:
+    OBJECT_ID = "object_id"
+    TENANT_ID = "tenant_id"
+    NAME = "name"
 
 
 class ChatGroupSpeakOrder(str, Enum):

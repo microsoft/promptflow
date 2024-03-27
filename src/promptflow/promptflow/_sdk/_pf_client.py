@@ -6,11 +6,12 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Union
 
-from .._constants import USER_AGENT_OVERRIDE_KEY
+from .._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
 from .._utils.logger_utils import get_cli_sdk_logger
+from .._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
-from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import (
@@ -20,7 +21,7 @@ from ._utils import (
     setup_user_agent_to_operation_context,
 )
 from .entities import Run
-from .entities._eager_flow import FlexFlow
+from .entities._flow import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -169,7 +170,6 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-
         with generate_yaml_entry(entry=flow, code=code) as flow:
             # load flow object for validation and early failure
             flow_obj = load_flow(source=flow)
@@ -283,12 +283,12 @@ class PFClient:
         :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
         :type credential: object
         """
-        if connection_provider == ConnectionProvider.LOCAL.value:
+        if connection_provider == ConnectionProviderConfig.LOCAL:
             from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
             logger.debug("PFClient using local connection operations.")
             connection_operation = ConnectionOperations(**kwargs)
-        elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        elif connection_provider.startswith(ConnectionProviderConfig.AZUREML):
             from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
             logger.debug(f"PFClient using local azure connection operations with credential {credential}.")

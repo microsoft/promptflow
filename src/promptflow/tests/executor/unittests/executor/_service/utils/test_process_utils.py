@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._core._errors import UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import JsonSerializedPromptflowException
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionTimeoutError
@@ -15,6 +14,7 @@ from promptflow.executor._service.utils.process_utils import (
     exception_wrapper,
     invoke_sync_function_in_process,
 )
+from promptflow.tracing._operation_context import OperationContext
 
 MOCK_CONTEXT_DICT = {"context_test_key": "test_value"}
 

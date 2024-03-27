@@ -7,6 +7,7 @@ from azure.ai.ml.entities import IdentityConfiguration
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._utils import is_python_flex_flow_entry
+from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 from promptflow.exceptions import UserErrorException
@@ -93,3 +94,27 @@ class TestRunOperations:
                 column_mapping={"entry": "${data.input_val}"},
             )
         assert "not supported" in str(e)
+
+    def test_wrong_workspace_type(
+        self, mocker: MockerFixture, subscription_id: str, resource_group_name: str, workspace_name: str
+    ):
+        from sdk_cli_azure_test._azure_utils import get_cred
+
+        from promptflow.recording.azure import get_pf_client_for_replay
+
+        # the test target "_workspace_default_datastore" is a cached property so the pf client needs to be recreated
+        # otherwise the test may fail due to the cached value
+        if pytest.is_replay:
+            pf = get_pf_client_for_replay()
+        else:
+            pf = PFClient(
+                credential=get_cred(),
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+            )
+        # test wrong workspace type "hub"
+        mocker.patch.object(pf.runs._workspace, "_kind", "hub")
+        with pytest.raises(RunOperationParameterError, match="Failed to get default workspace datastore"):
+            datastore = pf.runs._workspace_default_datastore
+            assert datastore

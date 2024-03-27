@@ -3,15 +3,15 @@ import os
 import re
 
 import pytest
-
-from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._serving.utils import load_feedback_swagger
-from promptflow._sdk._serving.constants import FEEDBACK_TRACE_FIELD_NAME
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+from promptflow.core._serving.constants import FEEDBACK_TRACE_FIELD_NAME
+from promptflow.core._serving.utils import load_feedback_swagger
+from promptflow.tracing._operation_context import OperationContext
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
@@ -105,9 +105,9 @@ def test_feedback_with_trace_context(flow_serving_client):
     trace_ctx_parent_id = "f3f3f3f3f3f3f3f3"
     trace_ctx_flags = "01"
     trace_parent = f"{trace_ctx_version}-{trace_ctx_trace_id}-{trace_ctx_parent_id}-{trace_ctx_flags}"
-    response = flow_serving_client.post("/feedback",
-                                        headers={"traceparent": trace_parent, "baggage": "userId=alice"},
-                                        data=feedback_data)
+    response = flow_serving_client.post(
+        "/feedback", headers={"traceparent": trace_parent, "baggage": "userId=alice"}, data=feedback_data
+    )
     assert response.status_code == 200
     spans = exporter.get_finished_spans()
     assert len(spans) == 1
@@ -631,3 +631,49 @@ def test_eager_flow_multiple_stream_output(multiple_stream_outputs):
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     response = json.loads(response.data.decode())
     assert response == {"error": {"code": "UserError", "message": "Multiple stream output fields not supported."}}
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc(eager_flow_evc):
+    # Supported: flow with EVC in definition
+    response = eager_flow_evc.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response == "Hello world! azure"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_override(eager_flow_evc_override):
+    # Supported: EVC's connection exist in flow definition
+    response = eager_flow_evc_override.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert response != "Hello world! ${azure_open_ai_connection.api_base}"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_override_not_exist(eager_flow_evc_override_not_exist):
+    # EVC's connection not exist in flow definition, will resolve it.
+    response = eager_flow_evc_override_not_exist.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # EVC not resolved since the connection not exist in flow definition
+    assert response == "Hello world! azure"
+
+
+@pytest.mark.e2etest
+def test_eager_flow_evc_connection_not_exist(eager_flow_evc_connection_not_exist):
+    # Won't get not existed connection since it's override
+    response = eager_flow_evc_connection_not_exist.post("/score", data=json.dumps({}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    # EVC not resolved since the connection not exist in flow definition
+    assert response == "Hello world! VALUE"

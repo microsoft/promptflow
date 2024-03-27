@@ -40,13 +40,13 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
+    is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
-    parse_variant,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -164,7 +164,7 @@ class Run(YAMLTranslatableMixin):
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
-            self.flow = Path(flow).resolve().absolute()
+            self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
@@ -589,6 +589,7 @@ class Run(YAMLTranslatableMixin):
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
             compute_name=compute_name,
             identity=identity_resource_id,
+            enable_multi_container=is_multi_container_enabled(),
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
@@ -743,3 +744,16 @@ class Run(YAMLTranslatableMixin):
         }
         logger.debug(f"Run init params: {init_params}")
         return Run(**init_params)
+
+    @functools.cached_property
+    def _flow_type(self) -> str:
+        """Get flow type of run."""
+
+        from promptflow._constants import FlowType
+        from promptflow._sdk._load_functions import load_flow
+        from promptflow._sdk.entities._flow import FlexFlow
+
+        flow_obj = load_flow(source=self.flow)
+        if isinstance(flow_obj, FlexFlow):
+            return FlowType.FLEX_FLOW
+        return FlowType.DAG_FLOW

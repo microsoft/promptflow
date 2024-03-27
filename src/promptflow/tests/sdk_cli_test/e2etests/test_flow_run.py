@@ -369,7 +369,7 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 connections={"print_env": {"new_connection": "test_custom_connection"}},
             )
-        assert "Connection with name new_connection not found" in str(e.value)
+        assert "Unsupported llm connection overwrite keys" in str(e.value)
 
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
@@ -386,7 +386,7 @@ class TestFlowRun:
         self, install_custom_tool_pkg, local_client, pf
     ):
         # Prepare custom connection
-        from promptflow.connections import CustomConnection
+        from promptflow._sdk.entities._connection import CustomConnection
 
         conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
         local_client.connections.create_or_update(conn)
@@ -1493,3 +1493,170 @@ class TestFlowRun:
         # convert DataFrame to dict
         details_dict = details.to_dict(orient="list")
         assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! azure"]}
+
+    def test_run_with_deployment_overwrite(self, pf):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/python_tool_deployment_name",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"deployment_name": "my_deployment_name", "model": "my_model"}],
+        }
+
+        # TODO(3021931): this should fail.
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/deployment_name_not_enabled",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"env": "${data.key}"},
+            connections={"print_env": {"deployment_name": "my_deployment_name", "model": "my_model"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+
+    def test_deployment_overwrite_failure(self, local_client, local_aoai_connection, pf):
+        # deployment name not exist
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            connections={"classify_with_llm": {"deployment_name": "not_exist"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert "The API deployment for this resource does not exist." in run_dict["error"]["message"]
+
+        # deployment name not a param
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            connections={"print_env": {"deployment_name": "not_exist"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert "get_env_var() got an unexpected keyword argument" in run_dict["error"]["message"]
+
+    def test_shadow_evc(self, pf):
+        # run without env override will fail
+        with pytest.raises(ConnectionNotFoundError):
+            pf.run(
+                flow=f"{FLOWS_DIR}/evc_connection_not_exist",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+            )
+        # won't fail with connection not found
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/evc_connection_not_exist",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            environment_variables={"API_BASE": "VAL"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.key": ["API_BASE"], "inputs.line_number": [0], "outputs.output": ["VAL"]}
+
+    def test_shadow_evc_flex_flow(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/evc_connection_not_exist")
+
+        # run without env override will fail
+        with pytest.raises(ConnectionNotFoundError):
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+
+        # won't fail in flex flow
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            environment_variables={"TEST": "VAL"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {"inputs.line_number": [0], "outputs.output": ["Hello world! VAL"]}
+
+    def test_eager_flow_evc_override(self, pf):
+        # resolve evc when used same name as flow's evc
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/print_environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/env_var_test.jsonl",
+            environment_variables={"TEST": "${azure_open_ai_connection.api_type}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["TEST"],
+            "inputs.line_number": [0],
+            "outputs.output": ["Hello world! azure"],
+        }
+
+        # won't get connection & resolve when added new env var names
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/print_environment_variables")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/env_var_new_key.jsonl",
+            environment_variables={"NEW_KEY": "${not_exist.api_type}"},
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["NEW_KEY"],
+            "inputs.line_number": [0],
+            "outputs.output": ["Hello world! ${not_exist.api_type}"],
+        }
+
+    def test_run_with_non_provided_connection_override(self, pf, local_custom_connection):
+        # override non-provided connection when submission
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
+        }
+
+    def test_run_with_non_provided_connection_override_list_annotation(self, pf, local_custom_connection):
+        # override non-provided connection when submission
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/list_connection_not_provided",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            column_mapping={"key": "${data.key}"},
+            connections={"print_env": {"connection": "test_custom_connection"}},
+        )
+        run_dict = run._to_dict()
+        assert "error" not in run_dict, run_dict["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict == {
+            "inputs.key": ["API_BASE"],
+            "inputs.line_number": [0],
+            "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
+        }
