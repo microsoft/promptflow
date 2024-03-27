@@ -24,10 +24,13 @@ from promptflow._constants import (
     SpanResourceFieldName,
     SpanStatusFieldName,
 )
-from promptflow._sdk._constants import SPAN_EVENTS_ATTRIBUTE_PAYLOAD  # noqa: F401
-from promptflow._sdk._constants import SPAN_EVENTS_NAME_PF_INPUTS  # noqa: F401
-from promptflow._sdk._constants import SPAN_EVENTS_NAME_PF_OUTPUT  # noqa: F401
-from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, CumulativeTokenCountFieldName
+from promptflow._sdk._constants import (
+    SPAN_EVENTS_ATTRIBUTE_PAYLOAD,
+    SPAN_EVENTS_NAME_PF_INPUTS,
+    SPAN_EVENTS_NAME_PF_OUTPUT,
+    TRACE_DEFAULT_COLLECTION,
+    CumulativeTokenCountFieldName,
+)
 from promptflow._sdk._errors import LineRunNotFoundError
 from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
@@ -35,7 +38,6 @@ from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk._utils import (
     convert_time_unix_nano_to_timestamp,
     flatten_pb_attributes,
-    json_loads_parse_const_as_str,
     parse_otel_span_status_code,
 )
 
@@ -346,25 +348,17 @@ class LineRun:
 
     @staticmethod
     def _get_inputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
-        # for event in span.events:
-        #     if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
-        #         return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
-        # return None
-        try:
-            return json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.INPUTS, "{}"))
-        except json.decoder.JSONDecodeError:
-            return span.attributes.get(SpanAttributeFieldName.INPUTS)
+        for event in span.events:
+            if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_INPUTS:
+                return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        return None
 
     @staticmethod
     def _get_outputs_from_span(span: Span) -> typing.Optional[typing.Dict]:
-        # for event in span.events:
-        #     if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
-        #         return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
-        # return None
-        try:
-            return json_loads_parse_const_as_str(span.attributes.get(SpanAttributeFieldName.OUTPUT, "{}"))
-        except json.decoder.JSONDecodeError:
-            return span.attributes.get(SpanAttributeFieldName.OUTPUT)
+        for event in span.events:
+            if event[SpanEventFieldName.NAME] == SPAN_EVENTS_NAME_PF_OUTPUT:
+                return json.loads(event[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD])
+        return None
 
     @staticmethod
     def _from_orm_object(obj: ORMLineRun) -> "LineRun":
