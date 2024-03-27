@@ -22,7 +22,7 @@ from ._operation_context import OperationContext
 from ._tracer import Tracer, _create_trace_from_function_call, get_node_name_from_context
 from ._utils import get_input_names_for_prompt_template, get_prompt_param_name_from_func, serialize
 from .contracts.generator_proxy import GeneratorProxy
-from .contracts.trace import TraceType, Trace
+from .contracts.trace import Trace, TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
@@ -122,6 +122,7 @@ def enrich_span_with_input(span, input):
     try:
         serialized_input = serialize_attribute(input)
         span.set_attribute("inputs", serialized_input)
+        span.add_event("promptflow.function.inputs", {"payload": serialized_input})
     except Exception as e:
         logging.warning(f"Failed to enrich span with input: {e}")
 
@@ -153,6 +154,9 @@ def traced_generator(original_span: ReadableSpan, inputs, generator):
         links=[link],
     ) as span:
         enrich_span_with_original_attributes(span, original_span.attributes)
+        # Enrich the new span with input before generator iteration to prevent loss of input information.
+        # The input is as an event within this span.
+        enrich_span_with_input(span, inputs)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
         generator_output = generator_proxy.items
@@ -191,6 +195,7 @@ def enrich_span_with_output(span, output):
     try:
         serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
+        span.add_event("promptflow.function.output", {"payload": serialized_output})
     except Exception as e:
         logging.warning(f"Failed to enrich span with output: {e}")
 
