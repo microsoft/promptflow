@@ -17,7 +17,6 @@ from promptflow._sdk._constants import (
     SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
     SCHEMA_KEYS_CONTEXT_SECRET_KEY,
     SCRUBBED_VALUE,
-    SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
 )
@@ -78,15 +77,6 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         if typ in type_dict:
             return type_dict.get(typ)
         return snake_to_camel(typ)
-
-    @classmethod
-    def _is_scrubbed_value(cls, value):
-        """For scrubbed value, cli will get original for update, and prompt user to input for create."""
-        if value is None or not value:
-            return True
-        if all([v == "*" for v in value]):
-            return True
-        return value == SCRUBBED_VALUE_NO_CHANGE
 
     @classmethod
     def _is_user_input_value(cls, value):
@@ -210,10 +200,6 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
             **kwargs,
         )
         return connection
-
-    def _get_scrubbed_secrets(self):
-        """Return the scrubbed secrets of connection."""
-        return {key: val for key, val in self.secrets.items() if self._is_scrubbed_value(val)}
 
 
 class _StrongTypeConnection(_CoreStrongTypeConnection, _Connection):
