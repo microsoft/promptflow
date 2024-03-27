@@ -55,17 +55,22 @@ jobs:
         with:
           pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
 
-      - name: Install promptflow
+      - name: Build wheel
+        uses: "./.github/actions/step_sdk_setup"
+        with:
+          setupType: promptflow_with_extra
+          scriptPath: ${{ env.testWorkingDirectory }}
+
+      - name: Install wheel
         shell: pwsh
+        working-directory: artifacts
         run: |
           Set-PSDebug -Trace 1
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-          pip uninstall -y promptflow-tracing
-          pip uninstall -y promptflow-core
-          pip uninstall -y promptflow
           pip install ${{ github.workspace }}/src/promptflow-tracing
           pip install ${{ github.workspace }}/src/promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow[azure,executable,azureml-serving,executor-service]
+          gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
+          gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
           pip freeze
 
       - name: install recording
