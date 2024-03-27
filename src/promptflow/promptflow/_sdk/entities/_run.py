@@ -303,6 +303,7 @@ class Run(YAMLTranslatableMixin):
         start_time = run_entity.get("startTimeUtc", None)
         end_time = run_entity.get("endTimeUtc", None)
         duration = run_entity.get("duration", None)
+        resume_from = run_entity["properties"].get("azureml.promptflow.resume_from_run_id", None)
         return Run(
             name=run_entity["runId"],
             flow=Path(f"azureml://flows/{flow_name}"),
@@ -319,6 +320,7 @@ class Run(YAMLTranslatableMixin):
             is_archived=run_entity.get("archived", False),  # TODO: Get archived status, depends on run history team
             error=run_entity.get("error", None),
             run_source=RunInfoSources.RUN_HISTORY,
+            resume_from=resume_from,
             portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["createdBy"],
             data=run_entity[RunDataKeys.DATA],
