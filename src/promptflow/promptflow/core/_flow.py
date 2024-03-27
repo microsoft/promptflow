@@ -118,7 +118,6 @@ class Flow(FlowBase):
 
         invoker = FlowInvoker(
             flow=self,
-            # TODO (3027983): resolve the connections before passing to invoker
             connections=connections,
             streaming=True,
         )
@@ -168,7 +167,6 @@ class AsyncFlow(FlowBase):
 
         invoker = AsyncFlowInvoker(
             flow=self,
-            # TODO (3027983): resolve the connections before passing to invoker
             connections=connections,
             streaming=True,
             flow_path=self.path,

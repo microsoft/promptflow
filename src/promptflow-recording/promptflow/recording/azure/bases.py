@@ -12,6 +12,7 @@ import vcr
 from vcr import matchers
 from vcr.request import Request
 
+from ..record_mode import is_live, is_record, is_replay
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
 from .processors import (
     AzureMLExperimentIDProcessor,
@@ -29,9 +30,6 @@ from .processors import (
 from .utils import (
     is_httpx_response,
     is_json_payload_request,
-    is_live,
-    is_record,
-    is_replay,
     sanitize_automatic_runtime_request_path,
     sanitize_azure_workspace_triad,
     sanitize_file_share_flow_path,
@@ -82,10 +80,8 @@ class PFAzureIntegrationTestRecording:
             )
 
     def _get_recording_file(self) -> Path:
-        # recording files are expected to be located at "tests/test_configs/recordings"
-        # test file path should locate at "tests/sdk_cli_azure_test/e2etests"
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
-        recording_dir = (test_file_path.parent.parent.parent / "test_configs" / "recordings").resolve()
+        recording_dir = (Path(__file__).parent / "../../../recordings/azure").resolve()
         recording_dir.mkdir(exist_ok=True)
 
         test_file_name = test_file_path.stem
@@ -250,7 +246,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         run_data_requests = dict()
         log_content_requests = dict()
         for req, resp in self.cassette.data:
-            # run hisotry's rundata API
+            # run history's rundata API
             if str(req.path).endswith("/rundata"):
                 body = req.body.decode("utf-8")
                 body_dict = json.loads(body)
