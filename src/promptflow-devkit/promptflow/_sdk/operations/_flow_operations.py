@@ -5,13 +5,16 @@ import contextlib
 import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 import uuid
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+
+import pydash
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._configuration import Configuration
@@ -906,3 +909,64 @@ class FlowOperations(TelemetryMixin):
                     load_in_subprocess=load_in_subprocess,
                 )
             )
+
+    @monitor_operation(activity_name="pf.flows.save", activity_type=ActivityType.PUBLICAPI)
+    def save(
+        self,
+        path: Union[str, PathLike],
+        entry: str,
+        *,
+        requirements: str = None,
+        image: str = None,
+        code: Union[str, PathLike] = None,
+        signature: dict = None,
+        input_sample: dict = None,
+        language: str = None,
+        force: bool = False,
+        **kwargs,
+    ) -> NoReturn:
+        """
+        Save flow to a directory.
+        """
+        target_flow_directory = Path(path)
+        if target_flow_directory.exists():
+            if not force:
+                raise UserErrorException(
+                    f"Specified path {target_flow_directory} already exists, "
+                    f"please use parameter force to overwrite."
+                )
+            shutil.rmtree(target_flow_directory)
+
+        data = {
+            "entry": entry,
+        }
+        if requirements:
+            requirements_filename = Path(requirements).name
+            if (Path(code) / requirements_filename).exists():
+                raise UserErrorException(
+                    f"Specified requirements file {requirements_filename} already exists in code, please rename it."
+                )
+            pydash.set_(data, "environment.python_requirements_txt", requirements_filename)
+
+        if image:
+            pydash.set_(data, "environment.image", image)
+
+        # TODO: enable this after we put inputs/outputs in yaml
+        # if signature:
+        #     data.update(signature)
+
+        if language:
+            data["language"] = language
+
+        # TODO: change this to a constant (not flow.dag.yaml)
+        target_flow_file = target_flow_directory / "flow.dag.yaml"
+        target_flow_directory.parent.mkdir(parents=True, exist_ok=True)
+        # TODO: handle ignore
+        shutil.copytree(code, target_flow_directory)
+        if requirements:
+            shutil.copy(requirements, target_flow_directory / Path(requirements).name)
+        if input_sample:
+            with open(target_flow_directory / "sample.json", "w", encoding=DEFAULT_ENCODING) as f:
+                json.dump(input_sample, f, indent=4)
+        with open(target_flow_file, "w", encoding=DEFAULT_ENCODING):
+            dump_yaml(data, target_flow_file)

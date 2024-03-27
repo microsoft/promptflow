@@ -331,3 +331,7 @@ class PFClient:
         return self.flows.test(
             flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
         )
+
+    def save(self, **kwargs) -> None:
+        # TODO: add docstring
+        self.flows.save(**kwargs)
