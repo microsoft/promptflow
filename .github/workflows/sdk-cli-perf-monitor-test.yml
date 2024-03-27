@@ -60,7 +60,19 @@ jobs:
         with:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
-
+      - name: Upload Wheel
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: |
+            ${{ github.workspace }}/src/promptflow/dist/*.whl
+            ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: artifacts
       - name: Install wheel
         shell: pwsh
         working-directory: artifacts
