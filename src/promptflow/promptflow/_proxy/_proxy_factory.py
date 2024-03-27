@@ -40,7 +40,7 @@ class ProxyFactory:
         cls.executor_proxy_classes[language] = executor_proxy_cls
 
     def create_executor_proxy(
-        self, flow_file, working_dir, connections, storage, language: str, **kwargs
+        self, flow_file, working_dir, connections, storage, language: str, init: dict, **kwargs
     ) -> AbstractExecutorProxy:
         executor_proxy_cls = self.get_executor_proxy_cls(language)
         return async_run_allowing_running_loop(
@@ -49,6 +49,7 @@ class ProxyFactory:
             working_dir,
             connections=connections,
             storage=storage,
+            init=init,
             **kwargs,
         )
 

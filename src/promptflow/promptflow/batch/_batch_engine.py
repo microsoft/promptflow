@@ -76,6 +76,7 @@ class BatchEngine:
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
         worker_count: Optional[int] = None,
+        init: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -94,6 +95,8 @@ class BatchEngine:
         :type line_timeout: Optional[int]
         :param worker_count: The concurrency limit of batch run
         :type worker_count: Optional[int]
+        :param init: Class init arguments for callable class, only supported for flex flow.
+        :type inits Optional[Dict[str, Any]]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
@@ -124,6 +127,7 @@ class BatchEngine:
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
+        self._init = init
 
     def run(
         self,
@@ -169,6 +173,7 @@ class BatchEngine:
                     connections=self._connections,
                     storage=self._storage,
                     language=self._program_language,
+                    init=self._init,
                     **self._kwargs,
                 )
                 try:

@@ -99,9 +99,11 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        init: Optional[dict] = None,
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
+        # TODO: support init in csharp executor
         port = kwargs.get("port", None)
         log_path = kwargs.get("log_path", "")
         init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"

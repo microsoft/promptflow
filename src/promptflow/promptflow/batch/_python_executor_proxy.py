@@ -54,9 +54,12 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        init: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
-        flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
+        flow_executor = FlowExecutor.create(
+            flow_file, connections, working_dir, storage=storage, raise_ex=False, init=init
+        )
         return cls(flow_executor)
 
     async def exec_aggregation_async(

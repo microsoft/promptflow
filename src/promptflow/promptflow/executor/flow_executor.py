@@ -197,8 +197,8 @@ class FlowExecutor:
         :type node_override: Optional[Dict[str, Dict[str, Any]]]
         :param line_timeout_sec: The line timeout in seconds to be used for the flow. Default is LINE_TIMEOUT_SEC.
         :type line_timeout_sec: Optional[int]
-        :param inits: Class init arguments for callable class, only supported for flex flow.
-        :type inits: Optional[Dict[str, Any]]
+        :param init: Class init arguments for callable class, only supported for flex flow.
+        :type inits Optional[Dict[str, Any]]
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
