@@ -58,7 +58,7 @@ class FlowContext:
     def _get_connection_obj_name(cls, connection):
         # create a unique connection name for connection obj
         # will generate same name if connection has same content
-        connection_dict = connection._to_dict()
+        connection_dict = dict(connection)
         connection_name = f"connection_{hash(json.dumps(connection_dict, sort_keys=True))}"
         return connection_name
 
@@ -146,6 +146,10 @@ class Flow(FlowBase):
     ):
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(data=dag, code=code, path=path, **kwargs)
+
+    @property
+    def environment_variables(self):
+        return self._data.get("environment_variables", {})
 
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):

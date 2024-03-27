@@ -12,7 +12,7 @@ from promptflow._constants import (
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs,
+    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
 )
 
 LOGGER_NAME = "promptflow"
@@ -113,7 +113,7 @@ KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").re
 REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = CONNECTION_SCRUBBED_VALUE
-SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
+SCRUBBED_VALUE_NO_CHANGE = CONNECTION_SCRUBBED_VALUE_NO_CHANGE
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"

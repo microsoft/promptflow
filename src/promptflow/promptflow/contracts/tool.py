@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from promptflow._constants import CONNECTION_NAME_PROPERTY
+from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_DATA_CLASS_KEY
 
 from .multimedia import Image
 from .types import AssistantDefinition, FilePath, PromptTemplate, Secret
@@ -190,6 +190,11 @@ class ConnectionType:
         from promptflow._core.tools_manager import connections
 
         val = type(val) if not isinstance(val, type) else val
+        if hasattr(val, CONNECTION_DATA_CLASS_KEY):
+            # Get the data class for sdk connection object
+            data_class = getattr(val, CONNECTION_DATA_CLASS_KEY)
+            logger.debug(f"val {val} has DATA_CLASS key, get the data plane class {data_class}.")
+            val = data_class
         return val in connections.values() or ConnectionType.is_custom_strong_type(val)
 
     @staticmethod
