@@ -22,6 +22,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 
+from ._errors import FlowEntryInitializationError
 from .flow_executor import FlowExecutor
 
 
@@ -138,7 +139,10 @@ class ScriptExecutor(FlowExecutor):
                 logger.debug(
                     f"Python class entry '{func_name}' has __call__ method, initializing it with {self._init_kwargs}"
                 )
-                obj = func(**self._init_kwargs)
+                try:
+                    obj = func(**self._init_kwargs)
+                except Exception as e:
+                    raise FlowEntryInitializationError(init_kwargs=self._init_kwargs) from e
                 func = getattr(obj, "__call__")
             else:
                 raise PythonLoadError(

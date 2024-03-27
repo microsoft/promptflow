@@ -8,6 +8,7 @@ from promptflow._constants import OUTPUT_FILE_NAME
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._result import BatchResult, LineResult
 from promptflow.contracts.run_info import Status
+from promptflow.executor._errors import FlowEntryInitializationError
 from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -189,3 +190,10 @@ class TestEagerFlow:
         batch_engine.run(input_dirs, {"func_input": "${data.func_input}"}, output_dir)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert ensure_output(outputs), outputs
+
+    def test_execute_init_func_with_user_error(self):
+        flow_folder = "callable_flow_with_init_exception"
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        with pytest.raises(FlowEntryInitializationError) as e:
+            ScriptExecutor(flow_file=flow_file, init_kwargs={})
+        assert "Failed to initialize flow entry with" in str(e.value)
