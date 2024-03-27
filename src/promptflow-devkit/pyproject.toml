@@ -1,5 +1,6 @@
 [project]
-description = "What is this"
+name = "promptflow-devkit"
+description = "promptflow-devkit"
 
 [project.scripts]
 pf = 'pf:__main__'
