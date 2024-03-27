@@ -1,2 +1,2 @@
-promptflow[azure]==1.1.0
+promptflow[azure]
 my-tools-package==0.0.5
