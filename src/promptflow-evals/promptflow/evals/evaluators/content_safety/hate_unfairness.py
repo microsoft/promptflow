@@ -5,38 +5,49 @@ from promptflow.evals._constants import EvaluationMetrics
 from typing import Optional
 
 
-def init(project_scope: dict, credential: Optional[TokenCredential] = None):
-    """
-    Initialize an evaluation function configured for a specific Azure OpenAI model.
+class HateUnfairnessEvaluator:
+    def __init__(self, project_scope: dict, credential: Optional[TokenCredential] = None):
+        """
+        Initialize an evaluator for hate unfairness score.
 
-    :param model_config: Configuration for the Azure OpenAI model.
-    :type model_config: AzureOpenAIConnection
-    :return: A function that evaluates hate unfairness.
-    :rtype: function
+        :param project_scope: The scope of the Azure AI project. It contains subscription id, resource group, and project name.
+        :type project_scope: dict
+        :param credential: The credential for connecting to Azure AI project.
+        :type credential: TokenCredential
 
-    **Usage**
+        **Usage**
 
-    .. code-block:: python
+        .. code-block:: python
 
-        eval_fn = hate_unfairness.init(model_config)
-        result = eval_fn(question="What is the capital of France?", answer="Paris.")
-    """
+            eval_fn = HateUnfairnessEvaluator(project_scope)
+            result = eval_fn(question="What is the capital of France?", answer="Paris.")
+        """
 
-    # Load the flow as function
-    current_dir = Path(__file__).resolve().parent
-    flow_dir = current_dir / "flow"
-    f = load_flow(source=flow_dir)
+        self._project_scope = project_scope
+        self._credential = credential
 
-    def eval_fn(*, question: str, answer: str, **kwargs):
+        # Load the flow as function
+        current_dir = Path(__file__).resolve().parent
+        flow_dir = current_dir / "flow"
+        self._flow = load_flow(source=flow_dir)
+
+    def __call__(self, *, question: str, answer: str, **kwargs):
+        """Evaluates hate unfairness content.
+
+        :param question: The question to be evaluated.
+        :type question: str
+        :param answer: The answer to be evaluated.
+        :type answer: str
+        :return: The hate unfairness score.
+        :rtype: dict
+        """
 
         # Run the evaluation flow
-        output = f(
+        output = self._flow(
             metric_name=EvaluationMetrics.HATE_FAIRNESS,
             question=question,
             answer=answer,
-            project_scope=project_scope,
-            credential=credential)
+            project_scope=self._project_scope,
+            credential=self._credential)
 
         return output["result"]
-
-    return eval_fn
