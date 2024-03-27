@@ -305,7 +305,7 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
     with mock.patch(func) as mock_cred_func:
         mock_cred_func.return_value = None
         app = create_serving_app(
-            environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+            environment_variables={"API_TYPE": "${aoai connection.api_type}"},
             extension_type="azureml",
         )
     app.config.update(

@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 
 class AbstractInspectorProxy:
@@ -22,6 +22,8 @@ class AbstractInspectorProxy:
     def __init__(self):
         pass
 
-    def get_used_connection_names(self, flow_file: Path, working_dir: Path) -> List[str]:
+    def get_used_connection_names(
+        self, flow_file: Path, working_dir: Path, environment_variables_overrides: Dict[str, str] = None
+    ) -> List[str]:
         """Check the type of each node input/attribute and return the connection names used in the flow."""
         raise NotImplementedError()
