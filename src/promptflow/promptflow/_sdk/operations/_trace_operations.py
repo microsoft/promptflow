@@ -16,11 +16,7 @@ _logger = get_cli_sdk_logger()
 
 
 class TraceOperations:
-    def list_spans(
-        self,
-        session_id: typing.Optional[str] = None,
-        trace_ids: typing.Optional[typing.List[str]] = None,
-    ) -> typing.List[Span]:
+    def list_spans(self, trace_ids: typing.List[str]) -> typing.List[Span]:
         orm_spans = ORMSpan.list(
             session_id=session_id,
             trace_ids=trace_ids,
@@ -28,11 +24,11 @@ class TraceOperations:
         return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
 
     def get_line_run(self, line_run_id: str) -> LineRun:
-        orm_spans = ORMLineRun.get_line_run(line_run_id=line_run_id)
-        line_run = LineRun._from_spans(
-            spans=[Span._from_orm_object(orm_span) for orm_span in orm_spans],
-            trace_id=line_run_id,
-        )
+        orm_line_run = ORMLineRun.get(line_run_id=line_run_id)
+        line_run = LineRun._from_orm_object(orm_line_run)
+        orm_eval_line_runs = ORMLineRun._get_children(line_run_id=line_run_id)
+        eval_line_runs = [LineRun._from_orm_object(obj) for obj in orm_eval_line_runs]
+        line_run._append_evaluations(eval_line_runs)
         return line_run
 
     def list_line_runs(

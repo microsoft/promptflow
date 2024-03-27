@@ -170,3 +170,10 @@ class LineRun(Base):
         with trace_mgmt_db_session() as session:
             session.query(LineRun).filter(LineRun.line_run_id == self.line_run_id).update(update_dict)
             session.commit()
+
+    @staticmethod
+    @sqlite_retry
+    def _get_children(line_run_id: str) -> typing.List["LineRun"]:
+        with trace_mgmt_db_session() as session:
+            line_runs = session.query(LineRun).filter(LineRun.parent_id == line_run_id).all()
+            return line_runs
