@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, YAMLError
 from werkzeug.utils import safe_join
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
@@ -192,7 +192,10 @@ class YamlEdit(Resource):
         flow_path = get_set_flow_yaml(flow, experiment, is_get=False)
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
         yaml = YAML()
-        content = yaml.load(content)
+        try:
+            content = yaml.load(content)
+        except YAMLError as e:
+            raise UserErrorException(f"Invalid yaml content: {str(e)}")
         with open(flow_path, "w") as outfile:
             dump_yaml(content, outfile)
         return make_response(f"{flow_path} content updated successfully", 200)

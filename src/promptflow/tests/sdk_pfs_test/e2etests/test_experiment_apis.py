@@ -27,8 +27,7 @@ class TestExperimentAPIs:
                 body={"experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix()}
             ).json
         assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
-            "url": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/"
-            "94fbjc7h0h6h"
+            "url": "https://www.youtube.com/watch?v=kYqRtjDBci8"
         }
         assert "eval" in experiment
 
