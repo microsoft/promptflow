@@ -69,13 +69,7 @@ setup(
         ],
     },
     packages=find_packages(),
-    scripts=["pf", "pf.bat"],
-    entry_points={
-        "console_scripts": [
-            "pfazure = promptflow.azure._cli.entry:main",
-            "pfs = promptflow._sdk._service.entry:main",
-        ],
-    },
+    scripts=["pf.bat"],
     include_package_data=True,
     project_urls={
         "Bug Reports": "https://github.com/microsoft/promptflow/issues",

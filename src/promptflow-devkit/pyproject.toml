@@ -1,10 +1,3 @@
-[project]
-name = "promptflow-devkit"
-description = "promptflow-devkit"
-
-[project.scripts]
-pf = 'pf:__main__'
-
 [tool.poetry]
 name = "promptflow-devkit"
 version = "0.1.0b1"
@@ -49,7 +42,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
-promptflow-core = "*"
+promptflow-core = "<2.0.0"
 psutil = "*"  # get process information when bulk run
 httpx = ">=0.25.1"  # used to send http requests asynchronously
 sqlalchemy = ">=1.4.48,<3.0.0"  # sqlite requirements
@@ -113,6 +106,10 @@ keyrings-alt = "*"
 [build-system]
 requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+pf = "pf:main"
+pfs = "promptflow._sdk._service.entry:main"
 
 [tool.pytest.ini_options]
 markers = [
