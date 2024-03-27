@@ -61,10 +61,10 @@ jobs:
           Set-PSDebug -Trace 1
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
           pip uninstall -y promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-tracing
           pip uninstall -y promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow-core
           pip uninstall -y promptflow
+          pip install ${{ github.workspace }}/src/promptflow-tracing
+          pip install ${{ github.workspace }}/src/promptflow-core
           pip install ${{ github.workspace }}/src/promptflow[azure,executable,azureml-serving,executor-service]
           pip freeze
 
