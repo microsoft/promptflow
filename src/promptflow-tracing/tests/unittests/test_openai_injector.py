@@ -1,3 +1,4 @@
+import json
 import logging
 from importlib.metadata import version
 from types import GeneratorType
@@ -7,14 +8,22 @@ import openai
 import pytest
 
 from promptflow.tracing._integrations._openai_injector import (
+    USER_AGENT_HEADER,
+    PROMPTFLOW_HEADER,
     _generate_api_and_injector,
     _openai_api_list,
+    get_aoai_telemetry_headers,
     inject_async,
     inject_openai_api,
+    inject_operation_headers,
     inject_sync,
     recover_openai_api,
+    _legacy_openai_apis,
+    _openai_apis,
 )
+from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._tracer import Tracer
+from promptflow.tracing._version import VERSION
 from promptflow.tracing.contracts.trace import TraceType
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -24,6 +33,143 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 class MockAPI:
     def create(self):
         pass
+
+
+@pytest.mark.unittest
+def test_inject_operation_headers_sync():
+    @inject_operation_headers
+    def f(**kwargs):
+        return kwargs
+
+    if IS_LEGACY_OPENAI:
+        headers = "headers"
+        kwargs_1 = {"headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+    else:
+        headers = "extra_headers"
+        kwargs_1 = {"extra_headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+
+    injected_headers = get_aoai_telemetry_headers()
+    assert f(a=1, b=2) == {"a": 1, "b": 2, headers: injected_headers}
+
+    merged_headers = {**injected_headers, "a": 1, "b": 2}
+    assert f(**kwargs_1) == {headers: merged_headers}
+
+    aoai_tools_headers = injected_headers.copy()
+    aoai_tools_headers.update({"ms-azure-ai-promptflow-called-from": "aoai-tool"})
+    assert f(**kwargs_2) == {headers: aoai_tools_headers}
+
+
+@pytest.mark.unittest
+@pytest.mark.asyncio
+async def test_inject_operation_headers_async():
+    @inject_operation_headers
+    async def f(**kwargs):
+        return kwargs
+
+    if IS_LEGACY_OPENAI:
+        headers = "headers"
+        kwargs_1 = {"headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+    else:
+        headers = "extra_headers"
+        kwargs_1 = {"extra_headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+
+    injected_headers = get_aoai_telemetry_headers()
+    assert await f(a=1, b=2) == {"a": 1, "b": 2, headers: injected_headers}
+
+    merged_headers = {**injected_headers, "a": 1, "b": 2}
+    assert await f(**kwargs_1) == {headers: merged_headers}
+
+    aoai_tools_headers = injected_headers.copy()
+    aoai_tools_headers.update({"ms-azure-ai-promptflow-called-from": "aoai-tool"})
+    assert await f(**kwargs_2) == {headers: aoai_tools_headers}
+
+
+@pytest.mark.unittest
+def test_aoai_call_inject():
+    if IS_LEGACY_OPENAI:
+        headers = "headers"
+        apis = ["openai.Completion.create", "openai.ChatCompletion.create", "openai.Embedding.create"]
+    else:
+        headers = "extra_headers"
+        apis = [
+            "openai.resources.Completions.create",
+            "openai.resources.chat.Completions.create",
+            "openai.resources.Embeddings.create",
+        ]
+
+    def mock_aoai(**kwargs):
+        return kwargs.get(headers)
+
+    with patch(apis[0], new=mock_aoai), patch(apis[1], new=mock_aoai), patch(apis[2], new=mock_aoai):
+        inject_openai_api()
+        injected_headers = get_aoai_telemetry_headers()
+
+        if IS_LEGACY_OPENAI:
+            return_headers_1 = openai.Completion.create(headers=None)
+            return_headers_2 = openai.ChatCompletion.create(headers="abc")
+            return_headers_3 = openai.Embedding.create(headers=1)
+        else:
+            return_headers_1 = openai.resources.Completions.create(extra_headers=None)
+            return_headers_2 = openai.resources.chat.Completions.create(extra_headers="abc")
+            return_headers_3 = openai.resources.Embeddings.create(extra_headers=1)
+
+        assert return_headers_1 is not None
+        assert injected_headers.items() <= return_headers_1.items()
+
+        assert return_headers_2 is not None
+        assert injected_headers.items() <= return_headers_2.items()
+
+        assert return_headers_3 is not None
+        assert injected_headers.items() <= return_headers_3.items()
+
+
+@pytest.mark.unittest
+def test_get_aoai_telemetry_headers():
+    # create a mock operation context
+    mock_operation_context = OperationContext.get_instance()
+    mock_operation_context.set_default_tracing_keys({"flow_id", "root_run_id"})
+    mock_operation_context.user_agent = "test-user-agent"
+    mock_operation_context.update(
+        {
+            "flow_id": "test-flow-id",
+            "root_run_id": "test-root-run-id",
+        }
+    )
+
+    # patch the OperationContext.get_instance method to return the mock operation context
+    with patch("promptflow.tracing._operation_context.OperationContext.get_instance") as mock_get_instance:
+        mock_get_instance.return_value = mock_operation_context
+
+        # call the function under test and get the headers
+        headers = get_aoai_telemetry_headers()
+
+        assert USER_AGENT_HEADER in headers
+        assert PROMPTFLOW_HEADER in headers
+
+        for key in headers.keys():
+            assert "_" not in key
+
+        # assert that the headers are correct
+        ua = f"test-user-agent promptflow-tracing/{VERSION}"
+        assert headers[USER_AGENT_HEADER] == ua
+        promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
+        assert promptflow_headers["flow_id"] == "test-flow-id"
+        assert promptflow_headers["root_run_id"] == "test-root-run-id"
+
+        context = OperationContext.get_instance()
+        context.dummy_key = "dummy_value"
+        headers = get_aoai_telemetry_headers()
+        promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
+        assert "dummy_key" not in promptflow_headers  # not default telemetry
+
+        context._tracking_keys.add("dummy_key")
+        headers = get_aoai_telemetry_headers()
+        promptflow_headers = json.loads(headers[PROMPTFLOW_HEADER])
+        assert promptflow_headers["dummy_key"] == "dummy_value"  # telemetry key inserted
 
 
 @pytest.mark.unittest
@@ -132,43 +278,27 @@ async def test_openai_generator_proxy_async():
     "is_legacy, expected_apis_with_injectors",
     [
         (
-            True,
+            False,
             [
                 (
-                    (
-                        ("openai", "Completion", "create", TraceType.LLM),
-                        ("openai", "ChatCompletion", "create", TraceType.LLM),
-                        ("openai", "Embedding", "create", TraceType.EMBEDDING),
-                    ),
+                    _openai_apis()[0],
                     inject_sync,
                 ),
                 (
-                    (
-                        ("openai", "Completion", "acreate", TraceType.LLM),
-                        ("openai", "ChatCompletion", "acreate", TraceType.LLM),
-                        ("openai", "Embedding", "acreate", TraceType.EMBEDDING),
-                    ),
+                    _openai_apis()[1],
                     inject_async,
                 ),
             ],
         ),
         (
-            False,
+            True,
             [
                 (
-                    (
-                        ("openai.resources.chat", "Completions", "create", TraceType.LLM),
-                        ("openai.resources", "Completions", "create", TraceType.LLM),
-                        ("openai.resources", "Embeddings", "create", TraceType.EMBEDDING),
-                    ),
+                    _legacy_openai_apis()[0],
                     inject_sync,
                 ),
                 (
-                    (
-                        ("openai.resources.chat", "AsyncCompletions", "create", TraceType.LLM),
-                        ("openai.resources", "AsyncCompletions", "create", TraceType.LLM),
-                        ("openai.resources", "AsyncEmbeddings", "create", TraceType.EMBEDDING),
-                    ),
+                    _legacy_openai_apis()[1],
                     inject_async,
                 ),
             ],
@@ -187,13 +317,13 @@ def test_api_list(is_legacy, expected_apis_with_injectors):
     "apis_with_injectors, expected_output, expected_logs",
     [
         (
-            [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_sync)],
-            [(MockAPI, "create", TraceType.LLM, inject_sync)],
+            [((("MockModule", "MockAPI", "create", TraceType.LLM, "Mock.create"),), inject_sync)],
+            [(MockAPI, "create", TraceType.LLM, inject_sync, "Mock.create")],
             [],
         ),
         (
-            [((("MockModule", "MockAPI", "create", TraceType.LLM),), inject_async)],
-            [(MockAPI, "create", TraceType.LLM, inject_async)],
+            [((("MockModule", "MockAPI", "create", TraceType.LLM, "Mock.acreate"),), inject_async)],
+            [(MockAPI, "create", TraceType.LLM, inject_async, "Mock.acreate")],
             [],
         ),
     ],
@@ -205,21 +335,32 @@ def test_generate_api_and_injector(apis_with_injectors, expected_output, expecte
             # Run the generator and collect the output
             result = list(_generate_api_and_injector(apis_with_injectors))
 
-        # Check if the result matches the expected output
-        assert result == expected_output
-
         # Check if the logs match the expected logs
         assert len(caplog.records) == len(expected_logs)
         for record, expected_message in zip(caplog.records, expected_logs):
             assert expected_message in record.message
+
+        # Check if the result matches the expected output
+        assert result == expected_output
 
     mock_import_module.assert_called_with("MockModule")
 
 
 def test_generate_api_and_injector_attribute_error_logging(caplog):
     apis = [
-        ((("NonExistentModule", "NonExistentAPI", "create", TraceType.LLM),), MagicMock()),
-        ((("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method", "missing_trace_type"),), MagicMock()),
+        ((("NonExistentModule", "NonExistentAPI", "create", TraceType.LLM, "create"),), MagicMock()),
+        (
+            (
+                (
+                    "MockModuleMissingMethod",
+                    "MockAPIMissingMethod",
+                    "missing_method",
+                    "missing_trace_type",
+                    "missing_name",
+                ),
+            ),
+            MagicMock(),
+        ),
     ]
 
     # Set up the side effect for the mock
@@ -263,7 +404,7 @@ def test_inject_and_recover_openai_api():
         pass
 
     # Real injector function that adds an _original attribute
-    def injector(f, trace_type):
+    def injector(f, trace_type, name):
         def wrapper_fun(*args, **kwargs):
             return f(*args, **kwargs)
 
@@ -281,8 +422,8 @@ def test_inject_and_recover_openai_api():
     with patch(
         "promptflow.tracing._integrations._openai_injector.available_openai_apis_and_injectors",
         return_value=[
-            (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector),
-            (FakeAPIWithOriginal, "create", TraceType.LLM, injector),
+            (FakeAPIWithoutOriginal, "create", TraceType.LLM, injector, "create"),
+            (FakeAPIWithOriginal, "create", TraceType.LLM, injector, "create"),
         ],
     ):
         # Call the function to inject the APIs

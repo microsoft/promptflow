@@ -115,13 +115,13 @@ class TestBatchResult:
 
         api_call_1 = get_api_call(
             "LLM",
-            "openai.resources.completions.Completions.create",
+            "openai_completion",
             inputs={"prompt": "Please tell me a joke.", "model": "text-davinci-003"},
             output={"choices": [{"text": "text"}]},
         )
         api_call_2 = get_api_call(
             "LLM",
-            "openai.resources.completions.Completions.create",
+            "openai_completion",
             inputs={
                 "prompt": ["Please tell me a joke.", "Please tell me a joke about fruit."],
                 "model": "text-davinci-003",
@@ -146,7 +146,7 @@ class TestBatchResult:
         line_api_calls = get_api_call("Chain", "Chain", children=[api_call_1, api_call_2])
         aggr_api_call = get_api_call(
             "LLM",
-            "openai.resources.chat.completions.Completions.create",
+            "openai_chat",
             inputs={
                 "messages": [{"system": "You are a helpful assistant.", "user": "Please tell me a joke."}],
                 "model": "gpt-35-turbo",

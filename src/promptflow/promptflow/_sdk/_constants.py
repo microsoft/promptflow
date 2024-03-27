@@ -9,9 +9,10 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs,
+    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
 )
 
 LOGGER_NAME = "promptflow"
@@ -19,7 +20,7 @@ LOGGER_NAME = "promptflow"
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
 # Please avoid using PROMPT_FLOW_DIR_NAME directly for home directory, "Path.home() / PROMPT_FLOW_DIR_NAME" e.g.
 # Use HOME_PROMPT_FLOW_DIR instead
-PROMPT_FLOW_DIR_NAME = ".promptflow"
+PROMPT_FLOW_DIR_NAME = PROMPT_FLOW_DIR_NAME
 
 
 def _prepare_home_dir() -> Path:
@@ -112,7 +113,7 @@ KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").re
 REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = CONNECTION_SCRUBBED_VALUE
-SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
+SCRUBBED_VALUE_NO_CHANGE = CONNECTION_SCRUBBED_VALUE_NO_CHANGE
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
@@ -153,6 +154,8 @@ AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "reso
 
 # chat group
 STOP_SIGNAL = "[STOP]"
+CHAT_GROUP_REFERENCE_NAME = "parent"
+CONVERSATION_HISTORY = "conversation_history"
 
 
 class RunTypes:
@@ -288,6 +291,7 @@ class LocalStorageFilenames:
     DETAIL = "detail.json"
     METRICS = "metrics.json"
     LOG = "logs.txt"
+    FLOW_LOGS_FOLDER = "flow_logs"
     EXCEPTION = "error.json"
     META = "meta.json"
 
@@ -352,11 +356,6 @@ class RunDataKeys:
 class RunHistoryKeys:
     RunMetaData = "runMetadata"
     HIDDEN = "hidden"
-
-
-class ConnectionProvider(str, Enum):
-    LOCAL = "local"
-    AZUREML = "azureml"
 
 
 class FlowType:
@@ -454,6 +453,12 @@ class LineRunFieldName:
     KIND = "kind"
     CUMULATIVE_TOKEN_COUNT = "cumulative_token_count"
     EVALUATIONS = "evaluations"
+
+
+class CreatedByFieldName:
+    OBJECT_ID = "object_id"
+    TENANT_ID = "tenant_id"
+    NAME = "name"
 
 
 class ChatGroupSpeakOrder(str, Enum):

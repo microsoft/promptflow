@@ -40,15 +40,13 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidFlowError, RunOperationError
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._utils import (
-    _merge_local_code_and_additional_includes,
-    get_used_connection_names_from_dict,
-    update_dict_value_with_connections,
-)
+from promptflow._sdk._utils import _merge_local_code_and_additional_includes
 from promptflow._sdk.entities._flow import FlexFlow, Flow
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow._utils.logger_utils import FileHandler, get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.core._utils import get_used_connection_names_from_dict, update_dict_value_with_connections
+from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -251,14 +249,13 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(
-        flow: Flow, client=None, *, connections_to_ignore=None, connections_to_add: List[str] = None
+        flow: Flow,
+        client=None,
+        *,
+        connections_to_ignore=None,
+        connections_to_add: List[str] = None,
+        environment_variables_overrides: Dict[str, str] = None,
     ) -> dict:
-        from promptflow._sdk.entities._flow import FlexFlow
-
-        if isinstance(flow, FlexFlow):
-            # TODO(2898247): support prompt flow management connection for eager flow
-            return {}
-
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -269,6 +266,7 @@ class SubmitterHelper:
             .get_used_connection_names(
                 flow_file=flow.path,
                 working_dir=flow.code,
+                environment_variables_overrides=environment_variables_overrides,
             )
         )
 
@@ -366,7 +364,7 @@ def show_node_log_and_output(node_run_infos, show_node_output, generator_record)
             # TODO executor return a type string of generator
             node_output = node_result.output
             if isinstance(node_result.output, GeneratorType):
-                node_output = "".join(
+                node_output = _safe_join(
                     resolve_generator_output_with_cache(
                         node_output, generator_record, generator_key=f"nodes.{node_name}.output"
                     )
@@ -418,11 +416,26 @@ def resolve_generator_output_with_cache(
     return output
 
 
+def _safe_join(generator_output):
+    items = []
+    for item in generator_output:
+        if isinstance(item, str):
+            items.append(item)
+        else:
+            try:
+                items.append(str(item))
+            except Exception as e:
+                raise UserErrorException(
+                    message=f"Failed to convert generator output to string: {e}",
+                )
+    return "".join(items)
+
+
 def resolve_generator(flow_result, generator_record):
     # resolve generator in flow result
     for k, v in flow_result.run_info.output.items():
         if isinstance(v, GeneratorType):
-            flow_output = "".join(
+            flow_output = _safe_join(
                 resolve_generator_output_with_cache(v, generator_record, generator_key=f"run.outputs.{k}")
             )
             flow_result.run_info.output[k] = flow_output
@@ -432,7 +445,7 @@ def resolve_generator(flow_result, generator_record):
     # resolve generator in node outputs
     for node_name, node in flow_result.node_run_infos.items():
         if isinstance(node.output, GeneratorType):
-            node_output = "".join(
+            node_output = _safe_join(
                 resolve_generator_output_with_cache(
                     node.output, generator_record, generator_key=f"nodes.{node_name}.output"
                 )

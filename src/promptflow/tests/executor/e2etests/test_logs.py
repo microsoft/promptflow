@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._constants import OUTPUT_FILE_NAME
+from promptflow._constants import LINE_NUMBER_WIDTH, OUTPUT_FILE_NAME
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult
@@ -14,6 +14,7 @@ from promptflow.executor import FlowExecutor
 
 from ..utils import (
     get_batch_inputs_line,
+    get_bulk_inputs_from_jsonl,
     get_flow_folder,
     get_flow_inputs_file,
     get_yaml_file,
@@ -204,6 +205,30 @@ class TestExecutorLogs:
                 assert isinstance(output, dict)
                 assert "line_number" in output, f"line_number is not in {i}th output {output}"
                 assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    def test_batch_run_flow_logs(self, dev_connections):
+        flow_folder = "print_input_flow"
+        logs_directory = Path(mkdtemp())
+        bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
+        bulk_run_flow_logs_folder = str(logs_directory / "test_bulk_run_flow_logs_folder")
+        Path(bulk_run_flow_logs_folder).mkdir()
+        with LogContext(bulk_run_log_path, run_mode=RunMode.Batch, flow_logs_folder=bulk_run_flow_logs_folder):
+            submit_batch_run(
+                flow_folder,
+                inputs_mapping={"text": "${data.text}"},
+                connections=dev_connections,
+                input_file_name="inputs.jsonl",
+            )
+            nlines = len(get_bulk_inputs_from_jsonl(flow_folder))
+            for i in range(nlines):
+                file_name = f"{str(i).zfill(LINE_NUMBER_WIDTH)}.log"
+                flow_log_file = Path(bulk_run_flow_logs_folder) / file_name
+                assert flow_log_file.is_file()
+                log_content = load_content(flow_log_file)
+                # Assert flow log file contains expected logs
+                assert "execution          WARNING" in log_content
+                assert "execution.flow     INFO" in log_content
+                assert f"in line {i} (index starts from 0)" in log_content
 
     def test_activate_config_log(self):
         logs_directory = Path(mkdtemp())
