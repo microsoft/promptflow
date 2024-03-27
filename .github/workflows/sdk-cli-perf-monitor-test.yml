@@ -58,6 +58,8 @@ jobs:
       - name: Install promptflow
         shell: pwsh
         run: |
+          Set-PSDebug -Trace 1
+          pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
           pip uninstall -y promptflow-tracing
           pip install ${{ github.workspace }}/src/promptflow-tracing
           pip uninstall -y promptflow-core
