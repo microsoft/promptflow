@@ -64,12 +64,10 @@ pillow = ">=10.1.0,<11.0.0"  # used to generate icon data URI for package tool
 opentelemetry-exporter-otlp-proto-http = ">=1.22.0,<2.0.0"  # trace support
 flask-restx = ">=1.2.0,<2.0.0"  # PFS Swagger
 flask-cors = ">=4.0.0,<5.0.0"  # handle PFS CORS
-promptflow-tracing = ">=1.0.0"  # tracing capabilities
 pyinstaller = ">=5.13.2"
 streamlit = ">=1.26.0"
 streamlit-quill = "<0.1.0"
 bs4 = "*"
-azure-core = ">=1.26.4,<2.0.0"
 
 [tool.poetry.extras]
 all = [
