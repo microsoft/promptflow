@@ -61,12 +61,19 @@ def persist_event(trace_id: str, span_id: str, event_id: Optional[str] = None) -
     return event_id
 
 
-def persist_line_run(trace_id: str, span_id: str, line_run_id: Optional[str] = None) -> str:
+def persist_line_run(
+    trace_id: str,
+    root_span_id: str,
+    line_run_id: Optional[str] = None,
+    parent_id: Optional[str] = None,
+    run: Optional[str] = None,
+    line_number: Optional[int] = None,
+) -> str:
     line_run_id = line_run_id or str(uuid.uuid4())
     line_run = LineRun(
         line_run_id=line_run_id,
         trace_id=trace_id,
-        span_id=span_id,
+        root_span_id=root_span_id,
         inputs=dict(),
         outputs=dict(),
         start_time=datetime.datetime.now(),
@@ -76,6 +83,9 @@ def persist_line_run(trace_id: str, span_id: str, line_run_id: Optional[str] = N
         name=str(uuid.uuid4()),
         kind="1",
         collection=str(uuid.uuid4()),
+        parent_id=parent_id,
+        run=run,
+        line_number=line_number,
     )
     line_run.persist()
     return line_run_id
@@ -237,6 +247,23 @@ class TestTrace:
     def test_line_run_persist_and_get(self) -> None:
         trace_id = str(uuid.uuid4())
         span_id = str(uuid.uuid4())
-        line_run_id = persist_line_run(trace_id=trace_id, span_id=span_id)
+        line_run_id = persist_line_run(trace_id=trace_id, root_span_id=span_id)
         line_run = LineRun.get(line_run_id=line_run_id)
-        assert line_run.trace_id == trace_id and line_run.span_id == span_id
+        assert line_run.trace_id == trace_id and line_run.root_span_id == span_id
+
+    def test_line_run_children_get(self) -> None:
+        # mock parent line run
+        trace_id, span_id = str(uuid.uuid4()), str(uuid.uuid4())
+        line_run_id = persist_line_run(trace_id=trace_id, root_span_id=span_id)
+        # mock child line runs
+        num_child_line_runs = 3
+        child_line_run_ids = list()
+        for _ in range(num_child_line_runs):
+            child_line_run_id = persist_line_run(
+                trace_id=str(uuid.uuid4()), root_span_id=str(uuid.uuid4()), parent_id=line_run_id
+            )
+            child_line_run_ids.append(child_line_run_id)
+        child_line_runs = LineRun._get_children(line_run_id=line_run_id)
+        assert len(child_line_runs) == num_child_line_runs
+        for child_line_run in child_line_runs:
+            assert child_line_run.line_run_id in child_line_run_ids
