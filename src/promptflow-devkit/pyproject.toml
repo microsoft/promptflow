@@ -59,20 +59,46 @@ gitpython = ">=3.1.24,<4.0.0"  # used git info to generate flow id
 strictyaml = ">=1.5.0,<2.0.0"  # used to identify exact location of validation error
 waitress = ">=2.1.2,<3.0.0"  # used to serve local service
 azure-monitor-opentelemetry-exporter = ">=1.0.0b21,<2.0.0"
-pyarrow = {extras = ["pyarrow", "all"], version = ">=14.0.1,<15.0.0"}  # used to read parquet file with pandas.read_parquet
+pyarrow = ">=14.0.1,<15.0.0"  # used to read parquet file with pandas.read_parquet
 pillow = ">=10.1.0,<11.0.0"  # used to generate icon data URI for package tool
 opentelemetry-exporter-otlp-proto-http = ">=1.22.0,<2.0.0"  # trace support
 flask-restx = ">=1.2.0,<2.0.0"  # PFS Swagger
 flask-cors = ">=4.0.0,<5.0.0"  # handle PFS CORS
 promptflow-tracing = ">=1.0.0"  # tracing capabilities
-fastapi = {extras = ["executor-service", "all"], version = ">=0.109.0,<1.0.0"}
-pyinstaller = {extras = ["executable", "all"], version = ">=5.13.2"}
-streamlit = {extras = ["executable", "all"], version = ">=1.26.0"}
-streamlit-quill = {extras = ["executable", "all"], version = "<0.1.0"}
-bs4 = {extras = ["executable", "all"], version = "*"}
-azure-identity = {extras = ["azureml-serving", "all"], version = ">=1.12.0,<2.0.0"}
-azure-ai-ml = {extras = ["azureml-serving", "all"], version = ">=1.14.0,<2.0.0"}
-azureml-ai-monitoring = {extras = ["azureml-serving", "all"], version = ">=0.1.0b3,<1.0.0"}
+pyinstaller = ">=5.13.2"
+streamlit = ">=1.26.0"
+streamlit-quill = "<0.1.0"
+bs4 = "*"
+azure-identity = ">=1.12.0,<2.0.0"
+azure-ai-ml = ">=1.14.0,<2.0.0"
+azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
+
+[tool.poetry.extras]
+all = [
+  "pyarrow",
+  "pyinstaller",
+  "streamlit",
+  "streamlit-quill",
+  "bs4",
+  "azure-identity",
+  "azure-ai-ml",
+  "azureml-ai-monitoring",
+]
+azureml-serving = [
+  "azure-identity",
+  "azure-ai-ml",
+  "azureml-ai-monitoring",
+]
+executable = [
+  "pyarrow",
+  "pyinstaller",
+  "streamlit",
+  "streamlit-quill",
+  "bs4",
+]
+pyarrow = [
+  "pyarrow",
+]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
