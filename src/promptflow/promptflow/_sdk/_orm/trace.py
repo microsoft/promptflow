@@ -70,6 +70,27 @@ class Span(Base):
                 stmt = stmt.limit(TRACE_LIST_DEFAULT_LIMIT)
             return [span for span in stmt.all()]
 
+    @staticmethod
+    @sqlite_retry
+    def delete(
+        run: typing.Optional[str] = None,
+        session_id: typing.Optional[str] = None,
+        started_before: typing.Optional[str] = None,
+    ) -> int:
+        with trace_mgmt_db_session() as session:
+            stmt: Query = session.query(Span)
+            if run is not None:
+                stmt = stmt.filter(Span.run == run)
+            if session_id is not None:
+                stmt = stmt.filter(Span.session_id == session_id)
+            if started_before is not None:
+                stmt = stmt.filter(text(f"json_extract(span.content, '$.start_time') < '{started_before}'"))
+            # retrieves the primary key identity of affected rows
+            # this is required for delete with arbitrary filter
+            row_cnt = stmt.delete(synchronize_session="fetch")
+            session.commit()
+            return row_cnt
+
 
 class LineRun:
     """Line run is an abstraction of spans, which is not persisted in the database."""

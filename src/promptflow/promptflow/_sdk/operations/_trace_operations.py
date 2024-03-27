@@ -7,10 +7,13 @@ import typing
 from collections import defaultdict
 
 from promptflow._constants import SpanAttributeFieldName, SpanFieldName
+from promptflow._sdk._constants import TRACE_DEFAULT_SESSION_ID
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
+from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._trace import LineRun, Span
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.exceptions import UserErrorException
 
 _logger = get_cli_sdk_logger()
 
@@ -155,3 +158,61 @@ class TraceOperations:
                 if line_run is not None:
                     line_runs.append(line_run)
         return line_runs
+
+    @monitor_operation(activity_name="pf.traces.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        run: typing.Optional[str] = None,
+        session: typing.Optional[str] = None,
+        started_before: typing.Optional[str] = None,
+    ) -> int:
+        """Delete traces permanently.
+
+        Support delete according to 1) run, 2) non default session and 3) session combined with started before.
+
+        :param run: Name of the run.
+        :type run: Optional[str]
+        :param session: Id of the session.
+        :type session: Optional[str]
+        :param started_before: ISO 8601 format time string (e.g., '2024-03-19T15:17:23.807563').
+        :type started_before: Optional[str]
+        :return: Number of deleted traces.
+        :rtype: int
+        """
+        self._validate_delete_query_params(run=run, session=session, started_before=started_before)
+        return ORMSpan.delete(
+            run=run,
+            session_id=session,
+            started_before=started_before,
+        )
+
+    def _validate_delete_query_params(
+        self,
+        run: typing.Optional[str] = None,
+        session: typing.Optional[str] = None,
+        started_before: typing.Optional[str] = None,
+    ) -> None:
+        # valid delete queries:
+        #   1. run=xxx
+        #   2. session=yyy
+        #   3. session=zz, started_before=zz
+        # directly return for above valid cases, otherwise raise the final user error
+        if run is not None and session is None and started_before is None:
+            return
+        if session is not None and run is None:
+            if started_before is not None:
+                # ensure `started_before` is a valid ISO 8601 date time string
+                try:
+                    from datetime import datetime
+
+                    datetime.fromisoformat(started_before)
+                    return
+                except ValueError:
+                    pass
+            elif session != TRACE_DEFAULT_SESSION_ID:
+                return
+        error_message = (
+            'Valid delete queries: 1) specify `run`; 2) specify `session` (not "default"); '
+            "3) specify `session` and `started_before` (ISO 8601)."
+        )
+        raise UserErrorException(error_message)
