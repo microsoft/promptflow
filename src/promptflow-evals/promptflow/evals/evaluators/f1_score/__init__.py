@@ -8,32 +8,37 @@ from promptflow import load_flow
 from pathlib import Path
 
 
-def init():
-    """
-    Initialize an evaluation function for calculating F1 score.
+class F1ScoreEvaluator:
+    def __init__(self):
+        """
+        Initialize an evaluator for calculating F1 score.
 
-    :return: A function that evaluates F1 score.
-    :rtype: function
+        **Usage**
 
-    **Usage**
+        .. code-block:: python
 
-    .. code-block:: python
+            eval_fn = F1ScoreEvaluator()
+            result = eval_fn(
+                answer="The capital of Japan is Tokyo.",
+                ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
+                    and technological advancements.")
+        """
 
-        eval_fn = f1_score.init()
-        result = eval_fn(
-            answer="The capital of Japan is Tokyo.",
-            ground_truth="Tokyo is Japan's capital, known for its blend of traditional culture \
-                and technological advancements.")
-    """
+        # Load the flow as function
+        current_dir = Path(__file__).resolve().parent
+        flow_dir = current_dir / "flow"
+        self._flow = load_flow(source=flow_dir)
 
-    # Load the flow as function
-    current_dir = Path(__file__).resolve().parent
-    flow_dir = current_dir / "flow"
-    f = load_flow(source=flow_dir)
+    def __call__(self, *, answer: str, ground_truth: str, **kwargs):
+        """Evaluate F1 score.
 
-    def eval_fn(*, answer: str, ground_truth: str, **kwargs):
+        :param answer: The answer to be evaluated.
+        :type answer: str
+        :param ground_truth: The ground truth to be evaluated.
+        :type ground_truth: str
+        :return: The F1 score.
+        :rtype: dict
+        """
 
         # Run the evaluation flow
-        return f(answer=answer, ground_truth=ground_truth)
-
-    return eval_fn
+        return self._flow(answer=answer, ground_truth=ground_truth)
