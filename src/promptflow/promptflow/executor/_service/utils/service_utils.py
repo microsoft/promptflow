@@ -29,20 +29,28 @@ def update_and_get_operation_context(context_dict: Mapping[str, Any]) -> Operati
         return operation_context
     # update operation context with context_dict
     operation_context.update(context_dict)
-    # update user agent to operation context
-    executor_user_agent = get_executor_version()
-    operation_context.append_user_agent(executor_user_agent)
+    # update promptflow version to operation context
     operation_context.append_user_agent(f"promptflow/{VERSION}")
     return operation_context
 
 
-def get_executor_version():
+def get_commit_id():
+    """Get commit id from BUILD_INFO environment variable.
+
+    BUILD_INFO is a json string in the promptflow-python image, like
+    '{
+        "build_number": "20240326.v2",
+        "date": "2024-03-27 05:12:33",
+        "commit_id": "...",
+        "branch": "main"
+    }'
+    """
     build_info = os.environ.get("BUILD_INFO", "")
     try:
         build_info_dict = json.loads(build_info)
-        return "promptflow-executor/" + build_info_dict["build_number"]
+        return build_info_dict["commit_id"]
     except Exception:
-        return "promptflow-executor/" + VERSION
+        return "unknown"
 
 
 def generate_error_response(ex: Union[dict, Exception]):
