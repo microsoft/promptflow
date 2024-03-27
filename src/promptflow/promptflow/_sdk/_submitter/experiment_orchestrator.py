@@ -126,7 +126,43 @@ class ExperimentOrchestrator:
         logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
-        context = kwargs.get("context", {})
+        context = kwargs.pop("context", None)
+        if context is not None:
+            return self._test_with_ui(
+                context, template, nodes_to_test, start_nodes, inputs, environment_variables, **kwargs
+            )
+        # If inputs, use the inputs as experiment data, else read the first line in template data
+        test_context = ExperimentTemplateTestContext(
+            template,
+            inputs=inputs,
+            environment_variables=environment_variables,
+            output_path=kwargs.get("output_path"),
+            session=kwargs.get("session"),
+        )
+
+        for node in nodes_to_test:
+            logger.info(f"Testing node {node.name}...")
+            if node in start_nodes:
+                # Start nodes inputs should be updated, as original value could be a constant without data reference.
+                # Filter unknown key out to avoid warning (case: user input with eval key to override data).
+                node.inputs = {**node.inputs, **{k: v for k, v in inputs.items() if k in node.inputs}}
+            node_result = self._test_node(node, test_context)
+            test_context.add_node_result(node.name, node_result)
+        logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
+        return test_context.node_results
+
+    def _test_with_ui(
+        self,
+        context: dict,
+        template: ExperimentTemplate,
+        nodes_to_test,
+        start_nodes,
+        inputs=None,
+        environment_variables=None,
+        **kwargs,
+    ):
+        # The api is used for ux calling pfs. We need the api to deal with skip flow or overwrite unbinding flow
+        # input scenario
         context_flow = context.get("node", None)
         context_run_id = context.get("run_id", None)
 

@@ -184,6 +184,8 @@ class ExperimentOperations(TelemetryMixin):
         :param environment_variables: Environment variables for experiment.
         :type environment_variables: dict
         """
+        # The api is used for ux calling pfs. We need the api to read detail.json and log and return to ux as the
+        # format they expected.
         result = self.test(
             experiment=experiment, environment_variables=environment_variables, output_path=output_path, **kwargs
         )
