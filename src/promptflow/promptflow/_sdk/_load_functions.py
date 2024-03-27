@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import hashlib
 from os import PathLike
 from pathlib import Path
 from typing import IO, AnyStr, Optional, Union
@@ -10,8 +9,8 @@ from dotenv import dotenv_values
 
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.yaml_utils import load_yaml
+from ..exceptions import UserErrorException
 from ._errors import MultipleExperimentTemplateError, NoExperimentTemplateError
-from ._utils import _sanitize_python_variable_name
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._experiment import Experiment, ExperimentTemplate
@@ -65,12 +64,11 @@ def load_common(
             **kwargs,
         )
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-    is_async_call: Optional[bool] = None,
     **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
@@ -79,13 +77,10 @@ def load_flow(
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
-    :param is_async_call: Optional argument to indicate the return value is an async function.
-        If True, the return value is an async function, otherwise, it is a sync function.
-    :type is_async_call: bool
     :return: A Flow object
     :rtype: Flow
     """
-    return Flow.load(source, is_async_call=is_async_call, **kwargs)
+    return Flow.load(source, **kwargs)
 
 
 def load_run(
@@ -135,20 +130,22 @@ def _load_env_to_connection(
     source = Path(source)
     name = next((_dct["name"] for _dct in params_override if "name" in _dct), None)
     if not name:
-        raise Exception("Please specify --name when creating connection from .env.")
+        raise UserErrorException(message_format="Please specify --name when creating connection from .env.")
     if not source.exists():
-        raise FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        e = FileNotFoundError(f"File {source.absolute().as_posix()!r} not found.")
+        raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
     try:
         data = dict(dotenv_values(source))
         if not data:
             # Handle some special case dotenv returns empty with no exception raised.
-            raise ValueError(
+            e = ValueError(
                 f"Load nothing from dotenv file {source.absolute().as_posix()!r}, "
                 "please make sure the file is not empty and readable."
             )
+            raise UserErrorException(str(e), privacy_info=[source.absolute().as_posix()]) from e
         return CustomConnection(name=name, secrets=data)
     except Exception as e:
-        raise Exception(f"Load entity error: {e}") from e
+        raise UserErrorException(f"Load entity error: {e}", privacy_info=[str(e)]) from e
 
 
 def _load_experiment_template(
@@ -205,8 +202,5 @@ def _load_experiment(
     absolute_path = source.resolve().absolute().as_posix()
     if not source.exists():
         raise NoExperimentTemplateError(f"Experiment file {absolute_path} not found.")
-    anonymous_exp_name = _sanitize_python_variable_name(
-        f"{source.stem}_{hashlib.sha1(absolute_path.encode('utf-8')).hexdigest()}"
-    )
-    experiment = load_common(Experiment, source, params_override=[{"name": anonymous_exp_name}], **kwargs)
+    experiment = load_common(Experiment, source, **kwargs)
     return experiment

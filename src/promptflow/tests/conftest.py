@@ -7,27 +7,17 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import (
-    CONNECTION_FILE,
-    DEFAULT_COMPUTE_INSTANCE_NAME,
-    DEFAULT_REGISTRY_NAME,
-    DEFAULT_RESOURCE_GROUP_NAME,
-    DEFAULT_RUNTIME_NAME,
-    DEFAULT_SUBSCRIPTION_ID,
-    DEFAULT_WORKSPACE_NAME,
-    ENV_FILE,
-)
+from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
-from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow.connections import AzureOpenAIConnection
+from promptflow._sdk.entities._connection import AzureOpenAIConnection
 
 load_dotenv()
 
@@ -169,15 +159,9 @@ def mock_generated_by_func():
     def my_generated_by_func(index_type: str):
         inputs = ""
         if index_type == "Azure Cognitive Search":
-            inputs = {
-                "index_type": index_type,
-                "index": "index_1"
-                }
+            inputs = {"index_type": index_type, "index": "index_1"}
         elif index_type == "Workspace MLIndex":
-            inputs = {
-                "index_type": index_type,
-                "index" : "index_2"
-            }
+            inputs = {"index_type": index_type, "index": "index_2"}
 
         result = json.dumps(inputs)
         return result
@@ -196,11 +180,21 @@ def mock_reverse_generated_by_func():
     return my_reverse_generated_by_func
 
 
+@pytest.fixture
+def enable_logger_propagate():
+    """This is for test cases that need to check the log output."""
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+    original_value = logger.propagate
+    logger.propagate = True
+    yield
+    logger.propagate = original_value
+
+
 @pytest.fixture(scope="session")
 def mock_module_with_for_retrieve_tool_func_result(
-    mock_list_func,
-    mock_generated_by_func,
-    mock_reverse_generated_by_func
+    mock_list_func, mock_generated_by_func, mock_reverse_generated_by_func
 ):
     """Mock module object for dynamic list testing."""
     mock_module_list_func = MagicMock()
@@ -224,55 +218,3 @@ def mock_module_with_for_retrieve_tool_func_result(
 
         mock_import.side_effect = side_effect
         yield
-
-
-# below fixtures are used for pfazure and global config tests
-@pytest.fixture(scope="session")
-def subscription_id() -> str:
-    if is_replay():
-        return SanitizedValues.SUBSCRIPTION_ID
-    else:
-        return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
-
-
-@pytest.fixture(scope="session")
-def resource_group_name() -> str:
-    if is_replay():
-        return SanitizedValues.RESOURCE_GROUP_NAME
-    else:
-        return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
-
-
-@pytest.fixture(scope="session")
-def workspace_name() -> str:
-    if is_replay():
-        return SanitizedValues.WORKSPACE_NAME
-    else:
-        return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
-
-
-@pytest.fixture(scope="session")
-def runtime_name() -> str:
-    return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
-
-
-@pytest.fixture(scope="session")
-def registry_name() -> str:
-    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
-
-
-@pytest.fixture
-def enable_logger_propagate():
-    """This is for test cases that need to check the log output."""
-    from promptflow._utils.logger_utils import get_cli_sdk_logger
-
-    logger = get_cli_sdk_logger()
-    original_value = logger.propagate
-    logger.propagate = True
-    yield
-    logger.propagate = original_value
-
-
-@pytest.fixture(scope="session")
-def compute_instance_name() -> str:
-    return os.getenv("PROMPT_FLOW_COMPUTE_INSTANCE_NAME", DEFAULT_COMPUTE_INSTANCE_NAME)

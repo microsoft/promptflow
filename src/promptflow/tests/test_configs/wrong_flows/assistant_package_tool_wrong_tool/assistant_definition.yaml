@@ -1,0 +1,9 @@
+model: gpt-4
+instructions: You are a helpful assistant.
+tools:
+  - type: code_interpreter
+  - type: function
+    source:
+      type: package
+      tool: hello.world
+    tool_type: python

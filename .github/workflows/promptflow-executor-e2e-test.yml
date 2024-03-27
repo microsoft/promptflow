@@ -4,6 +4,7 @@ on:
     - cron: "40 20 * * *" # Every day starting at 4:40 BJT
   pull_request_target:
     paths:
+      - src/promptflow-core/*
       - src/promptflow/*
       - src/promptflow/promptflow/*
       - src/promptflow/promptflow/_core/**
@@ -17,6 +18,7 @@ on:
       - src/promptflow/promptflow/storage/**
       - src/promptflow/tests/*
       - src/promptflow/tests/executor/**
+      - src/promptflow-tracing/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
@@ -25,6 +27,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 jobs:
   authorize:
     environment:
@@ -79,7 +82,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Set test mode
-      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
     - name: checkout
       uses: actions/checkout@v4
       with:
@@ -102,9 +105,16 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-core
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
+    - name: install recording
+      run: |
+        pip install vcrpy
+        pip install -e .
+      working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
       with:

@@ -9,25 +9,45 @@ from executor.process_utils import (
     current_process_wrapper_var,
     override_process_class,
 )
-from executor.record_utils import setup_recording
 from fastapi.testclient import TestClient
-from sdk_cli_test.recording_utilities import (
-    RecordStorage,
-    delete_count_lock_file,
-    is_live,
-    is_record,
-    is_replay,
-    recording_array_extend,
-    recording_array_reset,
-)
-from sdk_cli_test.recording_utilities.record_storage import is_recording_enabled
 
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 from promptflow.executor._service.app import app
-from promptflow.tracing._openai_injector import inject_openai_api
+from promptflow.tracing._integrations._openai_injector import inject_openai_api
+
+from .record_utils import setup_recording
+
+try:
+    from promptflow.recording.local import recording_array_reset
+    from promptflow.recording.record_mode import is_live, is_record, is_recording_enabled, is_replay
+except ImportError:
+    # Run test in empty mode if promptflow-recording is not installed
+    def recording_array_reset():
+        pass
+
+    def is_live():
+        return False
+
+    def is_record():
+        return False
+
+    def is_recording_enabled():
+        return False
+
+    def is_replay():
+        return False
+
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
+
+
+def pytest_configure(config):
+    # Register an additional marker
+    pytest.is_live = is_live()
+    pytest.is_record = is_record()
+    pytest.is_replay = is_replay()
+    pytest.is_recording_enabled = is_recording_enabled()
 
 
 @pytest.fixture
@@ -78,11 +98,15 @@ def process_override():
 def recording_injection(recording_setup, process_override):
     # This fixture is used to main entry point to inject recording mode into the test
     try:
-        yield (is_replay() or is_record(), recording_array_extend)
+        yield
     finally:
-        if is_replay() or is_record():
+        if pytest.is_replay or pytest.is_record:
+            from promptflow.recording.local import RecordStorage
+
             RecordStorage.get_instance().delete_lock_file()
-        if is_live():
+        if pytest.is_live:
+            from promptflow.recording.local import delete_count_lock_file
+
             delete_count_lock_file()
         recording_array_reset()
 
@@ -92,7 +116,7 @@ def inject_api_executor():
     """Inject OpenAI API during test session when recording not enabled
     AOAI call in promptflow should involve trace logging and header injection. Inject
     function to API call in test scenario."""
-    if not is_recording_enabled():
+    if not pytest.is_recording_enabled:
         inject_openai_api()
 
 

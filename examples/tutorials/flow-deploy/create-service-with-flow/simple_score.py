@@ -3,7 +3,7 @@ import logging
 
 from flask import Flask, jsonify, request
 
-from promptflow import load_flow
+from promptflow.client import load_flow
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import SystemErrorException, UserErrorException
@@ -72,7 +72,7 @@ def score():
     # data in request will be passed to flow as kwargs
     result_dict = f(**data)
     # Note: if specified streaming=True in the flow context, the result will be a generator
-    # reference promptflow._sdk._serving.response_creator.ResponseCreator on how to handle it in app.
+    # reference promptflow.core._serving.response_creator.ResponseCreator on how to handle it in app.
     return jsonify(result_dict)
 
 

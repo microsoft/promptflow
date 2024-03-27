@@ -7,6 +7,7 @@ from promptflow.azure._storage.cosmosdb.span import Span
 @pytest.mark.unittest
 class TestSpan:
     FAKE_CREATED_BY = {"oid": "fake_oid"}
+    FAKE_COLLECTION_ID = "fake_collection_id"
 
     def test_to_dict(self):
         span = Span(
@@ -28,6 +29,7 @@ class TestSpan:
                 span_type=None,
                 session_id=None,
             ),
+            collection_id=self.FAKE_COLLECTION_ID,
             created_by=self.FAKE_CREATED_BY,
         )
         assert span.to_dict() == {
@@ -41,6 +43,7 @@ class TestSpan:
                 "span_id": "0x9ded7ce65d5f7775",
             },
             "id": "0x9ded7ce65d5f7775",
+            "collection_id": "fake_collection_id",
             "created_by": {"oid": "fake_oid"},
         }
 
@@ -63,6 +66,7 @@ class TestSpan:
                 span_type=None,
                 session_id="test_session_id",
             ),
+            collection_id=self.FAKE_COLLECTION_ID,
             created_by=self.FAKE_CREATED_BY,
         )
         assert span.to_dict() == {
@@ -79,5 +83,6 @@ class TestSpan:
             },
             "id": "0x9ded7ce65d5f7775",
             "partition_key": "test_session_id",
+            "collection_id": "fake_collection_id",
             "created_by": {"oid": "fake_oid"},
         }

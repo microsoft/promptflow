@@ -1,0 +1,33 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+  ground_truth:
+    type: string
+  conversation_history:
+    type: list
+    default: []
+  
+outputs:
+  output:
+    type: string
+    reference: ${line_process.output}
+
+nodes:
+- name: line_process
+  type: python
+  source:
+    type: code
+    path: line_process.py
+  inputs:
+    ground_truth: ${inputs.ground_truth}
+    conversation_history: ${inputs.conversation_history}
+- name: aggregate
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    processed_results: ${line_process.output}
+  aggregation: true
+

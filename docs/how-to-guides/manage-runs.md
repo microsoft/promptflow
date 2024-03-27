@@ -154,7 +154,7 @@ print(run)
 Get run details with TABLE format.
 
 ```bash
-pf run show --name <run-name>
+pf run show-details --name <run-name>
 ```
 
 ![img](../media/how-to-guides/run_show_details.png)

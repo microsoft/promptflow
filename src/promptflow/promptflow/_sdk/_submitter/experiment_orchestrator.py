@@ -16,11 +16,14 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import is_dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Any, Dict, Union
 
 import psutil
 
 from promptflow._sdk._constants import (
+    CHAT_GROUP_REFERENCE_NAME,
+    CONVERSATION_HISTORY,
+    EXP_NODE_TYPE_2_RUN_TYPE,
     PF_TRACE_CONTEXT,
     PF_TRACE_CONTEXT_ATTR,
     PROMPT_FLOW_DIR_NAME,
@@ -29,7 +32,6 @@ from promptflow._sdk._constants import (
     ExperimentNodeType,
     ExperimentStatus,
     FlowRunProperties,
-    RunTypes,
 )
 from promptflow._sdk._errors import (
     ExperimentCommandRunError,
@@ -54,9 +56,9 @@ from promptflow._sdk._submitter.utils import (
 from promptflow._sdk._utils import overwrite_null_std_logger
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
-from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.operations import RunOperations
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -101,8 +103,7 @@ class ExperimentOrchestrator:
         start_nodes = [
             node
             for node in template.nodes
-            if node.type == ExperimentNodeType.FLOW
-            and ProtectedFlow._get_flow_definition(node.path) == ProtectedFlow._get_flow_definition(flow_path)
+            if node.type == ExperimentNodeType.FLOW and resolve_flow_path(node.path) == resolve_flow_path(flow_path)
         ]
         if not start_nodes:
             raise ExperimentValueError(f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")
@@ -129,18 +130,20 @@ class ExperimentOrchestrator:
         logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
         return test_context.node_results
 
-    def _test_node(self, node, test_context) -> Run:
+    def _test_node(self, node, test_context):
         if node.type == ExperimentNodeType.FLOW:
             return self._test_flow_node(node, test_context)
         elif node.type == ExperimentNodeType.COMMAND:
             return self._test_command_node(node, test_context)
+        elif node.type == ExperimentNodeType.CHAT_GROUP:
+            return self._test_chat_group_node(node, test_context)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
     def _test_flow_node(self, node, test_context):
         # Resolve experiment related inputs
         inputs_mapping = ExperimentHelper.resolve_column_mapping(node.name, node.inputs, test_context.test_inputs)
         data, runs = ExperimentHelper.get_referenced_data_and_run(
-            node.name, node.inputs, test_context.test_data, test_context.node_results
+            node.name, node.type, node.inputs, test_context.test_data, test_context.node_results
         )
         # Add data, run inputs/outputs to binding context for inputs mapping resolve.
         binding_context = {**{f"data.{k}": v for k, v in data.items()}, **{f"{k}.outputs": v for k, v in runs.items()}}
@@ -164,6 +167,14 @@ class ExperimentOrchestrator:
 
     def _test_command_node(self, *args, **kwargs):
         raise NotImplementedError
+
+    def _test_chat_group_node(self, node, test_context):
+        from promptflow._sdk.entities._chat_group._chat_group import ChatGroup
+
+        chat_group = ChatGroup._from_node(node, test_context)
+        logger.debug(f"Invoking chat group node {node.name!r}.")
+        chat_group.invoke()
+        return chat_group.conversation_history
 
     def start(self, nodes=None, from_nodes=None, attempt=None, **kwargs):
         """Start an execution of nodes.
@@ -266,17 +277,10 @@ class ExperimentOrchestrator:
         :type from_nodes: list
         """
 
-        def prepare_edges(node):
-            """Get all in-degree nodes of this node."""
-            node_names = set()
-            for input_value in node.inputs.values():
-                if ExperimentHelper._is_node_reference(input_value):
-                    referenced_node_name = input_value.split(".")[0].replace("${", "")
-                    node_names.add(referenced_node_name)
-            return node_names
-
         def generate_node_mapping_by_nodes(from_nodes):
-            all_node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            all_node_edges_mapping = {
+                node.name: ExperimentHelper._prepare_single_node_edges(node) for node in self.experiment.nodes
+            }
             node_edges_mapping, next_nodes = {node: all_node_edges_mapping[node] for node in from_nodes}, from_nodes
             while next_nodes:
                 linked_nodes = set()
@@ -390,14 +394,16 @@ class ExperimentOrchestrator:
             pre_nodes = set()
             node_mapping = {node.name: node for node in self.experiment.nodes}
             for node_name in nodes:
-                pre_nodes.update(prepare_edges(node_mapping[node_name]))
+                pre_nodes.update(ExperimentHelper._prepare_single_node_edges(node_mapping[node_name]))
             if not check_in_degree_node_outputs(pre_nodes):
                 raise UserErrorException(f"The output(s) of in-degree of nodes {nodes} do not exist.")
             node_edges_mapping = {}
             next_execute_nodes = [self._nodes[name] for name in nodes]
         else:
             # Execute all nodes in experiment.
-            node_edges_mapping = {node.name: prepare_edges(node) for node in self.experiment.nodes}
+            node_edges_mapping = {
+                node.name: ExperimentHelper._prepare_single_node_edges(node) for node in self.experiment.nodes
+            }
             logger.debug(f"Experiment nodes edges: {node_edges_mapping!r}")
             next_execute_nodes = get_next_executable_nodes()
 
@@ -517,16 +523,16 @@ class ExperimentNodeRun(Run):
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
         super().__init__(
             # Use node name as prefix for run name?
-            type=RunTypes.COMMAND if node.type == ExperimentNodeType.COMMAND else RunTypes.BATCH,
+            type=EXP_NODE_TYPE_2_RUN_TYPE[node.type],
             name=self.context.node_name_to_id[node.name],
-            display_name=node.display_name or node.name,
-            column_mapping=node.inputs,
+            display_name=getattr(node, "display_name", None) or node.name,
+            column_mapping=getattr(node, "inputs", None),
             variant=getattr(node, "variant", None),
             flow=self._get_node_path(),
             outputs=getattr(node, "outputs", None),
             connections=getattr(node, "connections", None),
             command=getattr(node, "command", None),
-            environment_variables=node.environment_variables,
+            environment_variables=getattr(node, "environment_variables", None),
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
             **kwargs,
         )
@@ -538,24 +544,41 @@ class ExperimentNodeRun(Run):
         """Resolve column mapping with experiment inputs to constant values."""
         logger.info(f"Start resolve node {self.node.name!r} column mapping.")
         resolved_mapping = {}
-        for name, value in self.column_mapping.items():
+        if self.node.type in [ExperimentNodeType.FLOW, ExperimentNodeType.COMMAND]:
+            resolved_mapping = self._resolve_single_column_mapping(self.column_mapping)
+        elif self.node.type == ExperimentNodeType.CHAT_GROUP:
+            # for chat group node, resolve column mapping for each role
+            for role in self.node.roles:
+                if "inputs" in role:
+                    resolved_mapping[role["role"]] = self._resolve_single_column_mapping(role["inputs"])
+        logger.debug(f"Resolved node {self.node.name!r} column mapping {resolved_mapping}.")
+        self.column_mapping = resolved_mapping
+
+    def _resolve_single_column_mapping(self, column_mapping: Dict[str, Any]):
+        """Resolve single column mapping with given column mapping dict"""
+        if column_mapping is None:
+            return None
+
+        resolved_mapping = {}
+        for name, value in column_mapping.items():
             if not isinstance(value, str) or not value.startswith("${inputs."):
                 resolved_mapping[name] = value
                 continue
             input_name = value.split(".")[1].replace("}", "")
             if input_name not in self.experiment_inputs:
                 raise ExperimentValueError(
-                    f"Node {self.node.name!r} inputs {value!r} related experiment input {input_name!r} not found."
+                    f"Input value {value!r} is specified in node {self.node.name!r}, but the related experiment input "
+                    f"{input_name!r} is not found. Allowed inputs are {list(self.experiment_inputs.keys())}."
                 )
             resolved_mapping[name] = self.experiment_inputs[input_name].default
-        logger.debug(f"Resolved node {self.node.name!r} column mapping {resolved_mapping}.")
-        self.column_mapping = resolved_mapping
+        return resolved_mapping
 
     def _resolve_input_dirs(self):
         logger.info("Start resolve node %s input dirs.", self.node.name)
         # Get the node referenced data and run
         referenced_data, referenced_run = ExperimentHelper.get_referenced_data_and_run(
             node_name=self.node.name,
+            node_type=self.node.type,
             column_mapping=self.column_mapping,
             experiment_data=self.experiment_data,
             experiment_runs=self.node_runs,
@@ -589,7 +612,7 @@ class ExperimentNodeRun(Run):
         elif self.node.type == ExperimentNodeType.COMMAND:
             return self.node.code
         elif self.node.type == ExperimentNodeType.CHAT_GROUP:
-            raise NotImplementedError("Chat group node in experiment is not supported yet.")
+            return self.node.code
         raise ExperimentValueError(f"Unknown experiment node {self.node.name!r} type {self.node.type!r}")
 
     def _run_node(self) -> Run:
@@ -781,14 +804,38 @@ class ExperimentHelper:
 
     @staticmethod
     def get_referenced_data_and_run(
-        node_name: str, column_mapping: dict, experiment_data: dict, experiment_runs: dict
+        node_name: str, node_type: str, column_mapping: dict, experiment_data: dict, experiment_runs: dict
     ) -> tuple:
+        """Get the node referenced data and runs from dict."""
+        if node_type in [ExperimentNodeType.FLOW, ExperimentNodeType.COMMAND]:
+            return ExperimentHelper.get_data_and_run_from_single_column_mapping(
+                node_name, column_mapping, experiment_data, experiment_runs
+            )
+        # for chat group node, get data and run from all roles column mapping
+        elif node_type == ExperimentNodeType.CHAT_GROUP:
+            data, run = {}, {}
+            for role, role_column_mapping in column_mapping.items():
+                role_data, role_run = ExperimentHelper.get_data_and_run_from_single_column_mapping(
+                    node_name, role_column_mapping, experiment_data, experiment_runs
+                )
+                data.update(role_data)
+                run.update(role_run)
+            return data, run
+        raise ExperimentValueError(f"Unknown experiment node type {node_type!r} from node {node_name!r}.")
+
+    @staticmethod
+    def get_data_and_run_from_single_column_mapping(
+        node_name: str, column_mapping: dict, experiment_data: dict, experiment_runs: dict
+    ):
         """Get the node referenced data and runs from dict."""
         data, run = {}, {}
         for value in column_mapping.values():
             if not isinstance(value, str):
                 continue
-            if value.startswith("${data."):
+            # ${parent.conversation_history} is a special binding for chat group node
+            if value == f"${{{CHAT_GROUP_REFERENCE_NAME}.{CONVERSATION_HISTORY}}}":
+                continue
+            elif value.startswith("${data."):
                 name = value.split(".")[1].replace("}", "")
                 if name not in experiment_data:
                     raise ExperimentValueError(
@@ -838,7 +885,18 @@ class ExperimentHelper:
     def _prepare_single_node_edges(node):
         """Prepare single node name to referenced node name edges mapping."""
         node_names = set()
-        for input_value in node.inputs.values():
+
+        # if node is chat group, then get all inputs from roles
+        node_input_values = []
+        if node.type == ExperimentNodeType.CHAT_GROUP:
+            for role in node.roles:
+                role_inputs = role.get("inputs", {}).values()
+                node_input_values.append(list(role_inputs))
+        else:
+            node_input_values = list(node.inputs.values())
+
+        # Get all in-degree nodes of this node
+        for input_value in node_input_values:
             if not isinstance(input_value, str):
                 continue
             if ExperimentHelper._is_node_reference(input_value):

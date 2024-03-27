@@ -23,8 +23,6 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 REQUIRES = [
     "psutil",  # get process information when bulk run
     "httpx>=0.25.1",  # used to send http requests asynchronously
-    "openai",  # promptflow._core.api_injector
-    "flask>=2.2.3,<4.0.0",  # Serving endpoint requirements
     "sqlalchemy>=1.4.48,<3.0.0",  # sqlite requirements
     # note that pandas 1.5.3 is the only version to test in ci before promptflow 0.1.0b7 is released
     # and pandas 2.x.x will be the only version to test in ci after that.
@@ -40,19 +38,16 @@ REQUIRES = [
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
     "marshmallow>=3.5,<4.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
-    "tiktoken>=0.4.0",
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
-    "ruamel.yaml>=0.17.10,<1.0.0",  # used to generate connection templates with preserved comments
     "pyarrow>=14.0.1,<15.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
-    "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
-    "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
-    "docutils",  # used to generate description for tools
     "opentelemetry-exporter-otlp-proto-http>=1.22.0,<2.0.0",  # trace support
     "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
     "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
+    "promptflow-tracing>=1.0.0",  # tracing capabilities
+    "promptflow-core",
 ]
 
 setup(
@@ -81,9 +76,9 @@ setup(
     extras_require={
         "azure": [
             "azure-core>=1.26.4,<2.0.0",
-            "azure-storage-blob[aio]>=12.13.0,<13.0.0",  # add [aio] for async run download feature
+            "azure-storage-blob[aio]>=12.17.0,<13.0.0",  # add [aio] for async run download feature
             "azure-identity>=1.12.0,<2.0.0",
-            "azure-ai-ml>=1.11.0,<2.0.0",
+            "azure-ai-ml>=1.14.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
             "azure-cosmos>=4.5.1,<5.0.0",  # used to upload trace to cloud
         ],
@@ -91,8 +86,7 @@ setup(
         "azureml-serving": [
             # AzureML connection dependencies
             "azure-identity>=1.12.0,<2.0.0",
-            "azure-ai-ml>=1.11.0,<2.0.0",
-            "azure-monitor-opentelemetry-exporter>=1.0.0b21,<2.0.0",
+            "azure-ai-ml>=1.14.0,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
@@ -104,7 +98,7 @@ setup(
     scripts=["pf", "pf.bat"],
     entry_points={
         "console_scripts": [
-            "pfazure = promptflow._cli._pf_azure.entry:main",
+            "pfazure = promptflow.azure._cli.entry:main",
             "pfs = promptflow._sdk._service.entry:main",
         ],
     },

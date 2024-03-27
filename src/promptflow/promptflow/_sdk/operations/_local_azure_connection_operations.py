@@ -1,23 +1,28 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import re
 import sys
 from typing import List
 
-from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, MAX_LIST_CLI_RESULTS
+from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
+from promptflow._sdk._utils import print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.credential_utils import get_default_azure_credential
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.core._connection_provider._utils import (
+    extract_workspace,
+    interactive_credential_disabled,
+    is_from_cli,
+    is_github_codespaces,
+)
 
 logger = get_cli_sdk_logger()
 
 
 class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     def __init__(self, connection_provider, **kwargs):
-        self._subscription_id, self._resource_group, self._workspace_name = self._extract_workspace(connection_provider)
+        self._subscription_id, self._resource_group, self._workspace_name = extract_workspace(connection_provider)
         self._credential = kwargs.pop("credential", None) or self._get_credential()
         super().__init__(
             subscription_id=self._subscription_id,
@@ -69,20 +74,6 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
             credential.credentials = (*credential.credentials, DeviceCodeCredential())
             return credential
         return DefaultAzureCredential(exclude_interactive_browser_credential=False)
-
-    @classmethod
-    def _extract_workspace(cls, connection_provider):
-        match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, connection_provider)
-        if not match or len(match.groups()) != 5:
-            raise ValueError(
-                "Malformed connection provider string, expected azureml://subscriptions/<subscription_id>/"
-                "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
-                f"workspaces/<workspace_name>, got {connection_provider}"
-            )
-        subscription_id = match.group(1)
-        resource_group = match.group(3)
-        workspace_name = match.group(5)
-        return subscription_id, resource_group, workspace_name
 
     @monitor_operation(activity_name="pf.connections.azure.list", activity_type=ActivityType.PUBLICAPI)
     def list(

@@ -4,9 +4,18 @@ import time
 import typing
 from dataclasses import asdict, dataclass, field
 
-from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanStatusFieldName
+from azure.cosmos import ContainerProxy
+
+from promptflow._constants import (
+    OK_LINE_RUN_STATUS,
+    RUNNING_LINE_RUN_STATUS,
+    SpanAttributeFieldName,
+    SpanFieldName,
+    SpanStatusFieldName,
+)
 from promptflow._sdk._utils import json_loads_parse_const_as_str
 from promptflow._sdk.entities._trace import Span
+from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
 
 
 @dataclass
@@ -19,17 +28,18 @@ class SummaryLine:
     partition_key: str
     session_id: str
     trace_id: str
-    root_span_id: str
-    inputs: typing.Dict
-    outputs: typing.Dict
-    start_time: datetime.datetime
-    end_time: datetime.datetime
-    status: str
-    latency: float
-    name: str
-    kind: str
-    created_by: typing.Dict
-    cumulative_token_count: typing.Optional[typing.Dict[str, int]]
+    collection_id: str
+    root_span_id: str = ""
+    inputs: typing.Dict = field(default_factory=dict)
+    outputs: typing.Dict = field(default_factory=dict)
+    start_time: str = ""
+    end_time: str = ""
+    status: str = ""
+    latency: float = 0.0
+    name: str = ""
+    kind: str = ""
+    created_by: typing.Dict = field(default_factory=dict)
+    cumulative_token_count: typing.Optional[typing.Dict[str, int]] = field(default_factory=dict)
     evaluations: typing.Dict = field(default_factory=dict)
     # Only for batch run
     batch_run_id: str = None
@@ -48,8 +58,9 @@ class LineEvaluation:
     outputs: typing.Dict
     trace_id: str
     root_span_id: str
-    display_name: str
+    name: str
     created_by: typing.Dict
+    collection_id: str
     flow_id: str = None
     # Only for batch run
     batch_run_id: str = None
@@ -59,18 +70,20 @@ class LineEvaluation:
 
 
 class Summary:
-    def __init__(self, span: Span, created_by: typing.Dict, logger: logging.Logger) -> None:
+    def __init__(self, span: Span, collection_id: str, created_by: typing.Dict, logger: logging.Logger) -> None:
         self.span = span
         self.created_by = created_by
         self.logger = logger
+        self.collection_id = collection_id
 
-    def persist(self, client):
+    def persist(self, client: ContainerProxy):
         if self.span.parent_span_id:
-            # This is not the root span
+            # For non root span, write a placeholder item to LineSummary table.
+            self._persist_running_item(client)
             return
         attributes = self.span._content[SpanFieldName.ATTRIBUTES]
 
-        # Persist span as a line run, since even evaluation is a line run, could be referenced by other evaluations.
+        # Persist root span as a line run.
         self._persist_line_run(client)
 
         if (
@@ -87,14 +100,32 @@ class Summary:
             SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID in attributes
             and SpanAttributeFieldName.LINE_NUMBER in attributes
         ):
-            # Add sleep to wait for main run to be persisted.
-            # We receive requests to persist main flow first and then evaluation,
-            # but init cosmosDB client is time consuming, and the later request will reuse the same client, so it's
-            # possible that the main run is not persisted when we start to patch evaluation to it.
-            time.sleep(1)
-            self._insert_evaluation(client)
+            self._insert_evaluation_with_retry(client)
 
-    def _persist_line_run(self, client):
+    # When there is the first span for line run, write placeholder item to LineSummary table.
+    def _persist_running_item(self, client: ContainerProxy):
+        trace_id = self.span.trace_id
+        session_id = self.span.session_id
+
+        item = SummaryLine(
+            id=trace_id,
+            partition_key=session_id,
+            session_id=session_id,
+            trace_id=trace_id,
+            status=RUNNING_LINE_RUN_STATUS,
+            collection_id=self.collection_id,
+            created_by=self.created_by,
+            start_time=self.span._content[SpanFieldName.START_TIME],
+        )
+        attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
+        if SpanAttributeFieldName.LINE_RUN_ID in attributes:
+            item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
+        elif SpanAttributeFieldName.BATCH_RUN_ID in attributes and SpanAttributeFieldName.LINE_NUMBER in attributes:
+            item.batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
+            item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
+        safe_create_cosmosdb_item(client, item)
+
+    def _persist_line_run(self, client: ContainerProxy):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
 
         session_id = self.span.session_id
@@ -124,9 +155,10 @@ class Summary:
             partition_key=session_id,
             session_id=session_id,
             trace_id=self.span.trace_id,
+            collection_id=self.collection_id,
             root_span_id=self.span.span_id,
-            inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "null")),
-            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "null")),
+            inputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.INPUTS, "{}")),
+            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
             start_time=start_time,
             end_time=end_time,
             status=self.span._content[SpanFieldName.STATUS][SpanStatusFieldName.STATUS_CODE],
@@ -143,54 +175,72 @@ class Summary:
             item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
 
         self.logger.info(f"Persist main run for LineSummary id: {item.id}")
-        return client.create_item(body=asdict(item))
+        # Use upsert because we may create running item in advance.
+        return client.upsert_item(body=asdict(item))
 
-    def _insert_evaluation(self, client):
+    def _insert_evaluation_with_retry(self, client: ContainerProxy):
+        for attempt in range(3):
+            try:
+                # We receive requests to persist main flow first and then evaluation,
+                # but init cosmosDB client could be time consuming, and the later request will reuse the same client,
+                # so it's possible that the main run is not persisted when we start to patch evaluation to it.
+                self._insert_evaluation(client)
+                break
+            except InsertEvaluationsRetriableException as e:
+                if attempt == 2:  # If this is the last attempt, ignore and just return
+                    self.logger.error(f"Error while inserting evaluation: {e}")
+                    return
+                time.sleep(1)
+
+    def _insert_evaluation(self, client: ContainerProxy):
         attributes: dict = self.span._content[SpanFieldName.ATTRIBUTES]
         partition_key = self.span.session_id
         name = self.span.name
         item = LineEvaluation(
             trace_id=self.span.trace_id,
             root_span_id=self.span.span_id,
-            outputs=json_loads_parse_const_as_str(attributes[SpanAttributeFieldName.OUTPUT]),
-            display_name=name,
+            collection_id=self.collection_id,
+            outputs=json_loads_parse_const_as_str(attributes.get(SpanAttributeFieldName.OUTPUT, "{}")),
+            name=name,
             created_by=self.created_by,
         )
-        if SpanAttributeFieldName.REFERENCED_LINE_RUN_ID in attributes:
-            # Query to get item id from line run id.
-            line_run_id = attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID]
-            query = "SELECT * FROM c WHERE c.line_run_id = @line_run_id"
-            parameters = [
-                {"name": "@line_run_id", "value": line_run_id},
-            ]
-            items = list(client.query_items(query=query, parameters=parameters, partition_key=partition_key))
-            if items:
-                main_id = items[0]["id"]
-            else:
-                self.logger.error(f"Cannot find main run for line run id: {line_run_id}")
-                return
-            line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
-            item.line_run_id = line_run_id
-        else:
-            # Query to get item id from batch run id and line number.
-            referenced_batch_run_id = attributes[SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID]
-            line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
-            query = "SELECT * FROM c WHERE c.batch_run_id = @batch_run_id AND c.line_number = @line_number"
-            parameters = [
-                {"name": "@batch_run_id", "value": referenced_batch_run_id},
-                {"name": "@line_number", "value": line_number},
-            ]
-            items = list(client.query_items(query=query, parameters=parameters, partition_key=partition_key))
-            if items:
-                main_id = items[0]["id"]
-            else:
-                self.logger.error(
-                    f"Cannot find main run for batch run id: {referenced_batch_run_id} and line number: {line_number}"
+
+        # None is the default value for the field.
+        referenced_line_run_id = attributes.get(SpanAttributeFieldName.REFERENCED_LINE_RUN_ID, None)
+        referenced_batch_run_id = attributes.get(SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID, None)
+        line_number = attributes.get(SpanAttributeFieldName.LINE_NUMBER, None)
+
+        query = (
+            "SELECT * FROM c WHERE "
+            "c.line_run_id = @line_run_id AND c.batch_run_id = @batch_run_id AND c.line_number = @line_number"
+        )
+        parameters = [
+            {"name": "@line_run_id", "value": referenced_line_run_id},
+            {"name": "@batch_run_id", "value": referenced_batch_run_id},
+            {"name": "@line_number", "value": line_number},
+        ]
+        query_results = list(client.query_items(query=query, parameters=parameters, partition_key=partition_key))
+
+        if query_results:
+            current_status = query_results[0].get("status", "")
+            if current_status != OK_LINE_RUN_STATUS:
+                raise InsertEvaluationsRetriableException(
+                    f"Main run status is {current_status}, cannot patch evaluation now."
                 )
-                return
+            main_id = query_results[0]["id"]
+        else:
+            raise InsertEvaluationsRetriableException(f"Cannot find main run by parameter {parameters}.")
+
+        if SpanAttributeFieldName.LINE_RUN_ID in attributes:
+            item.line_run_id = attributes[SpanAttributeFieldName.LINE_RUN_ID]
+        else:
             item.batch_run_id = attributes[SpanAttributeFieldName.BATCH_RUN_ID]
-            item.line_number = attributes[SpanAttributeFieldName.LINE_NUMBER]
+            item.line_number = line_number
 
         patch_operations = [{"op": "add", "path": f"/evaluations/{name}", "value": asdict(item)}]
         self.logger.info(f"Insert evaluation for LineSummary main_id: {main_id}")
         return client.patch_item(item=main_id, partition_key=partition_key, patch_operations=patch_operations)
+
+
+class InsertEvaluationsRetriableException(Exception):
+    pass

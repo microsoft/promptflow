@@ -10,7 +10,7 @@ import pytest
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
 from promptflow._sdk._constants import SCRUBBED_VALUE, ConnectionAuthMode, CustomStrongTypeConnectionConfigs
-from promptflow._sdk._errors import RequiredEnvironmentVariablesNotSetError, SDKError
+from promptflow._sdk._errors import SDKError
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
@@ -26,6 +26,7 @@ from promptflow._sdk.entities._connection import (
     _Connection,
 )
 from promptflow._utils.yaml_utils import load_yaml
+from promptflow.core._connection import RequiredEnvironmentVariablesNotSetError
 from promptflow.exceptions import UserErrorException
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -249,7 +250,7 @@ secrets:
 
     def test_connection_load_from_env_file_bad_case(self):
         # Test file not found
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(UserErrorException) as e:
             _load_env_to_connection(source=CONNECTION_ROOT / "mock.env", params_override=[{"name": "env_conn"}])
         assert "not found" in str(e.value)
         # Test file empty
