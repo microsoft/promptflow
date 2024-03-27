@@ -2,6 +2,10 @@
 name = "promptflow-core"
 version = "0.1.0b1"
 description = "Prompt flow core"
+include = [
+  "promptflow/core/_serving/static/*",
+  "promptflow/core/_serving/resources/*",
+]
 
 license = "MIT"
 
@@ -36,6 +40,13 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
+promptflow-tracing = ">=1.0.0,<2.0.0"
+"ruamel.yaml" = ">=0.17.10,<1.0.0"  # used to generate connection templates with preserved comments
+docutils = "*"  # used to generate description for tools
+jsonschema = ">=4.0.0,<5.0.0"  # used to validate tool
+filetype = ">=1.2.0"  # used to detect the mime type for multi-media input
+flask = ">=2.2.3,<4.0.0"  # Serving endpoint requirements
+fastapi = {extras = ["executor-service"], version = ">=0.109.0,<1.0.0"}
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"

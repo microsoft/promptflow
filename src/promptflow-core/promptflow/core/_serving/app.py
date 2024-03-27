@@ -57,6 +57,7 @@ class PromptflowServingApp(Flask):
 
             # enable environment_variables
             environment_variables = kwargs.get("environment_variables", {})
+            logger.debug(f"Environment variables: {environment_variables}")
             os.environ.update(environment_variables)
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)

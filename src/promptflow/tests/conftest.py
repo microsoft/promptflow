@@ -17,7 +17,7 @@ from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow.connections import AzureOpenAIConnection
+from promptflow._sdk.entities._connection import AzureOpenAIConnection
 
 load_dotenv()
 

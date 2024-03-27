@@ -6,7 +6,8 @@ from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
 from promptflow._utils.feature_utils import get_feature_list
-from promptflow.executor._service.utils.service_utils import get_executor_version
+from promptflow._version import VERSION
+from promptflow.executor._service.utils.service_utils import get_commit_id
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ def health_check():
 def version():
     return {
         "status": "healthy",
-        "version": get_executor_version(),
+        "version": VERSION,
+        "commit_id": get_commit_id(),
         "feature_list": get_feature_list(),
     }

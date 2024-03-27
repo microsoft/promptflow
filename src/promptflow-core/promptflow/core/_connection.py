@@ -6,7 +6,7 @@ import os
 import types
 from typing import Dict, List
 
-from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE
+from promptflow._constants import CONNECTION_SCRUBBED_VALUE as SCRUBBED_VALUE, CONNECTION_SCRUBBED_VALUE_NO_CHANGE
 from promptflow._constants import ConnectionAuthMode, ConnectionType, CustomStrongTypeConnectionConfigs
 from promptflow._core.token_provider import AzureTokenProvider
 from promptflow._utils.logger_utils import LoggerFactory
@@ -108,6 +108,19 @@ class _Connection:
             configs = {k: v for k, v in value_dict.items() if k not in secrets}
             return type_cls(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
+
+    @classmethod
+    def _is_scrubbed_value(cls, value):
+        """For scrubbed value, cli will get original for update, and prompt user to input for create."""
+        if value is None or not value:
+            return True
+        if all([v == "*" for v in value]):
+            return True
+        return value == CONNECTION_SCRUBBED_VALUE_NO_CHANGE
+
+    def _get_scrubbed_secrets(self):
+        """Return the scrubbed secrets of connection."""
+        return {key: val for key, val in self.secrets.items() if self._is_scrubbed_value(val)}
 
 
 class _StrongTypeConnection(_Connection):
