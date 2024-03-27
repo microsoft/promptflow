@@ -4,27 +4,25 @@
 
 from typing import Dict, Type
 
-from promptflow._constants import FlowLanguage, CHAT_GROUP_EXECUTOR_PROXY_KEY
+from promptflow._constants import FlowLanguage
 from promptflow._proxy import AbstractInspectorProxy
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
-from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 
 
 class ProxyFactory:
     executor_proxy_classes: Dict[str, Type[AbstractExecutorProxy]] = {
         FlowLanguage.Python: PythonExecutorProxy,
         FlowLanguage.CSharp: CSharpExecutorProxy,
-        CHAT_GROUP_EXECUTOR_PROXY_KEY: ChatGroupOrchestratorProxy
     }
 
     def __init__(self):
         pass
 
-    def get_executor_proxy_cls(self, type: str) -> Type[AbstractExecutorProxy]:
-        return self.executor_proxy_classes[type]
+    def get_executor_proxy_cls(self, language: str) -> Type[AbstractExecutorProxy]:
+        return self.executor_proxy_classes[language]
 
     @classmethod
     def register_executor(cls, language: str, executor_proxy_cls: Type[AbstractExecutorProxy]):
@@ -42,9 +40,9 @@ class ProxyFactory:
         cls.executor_proxy_classes[language] = executor_proxy_cls
 
     def create_executor_proxy(
-        self, flow_file, working_dir, connections, storage, type: str, **kwargs
+        self, flow_file, working_dir, connections, storage, language: str, **kwargs
     ) -> AbstractExecutorProxy:
-        executor_proxy_cls = self.get_executor_proxy_cls(type)
+        executor_proxy_cls = self.get_executor_proxy_cls(language)
         return async_run_allowing_running_loop(
             executor_proxy_cls.create,
             flow_file,

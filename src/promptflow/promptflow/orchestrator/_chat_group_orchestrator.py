@@ -1,4 +1,5 @@
 from typing import Optional, List, Mapping, Dict, Any
+from promptflow.contracts.flow import Flow
 from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._utils.yaml_utils import load_yaml
@@ -7,6 +8,7 @@ from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow._utils.execution_utils import apply_default_value_for_input
+from promptflow._proxy._proxy_factory import ProxyFactory
 
 
 class ChatGroupOrchestrator:
@@ -34,11 +36,13 @@ class ChatGroupOrchestrator:
         max_lines_count: Optional[int] = None,
     ) -> "ChatGroupOrchestrator":
 
+        for chat_role in chat_group_roles:
+            chat_role.working_dir = Flow._resolve_working_dir(chat_role.flow_file, chat_role.working_dir)
+            chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
+
         return ChatGroupOrchestrator(chat_group_roles, max_turn, storage, max_lines_count)
 
     def _create_executor_proxy(self, **kwargs) -> List[AbstractExecutorProxy]:
-        # temp solution for circle import
-        from promptflow._proxy._proxy_factory import ProxyFactory
         executor_proxy_list = []
         executor_proxy_factory = ProxyFactory()
         for chat_role in self._chat_group_roles:
@@ -47,7 +51,7 @@ class ChatGroupOrchestrator:
                 working_dir=chat_role.working_dir,
                 connections=chat_role.connections,
                 storage=self._storage,
-                type=self._check_language_from_yaml(chat_role),
+                language=self._check_language_from_yaml(chat_role),
                 **kwargs
             )
             executor_proxy_list.append(executor_proxy)

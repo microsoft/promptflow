@@ -16,7 +16,6 @@ from promptflow._constants import (
     LINE_TIMEOUT_SEC,
     OUTPUT_FILE_NAME,
     FlowLanguage,
-    CHAT_GROUP_EXECUTOR_PROXY_KEY
 )
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._proxy import ProxyFactory
@@ -47,7 +46,6 @@ from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
@@ -109,21 +107,13 @@ class BatchEngine:
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir) if flow_file is not None else working_dir
         self._is_eager_flow, self._program_language = self._check_eager_flow_and_language_from_yaml() \
-            if flow_file is not None else (None, CHAT_GROUP_EXECUTOR_PROXY_KEY)
+            if flow_file is not None else (None, None)
         self._flow = None
 
         # TODO: why self._flow is not initialized for eager flow?
         if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-
-        self._chat_group_roles: List[ChatGroupRole] = kwargs.get("chat_group_roles")
-        if self._chat_group_roles is not None:
-            for chat_role in self._chat_group_roles:
-                chat_role.working_dir = Flow._resolve_working_dir(chat_role.flow_file, chat_role.working_dir)
-                chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
-
-        self._max_turn = kwargs.get("max_turn")
 
         self._connections = connections
         self._storage = storage
@@ -153,6 +143,7 @@ class BatchEngine:
         raise_on_line_failure: Optional[bool] = False,
         resume_from_run_storage: Optional[AbstractBatchRunStorage] = None,
         resume_from_run_output_dir: Optional[Path] = None,
+        executor_proxy: Optional[AbstractExecutorProxy] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -181,12 +172,12 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with (_change_working_dir(self._working_dir)):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ProxyFactory().create_executor_proxy(
+                self._executor_proxy = executor_proxy or ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
-                    type=self._program_language,
+                    language=self._program_language,
                     **self._kwargs,
                     run_id=run_id,
                     input_dirs=input_dirs,

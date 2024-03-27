@@ -22,6 +22,7 @@ class ChatGroupRole:
 
     flow_file: Path
     role: str
+    name: str
     stop_signal: str
     working_dir: Optional[Path] = None
     connections: Optional[Dict[str, Any]] = None

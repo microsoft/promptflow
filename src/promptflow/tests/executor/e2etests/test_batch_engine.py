@@ -18,6 +18,7 @@ from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
 from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
+from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
 from promptflow.contracts.chat_group import ChatGroupRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
@@ -512,10 +513,19 @@ class TestBatch:
             ("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 5, "inputs_using_default_value.json"),
         ],
     )
-    def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, input_file_name, dev_connections):
+    @pytest.mark.asyncio
+    async def test_chat_group_batch_run(
+            self,
+            simulation_flow,
+            copilot_flow,
+            max_turn,
+            input_file_name,
+            dev_connections):
         simulation_role = ChatGroupRole(
             flow_file=get_yaml_file(simulation_flow),
-            role="user", stop_signal="[STOP]",
+            role="user",
+            name="simulator",
+            stop_signal="[STOP]",
             working_dir=get_flow_folder(simulation_flow),
             connections=dev_connections,
             inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
@@ -523,6 +533,7 @@ class TestBatch:
         copilot_role = ChatGroupRole(
             flow_file=get_yaml_file(copilot_flow),
             role="assistant",
+            name="copilot",
             stop_signal="[STOP]",
             working_dir=get_flow_folder(copilot_flow),
             connections=dev_connections,
@@ -534,13 +545,15 @@ class TestBatch:
 
         # register python proxy since current python proxy cannot execute single line
         ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
+        chat_group_orchestrator_proxy = await ChatGroupOrchestratorProxy.create(
+            flow_file="",
+            chat_group_roles=[simulation_role, copilot_role],
+            max_turn=max_turn)
         batchEngine = BatchEngine(
             flow_file=None,
             working_dir=get_flow_folder("chat_group"),
-            storage=mem_run_storage,
-            chat_group_roles=[simulation_role, copilot_role],
-            max_turn=max_turn)
-        batch_result = batchEngine.run(input_dirs, {}, output_dir)
+            storage=mem_run_storage)
+        batch_result = batchEngine.run(input_dirs, {}, output_dir, executor_proxy=chat_group_orchestrator_proxy)
 
         nlines = 3
         assert batch_result.total_lines == nlines
