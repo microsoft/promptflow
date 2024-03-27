@@ -100,7 +100,7 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
             # touch __init__.py for the package
             # NOTE that this is a workaround to enable VS Code to recognize the namespace package
             #      we should be able to remove this after we fully deprecate promptflow in local development
-            with open(pkg_working_dir / "__init__.py", mode="w", encoding="utf-8") as f:
+            with open(pkg_working_dir / "promptflow" / "__init__.py", mode="w", encoding="utf-8") as f:
                 f.write("")
 
 
