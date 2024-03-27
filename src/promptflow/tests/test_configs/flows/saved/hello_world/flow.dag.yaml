@@ -1,0 +1,5 @@
+entry: hello:hello_world
+environment:
+  python_requirements_txt: requirements
+  image: python:3.8-slim
+language: python
