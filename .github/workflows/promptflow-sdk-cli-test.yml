@@ -89,7 +89,7 @@ jobs:
     - name: install recording
       run: |
         pip install vcrpy
-        pip install -e .
+        pip install .
       working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
