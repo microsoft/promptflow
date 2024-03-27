@@ -1,0 +1,41 @@
+{
+    "package": {},
+    "code": {
+    {% for key, prompt_obj in prompt_params.items() %}
+        "{{ key }}": {
+            "type": "prompt",
+            "inputs": {
+            {% for input_name, value in prompt_obj.get("inputs", {}).items() %}
+                "{{ input_name }}": {
+                    "type": [
+                    {% for typ in value["type"] %}
+                        "{{ typ.value }}"
+                    {% endfor %}
+                    ]
+                }{{ "," if not loop.last else "" }}
+            {% endfor %}
+            },
+            "source": "{{ prompt_obj.source }}"
+        },
+    {% endfor %}
+        "{{ tool_file }}": {
+            "type": "python",
+            "inputs": {
+            {% for arg, typ in tool_meta_args.items() %}
+                "{{ arg }}": {
+                    "type": [
+                        "{{ typ }}"
+                    ]
+                },
+            {% endfor %}
+                "connection": {
+                    "type": [
+                        "CustomConnection"
+                    ]
+                }
+            },
+            "function": "{{ tool_function }}",
+            "source": "{{ tool_file }}"
+        }
+    }
+}

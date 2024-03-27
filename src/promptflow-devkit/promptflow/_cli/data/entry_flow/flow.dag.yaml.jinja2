@@ -1,0 +1,46 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+{% for arg, typ in flow_inputs.items() %}
+  {{ arg }}:
+    type: {{ typ }}
+{% endfor %}
+outputs:
+  output:
+    type: string
+    reference: {% raw %}${{% endraw %}{{ main_node_name }}.output}
+nodes:
+{%  for param_name, file in prompt_params.items() %}
+- name: {{ param_name }}
+  type: prompt
+  source:
+    type: code
+    path: {{ file }}
+  inputs:  # Please check the generated prompt inputs
+  {% for arg in prompt_inputs[param_name].keys() %}
+    {{ arg }}: ${inputs.{{ arg }}}
+  {% endfor %}
+{% endfor %}
+- name: {{ main_node_name }}
+  type: python
+  source:
+    type: code
+    path: {{ tool_file }}
+  inputs:
+  {# Below are node inputs link to flow inputs #}
+  {% for arg in func_params.keys() %}
+    {{ arg }}: ${inputs.{{ arg }}}
+  {% endfor %}
+  {# Below are node prompt template inputs from prompt nodes #}
+  {%  for param_name, file in prompt_params.items() %}
+    {{ param_name }}: {% raw %}${{% endraw %}{{ param_name }}.output}
+  {% endfor %}
+    connection: custom_connection
+{% if setup_sh or python_requirements_txt %}
+environment:
+    {% if setup_sh %}
+    setup_sh: {{ setup_sh }}
+    {% endif %}
+    {% if python_requirements_txt %}
+    python_requirements_txt: {{ python_requirements_txt }}
+    {% endif %}
+{% endif %}

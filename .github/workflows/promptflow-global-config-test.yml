@@ -69,6 +69,8 @@ jobs:
         echo "Installed promptflow-tracing"
         pip uninstall -y promptflow-core
         pip install ${{ github.workspace }}/src/promptflow-core
+        pip uninstall -y promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-devkit
         pip freeze
     - name: Azure Login
       uses: azure/login@v1

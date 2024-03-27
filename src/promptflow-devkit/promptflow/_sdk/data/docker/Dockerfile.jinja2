@@ -1,0 +1,61 @@
+# syntax=docker/dockerfile:1
+{% if env.image %}
+FROM {{env.image}}
+{% else %}
+{% if show_comment %}
+# use mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest? current image is based on Debian 11
+{% endif %}
+FROM docker.io/continuumio/miniconda3:latest
+{% endif %}
+
+WORKDIR /
+
+{% if env.python_requirements_txt %}
+COPY ./flow/{{env.python_requirements_txt}} /flow/{{env.python_requirements_txt}}
+{% endif %}
+
+# gcc is for build psutil in MacOS
+RUN apt-get update && apt-get install -y runit gcc
+
+# create conda environment
+{% if env.conda_file %}
+COPY ./flow/{{env.conda_file}} /flow/{{env.conda_file}}
+
+RUN conda create -f flow/{{env.conda_file}} -q && \
+{% else %}
+RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
+{% endif %}
+    conda run -n {{env.conda_env_name}} \
+{% if env.python_requirements_txt %}
+    pip install -r /flow/{{env.python_requirements_txt}} && \
+{% else %}
+{% if env.sdk_version %}
+    pip install promptflow=={{env.sdk_version}} \
+{% else %}
+    pip install promptflow \
+{% endif %}
+    promptflow-tools && \
+{% endif %}
+    conda run -n {{env.conda_env_name}} pip install keyrings.alt && \
+    conda run -n {{env.conda_env_name}} pip install gunicorn==20.1.0 && \
+    conda run -n {{env.conda_env_name}} pip cache purge && \
+    conda clean -a -y
+
+COPY ./flow /flow
+
+{% if env.setup_sh %}
+RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
+{% endif %}
+
+EXPOSE 8080
+
+COPY ./connections/* /connections/
+
+# reset runsvdir
+RUN rm -rf /var/runit
+COPY ./runit /var/runit
+# grant permission
+RUN chmod -R +x /var/runit
+
+COPY ./start.sh /
+CMD ["bash", "./start.sh"]
