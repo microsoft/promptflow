@@ -2,6 +2,7 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   topic:
     type: string
+    default: sport
   ground_truth:
     type: string
   conversation_history:

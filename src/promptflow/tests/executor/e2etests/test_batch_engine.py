@@ -506,10 +506,13 @@ class TestBatch:
                 assert content["run_info"]["root_run_id"] == resume_run_id
 
     @pytest.mark.parametrize(
-        "simulation_flow, copilot_flow, max_turn",
-        [("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 5)],
+        "simulation_flow, copilot_flow, max_turn, input_file_name",
+        [
+            ("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 5, "inputs.json"),
+            ("chat_group/chat_group_simulation", "chat_group/chat_group_copilot", 5, "inputs_using_default_value.json"),
+        ],
     )
-    def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, dev_connections):
+    def test_chat_group_batch_run(self, simulation_flow, copilot_flow, max_turn, input_file_name, dev_connections):
         simulation_role = ChatGroupRole(
             flow_file=get_yaml_file(simulation_flow),
             role="user", stop_signal="[STOP]",
@@ -525,14 +528,16 @@ class TestBatch:
             connections=dev_connections,
             inputs_mapping={"question": "${data.question}"}
         )
-        input_dirs = {"data": get_flow_inputs_file("chat_group", file_name="inputs.json")}
+        input_dirs = {"data": get_flow_inputs_file("chat_group", file_name=input_file_name)}
         output_dir = Path(mkdtemp())
+        mem_run_storage = MemoryRunStorage()
 
         # register python proxy since current python proxy cannot execute single line
         ProxyFactory.register_executor("python", SingleLinePythonExecutorProxy)
         batchEngine = BatchEngine(
             flow_file=None,
             working_dir=get_flow_folder("chat_group"),
+            storage=mem_run_storage,
             chat_group_roles=[simulation_role, copilot_role],
             max_turn=max_turn)
         batch_result = batchEngine.run(input_dirs, {}, output_dir)
@@ -554,3 +559,7 @@ class TestBatch:
             for j, line in enumerate(output):
                 if "line_number" not in output:
                     assert "role" in line, f"role is not in {i}th output {j}th line {line}"
+
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())

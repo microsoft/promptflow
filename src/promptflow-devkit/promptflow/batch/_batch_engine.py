@@ -10,7 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage, CHAT_GROUP_EXECUTOR_PROXY_KEY
+from promptflow._constants import (
+    LANGUAGE_KEY,
+    LINE_NUMBER_KEY,
+    LINE_TIMEOUT_SEC,
+    OUTPUT_FILE_NAME,
+    FlowLanguage,
+    CHAT_GROUP_EXECUTOR_PROXY_KEY
+)
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -198,7 +205,7 @@ class BatchEngine:
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
 
-                    if self._chat_group_roles is None:
+                    if self._executor_proxy.apply_inputs_mapping:
                         # set batch input source from input mapping
                         set_batch_input_source_from_inputs_mapping(inputs_mapping)
                         # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
@@ -439,7 +446,7 @@ class BatchEngine:
 
         # if the batch runs with errors, we should update the errors to ex
         ex = None
-        if not is_timeout and self._chat_group_roles is None:
+        if not is_timeout and self._executor_proxy.allow_aggregation:
             # execute aggregation nodes
             aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
             # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
@@ -475,8 +482,7 @@ class BatchEngine:
         while completed_line < total_lines:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
-            if self._chat_group_roles is None:
-                self._persist_run_info(completed_line_results)
+            self._persist_run_info(completed_line_results)
             line_results.extend(completed_line_results)
             log_progress(
                 self._start_time,

@@ -6,6 +6,7 @@ from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow._utils.execution_utils import apply_default_value_for_input
 
 
 class ChatGroupOrchestrator:
@@ -131,6 +132,7 @@ class ChatGroupOrchestrator:
                 chat_role.flow.inputs,
                 self._max_lines_count)
             batch_input = batch_input_processor._process_batch_inputs_line(inputs, chat_role.inputs_mapping)
-            batch_inputs.append(batch_input)
+            resolved_batch_input = apply_default_value_for_input(chat_role.flow.inputs, batch_input)
+            batch_inputs.append(resolved_batch_input)
 
         return batch_inputs
