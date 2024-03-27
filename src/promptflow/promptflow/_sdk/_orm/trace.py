@@ -17,6 +17,7 @@ from promptflow._sdk._constants import (
     SPAN_TABLENAME,
     SPAN_TRACE_ID_INDEX_NAME,
     SPAN_TRACE_ID_SPAN_ID_INDEX_NAME,
+    TRACE_LIST_DEFAULT_LIMIT,
 )
 from promptflow._sdk._errors import LineRunNotFoundError
 
@@ -153,6 +154,29 @@ class LineRun(Base):
                 .first()
             )
             return line_run
+
+    @staticmethod
+    @sqlite_retry
+    def list(
+        collection: typing.Optional[str] = None,
+        runs: typing.Optional[typing.List[str]] = None,
+        experiments: typing.Optional[typing.List[str]] = None,
+        trace_ids: typing.Optional[typing.List[str]] = None,
+    ) -> typing.List["LineRun"]:
+        with trace_mgmt_db_session() as session:
+            query = session.query(LineRun)
+            if collection is not None:
+                query = query.filter(LineRun.collection == collection)
+            elif runs is not None:
+                query = query.filter(LineRun.run.in_(runs))
+            elif experiments is not None:
+                query = query.filter(LineRun.experiment.in_(experiments))
+            elif trace_ids is not None:
+                query = query.filter(LineRun.trace_id.in_(trace_ids))
+            query = query.order_by(LineRun.start_time.desc())
+            if collection is not None:
+                query = query.limit(TRACE_LIST_DEFAULT_LIMIT)
+            return query.all()
 
     @sqlite_retry
     def _update(self) -> None:
