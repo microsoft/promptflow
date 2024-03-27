@@ -4,7 +4,8 @@
 from dataclasses import dataclass, is_dataclass
 
 from promptflow._core.tools_manager import register_connections
-from promptflow._sdk.entities import (
+from promptflow.contracts.types import Secret
+from promptflow.core._connection import (
     AzureContentSafetyConnection,
     AzureOpenAIConnection,
     CognitiveSearchConnection,
@@ -14,9 +15,8 @@ from promptflow._sdk.entities import (
     OpenAIConnection,
     SerpConnection,
     ServerlessConnection,
+    _Connection,
 )
-from promptflow._sdk.entities._connection import _Connection
-from promptflow.contracts.types import Secret
 
 
 @dataclass
