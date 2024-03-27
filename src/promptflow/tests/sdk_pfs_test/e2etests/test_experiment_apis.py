@@ -110,7 +110,7 @@ class TestExperimentAPIs:
             ]
         ):
             experiment = pfs_op.experiment_test(
-                body={"template": (EXPERIMENT_ROOT / "basic-no-script-template/basic1.exp.yaml").as_posix()}
+                body={"experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic1.exp.yaml").as_posix()}
             ).json
         assert "main" in experiment
         assert "eval" in experiment
@@ -124,7 +124,7 @@ class TestExperimentAPIs:
         ):
             experiment = pfs_op.experiment_test(
                 body={
-                    "template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix(),
+                    "experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix(),
                     "skip_flow": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
                     "skip_flow_output": {"category": "Channel", "evidence": "Both"},
                     "skip_flow_run_id": "123",
