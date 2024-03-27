@@ -14,12 +14,7 @@ from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import (
-    ClientUserAgentUtil,
-    generate_yaml_entry,
-    is_python_flex_flow_entry,
-    setup_user_agent_to_operation_context,
-)
+from ._utils import generate_yaml_entry, is_python_flex_flow_entry
 from .entities import Run
 from .entities._flow import FlexFlow
 from .operations import RunOperations
