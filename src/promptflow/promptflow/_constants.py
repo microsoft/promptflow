@@ -197,7 +197,7 @@ class SpanLinkFieldName:
 
 class MessageFormatType:
     BASIC = "basic"
-    OPENAI_VISION = "openai_vision"
+    OPENAI_VISION = "openai-vision"
 
 
 DEFAULT_OUTPUT_NAME = "output"

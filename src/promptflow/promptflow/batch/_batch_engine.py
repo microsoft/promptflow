@@ -10,7 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
+from promptflow._constants import (
+    LANGUAGE_KEY,
+    LINE_NUMBER_KEY,
+    LINE_TIMEOUT_SEC,
+    OUTPUT_FILE_NAME,
+    FlowLanguage,
+    MessageFormatType,
+)
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -108,9 +115,8 @@ class BatchEngine:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
-            # eager flow does not support multimedia contract currently
-
-        self._message_format = self._flow.message_format if not self._is_eager_flow else ""
+        # eager flow does not support multimedia contract currently, just use basic format type.
+        self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.Basic
         self._multimedia_processor = MultimediaProcessor.create(self._message_format)
 
         self._connections = connections

@@ -1,4 +1,4 @@
-message_format: OPENAI_VISION
+message_format: openai-vision
 inputs:
   chat_history:
     type: list

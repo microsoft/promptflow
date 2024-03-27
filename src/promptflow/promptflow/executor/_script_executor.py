@@ -8,7 +8,7 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Callable, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError
 from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
@@ -23,7 +23,6 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._trace import _traced
 from promptflow.tracing._tracer import Tracer
 
-from .._constants import MessageFormatType
 from .flow_executor import FlowExecutor
 
 

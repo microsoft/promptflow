@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from dateutil import parser
 
+from .._constants import MessageFormatType
+
 
 class Status(Enum):
     """An enumeration class for different types of run status."""
@@ -98,7 +100,7 @@ class RunInfo:
     logs: Optional[Dict[str, str]] = None
     system_metrics: Dict[str, Any] = None
     result: object = None
-    message_format: str = ""
+    message_format: str = MessageFormatType.BASIC
 
     @staticmethod
     def deserialize(data: dict) -> "RunInfo":
@@ -124,7 +126,7 @@ class RunInfo:
             logs=data.get("logs", None),
             system_metrics=data.get("system_metrics", None),
             result=data.get("result", None),
-            message_format=data.get("message_format", ""),
+            message_format=data.get("message_format", MessageFormatType.BASIC),
         )
         return run_info
 
@@ -200,7 +202,7 @@ class FlowRunInfo:
     system_metrics: Dict[str, Any] = None
     result: object = None
     upload_metrics: bool = False  # only set as true for root runs in bulk test mode and evaluation mode
-    message_format: str = ""
+    message_format: str = MessageFormatType.BASIC
 
     @staticmethod
     def deserialize(data: dict) -> "FlowRunInfo":
@@ -227,7 +229,7 @@ class FlowRunInfo:
             system_metrics=data.get("system_metrics", None),
             result=data.get("result", None),
             upload_metrics=data.get("upload_metrics", False),
-            message_format=data.get("message_format", ""),
+            message_format=data.get("message_format", MessageFormatType.BASIC),
         )
         return flow_run_info
 

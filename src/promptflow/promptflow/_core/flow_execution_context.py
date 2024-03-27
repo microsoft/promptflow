@@ -13,6 +13,7 @@ from contextvars import ContextVar
 from logging import WARNING
 from typing import Callable
 
+from promptflow._constants import MessageFormatType
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -43,7 +44,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_id=None,
         flow_id=None,
         line_number=None,
-        message_format=None,
+        message_format=MessageFormatType.BASIC,
     ):
         self._name = name
         self._run_tracker = run_tracker

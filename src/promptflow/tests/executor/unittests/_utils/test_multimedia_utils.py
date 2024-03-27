@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
+from promptflow._utils._errors import InvalidImageInput, InvalidMessageFormatType, LoadMultimediaDataError
 from promptflow._utils.multimedia_utils import (
     BasicMultimediaProcessor,
     ImageProcessor,
@@ -130,17 +130,22 @@ class TestTextProcessor:
 @pytest.mark.unittest
 class TestMultimediaProcessor:
     @pytest.mark.parametrize(
-        "message_format_type, processor_class",
+        "message_format_type, processor_class, expected_error",
         [
-            ("basic", BasicMultimediaProcessor),
-            ("OPENAI_VISION", OpenaiVisionMultimediaProcessor),
-            ("openai_vision", OpenaiVisionMultimediaProcessor),
-            (None, BasicMultimediaProcessor),
+            ("basic", BasicMultimediaProcessor, None),
+            ("OPENAI-VISION", OpenaiVisionMultimediaProcessor, None),
+            ("openai-vision", OpenaiVisionMultimediaProcessor, None),
+            (None, BasicMultimediaProcessor, None),
+            ("ABC", None, InvalidMessageFormatType),
         ],
     )
-    def test_create(self, message_format_type, processor_class):
-        processor = MultimediaProcessor.create(message_format_type)
-        assert isinstance(processor, processor_class)
+    def test_create(self, message_format_type, processor_class, expected_error):
+        if not expected_error:
+            processor = MultimediaProcessor.create(message_format_type)
+            assert isinstance(processor, processor_class)
+        else:
+            with pytest.raises(expected_error):
+                MultimediaProcessor.create(message_format_type)
 
     @pytest.mark.parametrize(
         "flow_folder_name, flow_file, processor_class",

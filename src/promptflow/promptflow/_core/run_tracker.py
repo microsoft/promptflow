@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from promptflow._constants import MessageFormatType
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -81,7 +82,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id="",
         inputs=None,
         index=None,
-        message_format="",
+        message_format=MessageFormatType.BASIC,
     ) -> FlowRunInfo:
         """Create a flow run and save to run storage on demand."""
         run_info = FlowRunInfo(
@@ -113,7 +114,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
-        message_format="",
+        message_format=MessageFormatType.BASIC,
     ):
         run_info = RunInfo(
             node=node,
@@ -142,7 +143,7 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         index,
-        message_format="",
+        message_format=MessageFormatType.BASIC,
     ):
         run_info = RunInfo(
             node=node,

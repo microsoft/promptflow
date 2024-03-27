@@ -5,7 +5,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, MessageFormatType
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.inputs_mapping_utils import apply_inputs_mapping
 from promptflow._utils.load_data import load_data
@@ -22,7 +22,7 @@ class BatchInputsProcessor:
         working_dir: Path,
         flow_inputs: Mapping[str, FlowInputDefinition],
         max_lines_count: Optional[int] = None,
-        message_format: str = "",
+        message_format: str = MessageFormatType.BASIC,
     ):
         self._working_dir = working_dir
         self._max_lines_count = max_lines_count

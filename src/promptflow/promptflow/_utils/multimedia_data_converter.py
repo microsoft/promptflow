@@ -117,7 +117,7 @@ class MultimediaConverter:
         :type flow_file: Path
         """
         # TODO: read flow.MessageFormatType from flow yaml file.
-        # Implement the format_adapter class for the openai_vision type.
+        # Implement the format_adapter class for the openai-vision type.
         # Then initialize the format_adapter for different MessageFormatType.
         self.format_adapter = MultimediaFormatAdapter20231201()
 

@@ -10,7 +10,8 @@ from urllib.parse import urlparse
 
 import requests
 
-from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
+from promptflow._constants import MessageFormatType
+from promptflow._utils._errors import InvalidImageInput, InvalidMessageFormatType, LoadMultimediaDataError
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes, Text
@@ -18,9 +19,6 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
-from promptflow.tracing._thread_local_singleton import ThreadLocalSingleton
-
-from .._constants import MessageFormatType
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
@@ -140,12 +138,20 @@ class TextProcessor:
         return Text.deserialize(text_dict)
 
 
-class MultimediaProcessor(ThreadLocalSingleton, ABC):
+class MultimediaProcessor(ABC):
     @staticmethod
     def create(message_format_type: str = MessageFormatType.BASIC):
-        if message_format_type and message_format_type.lower() == MessageFormatType.OPENAI_VISION:
+        if (
+            not message_format_type
+            or message_format_type == ""
+            or message_format_type.lower() == MessageFormatType.BASIC
+        ):
+            return BasicMultimediaProcessor()
+        if message_format_type.lower() == MessageFormatType.OPENAI_VISION:
             return OpenaiVisionMultimediaProcessor()
-        return BasicMultimediaProcessor()
+        raise InvalidMessageFormatType(
+            message_format="Invalid message format. Supported message formats are [basic, openai-vision].",
+        )
 
     @staticmethod
     def create_from_yaml(flow_file: Path, working_dir: Optional[Path] = None):

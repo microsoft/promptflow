@@ -10,6 +10,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._constants import MessageFormatType
 from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
@@ -50,7 +51,7 @@ class ToolResolver:
         working_dir: Path,
         connections: Optional[dict] = None,
         package_tool_keys: Optional[List[str]] = None,
-        message_format: str = "",
+        message_format: str = MessageFormatType.BASIC,
     ):
         try:
             # Import openai and aoai for llm tool
