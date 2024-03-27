@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
-      - main
-      - preview/docs
-    paths:
-      - 'README.md'
-      - 'docs/**'
-      - 'scripts/docs/**'
-      - '.github/workflows/build_doc_ci.yml'
-      - 'src/promptflow/promptflow/**'
+# TODO: Enable this after package separation
+#      - main
+#    paths:
+#      - 'README.md'
+#      - 'docs/**'
+#      - 'scripts/docs/**'
+#      - '.github/workflows/build_doc_ci.yml'
+#      - 'src/promptflow/promptflow/**'
 
 env:
   packageSetupType: promptflow_with_extra

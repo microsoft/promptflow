@@ -378,7 +378,7 @@ class TestFlowRun:
         self, install_custom_tool_pkg, local_client, pf
     ):
         # Prepare custom connection
-        from promptflow.connections import CustomConnection
+        from promptflow._sdk.entities._connection import CustomConnection
 
         conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
         local_client.connections.create_or_update(conn)

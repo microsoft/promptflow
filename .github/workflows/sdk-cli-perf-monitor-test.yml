@@ -67,11 +67,13 @@ jobs:
           pip install -e .
         working-directory: ${{ env.RECORD_DIRECTORY }}
 
-      - name: Install tracing
+      - name: Install dependency
         shell: pwsh
         run: |
           pip uninstall -y promptflow-tracing
-          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip install ${{ github.workspace }}/src/promptflow-tracing
+          pip uninstall -y promptflow-core
+          pip install ${{ github.workspace }}/src/promptflow-core
           pip freeze
 
       - name: Generate (mock) connections.json

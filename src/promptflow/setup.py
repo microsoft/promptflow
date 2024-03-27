@@ -47,7 +47,7 @@ REQUIRES = [
     "flask-restx>=1.2.0,<2.0.0",  # PFS Swagger
     "flask-cors>=4.0.0,<5.0.0",  # handle PFS CORS
     "promptflow-tracing>=1.0.0",  # tracing capabilities
-    "promptflow-core",  # tracing capabilities
+    "promptflow-core",
 ]
 
 setup(
