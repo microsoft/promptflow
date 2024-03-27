@@ -80,6 +80,8 @@ class ExperimentTest(Resource):
         session = args.session
         context = None
         if inputs and override_flow_path:
+            flow_path_dir, flow_path_file = resolve_flow_path(override_flow_path)
+            override_flow_path = (flow_path_dir / flow_path_file).as_posix()
             context = {"inputs": inputs, "node": override_flow_path}
         remove_dir = False
         if output_path is None:

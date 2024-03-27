@@ -122,7 +122,7 @@ class TestExperimentAPIs:
                 {"activity_name": "pf.experiment.test"},
             ]
         ):
-            experiment = pfs_op.experiment_test(
+            experiment = pfs_op.experiment_test_with_skip(
                 body={
                     "experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix(),
                     "skip_flow": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
@@ -131,3 +131,4 @@ class TestExperimentAPIs:
                 }
             ).json
         assert "eval" in experiment
+        assert len(experiment) == 1

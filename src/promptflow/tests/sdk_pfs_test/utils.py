@@ -313,3 +313,10 @@ class PFSOperations:
             json=body,
         )
         return response
+
+    def experiment_test_with_skip(self, body: dict):
+        response = self._client.post(
+            f"{self.EXPERIMENT_PREFIX}/skip_test",
+            json=body,
+        )
+        return response
