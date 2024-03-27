@@ -1,11 +1,9 @@
-import base64
 import json
 from enum import Enum
 from unittest.mock import patch
 
 import pytest
 
-from promptflow.contracts.multimedia import PFBytes
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
@@ -231,11 +229,3 @@ def test_serialize_attribute_with_non_serializable_data():
 
     data = NonSerializable()
     assert serialize_attribute(data) == json.dumps(str(data))
-
-
-@pytest.mark.unittest
-def test_serialize_pfbytes_data():
-    pfbytes_data = PFBytes(b"bytes_data", "image/png")
-    expected_result = f"data:image/png;base64,{base64.b64encode(pfbytes_data).decode('utf-8')}"
-
-    assert serialize_attribute(pfbytes_data) == json.dumps(expected_result)
