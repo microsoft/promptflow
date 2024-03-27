@@ -15,7 +15,7 @@ from utils import REPO_ROOT_DIR, change_cwd, print_blue, run_cmd
 PROMPT_FLOW_PKGS = [
     "promptflow-tracing",
     # TODO: uncomment below lines when the packages are ready
-    # "promptflow-core",
+    "promptflow-core",
     # "promptflow-devkit",
     # "promptflow-azure",
     "promptflow[azure]",

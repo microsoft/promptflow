@@ -4,6 +4,7 @@ on:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request:
     paths:
+      - src/promptflow-core/**
       - src/promptflow/**
       - src/promptflow-tracing/**
       - scripts/building/**
@@ -78,10 +79,10 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-core
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-        pip uninstall -y promptflow-tracing
-        pip install -e ${{ github.workspace }}/src/promptflow-tracing
         pip freeze
     - name: install recording
       run: |

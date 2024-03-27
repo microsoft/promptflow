@@ -2,10 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+
 def get_default_azure_credential():
     from azure.identity import DefaultAzureCredential
+
     try:
-        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+        from azure.ai.ml._azure_environments import AzureEnvironments, EndpointURLS, _get_cloud, _get_default_cloud_name
     except ImportError:
         return DefaultAzureCredential()
     # Support sovereign cloud cases, like mooncake, fairfax.
