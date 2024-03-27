@@ -337,10 +337,15 @@ class RunTracker(ThreadLocalSingleton):
         """Update exception details into run info."""
         # Update status to Cancelled the run terminates because of KeyboardInterruption or CancelledError.
         if isinstance(ex, KeyboardInterrupt) or isinstance(ex, asyncio.CancelledError):
+            ex = ToolCanceledError(
+                message_format="Tool execution is canceled because: {msg}.",
+                msg="Received cancel request.",
+                target=ErrorTarget.EXECUTOR,
+            )
             run_info.status = Status.Canceled
         else:
-            run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
             run_info.status = Status.Failed
+        run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
 
     def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
         flow_runs = self.flow_run_list
