@@ -14,8 +14,8 @@ from utils import REPO_ROOT_DIR, change_cwd, print_blue, run_cmd
 
 PROMPT_FLOW_PKGS = [
     "promptflow-tracing",
+    "promptflow-core",
     # TODO: uncomment below lines when the packages are ready
-    # "promptflow-core",
     # "promptflow-devkit",
     # "promptflow-azure",
     "promptflow[azure]",
@@ -96,6 +96,12 @@ def install_pkg_editable(pkg: str, verbose: bool) -> None:
         # we can refine this leveraging `poetry export` later
         elif os.path.exists("pyproject.toml"):
             collect_and_install_from_pyproject()
+
+            # touch __init__.py for the package
+            # NOTE that this is a workaround to enable VS Code to recognize the namespace package
+            #      we should be able to remove this after we fully deprecate promptflow in local development
+            with open(pkg_working_dir / "promptflow" / "__init__.py", mode="w", encoding="utf-8") as f:
+                f.write("")
 
 
 @dataclass

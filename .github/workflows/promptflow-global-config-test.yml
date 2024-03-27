@@ -4,6 +4,7 @@ on:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request_target:
     paths:
+      - src/promptflow-core/*
       - src/promptflow/**
       - scripts/building/**
       - .github/workflows/promptflow-global-config-test.yml
@@ -60,11 +61,14 @@ jobs:
       with:
         setupType: ${{ env.packageSetupType }}
         scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Install tracing
+    - name: Install dependency
       shell: pwsh
       run: |
         pip uninstall -y promptflow-tracing
-        pip install -e ${{ github.workspace }}/src/promptflow-tracing
+        pip install ${{ github.workspace }}/src/promptflow-tracing
+        echo "Installed promptflow-tracing"
+        pip uninstall -y promptflow-core
+        pip install ${{ github.workspace }}/src/promptflow-core
         pip freeze
     - name: Azure Login
       uses: azure/login@v1

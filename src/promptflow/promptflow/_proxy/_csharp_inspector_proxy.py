@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 import pydash
 
@@ -16,7 +16,10 @@ class CSharpInspectorProxy(AbstractInspectorProxy):
     def __init__(self):
         super().__init__()
 
-    def get_used_connection_names(self, flow_file: Path, working_dir: Path) -> List[str]:
+    def get_used_connection_names(
+        self, flow_file: Path, working_dir: Path, environment_variables_overrides: Dict[str, str] = None
+    ) -> List[str]:
+        # TODO: support environment_variables_overrides
         flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
         tools_meta = read_json_content(flow_tools_json_path, "meta of tools")
         flow_dag = load_yaml(flow_file)

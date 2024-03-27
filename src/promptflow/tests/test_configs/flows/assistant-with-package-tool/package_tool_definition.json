@@ -1,0 +1,14 @@
+{
+    "communicate.Communication.say_hello": {
+        "class_name": "Communication",
+        "function": "say_hello",
+        "inputs": {
+             "connection": {"type": ["AzureOpenAIConnection"]},
+             "connection_2": {"type": ["AzureOpenAIConnection"]}
+        },
+        "module": "communicate",
+        "name": "communication related activity",
+        "type": "python",
+        "description": "Say hello to the world or someone else"
+    }
+}
