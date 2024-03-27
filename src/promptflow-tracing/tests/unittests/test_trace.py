@@ -1,8 +1,11 @@
+import base64
+import json
 from enum import Enum
-
-import pytest
 from unittest.mock import patch
 
+import pytest
+
+from promptflow.contracts.multimedia import PFBytes
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
@@ -11,6 +14,7 @@ from promptflow.tracing._trace import (
     enrich_span_with_openai_tokens,
     enrich_span_with_prompt_info,
     enrich_span_with_trace,
+    serialize_attribute,
 )
 from promptflow.tracing.contracts.trace import TraceType
 
@@ -65,7 +69,7 @@ class MockUsage:
         return {
             "prompt_tokens": self.prompt_tokens,
             "completion_token": self.completion_token,
-            "total_tokens": self.total_tokens
+            "total_tokens": self.total_tokens,
         }
 
 
@@ -82,11 +86,11 @@ class MockTraceType(Enum):
 @pytest.mark.unittest
 def test_token_collector():
     """
-          1
-        / |
-        2  3
-        |
-        4
+      1
+    / |
+    2  3
+    |
+    4
     """
     token_collector = TokenCollector()
     span_1 = MockSpan(MockSpanContext(1))
@@ -136,7 +140,7 @@ def test_enrich_span_with_trace(caplog):
             "framework": "promptflow",
             "span_type": "type_1",
             "function": "test_trace",
-            "node_name": "test_node_name"
+            "node_name": "test_node_name",
         }
 
         # Raise exception when update attributes
@@ -148,8 +152,7 @@ def test_enrich_span_with_trace(caplog):
 
 @pytest.mark.unittest
 def test_enrich_span_with_prompt_info(caplog):
-    with patch(
-        "promptflow.tracing._trace.get_prompt_param_name_from_func", return_value="prompt_tpl"), patch(
+    with patch("promptflow.tracing._trace.get_prompt_param_name_from_func", return_value="prompt_tpl"), patch(
         "promptflow.tracing._trace.get_input_names_for_prompt_template", return_value=["input_1", "input_2"]
     ):
         # Normal case
@@ -159,7 +162,7 @@ def test_enrich_span_with_prompt_info(caplog):
         )
         assert span.attributes == {
             "prompt.template": "prompt_tpl",
-            "prompt.variables": "{\n  \"input_1\": \"value_1\",\n  \"input_2\": \"value_2\"\n}",
+            "prompt.variables": '{\n  "input_1": "value_1",\n  "input_2": "value_2"\n}',
         }
 
         # Raise exception when update attributes
@@ -176,7 +179,7 @@ def test_enrich_span_with_input(caplog):
     # Normal case
     span = MockSpan(MockSpanContext(1))
     enrich_span_with_input(span, "input")
-    assert span.attributes == {"inputs": "\"input\""}
+    assert span.attributes == {"inputs": '"input"'}
 
     # Raise exception when update attributes
     span = MockSpan(MockSpanContext(1), raise_exception_for_attr=True)
@@ -212,3 +215,27 @@ def test_enrich_span_with_openai_tokens(caplog):
         enrich_span_with_openai_tokens(span, TraceType.FUNCTION)
         assert caplog.records[0].levelname == "WARNING"
         assert "Failed to enrich span with openai tokens" in caplog.text
+
+
+@pytest.mark.unittest
+def test_serialize_attribute_with_serializable_data():
+    data = {"key": "value"}
+    result = serialize_attribute(data)
+    assert result == json.dumps(data, indent=2)
+
+
+@pytest.mark.unittest
+def test_serialize_attribute_with_non_serializable_data():
+    class NonSerializable:
+        pass
+
+    data = NonSerializable()
+    assert serialize_attribute(data) == json.dumps(str(data))
+
+
+@pytest.mark.unittest
+def test_serialize_pfbytes_data():
+    pfbytes_data = PFBytes(b"bytes_data", "image/png")
+    expected_result = f"data:image/png;base64,{base64.b64encode(pfbytes_data).decode('utf-8')}"
+
+    assert serialize_attribute(pfbytes_data) == json.dumps(expected_result)
