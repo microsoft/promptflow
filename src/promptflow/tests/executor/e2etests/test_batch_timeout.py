@@ -160,7 +160,11 @@ class TestBatchTimeout:
         # assert the error summary in batch result
         if batch_run_status == Status.Failed:
             ex = BatchRunTimeoutError(
-                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
+                message_format=(
+                    "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                    "Please adjust the timeout to a higher value."
+                ),
+                batch_timeout_sec=batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
             assert batch_results.error_summary.batch_error_dict == ExceptionPresenter.create(ex).to_dict()
