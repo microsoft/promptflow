@@ -46,7 +46,7 @@ def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, en
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
-        "flow_folder, inputs, ensure_output, init",
+        "flow_folder, inputs, ensure_output, init_kwargs",
         [
             ("dummy_flow_with_trace", {"text": "text", "models": ["model"]}, lambda x: x == "dummy_output", None),
             (
@@ -63,17 +63,17 @@ class TestEagerFlow:
             ),
         ],
     )
-    def test_flow_run(self, flow_folder, inputs, ensure_output, init):
+    def test_flow_run(self, flow_folder, inputs, ensure_output, init_kwargs):
         flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
 
         # Test submitting eager flow to script executor
-        executor = ScriptExecutor(flow_file=flow_file, init=init)
+        executor = ScriptExecutor(flow_file=flow_file, init_kwargs=init_kwargs)
         line_result = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
 
         # Test submitting eager flow to flow executor
-        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init=init)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={}, init_kwargs=init_kwargs)
         line_result1 = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result1, LineResult)
         assert ensure_output(line_result1.output)
@@ -94,7 +94,7 @@ class TestEagerFlow:
         assert "dummy exception" in line_result.run_info.error["message"]
 
     @pytest.mark.parametrize(
-        "flow_folder, inputs_mapping, ensure_output, init",
+        "flow_folder, inputs_mapping, ensure_output, init_kwargs",
         [
             (
                 "dummy_flow_with_trace",
@@ -116,11 +116,11 @@ class TestEagerFlow:
             ),
         ],
     )
-    def test_batch_run(self, flow_folder, inputs_mapping, ensure_output, init):
+    def test_batch_run(self, flow_folder, inputs_mapping, ensure_output, init_kwargs):
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
             get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
-            init=init,
+            init_kwargs=init_kwargs,
         )
         input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
         output_dir = Path(mkdtemp())
@@ -174,7 +174,7 @@ class TestEagerFlow:
     )
     def test_batch_run_with_init_multiple_workers(self, worker_count, ensure_output):
         flow_folder = "basic_callable_class"
-        init = {"obj_input": "obj_input"}
+        init_kwargs = {"obj_input": "obj_input"}
 
         input_dirs = {"data": get_flow_inputs_file(flow_folder, root=EAGER_FLOW_ROOT)}
         output_dir = Path(mkdtemp())
@@ -182,7 +182,7 @@ class TestEagerFlow:
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT),
             get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT),
-            init=init,
+            init_kwargs=init_kwargs,
             worker_count=worker_count,
         )
 

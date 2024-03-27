@@ -33,13 +33,13 @@ class ScriptExecutor(FlowExecutor):
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
-        init: Optional[Dict[str, Any]] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
-        logger.debug(f"Init params for script executor: {init}")
+        logger.debug(f"Init params for script executor: {init_kwargs}")
 
         self._flow_file = flow_file
-        self._init = init or {}
+        self._init_kwargs = init_kwargs or {}
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._initialize_function()
         self._connections = connections
@@ -135,8 +135,10 @@ class ScriptExecutor(FlowExecutor):
         # check if func is a callable class
         if inspect.isclass(func):
             if hasattr(func, "__call__"):
-                logger.debug(f"Python class entry '{func_name}' has __call__ method, initializing it with {self._init}")
-                obj = func(**self._init)
+                logger.debug(
+                    f"Python class entry '{func_name}' has __call__ method, initializing it with {self._init_kwargs}"
+                )
+                obj = func(**self._init_kwargs)
                 func = getattr(obj, "__call__")
             else:
                 raise PythonLoadError(
