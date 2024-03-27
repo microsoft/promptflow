@@ -65,4 +65,5 @@ class TraceOperations:
             orm_eval_line_runs = ORMLineRun._get_children(line_run_id=line_run.line_run_id)
             eval_line_runs = [LineRun._from_orm_object(obj) for obj in orm_eval_line_runs]
             line_run._append_evaluations(eval_line_runs)
+            line_runs.append(line_run)
         return line_runs
