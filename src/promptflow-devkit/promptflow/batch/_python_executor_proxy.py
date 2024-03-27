@@ -24,6 +24,7 @@ from promptflow.tracing._operation_context import OperationContext
 
 class PythonExecutorProxy(AbstractExecutorProxy):
     def __init__(self, flow_executor: FlowExecutor):
+        super().__init__()
         self._flow_executor = flow_executor
 
     @classmethod
