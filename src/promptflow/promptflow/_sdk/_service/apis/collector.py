@@ -70,7 +70,7 @@ def trace_collector(
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
                     # TODO: persist with batch
-                    span = Span._from_protobuf_object(span, resource=resource)
+                    span = Span._from_protobuf_object(span, resource=resource, logger=logger)
                     if not cloud_trace_only:
                         span._persist()
                     all_spans.append(span)

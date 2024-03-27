@@ -5,6 +5,7 @@
 import copy
 import datetime
 import json
+import logging
 import typing
 import uuid
 from dataclasses import asdict, dataclass
@@ -40,6 +41,17 @@ from promptflow._sdk._utils import (
     flatten_pb_attributes,
     parse_otel_span_status_code,
 )
+
+
+class Event:
+    @staticmethod
+    def get(event_id: str) -> typing.Dict:
+        orm_event = ORMEvent.get(event_id)
+        data = json.loads(orm_event.data)
+        # deserialize `events.attributes.payload` here to save effort in UX
+        payload = data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD]
+        data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD] = json.loads(payload)
+        return data
 
 
 class Span:
@@ -100,10 +112,11 @@ class Span:
 
     def _load_events(self) -> None:
         # load events from table `events` and update `events.attributes` inplace
+        events = []
         for i in range(len(self.events)):
             event_id = self.events[i][SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTES_EVENT_ID]
-            orm_event = ORMEvent.get(event_id)
-            self.events[i] = json.loads(orm_event.data)
+            events.append(Event.get(event_id=event_id))
+        self.events = events
 
     def _persist_line_run(self) -> None:
         # within a trace id, the line run will be created/updated in two cases:
@@ -188,11 +201,12 @@ class Span:
         return links
 
     @staticmethod
-    def _from_protobuf_object(obj: PBSpan, resource: typing.Dict) -> "Span":
+    def _from_protobuf_object(obj: PBSpan, resource: typing.Dict, logger: logging.Logger) -> "Span":
         # Open Telemetry does not provide official way to parse Protocol Buffer Span object
         # so we need to parse it manually relying on `MessageToJson`
         # reference: https://github.com/open-telemetry/opentelemetry-python/issues/3700#issuecomment-2010704554
         span_dict: dict = json.loads(MessageToJson(obj))
+        logger.debug("Received span: %s, resource: %s", json.dumps(span_dict), json.dumps(resource))
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
         parent_id = obj.parent_span_id.hex()

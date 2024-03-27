@@ -2,23 +2,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import json
 import typing
 
-from promptflow._constants import SpanEventFieldName
-from promptflow._sdk._constants import SPAN_EVENTS_ATTRIBUTE_PAYLOAD
-from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
-from promptflow._sdk.entities._trace import LineRun, Span
+from promptflow._sdk.entities._trace import Event, LineRun, Span
 
 
 class TraceOperations:
     def get_event(self, event_id: str) -> typing.Dict:
-        data = json.loads(ORMEvent.get(event_id=event_id).data)
-        payload = data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD]
-        data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD] = json.loads(payload)
-        return data
+        return Event.get(event_id=event_id)
 
     def get_span(
         self,
