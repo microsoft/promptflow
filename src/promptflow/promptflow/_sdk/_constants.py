@@ -9,10 +9,11 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
+    CustomStrongTypeConnectionConfigs,
 )
 
 LOGGER_NAME = "promptflow"
@@ -153,7 +154,6 @@ SPAN_TABLENAME = "spans"
 SPAN_TRACE_ID_INDEX_NAME = "idx_spans_trace_id"
 SPAN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_spans_trace_id_span_id"
 LINE_RUN_TABLENAME = "line_runs"
-LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_line_runs_trace_id_span_id"
 LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME = "idx_line_runs_run_line_number"
 LINE_RUN_PARENT_ID_INDEX_NAME = "idx_line_runs_parent_id"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"

@@ -14,7 +14,6 @@ from promptflow._sdk._constants import (
     LINE_RUN_PARENT_ID_INDEX_NAME,
     LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME,
     LINE_RUN_TABLENAME,
-    LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME,
     SPAN_TABLENAME,
     SPAN_TRACE_ID_INDEX_NAME,
     SPAN_TRACE_ID_SPAN_ID_INDEX_NAME,
@@ -96,9 +95,11 @@ class Span(Base):
 
     @staticmethod
     @sqlite_retry
-    def list(trace_id: str) -> typing.List["Span"]:
+    def list(trace_ids: typing.Union[str, typing.List[str]]) -> typing.List["Span"]:
+        if isinstance(trace_ids, str):
+            trace_ids = [trace_ids]
         with trace_mgmt_db_session() as session:
-            spans = session.query(Span).filter(Span.trace_id == trace_id).all()
+            spans = session.query(Span).filter(Span.trace_id.in_(trace_ids)).all()
             return spans
 
 
@@ -125,7 +126,6 @@ class LineRun(Base):
     collection: Mapped[str] = mapped_column(TEXT)
 
     __table_args__ = (
-        Index(LINE_RUN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
         Index(LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME, "run", "line_number"),
         Index(LINE_RUN_PARENT_ID_INDEX_NAME, "parent_id"),
     )

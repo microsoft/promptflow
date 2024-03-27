@@ -217,7 +217,7 @@ class TestTrace:
         assert span.name == mock_span.name
 
     def test_span_list(self, mock_span: SpanInfo) -> None:
-        spans = Span.list(trace_id=mock_span.trace_id)
+        spans = Span.list(trace_ids=mock_span.trace_id)
         assert len(spans) == 1
 
     def test_event_persist_and_get(self) -> None:
