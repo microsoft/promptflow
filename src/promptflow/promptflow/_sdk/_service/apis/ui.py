@@ -3,13 +3,12 @@
 # ---------------------------------------------------------
 import base64
 import hashlib
-import io
 import json
 import os
 from pathlib import Path
 
 from flask import Response, current_app, make_response, render_template, send_from_directory, url_for
-from ruamel.yaml import YAML, YAMLError
+from ruamel.yaml import YAMLError
 from werkzeug.utils import safe_join
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME, UX_INPUTS_JSON
@@ -17,7 +16,7 @@ from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import decrypt_flow_path
 from promptflow._sdk._utils import json_load, read_write_by_user
 from promptflow._utils.flow_utils import is_flex_flow, resolve_flow_path
-from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("ui", description="UI")
@@ -173,11 +172,7 @@ class YamlEdit(Resource):
             # call api provided by han to get flow input
             flow_input = {}
             flow_info.update(flow_input)
-        yaml = YAML()
-        string_stream = io.StringIO()  # Create a string stream
-        yaml.dump(flow_info, string_stream)  # Use ruamel.yaml to dump YAML data into the string stream
-        flow_info = string_stream.getvalue()
-        string_stream.close()
+        flow_info = dump_yaml(flow_info)
         return Response(flow_info, mimetype="text/yaml")
 
     @api.response(code=200, description="Set the flow yaml content")
@@ -191,9 +186,8 @@ class YamlEdit(Resource):
         experiment = args.experiment
         flow_path = get_set_flow_yaml(flow, experiment, is_get=False)
         flow_path.touch(mode=read_write_by_user(), exist_ok=True)
-        yaml = YAML()
         try:
-            content = yaml.load(content)
+            content = load_yaml_string(content)
         except YAMLError as e:
             raise UserErrorException(f"Invalid yaml content: {str(e)}")
         with open(flow_path, "w") as outfile:
