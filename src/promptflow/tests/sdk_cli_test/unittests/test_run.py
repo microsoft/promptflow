@@ -20,7 +20,6 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import inject_sys_path
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.exceptions import UserErrorException
 from promptflow.exceptions import UserErrorException, ValidationException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
