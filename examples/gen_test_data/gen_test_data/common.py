@@ -12,9 +12,10 @@ from promptflow._utils.logger_utils import get_logger
 
 def split_document(chunk_size, chunk_overlap, documents_folder, document_node_output):
     try:
-        from llama_index.core import SimpleDirectoryReader
-        from llama_index.core.node_parser import SentenceSplitter
-        from llama_index.core.schema import Document as LlamaindexDocument, BaseNode
+        from llama_index import SimpleDirectoryReader
+        from llama_index.node_parser import SentenceSplitter
+        from llama_index.readers.schema import Document as LlamaindexDocument
+        from llama_index.schema import BaseNode
     except ImportError:
         raise ImportError(
             "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
@@ -32,6 +33,8 @@ def split_document(chunk_size, chunk_overlap, documents_folder, document_node_ou
     )
     # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.  # noqa: E501
     reader = SimpleDirectoryReader(documents_folder, required_exts=SUPPORT_FILE_TYPE, recursive=True, encoding="utf-8")
+    # Disable the default suffixes to avoid splitting the documents into small chunks.
+    # TODO: find a better way to disable the default suffixes.
     SimpleDirectoryReader.supported_suffix = []
     chunks = reader.load_data()
     # Convert documents into nodes
