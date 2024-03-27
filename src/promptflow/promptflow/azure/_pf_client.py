@@ -12,7 +12,7 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
-from promptflow._sdk._utils import generate_yaml_entry
+from promptflow._sdk._utils import ClientUserAgentUtil, generate_yaml_entry, setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
@@ -281,10 +281,8 @@ class PFClient:
             return self.runs._create_by_resume_from(
                 resume_from=resume_from, name=name, display_name=display_name, tags=tags, **kwargs
             )
-
-        if code and not os.path.exists(code):
-            raise FileNotFoundError(f"code path {code} does not exist")
-        code = Path(code) if code else Path(os.getcwd())
+        if callable(flow):
+            raise UserErrorException(f"Providing callable {flow} as flow is not supported.")
         with generate_yaml_entry(entry=flow, code=code) as flow:
             run = Run(
                 name=name,
