@@ -233,6 +233,25 @@ class TestTracing:
             assert isinstance(inputs, dict)
             assert output is not None
 
+            self.validate_inputs_output_event(span)
+
+    def validate_inputs_output_event(self, span):
+        event_names = {event.name for event in span.events}
+        required_names = {"promptflow.function.inputs", "promptflow.function.output"}
+
+        missing_names = required_names - event_names
+        assert not missing_names, f"Missing required events: {', '.join(missing_names)}"
+
+        for event in span.events:
+            if event.name in required_names:
+                assert "payload" in event.attributes, f"Event {event.name} does not have a payload attribute."
+                try:
+                    json.loads(event.attributes["payload"])
+                except json.JSONDecodeError:
+                    assert (
+                        False
+                    ), f"Failed to parse payload for event {event.name}. Payload: {event.attributes['payload']}"
+
     def validate_openai_tokens(self, span_list, is_stream=False):
         span_dict = {span.context.span_id: span for span in span_list}
         expected_tokens = {}
