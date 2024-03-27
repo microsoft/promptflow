@@ -78,7 +78,7 @@ class ExperimentTest(Resource):
         environment_variables = args.environment_variables
         output_path = args.output_path
         session = args.session
-        context = {}
+        context = None
         if inputs and override_flow_path:
             context = {"inputs": inputs, "node": override_flow_path}
         remove_dir = False
