@@ -58,7 +58,11 @@ setup(
         "azure": ["promptflow-azure"],
         "executable": ["promptflow-devkit[executable]"],
         "azureml-serving": [
-            "promptflow-devkit[azureml-serving]",
+            # AzureML connection dependencies
+            "azure-identity>=1.12.0,<2.0.0",
+            "azure-ai-ml>=1.14.0,<2.0.0",
+            # MDC dependencies for monitoring
+            "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
         ],
         "executor-service": [
             "promptflow-core[executor-service]",  # used to build web executor server

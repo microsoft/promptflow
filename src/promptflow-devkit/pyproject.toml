@@ -69,9 +69,7 @@ pyinstaller = ">=5.13.2"
 streamlit = ">=1.26.0"
 streamlit-quill = "<0.1.0"
 bs4 = "*"
-azure-identity = ">=1.12.0,<2.0.0"
-azure-ai-ml = ">=1.14.0,<2.0.0"
-azureml-ai-monitoring = ">=0.1.0b3,<1.0.0"
+azure-core = ">=1.26.4,<2.0.0"
 
 [tool.poetry.extras]
 all = [
@@ -80,14 +78,6 @@ all = [
   "streamlit",
   "streamlit-quill",
   "bs4",
-  "azure-identity",
-  "azure-ai-ml",
-  "azureml-ai-monitoring",
-]
-azureml-serving = [
-  "azure-identity",
-  "azure-ai-ml",
-  "azureml-ai-monitoring",
 ]
 executable = [
   "pyarrow",
