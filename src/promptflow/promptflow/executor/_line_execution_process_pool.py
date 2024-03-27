@@ -134,6 +134,8 @@ class LineExecutionProcessPool:
             "working_dir": flow_executor._working_dir,
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
+            # only script executor has init
+            "init": flow_executor._init if hasattr(flow_executor, "_init") else {},
         }
         # Will set to True if the batch run is timeouted.
         self._is_timeout = False

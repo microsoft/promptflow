@@ -6,7 +6,7 @@ import uuid
 from dataclasses import is_dataclass
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Dict, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.run_tracker import RunTracker
@@ -33,10 +33,13 @@ class ScriptExecutor(FlowExecutor):
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
+        init: Optional[Dict[str, Any]] = None,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
+        logger.debug(f"Init params for script executor: {init}")
 
         self._flow_file = flow_file
+        self._init = init or {}
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._initialize_function()
         self._connections = connections
@@ -129,7 +132,19 @@ class ScriptExecutor(FlowExecutor):
         module_name, func_name = self._parse_flow_file()
         module = importlib.import_module(module_name)
         func = getattr(module, func_name, None)
-        if func is None or not inspect.isfunction(func):
+        # check if func is a callable class
+        if inspect.isclass(func):
+            if hasattr(func, "__call__"):
+                logger.debug(f"Python class entry '{func_name}' has __call__ method, initializing it with {self._init}")
+                obj = func(**self._init)
+                func = getattr(obj, "__call__")
+            else:
+                raise PythonLoadError(
+                    message_format="Python class entry '{func_name}' does not have __call__ method.",
+                    func_name=func_name,
+                    module_name=module_name,
+                )
+        elif func is None or not inspect.isfunction(func):
             raise PythonLoadError(
                 message_format="Failed to load python function '{func_name}' from file '{module_name}'.",
                 func_name=func_name,
