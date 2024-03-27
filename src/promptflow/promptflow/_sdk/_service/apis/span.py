@@ -18,27 +18,28 @@ from promptflow._constants import (
 from promptflow._sdk._constants import PFS_MODEL_DATETIME_FORMAT
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow.client import PFClient
 
 api = Namespace("Spans", description="Spans Management")
 
 # parsers for query parameters
 list_span_parser = api.parser()
-list_span_parser.add_argument("session", type=str, required=False)
 list_span_parser.add_argument("trace_ids", type=str, required=False)
+list_span_parser.add_argument("lazy_load", type=str, required=False)
 
 
 # use @dataclass for strong type
 @dataclass
 class ListSpanParser:
-    session_id: typing.Optional[str] = None
-    trace_ids: typing.Optional[typing.List[str]] = None
+    trace_ids: typing.List[str]
+    lazy_load: bool
 
     @staticmethod
     def from_request() -> "ListSpanParser":
         args = list_span_parser.parse_args()
         return ListSpanParser(
-            session_id=args.session,
             trace_ids=args.trace_ids.split(",") if args.trace_ids is not None else args.trace_ids,
+            lazy_load=False if str(args.lazy_load).lower() == "false" else True,
         )
 
 
@@ -106,12 +107,19 @@ class Spans(Resource):
     @api.marshal_list_with(span_model)
     @api.response(code=200, description="Spans")
     def get(self):
-        from promptflow.client import PFClient
-
         client: PFClient = get_client_from_request()
         args = ListSpanParser.from_request()
         spans = client._traces.list_spans(
-            session_id=args.session_id,
             trace_ids=args.trace_ids,
+            lazy_load=args.lazy_load,
         )
-        return [span._content for span in spans]
+        return [span._to_rest_object() for span in spans]
+
+
+@api.route("/Event/<string:event_id>")
+class Event(Resource):
+    @api.doc(description="Get span event with event id")
+    @api.response(code=200, description="Event")
+    def get(self, event_id: str):
+        client: PFClient = get_client_from_request()
+        return client._traces.get_event(event_id=event_id)

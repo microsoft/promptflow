@@ -2,14 +2,24 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import typing
 
+from promptflow._constants import SpanEventFieldName
+from promptflow._sdk._constants import SPAN_EVENTS_ATTRIBUTE_PAYLOAD
+from promptflow._sdk._orm.trace import Event as ORMEvent
 from promptflow._sdk._orm.trace import LineRun as ORMLineRun
 from promptflow._sdk._orm.trace import Span as ORMSpan
 from promptflow._sdk.entities._trace import LineRun, Span
 
 
 class TraceOperations:
+    def get_event(self, event_id: str) -> typing.Dict:
+        data = json.loads(ORMEvent.get(event_id=event_id).data)
+        payload = data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD]
+        data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD] = json.loads(payload)
+        return data
+
     def get_span(
         self,
         span_id: str,
@@ -22,10 +32,21 @@ class TraceOperations:
             span._load_events()
         return span
 
-    def list_spans(self, trace_ids: typing.Union[str, typing.List[str]]) -> typing.List[Span]:
+    def list_spans(
+        self,
+        trace_ids: typing.Union[str, typing.List[str]],
+        lazy_load: bool = True,
+    ) -> typing.List[Span]:
         if isinstance(trace_ids, str):
             trace_ids = [trace_ids]
-        return [Span._from_orm_object(obj) for obj in ORMSpan.list(trace_ids=trace_ids)]
+        orm_spans = ORMSpan.list(trace_ids=trace_ids)
+        spans = []
+        for obj in orm_spans:
+            span = Span._from_orm_object(obj)
+            if not lazy_load:
+                span._load_events()
+            spans.append(span)
+        return spans
 
     def get_line_run(self, line_run_id: str) -> LineRun:
         orm_line_run = ORMLineRun.get(line_run_id=line_run_id)
