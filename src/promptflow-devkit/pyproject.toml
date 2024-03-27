@@ -37,7 +37,6 @@ packages = [
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
 pywin32 = {version = ">=304", markers = "sys_platform == 'win32'"}
-pywin32 = ">=305"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
