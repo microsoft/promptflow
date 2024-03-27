@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Mapping, Optional, Type
 
 from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
+from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -36,7 +37,6 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._errors import BatchRunTimeoutError
-from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -61,7 +61,7 @@ class BatchEngine:
         redirect the registration to the ExecutorProxyFactory.
         """
         # TODO: remove this after we migrate to multi-container
-        ExecutorProxyFactory.register_executor(
+        ProxyFactory.register_executor(
             language=language,
             executor_proxy_cls=executor_proxy_cls,
         )
@@ -163,7 +163,7 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                self._executor_proxy = ExecutorProxyFactory().create_executor_proxy(
+                self._executor_proxy = ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
                     connections=self._connections,
@@ -197,9 +197,9 @@ class BatchEngine:
                     run_id = run_id or str(uuid.uuid4())
 
                     previous_run_results = None
-                    if resume_from_run_storage and resume_from_run_output_dir:
+                    if resume_from_run_storage:
                         previous_run_results = self._copy_previous_run_result(
-                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir, run_id
+                            resume_from_run_storage, batch_inputs, output_dir, run_id
                         )
 
                     # run flow in batch mode
@@ -231,13 +231,11 @@ class BatchEngine:
     def _copy_previous_run_result(
         self,
         resume_from_run_storage: AbstractBatchRunStorage,
-        resume_from_run_output_dir: Path,
         batch_inputs: List,
         output_dir: Path,
         run_id: str,
     ) -> List[LineResult]:
-        """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
-        to the storage of new run,
+        """Duplicate the previous debug_info from resume_from_run_storage to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
         try:
@@ -325,6 +323,18 @@ class BatchEngine:
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
                 )
+            if self._batch_timeout_expired():
+                task.cancel()
+                ex = BatchRunTimeoutError(
+                    message_format=(
+                        "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                        "Please adjust the timeout to a higher value."
+                    ),
+                    batch_timeout_sec=self._batch_timeout_sec,
+                    target=ErrorTarget.BATCH,
+                )
+                # summary some infos from line results and aggr results to batch result
+                return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
         return task.result()
 
     async def _exec(
@@ -415,7 +425,11 @@ class BatchEngine:
             self._update_aggr_result(aggr_result, aggr_exec_result)
         else:
             ex = BatchRunTimeoutError(
-                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
+                message_format=(
+                    "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                    "Please adjust the timeout to a higher value."
+                ),
+                batch_timeout_sec=self._batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
         # summary some infos from line results and aggr results to batch result
@@ -540,3 +554,9 @@ class BatchEngine:
             flow_dag = load_yaml(fin)
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
         return is_flex_flow(yaml_dict=flow_dag), language
+
+    def _batch_timeout_expired(self) -> bool:
+        # Currently, local PythonExecutorProxy will handle the batch timeout by itself.
+        if self._batch_timeout_sec is None or isinstance(self._executor_proxy, PythonExecutorProxy):
+            return False
+        return (datetime.utcnow() - self._start_time).total_seconds() > self._batch_timeout_sec

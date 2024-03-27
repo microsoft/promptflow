@@ -6,16 +6,17 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .._constants import USER_AGENT_OVERRIDE_KEY
+from .._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from ..exceptions import ErrorTarget, UserErrorException
 from ._configuration import Configuration
-from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
+from ._utils import generate_yaml_entry, is_python_flex_flow_entry
 from .entities import Run
-from .entities._eager_flow import FlexFlow
+from .entities._flow import FlexFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -72,6 +73,7 @@ class PFClient:
         display_name: str = None,
         tags: Dict[str, str] = None,
         resume_from: Union[str, Run] = None,
+        code: Union[str, PathLike] = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -122,6 +124,8 @@ class PFClient:
         :type tags: Dict[str, str]
         :param resume_from: Create run resume from an existing run.
         :type resume_from: str
+        :param code: Path to the code directory to run.
+        :type code: Union[str, PathLike]
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
@@ -149,33 +153,38 @@ class PFClient:
             )
         if not flow:
             raise ValueError("'flow' is required to create a run.")
-        if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
+        if not os.path.exists(flow) and not is_python_flex_flow_entry(entry=flow):
+            # check if it's eager flow's entry
+            raise UserErrorException(f"Flow path {flow} does not exist and it's not a valid entry point.")
         if data and not os.path.exists(data):
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-        # load flow object for validation and early failure
-        flow_obj = load_flow(source=flow)
-        # validate param conflicts
-        if isinstance(flow_obj, FlexFlow):
-            if variant or connections:
-                logger.warning("variant and connections are not supported for eager flow, will be ignored")
-                variant, connections = None, None
-        run = Run(
-            name=name,
-            display_name=display_name,
-            tags=tags,
-            data=data,
-            column_mapping=column_mapping,
-            run=run,
-            variant=variant,
-            flow=Path(flow),
-            connections=connections,
-            environment_variables=environment_variables,
-            config=Configuration(overrides=self._config),
-        )
-        return self.runs.create_or_update(run=run, **kwargs)
+        if code and not os.path.exists(code):
+            raise FileNotFoundError(f"code path {code} does not exist")
+        code = Path(code) if code else Path(os.getcwd())
+        with generate_yaml_entry(entry=flow, code=code) as flow:
+            # load flow object for validation and early failure
+            flow_obj = load_flow(source=flow)
+            # validate param conflicts
+            if isinstance(flow_obj, FlexFlow):
+                if variant or connections:
+                    logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                    variant, connections = None, None
+            run = Run(
+                name=name,
+                display_name=display_name,
+                tags=tags,
+                data=data,
+                column_mapping=column_mapping,
+                run=run,
+                variant=variant,
+                flow=Path(flow),
+                connections=connections,
+                environment_variables=environment_variables,
+                config=Configuration(overrides=self._config),
+            )
+            return self.runs.create_or_update(run=run, **kwargs)
 
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
@@ -267,12 +276,12 @@ class PFClient:
         :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
         :type credential: object
         """
-        if connection_provider == ConnectionProvider.LOCAL.value:
+        if connection_provider == ConnectionProviderConfig.LOCAL:
             from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
             logger.debug("PFClient using local connection operations.")
             connection_operation = ConnectionOperations(**kwargs)
-        elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        elif connection_provider.startswith(ConnectionProviderConfig.AZUREML):
             from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
             logger.debug(f"PFClient using local azure connection operations with credential {credential}.")

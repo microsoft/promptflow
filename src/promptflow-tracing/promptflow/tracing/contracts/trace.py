@@ -11,7 +11,6 @@ class TraceType(str, Enum):
     """An enumeration class to represent different types of traces."""
 
     LLM = "LLM"
-    TOOL = "Tool"
     FUNCTION = "Function"
     LANGCHAIN = "LangChain"
     FLOW = "Flow"
@@ -53,3 +52,4 @@ class Trace:
     node_name: Optional[str] = None  # The node name of the trace, used for flow level trace
     parent_id: str = ""  # The parent trace id of the trace
     id: str = ""  # The trace id
+    function: str = ""  # The function name of the trace

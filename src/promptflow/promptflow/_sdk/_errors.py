@@ -87,6 +87,12 @@ class ConnectionNameNotSetError(SDKError):
     pass
 
 
+class ConnectionClassNotFoundError(SDKError):
+    """Exception raised if relative sdk connection class not found."""
+
+    pass
+
+
 class InvalidRunError(SDKError):
     """Exception raised if run name is not legal."""
 

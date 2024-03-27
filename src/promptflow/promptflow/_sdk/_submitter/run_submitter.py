@@ -9,21 +9,21 @@ from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
-from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import parse_variant
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
 
-from ..._utils.logger_utils import LoggerFactory
 from .._configuration import Configuration
 from .._load_functions import load_flow
-from ..entities._eager_flow import FlexFlow
+from ..entities._flow import FlexFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -107,17 +107,21 @@ class RunSubmitter:
         run_id = run.name
         # for python, we can get metadata in-memory, so no need to dump them first
         if flow.language != FlowLanguage.Python:
-            from promptflow.batch._executor_proxy_factory import ExecutorProxyFactory
+            from promptflow._proxy import ProxyFactory
 
             # variants are resolved in the context, so we can't move this logic to Operations for now
-            ExecutorProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
+            ProxyFactory().get_executor_proxy_cls(flow.language).dump_metadata(
                 flow_file=Path(flow.path), working_dir=Path(flow.code)
             )
-            # TODO: shall we resolve connections here?
-            connections = []
-        else:
-            with _change_working_dir(flow.code):
-                connections = SubmitterHelper.resolve_connections(flow=flow)
+
+        with _change_working_dir(flow.code):
+            # resolve connections with environment variables overrides to avoid getting unused connections
+            logger.debug(
+                f"Resolving connections for flow {flow.path} with environment variables {run.environment_variables}."
+            )
+            connections = SubmitterHelper.resolve_connections(
+                flow=flow, environment_variables_overrides=run.environment_variables
+            )
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
@@ -145,14 +149,14 @@ class RunSubmitter:
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
-                resume_from_run_storage=resume_from_run_storage,
-                resume_from_run_output_dir=resume_from_run_storage.outputs_folder if resume_from_run_storage else None,
             )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
+                resume_from_run_storage=resume_from_run_storage,
+                resume_from_run_output_dir=resume_from_run_storage.outputs_folder if resume_from_run_storage else None,
             )
             error_logs = []
             if batch_result.failed_lines > 0:

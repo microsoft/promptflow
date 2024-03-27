@@ -12,6 +12,7 @@ import sys
 import tempfile
 import webbrowser
 from pathlib import Path
+from urllib.parse import urlencode, urlunparse
 
 from promptflow._cli._params import (
     add_param_config,
@@ -31,16 +32,16 @@ from promptflow._cli._pf._init_entry_generators import (
     ChatFlowDAGGenerator,
     FlowDAGGenerator,
     OpenAIConnectionGenerator,
-    StreamlitFileReplicator,
     ToolMetaGenerator,
     ToolPyGenerator,
     copy_extra_files,
 )
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._constants import FlowLanguage
+from promptflow._constants import ConnectionProviderConfig, FlowLanguage
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._sdk._service.utils.utils import encrypt_flow_path
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -328,7 +329,7 @@ def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
     deployment = deployment or DEFAULT_DEPLOYMENT
     ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(flow_path / "flow.dag.yaml")
     # When customer not configure the remote connection provider, create connection yaml to chat flow.
-    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProvider.LOCAL
+    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProviderConfig.LOCAL
     if is_local_connection:
         OpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "openai.yaml")
         AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "azure_openai.yaml")
@@ -393,7 +394,7 @@ def test_flow(args):
         _test_flow_experiment(args, pf_client, inputs, environment_variables)
         return
     if args.multi_modal or args.ui:
-        _test_flow_multi_modal(args, pf_client)
+        _test_flow_multi_modal(args)
         return
     if args.interactive:
         _test_flow_interactive(args, pf_client, inputs, environment_variables)
@@ -420,26 +421,23 @@ def _build_inputs_for_flow_test(args):
     return inputs
 
 
-def _test_flow_multi_modal(args, pf_client):
+def _test_flow_multi_modal(args):
     """Test flow with multi modality mode."""
     from promptflow._sdk._load_functions import load_flow
+    from promptflow._sdk._tracing import _invoke_pf_svc
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        flow = load_flow(args.flow)
+    # Todo: use base64 encode for now, will consider whether need use encryption or use db to store flow path info
+    def generate_url(flow_path, port):
+        encrypted_flow_path = encrypt_flow_path(flow_path)
+        query_params = urlencode({"flow": encrypted_flow_path})
+        return urlunparse(("http", f"127.0.0.1:{port}", "/v1.0/ui/chat", "", query_params, ""))
 
-        script_path = [
-            os.path.join(temp_dir, "main.py"),
-            os.path.join(temp_dir, "utils.py"),
-            os.path.join(temp_dir, "logo.png"),
-        ]
-        for script in script_path:
-            StreamlitFileReplicator(
-                flow_name=flow.display_name if flow.display_name else flow.name,
-                flow_dag_path=flow.flow_dag_path,
-            ).generate_to_file(script)
-        main_script_path = os.path.join(temp_dir, "main.py")
-        logger.info("Start streamlit with main script generated at: %s", main_script_path)
-        pf_client.flows._chat_with_ui(script=main_script_path, skip_open_browser=args.skip_open_browser)
+    pfs_port = _invoke_pf_svc()
+    flow = load_flow(args.flow)
+    flow_dir = os.path.abspath(flow.code)
+    chat_page_url = generate_url(flow_dir, pfs_port)
+    print(f"You can begin chat flow on {chat_page_url}")
+    webbrowser.open(chat_page_url)
 
 
 def _test_flow_interactive(args, pf_client, inputs, environment_variables):
@@ -556,12 +554,16 @@ def _resolve_python_flow_additional_includes(source) -> Path:
 
 
 def serve_flow_python(args, source):
+    from promptflow._sdk._configuration import Configuration
     from promptflow.core._serving.app import create_app
 
     static_folder = args.static_folder
     if static_folder:
         static_folder = Path(static_folder).absolute().as_posix()
     config = list_of_dict_to_dict(args.config)
+    pf_config = Configuration(overrides=config)
+    logger.info(f"Promptflow config: {pf_config}")
+    connection_provider = pf_config.get_connection_provider()
     source = _resolve_python_flow_additional_includes(source)
     os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     logger.info(f"Change working directory to model dir {source}")
@@ -569,7 +571,7 @@ def serve_flow_python(args, source):
     app = create_app(
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
-        config=config,
+        connection_provider=connection_provider,
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

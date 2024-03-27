@@ -23,9 +23,10 @@ class Span:
     resource: dict = None
     id: str = None
     partition_key: str = None
+    collection_id: str = None
     created_by: dict = None
 
-    def __init__(self, span: SpanEntity, created_by: dict) -> None:
+    def __init__(self, span: SpanEntity, collection_id: str, created_by: dict) -> None:
         self.name = span.name
         self.context = span._content[SpanFieldName.CONTEXT]
         self.kind = span._content[SpanFieldName.KIND]
@@ -38,6 +39,7 @@ class Span:
         self.links = span._content[SpanFieldName.LINKS]
         self.resource = span._content[SpanFieldName.RESOURCE]
         self.partition_key = span.session_id
+        self.collection_id = collection_id
         self.id = span.span_id
         self.created_by = created_by
 
