@@ -19,8 +19,8 @@ from promptflow._sdk._constants import (
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
+    HOME_PROMPT_FLOW_DIR,
     PARAMS_OVERRIDE_KEY,
-    PROMPT_FLOW_DIR_NAME,
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -40,13 +40,13 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
+    is_multi_container_enabled,
     is_remote_uri,
     parse_remote_flow_pattern,
-    parse_variant,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.flow_utils import get_flow_lineage_id, parse_variant
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
@@ -69,7 +69,7 @@ logger = get_cli_sdk_logger()
 class Run(YAMLTranslatableMixin):
     """Flow run entity.
 
-    :param flow: Path of the flow directory.
+    :param flow: Path of local flow entry or remote flow.
     :type flow: Path
     :param name: Name of the run.
     :type name: str
@@ -128,6 +128,7 @@ class Run(YAMLTranslatableMixin):
         source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
+        # !!! Caution !!!: Please update self._copy() if you add new fields to init
         # TODO: remove when RUN CRUD don't depend on this
         self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
@@ -163,7 +164,7 @@ class Run(YAMLTranslatableMixin):
         self.name = name or self._generate_run_name()
         experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
-            self.flow = Path(flow).resolve().absolute()
+            self.flow = Path(str(flow)).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
@@ -588,6 +589,7 @@ class Run(YAMLTranslatableMixin):
             session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
             compute_name=compute_name,
             identity=identity_resource_id,
+            enable_multi_container=is_multi_container_enabled(),
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
@@ -641,7 +643,7 @@ class Run(YAMLTranslatableMixin):
     def _validate_for_run_create_operation(self):
         """Validate run object for create operation."""
         # check flow value
-        if Path(self.flow).is_dir():
+        if Path(self.flow).is_dir() or Path(self.flow).is_file():
             # local flow
             pass
         elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):
@@ -666,7 +668,7 @@ class Run(YAMLTranslatableMixin):
         config = config or Configuration.get_instance()
         path = config.get_run_output_path()
         if path is None:
-            path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+            path = HOME_PROMPT_FLOW_DIR / ".runs"
         else:
             try:
                 flow_posix_path = self.flow.resolve().as_posix()
@@ -677,7 +679,7 @@ class Run(YAMLTranslatableMixin):
                     raise Exception(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
-                path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+                path = HOME_PROMPT_FLOW_DIR / ".runs"
                 warning_message = (
                     "Got unexpected error when parsing specified output path: "
                     f"{config.get_run_output_path()!r}; "
@@ -742,3 +744,16 @@ class Run(YAMLTranslatableMixin):
         }
         logger.debug(f"Run init params: {init_params}")
         return Run(**init_params)
+
+    @functools.cached_property
+    def _flow_type(self) -> str:
+        """Get flow type of run."""
+
+        from promptflow._constants import FlowType
+        from promptflow._sdk._load_functions import load_flow
+        from promptflow._sdk.entities._flow import FlexFlow
+
+        flow_obj = load_flow(source=self.flow)
+        if isinstance(flow_obj, FlexFlow):
+            return FlowType.FLEX_FLOW
+        return FlowType.DAG_FLOW

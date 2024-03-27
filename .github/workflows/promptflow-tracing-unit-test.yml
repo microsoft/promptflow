@@ -2,136 +2,98 @@ name: promptflow-tracing-unit-test
 
 on:
   schedule:
-    - cron: "40 18 * * *" # Every day starting at 2:40 BJT
-
+    - cron: "40 18 * * *" # 2:40 Beijing Time (GMT+8) every day
   pull_request:
     paths:
-      - src/promptflow/**
-      - scripts/building/**
+      - src/promptflow-tracing/**
       - .github/workflows/promptflow-tracing-unit-test.yml
-
   workflow_dispatch:
 
-
 env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
-
+  WORKING_DIRECTORY: ${{ github.workspace }}/src/promptflow-tracing
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-latest
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version 3.9
-      uses: "./.github/actions/step_create_python_environment"
+    - uses: actions/checkout@v4
+    - uses: snok/install-poetry@v1
+    - name: build
+      run: poetry build
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+    - uses: actions/upload-artifact@v4
       with:
-        pythonVersion: 3.9
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
-      with:
-        setupType: promptflow_with_extra
-        scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Wheel
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheel
-        path: |
-          ${{ github.workspace }}/src/promptflow/dist/*.whl
-          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+        name: promptflow-tracing
+        path: ${{ env.WORKING_DIRECTORY }}/dist/promptflow_tracing-*.whl
 
-  tracing_tests:
+  test:
     needs: build
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    # snok/install-poetry need this to support Windows
+    defaults:
+      run:
+        shell: bash
     runs-on: ${{ matrix.os }}
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: snok/install-poetry@v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: promptflow-tracing
+          path: ${{ env.WORKING_DIRECTORY }}
+      - name: install promptflow-tracing from wheel
+        # wildcard expansion (*) does not work in Windows, so leverage python to find and install
+        run: poetry run pip install $(python -c "import glob; print(glob.glob('promptflow_tracing-*.whl')[0])")
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install test dependency group
+        run: poetry install --only test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: install recording
+        run: poetry install
+        working-directory: ${{ env.RECORD_DIRECTORY }}
+      - name: run unit tests
+        run: poetry run pytest -m unittest --cov=promptflow --cov-config=pyproject.toml --cov-report=term --cov-report=html --cov-report=xml
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+      - name: upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/*.xml
+            ${{ env.WORKING_DIRECTORY }}/htmlcov/
 
-    - name: Display and Set Environment Variables
-      run: |
-        env | sort >> $GITHUB_OUTPUT
-      id: display_env
-      shell: bash -el {0}
-
-    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-      uses: "./.github/actions/step_create_python_environment"
-      with:
-        pythonVersion: ${{ matrix.pythonVersion }}
-
-    - name: Download Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: wheel
-        path: artifacts
-
-    - name: Install wheel
-      shell: pwsh
-      working-directory: artifacts
-      run: |
-        Set-PSDebug -Trace 1
-        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-        pip freeze
-
-    - name: run promptflow-tracing test
-      shell: pwsh
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/tracing_test/unittests `
-          -l eastus `
-          -m "unittest" `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/tracing_test/.coveragerc `
-          -o "${{ env.testWorkingDirectory }}/test-results-tracing.xml"
-
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
-        path: |
-          ${{ env.testWorkingDirectory }}/*.xml
-          ${{ env.testWorkingDirectory }}/htmlcov/
-
-
-  publish-test-results-tracing-test:
-    needs: tracing_tests
-    if: always()
-
+  report:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       checks: write
       pull-requests: write
       contents: read
       issues: read
-
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: Publish Test Results
-      uses: "./.github/actions/step_publish_test_results"
-      with:
-        testActionFileName: promptflow-tracing-unit-test.yml
-        testResultTitle: promptflow-tracing unit test result
-        osVersion: ubuntu-latest
-        pythonVersion: 3.9
-        coverageThreshold: 40
-        context: test/tracing
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: promptflow-tracing test result
+          comment_title: promptflow-tracing test result
+          files: "artifacts/**/test-results.xml"  # align with `--junit-xml` in pyproject.toml
+      - uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: "artifacts/report-ubuntu-latest-py3.9/coverage.xml"
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_complexity: true
+          output: both
+          thresholds: 40 60

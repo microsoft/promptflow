@@ -10,16 +10,14 @@ import os
 from datetime import datetime, timedelta
 from typing import Callable
 
-import psutil
-
 from promptflow._core._errors import UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import ExceptionPresenter, JsonSerializedPromptflowException
 from promptflow._utils.logger_utils import service_logger
 from promptflow._utils.process_utils import block_terminate_signal_to_parent
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._service._errors import ExecutionCanceledError, ExecutionTimeoutError
 from promptflow.executor._service.utils.process_manager import ProcessManager
+from promptflow.tracing._operation_context import OperationContext
 
 LONG_WAIT_TIMEOUT = timedelta(days=1).total_seconds()
 SHORT_WAIT_TIMEOUT = 10
@@ -45,17 +43,13 @@ async def invoke_sync_function_in_process(
         p.start()
         service_logger.info(f"[{os.getpid()}--{p.pid}] Start process to execute the request.")
         if run_id:
-            ProcessManager().start_process(run_id, p.pid)
+            ProcessManager().start_process(run_id, p)
 
         try:
             # Wait for the process to finish or timeout asynchronously
             start_time = datetime.utcnow()
-            while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and _is_process_alive(p):
+            while (datetime.utcnow() - start_time).total_seconds() < wait_timeout and p.is_alive():
                 await asyncio.sleep(1)
-
-            # If process_id is None, it indicates that the process has been terminated by cancel request.
-            if run_id and not ProcessManager().get_process(run_id):
-                raise ExecutionCanceledError(run_id)
 
             # Terminate the process if it is still alive after timeout
             if p.is_alive():
@@ -66,8 +60,12 @@ async def invoke_sync_function_in_process(
 
             # Raise exception if the process exit code is not 0
             if p.exitcode != 0:
+                # If process is not None, it indicates that the process has been terminated by other errors.
                 exception = error_dict.get("error", None)
                 if exception is None:
+                    # If process is None, it indicates that the process has been terminated by cancel request.
+                    if run_id and not ProcessManager().get_process(run_id):
+                        raise ExecutionCanceledError(run_id)
                     raise UnexpectedError(
                         message="Unexpected error occurred while executing the request",
                         target=ErrorTarget.EXECUTOR,
@@ -81,15 +79,6 @@ async def invoke_sync_function_in_process(
         finally:
             if run_id:
                 ProcessManager().remove_process(run_id)
-
-
-def _is_process_alive(p: multiprocessing.Process):
-    if psutil.pid_exists(p.pid):
-        if psutil.Process(p.pid).status() != psutil.STATUS_ZOMBIE:
-            return True
-    # Call p.join() to clear the zombie process correctly.
-    p.join()
-    return False
 
 
 def _execute_target_function(

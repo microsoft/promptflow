@@ -7,38 +7,56 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 from unittest.mock import patch
 
 import jwt
 import pytest
+from _constants import (
+    DEFAULT_COMPUTE_INSTANCE_NAME,
+    DEFAULT_REGISTRY_NAME,
+    DEFAULT_RESOURCE_GROUP_NAME,
+    DEFAULT_RUNTIME_NAME,
+    DEFAULT_SUBSCRIPTION_ID,
+    DEFAULT_WORKSPACE_NAME,
+)
 from azure.core.exceptions import ResourceNotFoundError
 from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
-from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
+from promptflow._utils.user_agent_utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
+try:
+    from promptflow.recording.record_mode import is_live, is_record, is_replay
+except ImportError:
+
+    def is_live():
+        return False
+
+    def is_record():
+        return False
+
+    def is_replay():
+        return False
+
+
 from ._azure_utils import get_cred
-from .recording_utilities import (
-    PFAzureIntegrationTestRecording,
-    SanitizedValues,
-    VariableRecorder,
-    get_created_flow_name_from_flow_path,
-    get_pf_client_for_replay,
-    is_live,
-    is_record,
-    is_replay,
-)
 
 FLOWS_DIR = "./tests/test_configs/flows"
 EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 DATAS_DIR = "./tests/test_configs/datas"
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
+
+
+def pytest_configure():
+    pytest.is_live = is_live()
+    pytest.is_record = is_record()
+    pytest.is_replay = is_replay()
 
 
 def package_scope_in_live_mode() -> str:
@@ -56,9 +74,60 @@ def package_scope_in_live_mode() -> str:
     return "package" if is_live() else "function"
 
 
+# region pfazure constants
+@pytest.fixture(scope="session")
+def subscription_id() -> str:
+    if is_replay():
+        from promptflow.recording.azure import SanitizedValues
+
+        return SanitizedValues.SUBSCRIPTION_ID
+    else:
+        return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture(scope="session")
+def resource_group_name() -> str:
+    if is_replay():
+        from promptflow.recording.azure import SanitizedValues
+
+        return SanitizedValues.RESOURCE_GROUP_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture(scope="session")
+def workspace_name() -> str:
+    if is_replay():
+        from promptflow.recording.azure import SanitizedValues
+
+        return SanitizedValues.WORKSPACE_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+@pytest.fixture(scope="session")
+def runtime_name() -> str:
+    return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture(scope="session")
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
+
+
+@pytest.fixture(scope="session")
+def compute_instance_name() -> str:
+    return os.getenv("PROMPT_FLOW_COMPUTE_INSTANCE_NAME", DEFAULT_COMPUTE_INSTANCE_NAME)
+
+
+# region
+
+
 @pytest.fixture(scope=package_scope_in_live_mode())
 def user_object_id() -> str:
-    if is_replay():
+    if pytest.is_replay:
+        from promptflow.recording.azure import SanitizedValues
+
         return SanitizedValues.USER_OBJECT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
@@ -68,7 +137,9 @@ def user_object_id() -> str:
 
 @pytest.fixture(scope=package_scope_in_live_mode())
 def tenant_id() -> str:
-    if is_replay():
+    if pytest.is_replay:
+        from promptflow.recording.azure import SanitizedValues
+
         return SanitizedValues.TENANT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
@@ -98,7 +169,9 @@ def ml_client(
 def remote_client(subscription_id: str, resource_group_name: str, workspace_name: str):
     from promptflow.azure import PFClient
 
-    if is_replay():
+    if pytest.is_replay:
+        from promptflow.recording.azure import get_pf_client_for_replay
+
         client = get_pf_client_for_replay()
     else:
         client = PFClient(
@@ -108,7 +181,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
             workspace_name=workspace_name,
         )
     assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
-    assert "promptflow/" not in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow-test" not in ClientUserAgentUtil.get_user_agent()
     yield client
 
 
@@ -150,13 +223,13 @@ MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
 
 @pytest.fixture
 def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspace_resource_id):
-    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow.core._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
     app = create_serving_app(
-        config={"connection.provider": remote_workspace_resource_id},
+        connection_provider=remote_workspace_resource_id,
         environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
     )
     app.config.update(
@@ -216,7 +289,7 @@ def serving_client_with_connection_data_override(mocker: MockerFixture, remote_w
 
 
 def create_serving_client_with_connections(model_name, mocker: MockerFixture, connections: dict = {}):
-    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow.core._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -228,7 +301,7 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
     )
     # Set credential to None for azureml extension type
     # As we mock app in github workflow, which do not have managed identity credential
-    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    func = "promptflow.core._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
     with mock.patch(func) as mock_cred_func:
         mock_cred_func.return_value = None
         app = create_serving_app(
@@ -244,17 +317,19 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def variable_recorder() -> VariableRecorder:
+def variable_recorder():
+    from promptflow.recording.azure import VariableRecorder
+
     yield VariableRecorder()
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def randstr(variable_recorder: VariableRecorder) -> Callable[[str], str]:
+def randstr(variable_recorder) -> Callable[[str], str]:
     """Return a "random" UUID."""
 
     def generate_random_string(variable_name: str) -> str:
         random_string = str(uuid.uuid4())
-        if is_live():
+        if pytest.is_live:
             return random_string
         elif is_replay():
             return variable_name
@@ -265,18 +340,16 @@ def randstr(variable_recorder: VariableRecorder) -> Callable[[str], str]:
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def vcr_recording(
-    request: pytest.FixtureRequest, user_object_id: str, tenant_id: str, variable_recorder: VariableRecorder
-) -> Optional[PFAzureIntegrationTestRecording]:
+def vcr_recording(request: pytest.FixtureRequest, user_object_id: str, tenant_id: str, variable_recorder):
     """Fixture to record or replay network traffic.
 
     If the test mode is "live", nothing will happen.
     If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
     based on the test file, class and function name, write to (record) or read from (replay) the file.
     """
-    if is_live():
-        yield None
-    else:
+    if pytest.is_record or pytest.is_replay:
+        from promptflow.recording.azure import PFAzureIntegrationTestRecording
+
         recording = PFAzureIntegrationTestRecording.from_test_case(
             test_class=request.cls,
             test_func_name=request.node.name,
@@ -287,6 +360,8 @@ def vcr_recording(
         recording.enter_vcr()
         request.addfinalizer(recording.exit_vcr)
         yield recording
+    else:
+        yield None
 
 
 # we expect this fixture only work when running live test without recording
@@ -310,7 +385,7 @@ def single_worker_thread_pool() -> None:
     def single_worker_thread_pool_executor(*args, **kwargs):
         return ThreadPoolExecutor(max_workers=1)
 
-    if is_live():
+    if pytest.is_live:
         yield
     else:
         with patch(
@@ -327,7 +402,7 @@ def mock_set_headers_with_user_aml_token(mocker: MockerFixture) -> None:
     There will be requests fetching cloud metadata during retrieving AML token, which will break during replay.
     As the logic comes from azure-ai-ml, changes in Prompt Flow can hardly affect it, mock it here.
     """
-    if not is_live():
+    if not pytest.is_live:
         mocker.patch(
             "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._set_headers_with_user_aml_token"
         )
@@ -337,13 +412,13 @@ def mock_set_headers_with_user_aml_token(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     """Mock PF Azure client to avoid network traffic during replay test."""
-    if not is_live():
+    if not pytest.is_live:
         mocker.patch(
-            "promptflow._cli._pf_azure._run._get_azure_pf_client",
+            "promptflow.azure._cli._run._get_azure_pf_client",
             return_value=remote_client,
         )
         mocker.patch(
-            "promptflow._cli._pf_azure._flow._get_azure_pf_client",
+            "promptflow.azure._cli._flow._get_azure_pf_client",
             return_value=remote_client,
         )
     yield
@@ -352,7 +427,7 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
 @pytest.fixture(scope=package_scope_in_live_mode())
 def mock_get_user_identity_info(user_object_id: str, tenant_id: str) -> None:
     """Mock get user object id and tenant id, currently used in flow list operation."""
-    if not is_live():
+    if not pytest.is_live:
         with patch(
             "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
             return_value=(user_object_id, tenant_id),
@@ -363,7 +438,7 @@ def mock_get_user_identity_info(user_object_id: str, tenant_id: str) -> None:
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder: VariableRecorder) -> Flow:
+def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
     flow_source = FLOWS_DIR + "/simple_hello_world/"
@@ -384,8 +459,10 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder:
     # flow in Azure will have different file share name with timestamp
     # and this is a client-side behavior, so we need to sanitize this in recording
     # so extract this during record test
-    if is_record():
+    if pytest.is_record:
         flow_name_const = "flow_name"
+        from promptflow.recording.azure import get_created_flow_name_from_flow_path
+
         flow_name = get_created_flow_name_from_flow_path(result.path)
         variable_recorder.get_or_record_variable(flow_name_const, flow_name)
 
@@ -504,12 +581,12 @@ def mock_isinstance_for_mock_datastore() -> None:
     We have an isinstance check during run download for datastore type for better error message;
     while our mock datastore in replay mode is not a valid type, so mock it with strict condition.
     """
-    if not is_replay():
+    if not pytest.is_replay:
         yield
     else:
         from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
 
-        from .recording_utilities.utils import MockDatastore
+        from promptflow.recording.azure.utils import MockDatastore
 
         original_isinstance = isinstance
 

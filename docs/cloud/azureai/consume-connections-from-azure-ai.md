@@ -2,6 +2,10 @@
 
 For a smooth development flow that transitions from cloud (Azure AI) to local environments, you can directly utilize the connection already established on the cloud by setting the connection provider to "Azure AI connections".
 
+:::{note}
+Promptflow is not able to manage connections from Azure AI, please manage it in workspace portal, [Azure AI Studio](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/connections-add), az ml cli or azure-ai-ml sdk.
+:::
+
 You can set the connection provider using the following steps:
 
 1. Navigate to the connection list in the VS Code primary sidebar.

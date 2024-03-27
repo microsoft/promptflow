@@ -8,6 +8,7 @@ on:
     paths:
       - src/promptflow/**
       - scripts/building/**
+      - src/promptflow-tracing/**
       - .github/workflows/sdk-cli-azure-test-pull-request.yml
 
 
@@ -17,6 +18,7 @@ env:
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
   PROMPT_FLOW_TEST_MODE: "replay"
+  RECORD_DIRECTORY: ${{ github.workspace }}/src/promptflow-recording
 
 
 jobs:
@@ -58,7 +60,7 @@ jobs:
         # replay tests can cover more combinations
         os: [ubuntu-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
-  
+
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
@@ -86,7 +88,15 @@ jobs:
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
           gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
           gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+          pip uninstall -y promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
           pip freeze
+
+      - name: install recording
+        run: |
+          pip install vcrpy
+          pip install -e .
+        working-directory: ${{ env.RECORD_DIRECTORY }}
 
       - name: Run SDK CLI Azure Test (replay mode)
         shell: pwsh

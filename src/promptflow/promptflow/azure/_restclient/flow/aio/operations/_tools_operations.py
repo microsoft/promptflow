@@ -15,7 +15,7 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._tools_operations import build_get_dynamic_list_request, build_get_package_tools_request, build_get_tool_meta_request, build_get_tool_meta_v2_request, build_get_tool_setting_request, build_retrieve_tool_func_result_request
+from ...operations._tools_operations import build_get_dynamic_list_request, build_get_package_tools_request, build_get_tool_meta_v2_request, build_get_tool_setting_request, build_retrieve_tool_func_result_request
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
 
@@ -94,89 +94,6 @@ class ToolsOperations:
         return deserialized
 
     get_tool_setting.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/setting'}  # type: ignore
-
-
-    @distributed_trace_async
-    async def get_tool_meta(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        tool_name: str,
-        tool_type: str,
-        endpoint_name: Optional[str] = None,
-        flow_runtime_name: Optional[str] = None,
-        flow_id: Optional[str] = None,
-        data: Optional[str] = None,
-        **kwargs: Any
-    ) -> str:
-        """get_tool_meta.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param tool_name:
-        :type tool_name: str
-        :param tool_type:
-        :type tool_type: str
-        :param endpoint_name:
-        :type endpoint_name: str
-        :param flow_runtime_name:
-        :type flow_runtime_name: str
-        :param flow_id:
-        :type flow_id: str
-        :param data:
-        :type data: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: str, or the result of cls(response)
-        :rtype: str
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType[str]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        content_type = kwargs.pop('content_type', "text/plain")  # type: Optional[str]
-
-        _content = data
-
-        request = build_get_tool_meta_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            content_type=content_type,
-            tool_name=tool_name,
-            tool_type=tool_type,
-            content=_content,
-            endpoint_name=endpoint_name,
-            flow_runtime_name=flow_runtime_name,
-            flow_id=flow_id,
-            template_url=self.get_tool_meta.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('str', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    get_tool_meta.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta'}  # type: ignore
 
 
     @distributed_trace_async

@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union, get_args, get_origin
 
 from promptflow._core._errors import (
     InputTypeMismatch,
@@ -409,38 +409,42 @@ class ToolLoader:
         else:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
-    def load_tool_for_package_node(self, node: Node) -> Tool:
-        if node.source.tool in self._package_tools:
-            return Tool.deserialize(self._package_tools[node.source.tool])
+    def load_package_tool(self, tool: str) -> Tool:
+        if tool in self._package_tools:
+            return Tool.deserialize(self._package_tools[tool])
 
         # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
         # If found, load the tool with the new tool ID for backward compatibility.
-        if node.source.tool in self._deprecated_tools:
-            new_tool_id = self._deprecated_tools[node.source.tool]
+        if tool in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[tool]
             # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead.")
+            module_logger.warning(f"Tool ID '{tool}' is deprecated. Please use '{new_tool_id}' instead.")
             return Tool.deserialize(self._package_tools[new_tool_id])
 
         raise PackageToolNotFoundError(
-            f"Package tool '{node.source.tool}' is not found in the current environment. "
+            f"Package tool '{tool}' is not found in the current environment. "
             f"All available package tools are: {list(self._package_tools.keys())}.",
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
-        if node.source.path is None:
+    def load_tool_for_package_node(self, node: Node) -> Tool:
+        tool = node.source.tool
+        return self.load_package_tool(tool)
+
+    def load_script_tool(self, path: str, node_name: str) -> Tuple[types.ModuleType, Tool]:
+        if path is None:
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
                 message_format="Load tool failed for node '{node_name}'. The source path is 'None'.",
-                node_name=node.name,
+                node_name=node_name,
             )
-        path = node.source.path
         if not (self._working_dir / path).is_file():
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
-                message_format="Load tool failed for node '{node_name}'. Tool file '{source_path}' can not be found.",
+                message_format="Load tool failed for node '{node_name}'. "
+                "Tool file '{source_path}' can not be found.",
                 source_path=path,
-                node_name=node.name,
+                node_name=node_name,
             )
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
@@ -448,28 +452,10 @@ class ToolLoader:
         f, init_inputs = collect_tool_function_in_module(m)
         return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
-    def load_tool_for_assistant_node(self, node_name: str, tool: dict) -> Tuple[types.ModuleType, Tool]:
-        # Generate Tool from the assistant tool definition
-        if tool["source"].path is None:
-            raise InvalidSource(
-                target=ErrorTarget.EXECUTOR,
-                message_format="Load assistant tool failed for node '{node_name}'. The source path is 'None'.",
-                node_name=node_name,
-            )
-        path = tool["source"].path
-        if not (self._working_dir / path).is_file():
-            raise InvalidSource(
-                target=ErrorTarget.EXECUTOR,
-                message_format="Load assistant tool failed for node '{node_name}'. "
-                "Tool file '{source_path}' can not be found.",
-                source_path=path,
-                node_name=node_name,
-            )
-        m = load_python_module_from_file(self._working_dir / path)
-        if m is None:
-            raise CustomToolSourceLoadError(f"Cannot load module for assistant tool from {path}.")
-        f, init_inputs = collect_tool_function_in_module(m)
-        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
+    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
+        """Load tool for script node."""
+        path = node.source.path
+        return self.load_script_tool(path, node.name)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
@@ -480,6 +466,18 @@ builtins = {}
 apis = {}
 connections = {}
 connection_type_to_api_mapping = {}
+
+
+def get_all_supported_types(param_annotation) -> list:
+    types = []
+    origin = get_origin(param_annotation)
+    if origin != Union:
+        types.append(param_annotation.__name__)
+    else:
+        for arg in get_args(param_annotation):
+            types.append(arg.__name__)
+
+    return types
 
 
 def _register(provider_cls, collection, type):
@@ -497,14 +495,18 @@ def _register(provider_cls, collection, type):
             module_logger.debug(f"Registered {name} as a builtin function")
     # Get the connection type - provider name mapping for execution use
     # Tools/Providers related connection must have been imported
+    api_name = provider_cls.__name__
+    should_break = False
     for param in initialize_inputs.values():
         if not param.annotation:
             continue
-        annotation_type_name = param.annotation.__name__
-        if annotation_type_name in connections:
-            api_name = provider_cls.__name__
-            module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
-            connection_type_to_api_mapping[annotation_type_name] = api_name
+        types = get_all_supported_types(param.annotation)
+        for type in types:
+            if type in connections:
+                module_logger.debug(f"Add connection type {type} to api {api_name} mapping")
+                connection_type_to_api_mapping[type] = api_name
+                should_break = True
+        if should_break:
             break
 
 

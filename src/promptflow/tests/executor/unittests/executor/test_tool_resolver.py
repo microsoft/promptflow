@@ -16,7 +16,7 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._assistant_tool_invoker import AssistantTool
+from promptflow.executor._assistant_tool_invoker import ResolvedAssistantTool
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
@@ -510,7 +510,7 @@ class TestToolResolver:
         m = sys.modules[__name__]
         v = InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)
         actual = tool_resolver._convert_to_custom_strong_type_connection_value(
-            "conn_name", v, node, tool, conn_types, m
+            "conn_name", v, node.name, node.source, tool, conn_types, m
         )
         assert isinstance(actual, expected_type)
         assert actual.api_base == "mock"
@@ -542,17 +542,6 @@ class TestToolResolver:
         with pytest.raises(InvalidSource) as _:
             resolver._load_source_content(node)
 
-
-@pytest.mark.unittest
-class TestAssistantToolResolver:
-    def _remove_predefined_inputs(self, value: any, predefined_inputs: list):
-        for input in predefined_inputs:
-            if input in value:
-                if isinstance(value, dict):
-                    value.pop(input)
-                elif isinstance(value, list):
-                    value.remove(input)
-
     @pytest.mark.parametrize(
         "predefined_inputs", [({"connection": "conn_name"}), ({"connection": "conn_name", "input_int": 1})]
     )
@@ -565,7 +554,7 @@ class TestAssistantToolResolver:
             {
                 "type": "function",
                 "tool_type": "python",
-                "source": {"type": "code", "path": "test_assistant_tool_invoker.py"},
+                "source": {"type": "code", "path": "assistant_sample_tool.py"},
                 "predefined_inputs": predefined_inputs,
             },
         ]
@@ -577,7 +566,7 @@ class TestAssistantToolResolver:
         # Test load tools
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections=connections)
-        tool_resolver._resolve_assistant_tool("node_name", assistant_definitions)
+        tool_resolver._resolve_assistant_tools("node_name", assistant_definitions)
         invoker = assistant_definitions._tool_invoker
         assert len(invoker._assistant_tools) == len(assistant_definitions.tools) == len(tool_definitions)
         for tool_name, assistant_tool in invoker._assistant_tools.items():
@@ -618,6 +607,14 @@ class TestAssistantToolResolver:
         result = invoker.invoke_tool(func_name="sample_tool", kwargs=kwargs)
         assert result == (input_int, input_str)
 
+    def _remove_predefined_inputs(self, value: any, predefined_inputs: list):
+        for input in predefined_inputs:
+            if input in value:
+                if isinstance(value, dict):
+                    value.pop(input)
+                elif isinstance(value, list):
+                    value.remove(input)
+
     @pytest.mark.parametrize("path", ["assistant_definition_with_connection.yaml"])
     def test_tool_with_connection_resolve(self, path):
         connections = {
@@ -637,7 +634,7 @@ class TestAssistantToolResolver:
         assert len(assistant_definition._tool_invoker._assistant_tools) == 1
         for k, v in assistant_definition._tool_invoker._assistant_tools.items():
             assert v.name == k == "echo"
-            assert isinstance(v, AssistantTool)
+            assert isinstance(v, ResolvedAssistantTool)
             assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
             assert v.openai_definition == {
                 "type": "function",
@@ -666,12 +663,12 @@ class TestAssistantToolResolver:
         for k, v in assistant_definition._tool_invoker._assistant_tools.items():
             if k == "code_interpreter":
                 assert v.name == k
-                assert isinstance(v, AssistantTool)
+                assert isinstance(v, ResolvedAssistantTool)
                 assert v.func is None
                 assert v.openai_definition == {"type": "code_interpreter"}
             else:
                 assert v.name == k
-                assert isinstance(v, AssistantTool)
+                assert isinstance(v, ResolvedAssistantTool)
                 assert v.func is None
                 assert v.openai_definition == {"type": "retrieval"}
 
@@ -694,7 +691,7 @@ class TestAssistantToolResolver:
         assert len(assistant_definition._tool_invoker._assistant_tools) == 1
         for k, v in assistant_definition._tool_invoker._assistant_tools.items():
             assert v.name == k == "echo"
-            assert isinstance(v, AssistantTool)
+            assert isinstance(v, ResolvedAssistantTool)
             assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
             assert v.openai_definition == {
                 "type": "function",
@@ -731,7 +728,7 @@ class TestAssistantToolResolver:
         assert len(assistant_definition._tool_invoker._assistant_tools) == 1
         for k, v in assistant_definition._tool_invoker._assistant_tools.items():
             assert v.name == k == "echo"
-            assert isinstance(v, AssistantTool)
+            assert isinstance(v, ResolvedAssistantTool)
             assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
             assert v.openai_definition == {
                 "function": {

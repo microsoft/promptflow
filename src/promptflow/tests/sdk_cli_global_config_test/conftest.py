@@ -1,14 +1,35 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import os
 
 import pytest
+from _constants import DEFAULT_RESOURCE_GROUP_NAME, DEFAULT_SUBSCRIPTION_ID, DEFAULT_WORKSPACE_NAME
 
 from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
 
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
+
+
+# region pfazure constants
+@pytest.fixture(scope="session")
+def subscription_id() -> str:
+    return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture(scope="session")
+def resource_group_name() -> str:
+    return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture(scope="session")
+def workspace_name() -> str:
+    return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+# endregion
 
 
 @pytest.fixture

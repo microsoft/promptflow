@@ -5,13 +5,14 @@ import asyncio
 import signal
 import threading
 import uuid
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
-from promptflow._core.operation_context import OperationContext
+from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -20,58 +21,50 @@ from promptflow._utils.execution_utils import (
     extract_aggregation_inputs,
     get_aggregation_inputs_properties,
     handle_line_failures,
+    set_batch_input_source_from_inputs_mapping,
 )
+from promptflow._utils.flow_utils import is_flex_flow
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow._utils.utils import (
-    copy_file_except,
     dump_list_to_jsonl,
     get_int_env_var,
-    load_list_from_jsonl,
     log_progress,
     resolve_dir_to_absolute,
     transpose,
 )
 from promptflow._utils.yaml_utils import load_yaml
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
+from promptflow.batch import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._errors import BatchRunTimeoutError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractBatchRunStorage, AbstractRunStorage
 
-OUTPUT_FILE_NAME = "output.jsonl"
 DEFAULT_CONCURRENCY = 10
 
 
 class BatchEngine:
     """This class is used to execute flows in batch mode"""
 
-    executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
-        FlowLanguage.Python: PythonExecutorProxy,
-        FlowLanguage.CSharp: CSharpExecutorProxy,
-    }
-
     @classmethod
-    def register_executor(cls, type: str, executor_proxy_cls: AbstractExecutorProxy):
+    def register_executor(cls, language: str, executor_proxy_cls: Type[AbstractExecutorProxy]):
         """Register a executor proxy class for a specific program language.
 
-        This method allows users to register a executor proxy class for a particular
-        programming language. The executor proxy class will be used when creating an instance
-        of the BatchEngine for flows written in the specified language.
-
-        :param type: The flow program language of the executor proxy,
-        :type type: str
-        :param executor_proxy_cls: The executor proxy class to be registered.
-        :type executor_proxy_cls:  ~promptflow.batch.AbstractExecutorProxy
+        this function is left to keep the compatibility with the old version promptflow-runtime; it will
+        redirect the registration to the ExecutorProxyFactory.
         """
-        cls.executor_proxy_classes[type] = executor_proxy_cls
+        # TODO: remove this after we migrate to multi-container
+        ProxyFactory.register_executor(
+            language=language,
+            executor_proxy_cls=executor_proxy_cls,
+        )
 
     def __init__(
         self,
@@ -121,6 +114,13 @@ class BatchEngine:
         self._batch_timeout_sec = batch_timeout_sec or get_int_env_var("PF_BATCH_TIMEOUT_SEC")
         self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         self._worker_count = worker_count or get_int_env_var("PF_WORKER_COUNT")
+        # update kwargs with worker_count and line_timeout_sec
+        self._kwargs.update(
+            {
+                "worker_count": self._worker_count,
+                "line_timeout_sec": self._line_timeout_sec,
+            }
+        )
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -163,13 +163,12 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                executor_proxy_cls = self.executor_proxy_classes[self._program_language]
-                self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
-                    executor_proxy_cls.create,
-                    self._flow_file,
-                    self._working_dir,
+                self._executor_proxy = ProxyFactory().create_executor_proxy(
+                    flow_file=self._flow_file,
+                    working_dir=self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
+                    language=self._program_language,
                     **self._kwargs,
                 )
                 try:
@@ -186,7 +185,7 @@ class BatchEngine:
                             )
 
                     # set batch input source from input mapping
-                    OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                    set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
                     inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
                     # resolve input data from input dirs and apply inputs mapping
@@ -195,10 +194,12 @@ class BatchEngine:
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 
+                    run_id = run_id or str(uuid.uuid4())
+
                     previous_run_results = None
-                    if resume_from_run_storage and resume_from_run_output_dir:
+                    if resume_from_run_storage:
                         previous_run_results = self._copy_previous_run_result(
-                            resume_from_run_storage, resume_from_run_output_dir, batch_inputs, output_dir
+                            resume_from_run_storage, batch_inputs, output_dir, run_id
                         )
 
                     # run flow in batch mode
@@ -230,29 +231,23 @@ class BatchEngine:
     def _copy_previous_run_result(
         self,
         resume_from_run_storage: AbstractBatchRunStorage,
-        resume_from_run_output_dir: Path,
         batch_inputs: List,
         output_dir: Path,
+        run_id: str,
     ) -> List[LineResult]:
-        """Duplicate the previous debug_info from resume_from_run_storage and output from resume_from_run_output_dir
-        to the storage of new run,
+        """Duplicate the previous debug_info from resume_from_run_storage to the storage of new run,
         return the list of previous line results for the usage of aggregation and summarization.
         """
-        # Load the previous flow run output from output.jsonl
-        previous_run_output = load_list_from_jsonl(resume_from_run_output_dir / "output.jsonl")
-        previous_run_output_dict = {
-            each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
-        }
-
-        # Copy other files from resume_from_run_output_dir to output_dir in case there are images
-        copy_file_except(resume_from_run_output_dir, output_dir, "output.jsonl")
-
         try:
             previous_run_results = []
             for i in range(len(batch_inputs)):
-                previous_run_info = resume_from_run_storage.load_flow_run_info(i)
+                previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
                 if previous_run_info and previous_run_info.status == Status.Completed:
+                    # UI uses root_run_id  to link the base path in datastore with the run_info of line.
+                    # Thus the root_run_id needs to be the current batch run id.
+                    previous_run_info.root_run_id = run_id
+                    previous_run_info.parent_run_id = run_id
                     # Load previous node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
@@ -263,6 +258,10 @@ class BatchEngine:
                     # Extract aggregation inputs for flow with aggregation node
                     aggregation_inputs = extract_aggregation_inputs(self._flow, previous_node_run_outputs)
 
+                    # Deepcopy to avoid modifying the original object when serializing image
+                    previous_run_output = deepcopy(previous_run_info.output)
+                    previous_run_output_in_line_result = persist_multimedia_data(previous_run_output, output_dir)
+
                     # Persist previous run info and node run info
                     self._storage.persist_flow_run(previous_run_info)
                     for node_run_info in previous_node_run_infos:
@@ -270,7 +269,7 @@ class BatchEngine:
 
                     # Create LineResult object for previous line result
                     previous_line_result = LineResult(
-                        output=previous_run_output_dict[i],
+                        output=previous_run_output_in_line_result,
                         aggregation_inputs=aggregation_inputs,
                         run_info=previous_run_info,
                         node_run_infos=previous_node_run_infos_dict,
@@ -303,10 +302,17 @@ class BatchEngine:
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
-        line_results.extend(previous_line_results or [])
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
-            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+            self._exec(
+                batch_inputs,
+                run_id,
+                output_dir,
+                raise_on_line_failure,
+                previous_line_results,
+                line_results,
+                aggr_result,
+            )
         )
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -317,17 +323,52 @@ class BatchEngine:
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
                 )
+            if self._batch_timeout_expired():
+                task.cancel()
+                ex = BatchRunTimeoutError(
+                    message_format=(
+                        "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                        "Please adjust the timeout to a higher value."
+                    ),
+                    batch_timeout_sec=self._batch_timeout_sec,
+                    target=ErrorTarget.BATCH,
+                )
+                # summary some infos from line results and aggr results to batch result
+                return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result, exception=ex)
         return task.result()
 
     async def _exec(
         self,
-        line_results: List[LineResult],
-        aggr_result: AggregationResult,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
+        previous_line_results: List[LineResult] = None,
+        line_results: List[LineResult] = [],
+        aggr_result: AggregationResult = AggregationResult({}, {}, {}),
     ) -> BatchResult:
+        """
+        Asynchronously execute batch processing of inputs with potential resumption from previous results,
+        and aggregate outputs accordingly. Empty list `line_results` and `aggr_result` is passed to ensure
+        their current state can be retrieved when batch run is canceled.
+
+        :param batch_inputs: A list of dictionaries representing the inputs for all lines of the batch.
+        :type batch_inputs: List[Mapping[str, Any]]
+        :param run_id: An optional unique identifier for the run. If not provided, a new UUID will be generated.
+        :type run_id: Optional[str]
+        :param output_dir: An optional path to a directory where outputs will be persisted.
+        :type output_dir: Optional[Path]
+        :param raise_on_line_failure: A flag indicating whether to raise an exception on individual line failures.
+        :type raise_on_line_failure: bool
+        :param previous_line_results: An optional list of previous line results to resume from.
+        :type previous_line_results: Optional[List[~promptflow.executor._result.LineResult]]
+        :param line_results: An output parameter to be populated with the results of processing all lines in the batch.
+        :type line_results: List[~promptflow.executor._result.LineResult]
+        :param aggr_result: An output parameter to be populated with the aggregated results of all lines in the batch.
+        :type aggr_result: ~promptflow.executor._result.AggregationResult
+        :return: A `BatchResult` object containing information about the execution of the batch.
+        :rtype: ~promptflow.batch._result.BatchResult
+        """
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
@@ -337,16 +378,23 @@ class BatchEngine:
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
 
-        existing_results_line_numbers = set([r.run_info.index for r in line_results])
-        bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
-        inputs_to_run = [input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers]
+        # if there are existing results resumed from previous run, we should skip the execution of these lines
+        if previous_line_results:
+            line_results.extend(previous_line_results)
+            existing_results_line_numbers = set([r.run_info.index for r in previous_line_results])
+            bulk_logger.info(f"Skipped the execution of {len(existing_results_line_numbers)} existing results.")
+            inputs_to_run = [
+                input for input in batch_inputs if input[LINE_NUMBER_KEY] not in existing_results_line_numbers
+            ]
+        else:
+            inputs_to_run = batch_inputs
 
         run_id = run_id or str(uuid.uuid4())
 
         # execute lines
         is_timeout = False
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            results, is_timeout = self._executor_proxy._exec_batch(
+            results, is_timeout = await self._executor_proxy._exec_batch(
                 inputs_to_run,
                 output_dir,
                 run_id,
@@ -377,7 +425,11 @@ class BatchEngine:
             self._update_aggr_result(aggr_result, aggr_exec_result)
         else:
             ex = BatchRunTimeoutError(
-                message="The batch run failed due to timeout. Please adjust the timeout settings to a higher value.",
+                message_format=(
+                    "The batch run failed due to timeout [{batch_timeout_sec}s]. "
+                    "Please adjust the timeout to a higher value."
+                ),
+                batch_timeout_sec=self._batch_timeout_sec,
                 target=ErrorTarget.BATCH,
             )
         # summary some infos from line results and aggr results to batch result
@@ -500,6 +552,11 @@ class BatchEngine:
             return True, FlowLanguage.CSharp
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
-        is_eager_flow = "entry" in flow_dag
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)
-        return is_eager_flow, language
+        return is_flex_flow(yaml_dict=flow_dag), language
+
+    def _batch_timeout_expired(self) -> bool:
+        # Currently, local PythonExecutorProxy will handle the batch timeout by itself.
+        if self._batch_timeout_sec is None or isinstance(self._executor_proxy, PythonExecutorProxy):
+            return False
+        return (datetime.utcnow() - self._start_time).total_seconds() > self._batch_timeout_sec
