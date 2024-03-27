@@ -38,6 +38,7 @@ RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 TOOL_ROOT = "./tests/test_configs/tools"
+PROMPTY_DIR = "./tests/test_configs/prompty"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
@@ -2157,3 +2158,28 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(flow_dir) / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_flow_test_prompty(self):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+        run_pf_command("flow", "test", "--flow", prompty_path.as_posix(), "--inputs", 'question="who are you"')
+        output_path = Path(prompty_path).parent / ".promptflow" / "prompty_example"
+        assert output_path.exists()
+        assert (output_path / "flow.log").exists()
+        assert (output_path / "flow.detail.json").exists()
+        assert (output_path / "flow.output.json").exists()
+
+    def test_flow_run_prompty(self, capfd):
+        prompty_path = Path(PROMPTY_DIR) / "prompty_example.prompty"
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            prompty_path.as_posix(),
+            "--data",
+            f"{DATAS_DIR}/prompty_inputs.jsonl",
+            "--name",
+            str(uuid.uuid4()),
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out

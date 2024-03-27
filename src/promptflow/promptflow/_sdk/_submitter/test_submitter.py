@@ -220,7 +220,7 @@ class TestSubmitter:
             self._within_init_context = True
 
             # Python flow may get metadata in-memory, so no need to dump them first
-            if self.flow.language != FlowLanguage.Python:
+            if getattr(self.flow, "language", FlowLanguage.Python) != FlowLanguage.Python:
                 # variant is resolve in the context, so we can't move this to Operations for now
                 ProxyFactory().get_executor_proxy_cls(self.flow.language).dump_metadata(
                     flow_file=self.flow.path,
@@ -270,7 +270,7 @@ class TestSubmitter:
                 )
 
                 # TODO: set up executor proxy for all languages
-                if self.flow.language == FlowLanguage.CSharp:
+                if getattr(self.flow, "language", FlowLanguage.Python) == FlowLanguage.CSharp:
                     self._executor_proxy = async_run_allowing_running_loop(
                         CSharpExecutorProxy.create,
                         self.flow.path,
@@ -415,7 +415,7 @@ class TestSubmitter:
         if self.target_node:
             raise UserErrorException("target_node is not allowed for flow test.")
 
-        if self.flow.language == FlowLanguage.Python:
+        if getattr(self.flow, "language", FlowLanguage.Python) == FlowLanguage.Python:
             # TODO: replace with implementation based on PythonExecutorProxy
             from promptflow.executor.flow_executor import execute_flow
 
