@@ -19,20 +19,30 @@ api = Namespace("Experiments", description="Experiments Management")
 dict_field = api.schema_model("ExperimentDict", {"additionalProperties": True, "type": "object"})
 list_field = api.schema_model("ExperimentList", {"type": "array", "items": {"$ref": "#/definitions/ExperimentDict"}})
 
-# Define start experiments request parsing
-test_experiment = api.parser()
-test_experiment.add_argument(
+base_experiment = api.parser()
+base_experiment.add_argument(
     "experiment_template", type=str, location="json", required=True, help="Experiment yaml file path"
 )
-test_experiment.add_argument("inputs", type=dict, location="json", required=False, help="Input parameters for flow")
-test_experiment.add_argument(
-    "environment_variables", type=str, location="json", required=False, help="Environment variables for flow"
+base_experiment.add_argument(
+    "environment_variables", type=str, location="json", required=False, help="Environment variables for experiment"
 )
-test_experiment.add_argument("output_path", type=str, location="json", required=False)
-test_experiment.add_argument("skip_flow", type=str, location="json", required=False)
-test_experiment.add_argument("skip_flow_output", type=dict, location="json", required=False)
-test_experiment.add_argument("skip_flow_run_id", type=str, location="json", required=False)
-test_experiment.add_argument("session", type=str, required=False, location="json")
+base_experiment.add_argument("output_path", type=str, location="json", required=False)
+base_experiment.add_argument("session", type=str, required=False, location="json")
+
+# Define start experiments request parsing
+test_experiment = base_experiment.copy()
+test_experiment.add_argument(
+    "override_flow_path", type=str, location="json", required=False, help="The flow path that need to be override input"
+)
+test_experiment.add_argument(
+    "inputs", type=dict, location="json", required=False, help="Input parameters for experiment"
+)
+
+# Define skip test experiments request parsing
+skip_test_experiment = base_experiment.copy()
+skip_test_experiment.add_argument("skip_flow", type=str, location="json", required=True)
+skip_test_experiment.add_argument("skip_flow_output", type=dict, location="json", required=True)
+skip_test_experiment.add_argument("skip_flow_run_id", type=str, location="json", required=True)
 
 
 @api.route("/")
@@ -64,18 +74,14 @@ class ExperimentTest(Resource):
         client = get_client_from_request()
         experiment_template = args.experiment_template
         inputs = args.inputs
+        override_flow_path = args.override_flow_path
         environment_variables = args.environment_variables
         output_path = args.output_path
-        skip_flow = args.skip_flow
         session = args.session
-        if skip_flow:
-            flow_path_dir, flow_path_file = resolve_flow_path(skip_flow)
-            skip_flow = (flow_path_dir / flow_path_file).as_posix()
-        skip_flow_output = args.skip_flow_output
-        skip_flow_run_id = args.skip_flow_run_id
-
+        context = {}
+        if inputs and override_flow_path:
+            context = {"inputs": inputs, "node": override_flow_path}
         remove_dir = False
-
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):
@@ -90,14 +96,58 @@ class ExperimentTest(Resource):
             result = client._experiments._test_with_ui(
                 experiment=experiment_template,
                 output_path=output_path,
-                inputs=inputs,
                 environment_variables=environment_variables,
-                skip_flow=skip_flow,
-                skip_flow_output=skip_flow_output,
-                skip_flow_run_id=skip_flow_run_id,
                 session=session,
+                context=context,
             )
         finally:
+            if remove_dir:
+                shutil.rmtree(output_path)
+        return result
+
+
+@api.route("/skip_test")
+class ExperimentSkipTest(Resource):
+    @api.doc(description="Test experiment with skipping node")
+    @api.response(code=200, description="Experiment execution details.")
+    @api.produces(["text/plain", "application/json"])
+    @api.expect(skip_test_experiment)
+    def post(self):
+        args = skip_test_experiment.parse_args()
+        client = get_client_from_request()
+        experiment_template = args.experiment_template
+        environment_variables = args.environment_variables
+        output_path = args.output_path
+        session = args.session
+        skip_flow = args.skip_flow
+        if skip_flow:
+            flow_path_dir, flow_path_file = resolve_flow_path(skip_flow)
+            skip_flow = (flow_path_dir / flow_path_file).as_posix()
+        skip_flow_output = args.skip_flow_output
+        skip_flow_run_id = args.skip_flow_run_id
+        context = {"node": skip_flow, "outputs": skip_flow_output, "run_id": skip_flow_run_id}
+
+        remove_dir = False
+        if output_path is None:
+            filename = str(uuid.uuid4())
+            if os.path.isdir(experiment_template):
+                output_path = Path(experiment_template) / filename
+            else:
+                output_path = Path(os.path.dirname(experiment_template)) / filename
+            os.makedirs(output_path, exist_ok=True)
+            remove_dir = True
+        output_path = Path(output_path).resolve()
+
+        try:
+            result = client._experiments._test_with_ui(
+                experiment=experiment_template,
+                output_path=output_path,
+                environment_variables=environment_variables,
+                session=session,
+                context=context,
+            )
+        finally:
+            pass
             if remove_dir:
                 shutil.rmtree(output_path)
         return result

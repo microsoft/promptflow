@@ -14,7 +14,6 @@ from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_ope
 from promptflow._sdk._utils import json_load, safe_parse_object_list
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -168,51 +167,26 @@ class ExperimentOperations(TelemetryMixin):
         from .._submitter.experiment_orchestrator import ExperimentOrchestrator
 
         experiment_template = _load_experiment_template(experiment)
-        output_path = kwargs.get("output_path", None)
-        session = kwargs.get("session", None)
-        skip_flow = kwargs.get("skip_flow", None)
-        skip_flow_output = kwargs.get("skip_flow_output", None)
-        skip_flow_run_id = kwargs.get("skip_flow_run_id", None)
-
-        def is_all_none_or_all_not_none(variables):
-            return all(variables) or not any(variables)
-
-        if not is_all_none_or_all_not_none([skip_flow, skip_flow_output, skip_flow_run_id]):
-            error = ValueError(
-                "Either all --skip_flow, --skip_flow_output, and --skip_flow_run_id should be "
-                "specified, or should be none."
-            )
-            raise UserErrorException(
-                target=ErrorTarget.CONTROL_PLANE_SDK,
-                message=str(error),
-                error=error,
-            )
+        output_path = kwargs.pop("output_path", None)
+        session = kwargs.pop("session", None)
 
         return ExperimentOrchestrator(client=self._client, experiment=None).test(
-            experiment_template,
-            None,
-            inputs,
-            environment_variables,
-            output_path=output_path,
-            session=session,
-            skip_flow=skip_flow,
-            skip_flow_output=skip_flow_output,
-            skip_flow_run_id=skip_flow_run_id,
+            experiment_template, None, inputs, environment_variables, output_path=output_path, session=session, **kwargs
         )
 
     def _test_with_ui(
-        self, experiment: Experiment, output_path: PathLike, inputs=None, environment_variables=None, **kwargs
+        self, experiment: Experiment, output_path: PathLike, environment_variables=None, **kwargs
     ) -> Experiment:
         """Test an experiment by http request.
 
         :param experiment: Experiment yaml file path.
         :type experiment: Union[Path, str]
-        :param inputs: Input parameters for flow.
-        :type inputs: dict
-        :param environment_variables: Environment variables for flow.
+        :param environment_variables: Environment variables for experiment.
         :type environment_variables: dict
         """
-        result = self.test(experiment=experiment, inputs=inputs, environment_variables=environment_variables, **kwargs)
+        result = self.test(
+            experiment=experiment, environment_variables=environment_variables, output_path=output_path, **kwargs
+        )
         return_output = {}
         for key in result:
             detail_path = output_path / key / "flow.detail.json"

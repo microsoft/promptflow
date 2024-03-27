@@ -81,8 +81,12 @@ class ExperimentOrchestrator:
         self._node_runs = {}
 
     def test(
-        self, template: ExperimentTemplate, flow: Union[str, Path] = None, inputs=None, environment_variables=None,
-            **kwargs
+        self,
+        template: ExperimentTemplate,
+        flow: Union[str, Path] = None,
+        inputs=None,
+        environment_variables=None,
+        **kwargs,
     ):
         """Test flow in experiment.
 
@@ -97,8 +101,9 @@ class ExperimentOrchestrator:
         """
         if flow is not None:
             flow_path = Path(flow).resolve().absolute()
-            logger.info(f"Testing flow {flow_path.as_posix()} in experiment "
-                        f"{template._base_path.absolute().as_posix()}.")
+            logger.info(
+                f"Testing flow {flow_path.as_posix()} in experiment " f"{template._base_path.absolute().as_posix()}."
+            )
             # Find start nodes, must be flow nodes
             start_nodes = [
                 node
@@ -107,44 +112,59 @@ class ExperimentOrchestrator:
             ]
             if not start_nodes:
                 raise ExperimentValueError(
-                    f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}.")
+                    f"Flow {flow_path.as_posix()} not found in experiment {template.dir_name!r}."
+                )
         else:
             logger.info(f"Testing experiment {template._base_path.absolute().as_posix()}.")
-            start_nodes = [node for node in template.nodes if
-                           len(ExperimentHelper._prepare_single_node_edges(node)) == 0]
+            start_nodes = [
+                node for node in template.nodes if len(ExperimentHelper._prepare_single_node_edges(node)) == 0
+            ]
+            if not start_nodes:
+                raise ExperimentValueError(f"Not found start node in experiment {template.dir_name!r}.")
 
         inputs, environment_variables = inputs or {}, environment_variables or {}
         logger.info(f"Found start nodes {[node.name for node in start_nodes]} for experiment.")
         nodes_to_test = ExperimentHelper.resolve_nodes_to_execute(template, start_nodes)
         logger.info(f"Resolved nodes to test {[node.name for node in nodes_to_test]} for experiment.")
-        # If inputs, use the inputs as experiment data, else read the first line in template data
-        skip_flow = kwargs.get("skip_flow")
-        skip_flow_run_id = kwargs.get("skip_flow_run_id")
+        context = kwargs.get("context", {})
+        context_flow = context.get("node", None)
+        context_run_id = context.get("run_id", None)
+
         skip_node_name = None
-        if skip_flow:
+        override_node_name = None
+        if context_flow:
             for node in nodes_to_test:
-                if Path(skip_flow).as_posix() == Path(node.path).as_posix():
-                    skip_node_name = node.name
+                # only support skip/override the first flow node which matches the ux passed flow path for now.
+                if Path(context_flow).as_posix() == Path(node.path).as_posix():
+                    if context_run_id:
+                        skip_node_name = node.name
+                    else:
+                        override_node_name = node.name
                     break
+        # If inputs, use the inputs as experiment data, else read the first line in template data
         test_context = ExperimentTemplateTestContext(
             template,
             inputs=inputs,
             environment_variables=environment_variables,
             output_path=kwargs.get("output_path"),
             session=kwargs.get("session"),
-            skip_flow_run_id=skip_flow_run_id,
+            context_run_id=context_run_id,
             skip_node_name=skip_node_name,
         )
 
         for node in nodes_to_test:
-            if skip_flow and Path(skip_flow).as_posix() == Path(node.path).as_posix():
-                test_context.add_node_result(node.name, kwargs.get("skip_flow_output"))
+            if skip_node_name and skip_node_name == node.name:
+                test_context.add_node_result(node.name, context.get("outputs", {}))
                 continue
             logger.info(f"Testing node {node.name}...")
             if node in start_nodes:
-                # Start nodes inputs should be updated, as original value could be a constant without data reference.
-                # Filter unknown key out to avoid warning (case: user input with eval key to override data).
-                node.inputs = {**node.inputs, **{k: v for k, v in inputs.items() if k in node.inputs}}
+                if override_node_name and override_node_name == node.name:
+                    node.inputs = {**node.inputs, **{k: v for k, v in context.get("inputs", {}).items()}}
+                else:
+                    # Start nodes inputs should be updated, as original value could be a constant without data
+                    # reference. Filter unknown key out to avoid warning (case: user input with eval key to override
+                    # data).
+                    node.inputs = {**node.inputs, **{k: v for k, v in inputs.items() if k in node.inputs}}
             node_result = self._test_node(node, test_context)
             test_context.add_node_result(node.name, node_result)
         logger.info("Testing completed. See full logs at %s.", test_context.output_path.as_posix())
@@ -676,10 +696,10 @@ class ExperimentTemplateContext:
         # Generate line run id for node
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.node_name_to_id = {node.name: f"{node.name}_attempt{timestamp}" for node in template.nodes}
-        skip_node_name = kwargs.get("skip_node_name")
-        skip_flow_run_id = kwargs.get("skip_flow_run_id")
-        if skip_flow_run_id and skip_node_name:
-            self.node_name_to_id[skip_node_name] = skip_flow_run_id
+        skip_node_name = kwargs.get("skip_node_name", None)
+        context_run_id = kwargs.get("context_run_id", None)
+        if context_run_id and skip_node_name:
+            self.node_name_to_id[skip_node_name] = context_run_id
         self.node_name_to_referenced_id = self._prepare_referenced_ids()
         # All run/line run in experiment should use same session
         self.session = session or str(uuid.uuid4())
@@ -745,7 +765,13 @@ class ExperimentTemplateContext:
 
 class ExperimentTemplateTestContext(ExperimentTemplateContext):
     def __init__(
-        self, template: ExperimentTemplate, inputs=None, environment_variables=None, output_path=None, session=None, **kwargs
+        self,
+        template: ExperimentTemplate,
+        inputs=None,
+        environment_variables=None,
+        output_path=None,
+        session=None,
+        **kwargs,
     ):
         """
         Test context for experiment template.

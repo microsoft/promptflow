@@ -24,9 +24,81 @@ class TestExperimentAPIs:
             ]
         ):
             experiment = pfs_op.experiment_test(
-                body={"template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix()}
+                body={"experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix()}
             ).json
-        assert "main" in experiment
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "url": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/"
+            "94fbjc7h0h6h"
+        }
+        assert "eval" in experiment
+
+    def test_experiment_test_with_override_input(self, pfs_op: PFSOperations) -> None:
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.get", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "basic-no-script-template/basic_without_binding.exp.yaml"
+                    ).as_posix(),
+                    "override_flow_path": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
+                    "inputs": {"url": "https://arxiv.org/abs/2307.04767", "answer": "Academic", "evidence": "Both"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "url": "https://arxiv.org/abs/2307.04767",
+            "answer": "Academic",
+            "evidence": "Both",
+        }
+        assert "eval" in experiment
+
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.get", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic.exp.yaml").as_posix(),
+                    "override_flow_path": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
+                    "inputs": {"url": "https://arxiv.org/abs/2307.04767", "answer": "Academic", "evidence": "Both"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "url": "https://arxiv.org/abs/2307.04767",
+            "answer": "Academic",
+            "evidence": "Both",
+        }
+        assert "eval" in experiment
+
+        with check_activity_end_telemetry(
+            expected_activities=[
+                {"activity_name": "pf.connections.get", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.flows.test", "first_call": False},
+                {"activity_name": "pf.experiment.test"},
+            ]
+        ):
+            experiment = pfs_op.experiment_test(
+                body={
+                    "experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic1.exp.yaml").as_posix(),
+                    "override_flow_path": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
+                    "inputs": {"url": "https://arxiv.org/abs/2307.04767", "answer": "Academic", "evidence": "Both"},
+                }
+            ).json
+        assert "main" in experiment and experiment["main"]["detail"]["flow_runs"][0]["inputs"] == {
+            "url": "https://arxiv.org/abs/2307.04767",
+            "answer": "Academic",
+            "evidence": "Both",
+        }
         assert "eval" in experiment
 
     def test_experiment_test_with_binding_flow_input(self, pfs_op: PFSOperations) -> None:
