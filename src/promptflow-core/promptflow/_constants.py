@@ -253,3 +253,6 @@ class CustomStrongTypeConnectionConfigs:
 class ConnectionProviderConfig:
     LOCAL = "local"
     AZUREML = "azureml"
+
+
+CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
