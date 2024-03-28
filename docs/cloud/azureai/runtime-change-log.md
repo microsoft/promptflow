@@ -19,15 +19,15 @@ Default runtime image is continuously updated, and here we record the new featur
 
 #### New features
 
-- Add param "seed" to LLM tool chat api
+- Add param "seed" to LLM tool chat api.
 
 ### 20240313.v1
 
 #### Bugs fixed
 
-- Fix the bug that call flow with a flow function will fail.
-- Mark the error type as user error If a run is archived before processing by runtime.
-- Return error response when start async flow got not 200 status.
+- Fix an issue where calling a flow with a flow function would result in failure.
+- Improve error handling by categorizing errors as user errors when a run is archived prior to being processed by the runtime.
+- Ensure an error response when runtime gets a non-200 status for flow test.
 
 ### 20240306.v5
 
