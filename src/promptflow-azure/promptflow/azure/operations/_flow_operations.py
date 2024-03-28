@@ -208,8 +208,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
-        from promptflow import load_flow as load_local_flow
         from promptflow._sdk.entities._flow import FlexFlow
+        from promptflow.client import load_flow as load_local_flow
 
         # validate the source folder
         logger.info("Validating flow source.")
