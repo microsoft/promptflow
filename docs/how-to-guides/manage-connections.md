@@ -211,7 +211,7 @@ On the VS Code primary sidebar > prompt flow pane. You can find the connections 
 ::::
 
 ## Load from environment variables
-With `promptflow>=1.7.0`, user is able to load a connection object from os environment variables with `<ConnectionType>.from_env` func.
+With `promptflow>=1.8.0`, user is able to load a connection object from os environment variables with `<ConnectionType>.from_env` func.
 Note that the connection object will **NOT BE CREATED** to local database.
 
 Supported types are as follows:
