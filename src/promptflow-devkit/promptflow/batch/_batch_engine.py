@@ -179,9 +179,6 @@ class BatchEngine:
                     storage=self._storage,
                     language=self._program_language,
                     **self._kwargs,
-                    run_id=run_id,
-                    input_dirs=input_dirs,
-                    max_lines_count=max_lines_count
                 )
                 try:
                     # register signal handler for python flow in the main thread
