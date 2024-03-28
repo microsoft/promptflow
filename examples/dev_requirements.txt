@@ -6,7 +6,6 @@ markdown # for readme generator
 nbformat # for readme generator
 papermill
 keyrings.alt
-black==23.7.0
 black-nb
 pypandoc # for markdown reader
 pypandoc_binary # pypandoc pandoc backend
