@@ -405,3 +405,9 @@ class TestFlowTest:
         assert is_dataclass(result.output)
         assert result.output.output1 == "0123456789"
         assert result.output.output2 == "0123456789"
+
+    def test_eager_flow_with_assistant(self):
+        clear_module_cache("entry")
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/assistant_script/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
