@@ -1576,3 +1576,16 @@ class TestFlowRun:
             "inputs.line_number": [0],
             "outputs.output": [{"connection": "Custom", "key": "API_BASE"}],
         }
+
+    def test_run_with_init(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic_callable_class")
+        run = pf.run(
+            flow=flow_path, data=f"{EAGER_FLOWS_DIR}/basic_callable_class/inputs.jsonl", init={"obj_input": "val"}
+        )
+        assert run.status == "Completed"
+        assert "error" not in run._to_dict(), run._to_dict()["error"]
+        details = pf.get_details(run.name)
+        # convert DataFrame to dict
+        details_dict = details.to_dict(orient="list")
+        assert details_dict["outputs.func_input"] == ["func_input", "func_input"]
+        assert details_dict["outputs.obj_input"] == ["val", "val"]
