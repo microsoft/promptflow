@@ -17,7 +17,6 @@ from promptflow._sdk._constants import (
     SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
     SCHEMA_KEYS_CONTEXT_SECRET_KEY,
     SCRUBBED_VALUE,
-    SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
 )
@@ -78,15 +77,6 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         if typ in type_dict:
             return type_dict.get(typ)
         return snake_to_camel(typ)
-
-    @classmethod
-    def _is_scrubbed_value(cls, value):
-        """For scrubbed value, cli will get original for update, and prompt user to input for create."""
-        if value is None or not value:
-            return True
-        if all([v == "*" for v in value]):
-            return True
-        return value == SCRUBBED_VALUE_NO_CHANGE
 
     @classmethod
     def _is_user_input_value(cls, value):
@@ -211,10 +201,6 @@ class _Connection(_CoreConnection, YAMLTranslatableMixin):
         )
         return connection
 
-    def _get_scrubbed_secrets(self):
-        """Return the scrubbed secrets of connection."""
-        return {key: val for key, val in self.secrets.items() if self._is_scrubbed_value(val)}
-
 
 class _StrongTypeConnection(_CoreStrongTypeConnection, _Connection):
     def _to_orm_object(self):
@@ -265,6 +251,7 @@ class _StrongTypeConnection(_CoreStrongTypeConnection, _Connection):
 
 class AzureOpenAIConnection(_CoreAzureOpenAIConnection, _StrongTypeConnection):
     __doc__ = _CoreAzureOpenAIConnection.__doc__
+    DATA_CLASS = _CoreAzureOpenAIConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -273,6 +260,7 @@ class AzureOpenAIConnection(_CoreAzureOpenAIConnection, _StrongTypeConnection):
 
 class OpenAIConnection(_CoreOpenAIConnection, _StrongTypeConnection):
     __doc__ = _CoreOpenAIConnection.__doc__
+    DATA_CLASS = _CoreOpenAIConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -281,6 +269,7 @@ class OpenAIConnection(_CoreOpenAIConnection, _StrongTypeConnection):
 
 class ServerlessConnection(_CoreServerlessConnection, _StrongTypeConnection):
     __doc__ = _CoreServerlessConnection.__doc__
+    DATA_CLASS = _CoreServerlessConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -289,6 +278,7 @@ class ServerlessConnection(_CoreServerlessConnection, _StrongTypeConnection):
 
 class SerpConnection(_CoreSerpConnection, _StrongTypeConnection):
     __doc__ = _CoreSerpConnection.__doc__
+    DATA_CLASS = _CoreSerpConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -297,6 +287,7 @@ class SerpConnection(_CoreSerpConnection, _StrongTypeConnection):
 
 class QdrantConnection(_CoreQdrantConnection, _StrongTypeConnection):
     __doc__ = _CoreQdrantConnection.__doc__
+    DATA_CLASS = _CoreQdrantConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -305,6 +296,7 @@ class QdrantConnection(_CoreQdrantConnection, _StrongTypeConnection):
 
 class WeaviateConnection(_CoreWeaviateConnection, _StrongTypeConnection):
     __doc__ = _CoreWeaviateConnection.__doc__
+    DATA_CLASS = _CoreWeaviateConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -313,6 +305,7 @@ class WeaviateConnection(_CoreWeaviateConnection, _StrongTypeConnection):
 
 class CognitiveSearchConnection(_CoreCognitiveSearchConnection, _StrongTypeConnection):
     __doc__ = _CoreCognitiveSearchConnection.__doc__
+    DATA_CLASS = _CoreCognitiveSearchConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -321,6 +314,7 @@ class CognitiveSearchConnection(_CoreCognitiveSearchConnection, _StrongTypeConne
 
 class AzureContentSafetyConnection(_CoreAzureContentSafetyConnection, _StrongTypeConnection):
     __doc__ = _CoreAzureContentSafetyConnection.__doc__
+    DATA_CLASS = _CoreAzureContentSafetyConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -329,6 +323,7 @@ class AzureContentSafetyConnection(_CoreAzureContentSafetyConnection, _StrongTyp
 
 class FormRecognizerConnection(_CoreFormRecognizerConnection, AzureContentSafetyConnection):
     __doc__ = _CoreFormRecognizerConnection.__doc__
+    DATA_CLASS = _CoreFormRecognizerConnection
 
     @classmethod
     def _get_schema_cls(cls):
@@ -337,6 +332,7 @@ class FormRecognizerConnection(_CoreFormRecognizerConnection, AzureContentSafety
 
 class CustomStrongTypeConnection(_CoreCustomStrongTypeConnection, _Connection):
     __doc__ = _CoreCustomStrongTypeConnection.__doc__
+    DATA_CLASS = _CoreCustomStrongTypeConnection
 
     def _to_orm_object(self) -> ORMConnection:
         custom_connection = self._convert_to_custom()
@@ -417,6 +413,7 @@ class CustomStrongTypeConnection(_CoreCustomStrongTypeConnection, _Connection):
 
 class CustomConnection(_CoreCustomConnection, _Connection):
     __doc__ = _CoreCustomConnection.__doc__
+    DATA_CLASS = _CoreCustomConnection
 
     @classmethod
     def _get_schema_cls(cls):

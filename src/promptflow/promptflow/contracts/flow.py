@@ -10,14 +10,14 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType
+from promptflow._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 from promptflow.tracing._utils import serialize
 
-from .._constants import LANGUAGE_KEY, FlowLanguage, MessageFormatType
 from .._sdk._constants import DEFAULT_ENCODING
-from .._utils.utils import _match_reference, _sanitize_python_variable_name, try_import
 from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
@@ -546,13 +546,21 @@ class FlowBase:
                 environment_variables[k] = v
         return environment_variables
 
-    def get_connection_names(self):
-        """Return connection names."""
-        connection_names = set({})
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
+        """Return connection names with environment variables overrides.
+        Note: only environment variables exist in flow.environment_variables will be considered.
 
+        :param environment_variables_overrides: used to override flow's environment variables.
+        :return: connection names used in this flow.
+        """
+        environment_variables_overrides = environment_variables_overrides or {}
+        connection_names = set({})
         # Add connection names from environment variable reference
         if self.environment_variables:
             for k, v in self.environment_variables.items():
+                if k in environment_variables_overrides:
+                    # Apply environment variables overrides
+                    v = environment_variables_overrides[k]
                 if not isinstance(v, str) or not v.startswith("${"):
                     continue
                 connection_name, _ = _match_reference(v)
@@ -853,9 +861,9 @@ class Flow(FlowBase):
                 connection_inputs.append(k)
         return connection_inputs
 
-    def get_connection_names(self):
+    def get_connection_names(self, environment_variables_overrides: Dict[str, str] = None):
         """Return connection names."""
-        connection_names = super().get_connection_names()
+        connection_names = super().get_connection_names(environment_variables_overrides=environment_variables_overrides)
         nodes = [
             self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
             for node in self.nodes

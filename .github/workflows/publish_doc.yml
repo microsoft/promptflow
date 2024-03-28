@@ -2,16 +2,17 @@ name: Publish Promptflow Doc
 
 on:
   workflow_dispatch:
-  push: 
-    branches:
-      - main
-      - preview/docs
-    paths:
-      - 'README.md'
-      - 'docs/**'
-      - 'scripts/docs/**'
-      - '.github/workflows/publish_doc.yml'
-      - 'src/promptflow/promptflow/**'
+    # TODO: Enable this after package separation
+#  push:
+#    branches:
+#      - main
+#      - preview/docs
+#    paths:
+#      - 'README.md'
+#      - 'docs/**'
+#      - 'scripts/docs/**'
+#      - '.github/workflows/publish_doc.yml'
+#      - 'src/promptflow/promptflow/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:

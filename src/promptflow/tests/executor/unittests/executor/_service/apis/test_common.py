@@ -1,6 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from promptflow._version import VERSION
+
 
 @pytest.mark.unittest
 class TestCommonApis:
@@ -11,12 +13,13 @@ class TestCommonApis:
 
     def test_version(self, monkeypatch, executor_client: TestClient):
         # mock the BUILD_INFO env variable
-        monkeypatch.setenv("BUILD_INFO", '{"build_number": "20240131.v1"}')
+        monkeypatch.setenv("BUILD_INFO", '{"commit_id": "test-commit-id"}')
 
         response = executor_client.get("/version")
         assert response.status_code == 200
 
         response = response.json()
         assert response["status"] == "healthy"
-        assert response["version"] == "promptflow-executor/20240131.v1"
+        assert response["version"] == VERSION
+        assert response["commit_id"] == "test-commit-id"
         assert isinstance(response["feature_list"], list)

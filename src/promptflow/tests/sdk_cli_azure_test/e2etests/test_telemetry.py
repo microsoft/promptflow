@@ -325,6 +325,7 @@ class TestTelemetry:
             mock_logger.side_effect = check_inner_call
             run = load_run(
                 source=f"{RUNS_DIR}/run_with_env.yaml",
+                params_override=[{"environment_variables": {}}],
             )
             # create 2 times will get 2 request ids
             run.name = str(uuid.uuid4())

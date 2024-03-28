@@ -14,13 +14,13 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import parse_variant
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 from promptflow.tracing._operation_context import OperationContext
 
-from ..._utils.logger_utils import LoggerFactory
 from .._configuration import Configuration
 from .._load_functions import load_flow
 from ..entities._flow import FlexFlow
@@ -115,7 +115,13 @@ class RunSubmitter:
             )
 
         with _change_working_dir(flow.code):
-            connections = SubmitterHelper.resolve_connections(flow=flow)
+            # resolve connections with environment variables overrides to avoid getting unused connections
+            logger.debug(
+                f"Resolving connections for flow {flow.path} with environment variables {run.environment_variables}."
+            )
+            connections = SubmitterHelper.resolve_connections(
+                flow=flow, environment_variables_overrides=run.environment_variables
+            )
         column_mapping = run.column_mapping
         # resolve environment variables
         run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
