@@ -4,11 +4,11 @@ environment:
 inputs:
   text:
     type: string
-    default: Hello World!
+    default: hello
 outputs:
-  output:
+  output_prompt:
     type: string
-    reference: ${llm.output}
+    reference: ${echo_my_prompt.output}
 nodes:
 - name: hello_prompt
   type: prompt
@@ -17,12 +17,10 @@ nodes:
     path: hello.jinja2
   inputs:
     text: ${inputs.text}
-- name: llm
+- name: echo_my_prompt
   type: python
   source:
     type: code
     path: hello.py
   inputs:
-    prompt: ${hello_prompt.output}
-    deployment_name: text-davinci-003
-    max_tokens: 120
+    input1: ${hello_prompt.output}
