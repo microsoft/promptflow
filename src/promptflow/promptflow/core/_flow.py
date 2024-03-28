@@ -21,6 +21,8 @@ from promptflow.core._prompty_utils import (
     prepare_open_ai_request_params,
 )
 from promptflow.exceptions import UserErrorException
+from promptflow.tracing import trace
+from promptflow.tracing._trace import _traced
 
 
 class AbstractFlowBase(abc.ABC):
@@ -332,6 +334,7 @@ class Prompty(FlowBase):
             raise MissingRequiredInputError(f"Missing required inputs: {missing_inputs}")
         return resolved_inputs
 
+    @trace
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
@@ -349,23 +352,29 @@ class Prompty(FlowBase):
 
         # 2.deal with prompt
         inputs = self._validate_inputs(kwargs)
-        template = convert_prompt_template(self._template, inputs, self._api)
+        traced_convert_prompt_template = _traced(func=convert_prompt_template, args_to_ignore=["api"])
+        template = traced_convert_prompt_template(self._template, inputs, self._api)
 
         # 3. prepare params
         params = prepare_open_ai_request_params(self._parameters, template, self._api, connection)
 
         # 4. send request to open ai
         api_client = get_open_ai_client_by_connection(connection=connection)
-        if self._api == "completion":
-            result = api_client.completions.create(**params).choices[0].text
-        else:
-            completion = api_client.chat.completions.create(**params)
-            result = getattr(completion.choices[0].message, "content", "")
-        if params.get("response_format", None) == "json_object":
-            # response_format is one of text or json_object.
-            # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
-            result = json.loads(result)
-        return result
+
+        def llm_executor(parameters):
+            if self._api == "completion":
+                result = api_client.completions.create(**parameters).choices[0].text
+            else:
+                completion = api_client.chat.completions.create(**parameters)
+                result = getattr(completion.choices[0].message, "content", "")
+            if parameters.get("response_format", None) == "json_object":
+                # response_format is one of text or json_object.
+                # https://platform.openai.com/docs/api-reference/chat/create#chat-create-response_format
+                result = json.loads(result)
+            return result
+
+        traced_llm_executor = _traced(llm_executor)
+        return traced_llm_executor(params)
 
 
 class AsyncPrompty(Prompty):
@@ -382,6 +391,7 @@ class AsyncPrompty(Prompty):
 
     """
 
+    @trace
     async def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         """Calling prompty as a function in async, the inputs should be provided with key word arguments.
         Returns the output of the prompty.
