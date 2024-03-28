@@ -165,7 +165,6 @@ cython_debug/
 
 # ignore
 !flow.tools.json
-**/.promptflow/*
 .runs
 connection.json
 .env
@@ -189,3 +188,5 @@ config.json
 
 # Poetry
 poetry.lock
+# promptflow subpackages __init__
+src/promptflow-*/promptflow/__init__.py
