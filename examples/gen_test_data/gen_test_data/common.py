@@ -94,7 +94,7 @@ def print_progress(log_file_path: str, process):
     logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
     finished_log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished (\d+) / (\d+) lines\.")
     progress_log_pattern = re.compile(
-        r".*execution\.bulk\s+INFO\s+\[Lines]\s+\[Finished:\s+(\d+)]\s+\[Processing:\s+(\d+)]\s+\[Pending:\s+(\d+)]"
+        r".*execution.bulk\s+INFO.*\[Finished: (\d+)\] \[Processing: (\d+)\] \[Pending: (\d+)\]"
     )
     # wait for the log file to be created
     start_time = time.time()
