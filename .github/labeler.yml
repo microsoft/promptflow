@@ -9,7 +9,7 @@ sdk:
 - src/promptflow-azure/promptflow/azure/**
 promptflow:
 - src/promptflow-core/**
-tracing:
+promptflow-tracing:
 - src/promptflow-tracing/**
 promptflow-tools:
 - src/promptflow-tools/**
