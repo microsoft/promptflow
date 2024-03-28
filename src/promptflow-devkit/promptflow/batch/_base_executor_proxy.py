@@ -126,6 +126,7 @@ class AbstractExecutorProxy:
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
