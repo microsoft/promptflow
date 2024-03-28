@@ -1,0 +1,16 @@
+[
+    {
+        "model": "gpt-4",
+        "api_key": "YOUR_OPENAI_API_KEY",
+        "base_url": "YOUR_OPENAI_API_BASE_RUL",
+        "api_type": "azure",
+        "api_version": "2023-06-01-preview"
+    },
+    {
+        "model": "gpt-35-turbo",
+        "api_key": "YOUR_OPENAI_API_KEY",        
+        "base_url": "YOUR_OPENAI_API_BASE_RUL",
+        "api_type": "azure",
+        "api_version": "2023-06-01-preview"
+    }
+]

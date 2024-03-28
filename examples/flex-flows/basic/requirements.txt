@@ -1,0 +1,2 @@
+promptflow[azure]
+python-dotenv
