@@ -20,6 +20,7 @@ from promptflow._cli._params import (
     add_param_environment_variables,
     add_param_flow_display_name,
     add_param_function,
+    add_param_init,
     add_param_inputs,
     add_param_prompt_template,
     add_param_source,
@@ -163,6 +164,7 @@ pf flow serve --source <path_to_flow> --skip-open-browser
             add_param_environment_variables,
             add_param_config,
             add_param_skip_browser,
+            add_param_init,
         ]
         + base_params,
         subparsers=subparsers,
@@ -572,6 +574,7 @@ def serve_flow_python(args, source):
         static_folder=static_folder,
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         connection_provider=connection_provider,
+        inits=list_of_dict_to_dict(args.inits),
     )
     if not args.skip_open_browser:
         target = f"http://{args.host}:{args.port}"

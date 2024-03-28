@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict
 
 from flask import Flask, g, jsonify, request
-from opentelemetry import trace, baggage, context
+from opentelemetry import baggage, context, trace
 from opentelemetry.trace.span import INVALID_SPAN
 
 from promptflow._utils.exception_utils import ErrorResponse
@@ -75,6 +75,10 @@ class PromptflowServingApp(Flask):
             self.connection_provider = self.extension.get_connection_provider()
             self.credential = self.extension.get_credential()
             self.sample = get_sample_json(self.project_path, logger)
+
+            self.inits = kwargs.get("inits", {})
+            logger.info("Init params: " + str(self.inits))
+
             self.init_swagger()
             # try to initialize the flow invoker
             try:
@@ -107,6 +111,7 @@ class PromptflowServingApp(Flask):
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
             credential=self.credential,
+            init_kwargs=self.inits,
         )
         # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow
