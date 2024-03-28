@@ -41,7 +41,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = "<4.0,>=3.8"
+python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
 promptflow-core = "<2.0.0"
 psutil = "*"  # get process information when bulk run
 httpx = ">=0.25.1"  # used to send http requests asynchronously
