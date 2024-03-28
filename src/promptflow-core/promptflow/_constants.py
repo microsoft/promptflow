@@ -257,3 +257,5 @@ class ConnectionProviderConfig:
 
 
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
+
+FLEX_FLOW_PUBLIC_NAME = "flex"
