@@ -72,18 +72,50 @@ def _is_tracer_provider_set() -> bool:
     return isinstance(trace.get_tracer_provider(), TracerProvider)
 
 
+def _is_pf_tracer_provider_set() -> bool:
+    provider = trace.get_tracer_provider()
+    if not isinstance(provider, TracerProvider):
+        return False
+    service_name = provider._resource.attributes.get(ResourceAttributesFieldName.SERVICE_NAME)
+    return service_name == RESOURCE_ATTRIBUTES_SERVICE_NAME
+
+
+def _append_span_processors(current_trace_provider: TracerProvider, tracer_provider: TracerProvider):
+    from opentelemetry.sdk.trace import ConcurrentMultiSpanProcessor, SynchronousMultiSpanProcessor
+
+    if not isinstance(current_trace_provider, TracerProvider):
+        return
+    if not isinstance(
+        current_trace_provider._active_span_processor, (ConcurrentMultiSpanProcessor, SynchronousMultiSpanProcessor)
+    ):
+        return
+
+    # Append all span processors to the new tracer provider
+    for processor in current_trace_provider._active_span_processor._span_processors:
+        tracer_provider.add_span_processor(processor)
+
+
 def _force_set_tracer_provider(tracer_provider: TracerProvider) -> None:
     from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
 
     with _TRACER_PROVIDER_SET_ONCE._lock:
         _TRACER_PROVIDER_SET_ONCE._done = False
 
+    #  Append all span processors to the new tracer provider to make sure all span processors are kept
+    current_trace_provider = trace.get_tracer_provider()
+    _append_span_processors(current_trace_provider, tracer_provider)
     trace.set_tracer_provider(tracer_provider)
 
 
 def _set_tracer_provider(res_attrs: typing.Dict[str, str]) -> None:
+    #  Do not set tracer provider if it is already set by pf
+    if _is_pf_tracer_provider_set():
+        return
+
     res = Resource(attributes=res_attrs)
     tracer_provider = TracerProvider(resource=res)
+    # Force set tracer provider if it is already set by other codes
+    # We will keep all span processors in the current tracer provider when setting the new one
     if _is_tracer_provider_set():
         _force_set_tracer_provider(tracer_provider)
     else:
