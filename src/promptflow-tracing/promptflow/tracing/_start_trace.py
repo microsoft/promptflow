@@ -72,6 +72,14 @@ def _is_tracer_provider_set() -> bool:
     return isinstance(trace.get_tracer_provider(), TracerProvider)
 
 
+def _is_pf_tracer_provider_set() -> bool:
+    provider = trace.get_tracer_provider()
+    if not isinstance(provider, TracerProvider):
+        return False
+    service_name = provider._resource.attributes.get(ResourceAttributesFieldName.SERVICE_NAME)
+    return service_name == RESOURCE_ATTRIBUTES_SERVICE_NAME
+
+
 def _append_span_processors(current_trace_provider: TracerProvider, tracer_provider: TracerProvider):
     from opentelemetry.sdk.trace import ConcurrentMultiSpanProcessor, SynchronousMultiSpanProcessor
 
@@ -100,8 +108,14 @@ def _force_set_tracer_provider(tracer_provider: TracerProvider) -> None:
 
 
 def _set_tracer_provider(res_attrs: typing.Dict[str, str]) -> None:
+    #  Do not set tracer provider if it is already set by pf
+    if _is_pf_tracer_provider_set():
+        return
+
     res = Resource(attributes=res_attrs)
     tracer_provider = TracerProvider(resource=res)
+    # Force set tracer provider if it is already set by other codes
+    # We will keep all span processors in the current tracer provider when setting the new one
     if _is_tracer_provider_set():
         _force_set_tracer_provider(tracer_provider)
     else:
