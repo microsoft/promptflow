@@ -442,6 +442,7 @@ class LineRun:
             cumulative_token_count=copy.deepcopy(self.cumulative_token_count),
             parent_id=self.parent_id,
             run=self.run,
+            line_number=self.line_number,
             experiment=self.experiment,
             session_id=self.session_id,
             collection=self.collection,
