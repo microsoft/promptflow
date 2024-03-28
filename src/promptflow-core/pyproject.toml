@@ -5,6 +5,7 @@ description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",
   "promptflow/core/_serving/resources/*",
+  "promptflow/_core/data/tool.schema.json",
 ]
 
 license = "MIT"
