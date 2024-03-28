@@ -4,6 +4,7 @@
 
 import copy
 import inspect
+import logging
 import types
 from dataclasses import dataclass
 from functools import partial
@@ -18,7 +19,7 @@ from promptflow._utils.multimedia_utils import create_image, load_multimedia_dat
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType, to_json_type_mapping_
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._assistant_tool_invoker import (
@@ -31,7 +32,7 @@ from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
-    FailedToParseAssistantTool,
+    FailedToGenerateToolDefinition,
     InvalidAssistantTool,
     InvalidConnectionType,
     InvalidCustomLLMTool,
@@ -174,7 +175,7 @@ class ToolResolver:
         self, tool: Tool, callable: Callable, predefined_inputs: dict
     ) -> ResolvedAssistantTool:
         func_name = tool.function
-        definition = self._generate_tool_definition(func_name, tool.description, predefined_inputs)
+        definition = self._generate_tool_definition(tool, callable, predefined_inputs)
         if predefined_inputs:
             inputs = {name: value.value for name, value in predefined_inputs.items()}
             func = partial(callable, **inputs)
@@ -222,33 +223,67 @@ class ToolResolver:
         # Step IV: construct the AssistantTool object from the updated predefined_inputs + Tool object
         return self._construct_assistant_tool(tool, callable, updated_predefined_inputs)
 
-    def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
+    def _generate_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
         try:
-            to_openai_type = {
-                "str": "string",
-                "int": "number",
-                "float": "number",
-                "bool": "boolean",
-                "list": "array",
-                "dict": "object",
+            sig = inspect.signature(func)
+            parameters = sig.parameters
+            # Attempt to extract the description, handling exceptions
+            try:
+                description, params = DocstringParser.parse_description(func.__doc__)
+            except Exception as e:
+                # Log the exception if necessary
+                logging.warning(f"Failed to parse docstring for function {func.__name__}: {e}")
+                # Set description to None or an empty string
+                description = None  # or description = ""
+                params = {}
+
+            func_definition = {
+                "name": func.__name__,
+                "description": description,
+                "parameters": {"type": "object", "properties": {}, "required": []},
             }
-            description, params = DocstringParser.parse(description)
-            for input in predefined_inputs:
-                if input in params:
-                    params.pop(input)
-            for _, param in params.items():
-                param["type"] = to_openai_type[param["type"]] if param["type"] in to_openai_type else param["type"]
+
+            for name, param in parameters.items():
+                if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+                    # Exclude positional and keyword arguments from definition generation
+                    continue
+                if name in predefined_inputs:
+                    # Exclude predefined inputs from definition generation
+                    continue
+                # Determine if parameter is required (has no default value)
+                is_required = param.default is param.empty
+                if is_required:
+                    func_definition["parameters"]["required"].append(name)
+
+                # Get parameter type and convert to JSON type
+                param_type = tool.inputs.get(name).type[0]
+                json_type = to_json_type_mapping_.get(param_type, "object")
+
+                # Construct parameter definition
+                func_definition["parameters"]["properties"][name] = {
+                    "type": json_type,
+                    "description": params.get(name, {}).get("description", ""),
+                }
+
+                # Handle enums separately to include possible values
+                if tool.inputs[name].enum:
+                    func_definition["parameters"]["properties"][name]["enum"] = tool.inputs[name].enum
 
             return {
                 "type": "function",
-                "function": {
-                    "name": func_name,
-                    "description": description,
-                    "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
-                },
+                "function": func_definition,
             }
         except Exception as e:
-            raise FailedToParseAssistantTool(func_name=func_name) from e
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            raise FailedToGenerateToolDefinition(
+                message_format=(
+                    "Failed to generate openai tool definition for function '{func_name}'. "
+                    "Error: {error_type_and_message}."
+                ),
+                func_name=func.__name__,
+                error_type_and_message=error_type_and_message,
+                target=ErrorTarget.EXECUTOR,
+            ) from e
 
     def _convert_literal_input_types(
         self, node_name: str, source: ToolSource, inputs: dict, tool: Tool, module: types.ModuleType = None

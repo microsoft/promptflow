@@ -16,6 +16,7 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
+from promptflow.executor._assistant_tool_invoker import ResolvedAssistantTool
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
@@ -25,7 +26,7 @@ from promptflow.executor._errors import (
 )
 from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 
-from ...utils import DATA_ROOT, FLOW_ROOT
+from ...utils import ASSISTANT_DEFINITION_ROOT, DATA_ROOT, FLOW_ROOT
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -613,3 +614,172 @@ class TestToolResolver:
                     value.pop(input)
                 elif isinstance(value, list):
                     value.remove(input)
+
+    @pytest.mark.parametrize("path", ["assistant_definition_with_connection.yaml"])
+    def test_tool_with_connection_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, ResolvedAssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "type": "function",
+                "function": {
+                    "name": "echo",
+                    "description": "This tool is used to echo the message back.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"message": {"type": "string", "description": "The message to echo."}},
+                        "required": ["message"],
+                    },
+                },
+            }
+
+    @pytest.mark.parametrize("path", ["assistant_definition_without_functions.yaml"])
+    def test_code_interpreter_and_retrieval_tool_resolve(self, path):
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections={})
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 2
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            if k == "code_interpreter":
+                assert v.name == k
+                assert isinstance(v, ResolvedAssistantTool)
+                assert v.func is None
+                assert v.openai_definition == {"type": "code_interpreter"}
+            else:
+                assert v.name == k
+                assert isinstance(v, ResolvedAssistantTool)
+                assert v.func is None
+                assert v.openai_definition == {"type": "retrieval"}
+
+    @pytest.mark.parametrize("path", ["assistant_definition_partial_description.yaml"])
+    def test_description_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, ResolvedAssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "type": "function",
+                "function": {
+                    "name": "echo",
+                    "description": "",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "message": {"type": "string", "description": "The message to echo."},
+                            "message1": {"type": "string", "description": ""},
+                        },
+                        "required": ["message", "message1"],
+                    },
+                },
+            }
+
+    @pytest.mark.parametrize("path", ["assistant_definition_types.yaml"])
+    def test_types_resolve(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
+        assistant_definition = tool_resolver._convert_to_assistant_definition(
+            assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+        )
+
+        assert assistant_definition.model == "mock_model"
+        assert assistant_definition.instructions == "mock_instructions"
+        assert assistant_definition.tools
+        assert len(assistant_definition._tool_invoker._assistant_tools) == 1
+        for k, v in assistant_definition._tool_invoker._assistant_tools.items():
+            assert v.name == k == "echo"
+            assert isinstance(v, ResolvedAssistantTool)
+            assert isinstance(v.func.keywords["connection"], AzureOpenAIConnection)
+            assert v.openai_definition == {
+                "function": {
+                    "description": "This tool is used to echo the message back.",
+                    "name": "echo",
+                    "parameters": {
+                        "properties": {
+                            "message_bool": {"description": "", "type": "boolean"},
+                            "message_custom_type": {"description": "", "type": "object"},
+                            "message_default": {"description": "", "type": "number"},
+                            "message_dict": {"description": "", "type": "object"},
+                            "message_enum_str": {"description": "", "enum": ["c", "f"], "type": "string"},
+                            "message_float": {"description": "", "type": "number"},
+                            "message_int": {"description": "", "type": "number"},
+                            "message_list": {"description": "", "type": "array"},
+                            "message_no_type": {"description": "", "type": "object"},
+                            "message_none": {"description": "", "type": "object"},
+                            "message_str": {"description": "", "type": "string"},
+                        },
+                        "required": [
+                            "message_str",
+                            "message_float",
+                            "message_int",
+                            "message_bool",
+                            "message_list",
+                            "message_dict",
+                            "message_none",
+                            "message_enum_str",
+                            "message_custom_type",
+                            "message_no_type",
+                        ],
+                        "type": "object",
+                    },
+                },
+                "type": "function",
+            }
+
+    @pytest.mark.parametrize("path", ["assistant_definition_non_existing.yaml"])
+    def test_invalid_assistant_definition_path(self, path):
+        connections = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"api_key": "mock", "api_base": "mock"},
+            }
+        }
+        tool_resolver = ToolResolver(working_dir=Path(ASSISTANT_DEFINITION_ROOT), connections=connections)
+        with pytest.raises(InvalidSource) as e:
+            tool_resolver._convert_to_assistant_definition(
+                assistant_definition_path=path, input_name="input_name", node_name="dummy_node"
+            )
+        assert (
+            e.value.message == "Input 'input_name' for node 'dummy_node' of "
+            "value 'assistant_definition_non_existing.yaml' is not a valid path."
+        )

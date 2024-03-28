@@ -1,0 +1,10 @@
+model: mock_model
+instructions: mock_instructions
+tools:
+- type: function
+  tool_type: python
+  source:
+    type: code
+    path: echo.py
+  predefined_inputs:
+    connection: azure_open_ai_connection
