@@ -452,11 +452,22 @@ class LineRun:
         for evaluation in evaluations:
             if self.evaluations is None:
                 self.evaluations = dict()
-            self.evaluations[evaluation.name] = evaluation
+            eval_name = evaluation.run if evaluation.run is not None else evaluation.name
+            self.evaluations[eval_name] = evaluation
 
     def _to_rest_object(self) -> typing.Dict:
-        res = asdict(self)
-        res["start_time"] = self.start_time.isoformat()
-        res["end_time"] = self.end_time.isoformat() if self.end_time is not None else None
-        # TODO: handle evaluations
-        return res
+        # datetime.datetime is not JSON serializable, so we need to take care of this
+        # otherwise, Flask will raise and complain about this
+        # line run's start/end time, and (optional) evaluations start/end time
+        _self = copy.deepcopy(self)
+        _self.start_time = _self.start_time.isoformat()
+        _self.end_time = _self.end_time.isoformat() if self.end_time is not None else None
+        # evaluations
+        if _self.evaluations is not None:
+            for eval_name in _self.evaluations:
+                evaluation = _self.evaluations[eval_name]
+                _self.evaluations[eval_name].start_time = evaluation.start_time.isoformat()
+                _self.evaluations[eval_name].end_time = (
+                    evaluation.end_time.isoformat() if evaluation.end_time is not None else None
+                )
+        return asdict(_self)

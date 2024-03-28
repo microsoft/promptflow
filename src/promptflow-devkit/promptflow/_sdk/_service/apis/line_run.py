@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 import typing
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 from flask_restx import fields
 
@@ -91,6 +91,4 @@ class LineRuns(Resource):
             experiments=args.experiments,
             trace_ids=args.trace_ids,
         )
-        # order by start_time desc
-        line_runs.sort(key=lambda x: x.start_time, reverse=True)
-        return [asdict(line_run) for line_run in line_runs]
+        return [line_run._to_rest_object() for line_run in line_runs]
