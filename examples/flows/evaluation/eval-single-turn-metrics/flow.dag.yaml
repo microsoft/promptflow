@@ -1,0 +1,342 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    default: Which tent is the most waterproof?
+    is_chat_input: false
+  answer:
+    type: string
+    default: The Alpine Explorer Tent is the most waterproof.
+    is_chat_input: false
+  context:
+    type: string
+    default: From the our product list, the alpine explorer tent is the most
+      waterproof. The Adventure Dining Tabbe has higher weight.
+    is_chat_input: false
+  ground_truth:
+    type: string
+    default: The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m
+    is_chat_input: false
+  metrics:
+    type: string
+    default: grounding,answer_relevance,answer_quality,context_precision,answer_similarity,creativity,context_recall,answer_correctness
+    is_chat_input: false
+outputs:
+  answer_correctness:
+    type: string
+    reference: ${concat_scores.output.answer_correctness}
+  context_recall:
+    type: string
+    reference: ${concat_scores.output.context_recall}
+  answer_similarity:
+    type: string
+    reference: ${concat_scores.output.answer_similarity}
+  answer_relevance:
+    type: string
+    reference: ${concat_scores.output.answer_relevance}
+  context_precision:
+    type: string
+    reference: ${concat_scores.output.context_precision}
+  creativity:
+    type: string
+    reference: ${concat_scores.output.creativity}
+  grounding:
+    type: string
+    reference: ${concat_scores.output.grounding}
+  answer_quality:
+    type: string
+    reference: ${concat_scores.output.answer_quality}
+nodes:
+- name: select_metrics
+  type: python
+  source:
+    type: code
+    path: select_metrics.py
+  inputs:
+    metrics: ${inputs.metrics}
+  use_variants: false
+- name: validate_input
+  type: python
+  source:
+    type: code
+    path: validate_input.py
+  inputs:
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+    selected_metrics: ${select_metrics.output}
+  use_variants: false
+- name: grounding
+  type: llm
+  source:
+    type: code
+    path: grounding.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.grounding}
+    is: true
+  use_variants: false
+- name: answer_quality
+  type: llm
+  source:
+    type: code
+    path: answer_quality.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.answer_quality}
+    is: true
+  use_variants: false
+- name: answer_similarity
+  type: llm
+  source:
+    type: code
+    path: answer_similarity.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.answer_similarity}
+    is: true
+  use_variants: false
+- name: creativity
+  type: llm
+  source:
+    type: code
+    path: creativity.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.creativity}
+    is: true
+  use_variants: false
+- name: context_recall
+  type: llm
+  source:
+    type: code
+    path: context_recall.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    context: ${inputs.context}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.context_recall}
+    is: true
+  use_variants: false
+- name: calculate_context_recall
+  type: python
+  source:
+    type: code
+    path: calculate_context_recall.py
+  inputs:
+    llm_result: ${context_recall.output}
+  activate:
+    when: ${validate_input.output.context_recall}
+    is: true
+  use_variants: false
+- name: context_precision
+  type: llm
+  source:
+    type: code
+    path: context_precision.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    context: ${inputs.context}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.context_precision}
+    is: true
+  use_variants: false
+- name: answer_relevance
+  type: llm
+  source:
+    type: code
+    path: answer_relevance.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.answer_relevance}
+    is: true
+  use_variants: false
+- name: handle_generated_question
+  type: python
+  source:
+    type: code
+    path: handle_generated_question.py
+  inputs:
+    llm_result: ${answer_relevance.output}
+  activate:
+    when: ${validate_input.output.answer_relevance}
+    is: true
+  use_variants: false
+- name: embedding_question
+  type: python
+  source:
+    type: package
+    tool: promptflow.tools.embedding.embedding
+  inputs:
+    connection: open_ai_connection
+    deployment_name: text-embedding-ada-002
+    input: ${inputs.question}
+  activate:
+    when: ${validate_input.output.answer_relevance}
+    is: true
+  use_variants: false
+- name: embedding_generated_question
+  type: python
+  source:
+    type: package
+    tool: promptflow.tools.embedding.embedding
+  inputs:
+    connection: open_ai_connection
+    deployment_name: text-embedding-ada-002
+    input: ${handle_generated_question.output.question}
+  activate:
+    when: ${validate_input.output.answer_relevance}
+    is: true
+  use_variants: false
+- name: calculate_answer_relevance
+  type: python
+  source:
+    type: code
+    path: calculate_answer_relevance.py
+  inputs:
+    generated_question_embedding: ${embedding_generated_question.output}
+    noncommittal: ${handle_generated_question.output.noncommittal}
+    question_embedding: ${embedding_question.output}
+  activate:
+    when: ${validate_input.output.answer_relevance}
+    is: true
+  use_variants: false
+- name: answer_correctness
+  type: llm
+  source:
+    type: code
+    path: answer_correctness.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.answer_correctness}
+    is: true
+  use_variants: false
+- name: calculate_answer_correctness
+  type: python
+  source:
+    type: code
+    path: calculate_answer_correctness.py
+  inputs:
+    similarity_score: ${answer_similarity.output}
+    statement_result: ${answer_correctness.output}
+  activate:
+    when: ${validate_input.output.answer_correctness}
+    is: true
+  use_variants: false
+- name: concat_scores
+  type: python
+  source:
+    type: code
+    path: concat_scores.py
+  inputs:
+    answer_correctness: ${calculate_answer_correctness.output}
+    answer_quality: ${answer_quality.output}
+    answer_relevance: ${calculate_answer_relevance.output}
+    answer_similarity: ${answer_similarity.output}
+    context_precision: ${context_precision.output}
+    context_recall: ${calculate_context_recall.output}
+    creativity: ${creativity.output}
+    grounding: ${grounding.output}
+  use_variants: false
+- name: aggregate_results
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    metrics: ${inputs.metrics}
+    results: ${concat_scores.output}
+  aggregation: true
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt

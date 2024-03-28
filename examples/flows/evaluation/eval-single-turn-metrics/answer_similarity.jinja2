@@ -1,0 +1,22 @@
+# System:
+You are an AI assistant. You will be given the definition of an evaluation metric for assessing the quality of an answer in a question-answering task. Your job is to compute an accurate evaluation score using the provided evaluation metric.
+# User:
+Equivalence, as a metric, measures the similarity between the predicted answer and the correct answer. If the information and content in the predicted answer is similar or equivalent to the correct answer, then the value of the Equivalence metric should be high, else it should be low. Given the question, correct answer, and predicted answer, determine the value of Equivalence metric using the following rating scale:
+1: the predicted answer is not at all similar to the correct answer
+2: the predicted answer is mostly not similar to the correct answer
+3: the predicted answer is somewhat similar to the correct answer
+4: the predicted answer is mostly similar to the correct answer
+5: the predicted answer is completely similar to the correct answer
+
+This rating value should always be an integer between 1 and 5. And the output should only contain the score which is an integer between 1 and 5.
+
+# Examples:
+question: What are the health benefits of regular exercise?
+correct answer: Regular exercise can help maintain a healthy weight, increase muscle and bone strength, and reduce the risk of chronic diseases. It also promotes mental well-being by reducing stress and improving overall mood.
+predicted answer: Routine physical activity can contribute to maintaining ideal body weight, enhancing muscle and bone strength, and preventing chronic illnesses. In addition, it supports mental health by alleviating stress and augmenting general mood.
+score: 5
+
+question: {{question}}
+correct answer:{{ground_truth}}
+predicted answer: {{answer}}
+score:

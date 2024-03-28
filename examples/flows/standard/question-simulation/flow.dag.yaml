@@ -1,0 +1,77 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  chat_history:
+    type: list
+    default: [{"inputs":{"question":"Can you introduce something about large language model?"},"outputs":{"answer":"A large language model (LLM) is a type of language model that is distinguished by its ability to perform general-purpose language generation and understanding. These models learn statistical relationships from text documents through a self-supervised and semi-supervised training process that is computationally intensive. LLMs are a form of artificial neural networks, and many of the most advanced ones are built using a transformer-based architecture, although there are some recent implementations based on other architectures, such as recurrent neural network variants and Mamba, which is a state space model.\n\nLLMs are capable of text generation, which is a subset of generative AI. They do this by taking an input text and predicting the next token or word in a sequence. Initially, fine-tuning was the primary method for adapting these models to perform specific tasks, but with the advent of larger models like GPT-3, prompt engineering can be used to achieve similar results without fine-tuning.\n\nThese models are believed to acquire knowledge about the syntax, semantics, and \"ontology\" inherent in human language from the corpora they are trained on. However, they also inherit any inaccuracies and biases present in the training data.\n\nNotable examples of LLMs include OpenAI's GPT series (such as GPT-3","context":"Content: A large language model (LLM) is a language model notable for its ability to achieve general-purpose language generation and understanding. LLMs acquire these abilities by learning statistical relationships from text documents during a computationally intensive self-supervised and semi-supervised training process.[1] LLMs are artificial neural networks, the largest and most capable of which are built with a transformer-based architecture. Some recent implementations are based on other architectures, such as recurrent neural network variants and Mamba (a state space model).[2][3][4]. LLMs can be used for text generation, a form of generative AI, by taking an input text and repeatedly predicting the next token or word.[5] Up to 2020, fine tuning was the only way a model could be adapted to be able to accomplish specific tasks. Larger sized models, such as GPT-3, however, can be prompt-engineered to achieve similar results.[6] They are thought to acquire knowledge about syntax, semantics and \"ontology\" inherent in human language corpora, but also inaccuracies and biases present in the corpora.[7]. Some notable LLMs are OpenAI's GPT series of models (e.g., GPT-3.5 and GPT-4, used in ChatGPT and Microsoft Copilot), Google's PaLM and Gemini (the latter of which is currently used in the chatbot of the same name), Meta's LLaMA family of open-source models, and Anthropic's Claude models.. At the 2017 NeurIPS conference, Google researchers introduced the transformer architecture in their landmark paper \"Attention Is All You Need\". This paper's goal was to improve upon 2014 Seq2seq technology, [8] and was based mainly on the attention mechanism developed by Bahdanau et al. in 2014.[9] The following year in 2018, BERT was introduced and quickly became \"ubiquitous\".[10] Though the original transformer has both encoder and decoder blocks, BERT is an encoder-only model.. Although decoder-only GPT-1 was introduced in 2018, it was GPT-2 in 2019 that caught widespread attention because OpenAI at first deemed it too powerful to release publicly, out of fear of malicious use.[11] GPT-3 in 2020 went a step further and as of 2024[update] is available only via API with no offering of downloading the model to execute locally.\nSource: https://en.wikipedia.org/w/index.php?search=Large language model\n\nContent: Gemini may refer to:. Main pageContentsCurrent eventsRandom articleAbout WikipediaContact usDonate. HelpLearn to editCommunity portalRecent changesUpload file. Create account. Log in. Create account Log in. (Top). 1Space. 2Mythology. 3Given name.\nSource: https://en.wikipedia.org/w/index.php?search=Gemini "}}]
+    is_chat_input: false
+  question_count:
+    type: int
+    default: 3
+    is_chat_input: false
+outputs:
+  question:
+    type: string
+    reference: ${flow_output.output}
+nodes:
+- name: verify_if_conversation_stopped
+  type: llm
+  source:
+    type: code
+    path: verify_if_conversation_stopped.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    chat_history: ${inputs.chat_history}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+- name: if_continue
+  type: python
+  source:
+    type: code
+    path: if_continue.py
+  inputs:
+    stop_or_continue: ${verify_if_conversation_stopped.output}
+  use_variants: false
+- name: human_prompt
+  type: prompt
+  source:
+    type: code
+    path: human_prompt.jinja2
+  inputs:
+    chat_history: ${inputs.chat_history}
+  activate:
+    when: ${if_continue.output}
+    is: true
+  use_variants: false
+- name: call_llm_chat
+  type: python
+  source:
+    type: code
+    path: call_llm_chat.py
+  inputs:
+    connection: open_ai_connection
+    deployment_name_or_model: gpt-4
+    prompt: ${human_prompt.output}
+    question_count: ${inputs.question_count}
+    stop:
+    - "Human:"
+    - "Bot:"
+  use_variants: false
+- name: flow_output
+  type: python
+  source:
+    type: code
+    path: flow_output.py
+  inputs:
+    questions: ${call_llm_chat.output}
+    stop_or_continue: ${verify_if_conversation_stopped.output}
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt

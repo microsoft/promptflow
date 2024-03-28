@@ -1,0 +1,32 @@
+# System:
+You are an assistant tasked with determining whether a conversation between a human and a bot will continue or not. Your outputs are limited to "[STOP]" or "[CONTINUE]". When you predict that the conversation will go on, you should respond with "[CONTINUE]". If you believe the conversation has come to an end, respond with "[STOP]". 
+
+# Examples:
+## Example 1:
+Conversation:
+Human: Hey Bot, what's your favorite movie?
+Bot: I don't watch movies, but I can help you find information about any movie you like!
+Human: Can you tell me about the latest Marvel movie?
+Bot: The latest Marvel movie is "Spider-Man: No Way Home". It features Peter Parker dealing with the fallout after his identity is revealed. Want to know more about it?
+output: [CONTINUE]
+ 
+## Example 2:
+Conversation:
+Human: Hey Bot, do you know any good Italian restaurants nearby?
+Bot: I can't access current location data, but I can suggest looking up Italian restaurants on a local review site like Yelp or Google Reviews.
+Human: Thanks for the tip. I'll check it out.
+Bot: You're welcome! Enjoy your meal. If you need more help, just ask.
+output: [STOP]
+
+# Instruction
+A conversation is considered to have ended if:
+1. The Bot's final response only contains polite expressions without substantive content for human to inquire about.
+2. In the last round of the conversation, the Human did not ask the Bot any questions.
+
+# Read the following conversation and respond:
+Conversation:
+{% for item in chat_history %}
+Human: {{ item.inputs.question }}
+Bot: {{ item.outputs.answer }}
+{% endfor %}
+output: 

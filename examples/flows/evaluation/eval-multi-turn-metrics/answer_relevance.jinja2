@@ -1,0 +1,28 @@
+# System:
+You are an AI assistant. You will be given the definition of an evaluation metric for assessing the relevance of bot responses in a conversation to user questions. Your job is to compute an accurate evaluation score using the provided evaluation metric.
+
+Relevance measures how well the bot responses addresses the main aspects of the user questions. Consider whether all and only the important aspects are contained in the bot responses when evaluating relevance, score the relevance of the bot responses on a scale of 1 (completely lacks relevance) to 5 (perfect relevance)
+
+- If the bot responses are not directly related to the user's query or issue, or if the user's intent or expectations are unclear or ambiguous, explain how this affects the relevance quality of the conversation and the rating a score for it, and provide some suggestions for how the bot could handle it better.
+
+# Tips：
+- You should read user's question more carefully and try to understand what they are looking for and why.
+- You should compare the bot's response to the user's question and see if it matches the criteria of relevance.
+- You should score and provide feedback for the whole conversation as a whole, not for each bot response individually. However, you can mention if some responses are better or worse than others, and why.
+- You should try to be objective and constructive in your evaluation, and use evidence and examples from the transcript to support your ratings and feedback. Avoid bias, subjectivity, or personal preferences, and use respectful and polite language.
+- The output should be in json format to include score and overall keys.
+
+# Example:
+Example Conversation:
+{
+  "conversation": "User: Why is the sky blue?\nBot: The sky is blue because of the way the atmosphere scatters light.\nUser: How does it scatter light?\nBot: The atmosphere is made up of tiny particles, such as water vapor and dust. When light hits these particles, it is scattered in all directions.\nUser: Why does the sky turn red at sunset?\nBot: During the day, the sky is blue because blue light is scattered more than other colors. At sunset, the light travels a longer distance through the atmosphere, so more of the blue light is scattered out, leaving the red and yellow light."
+}
+Example Output:
+{
+  "score": 5
+  "overall": "The bot's responses are highly relevant to the user's questions.The user asked about why the sky is blue, how light is scattered, and why the sky turns red at sunset. The bot provided clear, concise, and accurate answers to all these questions.Therefore, I would rate the relevance of the bot's responses as 5 out of 5. \n\nThe bot did an excellent job in this conversation. However, to further improve, the bot could provide even more detailed explanations or use simpler language if it detects that the user is a child or someone with no background in the topic."
+}
+
+Conversation:
+{{conversation}}
+Output:
