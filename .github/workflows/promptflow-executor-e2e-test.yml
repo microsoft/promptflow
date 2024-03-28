@@ -106,14 +106,16 @@ jobs:
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         pip install ${{ github.workspace }}/src/promptflow-tracing
-        pip install ${{ github.workspace }}/src/promptflow-core
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executor-service]"}}
+        pip install ${{ github.workspace }}/src/promptflow-core[executor-service]
+        pip install ${{ github.workspace }}/src/promptflow-devkit
+        pip install ${{ github.workspace }}/src/promptflow-azure
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: install recording
       run: |
         pip install vcrpy
-        pip install -e .
+        pip install .
       working-directory: ${{ env.RECORD_DIRECTORY }}
     - name: Azure Login
       uses: azure/login@v1
