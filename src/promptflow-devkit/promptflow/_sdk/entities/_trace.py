@@ -47,11 +47,7 @@ class Event:
     @staticmethod
     def get(event_id: str) -> typing.Dict:
         orm_event = ORMEvent.get(event_id)
-        data = json.loads(orm_event.data)
-        # deserialize `events.attributes.payload` here to save effort in UX
-        payload = data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD]
-        data[SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTE_PAYLOAD] = json.loads(payload)
-        return data
+        return json.loads(orm_event.data)
 
 
 class Span:
