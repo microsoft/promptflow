@@ -68,7 +68,7 @@ pyinstaller = ">=5.13.2"
 streamlit = ">=1.26.0"
 streamlit-quill = "<0.1.0"
 bs4 = "*"
-pywin32 = {version = ">=304", markers = "sys_platform == 'win32'"}
+pywin32 = {version = "*", markers = "sys_platform == 'win32'"}
 
 [tool.poetry.extras]
 all = [
