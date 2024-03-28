@@ -76,8 +76,8 @@ class PromptflowServingApp(Flask):
             self.credential = self.extension.get_credential()
             self.sample = get_sample_json(self.project_path, logger)
 
-            self.inits = kwargs.get("inits", {})
-            logger.info("Init params: " + str(self.inits))
+            self.init = kwargs.get("init", {})
+            logger.info("Init params: " + str(self.init))
 
             self.init_swagger()
             # try to initialize the flow invoker
@@ -111,7 +111,7 @@ class PromptflowServingApp(Flask):
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
             credential=self.credential,
-            init_kwargs=self.inits,
+            init_kwargs=self.init,
         )
         # why we need to update bonded executable flow?
         self.flow = self.flow_invoker.flow
