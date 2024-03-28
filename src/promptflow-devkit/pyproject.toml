@@ -101,7 +101,7 @@ requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-pf = "promptflow._cli._pf.entry:main"
+pf = "promptflow.scripts.pf:main"
 pfs = "promptflow._sdk._service.entry:main"
 
 [tool.pytest.ini_options]

@@ -8,3 +8,6 @@ def main():
         os.environ['PF_INSTALLER'] = 'PIP'
 
     os.execl(sys.executable, sys.executable, '-m', 'promptflow._cli._pf.entry', *sys.argv[1:])
+
+if __name__ == '__main__':
+    main()
