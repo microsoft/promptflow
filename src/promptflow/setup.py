@@ -69,7 +69,6 @@ setup(
         ],
     },
     packages=find_packages(),
-    scripts=["pf.bat"],
     include_package_data=True,
     project_urls={
         "Bug Reports": "https://github.com/microsoft/promptflow/issues",
