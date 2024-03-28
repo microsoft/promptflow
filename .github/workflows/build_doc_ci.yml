@@ -34,6 +34,7 @@ jobs:
 
       - name: Install packages
         shell: pwsh
+        # Note: Use -e to avoid duplicate object warning when build apidoc.
         run: |
           pip uninstall -y promptflow-tracing promptflow-core promptflow-devkit promptflow-azure
           pip install -e ${{ github.workspace }}/src/promptflow-tracing
@@ -62,4 +63,4 @@ jobs:
       - name: Build LinkCheck
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
+        run: ./doc_generation.ps1 -WithReferenceDoc:$true -BuildLinkCheck -WarningAsError:$true
