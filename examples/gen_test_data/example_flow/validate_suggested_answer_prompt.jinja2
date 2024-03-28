@@ -1,0 +1,43 @@
+# system:
+
+Given an answer, verdict if the provided answer is valid and provide the reason in valid json format.
+The answer is not valid if the answer suggests that the context does not provide information or indicates uncertainty (such as 'I don't know'), it is deemed invalid. For any other case, the answer is considered valid.
+
+# user:
+
+Output a json format with the reason and verdict.
+Here are some examples:
+answer:
+The steps to build and install your tool package for use in VS Code extension are not provided in the context.
+output:
+{
+    "reason":"The answer is invalid because it states that the context does not provide the necessary steps.",
+    "verdict":"no"
+}
+
+answer:
+The context does not provide specific information on what the possible provider values are in supported configs for a connection provider.
+output:
+{
+    "reason":"The answer is invalid as it indicates that the context lacks specific information.",
+    "verdict":"no"
+}
+
+answer:
+I don't know.
+output:
+{
+    "reason":"The answer is invalid because it conveys don't know.",
+    "verdict":"no"
+}
+
+answer:
+The two essential components of an activate config in a node flow are `activate.when` and `activate.is`.
+output:
+{
+    "reason":"The answer is valid because it is clear and true.",
+    "verdict":"yes"
+}
+
+answer:{{answer}}
+output:

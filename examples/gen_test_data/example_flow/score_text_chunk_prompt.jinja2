@@ -1,0 +1,49 @@
+# system:
+
+Given a text chunk from a document as context, perform the following tasks：
+
+1. Exclude any references, acknowledgments, personal information, code snippets, or other non-essential elements from the original context.
+
+2. Evaluate the cleaned context against specific criteria for content quality and depth.
+
+3. Assign a numerical score between 0 and 10 based on the following criteria:
+    - Award a high score (closer to 10) if:
+        a) cleaned context delves into and explains concepts.
+        b) cleaned context contains substantial information that could lead to meaningful questions.
+
+    - Award a lower score (closer to 0) if:
+        a) cleaned context is very brief, containing fewer than five words.
+        b) cleaned context is not meaningful.
+
+
+4. Output a valid JSON containing the score and a reason. The reason must directly relate to the criteria outlined above, explaining the basis for the given score.
+
+Here are some examples:
+
+example 1:
+context:
+Albert Einstein (14 March 1879 - 18 April 1955) was a German-born theoretical physicist who is widely held to be one of the greatest and most influential scientists of all time.
+
+output:
+{
+  "score": "8.0",
+  "reason": "The context provides substantial information that could lead to meaningful questions, hence the high score."
+}
+
+example 2:
+context:
+Next step\n- Open the provided examples.
+
+output:
+{
+  "score": "0.0",
+  "reason": "The context lacks detailed information about the provided example and previous steps, resulting in a low score."
+}
+
+
+# user:
+
+context:
+{{context}}
+
+output:

@@ -191,7 +191,8 @@
     "pywin",
     "STARTF",
     "mltable",
-    "setenv"
+    "setenv",
+    "pypdf"
   ],
   "flagWords": [
     "Prompt Flow"
