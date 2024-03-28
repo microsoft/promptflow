@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Dict
 
 from flask import Flask, g, jsonify, request
-from opentelemetry import baggage, context
+from opentelemetry import trace, baggage, context
+from opentelemetry.trace.span import INVALID_SPAN
 
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.logger_utils import LoggerFactory
@@ -36,6 +37,7 @@ from promptflow.core._serving.utils import (
 from promptflow.core._utils import init_executable
 from promptflow.exceptions import SystemErrorException
 from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.tracing._operation_context import OperationContext
 
 from .swagger import generate_swagger
 
@@ -153,10 +155,17 @@ def add_default_routes(app: PromptflowServingApp):
         run_id = g.get("req_id", None)
         # TODO: refine this once we can directly set the input/output log level to DEBUG in flow_invoker.
         disable_data_logging = logger.level >= logging.INFO
-        # try parse trace context and attach it as current context if exist
-        ctx = try_extract_trace_context(logger)
+        span = trace.get_current_span()
+        if span == INVALID_SPAN:
+            # no parent span, try to extract trace context from request
+            ctx = try_extract_trace_context(logger)
+        else:
+            ctx = None
         token = context.attach(ctx) if ctx else None
         try:
+            req_id = g.get("req_id", None)
+            if req_id:
+                OperationContext.get_instance()._add_otel_attributes("request_id", req_id)
             flow_result = app.flow_invoker.invoke(
                 data, run_id=run_id, disable_input_output_logging=disable_data_logging
             )  # noqa
@@ -252,6 +261,13 @@ def create_app(**kwargs):
         CORS(app)
     except ImportError:
         logger.warning("flask-cors is not installed, CORS is not enabled.")
+    # enable auto-instrumentation if customer installed opentelemetry-instrumentation-flask
+    try:
+        from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+        FlaskInstrumentor().instrument_app(app, excluded_urls="/swagger.json,/health,/version")
+    except ImportError:
+        logger.info("opentelemetry-instrumentation-flask is not installed, auto-instrumentation is not enabled.")
     if __name__ != "__main__":
         app.logger.handlers = logger.handlers
         app.logger.setLevel(logger.level)

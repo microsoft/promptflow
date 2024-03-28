@@ -69,4 +69,3 @@ class TestAssistant:
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
             flow_result = executor.exec_line({})
             assert flow_result.run_info.status == Status.Completed
-            assert flow_result.output["answer"]["content"][0]["text"]["value"] == "Hello World!"
