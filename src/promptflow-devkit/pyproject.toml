@@ -138,5 +138,5 @@ include_external_packages = "True"
 [[tool.importlinter.contracts]]
 name = "Contract forbidden modules"
 type = "forbidden"
-source_modules = ["promptflow.devkit"]
+source_modules = ["promptflow._cli", "promptflow._internal", "promptflow._proxy", "promptflow._sdk", "promptflow.batch", "promptflow.client", "promptflow.entities", "promptflow.operations"]
 forbidden_modules = ["promptflow.azure"]
