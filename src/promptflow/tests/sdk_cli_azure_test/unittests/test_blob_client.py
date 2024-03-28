@@ -6,7 +6,7 @@ from promptflow.azure._storage.blob.client import _get_datastore_client_key, _ge
 
 
 @pytest.mark.unittest
-class TestCosmosDB:
+class TestBlobClient:
     def test_get_datastore_from_map(self):
         datastore_map["test"] = {
             "expire_at": datetime.datetime.now() + datetime.timedelta(0, -1),  # already expire
