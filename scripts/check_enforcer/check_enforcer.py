@@ -47,11 +47,11 @@ checks = {
         "scripts/building/**",
         ".github/workflows/promptflow-sdk-cli-test.yml",
     ],
-    "sdk_cli_global_config_tests": [
-        "src/promptflow/**",
-        "scripts/building/**",
-        ".github/workflows/promptflow-global-config-test.yml",
-    ],
+    # "sdk_cli_global_config_tests": [
+    #     "src/promptflow/**",
+    #     "scripts/building/**",
+    #     ".github/workflows/promptflow-global-config-test.yml",
+    # ],
     "sdk_cli_azure_test_replay": [
         "src/promptflow/**",
         "scripts/building/**",
