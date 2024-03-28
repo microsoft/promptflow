@@ -6,7 +6,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig
+from .._constants import USER_AGENT_OVERRIDE_KEY, ConnectionProviderConfig, FlowLanguage
+from .._proxy import ProxyFactory
 from .._utils.logger_utils import get_cli_sdk_logger
 from .._utils.user_agent_utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from ..exceptions import ErrorTarget, UserErrorException
@@ -162,6 +163,7 @@ class PFClient:
             raise ValueError("at least one of data or run must be provided")
         if code and not os.path.exists(code):
             raise FileNotFoundError(f"code path {code} does not exist")
+        ProxyFactory().get_executor_proxy_cls(language=FlowLanguage.Python)
         code = Path(code) if code else Path(os.getcwd())
         with generate_yaml_entry(entry=flow, code=code) as flow:
             # load flow object for validation and early failure
