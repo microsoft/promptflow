@@ -60,6 +60,20 @@ jobs:
         with:
           submodules: true
 
+      - name: Python Setup
+        uses: "./.github/actions/step_create_python_environment"
+
+      - name: Install packages
+        shell: pwsh
+        # Note: Use -e to avoid duplicate object warning when build apidoc.
+        run: |
+          pip uninstall -y promptflow-tracing promptflow-core promptflow-devkit promptflow-azure
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-core
+          pip install -e ${{ github.workspace }}/src/promptflow-devkit
+          pip install -e ${{ github.workspace }}/src/promptflow-azure
+          pip freeze
+
       - name: Build LinkCheck
         shell: powershell
         working-directory: scripts/docs/
