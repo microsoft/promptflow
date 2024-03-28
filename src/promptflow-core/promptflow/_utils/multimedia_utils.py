@@ -99,8 +99,10 @@ class ImageProcessor:
             return Image(response.content, mime_type=mime_type, source_url=url)
         else:
             raise InvalidImageInput(
-                message_format="Failed to fetch image from URL: {url}. Error code: {error_code}. "
-                "Error message: {error_message}.",
+                message_format=(
+                    "Failed to fetch image from URL: {url}. Error code: {error_code}. "
+                    "Error message: {error_message}."
+                ),
                 target=ErrorTarget.EXECUTOR,
                 url=url,
                 error_code=response.status_code,
@@ -141,16 +143,15 @@ class TextProcessor:
 class MultimediaProcessor(ABC):
     @staticmethod
     def create(message_format_type: str = MessageFormatType.BASIC):
-        if (
-            not message_format_type
-            or message_format_type == ""
-            or message_format_type.lower() == MessageFormatType.BASIC
-        ):
+        if not message_format_type or message_format_type.lower() == MessageFormatType.BASIC:
             return BasicMultimediaProcessor()
         if message_format_type.lower() == MessageFormatType.OPENAI_VISION:
             return OpenaiVisionMultimediaProcessor()
         raise InvalidMessageFormatType(
-            message_format="Invalid message format. Supported message formats are [basic, openai-vision].",
+            message_format=(
+                f"Invalid message format '{message_format_type}'. "
+                "Supported message formats are ['basic', 'openai-vision']."
+            ),
         )
 
     @staticmethod
@@ -171,8 +172,10 @@ class MultimediaProcessor(ABC):
                 return self._create_image_from_dict(value)
             else:
                 raise InvalidImageInput(
-                    message_format="Invalid image input format. The image input should be a dictionary like: "
-                    "{{data:image/<image_type>;[path|base64|url]: <image_data>}}.",
+                    message_format=(
+                        "Invalid image input format. The image input should be a dictionary like: "
+                        "{{data:image/<image_type>;[path|base64|url]: <image_data>}}."
+                    ),
                     target=ErrorTarget.EXECUTOR,
                 )
         elif isinstance(value, str):
@@ -183,8 +186,10 @@ class MultimediaProcessor(ABC):
             return ImageProcessor.create_image_from_string(value)
         else:
             raise InvalidImageInput(
-                message_format=f"Unsupported image input type: {type(value)}. "
-                "The image inputs should be a string or a dictionary.",
+                message_format=(
+                    f"Unsupported image input type: {type(value)}. "
+                    "The image inputs should be a string or a dictionary."
+                ),
                 target=ErrorTarget.EXECUTOR,
             )
 
@@ -339,8 +344,9 @@ class BasicMultimediaProcessor(MultimediaProcessor):
                 return ImageProcessor.create_image_from_url(v, mime_type=f"image/{format}")
             else:
                 raise InvalidImageInput(
-                    message_format=f"Unsupported image resource: {resource}. "
-                    "Supported Resources are [path, base64, url].",
+                    message_format=(
+                        f"Unsupported image resource: {resource}. Supported Resources are [path, base64, url]."
+                    ),
                     target=ErrorTarget.EXECUTOR,
                 )
 
@@ -399,7 +405,11 @@ class OpenaiVisionMultimediaProcessor(MultimediaProcessor):
         if "type" not in multimedia_dict:
             return False
         image_type = multimedia_dict["type"]
-        if image_type in ["image_url", "image_file"] and image_type in multimedia_dict:
+        if image_type not in multimedia_dict or not isinstance(multimedia_dict[image_type], dict):
+            return False
+        if image_type == "image_url" and "url" in multimedia_dict[image_type]:
+            return True
+        if image_type == "image_file" and "path" in multimedia_dict[image_type]:
             return True
         return False
 
@@ -407,14 +417,14 @@ class OpenaiVisionMultimediaProcessor(MultimediaProcessor):
     def _create_image_from_dict(image_dict: dict):
         image_type = image_dict["type"]
         if image_type == "image_url":
-            if ImageProcessor.is_base64(image_dict["image_url"]["url"]):
-                return ImageProcessor.create_image_from_base64(image_dict["image_url"]["url"])
-            elif ImageProcessor.is_url(image_dict["image_url"]["url"]):
-                return ImageProcessor.create_image_from_url(image_dict["image_url"]["url"])
+            image_url = image_dict["image_url"]["url"]
+            if ImageProcessor.is_base64(image_url):
+                return ImageProcessor.create_image_from_base64(image_url)
+            elif ImageProcessor.is_url(image_url):
+                return ImageProcessor.create_image_from_url(image_url)
             else:
                 raise InvalidImageInput(
-                    message_format=f"Invalid image url: {image_dict['image_url']}."
-                    "Should be a valid url or base64 string.",
+                    message_format=f"Invalid image url: {image_url}. Should be a valid url or base64 string.",
                     target=ErrorTarget.EXECUTOR,
                 )
         elif image_type == "image_file":

@@ -136,6 +136,7 @@ class TestMultimediaProcessor:
             ("OPENAI-VISION", OpenaiVisionMultimediaProcessor, None),
             ("openai-vision", OpenaiVisionMultimediaProcessor, None),
             (None, BasicMultimediaProcessor, None),
+            ("", BasicMultimediaProcessor, None),
             ("ABC", None, InvalidMessageFormatType),
         ],
     )
@@ -347,22 +348,42 @@ class TestOpenaiVisionMultimediaProcessor:
     processor = OpenaiVisionMultimediaProcessor()
 
     def test_is_multimedia_dict(self):
-        multimedia_dict = {"type": "image_url", "image_url": "data"}
+        multimedia_dict = {"type": "image_url", "image_url": {"url": "data"}}
         assert self.processor.is_multimedia_dict(multimedia_dict) is True
 
+        multimedia_dict = {"type": "image_file", "image_file": {"path": "data"}}
+        assert self.processor.is_multimedia_dict(multimedia_dict) is True
+
+        # len(multimedia_dict) != 2
         multimedia_dict = {"image_url": "data"}
         assert self.processor.is_multimedia_dict(multimedia_dict) is False
 
+        # len(multimedia_dict) != 2
         multimedia_dict = {}
         assert self.processor.is_multimedia_dict(multimedia_dict) is False
 
+        # "type" not in multimedia_dict
         multimedia_dict = {"image/jpeg": "test.jpg", "extra": "data"}
         assert self.processor.is_multimedia_dict(multimedia_dict) is False
 
+        # image_type not in multimedia_dict
+        multimedia_dict = {"type": "image_url", "image_file": "data"}
+        assert self.processor.is_multimedia_dict(multimedia_dict) is False
+
+        # multimedia_dict[image_type] is not a dict
+        multimedia_dict = {"type": "image_url", "image_url": "data"}
+        assert self.processor.is_multimedia_dict(multimedia_dict) is False
+
+        # image_type is not "image_url" or "image_file"
         multimedia_dict = {"type": "text", "text": "data"}
         assert self.processor.is_multimedia_dict(multimedia_dict) is False
 
-        multimedia_dict = {"type": "image_url", "image_file": "data"}
+        # image_url without "url" key
+        multimedia_dict = {"type": "image_url", "image_url": {}}
+        assert self.processor.is_multimedia_dict(multimedia_dict) is False
+
+        # image_file without "path" key
+        multimedia_dict = {"type": "image_file", "image_file": {"url": "data"}}
         assert self.processor.is_multimedia_dict(multimedia_dict) is False
 
     def test_create_image_with_dict(self, mocker):
@@ -492,8 +513,10 @@ class TestOpenaiVisionMultimediaProcessor:
 
     def test_persist_multimedia_date(self, mocker):
         image = ImageProcessor.create_image_from_file(TEST_IMAGE_PATH)
+        text = Text("Hello, World!")
+        text_with_annotations = Text("Hello, World!", annotations=["annotation"])
         mocker.patch("builtins.open", mock_open())
-        data = {"image": image, "images": [image, image, "other_data"], "other_data": "other_data"}
+        data = {"image": image, "images": [image, image, "other_data"], "texts": [text, text_with_annotations]}
         persisted_data = self.processor.persist_multimedia_data(data, base_dir=Path(__file__).parent)
 
         file_name = re.compile(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}.jpeg$")
@@ -505,6 +528,10 @@ class TestOpenaiVisionMultimediaProcessor:
         check_persisted_image_file(persisted_data["image"])
         check_persisted_image_file(persisted_data["images"][0])
         check_persisted_image_file(persisted_data["images"][1])
+        persisted_data["texts"] == [
+            {"type": "text", "text": "Hello, World!"},
+            {"type": "text", "text": {"value": "Hello, World!", "annotations": ["annotation"]}},
+        ]
 
     def test_convert_multimedia_date_to_base64(self):
         image = ImageProcessor.create_image_from_file(TEST_IMAGE_PATH)
