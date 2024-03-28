@@ -55,6 +55,7 @@ class ScriptExecutor(FlowExecutor):
         **kwargs,
     ) -> LineResult:
         run_id = run_id or str(uuid.uuid4())
+        # TODO: refactor NodeLogManager, for script executor, we don't have node concept.
         log_manager = NodeLogManager()
         # Not need to clear node context, since log_manger will be cleared after the with block.
         log_manager.set_node_context(run_id, "Flex", index)
