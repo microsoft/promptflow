@@ -97,16 +97,14 @@ nodes:
     type: code
     path: answer_relevance.jinja2
   inputs:
-    deployment_name: gpt-4-turbo
+    deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    response_format:
-      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
-  connection: promptflow-ci-sweden-central
+  connection: open_ai_connection
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -119,16 +117,14 @@ nodes:
     type: code
     path: conversation_quality_prompt.jinja2
   inputs:
-    deployment_name: gpt-4-turbo
+    deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    response_format:
-      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
-  connection: promptflow-ci-sweden-central
+  connection: open_ai_connection
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -141,16 +137,14 @@ nodes:
     type: code
     path: creativity.jinja2
   inputs:
-    deployment_name: gpt-4-turbo
+    deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    response_format:
-      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
-  connection: promptflow-ci-sweden-central
+  connection: open_ai_connection
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -173,9 +167,9 @@ nodes:
     type: code
     path: grounding.py
   inputs:
-    connection: promptflow-ci-sweden-central
+    connection: open_ai_connection
     chat_history: ${inputs.chat_history}
-    model_or_deployment_name: gpt-4-turbo
+    model_or_deployment_name: gpt-4
     prompt: ${grounding_prompt.output}
   activate:
     when: ${validate_input.output.grounding}

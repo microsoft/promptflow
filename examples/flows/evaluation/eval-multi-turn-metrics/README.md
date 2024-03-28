@@ -1,6 +1,6 @@
 # Evaluation multi turn metrics:
 
-This evaluation flow will evaluate the Q&A systems by leveraging the state-of-the-art Large Language Models (LLM) to measure the quality of the responses. Utilizing GPT and GPT embedding model to assist with measurements aims to achieve a high agreement with human evaluations compared to traditional mathematical measurements.
+This evaluation flow will evaluate a conversation by using Large Language Models (LLM) to measure the quality of the responses.
 
 ## What you will learn
 
@@ -39,7 +39,7 @@ This evaluation flow allows you to assess and evaluate your model with the LLM-a
 ## Tools used in this flow
 - LLM tool
 - Python tool
-- Embedding tool
+- Prompt tool
 
 
 ## 0. Setup connection
@@ -47,7 +47,7 @@ Prepare your Azure Open AI resource follow this [instruction](https://learn.micr
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> name=promptflow-ci-sweden-central api_version=2023-07-01-preview
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 ## 1. Test flow/node

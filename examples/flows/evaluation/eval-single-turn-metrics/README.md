@@ -1,25 +1,25 @@
 # Evaluation single turn metrics:
 
-This evaluation flow will evaluate the Q&A systems by leveraging the state-of-the-art Large Language Models (LLM) to measure the quality of the responses. Utilizing GPT and GPT embedding model to assist with measurements aims to achieve a high agreement with human evaluations compared to traditional mathematical measurements.
+This evaluation flow will evaluate a question and answer pair by using Large Language Models (LLM) to measure the quality of the answer.
 
 ## What you will learn
 
 This evaluation flow allows you to assess and evaluate your model with the LLM-assisted metrics:
 
 
-* grounding: Measures whether the answer follows logically from the information contained in the context based on provided answer and context. grounding is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
+* __grounding__: Measures whether the answer follows logically from the information contained in the context based on provided answer and context. grounding is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
 
-* answer_relevance: Measure whether the answer is relevance to the question based on provided question, context and answer. answer_relevance is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
+* __answer_relevance__: Measure whether the answer is relevance to the question based on provided question, context and answer. answer_relevance is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
 
-* context_recall: Measures each sentence in the ground truth and classify of the sentence can be attributed to the given context or not based on provided question, context and ground_truth. context_recall is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
+* __context_recall__: Measures each sentence in the ground truth and classify of the sentence can be attributed to the given context or not based on provided question, context and ground_truth. context_recall is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
 
-* context_precision: Measures if the context was useful in arriving at the given ground truth based on provided question, context and ground_truth. context_precision is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.  
+* __context_precision__: Measures if the context was useful in arriving at the given ground truth based on provided question, context and ground_truth. context_precision is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.  
 
-* answer_similarity: Measures the similarity between the answer and ground_truth. answer_similarity is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best
+* __answer_similarity__: Measures the similarity between the answer and ground_truth. answer_similarity is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best
 
-* answer_correctness: Measure whether the answer is correct based on the provided answer and ground truth. answer_correctness is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
+* __answer_correctness__: Measure whether the answer is correct based on the provided answer and ground truth. answer_correctness is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
 
-* answer_quality: Measures the answer quality for each of the following factors based on provided question and answer: 
+* __answer_quality__: Measures the answer quality for each of the following factors based on provided question and answer: 
     - Accuracy and relevance: How well does the bot provide correct and reliable information or advice that matches the user's intent and expectations, and uses credible and up-to-date sources or references to support its claims? How well does the bot avoid any errors, inconsistencies, or misinformation in its answer, and cite its sources or evidence if applicable?
     - Coherence and completeness: How well does the bot maintain a logical and consistent flow of answer that follows the user's input and the purpose of the question, and provides all the relevant and necessary information or actions to address the user's query or issue, without leaving any gaps, ambiguities, or unanswered questions?
     - Engagement and tone: How well does the bot capture and maintain the user's interest and attention, and motivate them to continue the conversation or explore the topic further, using natural and conversational language, personality, and emotion? how well does the bot's tone match or adapt to the user's tone and mood? Does the bot avoid being rude, sarcastic, condescending, or too formal or informal, and convey respect, empathy, and politeness?
@@ -31,7 +31,7 @@ This evaluation flow allows you to assess and evaluate your model with the LLM-a
 
     answer_quality is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
 
-* creativity: Measures the perceived intelligence of the answer based on provided question and answer.
+* __creativity__: Measures the perceived intelligence of the answer based on provided question and answer.
     - Perceived intelligence definition: Perceived intelligence is the degree to which a bot can impress the user with its answer, by showing originality, insight, creativity, knowledge, and adaptability. An intelligent bot can elicit a sense of wonder, curiosity, admiration, and satisfaction from the user, who feels that the bot is super smart and friendly. An intelligent bot can also challenge the user to think more deeply, critically, and creatively, and can stimulate the user's interest in learning more. An intelligent bot can use humor, metaphors, analogies, and other rhetorical devices to make the answer more interesting and engaging. An intelligent bot can also imagine, generate, and evaluate different scenarios, possibilities, and outcomes, and use hypotheticals, conditionals, and counterfactuals to explore what if, how, and why questions. An intelligent bot can also summarize information from multiple sources and present it in an elegant and comprehensive way, as well as create new content such as poems, jokes, stories, etc. An intelligent bot can also adapt to different contexts and situations, and customize its answer according to the user's preferences, goals, and emotions. Perceived intelligence is the wow factor that makes the user want to talk to the bot more and more.
     Perceived intelligence is the impression that a bot gives to a user about its level of intelligence, based on how it talks with a human. Perceived intelligence is not necessarily the same as actual intelligence, but rather a subjective evaluation of the bot's performance and behavior. Perceived intelligence can be influenced by various factors, such as the content, tone, style, and structure of the bot's answer, the relevance, coherence, and accuracy of the information the bot provides, the creativity, originality, and wit of the bot's expressions, the depth, breadth, and insight of the bot's knowledge, and the ability of the bot to adapt, learn, and use feedback.
     Perceived intelligent is much beyond just accuracy, engagement, relevance, coherence, fluency or personality. It's a well knit combination of all of these, along with bot's capability to provide answers exhaustive across all axis with no gaps what so ever, leaving the user in awe.
@@ -56,7 +56,7 @@ Prepare your Azure Open AI resource follow this [instruction](https://learn.micr
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> name=promptflow-ci-sweden-central api_version=2023-07-01-preview
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 ## 1. Test flow/node
