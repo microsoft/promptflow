@@ -65,7 +65,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
   content: "
     Reference provides technical information about prompt flow API.<br/><br/>
     - Command line Interface reference: [pf](reference/pf-command-reference.md)<br/>
-    - Python library reference: [promptflow](reference/python-library-reference/promptflow.md)<br/>
+    - Python library reference: [promptflow](reference/python-library-reference/promptflow-core/promptflow.rst)<br/>
     - Tool reference: [LLM Tool](reference/tools-reference/llm-tool.md), [Python Tool](reference/tools-reference/python-tool.md), [Prompt Tool](reference/tools-reference/prompt-tool.md)<br/>
   "
 ```
