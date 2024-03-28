@@ -7,6 +7,7 @@
 # https://opentelemetry.io/docs/specs/otlp/#otlphttp-request
 # to provide OTLP/HTTP endpoint as OTEL collector
 
+import copy
 import json
 import logging
 import traceback
@@ -68,7 +69,7 @@ def trace_collector(
                     span = Span._from_protobuf_object(span, resource=resource, logger=logger)
                     if not cloud_trace_only:
                         span._persist()
-                    all_spans.append(span)
+                    all_spans.append(copy.deepcopy(span))
 
         if cloud_trace_only:
             # If we only trace to cloud, we should make sure the data writing is success before return.
