@@ -82,6 +82,9 @@ function Update-Sub-Pkg-Index-Title {
     $IndexRst = [System.IO.Path]::Combine($SubPkgRefDocPath, "promptflow.rst")
     $IndexContent = Get-Content $IndexRst
     $IndexContent[0] = ("{0} package" -f $SubPkgName)
+    $IndexContent[1] = "================================="
+    $IndexContent[2] = ".. py:module:: promptflow"
+    $IndexContent[3] = "   :noindex:"
     Set-Content $IndexRst $IndexContent
 }
 
@@ -116,15 +119,6 @@ if($WithReferenceDoc){
     }
 
     Write-Host "=============== Overwrite promptflow.connections.rst ==============="
-    # We are doing this overwrite because the connection entities are also defined in the promptflow.entities module
-    # and it will raise duplicate object description error if we don't do so when we run sphinx-build later.
-#     ForceOverwrite "connections"
-#     ForceOverwrite "core"
-#     ForceOverwrite "client"
-#     $FileName = "promptflow.md"
-#     $TargetRst = [System.IO.Path]::Combine($RepoRootPath, ("scripts\docs\{0}" -f $FileName))
-#     $AutoGenRst = [System.IO.Path]::Combine($RefDocPath, $FileName)
-#     Copy-Item -Path $TargetRst -Destination $AutoGenRst -Force
 }
 
 
