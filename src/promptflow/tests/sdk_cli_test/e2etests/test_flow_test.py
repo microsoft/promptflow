@@ -63,7 +63,7 @@ class TestFlowTest:
 
     def test_pf_test_flow_with_package_tool_with_custom_connection_as_input_value(self, install_custom_tool_pkg):
         # Prepare custom connection
-        from promptflow._sdk.entities._connection import CustomConnection
+        from promptflow.connections import CustomConnection
 
         conn = CustomConnection(name="custom_connection_3", secrets={"api_key": "test"}, configs={"api_base": "test"})
         _client.connections.create_or_update(conn)
@@ -77,7 +77,7 @@ class TestFlowTest:
 
     def test_pf_test_flow_with_script_tool_with_custom_strong_type_connection(self):
         # Prepare custom connection
-        from promptflow._sdk.entities._connection import CustomConnection
+        from promptflow.connections import CustomConnection
 
         conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
         _client.connections.create_or_update(conn)

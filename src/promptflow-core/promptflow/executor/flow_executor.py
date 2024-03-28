@@ -62,6 +62,7 @@ from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.tracing._integrations._openai_injector import inject_openai_api
 from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import setup_exporter_from_environ
 from promptflow.tracing._trace import (
     enrich_span_with_context,
     enrich_span_with_input,
@@ -199,6 +200,7 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
+        setup_exporter_from_environ()
         if is_flex_flow(file_path=flow_file, working_dir=working_dir):
             from ._script_executor import ScriptExecutor
 
