@@ -278,6 +278,7 @@ class TestExperiment:
                 )
             assert "not found in experiment" in str(error.value)
 
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_test(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()
@@ -288,6 +289,7 @@ class TestExperiment:
             )
             assert len(result) == 2
 
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
     def test_experiment_test_with_skip_node(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         client = PFClient()

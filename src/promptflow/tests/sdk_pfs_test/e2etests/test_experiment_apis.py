@@ -43,7 +43,7 @@ class TestExperimentAPIs:
             experiment = pfs_op.experiment_test(
                 body={
                     "experiment_template": (
-                        EXPERIMENT_ROOT / "basic-no-script-template/basic_without_binding.exp.yaml"
+                        EXPERIMENT_ROOT / "basic-no-script-template/basic_without_binding/basic.exp.yaml"
                     ).as_posix(),
                     "override_flow_path": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
                     "inputs": {"url": "https://arxiv.org/abs/2307.04767", "answer": "Academic", "evidence": "Both"},
@@ -88,7 +88,9 @@ class TestExperimentAPIs:
         ):
             experiment = pfs_op.experiment_test(
                 body={
-                    "experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic1.exp.yaml").as_posix(),
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "basic-no-script-template/bind_to_flow_input/basic.exp.yaml"
+                    ).as_posix(),
                     "override_flow_path": (FLOW_ROOT / "web_classification" / "flow.dag.yaml").as_posix(),
                     "inputs": {"url": "https://arxiv.org/abs/2307.04767", "answer": "Academic", "evidence": "Both"},
                 }
@@ -110,7 +112,11 @@ class TestExperimentAPIs:
             ]
         ):
             experiment = pfs_op.experiment_test(
-                body={"experiment_template": (EXPERIMENT_ROOT / "basic-no-script-template/basic1.exp.yaml").as_posix()}
+                body={
+                    "experiment_template": (
+                        EXPERIMENT_ROOT / "basic-no-script-template/bind_to_flow_input/basic.exp.yaml"
+                    ).as_posix()
+                }
             ).json
         assert "main" in experiment
         assert "eval" in experiment
