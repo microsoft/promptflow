@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from ._version import __version__
+__path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
-__all__ = ["__version__"]
+from ._pf_client import PFClient
+
+__all__ = ["PFClient"]

@@ -327,7 +327,7 @@ def _sanitize_python_variable_name(name: str):
 
 def default_json_encoder(obj):
     if isinstance(obj, PFBytes):
-        return str(obj)
+        return obj.to_base64(with_type=True)
     if isinstance(obj, AssistantDefinition):
         return obj.serialize()
     else:
