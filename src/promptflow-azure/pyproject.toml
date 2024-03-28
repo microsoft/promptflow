@@ -50,7 +50,6 @@ promptflow-devkit = "<2.0.0"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
-promptflow-devkit = { path = "../promptflow-devkit" }
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
