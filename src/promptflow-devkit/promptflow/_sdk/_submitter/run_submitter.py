@@ -149,6 +149,7 @@ class RunSubmitter:
                 entry=flow.entry if isinstance(flow, FlexFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
+                init_kwargs=run.init,
             )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,

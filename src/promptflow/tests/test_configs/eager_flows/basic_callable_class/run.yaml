@@ -1,0 +1,5 @@
+description: sample bulk run
+flow: ./
+data: ./inputs.jsonl
+init:
+  obj_input: val

@@ -9,10 +9,11 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
+    CustomStrongTypeConnectionConfigs,
 )
 
 LOGGER_NAME = "promptflow"
@@ -255,6 +256,7 @@ class FlowRunProperties:
     OUTPUTS = "outputs"
     RESUME_FROM = "resume_from"
     COLUMN_MAPPING = "column_mapping"
+    INIT_KWARGS = "init_kwargs"
 
 
 class CommonYamlFields:
