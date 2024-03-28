@@ -1,6 +1,6 @@
-from promptflow import tool
+from promptflow.core import tool
 from typing import List
-from promptflow import log_metric
+from promptflow.core import log_metric
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
 # Adding type to arguments and return value will help the system show the types properly

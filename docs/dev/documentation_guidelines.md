@@ -23,7 +23,7 @@ First please read through [Sphinx style](https://sphinx-rtd-tutorial.readthedocs
 Let's start with a class example:
 ```python
 from typing import Dict, Optional, Union
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 class MyClass:
     """One-line summary of the class.

@@ -1,4 +1,4 @@
-from promptflow import ToolProvider, tool
+from promptflow.core import ToolProvider, tool
 from promptflow.connections import CustomConnection
 
 

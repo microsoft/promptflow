@@ -1,6 +1,6 @@
 from enum import Enum
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 class UserType(str, Enum):

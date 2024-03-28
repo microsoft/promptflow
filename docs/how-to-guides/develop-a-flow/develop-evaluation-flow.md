@@ -61,7 +61,7 @@ Before introducing the aggregation node, let's see what a regular node looks lik
 It takes both `groundtruth` and `prediction` from the flow inputs, compare them in the source code to see if they match:
 
 ```python
-from promptflow import tool
+from promptflow.core import tool
 
 @tool
 def grade(groundtruth: str, prediction: str):
@@ -86,7 +86,7 @@ When it comes to an `aggregation node`, there are two key distinctions that set 
 
 ```python
 from typing import List
-from promptflow import log_metric, tool
+from promptflow.core import log_metric, tool
 
 @tool
 def calculate_accuracy(grades: List[str]):
@@ -157,7 +157,7 @@ Promptflow supports logging and tracking experiments using `log_metric` function
 
 ```python
 from typing import List
-from promptflow import log_metric, tool
+from promptflow.core import log_metric, tool
 
 @tool
 def example_log_metrics(grades: List[str]):

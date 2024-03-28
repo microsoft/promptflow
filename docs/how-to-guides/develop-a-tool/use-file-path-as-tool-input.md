@@ -23,7 +23,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
     ```python
     import importlib
     from pathlib import Path
-    from promptflow import tool
+    from promptflow.core import tool
     # 1. import the FilePath type
     from promptflow.contracts.types import FilePath
 
@@ -78,7 +78,7 @@ We can also utilize the `FilePath` input type directly in a script tool, elimina
     ```python
     import importlib
     from pathlib import Path
-    from promptflow import tool
+    from promptflow.core import tool
     # 1. import the FilePath type
     from promptflow.contracts.types import FilePath
 

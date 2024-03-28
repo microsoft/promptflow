@@ -87,7 +87,7 @@ pfazure run create --file run.yml
 :sync: SDK
 
 ```python
-from promptflow import load_run
+from promptflow.client import load_run
 
 run = load_run(source="run.yml")
 pf = PFClient(

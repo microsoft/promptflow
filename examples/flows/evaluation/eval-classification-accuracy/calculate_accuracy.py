@@ -1,6 +1,6 @@
 from typing import List
 
-from promptflow import log_metric, tool
+from promptflow.core import log_metric, tool
 
 
 @tool

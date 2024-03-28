@@ -74,7 +74,7 @@ By selecting the tool card on the very top, you'll add a new tool node to flow.
 You can edit the tool by simply opening the source file and making edits. For example, we provide a simple Python tool code below.
 
 ```python
-from promptflow import tool
+from promptflow.core import tool
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
 # Adding type to arguments and return value will help the system show the types properly
@@ -144,7 +144,7 @@ For example:
 
 ```python
 import json
-from promptflow import tool
+from promptflow.core import tool
 
 @tool
 def convert_to_dict(input_str: str, input_str2: str) -> dict:

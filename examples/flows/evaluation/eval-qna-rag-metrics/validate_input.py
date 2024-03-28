@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 
 def is_valid(input_item):

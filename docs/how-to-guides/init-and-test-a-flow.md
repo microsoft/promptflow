@@ -127,7 +127,7 @@ Promptflow CLI will generate test logs and outputs in `.promptflow`:
 The return value of `test` function is the flow outputs.
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 pf_client = PFClient()
 
@@ -188,7 +188,7 @@ The log and result of flow node test will be displayed in the terminal. And the 
 Customer can execute this command to test the flow. The return value of `test` function is the node outputs.
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 pf_client = PFClient()
 
@@ -266,7 +266,7 @@ The flow result will be streamed in the terminal as shown below.
 The LLM node return value of `test` function is a generator, you can consume the result by this way:
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 pf_client = PFClient()
 

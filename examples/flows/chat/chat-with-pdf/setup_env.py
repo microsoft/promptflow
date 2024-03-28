@@ -1,7 +1,7 @@
 import os
 from typing import Union
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 from chat_with_pdf.utils.lock import acquire_lock

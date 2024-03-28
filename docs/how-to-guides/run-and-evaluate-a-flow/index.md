@@ -58,7 +58,7 @@ More details can be found with `pf run --help`
 :sync: SDK
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Please protect the entry point by using `if __name__ == '__main__':`,
 # otherwise it would cause unintended side effect when promptflow spawn worker processes.
@@ -180,7 +180,7 @@ After the run is finished, you can evaluate the run with below command, compared
 More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # PFClient can help manage your runs and connections.
 pf = PFClient()

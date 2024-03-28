@@ -6,7 +6,7 @@ from functools import partial
 import bs4
 import requests
 
-from promptflow import tool
+from promptflow.core import tool
 
 session = requests.Session()
 

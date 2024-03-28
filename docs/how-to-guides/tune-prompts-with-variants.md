@@ -80,7 +80,7 @@ pf run create --flow web-classification --data web-classification/data.jsonl --v
 :sync: SDK
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 pf = PFClient()  # get a promptflow client
 flow = "web-classification"

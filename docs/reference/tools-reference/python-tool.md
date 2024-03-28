@@ -62,7 +62,7 @@ The snippet below shows the basic structure of a tool function. Promptflow will 
 from function parameters and type annotations.
 
 ```python
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import CustomConnection
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
@@ -97,7 +97,7 @@ we have introduced support for keyword arguments (kwargs) in the Python tool.
 
 
 ```python
-from promptflow import tool
+from promptflow.core import tool
 
 
 @tool

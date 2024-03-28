@@ -1,7 +1,7 @@
 from typing import Union
 from openai.version import VERSION as OPENAI_VERSION
 
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import CustomConnection, AzureOpenAIConnection
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
