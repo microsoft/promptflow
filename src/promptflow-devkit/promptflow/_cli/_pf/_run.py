@@ -587,7 +587,7 @@ def create_run(create_func: Callable, resume_func: Callable, args):
     environment_variables = args.environment_variables
     connections = args.connections
     resume_from = args.resume_from
-    init_kwargs = args.init
+    init = args.init
     params_override = args.params_override or []
 
     if environment_variables:
@@ -596,6 +596,8 @@ def create_run(create_func: Callable, resume_func: Callable, args):
         connections = list_of_dict_to_nested_dict(connections)
     if column_mapping:
         column_mapping = list_of_dict_to_dict(column_mapping)
+    if init:
+        init = list_of_dict_to_dict(init)
 
     run_params = {
         "name": name,
@@ -607,7 +609,7 @@ def create_run(create_func: Callable, resume_func: Callable, args):
         "environment_variables": environment_variables,
         "connections": connections,
         "resume_from": resume_from,
-        "init_kwargs": init_kwargs,
+        "init": init,
     }
     # remove empty fields
     run_params = {k: v for k, v in run_params.items() if v is not None}
