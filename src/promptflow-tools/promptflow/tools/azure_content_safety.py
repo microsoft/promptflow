@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 import json
 import requests
 
-from promptflow import tool, ToolProvider
+from promptflow.core import tool, ToolProvider
 from promptflow.connections import AzureContentSafetyConnection
 from promptflow.tools.exception import AzureContentSafetyInputValueError, AzureContentSafetySystemError
 

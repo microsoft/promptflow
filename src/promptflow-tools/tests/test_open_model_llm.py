@@ -549,7 +549,7 @@ user:
                                       secrets={
                                           "endpoint_api_key": gpt2_custom_connection.secrets['endpoint_api_key']})
 
-        from promptflow import PFClient as LocalPFClient
+        from promptflow.client import PFClient as LocalPFClient
         pf_client = LocalPFClient()
         pf_client.connections.create_or_update(connection)
 

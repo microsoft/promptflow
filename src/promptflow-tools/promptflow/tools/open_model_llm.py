@@ -278,7 +278,7 @@ class CustomConnectionsContainer:
                                           ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
         result = []
         try:
-            from promptflow import PFClient as LocalPFClient
+            from promptflow.client import PFClient as LocalPFClient
         except Exception as e:
             print(f"Skipping Local PFClient. Exception: {e}", file=sys.stderr)
             return result
@@ -304,7 +304,7 @@ class CustomConnectionsContainer:
         return result
 
     def get_endpoint_from_local_custom_connection(self, connection_name) -> Tuple[str, str, str]:
-        from promptflow import PFClient as LocalPFClient
+        from promptflow.client import PFClient as LocalPFClient
         pf = LocalPFClient()
 
         connection = pf.connections.get(connection_name, with_secrets=True)
