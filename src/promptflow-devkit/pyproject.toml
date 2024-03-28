@@ -70,13 +70,6 @@ streamlit-quill = "<0.1.0"
 bs4 = "*"
 
 [tool.poetry.extras]
-all = [
-  "pyarrow",
-  "pyinstaller",
-  "streamlit",
-  "streamlit-quill",
-  "bs4",
-]
 executable = [
   "pyarrow",
   "pyinstaller",

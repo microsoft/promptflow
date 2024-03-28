@@ -33,7 +33,7 @@ jobs:
         poetry install --with dev
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-devkit
         touch ./promptflow/__init__.py
-        poetry install --with dev
+        poetry install --with dev --extras "pyarrow"
         cd ${{ env.WORKING_DIRECTORY }}/src/promptflow-azure
         touch ./promptflow/__init__.py
         poetry install --with dev
