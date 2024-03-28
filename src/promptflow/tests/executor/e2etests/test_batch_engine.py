@@ -43,7 +43,6 @@ SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 RUNS_ROOT = TEST_ROOT / "test_configs/runs"
-DATAS_ROOT = TEST_ROOT / "test_configs/datas"
 
 
 async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
@@ -520,8 +519,14 @@ class TestBatch:
     @pytest.mark.parametrize(
         "simulation_flow, copilot_flow, max_turn, input_file_name",
         [
-            ("chat_group_simulation", "chat_group_copilot", 5, "inputs.json"),
-            ("chat_group_simulation", "chat_group_copilot", 5, "inputs_using_default_value.json"),
+            ("chat_group/cloud_batch_runs/chat_group_simulation",
+             "chat_group/cloud_batch_runs/chat_group_copilot",
+             5,
+             "inputs.json"),
+            ("chat_group/cloud_batch_runs/chat_group_simulation",
+             "chat_group/cloud_batch_runs/chat_group_copilot",
+             5,
+             "inputs_using_default_value.json"),
         ],
     )
     @pytest.mark.asyncio
@@ -539,7 +544,7 @@ class TestBatch:
             stop_signal="[STOP]",
             working_dir=get_flow_folder(simulation_flow),
             connections=dev_connections,
-            inputs_mapping={"question": "${data.topic}", "ground_truth": "${data.ground_truth}"}
+            inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
         )
         copilot_role = ChatGroupRole(
             flow_file=get_yaml_file(copilot_flow),
@@ -550,7 +555,7 @@ class TestBatch:
             connections=dev_connections,
             inputs_mapping={"question": "${data.question}"}
         )
-        input_dirs = {"data": get_flow_inputs_file(DATAS_ROOT / "chat_group", file_name=input_file_name)}
+        input_dirs = {"data": get_flow_inputs_file("chat_group/cloud_batch_runs", file_name=input_file_name)}
         output_dir = Path(mkdtemp())
         mem_run_storage = MemoryRunStorage()
 
