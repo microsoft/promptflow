@@ -77,4 +77,6 @@ jobs:
       - name: Build LinkCheck
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -WithReferenceDoc:$true -BuildLinkCheck -WarningAsError:$true
+        run: |-
+          pip install langchain
+          ./doc_generation.ps1 -WithReferenceDoc:$true -WarningAsError:$true -BuildLinkCheck
