@@ -166,10 +166,8 @@ def log_progress(
     # There are two situations that we will print the progress log:
     # 1. The difference between current_count and last_log_count exceeds log_interval.
     # 2. The current_count is evenly divisible by log_interval.
-    log_flag = (
-        current_count > last_log_count
-        and (current_count - last_log_count) >= log_interval
-        or (current_count % log_interval == 0)
+    log_flag = (current_count - last_log_count) >= log_interval or (
+        current_count > last_log_count and current_count % log_interval == 0
     )
 
     if current_count > 0 and (log_flag or current_count == total_count):
