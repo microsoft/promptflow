@@ -13,6 +13,7 @@ from promptflow._cli._params import (
     add_param_connections,
     add_param_environment_variables,
     add_param_include_archived,
+    add_param_init,
     add_param_max_results,
     add_param_output_format,
     add_param_run_name,
@@ -111,6 +112,7 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         add_param_connections,
         add_param_set,
         add_param_resume_from,
+        add_param_init,
     ] + base_params
 
     add_params.extend(add_param_list)
@@ -142,6 +144,8 @@ pf run create --source <path-to-run-folder>
 pf run create --resume-from <run-name>
 # Create a run resume from an existing run, set the name, display_name, description and tags:
 pf run create --resume-from <run-name> --name <new-run-name> --set display_name='A new run' description='my run description' tags.Type=Test
+# Create a run with init kwargs:
+pf run create -f <yaml-filename> --init key1=value1 key2=value2
 """
 
     # data for pf has different help doc than pfazure
@@ -583,6 +587,7 @@ def create_run(create_func: Callable, resume_func: Callable, args):
     environment_variables = args.environment_variables
     connections = args.connections
     resume_from = args.resume_from
+    init_kwargs = args.init
     params_override = args.params_override or []
 
     if environment_variables:
@@ -602,6 +607,7 @@ def create_run(create_func: Callable, resume_func: Callable, args):
         "environment_variables": environment_variables,
         "connections": connections,
         "resume_from": resume_from,
+        "init_kwargs": init_kwargs,
     }
     # remove empty fields
     run_params = {k: v for k, v in run_params.items() if v is not None}

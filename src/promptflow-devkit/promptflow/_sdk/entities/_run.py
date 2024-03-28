@@ -101,8 +101,8 @@ class Run(YAMLTranslatableMixin):
     :type connections: Optional[Dict[str, Dict]]
     :param properties: Properties of the run.
     :type properties: Optional[Dict[str, Any]]
-    :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
-    :type init_kwargs: Optional[Dict[str, Any]]
+    :param init: Class init arguments for callable class, only supported for flex flow.
+    :type init: Optional[Dict[str, Any]]
     :param kwargs: Additional keyword arguments.
     :type kwargs: Optional[dict]
     """
@@ -128,7 +128,7 @@ class Run(YAMLTranslatableMixin):
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
         source: Optional[Union[Path, str]] = None,
-        init_kwargs: Optional[Dict[str, Any]] = None,
+        init: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         # !!! Caution !!!: Please update self._copy() if you add new fields to init
@@ -190,7 +190,7 @@ class Run(YAMLTranslatableMixin):
         self._identity = kwargs.get("identity", {})
         self._outputs = kwargs.get("outputs", None)
         self._command = kwargs.get("command", None)
-        self._init_kwargs = init_kwargs or {}
+        self._init = init or {}
 
     @property
     def created_on(self) -> str:
@@ -234,8 +234,8 @@ class Run(YAMLTranslatableMixin):
         }
 
     @property
-    def init_kwargs(self):
-        return self._init_kwargs
+    def init(self):
+        return self._init
 
     @classmethod
     def _from_orm_object(cls, obj: ORMRun) -> "Run":
@@ -274,7 +274,7 @@ class Run(YAMLTranslatableMixin):
             command=properties_json.get(FlowRunProperties.COMMAND, None),
             outputs=properties_json.get(FlowRunProperties.OUTPUTS, None),
             column_mapping=properties_json.get(FlowRunProperties.COLUMN_MAPPING, None),
-            init_kwargs=properties_json.get(FlowRunProperties.INIT_KWARGS, None),
+            init=properties_json.get(FlowRunProperties.INIT_KWARGS, None),
         )
 
     @classmethod
@@ -368,7 +368,7 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
-            init_kwargs=json.dumps(self.init_kwargs),
+            init_kwargs=json.dumps(self.init),
         )
 
     def _dump(self) -> None:

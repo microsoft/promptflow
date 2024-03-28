@@ -187,7 +187,7 @@ class PFClient:
                 connections=connections,
                 environment_variables=environment_variables,
                 config=Configuration(overrides=self._config),
-                init_kwargs=init,
+                init=init,
             )
             return self.runs.create_or_update(run=run, **kwargs)
 
