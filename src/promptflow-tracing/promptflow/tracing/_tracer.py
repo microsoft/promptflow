@@ -178,11 +178,11 @@ def _create_trace_from_function_call(
         all_kwargs.pop(key, None)
 
     function = f.__qualname__
-    if trace_type in [TraceType.LLM, TraceType.EMBEDDING] and f.__module__:
+    if f.__module__:
         function = f"{f.__module__}.{function}"
 
     return Trace(
-        name=name or function,  # Use the function name as the trace name if not provided
+        name=name or f.__qualname__,  # Use the function name as the trace name if not provided
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
