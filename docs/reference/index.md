@@ -23,7 +23,10 @@ pfazure-command-reference.md
 :caption: Python Library Reference
 :maxdepth: 4
 
-python-library-reference/promptflow
+python-library-reference/promptflow-tracing/promptflow
+python-library-reference/promptflow-core/promptflow
+python-library-reference/promptflow-devkit/promptflow
+python-library-reference/promptflow-azure/promptflow
 ```
 
 ```{toctree}

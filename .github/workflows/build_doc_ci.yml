@@ -2,16 +2,15 @@ name: Build Doc CI
 
 on:
   workflow_dispatch:
-# TODO: Enable this after package separation
-#  pull_request:
-#    branches:
-#      - main
-#    paths:
-#      - 'README.md'
-#      - 'docs/**'
-#      - 'scripts/docs/**'
-#      - '.github/workflows/build_doc_ci.yml'
-#      - 'src/promptflow/promptflow/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'scripts/docs/**'
+      - '.github/workflows/build_doc_ci.yml'
+      - 'src/promptflow/promptflow/**'
 
 env:
   packageSetupType: promptflow_with_extra
@@ -30,17 +29,15 @@ jobs:
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
 
-      - name: Dev setup
-        uses: "./.github/actions/step_sdk_setup"
-        with:
-          setupType: ${{ env.packageSetupType }}
-          scriptPath: ${{ env.testWorkingDirectory }}
-
-      - name: Install tracing
+      - name: Install packages
         shell: pwsh
         run: |
           pip uninstall -y promptflow-tracing
-          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip install ${{ github.workspace }}/src/promptflow-tracing
+          pip install ${{ github.workspace }}/src/promptflow-core
+          pip install ${{ github.workspace }}/src/promptflow-devkit
+          pip install ${{ github.workspace }}/src/promptflow-azure
+          pip install ${{ github.workspace }}/src/promptflow-tools
           pip freeze
 
       - name: Build doc with reference doc
