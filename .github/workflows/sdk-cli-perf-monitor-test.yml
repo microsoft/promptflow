@@ -92,7 +92,7 @@ jobs:
       - name: install recording
         run:
           pip install vcrpy
-          pip install .
+          pip install -e .
         working-directory: ${{ env.RECORD_DIRECTORY }}
 
       - name: Generate (mock) connections.json
