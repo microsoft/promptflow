@@ -108,6 +108,12 @@ def load_content(source: Union[str, Path]) -> str:
     return Path(source).read_text()
 
 
+def count_lines(filename):
+    with open(filename, "r") as f:
+        lines = f.readlines()
+    return len(lines)
+
+
 def is_jsonl_file(file_path: Path):
     return file_path.suffix.lower() == ".jsonl"
 
