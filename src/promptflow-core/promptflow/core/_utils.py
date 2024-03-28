@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from typing import Dict, Union
 
+from jinja2 import Template
+
 from promptflow._constants import DEFAULT_ENCODING, FLOW_META_JSON, FLOW_META_JSON_GEN_TIMEOUT, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.flow_utils import is_flex_flow, resolve_entry_file, resolve_flow_path
@@ -112,6 +114,11 @@ def generate_flow_meta(
             json.dump(flow_meta, f, indent=4)
 
     return flow_meta
+
+
+def render_jinja_template_content(template_content, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
+    template = Template(template_content, trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+    return template.render(**kwargs)
 
 
 def init_executable(*, flow_dag: dict = None, flow_path: Path = None, working_dir: Path = None):

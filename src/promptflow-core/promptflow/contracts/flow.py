@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import json
 import logging
 import sys
@@ -316,6 +317,21 @@ class Node:
         :return: The node constructed from the dict.
         :rtype: ~promptflow.contracts.flow.Node
         """
+        from promptflow._utils.flow_utils import is_prompty_flow
+
+        if data.get("source", {}).get("path", None) and is_prompty_flow(data.get("source").get("path")):
+            # When the source file is prompty, the prompty config will be parsed and
+            # used as the default value for the field in node
+            from promptflow.core._flow import Prompty
+
+            prompty_data = copy.copy(Prompty(data.get("source").get("path"))._data)
+            prompty_data.update(data)
+            prompty_data.get("inputs", {}).update(prompty_data.pop("parameters", {}))
+            data = prompty_data
+            # TODO remove if when llm tool is added to promptflow-tools
+            data["type"] = "llm"
+            data["tool"] = None
+
         node = Node(
             name=data.get("name"),
             tool=data.get("tool"),

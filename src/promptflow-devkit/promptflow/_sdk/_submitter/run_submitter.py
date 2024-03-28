@@ -9,7 +9,7 @@ from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import ContextAttributeKey, FlowRunProperties
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import Flow, Prompty
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -102,11 +102,13 @@ class RunSubmitter:
             error = ValidationException("Either run or data or resume from run must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
-    def _submit_bulk_run(self, flow: Union[Flow, FlexFlow], run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(
+        self, flow: Union[Flow, FlexFlow, Prompty], run: Run, local_storage: LocalStorageOperations
+    ) -> dict:
         logger.info(f"Submitting run {run.name}, log path: {local_storage.logger.file_path}")
         run_id = run.name
         # for python, we can get metadata in-memory, so no need to dump them first
-        if flow.language != FlowLanguage.Python:
+        if getattr(flow, "language", FlowLanguage.Python) != FlowLanguage.Python:
             from promptflow._proxy import ProxyFactory
 
             # variants are resolved in the context, so we can't move this logic to Operations for now

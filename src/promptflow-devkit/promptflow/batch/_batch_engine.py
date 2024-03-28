@@ -10,7 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Type
 
-from promptflow._constants import LANGUAGE_KEY, LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, OUTPUT_FILE_NAME, FlowLanguage
+from promptflow._constants import (
+    LANGUAGE_KEY,
+    LINE_NUMBER_KEY,
+    LINE_TIMEOUT_SEC,
+    OUTPUT_FILE_NAME,
+    PROMPTY_EXTENSION,
+    FlowLanguage,
+)
 from promptflow._core._errors import ResumeCopyError, UnexpectedError
 from promptflow._proxy import ProxyFactory
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -550,6 +557,8 @@ class BatchEngine:
         # TODO: remove this after path is removed
         if flow_file.suffix.lower() == ".dll":
             return True, FlowLanguage.CSharp
+        elif flow_file.suffix.lower() == PROMPTY_EXTENSION:
+            return True, FlowLanguage.Python
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         language = flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python)

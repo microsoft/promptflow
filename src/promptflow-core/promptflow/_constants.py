@@ -25,6 +25,7 @@ LANGUAGE_KEY = "language"
 USER_AGENT_OVERRIDE_KEY = "user_agent_override"
 
 DEFAULT_FLOW_YAML_FILE_NAME = "flow.dag.yaml"
+PROMPTY_EXTENSION = ".prompty"
 
 CHAT_HISTORY = "chat_history"
 
