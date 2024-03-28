@@ -153,10 +153,11 @@ class TestStartTrace:
     def test_setup_exporter_in_executor(self, monkeypatch: pytest.MonkeyPatch):
         with monkeypatch.context() as m:
             m.delenv(OTEL_EXPORTER_OTLP_ENDPOINT, raising=False)
+            original_proivder = trace.get_tracer_provider()
             setup_exporter_from_environ()
-            tracer_provider: TracerProvider = trace.get_tracer_provider()
+            new_provider: TracerProvider = trace.get_tracer_provider()
             # Assert the provider without exporter is not the one with exporter
-            assert not isinstance(tracer_provider, TracerProvider)
+            assert original_proivder == new_provider
 
     def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
