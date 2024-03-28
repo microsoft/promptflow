@@ -320,6 +320,7 @@ class LineRun:
         collection = resource_attributes.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
         experiment = resource_attributes.get(SpanResourceAttributesFieldName.EXPERIMENT_NAME, None)
         run = span.attributes.get(SpanAttributeFieldName.BATCH_RUN_ID, None)
+        line_number = span.attributes.get(SpanAttributeFieldName.LINE_NUMBER, None)
         session_id = span.attributes.get(SpanAttributeFieldName.SESSION_ID, None)
         parent_id = LineRun._determine_parent_id(span)
         return {
@@ -329,6 +330,7 @@ class LineRun:
             "collection": collection,
             "parent_id": parent_id,
             "run": run,
+            "line_number": line_number,
             "experiment": experiment,
             "session_id": session_id,
         }
