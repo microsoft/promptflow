@@ -1,6 +1,6 @@
-# Simulation flow:
+# Question simulation:
 
-This simulation flow is used to generate suggestions for the next question based on the previous chat history.
+This question simulation flow is used to generate suggestions for the next question based on the previous chat history.
 
 ## Flow inputs
 * chat_history (list): the previous chat_history, the format for it is as follows:
