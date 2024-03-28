@@ -2,7 +2,12 @@ import datetime
 
 import pytest
 
-from promptflow.azure._storage.cosmosdb.client import _get_client_from_map, _get_container_lock, client_map
+from promptflow.azure._storage.cosmosdb.client import (
+    _get_client_from_map,
+    _get_container_lock,
+    _get_db_client_key,
+    client_map,
+)
 
 
 @pytest.mark.unittest
@@ -25,3 +30,6 @@ class TestCosmosDB:
         assert container_lock is not None
         assert _get_container_lock("test2") != container_lock
         assert _get_container_lock("test") == container_lock
+
+    def test_get_db_client_key(self):
+        assert _get_db_client_key("container", "sub", "rg", "ws") == "sub@rg@ws@container"
