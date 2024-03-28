@@ -11,18 +11,13 @@ import json
 import logging
 import traceback
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from flask import request
 from google.protobuf.json_format import MessageToJson
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
-from promptflow._constants import (
-    CosmosDBContainerName,
-    SpanFieldName,
-    SpanResourceAttributesFieldName,
-    SpanResourceFieldName,
-)
+from promptflow._constants import CosmosDBContainerName, SpanResourceAttributesFieldName, SpanResourceFieldName
 from promptflow._sdk._constants import TRACE_DEFAULT_SESSION_ID
 from promptflow._sdk._utils import parse_kv_from_pb_attribute
 from promptflow._sdk.entities._trace import Span
@@ -94,7 +89,7 @@ def trace_collector(
 
 
 def _try_write_trace_to_cosmosdb(
-    all_spans,
+    all_spans: List[Span],
     get_created_by_info_with_cache: Callable,
     logger: logging.Logger,
     credential: Optional[object] = None,
@@ -104,7 +99,7 @@ def _try_write_trace_to_cosmosdb(
         return
     try:
         first_span = all_spans[0]
-        span_resource = first_span._content.get(SpanFieldName.RESOURCE, {})
+        span_resource = first_span.resource
         resource_attributes = span_resource.get(SpanResourceFieldName.ATTRIBUTES, {})
         subscription_id = resource_attributes.get(SpanResourceAttributesFieldName.SUBSCRIPTION_ID, None)
         resource_group_name = resource_attributes.get(SpanResourceAttributesFieldName.RESOURCE_GROUP_NAME, None)
