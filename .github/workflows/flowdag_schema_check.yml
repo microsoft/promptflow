@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: env | sort >> $GITHUB_OUTPUT
-      - name: Python Setup - ubuntu-latest - Python Version 3.9
+      - name: Python Setup - ubuntu-latest - Python Version 3.10
         uses: "./.github/actions/step_create_python_environment"
         with:
-          pythonVersion: 3.9
+          pythonVersion: 3.10
       - run: |
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
           pip install -r ${{ github.workspace }}/examples/requirements.txt
