@@ -97,14 +97,16 @@ nodes:
     type: code
     path: answer_relevance.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -117,14 +119,16 @@ nodes:
     type: code
     path: conversation_quality_prompt.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -137,14 +141,16 @@ nodes:
     type: code
     path: creativity.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     conversation: ${convert_chat_history_to_conversation.output}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -167,9 +173,9 @@ nodes:
     type: code
     path: grounding.py
   inputs:
-    connection: ''
+    connection: promptflow-ci-sweden-central
     chat_history: ${inputs.chat_history}
-    model_or_deployment_name: ''
+    model_or_deployment_name: gpt-4-turbo
     prompt: ${grounding_prompt.output}
   activate:
     when: ${validate_input.output.grounding}
@@ -181,8 +187,8 @@ nodes:
     type: code
     path: concat_scores.py
   inputs:
-    conversation_quality: ${conversation_quality.output}
     answer_relevance: ${answer_relevance.output}
+    conversation_quality: ${conversation_quality.output}
     creativity: ${creativity.output}
     grounding: ${grounding.output}
   use_variants: false

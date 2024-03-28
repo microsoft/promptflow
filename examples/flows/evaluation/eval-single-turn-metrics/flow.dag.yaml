@@ -73,7 +73,7 @@ nodes:
     type: code
     path: grounding.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
     presence_penalty: 0
@@ -81,7 +81,7 @@ nodes:
     answer: ${inputs.answer}
     context: ${inputs.context}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -94,15 +94,17 @@ nodes:
     type: code
     path: answer_quality.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     answer: ${inputs.answer}
     question: ${inputs.question}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -115,7 +117,7 @@ nodes:
     type: code
     path: answer_similarity.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
     presence_penalty: 0
@@ -124,7 +126,7 @@ nodes:
     ground_truth: ${inputs.ground_truth}
     question: ${inputs.question}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -137,15 +139,17 @@ nodes:
     type: code
     path: creativity.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     answer: ${inputs.answer}
     question: ${inputs.question}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -158,16 +162,18 @@ nodes:
     type: code
     path: context_recall.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     context: ${inputs.context}
     ground_truth: ${inputs.ground_truth}
     question: ${inputs.question}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -191,7 +197,7 @@ nodes:
     type: code
     path: context_precision.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
     presence_penalty: 0
@@ -200,7 +206,7 @@ nodes:
     ground_truth: ${inputs.ground_truth}
     question: ${inputs.question}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -213,15 +219,17 @@ nodes:
     type: code
     path: answer_relevance.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     answer: ${inputs.answer}
     context: ${inputs.context}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:
@@ -245,7 +253,7 @@ nodes:
     type: package
     tool: promptflow.tools.embedding.embedding
   inputs:
-    connection: ''
+    connection: promptflow-ci-sweden-central
     deployment_name: text-embedding-ada-002
     input: ${inputs.question}
   activate:
@@ -258,7 +266,7 @@ nodes:
     type: package
     tool: promptflow.tools.embedding.embedding
   inputs:
-    connection: ''
+    connection: promptflow-ci-sweden-central
     deployment_name: text-embedding-ada-002
     input: ${handle_generated_question.output.question}
   activate:
@@ -284,16 +292,18 @@ nodes:
     type: code
     path: answer_correctness.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
+    response_format:
+      type: json_object
     presence_penalty: 0
     frequency_penalty: 0
     answer: ${inputs.answer}
     ground_truth: ${inputs.ground_truth}
     question: ${inputs.question}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   activate:

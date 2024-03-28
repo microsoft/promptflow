@@ -19,14 +19,14 @@ nodes:
     type: code
     path: verify_if_conversation_stopped.jinja2
   inputs:
-    deployment_name: ''
+    deployment_name: gpt-4-turbo
     temperature: 0
     top_p: 1
     presence_penalty: 0
     frequency_penalty: 0
     chat_history: ${inputs.chat_history}
   provider: AzureOpenAI
-  connection: ''
+  connection: promptflow-ci-sweden-central
   api: chat
   module: promptflow.tools.aoai
   use_variants: false
@@ -55,8 +55,8 @@ nodes:
     type: code
     path: call_llm_chat.py
   inputs:
-    connection: ''
-    deployment_name_or_model: ''
+    connection: promptflow-ci-sweden-central
+    deployment_name_or_model: gpt-4-turbo
     prompt: ${human_prompt.output}
     question_count: ${inputs.question_count}
     stop:

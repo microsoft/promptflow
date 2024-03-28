@@ -34,3 +34,18 @@ This question simulation flow is used to generate suggestions for the next quest
 - LLM tool
 - Python tool
 - Prompt tool
+
+
+## 0. Setup connection
+Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> name=promptflow-ci-sweden-central api_version=2023-07-01-preview
+```
+
+## 1. Test flow/node
+```bash
+# test with default input value in flow.dag.yaml
+pf flow test --flow .
+```
