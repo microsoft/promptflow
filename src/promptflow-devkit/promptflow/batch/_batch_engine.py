@@ -240,6 +240,7 @@ class BatchEngine:
         """
         try:
             previous_run_results = []
+            aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
             for i in range(len(batch_inputs)):
                 previous_run_info: FlowRunInfo = resume_from_run_storage.load_flow_run_info(i)
 
@@ -248,8 +249,25 @@ class BatchEngine:
                     # Thus the root_run_id needs to be the current batch run id.
                     previous_run_info.root_run_id = run_id
                     previous_run_info.parent_run_id = run_id
+
                     # Load previous node run info
                     previous_node_run_infos = resume_from_run_storage.load_node_run_info_for_line(i)
+
+                    # In storage, aggregation nodes are persisted with filenames similar to regular nodes.
+                    # Currently we read regular node run records by filename in the node artifacts folder,
+                    # which may lead to load records of aggregation nodes at the same time, which is not intended.
+                    # E.g, aggregation-node/000000000.jsonl will be treated as the node_run_info of the first line:
+                    # node_artifacts/
+                    # ├─ non-aggregation-node/
+                    # │  ├─ 000000000.jsonl
+                    # │  ├─ 000000001.jsonl
+                    # │  ├─ 000000002.jsonl
+                    # ├─ aggregation-node/
+                    # │  ├─ 000000000.jsonl
+                    # So we filter out aggregation nodes since line records should not contain any info about them.
+                    previous_node_run_infos = [
+                        run_info for run_info in previous_node_run_infos if run_info.node not in aggregation_nodes
+                    ]
                     previous_node_run_infos_dict = {node_run.node: node_run for node_run in previous_node_run_infos}
                     previous_node_run_outputs = {
                         node_info.node: node_info.output for node_info in previous_node_run_infos
