@@ -52,12 +52,12 @@ class Span:
         if self.id is None or self.partition_key is None or self.resource is None:
             return
 
-        if self.events and blob_container_client is not None and blob_base_uri is not None:
-            self._persist_events(blob_container_client, blob_base_uri)
-
         resource_attributes = self.resource.get(SpanFieldName.ATTRIBUTES, None)
         if resource_attributes is None:
             return
+
+        if self.events and blob_container_client is not None and blob_base_uri is not None:
+            self._persist_events(blob_container_client, blob_base_uri)
 
         from azure.cosmos.exceptions import CosmosResourceExistsError
 
