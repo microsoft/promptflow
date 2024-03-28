@@ -127,19 +127,18 @@ def print_progress(log_file_path: str, process):
                         finished, processing, pending = map(int, progress_match.groups())
                         total = finished + processing + pending
                         if progress_bar is None:
-                            # Set miniters=1 to update the progress bar every 60s a new progress line shows up.
                             # Set mininterval=0 to refresh the progress bar when it calls progress_bar.update
                             # after initialization.
-                            progress_bar = tqdm(
-                                total=total, desc="Processing", miniters=1, mininterval=0, file=sys.stdout
-                            )
+                            progress_bar = tqdm(total=total, desc="Processing", mininterval=0, file=sys.stdout)
                         progress_bar.update(finished - progress_bar.n)
 
                     if finished_match:
                         finished, total = map(int, finished_match.groups())
+                        if progress_bar is None:
+                            progress_bar = tqdm(total=total, desc="Processing", mininterval=0, file=sys.stdout)
+                        progress_bar.update(finished - progress_bar.n)
 
                         if finished == total:
-                            progress_bar.update(finished - progress_bar.n)
                             progress_bar.close()
                             logger.info("Batch run is completed.")
 
