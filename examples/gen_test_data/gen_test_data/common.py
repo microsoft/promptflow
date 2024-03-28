@@ -28,11 +28,13 @@ def split_document(chunk_size, chunk_overlap, documents_folder, document_node_ou
     filtered_num_files = sum(1 for _ in all_files if _.suffix.lower() in SUPPORT_FILE_TYPE)
     logger.info(
         f"Found {len(all_files)} files in the documents folder '{documents_folder}'. "
-        f"Rest {filtered_num_files} files after filtering unsupported file types. "
+        f"After filtering out unsupported file types, {filtered_num_files} files remain."
         f"Using chunk size: {chunk_size} to split."
     )
     # `SimpleDirectoryReader` by default chunk the documents based on heading tags and paragraphs, which may lead to small chunks.  # noqa: E501
     reader = SimpleDirectoryReader(documents_folder, required_exts=SUPPORT_FILE_TYPE, recursive=True, encoding="utf-8")
+    # Disable the default suffixes to avoid splitting the documents into small chunks.
+    # TODO: find a better way to disable the default suffixes.
     SimpleDirectoryReader.supported_suffix = []
     chunks = reader.load_data()
     # Convert documents into nodes
