@@ -28,24 +28,27 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
       - .docx - `pip install docx2txt`
       - .pdf - `pip install pypdf`
       - .ipynb - `pip install nbconvert`
-      > !Note: We use llama index `SimpleDirectoryReader` to load documents. For the latest information on required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
+      > !Note: the example uses llama index `SimpleDirectoryReader` to load documents. For the latest information of different file type required packages, please check [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/simple_directory_reader.html).
 
 3. Install VSCode extension `Prompt flow`.
 
-4. [Create connections](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#create-a-connection)
+4. Create your AzureOpenAI or OpenAI connection by following [this doc](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#create-a-connection).
 
-5. Prepare config.ini
+5. Prepare test data generation setting.
     - Navigate to [example_gen_test_data](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data) folder.
     - Run command to copy [`config.yml.example`](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/config.yml.example).
         ```
         cp config.yml.example config.yml
         ```
-    - Update the configurations in the `configs.yml`. Fill in the values in `Common` and `Local` section following inline comment instruction.
+    - Fill in configurations in the `config.yml` by following inline comment instructions. The config is made up of 3 sections: 
+      - Common section: this section provides common values for all other sections. Required.
+      - Local section: this section is for local test data generation related configuration. Can skip if not run in local.
+      - Cloud section: this section is for cloud test data generation related configuration. Can skip if not run in cloud.
 
 
 ## Create a test data generation flow
-  - Open the [sample test data generation flow](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/) in VSCode. This flow is designed to generate a pair of question and suggested answer based on the given text chunk. The flow also includes validation prompts to ensure the quality of the generated test data.
-  - Fill in node inputs including `connection`, `model` or `deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode by referring to [Test flow with VS Code Extension](https://microsoft.github.io/promptflow/how-to-guides/init-and-test-a-flow.html#visual-editor-on-the-vs-code-for-prompt-flow).
+  - Open the [sample test data generation flow](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/) in "Prompt flow" VSCode Extension. This flow is designed to generate a pair of question and suggested answer based on the given text chunk. The flow also includes validation prompts to ensure the quality of the generated test data.
+  - Fill in node inputs including `connection`, `model` or `deployment_name`, `response_format`, `score_threshold` or other parameters. Click run button to test the flow in VSCode Extension by referring to [Test flow with VS Code Extension](https://microsoft.github.io/promptflow/how-to-guides/init-and-test-a-flow.html#visual-editor-on-the-vs-code-for-prompt-flow).
 
     > !Note: Recommend to use `gpt-4` series models than the `gpt-3.5` for better performance.
 
@@ -53,14 +56,14 @@ By leveraging the capabilities of llm, this guide streamlines the test data gene
 
   - [*Optional*] Customize your test data generation logic refering to [tune-prompts-with-variants](https://microsoft.github.io/promptflow/how-to-guides/tune-prompts-with-variants.html). 
 
-    **Understand the prompts**
+    **Understanding the prompts**
     
     The test data generation flow contains 5 prompts, classified into two categories based on their roles: generation prompts and validation prompts. Generation prompts are used to create questions, suggested answers, etc., while validation prompts are used to verify the validity of the text chunk, generated question or answer.
     - Generation prompts
       - [*generate question prompt*](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/generate_question_prompt.jinja2): frame a question based on the given text chunk.
       - [*generate suggested answer prompt*](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/generate_suggested_answer_prompt.jinja2): generate suggested answer for the question based on the given text chunk.
     - Validation prompts
-      - [*score text chunk prompt*](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/score_text_chunk_prompt.jinja2): score 0-10 to validate if the given text chunk is worthy of framing a question. If the score is lower than `score_threshold` (default 4), validation fails.
+      - [*score text chunk prompt*](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/score_text_chunk_prompt.jinja2): score 0-10 to validate if the given text chunk is worthy of framing a question. If the score is lower than `score_threshold` (a node input that is adjustable), validation fails.
       - [*validate question prompt*](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/validate_question_prompt.jinja2): validate if the generated question is good.
       - [*validate suggested answer*](https://github.com/microsoft/promptflow/blob/c304f6fddb2ac64c3d7889f56fa79efa364c8f3b/examples/gen_test_data/gen_test_data/generate_test_data_flow/validate_suggested_answer_prompt.jinja2): validate if the generated suggested answer is good.
 

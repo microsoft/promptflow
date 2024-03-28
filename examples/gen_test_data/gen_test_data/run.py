@@ -268,7 +268,7 @@ if __name__ == "__main__":
         should_skip_split_documents = True
     elif not documents_folder or not validate_path_func(documents_folder):
         raise Exception(
-            "Either 'documents_folder' or 'document_nodes_file' should be specified correctly.\n"
+            "Neither 'documents_folder' nor 'document_nodes_file' is valid.\n"
             f"documents_folder: '{documents_folder}'\ndocument_nodes_file: '{document_nodes_file}'"
         )
 
