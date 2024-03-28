@@ -146,9 +146,9 @@ def _try_write_trace_to_cosmosdb(
         created_by_thread.start()
 
         # Get default blob may be slow. So, we have a cache for default datastore.
-        from promptflow.azure._storage.blob.client import get_client as get_blob_client
+        from promptflow.azure._storage.blob.client import get_datastore_container_client
 
-        blob_container_client, blob_base_uri = get_blob_client(
+        blob_container_client, blob_base_uri = get_datastore_container_client(
             logger=logger,
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,

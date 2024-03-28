@@ -64,7 +64,7 @@ class Span:
         try:
             return cosmos_client.create_item(body=self.to_dict())
         except CosmosResourceExistsError:
-            return None
+            return
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
