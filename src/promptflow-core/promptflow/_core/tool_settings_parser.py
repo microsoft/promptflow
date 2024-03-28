@@ -5,7 +5,6 @@ import io
 from pathlib import Path
 
 from promptflow._constants import ICON, ICON_DARK, ICON_LIGHT
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow._utils.tool_utils import asdict_without_none
 from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import UserErrorException
@@ -75,5 +74,5 @@ def _serialize_image_data(image_path):
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")
     icon_image = Image(buffered.getvalue(), mime_type="image/png")
-    image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
+    image_url = icon_image.to_base64(with_type=True)
     return image_url

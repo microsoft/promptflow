@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 from streamlit_quill import st_quill  # noqa: F401
 
 from promptflow._sdk._utils import print_yellow_warning
-from promptflow._utils.multimedia_utils import MIME_PATTERN, is_multimedia_dict
+from promptflow._utils.multimedia_utils import MIME_PATTERN, BasicMultimediaProcessor
 from promptflow.core._serving.flow_invoker import FlowInvoker
 
 invoker = None
@@ -83,7 +83,7 @@ def start():
                 st.markdown(f"`{json_dumps(message_items)},`")
 
         def dict_iter_render_message(message_items):
-            if is_multimedia_dict(message_items):
+            if BasicMultimediaProcessor.is_multimedia_dict(message_items):
                 key = list(message_items.keys())[0]
                 value = message_items[key]
                 show_image(value, key)
