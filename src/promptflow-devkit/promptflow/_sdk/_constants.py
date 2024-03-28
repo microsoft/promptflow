@@ -145,10 +145,21 @@ FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 # trace
 TRACE_DEFAULT_SESSION_ID = "default"
+TRACE_DEFAULT_COLLECTION = "default"
 TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
 TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
-SPAN_TABLENAME = "span"
+EVENT_TABLENAME = "events"
+EVENT_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_events_trace_id_span_id"
+SPAN_TABLENAME = "spans"
+SPAN_TRACE_ID_INDEX_NAME = "idx_spans_trace_id"
+SPAN_TRACE_ID_SPAN_ID_INDEX_NAME = "idx_spans_trace_id_span_id"
+LINE_RUN_TABLENAME = "line_runs"
+LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME = "idx_line_runs_run_line_number"
+LINE_RUN_PARENT_ID_INDEX_NAME = "idx_line_runs_parent_id"
 PFS_MODEL_DATETIME_FORMAT = "iso8601"
+SPAN_EVENTS_NAME_PF_INPUTS = "promptflow.function.inputs"
+SPAN_EVENTS_NAME_PF_OUTPUT = "promptflow.function.output"
+SPAN_EVENTS_ATTRIBUTE_PAYLOAD = "payload"
 
 UX_INPUTS_JSON = "ux.inputs.json"
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])

@@ -17,9 +17,11 @@ from sqlalchemy.schema import CreateTable
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CONNECTION_TABLE_NAME,
+    EVENT_TABLENAME,
     EXP_NODE_RUN_TABLE_NAME,
     EXPERIMENT_CREATED_ON_INDEX_NAME,
     EXPERIMENT_TABLE_NAME,
+    LINE_RUN_TABLENAME,
     LOCAL_MGMT_DB_PATH,
     LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH,
     ORCHESTRATOR_TABLE_NAME,
@@ -272,10 +274,16 @@ def trace_mgmt_db_session() -> Session:
         engine = create_engine(f"sqlite:///{str(TRACE_MGMT_DB_PATH)}", future=True)
         engine = support_transaction(engine)
 
-        if not inspect(engine).has_table(SPAN_TABLENAME):
-            from promptflow._sdk._orm.trace import Span
+        if any(
+            [
+                not inspect(engine).has_table(EVENT_TABLENAME),
+                not inspect(engine).has_table(SPAN_TABLENAME),
+                not inspect(engine).has_table(LINE_RUN_TABLENAME),
+            ]
+        ):
+            from .trace import Base
 
-            Span.metadata.create_all(engine)
+            Base.metadata.create_all(engine)
 
         trace_session_maker = sessionmaker(bind=engine)
     except Exception as e:  # pylint: disable=broad-except

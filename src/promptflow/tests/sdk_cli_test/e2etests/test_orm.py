@@ -5,15 +5,93 @@
 import datetime
 import json
 import uuid
+from collections import namedtuple
+from typing import Optional
 
 import pytest
 
 from promptflow._sdk._constants import ListViewType, RunStatus, RunTypes
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._orm import RunInfo
+from promptflow._sdk._orm.trace import Event, LineRun, Span
+
+SpanInfo = namedtuple("SpanInfo", ["trace_id", "span_id", "name"])
 
 
-@pytest.fixture()
+def persist_span(trace_id: str, span_id: str, name: str) -> None:
+    span = Span(
+        trace_id=trace_id,
+        span_id=span_id,
+        name=name,
+        context={
+            "trace_id": trace_id,
+            "span_id": span_id,
+            "trace_state": "",
+        },
+        kind="1",
+        parent_id=None,
+        start_time=datetime.datetime.now(),
+        end_time=datetime.datetime.now(),
+        status={
+            "status_code": "Ok",
+            "description": "",
+        },
+        attributes=None,
+        links=None,
+        events=None,
+        resource={
+            "attributes": {
+                "service.name": "promptflow",
+            },
+            "schema_url": "",
+        },
+    )
+    span.persist()
+
+
+def persist_event(trace_id: str, span_id: str, event_id: Optional[str] = None) -> str:
+    event_id = event_id or str(uuid.uuid4())
+    event = Event(
+        event_id=event_id,
+        trace_id=trace_id,
+        span_id=span_id,
+        data=str(uuid.uuid4()),
+    )
+    event.persist()
+    return event_id
+
+
+def persist_line_run(
+    trace_id: str,
+    root_span_id: str,
+    line_run_id: Optional[str] = None,
+    parent_id: Optional[str] = None,
+    run: Optional[str] = None,
+    line_number: Optional[int] = None,
+) -> str:
+    line_run_id = line_run_id or str(uuid.uuid4())
+    line_run = LineRun(
+        line_run_id=line_run_id,
+        trace_id=trace_id,
+        root_span_id=root_span_id,
+        inputs=dict(),
+        outputs=dict(),
+        start_time=datetime.datetime.now(),
+        end_time=datetime.datetime.now(),
+        status="Ok",
+        duration=3.14,
+        name=str(uuid.uuid4()),
+        kind="1",
+        collection=str(uuid.uuid4()),
+        parent_id=parent_id,
+        run=run,
+        line_number=line_number,
+    )
+    line_run.persist()
+    return line_run_id
+
+
+@pytest.fixture
 def run_name() -> str:
     name = str(uuid.uuid4())
     run_info = RunInfo(
@@ -28,6 +106,15 @@ def run_name() -> str:
     )
     run_info.dump()
     return name
+
+
+@pytest.fixture
+def mock_span() -> SpanInfo:
+    trace_id = str(uuid.uuid4())
+    span_id = str(uuid.uuid4())
+    name = f"mock_span_{uuid.uuid4()}"
+    persist_span(trace_id, span_id, name)
+    return SpanInfo(trace_id=trace_id, span_id=span_id, name=name)
 
 
 @pytest.mark.sdk_test
@@ -128,3 +215,55 @@ class TestRunInfo:
         run_info_from_db = RunInfo.get(name)
         assert run_info_from_db.type is None
         assert run_info_from_db.display_name is None
+
+
+@pytest.mark.sdk_test
+@pytest.mark.e2etest
+class TestTrace:
+    def test_span_persist_and_get(self, mock_span: SpanInfo) -> None:
+        span = Span.get(span_id=mock_span.span_id)
+        assert span.name == mock_span.name
+        span = Span.get(trace_id=mock_span.trace_id, span_id=mock_span.span_id)
+        assert span.name == mock_span.name
+
+    def test_span_list(self, mock_span: SpanInfo) -> None:
+        spans = Span.list(trace_ids=mock_span.trace_id)
+        assert len(spans) == 1
+
+    def test_event_persist_and_get(self) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        event_id = persist_event(trace_id=trace_id, span_id=span_id)
+        event = Event.get(event_id=event_id)
+        assert event.trace_id == trace_id and event.span_id == span_id
+
+    def test_event_list(self) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        persist_event(trace_id=trace_id, span_id=span_id)
+        events = Event.list(trace_id=trace_id, span_id=span_id)
+        assert len(events) == 1
+
+    def test_line_run_persist_and_get(self) -> None:
+        trace_id = str(uuid.uuid4())
+        span_id = str(uuid.uuid4())
+        line_run_id = persist_line_run(trace_id=trace_id, root_span_id=span_id)
+        line_run = LineRun.get(line_run_id=line_run_id)
+        assert line_run.trace_id == trace_id and line_run.root_span_id == span_id
+
+    def test_line_run_children_get(self) -> None:
+        # mock parent line run
+        trace_id, span_id = str(uuid.uuid4()), str(uuid.uuid4())
+        line_run_id = persist_line_run(trace_id=trace_id, root_span_id=span_id)
+        # mock child line runs
+        num_child_line_runs = 3
+        child_line_run_ids = list()
+        for _ in range(num_child_line_runs):
+            child_line_run_id = persist_line_run(
+                trace_id=str(uuid.uuid4()), root_span_id=str(uuid.uuid4()), parent_id=line_run_id
+            )
+            child_line_run_ids.append(child_line_run_id)
+        child_line_runs = LineRun._get_children(line_run_id=line_run_id)
+        assert len(child_line_runs) == num_child_line_runs
+        for child_line_run in child_line_runs:
+            assert child_line_run.line_run_id in child_line_run_ids

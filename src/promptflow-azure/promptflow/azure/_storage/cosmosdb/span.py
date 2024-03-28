@@ -4,7 +4,8 @@
 
 from typing import Any, Dict
 
-from promptflow._constants import SpanFieldName
+from promptflow._constants import SpanFieldName, SpanResourceAttributesFieldName
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk.entities._trace import Span as SpanEntity
 
 
@@ -28,17 +29,17 @@ class Span:
 
     def __init__(self, span: SpanEntity, collection_id: str, created_by: dict) -> None:
         self.name = span.name
-        self.context = span._content[SpanFieldName.CONTEXT]
-        self.kind = span._content[SpanFieldName.KIND]
-        self.parent_id = span.parent_span_id
-        self.start_time = span._content[SpanFieldName.START_TIME]
-        self.end_time = span._content[SpanFieldName.END_TIME]
-        self.status = span._content[SpanFieldName.STATUS]
-        self.attributes = span._content[SpanFieldName.ATTRIBUTES]
-        self.events = span._content[SpanFieldName.EVENTS]
-        self.links = span._content[SpanFieldName.LINKS]
-        self.resource = span._content[SpanFieldName.RESOURCE]
-        self.partition_key = span.session_id
+        self.context = span.context
+        self.kind = span.kind
+        self.parent_id = span.parent_id
+        self.start_time = span.start_time.isoformat()
+        self.end_time = span.end_time.isoformat()
+        self.status = span.status
+        self.attributes = span.attributes
+        self.events = span.events
+        self.links = span.links
+        self.resource = span.resource
+        self.partition_key = span.resource.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
         self.collection_id = collection_id
         self.id = span.span_id
         self.created_by = created_by

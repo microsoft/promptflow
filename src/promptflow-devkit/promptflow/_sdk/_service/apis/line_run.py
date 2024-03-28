@@ -86,7 +86,7 @@ class LineRuns(Resource):
         client: PFClient = get_client_from_request()
         args = ListLineRunParser.from_request()
         line_runs: typing.List[LineRunEntity] = client._traces.list_line_runs(
-            session_id=args.session_id,
+            collection=args.session_id,
             runs=args.runs,
             experiments=args.experiments,
             trace_ids=args.trace_ids,
