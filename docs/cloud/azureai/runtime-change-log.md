@@ -27,7 +27,6 @@ Default runtime image is continuously updated, and here we record the new featur
 
 - Fix an issue where calling a flow with a flow function would result in failure.
 - Improve error handling by categorizing errors as user errors when a run is archived prior to being processed by the runtime.
-- Ensure an error response when runtime gets a non-200 status for flow test.
 
 ### 20240306.v5
 
