@@ -129,6 +129,7 @@ class SpanFieldName:
     EVENTS = "events"
     LINKS = "links"
     RESOURCE = "resource"
+    EXTERNAL_EVENT_DATA_URIS = "external_event_data_uris"
 
 
 class SpanContextFieldName:

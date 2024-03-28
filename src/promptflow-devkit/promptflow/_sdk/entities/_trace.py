@@ -82,6 +82,7 @@ class Span:
         self.links = copy.deepcopy(links) if links is not None else list()
         self.events = copy.deepcopy(events) if events is not None else list()
         self.resource = copy.deepcopy(resource)
+        self._external_event_ids = list()
 
     def _persist(self) -> None:
         # persist (create or update) line run
@@ -111,6 +112,7 @@ class Span:
         events = []
         for i in range(len(self.events)):
             event_id = self.events[i][SpanEventFieldName.ATTRIBUTES][SPAN_EVENTS_ATTRIBUTES_EVENT_ID]
+            self._external_event_ids.append(event_id)
             events.append(Event.get(event_id=event_id))
         self.events = events
 
@@ -235,6 +237,19 @@ class Span:
         )
 
     def _to_rest_object(self) -> typing.Dict:
+        rest_events = copy.deepcopy(self.events)
+        # `self._external_event_ids` is empty indicates:
+        #   1. span object is lazy load
+        #   2. no external events
+        # iterate `self.events` to move event id(s) to `external_event_data_uris` in this case
+        # following the large data contract
+        if len(self._external_event_ids) == 0:
+            rest_external_event_data_uris = list()
+            for i in range(len(rest_events)):
+                event_id = rest_events[i][SpanEventFieldName.ATTRIBUTES].pop(SPAN_EVENTS_ATTRIBUTES_EVENT_ID)
+                rest_external_event_data_uris.append(event_id)
+        else:
+            rest_external_event_data_uris = copy.deepcopy(self._external_event_ids)
         return {
             "name": self.name,
             "context": copy.deepcopy(self.context),
@@ -245,8 +260,9 @@ class Span:
             "status": copy.deepcopy(self.status),
             "attributes": copy.deepcopy(self.attributes),
             "links": copy.deepcopy(self.links),
-            "events": copy.deepcopy(self.events),
+            "events": rest_events,
             "resource": copy.deepcopy(self.resource),
+            "external_event_data_uris": rest_external_event_data_uris,
         }
 
 

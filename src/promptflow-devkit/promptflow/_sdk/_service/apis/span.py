@@ -97,6 +97,7 @@ span_model = api.model(
         SpanFieldName.EVENTS: fields.List(fields.Nested(event_model)),
         SpanFieldName.LINKS: fields.List(fields.Nested(link_model)),
         SpanFieldName.RESOURCE: fields.Nested(resource_model, required=True, skip_none=True),
+        SpanFieldName.EXTERNAL_EVENT_DATA_URIS: fields.List(fields.String),
     },
 )
 
