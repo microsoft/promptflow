@@ -172,6 +172,7 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with (_change_working_dir(self._working_dir)):
                 # create executor proxy instance according to the flow program language
+                # TODO: pass creating proxy related parameters in this run function to void using class properties
                 self._executor_proxy = executor_proxy or ProxyFactory().create_executor_proxy(
                     flow_file=self._flow_file,
                     working_dir=self._working_dir,
@@ -193,7 +194,7 @@ class BatchEngine:
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
 
-                    if self._executor_proxy.apply_inputs_mapping:
+                    if self._executor_proxy.should_apply_inputs_mapping:
                         # set batch input source from input mapping
                         set_batch_input_source_from_inputs_mapping(inputs_mapping)
                         # if using eager flow, the self._flow is none, so we need to get inputs definition from executor

@@ -38,12 +38,12 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 class AbstractExecutorProxy:
 
     def __init__(self):
-        self._apply_inputs_mapping = True
+        self._should_apply_inputs_mapping = True
         self._allow_aggregation = True
 
     @property
-    def apply_inputs_mapping(self):
-        return self._apply_inputs_mapping
+    def should_apply_inputs_mapping(self):
+        return self._should_apply_inputs_mapping
 
     @property
     def allow_aggregation(self):

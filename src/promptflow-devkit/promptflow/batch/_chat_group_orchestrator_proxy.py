@@ -18,7 +18,7 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         super().__init__(**kwargs)
         self._orchestrator = orchestrator
         self._allow_aggregation = False
-        self._apply_inputs_mapping = False
+        self._should_apply_inputs_mapping = False
 
     @classmethod
     async def create(
