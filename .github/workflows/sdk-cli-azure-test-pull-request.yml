@@ -6,6 +6,8 @@ name: sdk-cli-azure-test-pull-request
 on:
   pull_request:
     paths:
+      - src/promptflow-core/**
+      - src/promptflow-devkit/**
       - src/promptflow/**
       - scripts/building/**
       - src/promptflow-tracing/**
@@ -86,10 +88,12 @@ jobs:
         run: |
           Set-PSDebug -Trace 1
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+          pip install ${{ github.workspace }}/src/promptflow-tracing
+          pip install ${{ github.workspace }}/src/promptflow-core
+          pip install ${{ github.workspace }}/src/promptflow-devkit
+          pip install ${{ github.workspace }}/src/promptflow-azure
           gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
           gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
-          pip uninstall -y promptflow-tracing
-          pip install -e ${{ github.workspace }}/src/promptflow-tracing
           pip freeze
 
       - name: install recording

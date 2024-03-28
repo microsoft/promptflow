@@ -2,6 +2,9 @@
 name = "promptflow-azure"
 version = "0.1.0b1"
 description = "Prompt flow azure"
+include = [
+  "promptflow/azure/resources/*"
+]
 
 license = "MIT"
 
@@ -36,10 +39,18 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.8"
+azure-core = ">=1.26.4,<2.0.0"
+"azure-storage-blob[aio]" = ">=12.17.0,<13.0.0"  # add [aio] for async run download feature
+azure-identity = ">=1.12.0,<2.0.0"
+azure-ai-ml = ">=1.14.0,<2.0.0"
+azure-cosmos = ">=4.5.1,<5.0.0"  # used to upload trace to cloud
+pyjwt = ">=2.4.0,<3.0.0"  # requirement of control plane SDK
+promptflow-devkit = "<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
+promptflow-devkit = { path = "../promptflow-devkit" }
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -49,6 +60,9 @@ pytest-xdist = "*"
 [build-system]
 requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+pfazure = "promptflow.azure._cli.entry:main"
 
 [tool.pytest.ini_options]
 markers = [
