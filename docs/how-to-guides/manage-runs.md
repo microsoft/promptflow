@@ -8,7 +8,7 @@ This documentation will walk you through how to manage your runs with CLI, SDK a
 
 In general:
 - For `CLI`, you can run `pf/pfazure run --help` in terminal to see the help messages.
-- For `SDK`, you can refer to [Promptflow Python Library Reference](../reference/python-library-reference/promptflow.md) and check `PFClient.runs` for more run operations.
+- For `SDK`, you can refer to [Promptflow Python Library Reference](../reference/python-library-reference/promptflow-devkit/promptflow.rst) and check `PFClient.runs` for more run operations.
 
 Let's take a look at the following topics:
 

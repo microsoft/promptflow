@@ -2,17 +2,19 @@ name: Publish Promptflow Doc
 
 on:
   workflow_dispatch:
-    # TODO: Enable this after package separation
-#  push:
-#    branches:
-#      - main
-#      - preview/docs
-#    paths:
-#      - 'README.md'
-#      - 'docs/**'
-#      - 'scripts/docs/**'
-#      - '.github/workflows/publish_doc.yml'
-#      - 'src/promptflow/promptflow/**'
+  push:
+    branches:
+      - main
+      - preview/docs
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'scripts/docs/**'
+      - '.github/workflows/publish_doc.yml'
+      - 'src/promptflow-tracing/promptflow/**'
+      - 'src/promptflow-core/promptflow/**'
+      - 'src/promptflow-devkit/promptflow/**'
+      - 'src/promptflow-azure/promptflow/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -40,11 +42,16 @@ jobs:
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
 
-      - name: Dev setup
-        uses: "./.github/actions/step_sdk_setup"
-        with:
-          setupType: ${{ env.packageSetupType }}
-          scriptPath: ${{ env.testWorkingDirectory }}
+      - name: Install packages
+        shell: pwsh
+        # Note: Use -e to avoid duplicate object warning when build apidoc.
+        run: |
+          pip uninstall -y promptflow-tracing promptflow-core promptflow-devkit promptflow-azure
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-core
+          pip install -e ${{ github.workspace }}/src/promptflow-devkit
+          pip install -e ${{ github.workspace }}/src/promptflow-azure
+          pip freeze
 
       - name: Build Doc
         shell: powershell
