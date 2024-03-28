@@ -9,10 +9,11 @@ from pathlib import Path
 
 from promptflow._constants import (
     CONNECTION_SCRUBBED_VALUE,
+    CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
     PROMPT_FLOW_DIR_NAME,
     ConnectionAuthMode,
     ConnectionType,
-    CustomStrongTypeConnectionConfigs, CONNECTION_SCRUBBED_VALUE_NO_CHANGE,
+    CustomStrongTypeConnectionConfigs,
 )
 
 LOGGER_NAME = "promptflow"
@@ -476,6 +477,11 @@ class IdentityKeys(str, Enum):
     USER_IDENTITY = "user_identity"
     RESOURCE_ID = "resource_id"
     CLIENT_ID = "client_id"
+
+
+class OSType:
+    WINDOWS = "Windows"
+    LINUX = "Linux"
 
 
 # Note: Keep these for backward compatibility

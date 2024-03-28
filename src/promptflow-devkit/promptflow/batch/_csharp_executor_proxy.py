@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import platform
+import signal
 import socket
 import subprocess
 import uuid
@@ -8,6 +10,7 @@ from pathlib import Path
 from typing import NoReturn, Optional
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._sdk._constants import OSType
 from promptflow._utils.flow_utils import is_flex_flow
 from promptflow.batch._csharp_base_executor_proxy import CSharpBaseExecutorProxy
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -146,11 +149,35 @@ class CSharpExecutorProxy(CSharpBaseExecutorProxy):
         return executor_proxy
 
     async def destroy(self):
-        """Destroy the executor"""
+        """Destroy the executor service.
+
+        client.stream api in exec_line function won't pass all response one time.
+        For API-based streaming chat flow, if executor proxy is destroyed, it will kill service process
+        and connection will close. this will result in subsequent getting generator content failed.
+
+        Besides, external caller usually wait for the destruction of executor proxy before it can continue and iterate
+        the generator content, so we can't keep waiting here.
+
+        On the other hand, the subprocess for execution service is not started in detach mode;
+        it wll exit when parent process exit. So we simply skip the destruction here.
+        """
+
+        # TODO 3033484: update this after executor service support graceful shutdown
+        if not await self._all_generators_exhausted():
+            raise UnexpectedError(
+                message_format="The executor service is still handling a stream request "
+                "whose response is not fully consumed yet."
+            )
+
         # process is not None, it means the executor service is started by the current executor proxy
         # and should be terminated when the executor proxy is destroyed if the service is still active
         if self._process and self._is_executor_active():
-            self._process.terminate()
+            if platform.system() == OSType.WINDOWS:
+                # send CTRL_C_EVENT to the process to gracefully terminate the service
+                self._process.send_signal(signal.CTRL_C_EVENT)
+            else:
+                # for Linux and MacOS, Popen.terminate() will send SIGTERM to the process
+                self._process.terminate()
             try:
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
