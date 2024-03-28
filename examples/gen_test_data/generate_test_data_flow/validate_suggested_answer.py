@@ -2,9 +2,9 @@ from typing import Union
 
 from utils import ErrorMsg, get_suggested_answer_validation_res
 
-from promptflow import tool
 from promptflow._core.tool import InputSetting
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.core import tool
 
 
 @tool(

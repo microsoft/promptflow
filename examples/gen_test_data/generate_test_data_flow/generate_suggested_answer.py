@@ -2,9 +2,9 @@ from typing import Union
 
 from utils import llm_call
 
-from promptflow import tool
 from promptflow._core.tool import InputSetting
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.core import tool
 
 
 @tool(
@@ -17,23 +17,28 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
         "model": InputSetting(enabled_by="connection", enabled_by_type=["OpenAIConnection"]),
     }
 )
-def generate_question(
+def generate_suggested_answer(
     connection: Union[OpenAIConnection, AzureOpenAIConnection],
-    generate_question_prompt: str,
+    question: str,
+    context: str,
+    generate_suggested_answer_prompt: str,
     deployment_name: str = "",
     model: str = "",
-    context: str = None,
     temperature: float = 0.2,
 ):
     """
-    Generates a question based on the given context.
+    Generates a suggested answer based on the given prompts and context information.
 
     Returns:
-        str: The generated seed question.
+        str: The generated suggested answer.
     """
-    # text chunk is not valid, just skip test data gen.
-    if not context:
+    if question and context:
+        return llm_call(
+            connection,
+            model,
+            deployment_name,
+            generate_suggested_answer_prompt,
+            temperature=temperature,
+        )
+    else:
         return ""
-
-    seed_question = llm_call(connection, model, deployment_name, generate_question_prompt, temperature=temperature)
-    return seed_question
