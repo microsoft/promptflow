@@ -117,8 +117,6 @@ if($WithReferenceDoc){
         }
         Update-Sub-Pkg-Index-Title $SubPkgRefDocPath $Item.Name
     }
-
-    Write-Host "=============== Overwrite promptflow.connections.rst ==============="
 }
 
 
