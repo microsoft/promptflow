@@ -240,6 +240,7 @@ class ExperimentOrchestrator:
             inputs=inputs,
             output_path=test_context.output_path / node.name,
             dump_test_result=True,
+            allow_generator_output=False,
             stream_output=False,
             run_id=test_context.node_name_to_id[node.name],
             session=test_context.session,

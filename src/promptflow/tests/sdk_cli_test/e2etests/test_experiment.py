@@ -295,9 +295,11 @@ class TestExperiment:
             mock_func.return_value = True
             result = client._experiments.test(
                 experiment=template_path,
-                skip_flow=FLOW_ROOT / "web_classification" / "flow.dag.yaml",
-                skip_flow_output={"category": "Channel", "evidence": "Both"},
-                skip_flow_run_id="123",
+                context={
+                    "node": FLOW_ROOT / "web_classification" / "flow.dag.yaml",
+                    "outputs": {"category": "Channel", "evidence": "Both"},
+                    "run_id": "123",
+                },
             )
             assert len(result) == 1
 
