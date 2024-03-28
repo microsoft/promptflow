@@ -113,16 +113,17 @@ class TestExecutorLogs:
             assert 40 <= line_count <= 50
 
     @pytest.mark.parametrize(
-        "root,folder_name, line_number", [[FLOW_ROOT, "print_input_flow", 8], [EAGER_FLOW_ROOT, "print_input_flex", 2]]
+        "flow_root_dir, flow_folder_name, line_number",
+        [[FLOW_ROOT, "print_input_flow", 8], [EAGER_FLOW_ROOT, "print_input_flex", 2]],
     )
-    def test_batch_run_flow_logs(self, root, folder_name, line_number):
+    def test_batch_run_flow_logs(self, flow_root_dir, flow_folder_name, line_number):
         logs_directory = Path(mkdtemp())
         bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
         bulk_run_flow_logs_folder = str(logs_directory / "test_bulk_run_flow_logs_folder")
         Path(bulk_run_flow_logs_folder).mkdir()
         with LogContext(bulk_run_log_path, run_mode=RunMode.Batch, flow_logs_folder=bulk_run_flow_logs_folder):
-            self.submit_bulk_run(folder_name, root=root)
-            nlines = len(get_bulk_inputs_from_jsonl(folder_name, root=root))
+            self.submit_bulk_run(flow_folder_name, root=flow_root_dir)
+            nlines = len(get_bulk_inputs_from_jsonl(flow_folder_name, root=flow_root_dir))
             for i in range(nlines):
                 file_name = f"{str(i).zfill(LINE_NUMBER_WIDTH)}.log"
                 flow_log_file = Path(bulk_run_flow_logs_folder) / file_name
