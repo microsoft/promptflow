@@ -14,7 +14,7 @@ args, _ = parser.parse_known_args()
 input_df = pd.read_json(args.input_data_file, lines=True)
 
 # data preparation, e.g. data sampling, data cleaning, etc.
-processed_data = input_df.sample(n=200, replace=True, random_state=1)
+processed_data = input_df.sample(n=20, replace=True, random_state=1)
 
 # export data into output folder
 output_file_path = os.path.join(args.output_data_folder, "processed_data.csv")
