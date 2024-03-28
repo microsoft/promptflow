@@ -16,9 +16,10 @@ def split_document(chunk_size, chunk_overlap, documents_folder, document_node_ou
         from llama_index.node_parser import SentenceSplitter
         from llama_index.readers.schema import Document as LlamaindexDocument
         from llama_index.schema import BaseNode
-    except ImportError:
+    except ImportError as e:
         raise ImportError(
-            "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
+            f"{str(e)}. It appears that `llama_index` may not be installed, or the installed version may be incorrect."
+            "Please check `requirements.txt` file and install all the dependencies."
         )
 
     logger = get_logger("doc.split")
@@ -91,7 +92,10 @@ def print_progress(log_file_path: str, process):
 
     logger = get_logger("data.gen")
     logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
-    log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished (\d+) / (\d+) lines\.")
+    finished_log_pattern = re.compile(r".*execution.bulk\s+INFO\s+Finished (\d+) / (\d+) lines\.")
+    progress_log_pattern = re.compile(
+        r".*execution.bulk\s+INFO.*\[Finished: (\d+)\] \[Processing: (\d+)\] \[Pending: (\d+)\]"
+    )
     # wait for the log file to be created
     start_time = time.time()
     while not Path(log_file_path).is_file():
@@ -114,20 +118,31 @@ def print_progress(log_file_path: str, process):
                 line = f.readline().strip()
                 if line:
                     last_data_time = time.time()  # Update the time when the last data was received
-                    match = log_pattern.match(line)
-                    if not match:
+                    progress_match = progress_log_pattern.match(line)
+                    finished_match = finished_log_pattern.match(line)
+                    if not progress_match and not finished_match:
                         continue
 
-                    finished, total = map(int, match.groups())
-                    if progress_bar is None:
-                        progress_bar = tqdm(total=total, desc="Processing", file=sys.stdout)
-                    progress_bar.update(finished - progress_bar.n)
+                    if progress_match:
+                        finished, processing, pending = map(int, progress_match.groups())
+                        total = finished + processing + pending
+                        if progress_bar is None:
+                            # Set mininterval=0 to refresh the progress bar when it calls progress_bar.update
+                            # after initialization.
+                            progress_bar = tqdm(total=total, desc="Processing", mininterval=0, file=sys.stdout)
+                        progress_bar.update(finished - progress_bar.n)
 
-                    if finished == total:
-                        progress_bar.close()
-                        logger.info("Batch run is completed.")
+                    if finished_match:
+                        finished, total = map(int, finished_match.groups())
+                        if progress_bar is None:
+                            progress_bar = tqdm(total=total, desc="Processing", mininterval=0, file=sys.stdout)
+                        progress_bar.update(finished - progress_bar.n)
 
-                        break
+                        if finished == total:
+                            progress_bar.close()
+                            logger.info("Batch run is completed.")
+
+                            break
                 elif time.time() - last_data_time > 300:
                     logger.info(
                         "No new log line received for 5 minutes. Stop reading. "

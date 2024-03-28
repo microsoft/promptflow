@@ -2,9 +2,9 @@ from typing import Union
 
 from utils import ErrorMsg, ResponseFormat, get_text_chunk_score
 
-from promptflow import tool
 from promptflow._core.tool import InputSetting
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.core import tool
 
 
 @tool(
