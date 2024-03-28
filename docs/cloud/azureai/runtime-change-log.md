@@ -15,6 +15,20 @@ You can check the runtime image version from the flow execution log:
 ## Change log
 Default runtime image is continuously updated, and here we record the new features and fixed bugs of each image version.
 
+### 20240319.v1
+
+#### New features
+
+- Add param "seed" to LLM tool chat api
+
+### 20240313.v1
+
+#### Bugs fixed
+
+- Fix the bug that call flow with a flow function will fail.
+- Mark the error type as user error If a run is archived before processing by runtime.
+- Return error response when start async flow got not 200 status.
+
 ### 20240306.v5
 
 #### New features
