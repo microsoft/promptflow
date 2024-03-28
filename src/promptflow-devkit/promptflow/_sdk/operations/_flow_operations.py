@@ -278,6 +278,9 @@ class FlowOperations(TelemetryMixin):
         :return: The result of flow or node
         :rtype: dict
         """
+        # TODO : it's not clear why we need this method, please help verify:
+        #  1. why we can't use test method directly
+        #  2. is _chat_with_ui still necessary
         experiment = kwargs.pop("experiment", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             result = self.test(
@@ -286,6 +289,8 @@ class FlowOperations(TelemetryMixin):
                 environment_variables=environment_variables,
                 variant=variant,
                 node=node,
+                allow_generator_output=kwargs.pop("allow_generator_output", False),
+                stream_output=kwargs.pop("stream_output", False),
                 experiment=experiment,
                 output_path=output_path,
             )
