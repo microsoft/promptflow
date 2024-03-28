@@ -35,12 +35,11 @@ jobs:
       - name: Install packages
         shell: pwsh
         run: |
-          pip uninstall -y promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-tracing
-          pip install ${{ github.workspace }}/src/promptflow-core
-          pip install ${{ github.workspace }}/src/promptflow-devkit
-          pip install ${{ github.workspace }}/src/promptflow-azure
-          pip install ${{ github.workspace }}/src/promptflow-tools
+          pip uninstall -y promptflow-tracing promptflow-core promptflow-devkit promptflow-azure
+          pip install -e ${{ github.workspace }}/src/promptflow-tracing
+          pip install -e ${{ github.workspace }}/src/promptflow-core
+          pip install -e ${{ github.workspace }}/src/promptflow-devkit
+          pip install -e ${{ github.workspace }}/src/promptflow-azure
           pip freeze
 
       - name: Build doc with reference doc
