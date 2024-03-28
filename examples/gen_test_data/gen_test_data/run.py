@@ -189,7 +189,7 @@ def run_cloud(
                 documents_folder=data_input, chunk_size=chunk_size, chunk_overlap=chunk_overlap
             ).outputs.document_node_output
         )
-        flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_flow"}])(
+        flow_node = load_component(flow_yml_path, params_override=[{"name": "gen_test_data_example_flow"}])(
             data=data, text_chunk="${data.text_chunk}", connections=node_inputs_override
         )
         flow_node.mini_batch_size = mini_batch_size
