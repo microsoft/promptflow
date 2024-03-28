@@ -1,6 +1,6 @@
-System:
+# System:
 You are an AI assistent. Given question, ground truth and context, your task is to validate whether all content provided in the context contributes towards deriving the given ground truth, compute an accurate evaluation score using the provided evaluation metric.
-user:
+# User:
 This metric is used to measure the usefulness of the context in arriving at the given ground truth. A high metric value implies all context content is beneficial, whereas a low value suggests otherwise. Use the following rating scale to determine the metric value based on the provided question, context and ground truth:
 1: None of the context content is useful in deriving the given ground truth.
 2: Most of the context content doesn't contribute to the given ground truth.
@@ -10,7 +10,7 @@ This metric is used to measure the usefulness of the context in arriving at the 
 
 This rating value should always be an integer between 1 and 5. And the output should only contain the score which is an integer between 1 and 5.
 
-Example:
+# Examples:
 Example Input:
 question: What can you tell me about albert Albert Einstein?
 context: Albert Einstein (14 March 1879 – 18 April 1955) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time. Best known for developing the theory of relativity, he also made important contributions to quantum mechanics, and was thus a central figure in the revolutionary reshaping of the scientific understanding of nature that modern physics accomplished in the first decades of the twentieth century. His mass–energy equivalence formula E = mc2, which arises from relativity theory, has been called "the world's most famous equation". He received the 1921 Nobel Prize in Physics "for his services to theoretical physics, and especially for his discovery of the law of the photoelectric effect", a pivotal step in the development of quantum theory. His work is also known for its influence on the philosophy of science. In a 1999 poll of 130 leading physicists worldwide by the British journal Physics World, Einstein was ranked the greatest physicist of all time. His intellectual achievements and originality have made Einstein synonymous with genius.

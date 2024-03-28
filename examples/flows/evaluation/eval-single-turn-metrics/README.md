@@ -43,7 +43,9 @@ This evaluation flow allows you to assess and evaluate your model with the LLM-a
 
 ## Prerequisites
 
-- Connection: suggest to use Azure OpenAI or OpenAI connection with 1106 model. If you use the 1106 chat model, then please assign {"type":"json_object"} value to response_format for these nodes: answer_quality, creativity, context_recall, context_precision, answer_relevance, answer_correctness.
+- Connection: Azure OpenAI or OpenAI connection.
+    > !Note: Recommend to use `gpt-4` series models than the `gpt-3.5` for better performance.
+    > !Note: Recommend to use `gpt-4` model (Azure OpenAI `gpt-4` model with version `0613` or later) than `gpt-4-turbo` model (Azure OpenAI `gpt-4` model with version `1106` or later) for better performance. Due to inferior performance of `gpt-4-turbo` model, when you use it, sometimes you might need to set the `response_format`to {"type":"json_object"} for these nodes: answer_quality, creativity, context_recall, context_precision, answer_relevance, answer_correctness, in order to make sure the llm can generate valid json response.
 
 ## Tools used in this flow
 - LLM tool
