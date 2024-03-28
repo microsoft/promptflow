@@ -8,6 +8,8 @@ import typing
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+
 
 from ._constants import (
     PF_TRACING_SKIP_LOCAL_SETUP_ENVIRON,
@@ -55,8 +57,14 @@ def start_trace(
 
 
 def setup_exporter_from_environ() -> None:
+
     # openai instrumentation
     inject_openai_api()
+
+    # Ignore all the setup if the endpoint is not set
+    endpoint = os.getenv(OTEL_EXPORTER_OTLP_ENDPOINT)
+    if not endpoint:
+        return
 
     if _is_devkit_installed():
         from promptflow._sdk._tracing import setup_exporter_to_pfs

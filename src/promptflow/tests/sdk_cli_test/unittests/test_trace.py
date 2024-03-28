@@ -96,6 +96,7 @@ class TestStartTrace:
                 TraceEnvironmentVariableName.SUBSCRIPTION_ID: "test_subscription_id",
                 TraceEnvironmentVariableName.RESOURCE_GROUP_NAME: "test_resource_group_name",
                 TraceEnvironmentVariableName.WORKSPACE_NAME: "test_workspace_name",
+                OTEL_EXPORTER_OTLP_ENDPOINT: "https://dummy-endpoint",
             },
             clear=True,
         ):
@@ -154,7 +155,8 @@ class TestStartTrace:
             m.delenv(OTEL_EXPORTER_OTLP_ENDPOINT, raising=False)
             setup_exporter_from_environ()
             tracer_provider: TracerProvider = trace.get_tracer_provider()
-            assert len(tracer_provider._active_span_processor._span_processors) == 0
+            # Assert the provider without exporter is not the one with exporter
+            assert not isinstance(tracer_provider, TracerProvider)
 
     def test_setup_exporter_in_executor_with_preview_flag(self, mock_promptflow_service_invocation):
         with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
