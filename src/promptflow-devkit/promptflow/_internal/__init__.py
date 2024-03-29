@@ -75,7 +75,6 @@ from promptflow._utils.multimedia_data_converter import (
     ResourceType,
 )
 from promptflow._utils.multimedia_utils import (
-    BasicMultimediaProcessor,
     MultimediaProcessor,
     load_multimedia_data_recursively,
     persist_multimedia_data,
