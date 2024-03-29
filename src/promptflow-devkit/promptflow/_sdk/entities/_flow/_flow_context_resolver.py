@@ -62,7 +62,7 @@ class FlowContextResolver:
     def _resolve_variant(self, flow_context: FlowContext) -> "FlowContextResolver":
         """Resolve variant of the flow and store in-memory."""
         # TODO: put all varint string parser here
-        from promptflow._sdk._submitter import overwrite_variant
+        from promptflow._sdk._orchestrator import overwrite_variant
 
         if not flow_context.variant:
             tuning_node, variant = None, None
@@ -78,7 +78,7 @@ class FlowContextResolver:
 
     def _resolve_connections(self, flow_context: FlowContext) -> "FlowContextResolver":
         """Resolve connections of the flow and store in-memory."""
-        from promptflow._sdk._submitter import overwrite_connections
+        from promptflow._sdk._orchestrator import overwrite_connections
 
         overwrite_connections(
             flow_dag=self.flow_dag,
@@ -89,7 +89,7 @@ class FlowContextResolver:
 
     def _resolve_overrides(self, flow_context: FlowContext) -> "FlowContextResolver":
         """Resolve overrides of the flow and store in-memory."""
-        from promptflow._sdk._submitter import overwrite_flow
+        from promptflow._sdk._orchestrator import overwrite_flow
 
         overwrite_flow(
             flow_dag=self.flow_dag,

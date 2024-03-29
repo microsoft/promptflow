@@ -575,7 +575,7 @@ class TestCli:
         ],
     )
     def test_flow_test_with_environment_variable(self, flow_folder_name, env_key, except_value, local_client):
-        from promptflow._sdk._submitter.utils import SubmitterHelper
+        from promptflow._sdk._orchestrator.utils import SubmitterHelper
 
         def validate_stdout(detail_path):
             with open(detail_path, "r") as f:

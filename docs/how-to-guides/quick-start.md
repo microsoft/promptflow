@@ -165,7 +165,7 @@ More command details can be found in [CLI reference](../reference/pf-command-ref
 In SDK, connections can be created and managed with `PFClient`.
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 from promptflow.entities import AzureOpenAIConnection
 
 # PFClient can help manage your runs and connections.
@@ -254,7 +254,7 @@ pf flow test --flow web-classification  # "web-classification" is the directory 
 The return value of `test` function is the flow/node outputs.
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 pf = PFClient()
 
