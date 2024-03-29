@@ -11,12 +11,11 @@ from streamlit_quill import st_quill
 from utils import dict_iter_render_message, parse_image_content, parse_list_from_html, render_single_dict_message
 
 from promptflow._constants import STREAMING_ANIMATION_TIME
+from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import resolve_generator, resolve_generator_output_with_cache
 from promptflow._utils.flow_utils import dump_flow_result
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.client import load_flow
-
-invoker = None
 
 
 def start():
@@ -71,55 +70,45 @@ def start():
             render_message("user", kwargs)
         # Force append chat history to kwargs
         if is_chat_flow:
-            response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
-        else:
-            response = run_flow(kwargs)
+            kwargs[chat_history_input_name] = get_chat_history_from_session()
 
-        if response.run_info.status.value == "Failed":
-            raise Exception(response.run_info.error)
+        flow = load_flow(flow_path)
+        with TestSubmitter(flow=flow, flow_context=flow.context).init(stream_output=is_streaming) as submitter:
+            # can't exit the context manager before the generator is fully consumed
+            response = submitter.flow_test(inputs=kwargs, allow_generator_output=is_streaming)
 
-        if is_streaming:
-            # Display assistant response in chat message container
+            if response.run_info.status.value == "Failed":
+                raise Exception(response.run_info.error)
+
+            if is_streaming:
+                # Display assistant response in chat message container
+                with container:
+                    with st.chat_message("assistant"):
+                        message_placeholder = st.empty()
+                        full_response = f"{chat_output_name}: "
+                        prefix_length = len(full_response)
+                        chat_output = response.output[chat_output_name]
+                        if isinstance(chat_output, GeneratorType):
+                            # Simulate stream of response with milliseconds delay
+                            for chunk in resolve_generator_output_with_cache(
+                                chat_output, generator_record, generator_key=f"run.outputs.{chat_output_name}"
+                            ):
+                                # there should be no extra spaces between adjacent chunks?
+                                full_response += chunk
+                                time.sleep(STREAMING_ANIMATION_TIME)
+                                # Add a blinking cursor to simulate typing
+                                message_placeholder.markdown(full_response + "▌")
+                            message_placeholder.markdown(full_response)
+                            response.output[chat_output_name] = full_response[prefix_length:]
+                            post_process_dump_result(response, session_state_history, generator_record=generator_record)
+                            return
+
+            # generator in response has been fully consumed here
+            resolved_outputs = post_process_dump_result(
+                response, session_state_history, generator_record=generator_record
+            )
             with container:
-                with st.chat_message("assistant"):
-                    message_placeholder = st.empty()
-                    full_response = f"{chat_output_name}: "
-                    prefix_length = len(full_response)
-                    chat_output = response.output[chat_output_name]
-                    if isinstance(chat_output, GeneratorType):
-                        # Simulate stream of response with milliseconds delay
-                        for chunk in resolve_generator_output_with_cache(
-                            chat_output, generator_record, generator_key=f"run.outputs.{chat_output_name}"
-                        ):
-                            # there should be no extra spaces between adjacent chunks?
-                            full_response += chunk
-                            time.sleep(STREAMING_ANIMATION_TIME)
-                            # Add a blinking cursor to simulate typing
-                            message_placeholder.markdown(full_response + "▌")
-                        message_placeholder.markdown(full_response)
-                        response.output[chat_output_name] = full_response[prefix_length:]
-                        post_process_dump_result(response, session_state_history, generator_record=generator_record)
-                        return
-
-        resolved_outputs = post_process_dump_result(response, session_state_history, generator_record=generator_record)
-        with container:
-            render_message("assistant", resolved_outputs)
-
-    def run_flow(data: dict) -> dict:
-        global invoker
-        if not invoker:
-            if flow_path:
-                flow = Path(flow_path)
-            else:
-                flow = Path(__file__).parent / "flow"
-            if flow.is_dir():
-                os.chdir(flow)
-            else:
-                os.chdir(flow.parent)
-            invoker = load_flow(flow)
-            invoker.context.streaming = is_streaming
-        result = invoker.invoke(data)
-        return result
+                render_message("assistant", resolved_outputs)
 
     image = Image.open(Path(__file__).parent / "logo.png")
     st.set_page_config(
@@ -203,12 +192,24 @@ def start():
                 st.rerun()
 
 
+def resolve_flow_path(_from_config):
+    if _from_config:
+        result = Path(_from_config)
+    else:
+        result = Path(__file__).parent / "flow"
+    if result.is_dir():
+        os.chdir(result)
+    else:
+        os.chdir(result.parent)
+    return result
+
+
 if __name__ == "__main__":
     with open(Path(__file__).parent / "config.json", "r") as f:
         config = json.load(f)
         is_chat_flow = config["is_chat_flow"]
         chat_history_input_name = config["chat_history_input_name"]
-        flow_path = config["flow_path"]
+        flow_path = resolve_flow_path(config["flow_path"])
         flow_name = config["flow_name"]
         flow_inputs = config["flow_inputs"]
         label = config["label"]
