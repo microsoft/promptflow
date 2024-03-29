@@ -19,7 +19,7 @@ from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
 from promptflow.batch._single_line_python_executor_proxy import SingleLinePythonExecutorProxy
 from promptflow.batch._chat_group_orchestrator_proxy import ChatGroupOrchestratorProxy
-from promptflow.orchestrator._chat_group import ChatGroupRole
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
@@ -515,7 +515,6 @@ class TestBatch:
         assert status_summary["__pf__.nodes.flip_image.completed"] == 3
         assert status_summary["__pf__.nodes.count_image.completed"] == 1
 
-    
     @pytest.mark.parametrize(
         "simulation_flow, copilot_flow, max_turn, input_file_name",
         [
@@ -537,7 +536,8 @@ class TestBatch:
             max_turn,
             input_file_name,
             dev_connections):
-        simulation_role = ChatGroupRole(
+        simulation_role = ChatRole(
+            flow=get_yaml_file(simulation_flow),
             flow_file=get_yaml_file(simulation_flow),
             role="user",
             name="simulator",
@@ -546,7 +546,8 @@ class TestBatch:
             connections=dev_connections,
             inputs_mapping={"topic": "${data.topic}", "ground_truth": "${data.ground_truth}"}
         )
-        copilot_role = ChatGroupRole(
+        copilot_role = ChatRole(
+            flow=get_yaml_file(copilot_flow),
             flow_file=get_yaml_file(copilot_flow),
             role="assistant",
             name="copilot",

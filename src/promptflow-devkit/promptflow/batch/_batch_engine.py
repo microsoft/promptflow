@@ -118,10 +118,9 @@ class BatchEngine:
         if flow_file is not None and not self._is_eager_flow:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-
-        # eager flow does not support multimedia contract currently, just use basic format type.
-        self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
-        self._multimedia_processor = MultimediaProcessor.create(self._message_format)
+            # eager flow does not support multimedia contract currently, just use basic format type.
+            self._message_format = self._flow.message_format if not self._is_eager_flow else MessageFormatType.BASIC
+            self._multimedia_processor = MultimediaProcessor.create(self._message_format)
 
         self._connections = connections
         self._storage = storage if storage else DefaultRunStorage(base_dir=self._working_dir)
@@ -203,17 +202,21 @@ class BatchEngine:
                             bulk_logger.info(
                                 "Current thread is not main thread, skip signal handler registration in BatchEngine."
                             )
+                    if self._executor_proxy.should_apply_inputs_mapping:
+                        # set batch input source from input mapping
+                        set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                        # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
+                        inputs = self._executor_proxy.get_inputs_definition() \
+                            if self._is_eager_flow else self._flow.inputs
 
-                    # set batch input source from input mapping
-                    set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                    # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._executor_proxy.get_inputs_definition() if self._is_eager_flow else self._flow.inputs
-
-                    # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(
-                        self._working_dir, inputs, max_lines_count, message_format=self._message_format
-                    )
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                        # resolve input data from input dirs and apply inputs mapping
+                        batch_input_processor = BatchInputsProcessor(
+                            self._working_dir, inputs, max_lines_count, message_format=self._message_format
+                        )
+                        batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    else:
+                        batch_input_processor = BatchInputsProcessor("", {}, max_lines_count)
+                        batch_inputs = batch_input_processor.process_batch_inputs_without_inputs_mapping(input_dirs)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
 

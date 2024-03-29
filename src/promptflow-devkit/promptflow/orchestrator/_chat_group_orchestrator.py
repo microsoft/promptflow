@@ -1,6 +1,5 @@
 from typing import Optional, List, Mapping, Dict, Any
-from promptflow.contracts.flow import Flow
-from promptflow.orchestrator._chat_group import ChatGroupRole
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
@@ -13,7 +12,7 @@ from promptflow._utils.logger_utils import bulk_logger
 class ChatGroupOrchestrator:
     def __init__(
         self,
-        chat_group_roles: List[ChatGroupRole],
+        chat_group_roles: List[ChatRole],
         max_turn: Optional[int] = None,
         storage: Optional[AbstractRunStorage] = None,
         max_lines_count: Optional[int] = None,
@@ -22,7 +21,7 @@ class ChatGroupOrchestrator:
         """Chat group orchestrator schedule runs for each line in batch inputs.
 
         :param chat_group_roles: chat group roles
-        :type chat_group_roles: List[ChatGroupRole]
+        :type chat_group_roles: List[ChatRole]
         :param max_turn: max turn of chat, defaults to None
         :type max_turn: Optional[int], optional
         :param storage: storage, defaults to None
@@ -40,15 +39,11 @@ class ChatGroupOrchestrator:
     @classmethod
     def create(
         cls,
-        chat_group_roles: List[ChatGroupRole],
+        chat_group_roles: List[ChatRole],
         max_turn: Optional[int] = None,
         storage: Optional[AbstractRunStorage] = None,
         max_lines_count: Optional[int] = None,
     ) -> "ChatGroupOrchestrator":
-
-        for chat_role in chat_group_roles:
-            chat_role.working_dir = Flow._resolve_working_dir(chat_role.flow_file, chat_role.working_dir)
-            chat_role.flow = Flow.from_yaml(chat_role.flow_file, working_dir=chat_role.working_dir)
 
         return ChatGroupOrchestrator(chat_group_roles, max_turn, storage, max_lines_count)
 
@@ -149,7 +144,7 @@ class ChatGroupOrchestrator:
     def _process_flow_outputs(
             self,
             index: int,
-            chat_role: ChatGroupRole,
+            chat_role: ChatRole,
             current_line_result: LineResult,
             conversation_history: List[Mapping[str, Any]],
             outputs: dict,

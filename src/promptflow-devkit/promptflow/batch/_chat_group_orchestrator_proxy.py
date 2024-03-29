@@ -2,7 +2,7 @@ from typing import Optional, List, Mapping, Any
 from pathlib import Path
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.executor._result import LineResult
-from promptflow.orchestrator._chat_group import ChatGroupRole
+from promptflow._sdk.entities._chat_group._chat_role import ChatRole
 from promptflow.orchestrator._chat_group_orchestrator import ChatGroupOrchestrator
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -42,7 +42,7 @@ class ChatGroupOrchestratorProxy(AbstractExecutorProxy):
         :return: ChatGroupOrchestratorProxy
         :rtype: ChatGroupOrchestratorProxy
         """
-        chat_group_roles: List[ChatGroupRole] = kwargs.get("chat_group_roles")
+        chat_group_roles: List[ChatRole] = kwargs.get("chat_group_roles")
         max_turn = kwargs.get("max_turn")
         max_lines_count = kwargs.get("max_lines_count")
 
