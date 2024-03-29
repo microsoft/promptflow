@@ -6,7 +6,7 @@ DO NOT change the module names in "all" list. If the interface has changed in so
 original function/module names the same as before, otherwise mlflow will be broken by this change.
 """
 from promptflow._sdk._constants import DAG_FILE_NAME
-from promptflow._sdk._submitter import remove_additional_includes
+from promptflow._sdk._orchestrator import remove_additional_includes
 from promptflow._sdk._utils import _merge_local_code_and_additional_includes
 from promptflow._sdk.entities._flow import Flow
 from promptflow.core._serving.flow_invoker import FlowInvoker

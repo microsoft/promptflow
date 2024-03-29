@@ -283,17 +283,15 @@ class LineExecutionProcessPool:
                         )
                     )
                 # Wait for batch run to complete or timeout
-                completed_line = 0
+                last_log_count = 0
                 while not self._batch_timeout_expired(self._batch_start_time):
                     # Print the progress logs of the batch run.
-                    log_progress(
+                    last_log_count = log_progress(
                         run_start_time=self._batch_start_time,
-                        logger=bulk_logger,
-                        count=len(self._result_dict),
                         total_count=self._nlines,
-                        last_log_count=completed_line,
+                        current_count=len(self._result_dict),
+                        last_log_count=last_log_count,
                     )
-                    completed_line = len(self._result_dict)
                     # If the batch run is completed, break the loop.
                     if self._is_batch_run_completed():
                         break
