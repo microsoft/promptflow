@@ -79,6 +79,7 @@ def get_port_from_config(create_if_not_exists=False):
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
             dump_yaml(service_config, f)
+    logger.warning(f"get port: {port}")
     return port
 
 
