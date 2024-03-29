@@ -111,7 +111,7 @@ class Summary:
 
         item = SummaryLine(
             id=trace_id,
-            partition_key=session_id,
+            partition_key=self.collection_id,
             session_id=session_id,
             trace_id=trace_id,
             status=RUNNING_LINE_RUN_STATUS,
@@ -154,7 +154,7 @@ class Summary:
             cumulative_token_count = None
         item = SummaryLine(
             id=self.span.trace_id,  # trace id is unique for LineSummary container
-            partition_key=session_id,
+            partition_key=self.collection_id,
             session_id=session_id,
             trace_id=self.span.trace_id,
             collection_id=self.collection_id,
@@ -196,7 +196,7 @@ class Summary:
 
     def _insert_evaluation(self, client: ContainerProxy):
         attributes: dict = self.span.attributes
-        partition_key = self.session_id
+        partition_key = self.collection_id
         name = self.span.name
         item = LineEvaluation(
             trace_id=self.span.trace_id,
