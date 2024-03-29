@@ -178,6 +178,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
+        init_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -197,6 +198,8 @@ class FlowExecutor:
         :type node_override: Optional[Dict[str, Dict[str, Any]]]
         :param line_timeout_sec: The line timeout in seconds to be used for the flow. Default is LINE_TIMEOUT_SEC.
         :type line_timeout_sec: Optional[int]
+        :param init_kwargs: Class init arguments for callable class, only supported for flex flow.
+        :type init_kwargs: Optional[Dict[str, Any]]
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
@@ -205,11 +208,11 @@ class FlowExecutor:
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
-                flow_file=Path(flow_file),
-                working_dir=working_dir,
-                storage=storage,
+                flow_file=Path(flow_file), working_dir=working_dir, storage=storage, init_kwargs=init_kwargs
             )
         else:
+            if init_kwargs:
+                logger.warning(f"Got unexpected init args {init_kwargs} for non-script flow. Ignoring them.")
             flow = Flow.from_yaml(flow_file, working_dir=working_dir)
             return cls._create_from_flow(
                 flow_file=flow_file,

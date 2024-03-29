@@ -927,6 +927,7 @@ def generate_yaml_entry(entry: Union[str, PathLike], code: Path):
         with create_temp_eager_flow_yaml(entry, code) as flow_yaml_path:
             yield flow_yaml_path
     else:
+        logger.warning(f"Specify code {code} is only supported for Python flex flow entry, ignoring it.")
         yield entry
 
 

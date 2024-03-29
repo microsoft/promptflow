@@ -9,7 +9,7 @@ Tools used in this flow：
 
 In this flow, you will learn
 - how to compose a point based evaluation flow, where you can calculate point-wise metrics.
-- the way to log metrics. use `from promptflow import log_metric`
+- the way to log metrics. use `from promptflow.core import log_metric`
     - see file [calculate_accuracy.py](calculate_accuracy.py)
 
 ### 0. Setup connection

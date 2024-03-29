@@ -297,3 +297,13 @@ class FailedToGenerateToolDefinition(UserErrorException):
     """Exception raised when failed to generate openai tool json definition."""
 
     pass
+
+
+class FlowEntryInitializationError(UserErrorException):
+    """Exception raised when failed to initialize flow entry."""
+
+    def __init__(self, init_kwargs):
+        super().__init__(
+            message_format="Failed to initialize flow entry with '{init_kwargs}'.",
+            init_kwargs=init_kwargs,
+        )

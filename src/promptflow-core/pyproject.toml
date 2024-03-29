@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "promptflow-core"
-version = "0.1.0b1"
+version = "1.0.0.dev0"
 description = "Prompt flow core"
 include = [
   "promptflow/core/_serving/static/*",
   "promptflow/core/_serving/resources/*",
+  "promptflow/_core/data/tool.schema.json",
 ]
 
 license = "MIT"
@@ -54,7 +55,6 @@ executor-service = ["fastapi"]
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
-promptflow-tracing = { path = "../promptflow-tracing" }
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -100,5 +100,23 @@ include_external_packages = "True"
 [[tool.importlinter.contracts]]
 name = "Contract forbidden modules"
 type = "forbidden"
-source_modules = ["promptflow.core"]
-forbidden_modules = ["promptflow.devkit", "promptflow.azure"]
+source_modules = [
+  "promptflow.core",
+  "promptflow._core",
+  "promptflow._utils",
+  "promptflow.connections",
+  "promptflow.contracts",
+  "promptflow.executor",
+  "promptflow.integrations",
+  "promptflow.storage"]
+forbidden_modules = [
+  "promptflow._cli",
+  "promptflow._internal",
+  "promptflow._proxy",
+  "promptflow._sdk",
+  "promptflow.batch",
+  "promptflow.client",
+  "promptflow.entities",
+  "promptflow.operations",
+  "promptflow.azure"
+]
