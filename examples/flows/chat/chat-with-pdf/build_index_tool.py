@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 from chat_with_pdf.build_index import create_faiss_index
 
 
