@@ -15,8 +15,8 @@ from ruamel.yaml import YAML
 from promptflow._sdk._constants import PF_TRACE_CONTEXT, ExperimentStatus, RunStatus, RunTypes
 from promptflow._sdk._errors import ExperimentValueError, RunOperationError
 from promptflow._sdk._load_functions import _load_experiment, load_common
+from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator, ExperimentTemplateTestContext
 from promptflow._sdk.entities._experiment import CommandNode, Experiment, ExperimentTemplate, FlowNode
 
 TEST_ROOT = Path(__file__).parent.parent.parent
