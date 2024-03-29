@@ -55,7 +55,7 @@ class TestSpan:
                     "span_id": "0x9ded7ce65d5f7775",
                 },
                 kind="test",
-                parent_span_id="test",
+                parent_id="test",
                 start_time="test",
                 end_time="test",
                 status={},
