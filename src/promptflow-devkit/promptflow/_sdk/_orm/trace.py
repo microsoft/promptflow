@@ -6,7 +6,7 @@ import datetime
 import typing
 
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Index
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from promptflow._sdk._constants import EVENT_TABLENAME, LINE_RUN_TABLENAME, SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._errors import LineRunNotFoundError
@@ -34,7 +34,7 @@ class LineRunIndexName:
     SESSION_ID = "idx_line_runs_session_id"
 
 
-class Base(DeclarativeBase):
+class Base(declarative_base()):
     @sqlite_retry
     def persist(self) -> None:
         with trace_mgmt_db_session() as session:
