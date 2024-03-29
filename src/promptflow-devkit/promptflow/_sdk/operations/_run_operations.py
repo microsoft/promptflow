@@ -65,6 +65,29 @@ class RunOperations(TelemetryMixin):
             message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
         )
 
+    @monitor_operation(activity_name="pf.runs.search", activity_type=ActivityType.INTERNALCALL)
+    def _search(
+            self,
+            search_name: str,
+            max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
+    ) -> List[Run]:
+        """List runs.
+
+        :param search_name: The search name prefix.
+        :type search_name: str
+        :param max_results: Max number of results to return. Default: MAX_RUN_LIST_RESULTS.
+        :type max_results: Optional[int]
+        :return: List of run objects.
+        :rtype: List[~promptflow.entities.Run]
+        """
+        orm_runs = ORMRun.search(search_name=search_name, max_results=max_results)
+        return safe_parse_object_list(
+            obj_list=orm_runs,
+            parser=Run._from_orm_object,
+            message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
+        )
+
+
     @monitor_operation(activity_name="pf.runs.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str) -> Run:
         """Get a run entity.

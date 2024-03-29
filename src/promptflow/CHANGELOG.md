@@ -6,6 +6,7 @@
 - [SDK/CLI] Create a run with `resume_from`, note that only run created with `promptflow>=1.8.0` can be used as the value of `resume_from`:
   - CLI: Support `pf run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `pf.run(resume_from=<original-run-name>)` to create a run resume from another run.
+  - CLI: Added autocomplete feature.
 - [SDK/CLI][azure] Create a run with `resume_from`.
   - CLI: Support `pfazure run create --resume-from <original-run-name>` to create a run resume from another run.
   - SDK: Support `p.run(resume_from=<original-run-name>)` to create a run resume from another run.

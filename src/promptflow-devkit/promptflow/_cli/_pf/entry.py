@@ -2,8 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
+#
+# PYTHON_ARGCOMPLETE_OK
+
 import json
 import time
+
+import argcomplete
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
 from promptflow._cli._utils import _get_cli_activity_name, cli_exception_and_telemetry_handler
@@ -118,6 +123,8 @@ def get_parser_args(argv):
     add_trace_parser(subparsers)
     add_service_parser(subparsers)
     add_upgrade_parser(subparsers)
+
+    argcomplete.autocomplete(parser)
 
     return parser.prog, parser.parse_args(argv)
 

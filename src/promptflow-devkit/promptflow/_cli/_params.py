@@ -4,6 +4,7 @@
 
 import argparse
 
+from promptflow._cli._completers._param_completers import run_name_completer
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
 
 # TODO: avoid azure dependency here
@@ -176,7 +177,9 @@ def add_param_source(parser):
 
 
 def add_param_run_name(parser):
-    parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run.", metavar="PROTOCOL"
+    ).completer = run_name_completer
 
 
 def add_param_connection_name(parser):
