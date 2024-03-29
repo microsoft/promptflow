@@ -28,13 +28,13 @@ class TestSummary:
             name="test_span",
             context={"trace_id": "test_trace_id", "span_id": "0987654321"},
             kind="client",
-            start_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00Z"),
-            end_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00Z"),
+            start_time=datetime.datetime.now(),
+            end_time=datetime.datetime.now(),
             status={"status_code": OK_LINE_RUN_STATUS},
             attributes={"key1": "value1", "key2": "value2"},
             resource={"type": "resource_type", "name": "resource_name"},
             parent_id="9876543210",
-            events=[{"name": "event1", "time": "2022-01-01T00:00:30Z"}],
+            events=[{"name": "event1", "time": datetime.datetime.now().isoformat()}],
             links=[{"trace_id": "0987654321", "span_id": "1234567890"}],
         )
         self.summary = Summary(test_span, self.FAKE_COLLECTION_ID, self.FAKE_CREATED_BY, self.FAKE_LOGGER)
