@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from mock import mock
 
-from promptflow._constants import RUNNING_LINE_RUN_STATUS, SPAN_EVENTS_ATTRIBUTES_EVENT_ID
+from promptflow._constants import RUNNING_LINE_RUN_STATUS
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._trace import Span
@@ -65,6 +65,14 @@ def mock_span(
     )
 
 
+def assert_span_equals(span: Span, expected_span_dict: typing.Dict) -> None:
+    span_dict = span._to_rest_object()
+    # assert "external_event_data_uris" in span_dict and pop
+    assert "external_event_data_uris" in span_dict
+    span_dict.pop("external_event_data_uris")
+    assert span_dict == expected_span_dict
+
+
 @pytest.mark.e2etest
 @pytest.mark.sdk_test
 class TestTraceEntitiesAndOperations:
@@ -81,16 +89,13 @@ class TestTraceEntitiesAndOperations:
         expected_span_dict = load_and_override_span_example(
             trace_id=trace_id, span_id=span_id, parent_id=parent_id, line_run_id=line_run_id
         )
-        assert eager_load_span._to_rest_object() == expected_span_dict
+        assert_span_equals(eager_load_span, expected_span_dict)
         # lazy load (default)
         lazy_load_span = pf._traces.get_span(trace_id=trace_id, span_id=span_id)
-        lazy_load_rest_obj = lazy_load_span._to_rest_object()
-        # without events, REST object should be the same as expected
-        expected_span_dict.pop("events")
-        lazy_load_events = lazy_load_rest_obj.pop("events")
-        assert lazy_load_rest_obj == expected_span_dict
-        for event in lazy_load_events:
-            assert SPAN_EVENTS_ATTRIBUTES_EVENT_ID in event["attributes"]
+        # events.attributes should be empty in lazy load mode
+        for i in range(len(expected_span_dict["events"])):
+            expected_span_dict["events"][i]["attributes"] = dict()
+        assert_span_equals(lazy_load_span, expected_span_dict)
 
     def test_spans_persist_and_line_run_gets(self, pf: PFClient) -> None:
         trace_id = str(uuid.uuid4())
