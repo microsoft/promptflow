@@ -8,21 +8,30 @@ import typing
 from sqlalchemy import INTEGER, JSON, REAL, TEXT, TIMESTAMP, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from promptflow._sdk._constants import (
-    EVENT_TABLENAME,
-    EVENT_TRACE_ID_SPAN_ID_INDEX_NAME,
-    LINE_RUN_PARENT_ID_INDEX_NAME,
-    LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME,
-    LINE_RUN_TABLENAME,
-    SPAN_TABLENAME,
-    SPAN_TRACE_ID_INDEX_NAME,
-    SPAN_TRACE_ID_SPAN_ID_INDEX_NAME,
-    TRACE_LIST_DEFAULT_LIMIT,
-)
+from promptflow._sdk._constants import EVENT_TABLENAME, LINE_RUN_TABLENAME, SPAN_TABLENAME, TRACE_LIST_DEFAULT_LIMIT
 from promptflow._sdk._errors import LineRunNotFoundError
 
 from .retry import sqlite_retry
 from .session import trace_mgmt_db_session
+
+
+class EventIndexName:
+    TRACE_ID_SPAN_ID = "idx_events_trace_id_span_id"
+
+
+class SpanIndexName:
+    TRACE_ID = "idx_spans_trace_id"
+    TRACE_ID_SPAN_ID = "idx_spans_trace_id_span_id"
+
+
+class LineRunIndexName:
+    RUN_LINE_NUMBER = "idx_line_runs_run_line_number"  # query parent line run
+    PARENT_ID = "idx_line_runs_parent_id"
+    COLLECTION = "idx_line_runs_collection"
+    RUN = "idx_line_runs_run"
+    EXPERIMENT = "idx_line_runs_experiment"
+    TRACE_ID = "idx_line_runs_trace_id"
+    SESSION_ID = "idx_line_runs_session_id"
 
 
 class Base(DeclarativeBase):
@@ -41,7 +50,7 @@ class Event(Base):
     span_id: Mapped[str] = mapped_column(TEXT)
     data: Mapped[str] = mapped_column(TEXT)
 
-    __table_args__ = (Index(EVENT_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),)
+    __table_args__ = (Index(EventIndexName.TRACE_ID_SPAN_ID, "trace_id", "span_id"),)
 
     @staticmethod
     @sqlite_retry
@@ -77,8 +86,8 @@ class Span(Base):
     resource: Mapped[typing.Dict] = mapped_column(JSON)
 
     __table_args__ = (
-        Index(SPAN_TRACE_ID_INDEX_NAME, "trace_id"),
-        Index(SPAN_TRACE_ID_SPAN_ID_INDEX_NAME, "trace_id", "span_id"),
+        Index(SpanIndexName.TRACE_ID, "trace_id"),
+        Index(SpanIndexName.TRACE_ID_SPAN_ID, "trace_id", "span_id"),
     )
 
     @staticmethod
@@ -127,8 +136,13 @@ class LineRun(Base):
     collection: Mapped[str] = mapped_column(TEXT)
 
     __table_args__ = (
-        Index(LINE_RUN_RUN_LINE_NUMBER_INDEX_NAME, "run", "line_number"),
-        Index(LINE_RUN_PARENT_ID_INDEX_NAME, "parent_id"),
+        Index(LineRunIndexName.RUN_LINE_NUMBER, "run", "line_number"),
+        Index(LineRunIndexName.PARENT_ID, "parent_id"),
+        Index(LineRunIndexName.COLLECTION, "collection"),
+        Index(LineRunIndexName.RUN, "run"),
+        Index(LineRunIndexName.EXPERIMENT, "experiment"),
+        Index(LineRunIndexName.TRACE_ID, "trace_id"),
+        Index(LineRunIndexName.SESSION_ID, "session_id"),
     )
 
     @staticmethod
