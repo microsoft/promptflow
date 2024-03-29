@@ -2,12 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from functools import partial
 from pathlib import Path
 from typing import Union
 
-from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
-from promptflow.contracts.multimedia import Image
+from promptflow._utils.multimedia_utils import MultimediaProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 
@@ -78,15 +76,16 @@ class DefaultRunStorage(AbstractRunStorage):
         :param run_info: The run info of the node or flow.
         :type run_info: ~promptflow.contracts.run_info.RunInfo or ~promptflow.contracts.run_info.FlowRunInfo
         """
+        multimedia_processor = MultimediaProcessor.create(run_info.message_format)
         # Persist and convert images in inputs to path dictionaries.
         # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.inputs:
-            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
+            run_info.inputs = self._persist_and_convert_images_to_path_dicts(multimedia_processor, run_info.inputs)
 
         # Persist and convert images in output to path dictionaries.
         # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.output:
-            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
+            serialized_output = self._persist_and_convert_images_to_path_dicts(multimedia_processor, run_info.output)
             run_info.output = serialized_output
             run_info.result = serialized_output
 
@@ -96,7 +95,9 @@ class DefaultRunStorage(AbstractRunStorage):
         # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
         # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
-            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
+            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(
+                multimedia_processor, run_info.api_calls, inplace=True
+            )
 
     def persist_node_run(self, run_info: NodeRunInfo):
         """Persist the multimedia data in node run info after the node is executed.
@@ -116,7 +117,9 @@ class DefaultRunStorage(AbstractRunStorage):
         """
         self.persist_run_info(run_info)
 
-    def _persist_and_convert_images_to_path_dicts(self, value, inplace=False):
+    def _persist_and_convert_images_to_path_dicts(
+        self, multimedia_processor: MultimediaProcessor, value, inplace=False
+    ):
         """Persist image objects within a Python object to disk and convert them to path dictionaries.
 
         This function recursively processes a given Python object, which can be a list, a dictionary, or a nested
@@ -138,12 +141,6 @@ class DefaultRunStorage(AbstractRunStorage):
                  the conversions.
         :rtype: Any
         """
-        if self._base_dir:
-            pfbytes_file_reference_encoder = get_file_reference_encoder(
-                folder_path=self._base_dir,
-                relative_path=self._sub_dir,
-            )
-        else:
-            pfbytes_file_reference_encoder = None
-        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
-        return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
+        return multimedia_processor.persist_multimedia_data(
+            value, base_dir=self._base_dir, sub_dir=self._sub_dir, inplace=inplace
+        )
