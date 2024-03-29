@@ -16,7 +16,11 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow._utils.tool_utils import (
+    function_to_interface,
+    get_inputs_for_prompt_template,
+    get_prompt_param_name_from_func,
+)
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType, to_json_type_mapping
@@ -225,8 +229,8 @@ class ToolResolver:
 
     def _generate_tool_definition(self, tool: Tool, func: Callable, predefined_inputs: dict) -> dict:
         try:
-            sig = inspect.signature(func)
-            parameters = sig.parameters
+            # Must keep initialize_inputs None to exclude it from inputs
+            inputs, _, _, _ = function_to_interface(func)
             # Attempt to extract the description, handling exceptions
             try:
                 description, param_descriptions = DocstringParser.parse_description(func.__doc__)
@@ -243,20 +247,17 @@ class ToolResolver:
                 "parameters": {"type": "object", "properties": {}, "required": []},
             }
 
-            for name, param in parameters.items():
-                if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
-                    # Exclude positional and keyword arguments from definition generation
-                    continue
+            for name, param in inputs.items():
                 if name in predefined_inputs:
                     # Exclude predefined inputs from definition generation
                     continue
                 # Determine if parameter is required (has no default value)
-                is_required = param.default is param.empty
+                is_required = param.default is None
                 if is_required:
                     func_definition["parameters"]["required"].append(name)
 
                 # Get parameter type and convert to JSON type
-                param_type = tool.inputs.get(name).type[0]
+                param_type = param.type[0]
                 json_type = to_json_type_mapping.get(param_type, "object")
 
                 # Construct parameter definition
