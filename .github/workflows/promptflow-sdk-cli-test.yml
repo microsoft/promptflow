@@ -136,13 +136,6 @@ jobs:
           -l eastus `
           -m "unittest or e2etest" `
           -o "${{ env.testWorkingDirectory }}/test-results-sdk-cli-executable.xml"
-    - name: Install pfs
-      shell: pwsh
-      working-directory: artifacts
-      run: |
-        Set-PSDebug -Trace 1
-        pip install ${{ github.workspace }}/src/promptflow-azure
-        pip freeze
     - name: Run PFS Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
