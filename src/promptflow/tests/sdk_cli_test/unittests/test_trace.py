@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import base64
+import json
 import logging
 import os
 import uuid
@@ -16,9 +17,17 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
-from promptflow._constants import SpanResourceAttributesFieldName, SpanResourceFieldName, TraceEnvironmentVariableName
+from promptflow._constants import (
+    SpanAttributeFieldName,
+    SpanResourceAttributesFieldName,
+    SpanResourceFieldName,
+    TraceEnvironmentVariableName,
+)
+from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
+from promptflow._sdk._tracing import start_trace_with_devkit
 from promptflow._sdk.entities._trace import Span
-from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ
+from promptflow.tracing._operation_context import OperationContext
+from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
 
