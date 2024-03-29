@@ -130,8 +130,14 @@ class ScriptExecutor(FlowExecutor):
         return self._inputs
 
     def _initialize_function(self):
-        module_name, func_name = self._parse_flow_file()
-        module = importlib.import_module(module_name)
+        try:
+            module_name, func_name = self._parse_flow_file()
+            module = importlib.import_module(module_name)
+        except Exception as e:
+            raise PythonLoadError(
+                message_format="Failed to load python module for {entry_file}",
+                entry_file=self._flow_file,
+            ) from e
         func = getattr(module, func_name, None)
         # check if func is a callable class
         if inspect.isclass(func):

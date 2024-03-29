@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide describes how to author Python docstrings for promptflow public interfaces. See our doc site at [Promptflow API reference documentation](https://microsoft.github.io/promptflow/reference/python-library-reference/promptflow.html).
+This guide describes how to author Python docstrings for promptflow public interfaces. See our doc site at [Promptflow API reference documentation](https://microsoft.github.io/promptflow/reference/python-library-reference/promptflow-tracing/promptflow.html).
 
 ## Principles
 
@@ -23,7 +23,7 @@ First please read through [Sphinx style](https://sphinx-rtd-tutorial.readthedocs
 Let's start with a class example:
 ```python
 from typing import Dict, Optional, Union
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 class MyClass:
     """One-line summary of the class.

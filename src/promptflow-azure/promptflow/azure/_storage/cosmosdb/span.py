@@ -2,14 +2,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 from typing import Any, Dict
 
-from promptflow._constants import SpanFieldName
+from azure.cosmos.container import ContainerProxy
+from azure.storage.blob import ContainerClient
+
+from promptflow._constants import SpanContextFieldName, SpanEventFieldName, SpanFieldName
 from promptflow._sdk.entities._trace import Span as SpanEntity
 
 
 class Span:
-
     name: str = None
     context: dict = None
     kind: str = None
@@ -25,6 +28,7 @@ class Span:
     partition_key: str = None
     collection_id: str = None
     created_by: dict = None
+    external_event_data_uris: list = None
 
     def __init__(self, span: SpanEntity, collection_id: str, created_by: dict) -> None:
         self.name = span.name
@@ -42,8 +46,9 @@ class Span:
         self.collection_id = collection_id
         self.id = span.span_id
         self.created_by = created_by
+        self.external_event_data_uris = []
 
-    def persist(self, client):
+    def persist(self, cosmos_client: ContainerProxy, blob_container_client: ContainerClient, blob_base_uri: str):
         if self.id is None or self.partition_key is None or self.resource is None:
             return
 
@@ -51,12 +56,30 @@ class Span:
         if resource_attributes is None:
             return
 
+        if self.events and blob_container_client is not None and blob_base_uri is not None:
+            self._persist_events(blob_container_client, blob_base_uri)
+
         from azure.cosmos.exceptions import CosmosResourceExistsError
 
         try:
-            return client.create_item(body=self.to_dict())
+            return cosmos_client.create_item(body=self.to_dict())
         except CosmosResourceExistsError:
-            return None
+            return
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v}
+
+    def _persist_events(self, blob_container_client: ContainerClient, blob_base_uri: str):
+        for idx, event in enumerate(self.events):
+            event_data = json.dumps(event)
+            blob_client = blob_container_client.get_blob_client(self._event_path(idx))
+            blob_client.upload_blob(event_data)
+
+            event[SpanEventFieldName.ATTRIBUTES] = {}
+            self.external_event_data_uris.append(f"{blob_base_uri}{self._event_path(idx)}")
+
+    EVENT_PATH_PREFIX = ".promptflow/.trace"
+
+    def _event_path(self, idx: int) -> str:
+        trace_id = self.context[SpanContextFieldName.TRACE_ID]
+        return f"{self.EVENT_PATH_PREFIX}/{self.collection_id}/{trace_id}/{self.id}/{idx}"

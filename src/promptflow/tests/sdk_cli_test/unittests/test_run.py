@@ -11,9 +11,9 @@ import pytest
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow, load_run
+from promptflow._sdk._orchestrator import RunSubmitter, overwrite_variant, variant_overwrite_context
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
-from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
