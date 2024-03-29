@@ -102,7 +102,7 @@ def print_progress(log_file_path: str, process):
         # if the log file is not created within 5 minutes, raise an error
         if time.time() - start_time > 300:
             raise Exception(f"Log file '{log_file_path}' is not created within 5 minutes.")
-    
+
     logger.info(f"Click '{log_file_path}' to see detailed batch run log. Showing the progress here...")
     progress_bar = None
     try:
