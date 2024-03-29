@@ -83,7 +83,7 @@ jobs:
         pip install ${{ github.workspace }}/src/promptflow-tracing
         pip install ${{ github.workspace }}/src/promptflow-core
         pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow]
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
+        pip install ${{ github.workspace }}/src/promptflow
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: install recording
@@ -124,9 +124,7 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip uninstall -y promptflow promptflow-sdk promptflow-tools
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
         pip freeze
     - name: Run SDK CLI Executable Test
       shell: pwsh
@@ -143,10 +141,7 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip uninstall -y promptflow promptflow-sdk promptflow-tools
-        pip install ${{ github.workspace }}/src/promptflow-devkit
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip install ${{ github.workspace }}/src/promptflow-azure
         pip freeze
     - name: Run PFS Test
       shell: pwsh
