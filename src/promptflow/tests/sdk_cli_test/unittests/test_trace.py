@@ -122,9 +122,8 @@ class TestStartTrace:
         # below line should execute successfully
         span = Span._from_protobuf_object(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
         # as the above span do not have any attributes, so the parsed span should not have any attributes
-        attributes = span._content["attributes"]
-        assert isinstance(attributes, dict)
-        assert len(attributes) == 0
+        assert isinstance(span.attributes, dict)
+        assert len(span.attributes) == 0
 
     def test_experiment_test_lineage(self, monkeypatch: pytest.MonkeyPatch, mock_promptflow_service_invocation) -> None:
         # experiment orchestrator will help set this context in environment
