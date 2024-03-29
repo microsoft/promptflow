@@ -163,8 +163,9 @@ class ExperimentOperations(TelemetryMixin):
         :param environment_variables: Environment variables for flow.
         :type environment_variables: dict
         """
+        from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator
+
         from .._load_functions import _load_experiment_template
-        from .._submitter.experiment_orchestrator import ExperimentOrchestrator
 
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.pop("output_path", None)
@@ -217,8 +218,9 @@ class ExperimentOperations(TelemetryMixin):
         :param environment_variables: Environment variables for flow.
         :type environment_variables: dict
         """
+        from promptflow._sdk._orchestrator.experiment_orchestrator import ExperimentOrchestrator
+
         from .._load_functions import _load_experiment_template
-        from .._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)
