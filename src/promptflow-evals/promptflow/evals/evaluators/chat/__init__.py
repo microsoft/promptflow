@@ -17,7 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 class ChatEvaluator:
-    def __init__(self, model_config: AzureOpenAIConnection, deployment_name: str):
+    def __init__(
+            self,
+            model_config: AzureOpenAIConnection,
+            deployment_name: str,
+            eval_last_turn: bool = False,
+            parallel: bool = True):
         """
         Initialize an evaluator configured for a specific Azure OpenAI model.
 
@@ -25,6 +30,10 @@ class ChatEvaluator:
         :type model_config: AzureOpenAIConnection
         :param deployment_name: Deployment to be used which has Azure OpenAI model.
         :type deployment_name: AzureOpenAIConnection
+        :param eval_last_turn: Set to True to evaluate only the most recent exchange in the dialogue, focusing on the latest user inquiry and the assistant's corresponding response. Defaults to False
+        :type eval_last_turn: bool
+        :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution. Default is True.
+        :type parallel: bool
         :return: A function that evaluates and generates metrics for "chat" scenario.
         :rtype: function
 
@@ -40,6 +49,8 @@ class ChatEvaluator:
             ]
             result = chat_eval(conversation=conversation)
         """
+        self._eval_last_turn = eval_last_turn
+        self._parallel = parallel
 
         # TODO: Need a built-in evaluator for retrieval. It needs to be added to `self._rag_evaluators` collection
         self._rag_evaluators  = [
@@ -51,14 +62,12 @@ class ChatEvaluator:
             FluencyEvaluator(model_config, deployment_name=deployment_name),
         ]
 
-    def __call__(self, *, conversation: List[Dict], parallel=True, **kwargs):
+    def __call__(self, *, conversation: List[Dict], **kwargs):
         """Evaluates chat scenario.
 
         :param conversation: The conversation to be evaluated. Each turn should have "role" and "content" keys.
                              "context" key is optional for assistant's turn and should have "citations" key with list of citations.
         :type conversation: List[Dict]
-        :param parallel: If True, use parallel execution for evaluators. Else, use sequential execution. Default is True.
-        :type parallel: bool
         :return: The scores for Chat scenario.
         :rtype: dict
         """
@@ -69,7 +78,14 @@ class ChatEvaluator:
         questions = []
         answers = []
         contexts = []
-        for turn_num, each_turn in enumerate(conversation):
+
+        if self._eval_last_turn:
+            # Process only the last two turns if _eval_last_turn is True
+            conversation_slice = conversation[-2:] if len(conversation) >= 2 else conversation
+        else:
+            conversation_slice = conversation
+
+        for each_turn in conversation_slice:
             role = each_turn["role"]
             if role == "user":
                 questions.append(each_turn["content"])
@@ -97,7 +113,7 @@ class ChatEvaluator:
         for turn_num in range(len(questions)):
             current_turn_result = {}
 
-            if parallel:
+            if self._parallel:
                 # Parallel execution
                 with ThreadPoolExecutor() as executor:
                     future_to_evaluator = {
