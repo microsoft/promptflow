@@ -16,8 +16,8 @@ class TestSpan:
     def test_to_dict(self):
         span = Span(
             SpanEntity(
-                trace_id="0xacf2291a630af328da8fabd6bf49f653",
-                span_id="0x9ded7ce65d5f7775",
+                trace_id=self.FAKE_TRACE_ID,
+                span_id=self.FAKE_SPAN_ID,
                 name="test",
                 context={
                     "trace_id": self.FAKE_TRACE_ID,
@@ -54,8 +54,8 @@ class TestSpan:
 
         span = Span(
             SpanEntity(
-                trace_id="0xacf2291a630af328da8fabd6bf49f653",
-                span_id="0x9ded7ce65d5f7775",
+                trace_id=self.FAKE_TRACE_ID,
+                span_id=self.FAKE_SPAN_ID,
                 name="test",
                 context={
                     "trace_id": self.FAKE_TRACE_ID,
@@ -97,21 +97,21 @@ class TestSpan:
         span = Span(
             SpanEntity(
                 name="test",
+                trace_id=self.FAKE_TRACE_ID,
+                span_id=self.FAKE_SPAN_ID,
                 context={
                     "trace_id": self.FAKE_TRACE_ID,
                     "span_id": self.FAKE_SPAN_ID,
                 },
                 kind="test",
-                parent_span_id="test",
-                start_time="test",
-                end_time="test",
+                parent_id="test",
+                start_time=datetime.datetime.fromisoformat("2022-01-01T00:00:00"),
+                end_time=datetime.datetime.fromisoformat("2022-01-01T00:01:00"),
                 status={},
                 attributes={},
                 events=[],
                 links=[],
                 resource={},
-                span_type=None,
-                session_id=None,
             ),
             collection_id=self.FAKE_COLLECTION_ID,
             created_by=self.FAKE_CREATED_BY,
