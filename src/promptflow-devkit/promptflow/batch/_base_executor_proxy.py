@@ -392,7 +392,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 error_type_and_message=f"({e.__class__.__name__}) {e}",
             )
         # If any exception occurs, format and return a line result with error
-        error = ExceptionPresenter.create(error).to_dict() if isinstance(ex, Exception) else ex
+        error = ExceptionPresenter.create(ex).to_dict() if isinstance(ex, Exception) else ex
         run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, error)
         return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
 
