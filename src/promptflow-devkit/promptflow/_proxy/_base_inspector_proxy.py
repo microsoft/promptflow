@@ -27,3 +27,8 @@ class AbstractInspectorProxy:
     ) -> List[str]:
         """Check the type of each node input/attribute and return the connection names used in the flow."""
         raise NotImplementedError()
+
+    @classmethod
+    def is_flex_flow_entry(self, entry: str) -> bool:
+        """Check if the flow is a flex flow entry."""
+        raise NotImplementedError()
