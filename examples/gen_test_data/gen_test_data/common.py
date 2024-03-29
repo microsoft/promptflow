@@ -184,6 +184,9 @@ def _retrieve_file_names_from_document_nodes_file(document_nodes_file_path) -> t
     text_info = {}
     with open(document_nodes_file_path, "r") as file:
         for line in file:
+            # Should skip empty new lines, otherwise, json.loads would throw error.
+            if not line.strip():
+                continue
             line_json = json.loads(line)
             text_chunk = line_json[TEXT_CHUNK]
             document_node = json.loads(line_json["document_node"])
@@ -194,7 +197,7 @@ def _retrieve_file_names_from_document_nodes_file(document_nodes_file_path) -> t
 
 def _count_lines(file_path) -> int:
     with open(file_path, "r") as f:
-        return sum(1 for _ in f)
+        return sum(1 for line in f if line.strip())
 
 
 def summarize_batch_run_res(gen_details_file_path, document_nodes_file_path, output_file_path):
@@ -208,6 +211,9 @@ def summarize_batch_run_res(gen_details_file_path, document_nodes_file_path, out
 
     with open(gen_details_file_path, "r") as details_f:
         for details_line in details_f:
+            # Should skip empty new lines, otherwise, json.loads would throw error.
+            if not details_line.strip():
+                continue
             data = json.loads(details_line)
             if data["debug_info"] == "(Failed)":
                 continue
