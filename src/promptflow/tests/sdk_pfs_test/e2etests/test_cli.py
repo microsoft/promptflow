@@ -10,9 +10,6 @@ import requests
 
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._service.utils.utils import get_port_from_config, get_random_port, kill_exist_service
-from promptflow._utils.logger_utils import get_cli_sdk_logger
-
-logger = get_cli_sdk_logger()
 
 
 @pytest.mark.e2etest
@@ -40,7 +37,6 @@ class TestPromptflowServiceCLI:
 
     def _is_service_healthy(self, port=None):
         port = port or get_port_from_config()
-        logger.warning(f"port: {port}")
         response = requests.get(f"http://localhost:{port}/heartbeat")
         return response.status_code == 200
 
