@@ -8,7 +8,7 @@ from promptflow._sdk._utils import render_jinja_template
 
 def get_git_base_dir():
     return Path(
-        subprocess.run(['git', 'rev-parse', '--show-toplevel'],stdout=subprocess.PIPE)
+        subprocess.run(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE)
         .stdout.decode('utf-8').strip())
 
 
@@ -50,7 +50,8 @@ def get_package_dependencies(package_name_list):
     dependencies = []
     for package_name in package_name_list:
         if (is_tool('conda')):
-            result = subprocess.run('conda activate root | pip show {}'.format(package_name), shell=True, stdout=subprocess.PIPE)
+            result = subprocess.run('conda activate root | pip show {}'.format(package_name),
+                                    shell=True, stdout=subprocess.PIPE)
         else:
             result = subprocess.run(['pip', 'show', package_name], stdout=subprocess.PIPE)
         print("---" + package_name)
@@ -106,6 +107,7 @@ if __name__ == '__main__':
     }
     # always use unix line ending
     Path("./promptflow.spec").write_bytes(
-        render_jinja_template(get_git_base_dir() / "scripts/installer/windows/scripts/promptflow.spec.jinja2", **render_context)
+        render_jinja_template(
+            get_git_base_dir() / "scripts/installer/windows/scripts/promptflow.spec.jinja2", **render_context)
         .encode("utf-8")
         .replace(b"\r\n", b"\n"),)
