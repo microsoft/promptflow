@@ -34,7 +34,7 @@ ICON_LIGHT = "icon_light"
 ICON = "icon"
 UIONLY_HIDDEN = "uionly_hidden"
 SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
-TOOL_SCHEMA = Path(__file__).parent / "_sdk" / "data" / "tool.schema.json"
+TOOL_SCHEMA = Path(__file__).parent / "_core" / "data" / "tool.schema.json"
 PF_MAIN_MODULE_NAME = "__pf_main__"
 
 DEFAULT_ENCODING = "utf-8"
@@ -262,3 +262,5 @@ class ConnectionProviderConfig:
 
 
 CONNECTION_DATA_CLASS_KEY = "DATA_CLASS"
+
+FLEX_FLOW_PUBLIC_NAME = "flex"

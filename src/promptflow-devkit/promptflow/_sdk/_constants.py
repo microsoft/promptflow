@@ -485,6 +485,11 @@ class IdentityKeys(str, Enum):
     CLIENT_ID = "client_id"
 
 
+class OSType:
+    WINDOWS = "Windows"
+    LINUX = "Linux"
+
+
 # Note: Keep these for backward compatibility
 CustomStrongTypeConnectionConfigs = CustomStrongTypeConnectionConfigs
 ConnectionType = ConnectionType

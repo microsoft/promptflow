@@ -101,4 +101,5 @@ def _init_container_client(endpoint: str, database_name: str, container_name: st
 
 
 def _get_db_client_key(container_name: str, subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
-    return f"{subscription_id}_{resource_group_name}_{workspace_name}_{container_name}"
+    # Azure name allow hyphens and underscores. User @ to avoid possible conflict.
+    return f"{subscription_id}@{resource_group_name}@{workspace_name}@{container_name}"
