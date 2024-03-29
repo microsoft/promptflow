@@ -5,8 +5,12 @@ import copy
 from pathlib import Path
 from promptflow._sdk._utils import render_jinja_template
 
+
 def get_git_base_dir():
-    return Path(subprocess.run(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip())
+    return Path(
+        subprocess.run(['git', 'rev-parse', '--show-toplevel'],stdout=subprocess.PIPE)
+        .stdout.decode('utf-8').strip())
+
 
 def is_tool(name):
     """Check whether `name` is on PATH and marked as executable."""
@@ -15,6 +19,7 @@ def is_tool(name):
     from shutil import which
 
     return which(name) is not None
+
 
 def extract_requirements(file_path):
     with open(file_path, 'r') as file:
@@ -30,6 +35,7 @@ def extract_requirements(file_path):
                 if keyword.arg == 'extras_require':
                     extras_requires = ast.literal_eval(keyword.value)
     return install_requires, extras_requires
+
 
 def extract_package_names(packages):
     package_names = []
