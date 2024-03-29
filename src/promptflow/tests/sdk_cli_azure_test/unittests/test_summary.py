@@ -140,7 +140,7 @@ class TestSummary:
         client.query_items.assert_called_once()
         client.patch_item.assert_called_once_with(
             item="main_id",
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
             patch_operations=expected_patch_operations,
         )
 
@@ -163,7 +163,7 @@ class TestSummary:
                 {"name": "@batch_run_id", "value": None},
                 {"name": "@line_number", "value": None},
             ],
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
         )
 
         expected_item = LineEvaluation(
@@ -180,7 +180,7 @@ class TestSummary:
         ]
         client.patch_item.assert_called_once_with(
             item="main_id",
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
             patch_operations=expected_patch_operations,
         )
 
@@ -205,7 +205,7 @@ class TestSummary:
                 {"name": "@batch_run_id", "value": "referenced_batch_run_id"},
                 {"name": "@line_number", "value": 1},
             ],
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
         )
 
         expected_item = LineEvaluation(
@@ -223,7 +223,7 @@ class TestSummary:
         ]
         client.patch_item.assert_called_once_with(
             item="main_id",
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
             patch_operations=expected_patch_operations,
         )
 
@@ -242,7 +242,7 @@ class TestSummary:
         )
         expected_item = SummaryLine(
             id="test_trace_id",
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
             collection_id=self.FAKE_COLLECTION_ID,
             session_id="test_session_id",
             line_run_id="line_run_id",
@@ -283,7 +283,7 @@ class TestSummary:
         )
         expected_item = SummaryLine(
             id="test_trace_id",
-            partition_key="test_session_id",
+            partition_key=self.FAKE_COLLECTION_ID,
             session_id="test_session_id",
             collection_id=self.FAKE_COLLECTION_ID,
             batch_run_id="batch_run_id",

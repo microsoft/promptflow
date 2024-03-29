@@ -8,13 +8,7 @@ from typing import Any, Dict
 from azure.cosmos.container import ContainerProxy
 from azure.storage.blob import ContainerClient
 
-from promptflow._constants import (
-    SpanContextFieldName,
-    SpanEventFieldName,
-    SpanFieldName,
-    SpanResourceAttributesFieldName,
-)
-from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION
+from promptflow._constants import SpanContextFieldName, SpanEventFieldName, SpanFieldName
 from promptflow._sdk.entities._trace import Span as SpanEntity
 
 
@@ -48,7 +42,7 @@ class Span:
         self.events = span.events
         self.links = span.links
         self.resource = span.resource
-        self.partition_key = span.resource.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
+        self.partition_key = collection_id
         self.collection_id = collection_id
         self.id = span.span_id
         self.created_by = created_by
