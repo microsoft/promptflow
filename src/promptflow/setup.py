@@ -48,7 +48,7 @@ setup(
     python_requires="<4.0,>=3.8",
     install_requires=REQUIRES,
     extras_require={
-        "": [
+        "*": [
             "promptflow-core",
             "promptflow-devkit",  # devkit capabilities
         ],
