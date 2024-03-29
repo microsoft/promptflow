@@ -166,7 +166,7 @@ class ExperimentOperations(TelemetryMixin):
         :type environment_variables: dict
         """
         from .._load_functions import _load_experiment_template
-        from .._submitter.experiment_orchestrator import ExperimentOrchestrator
+        from .._orchestrator.experiment_orchestrator import ExperimentOrchestrator
 
         experiment_template = _load_experiment_template(experiment)
         output_path = kwargs.get("output_path", None)
