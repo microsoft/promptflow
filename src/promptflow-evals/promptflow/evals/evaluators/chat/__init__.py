@@ -153,33 +153,33 @@ class ChatEvaluator:
 
         expected_role = "user"
         for turn_num, turn in enumerate(conversation):
-            turn_num_one_based = turn_num + 1
+            one_based_turn_num = turn_num + 1
 
             if not isinstance(turn, dict):
-                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {turn_num_one_based}")
+                raise ValueError(f"Each turn in 'conversation' must be a dictionary. Turn number: {one_based_turn_num}")
 
             if "role" not in turn or "content" not in turn:
-                raise ValueError(f"Each turn in 'conversation' must have 'role' and 'content' keys. Turn number: {turn_num_one_based}")
+                raise ValueError(f"Each turn in 'conversation' must have 'role' and 'content' keys. Turn number: {one_based_turn_num}")
 
             if turn["role"] != expected_role:
-                raise ValueError(f"Expected role {expected_role} but got {turn['role']}. Turn number: {turn_num_one_based}")
+                raise ValueError(f"Expected role {expected_role} but got {turn['role']}. Turn number: {one_based_turn_num}")
 
             if not isinstance(turn["content"], str):
-                raise ValueError(f"Content in each turn must be a string. Turn number: {turn_num_one_based}")
+                raise ValueError(f"Content in each turn must be a string. Turn number: {one_based_turn_num}")
 
             if turn["role"] == "assistant" and "context" in turn:
                 if not isinstance(turn["context"], dict):
-                    raise ValueError(f"Context in each assistant's turn must be a dictionary. Turn number: {turn_num_one_based}")
+                    raise ValueError(f"Context in each assistant's turn must be a dictionary. Turn number: {one_based_turn_num}")
 
                 if "citations" not in turn["context"]:
-                    raise ValueError(f"Context in each assistant's turn must have 'citations' key. Turn number: {turn_num_one_based}")
+                    raise ValueError(f"Context in each assistant's turn must have 'citations' key. Turn number: {one_based_turn_num}")
 
                 if not isinstance(turn["context"]["citations"], list):
-                    raise ValueError(f"'citations' in context must be a list. Turn number: {turn_num_one_based}")
+                    raise ValueError(f"'citations' in context must be a list. Turn number: {one_based_turn_num}")
 
                 for citation_num, citation in enumerate(turn["context"]["citations"]):
                     if not isinstance(citation, dict):
-                        raise ValueError(f"Each citation in 'citations' must be a dictionary. Turn number: {turn_num_one_based}, Citation number: {citation_num}")
+                        raise ValueError(f"Each citation in 'citations' must be a dictionary. Turn number: {one_based_turn_num}, Citation number: {citation_num + 1}")
 
             # Toggle expected role for the next turn
             expected_role = "user" if expected_role == "assistant" else "assistant"
