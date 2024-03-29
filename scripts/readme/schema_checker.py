@@ -30,7 +30,17 @@ def main(input_glob_flow_dag):
         if error is False:
             new_links = []
             if (Path(file).parent / "requirements.txt").exists():
+                # remove all promptflow lines in requirements.txt
+                # and save time, or else it will check all dependencies of promptflow time by time
+                with open(Path(file).parent / "requirements.txt", "r") as f:
+                    lines = f.readlines()
+                with open(Path(file).parent / "requirements.txt", "w") as f:
+                    for line in lines:
+                        if "promptflow" not in line:
+                            f.write(line)
+
                 install(Path(file).parent / "requirements.txt")
+
             if "flow-with-symlinks" in str(file):
                 saved_path = os.getcwd()
                 os.chdir(str(file.parent))
