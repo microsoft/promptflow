@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from azure.cosmos import ContainerProxy
 
-from promptflow._constants import SpanAttributeFieldName, SpanResourceAttributesFieldName
+from promptflow._constants import SpanAttributeFieldName, SpanResourceAttributesFieldName, SpanResourceFieldName
 from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, CreatedByFieldName
 from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
@@ -39,9 +39,11 @@ class CollectionCosmosDB:
     def __init__(self, span: Span, is_cloud_trace: bool, created_by: Dict[str, Any]):
         self.span = span
         self.created_by = created_by
-        self.collection_name = span.resource.get(SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION)
         self.location = LocationType.CLOUD if is_cloud_trace else LocationType.LOCAL
-        resource_attributes = span.resource
+        resource_attributes = span.resource.get(SpanResourceFieldName.ATTRIBUTES, {})
+        self.collection_name = resource_attributes.get(
+            SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION
+        )
         self.collection_id = (
             resource_attributes[SpanResourceAttributesFieldName.COLLECTION_ID]
             if is_cloud_trace

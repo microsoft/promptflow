@@ -11,9 +11,13 @@ class TestCollectionCosmosDB:
     @pytest.fixture(autouse=True)
     def setUp(self):
         self.span = mock.Mock()
-        self.span.session_id = "test_collection_name"
         self.span.attributes = dict()
-        self.span.resource = {"collection.id": "test_collection_id", "collection": "test_collection_name"}
+        self.span.resource = {
+            "attributes": {
+                "collection.id": "test_collection_id",
+                "collection": "test_collection_name",
+            }
+        }
         self.created_by = {CreatedByFieldName.OBJECT_ID: "test_user_id"}
         self.collection = CollectionCosmosDB(self.span, True, self.created_by)
 
