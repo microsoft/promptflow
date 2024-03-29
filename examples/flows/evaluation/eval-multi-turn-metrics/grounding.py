@@ -1,6 +1,6 @@
 from typing import Union
 from statistics import mean
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.tools.aoai import chat as aoai_chat
 from promptflow.tools.openai import chat as openai_chat
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
