@@ -1,14 +1,18 @@
 import json
+import time
 from enum import Enum
 from unittest.mock import patch
 
 import pytest
+from openai.types.create_embedding_response import CreateEmbeddingResponse, Embedding, Usage
 
 from promptflow.tracing._operation_context import OperationContext
 from promptflow.tracing._trace import (
     TokenCollector,
     enrich_span_with_context,
+    enrich_span_with_embedding,
     enrich_span_with_input,
+    enrich_span_with_llm,
     enrich_span_with_openai_tokens,
     enrich_span_with_prompt_info,
     enrich_span_with_trace,
@@ -24,6 +28,7 @@ class MockSpan:
         self.parent = parent
         self.raise_exception_for_attr = raise_exception_for_attr
         self.attributes = {}
+        self.events = []
 
     def get_span_context(self):
         return self.span_context
@@ -40,11 +45,21 @@ class MockSpan:
         else:
             raise Exception("Dummy Error")
 
+    def add_event(self, name: str, attributes=None, timestamp=None):
+        self.events.append(MockEvent(name, attributes, timestamp))
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         return False
+
+
+class MockEvent:
+    def __init__(self, name, attributes, timestamp=None):
+        self.name = name
+        self.attributes = attributes
+        self.timestamp = timestamp or int(time.time())
 
 
 class MockSpanContext:
@@ -153,21 +168,24 @@ def test_enrich_span_with_prompt_info(caplog):
     with patch("promptflow.tracing._trace.get_prompt_param_name_from_func", return_value="prompt_tpl"), patch(
         "promptflow.tracing._trace.get_input_names_for_prompt_template", return_value=["input_1", "input_2"]
     ):
-        # Normal case
-        span = MockSpan(MockSpanContext(1))
-        enrich_span_with_prompt_info(
-            span, None, {"prompt_tpl": "prompt_tpl", "input_1": "value_1", "input_2": "value_2"}
-        )
-        assert span.attributes == {
+        test_prompt_args = {"prompt_tpl": "prompt_tpl", "input_1": "value_1", "input_2": "value_2"}
+        expected_prompt_info = {
             "prompt.template": "prompt_tpl",
             "prompt.variables": '{\n  "input_1": "value_1",\n  "input_2": "value_2"\n}',
         }
 
+        # Normal case
+        span = MockSpan(MockSpanContext(1))
+        enrich_span_with_prompt_info(span, None, test_prompt_args)
+
+        assert span.attributes == expected_prompt_info
+        assert span.events[0].name == "promptflow.prompt.template"
+        assert span.events[0].attributes == {"payload": serialize_attribute(expected_prompt_info)}
+
         # Raise exception when update attributes
         span = MockSpan(MockSpanContext(1), raise_exception_for_attr=True)
-        enrich_span_with_prompt_info(
-            span, None, {"prompt_tpl": "prompt_tpl", "input_1": "value_1", "input_2": "value_2"}
-        )
+        enrich_span_with_prompt_info(span, None, test_prompt_args)
+
         assert caplog.records[0].levelname == "WARNING"
         assert "Failed to enrich span with prompt info" in caplog.text
 
@@ -213,6 +231,43 @@ def test_enrich_span_with_openai_tokens(caplog):
         enrich_span_with_openai_tokens(span, TraceType.FUNCTION)
         assert caplog.records[0].levelname == "WARNING"
         assert "Failed to enrich span with openai tokens" in caplog.text
+
+
+@pytest.mark.unittest
+def test_enrich_span_with_llm():
+    span = MockSpan(MockSpanContext(1))
+    model = "test_model"
+    generated_message = "test_message"
+
+    enrich_span_with_llm(span, model, generated_message)
+
+    span.attributes == {
+        "llm.response.model": model,
+        "llm.generated_message": generated_message,
+    }
+    span.events[0].name == "promptflow.llm.generated_message"
+    span.events[0].attributes == {"payload": serialize_attribute(generated_message)}
+
+
+@pytest.mark.unittest
+def test_enrich_span_with_embedding():
+    span = MockSpan(MockSpanContext(1))
+    test_inputs = {"input": "test"}
+    test_embedding = Embedding(index=0, embedding=[0.1, 0.2, 0.3], object="embedding")
+    usage = Usage(prompt_tokens=10, total_tokens=20)
+    test_response = CreateEmbeddingResponse(model="gpt-3", data=[test_embedding], object="list", usage=usage)
+
+    expected_embedding = [{"embedding.vector": "<3 dimensional vector>", "embedding.text": "test"}]
+    expected_attributes = {
+        "llm.response.model": "gpt-3",
+        "embedding.embeddings": serialize_attribute(expected_embedding),
+    }
+
+    enrich_span_with_embedding(span, test_inputs, test_response)
+
+    assert span.attributes == expected_attributes
+    assert span.events[0].name == "promptflow.embedding.embeddings"
+    assert span.events[0].attributes == {"payload": serialize_attribute(expected_embedding)}
 
 
 @pytest.mark.unittest

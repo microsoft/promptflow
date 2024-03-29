@@ -98,7 +98,7 @@ class RunOperations(TelemetryMixin):
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
-            from promptflow._sdk._submitter import RunSubmitter
+            from promptflow._sdk._orchestrator import RunSubmitter
 
             created_run = RunSubmitter(client=self._client).submit(run=run, **kwargs)
             if stream:
@@ -118,7 +118,7 @@ class RunOperations(TelemetryMixin):
         """
         logger.debug(f"Resume from {resume_from!r}, kwargs: {kwargs}")
         stream = kwargs.pop("stream", False)
-        from promptflow._sdk._submitter import RunSubmitter
+        from promptflow._sdk._orchestrator import RunSubmitter
 
         created_run = RunSubmitter(client=self._client).resume(resume_from=resume_from, **kwargs)
         if stream:

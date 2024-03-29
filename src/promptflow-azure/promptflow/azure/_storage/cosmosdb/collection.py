@@ -9,8 +9,8 @@ from typing import Any, Dict
 
 from azure.cosmos import ContainerProxy
 
-from promptflow._constants import SpanAttributeFieldName, SpanFieldName, SpanResourceAttributesFieldName
-from promptflow._sdk._constants import CreatedByFieldName
+from promptflow._constants import SpanAttributeFieldName, SpanResourceAttributesFieldName, SpanResourceFieldName
+from promptflow._sdk._constants import TRACE_DEFAULT_COLLECTION, CreatedByFieldName
 from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.cosmosdb_utils import safe_create_cosmosdb_item
 
@@ -39,9 +39,11 @@ class CollectionCosmosDB:
     def __init__(self, span: Span, is_cloud_trace: bool, created_by: Dict[str, Any]):
         self.span = span
         self.created_by = created_by
-        self.collection_name = span.session_id
         self.location = LocationType.CLOUD if is_cloud_trace else LocationType.LOCAL
-        resource_attributes = span._content.get(SpanFieldName.RESOURCE, None)
+        resource_attributes = span.resource.get(SpanResourceFieldName.ATTRIBUTES, {})
+        self.collection_name = resource_attributes.get(
+            SpanResourceAttributesFieldName.COLLECTION, TRACE_DEFAULT_COLLECTION
+        )
         self.collection_id = (
             resource_attributes[SpanResourceAttributesFieldName.COLLECTION_ID]
             if is_cloud_trace
@@ -49,7 +51,7 @@ class CollectionCosmosDB:
         )
 
     def create_collection_if_not_exist(self, client: ContainerProxy):
-        span_attributes = self.span._content[SpanFieldName.ATTRIBUTES]
+        span_attributes = self.span.attributes
         # For batch run, ignore collection operation
         if SpanAttributeFieldName.BATCH_RUN_ID in span_attributes:
             return
@@ -71,7 +73,7 @@ class CollectionCosmosDB:
         )
 
     def update_collection_updated_at_info(self, client: ContainerProxy):
-        span_attributes = self.span._content[SpanFieldName.ATTRIBUTES]
+        span_attributes = self.span.attributes
         # For batch run, ignore collection operation
         if SpanAttributeFieldName.BATCH_RUN_ID in span_attributes:
             return

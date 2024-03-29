@@ -114,6 +114,7 @@ def enrich_span_with_prompt_info(span, func, kwargs):
             }
             prompt_info = {"prompt.template": prompt_tpl, "prompt.variables": serialize_attribute(prompt_vars)}
             span.set_attributes(prompt_info)
+            span.add_event("promptflow.prompt.template", {"payload": serialize_attribute(prompt_info)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with prompt info: {e}")
 
@@ -187,6 +188,7 @@ def enrich_span_with_llm(span, model, generated_message):
     try:
         span.set_attribute("llm.response.model", model)
         span.set_attribute("llm.generated_message", serialize_attribute(generated_message))
+        span.add_event("promptflow.llm.generated_message", {"payload": serialize_attribute(generated_message)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with llm: {e}")
 
@@ -230,6 +232,7 @@ def enrich_span_with_embedding(span, inputs, output):
                     }
                 )
             span.set_attribute("embedding.embeddings", serialize_attribute(embeddings))
+            span.add_event("promptflow.embedding.embeddings", {"payload": serialize_attribute(embeddings)})
     except Exception as e:
         logging.warning(f"Failed to enrich span with embedding: {e}")
 
