@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 
 
 def string_to_number(raw_string: str) -> float:

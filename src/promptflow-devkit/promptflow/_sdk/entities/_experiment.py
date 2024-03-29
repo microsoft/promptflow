@@ -129,7 +129,7 @@ class FlowNode(YAMLTranslatableMixin):
         """Save flow source to experiment snapshot."""
         # Resolve additional includes in flow
         from .._load_functions import load_flow
-        from .._submitter import remove_additional_includes
+        from .._orchestrator import remove_additional_includes
 
         Path(target).mkdir(parents=True, exist_ok=True)
         flow = load_flow(source=self.path)

@@ -63,7 +63,7 @@ The expected result is as follows if the connection created successfully.
 Using SDK, each connection type has a corresponding class to create a connection. The following code snippet shows how to import the required class and create the connection:
 
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 from promptflow.entities import AzureOpenAIConnection, CustomConnection
 
 # Get a pf client to manage connections
@@ -162,7 +162,7 @@ pf connection list
 :sync: SDK
 List connection command will return the connections object list, note that all secrets and api keys will be scrubbed:
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 # Get a pf client to manage connections
 pf = PFClient()
 # List and print connections
@@ -193,7 +193,7 @@ pf connection delete -n <connection_name>
 :sync: SDK
 Delete a connection with the following code snippet:
 ```python
-from promptflow import PFClient
+from promptflow.client import PFClient
 
 # Get a pf client to manage connections
 pf = PFClient()
