@@ -1,13 +1,13 @@
 import os
 from .file_clients.file_client_factory import FileClientFactory
 from .utils.yaml_parser import YamlParser
-from .contracts.entities import ExperimentConfig, ExperimentConfigCache, ExpContext
+from .contracts.entities import ExperimentConfig, ExperimentConfigCache
 from .contracts.entities import GroupType, Step
 from .contracts.entities import Experiment
 from .contracts.entities import Variant
 
 from datetime import datetime
-from typing import Dict, Tuple
+from typing import Dict, List
 import threading
 import contextvars
 
@@ -22,31 +22,33 @@ CACHE_EXPIRATION_SECONDS = 300
 # 3. Thread-safe, cache
 class Exp:
 
-    # cache mock
-    _cached_exp: Dict[str, ExperimentConfigCache] = {}
-    _cached_exp_lock = threading.Lock()
+    _exp_config_file_identifier: str = None
 
-    _context_vars_lock = threading.Lock()
-    _exp_variants = contextvars.ContextVar("exp_variants")
-    _exp_variants.set(None)
+    # cache for experiment config
+    _exp_config_cache: ExperimentConfigCache = None
+    _exp_config_cache_lock = threading.Lock()
+
+    # context of ruid
     _exp_ruid = contextvars.ContextVar("exp_ruid")
     _exp_ruid.set(None)
 
-    _context_dict_lock = threading.Lock()
-    _id_2_context: Dict[str, ExpContext] = {}
+    # kvs for ruid to (experiment name -> variant)
+    _ruid_to_variants: Dict[str, Dict[str, Variant]] = {}
+    _ruid_to_variants_lock = threading.Lock()
 
-    def __init__(self, file_identifier: str):
+    # kvs for tracing/span id to ruid
+    _trace_id_to_ruid: Dict[str, str] = {}
+    _trace_id_to_ruid_lock = threading.Lock()
 
-        self._file_identifier = file_identifier
+    @staticmethod
+    def init(file_identifier: str):
+        Exp._exp_config_file_identifier = file_identifier
 
-        if not Exp._is_cache_valid(file_identifier):
+        if not Exp._is_cache_valid():
             if Exp._is_serving_mode():
-                Exp._update_cache_passively(file_identifier)
+                Exp._update_cache_passively()
             else:
-                Exp._update_cache_actively(file_identifier)
-
-    def get_variant(self, rand_unit_id: str, experiment_name: str) -> Tuple[int, Variant]:
-        return Exp.get_variant_for_config(self._file_identifier, rand_unit_id, experiment_name)
+                Exp._update_cache_actively()
 
     # Get variant based on given randonmization unit ID and experiment name
     # Extra Requirement: add extra columns into all the upcoming spans under
@@ -56,68 +58,103 @@ class Exp:
     #     name of all experiments
     # 2. "_exp.ruid" column, the value is the input rand_unit_id
     @staticmethod
-    def get_variant_for_config(
-        file_identifier: str,
-        rand_unit_id: str,
+    def assign_variant(
+        ruid: str,
         experiment_name: str
-    ) -> Tuple[int, Variant]:
+    ) -> Variant:
+        if not Exp._exp_config_file_identifier:
+            return Variant()
 
         if not Exp._is_serving_mode():
-            Exp._update_cache_actively(file_identifier)
+            Exp._update_cache_actively()
+        if Exp._exp_config_cache is None:
+            return None
 
-        bucket = Exp._get_bucket(rand_unit_id)
-        for exp in Exp._cached_exp[file_identifier].experiment_config.experiments:
+        Exp._exp_ruid.set(ruid)
+        bucket = Exp._get_bucket(ruid)
+        for exp in Exp._exp_config_cache.experiment_config.experiments:
             if exp.name == experiment_name:
                 variant = Exp._get_variant(exp, bucket)
 
-                with Exp._context_vars_lock:
-                    Exp._exp_ruid.set(rand_unit_id)
-                    existing_variants = Exp._exp_variants.get()
-                    if existing_variants:
-                        variant_list = set(existing_variants.split(","))
-                        if variant.name not in variant_list:
-                            Exp._exp_variants.set(existing_variants + "," + variant.name)
-                    else:
-                        Exp._exp_variants.set(variant.name)
-                return bucket, variant
-        return bucket, None
+                with Exp._ruid_to_variants_lock:
+                    if ruid not in Exp._ruid_to_variants:
+                        Exp._ruid_to_variants[ruid] = {}
+                    Exp._ruid_to_variants[ruid][experiment_name] = variant
+                return variant
+        return None
 
     @staticmethod
-    def map_context_with_id(id: str, context: ExpContext):
-        with Exp._context_dict_lock:
-            Exp._id_2_context[id] = context
+    def get_variable(experiment_name: str, variable_name: str, default: object):
+        if not Exp._exp_config_file_identifier:
+            return default
+
+        ruid = Exp.get_ruid()
+        variant = None
+        if ruid and ruid in Exp._ruid_to_variants:
+            variants = Exp._ruid_to_variants[ruid]
+            if experiment_name in variants:
+                variant = variants[experiment_name]
+        if variable_name in variant.variables:
+            return variant.variables[variable_name]
+        return default
 
     @staticmethod
-    def get_context_by_id(id: str) -> ExpContext:
-        if id not in Exp._id_2_context:
+    def map_ruid_with_trace_id(ruid: str, trace_id: str):
+        with Exp._trace_id_to_ruid_lock:
+            Exp._trace_id_to_ruid[trace_id] = ruid
+
+    @staticmethod
+    def get_ruid_by_trace_id(trace_id: str) -> str:
+        if trace_id not in Exp._trace_id_to_ruid:
             return None
-        with Exp._context_dict_lock:
-            return Exp._id_2_context[id]
+        return Exp._trace_id_to_ruid[trace_id]
 
     @staticmethod
-    def get_variants() -> str:
-        return Exp._exp_variants.get()
+    def get_variant_names_by_trace_id(trace_id: str) -> List[str]:
+        if trace_id not in Exp._trace_id_to_ruid:
+            return None
+        ruid = Exp._trace_id_to_ruid[trace_id]
+        if ruid not in Exp._ruid_to_variants:
+            return None
+        return [variant.name for variant in Exp._ruid_to_variants[ruid].values()]
+
+    @staticmethod
+    def get_variant_names_from_context() -> List[str]:
+        ruid = Exp.get_ruid()
+        if not ruid or (ruid not in Exp._ruid_to_variants):
+            return None
+        return [variant.name for variant in Exp._ruid_to_variants[ruid].values()]
 
     @staticmethod
     def get_ruid() -> str:
-        return Exp._exp_ruid.get()
-    
-    @staticmethod
-    def _update_cache_actively(file_identifier: str):
-        if not Exp._is_cache_valid(file_identifier):
-            Exp._do_update_cache(file_identifier)
+        try:
+            return Exp._exp_ruid.get()
+        except LookupError:
+            return None
 
     @staticmethod
-    def _update_cache_passively(file_identifier: str):
-        Exp._do_update_cache(file_identifier)
-        threading.Timer(CACHE_EXPIRATION_SECONDS, Exp._update_cache_passively, [file_identifier]).start()
+    def _update_cache_actively():
+        if not Exp._is_cache_valid():
+            Exp._do_update_cache()
 
     @staticmethod
-    def _do_update_cache(file_identifier: str):
-        experiment_config = Exp._load_config(file_identifier)
+    def _update_cache_passively():
+        Exp._do_update_cache()
+        threading.Timer(CACHE_EXPIRATION_SECONDS, Exp._update_cache_passively).start()
+
+    @staticmethod
+    def _do_update_cache():
+        if not Exp._exp_config_file_identifier:
+            return
+
+        experiment_config = Exp._load_config(Exp._exp_config_file_identifier)
         if experiment_config:
-            with Exp._cached_exp_lock:
-                Exp._cached_exp[file_identifier] = ExperimentConfigCache(experiment_config, datetime.now())
+            with Exp._exp_config_cache_lock:
+                Exp._exp_config_cache = ExperimentConfigCache(
+                    file_identifier=Exp._exp_config_file_identifier,
+                    experiment_config=experiment_config,
+                    last_updated=datetime.now()
+                )
 
     @staticmethod
     def _get_bucket(rand_unit_id: str) -> int:
@@ -152,18 +189,18 @@ class Exp:
         return timestamp >= step.start_time and timestamp < step.expire_time
 
     @staticmethod
-    def _is_cache_valid(file_identifier: str) -> bool:
-        with Exp._cached_exp_lock:
-            if file_identifier not in Exp._cached_exp:
+    def _is_cache_valid() -> bool:
+        with Exp._exp_config_cache_lock:
+            if Exp._exp_config_cache is None:
                 return False
-            diff = datetime.now() - Exp._cached_exp[file_identifier].last_updated
+            diff = datetime.now() - Exp._exp_config_cache.last_updated
             return diff.total_seconds() < CACHE_EXPIRATION_SECONDS
 
     @staticmethod
     def _load_config(file_identifier: str) -> ExperimentConfig:
         client = FileClientFactory.get_file_client(file_identifier)
         return YamlParser.load_to_dataclass(ExperimentConfig, client.load())
-    
+
     @staticmethod
     def _is_serving_mode() -> bool:
         run_mode = os.environ.get("PROMPTFLOW_RUN_MODE")

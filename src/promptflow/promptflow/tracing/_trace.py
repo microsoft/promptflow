@@ -14,7 +14,7 @@ from typing import Callable, List, Optional
 import opentelemetry.trace as otel_trace
 from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
-from opentelemetry.trace.span import NonRecordingSpan, Span
+from opentelemetry.trace.span import NonRecordingSpan
 from opentelemetry.sdk.trace import ReadableSpan
 
 from promptflow._core.generator_proxy import GeneratorProxy
@@ -26,7 +26,6 @@ from .._utils.utils import default_json_encoder
 from ._tracer import _create_trace_from_function_call, get_node_name_from_context, Tracer
 from .contracts.trace import TraceType
 from ..exp_poc.exp import Exp
-from ..exp_poc.contracts.entities import ExpContext
 
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -236,30 +235,26 @@ def enrich_span_with_llm_model(span, output):
         logging.warning(f"Failed to enrich span with llm model: {e}")
 
 
-def enrich_span_with_exp_info(span: Span):
-    variant = Exp.get_variants()
+def enrich_span_with_exp_info(span: ReadableSpan):
     ruid = Exp.get_ruid()
+    variant_names = Exp.get_variant_names_from_context()
 
     span_id = span.get_span_context().span_id
     parent_span_id = None
     if hasattr(span, "parent") and (span.parent is not None):
         parent_span_id = span.parent.span_id
 
-    if (variant is not None) and (parent_span_id is not None):
-        Exp.map_context_with_id(parent_span_id, ExpContext(exp_ruid=ruid, exp_variants=variant))
-    elif variant is None:
-        context = Exp.get_context_by_id(span_id)
-        if context is not None:
-            variant = context.exp_variants
-            ruid = context.exp_ruid
-        elif parent_span_id is not None:
-            context = Exp.get_context_by_id(parent_span_id)
-            if context is not None:
-                variant = context.exp_variants
-                ruid = context.exp_ruid
+    if (variant_names is not None) and (parent_span_id is not None):
+        Exp.map_ruid_with_trace_id(ruid, parent_span_id)
+    elif variant_names is None:
+        ruid = Exp.get_ruid_by_trace_id(span_id)
+        variant_names = Exp.get_variant_names_by_trace_id(span_id)
+        if (variant_names is None) and (parent_span_id is not None):
+            ruid = Exp.get_ruid_by_trace_id(parent_span_id)
+            variant_names = Exp.get_variant_names_by_trace_id(parent_span_id)
 
-    if variant:
-        span.set_attribute("exp.variant", variant)
+    if variant_names:
+        span.set_attribute("exp.variant", ",".join(variant_names))
     if ruid:
         span.set_attribute("exp.ruid", ruid)
 

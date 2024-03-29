@@ -15,6 +15,11 @@ class Variant:
     variables: Dict = None
     type: GroupType = None
 
+    def get_variable(self, name: str, default: object = None):
+        if self.variables and (name in self.variables):
+            return self.variables[name]
+        return default
+
 
 @dataclass
 class Step:
@@ -38,11 +43,6 @@ class ExperimentConfig:
 
 @dataclass
 class ExperimentConfigCache:
+    file_identifier: str = None
     experiment_config: ExperimentConfig = None
     last_updated: datetime = None
-
-
-@dataclass
-class ExpContext:
-    exp_ruid: str = None
-    exp_variants: str = None
