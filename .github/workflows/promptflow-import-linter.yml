@@ -1,13 +1,14 @@
 name: promptflow-import-linter
 
 on:
-  pull_request:
-    paths:
-      - src/promptflow-tracing/**
-      - src/promptflow-core/**
-      - src/promptflow-devkit/**
-      - src/promptflow-azure/**
-      - .github/workflows/promptflow-import-linter.yml
+  # BUG(3050545): uncomment after we make this stable
+  # pull_request:
+  #   paths:
+  #     - src/promptflow-tracing/**
+  #     - src/promptflow-core/**
+  #     - src/promptflow-devkit/**
+  #     - src/promptflow-azure/**
+  #     - .github/workflows/promptflow-import-linter.yml
   workflow_dispatch:
 
 env:
