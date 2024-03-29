@@ -32,7 +32,7 @@ class TestPFClient:
 
         with mock.patch(target) as mocked:
             mocked.return_value.get_connection_provider.return_value = "azureml:xx"
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(MalformedConnectionProviderConfig) as e:
                 client = PFClient()
                 assert client.connections
             assert "Malformed connection provider string" in str(e.value)
