@@ -117,6 +117,8 @@ jobs:
           pip install ${{ github.workspace }}/src/promptflow-core
           pip install ${{ github.workspace }}/src/promptflow-devkit[pyarrow,executable]
           pip install ${{ github.workspace }}/src/promptflow-azure
+          echo "Should fix this after pf-core could install this dependency"
+          pip install azureml-ai-monitoring
           pip freeze
 
       - name: Generate promptflow spec file to config pyinstaller
