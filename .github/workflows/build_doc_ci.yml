@@ -48,6 +48,7 @@ jobs:
         working-directory: scripts/docs/
         run: |-
           pip install langchain
+          pip install -U sqlalchemy
           ./doc_generation.ps1 -WithReferenceDoc:$true -WarningAsError:$true 
 
   # Note: We have this job separately because some error may missing when build link check exists.
