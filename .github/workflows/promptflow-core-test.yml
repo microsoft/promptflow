@@ -1,4 +1,4 @@
-name: promptflow-tracing-unit-test
+name: promptflow-core-test [Pure]
 
 on:
   schedule:
@@ -36,6 +36,7 @@ jobs:
         run: |
           poetry run pip install ${{ github.workspace }}/src/promptflow-tracing
           poetry run pip install ${{ github.workspace }}/src/promptflow-core/
+          pip freeze
         working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: install test dependency group
         run: poetry install --only test
