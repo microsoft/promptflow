@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 import base64
-import json
+import logging
 import os
 import uuid
 from typing import Dict
@@ -16,17 +16,9 @@ from opentelemetry.proto.trace.v1.trace_pb2 import Span as PBSpan
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
 from opentelemetry.sdk.trace import TracerProvider
 
-from promptflow._constants import (
-    SpanAttributeFieldName,
-    SpanResourceAttributesFieldName,
-    SpanResourceFieldName,
-    TraceEnvironmentVariableName,
-)
-from promptflow._sdk._constants import PF_TRACE_CONTEXT, PF_TRACE_CONTEXT_ATTR, ContextAttributeKey
-from promptflow._sdk._tracing import start_trace_with_devkit
+from promptflow._constants import SpanResourceAttributesFieldName, SpanResourceFieldName, TraceEnvironmentVariableName
 from promptflow._sdk.entities._trace import Span
-from promptflow.tracing._operation_context import OperationContext
-from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ, start_trace
+from promptflow.tracing._start_trace import _is_tracer_provider_set, setup_exporter_from_environ
 
 MOCK_PROMPTFLOW_SERVICE_PORT = "23333"
 
@@ -118,7 +110,7 @@ class TestStartTrace:
         pb_span.parent_span_id = base64.b64decode("C+++WS+OuxI=")
         pb_span.kind = PBSpan.SpanKind.SPAN_KIND_INTERNAL
         # below line should execute successfully
-        span = Span._from_protobuf_object(pb_span, resource=mock_resource)
+        span = Span._from_protobuf_object(pb_span, resource=mock_resource, logger=logging.getLogger(__name__))
         # as the above span do not have any attributes, so the parsed span should not have any attributes
         attributes = span._content["attributes"]
         assert isinstance(attributes, dict)
