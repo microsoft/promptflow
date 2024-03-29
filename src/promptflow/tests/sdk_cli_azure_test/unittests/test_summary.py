@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from promptflow._constants import OK_LINE_RUN_STATUS, SpanAttributeFieldName, SpanFieldName
+from promptflow._constants import OK_LINE_RUN_STATUS, SpanAttributeFieldName
 from promptflow._sdk.entities._trace import Span
 from promptflow.azure._storage.cosmosdb.summary import (
     InsertEvaluationsRetriableException,
@@ -41,7 +41,7 @@ class TestSummary:
 
     def test_non_root_span_does_not_persist(self):
         mock_client = mock.Mock()
-        self.summary.span.parent_span_id = "parent_span_id"
+        self.summary.span.parent_id = "parent_span_id"
 
         with mock.patch.multiple(
             self.summary,
@@ -56,8 +56,8 @@ class TestSummary:
 
     def test_root_span_persist_main_line(self):
         mock_client = mock.Mock()
-        self.summary.span.parent_span_id = None
-        attributes = self.summary.span._content[SpanFieldName.ATTRIBUTES]
+        self.summary.span.parent_id = None
+        attributes = self.summary.span.attributes
         attributes.pop(SpanAttributeFieldName.LINE_RUN_ID, None)
         attributes.pop(SpanAttributeFieldName.BATCH_RUN_ID, None)
         with mock.patch.multiple(
@@ -73,11 +73,9 @@ class TestSummary:
 
     def test_root_evaluation_span_insert(self):
         mock_client = mock.Mock()
-        self.summary.span.parent_span_id = None
-        self.summary.span._content[SpanFieldName.ATTRIBUTES][SpanAttributeFieldName.LINE_RUN_ID] = "line_run_id"
-        self.summary.span._content[SpanFieldName.ATTRIBUTES][
-            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID
-        ] = "main_line_run_id"
+        self.summary.span.parent_id = None
+        self.summary.span.attributes[SpanAttributeFieldName.LINE_RUN_ID] = "line_run_id"
+        self.summary.span.attributes[SpanAttributeFieldName.REFERENCED_LINE_RUN_ID] = "main_line_run_id"
         with mock.patch.multiple(
             self.summary,
             _persist_running_item=mock.DEFAULT,
@@ -91,12 +89,10 @@ class TestSummary:
 
     def test_insert_evaluation_not_found(self):
         client = mock.Mock()
-        self.summary.span._content = {
-            SpanFieldName.ATTRIBUTES: {
-                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
-                SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-            }
+        self.summary.span.attributes = {
+            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
+            SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
+            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
 
         client.query_items.return_value = []
@@ -107,12 +103,10 @@ class TestSummary:
 
     def test_insert_evaluation_not_finished(self):
         client = mock.Mock()
-        self.summary.span._content = {
-            SpanFieldName.ATTRIBUTES: {
-                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
-                SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-            }
+        self.summary.span.attributes = {
+            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
+            SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
+            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
 
         client.query_items.return_value = [{"id": "main_id"}]
@@ -123,12 +117,10 @@ class TestSummary:
 
     def test_insert_evaluation_normal(self):
         client = mock.Mock()
-        self.summary.span._content = {
-            SpanFieldName.ATTRIBUTES: {
-                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
-                SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-            }
+        self.summary.span.attributes = {
+            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
+            SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
+            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
         expected_item = LineEvaluation(
             line_run_id="line_run_id",
@@ -154,12 +146,10 @@ class TestSummary:
 
     def test_insert_evaluation_query_line(self):
         client = mock.Mock()
-        self.summary.span._content = {
-            SpanFieldName.ATTRIBUTES: {
-                SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
-                SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-            }
+        self.summary.span.attributes = {
+            SpanAttributeFieldName.REFERENCED_LINE_RUN_ID: "referenced_line_run_id",
+            SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
+            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
         client.query_items.return_value = [{"id": "main_id", "status": OK_LINE_RUN_STATUS}]
         self.summary._insert_evaluation(client)
@@ -196,13 +186,11 @@ class TestSummary:
 
     def test_insert_evaluation_query_batch_run(self):
         client = mock.Mock()
-        self.summary.span._content = {
-            SpanFieldName.ATTRIBUTES: {
-                SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: "referenced_batch_run_id",
-                SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
-                SpanAttributeFieldName.LINE_NUMBER: 1,
-                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-            }
+        self.summary.span.attributes = {
+            SpanAttributeFieldName.REFERENCED_BATCH_RUN_ID: "referenced_batch_run_id",
+            SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
+            SpanAttributeFieldName.LINE_NUMBER: 1,
+            SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
         }
         client.query_items.return_value = [{"id": "main_id", "status": OK_LINE_RUN_STATUS}]
 
@@ -241,17 +229,15 @@ class TestSummary:
 
     def test_persist_line_run(self):
         client = mock.Mock()
-        self.summary.span._content.update(
+        self.summary.span.attributes.update(
             {
-                SpanFieldName.ATTRIBUTES: {
-                    SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
-                    SpanAttributeFieldName.INPUTS: '{"input_key": "input_value"}',
-                    SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-                    SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
-                    SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
-                    SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
-                    SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
-                },
+                SpanAttributeFieldName.LINE_RUN_ID: "line_run_id",
+                SpanAttributeFieldName.INPUTS: '{"input_key": "input_value"}',
+                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
+                SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
+                SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
+                SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
+                SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
             }
         )
         expected_item = SummaryLine(
@@ -283,19 +269,17 @@ class TestSummary:
 
     def test_persist_batch_run(self):
         client = mock.Mock()
-        self.summary.span._content.update(
+        self.summary.span.attributes.update(
             {
-                SpanFieldName.ATTRIBUTES: {
-                    SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
-                    SpanAttributeFieldName.LINE_NUMBER: "1",
-                    SpanAttributeFieldName.INPUTS: '{"input_key": "input_value"}',
-                    SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
-                    SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
-                    SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
-                    SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
-                    SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
-                },
-            }
+                SpanAttributeFieldName.BATCH_RUN_ID: "batch_run_id",
+                SpanAttributeFieldName.LINE_NUMBER: "1",
+                SpanAttributeFieldName.INPUTS: '{"input_key": "input_value"}',
+                SpanAttributeFieldName.OUTPUT: '{"output_key": "output_value"}',
+                SpanAttributeFieldName.SPAN_TYPE: "promptflow.TraceType.Flow",
+                SpanAttributeFieldName.COMPLETION_TOKEN_COUNT: 10,
+                SpanAttributeFieldName.PROMPT_TOKEN_COUNT: 5,
+                SpanAttributeFieldName.TOTAL_TOKEN_COUNT: 15,
+            },
         )
         expected_item = SummaryLine(
             id="test_trace_id",
