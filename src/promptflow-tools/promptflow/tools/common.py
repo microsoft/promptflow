@@ -18,6 +18,7 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
 GPT4V_VERSION = "vision-preview"
+VALID_ROLES = ["system", "user", "assistant", "function", "tool"]
 
 
 class Deployment:
@@ -47,7 +48,7 @@ class ChatInputList(list):
 
 def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
-        valid_roles = ["assistant", "function", "user", "system"]
+        valid_roles = VALID_ROLES
 
     if role not in valid_roles:
         valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
@@ -167,10 +168,19 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
+def try_parse_tool_call_id_and_content(role_prompt):
+    # customer can add ## in front of name/content for markdown highlight.
+    # and we still support name/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*tool_call_id:\n+\s*(\S+)\s*\n*#{0,2}\s*content:\n?(.*)"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    return None
+
+
 def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, image_detail: str = 'auto'):
-    # TODO: support role "tool" and its_properties.
     if not valid_roles:
-        valid_roles = ["system", "user", "assistant", "function"]
+        valid_roles = VALID_ROLES
 
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
@@ -181,11 +191,21 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None, ima
     hash2images = {str(x): x for x in images}
 
     chunks = re.split(separator, chat_str, flags=re.MULTILINE)
+    print(f"yaodebug: chunks: {chunks}")
     chat_list = []
 
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
-        if last_message and "role" in last_message and "content" not in last_message:
+        print(f"==========yaodebug=========\n last_message: {last_message}\n--------------------\n chunk: {chunk}\n--------------------\nchat_list: {chat_list}")
+        if last_message and "role" in last_message and last_message["role"] == "tool" and "content" not in last_message:
+            parsed_result = try_parse_tool_call_id_and_content(chunk)
+            if parsed_result is None:
+                raise ChatAPIFunctionRoleInvalidFormat(
+                    message="..")  # TODO: complete the message
+            else:
+                last_message["tool_call_id"] = parsed_result[0]
+                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+        elif last_message and "role" in last_message and "content" not in last_message:
             parsed_result = try_parse_name_and_content(chunk)
             if parsed_result is None:
                 # "name" is required if the role is "function"

@@ -4,7 +4,7 @@ import pytest
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList, \
     ParseConnectionError, _parse_resource_id, list_deployment_connections, \
-    normalize_connection_config
+    normalize_connection_config, try_parse_tool_call_id_and_content
 from promptflow.tools.exception import ListDeploymentsError
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -144,6 +144,100 @@ class TestCommon:
     )
     def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
         actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
+
+    def test_parse_chat_with_role_tool(self):
+        chat_str = '# tool:\n## tool_call_id:\ncall_001\n## content:\n{"location": "San Francisco, CA", "temperature": "72", "unit": null}\n'
+        expected_result = [
+            {
+                "role": "tool",
+                "tool_call_id": "call_001",
+                "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
+            }
+        ]
+        actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
+
+    def test_parse_chat_with_role_tool_2(self):
+        chat_str = """
+# tool:
+## tool_call_id:
+call_001
+## content:
+{"location": "San Francisco, CA", "temperature": "72", "unit": null}
+
+# tool:
+## tool_call_id:
+call_002
+## content:
+{"location": "San Francisco, CA", "temperature": "72", "unit": null}
+
+# tool:
+## tool_call_id:
+call_003
+## content:
+{"location": "San Francisco, CA", "temperature": "72", "unit": null}
+"""
+        expected_result = [
+            {
+                "role": "tool",
+                "tool_call_id": "call_001",
+                "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call_002",
+                "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call_003",
+                "content": '{"location": "San Francisco, CA", "temperature": "72", "unit": null}',
+            }
+        ]
+        actual_result = parse_chat(chat_str)
+        print(f"yaodebug: actual_result: {actual_result}")
+        assert actual_result == expected_result
+
+    def test_parse_chat_with_role_assistant(self):
+        chat_str = """
+# assistant:
+## tool_calls:
+[{'id': 'call_001', 'function': {'arguments': '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_002', 'function': {'arguments': '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}, {'id': 'call_003', 'function': {'arguments': '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}', 'name': 'get_current_weather_py'}, 'type': 'function'}]
+"""
+        expected_result = [
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": "call_001",
+                        "function": {
+                            "arguments": '{"location": {"city": "San Francisco", "country": "USA"}, "unit": "metric"}',
+                            "name": "get_current_weather_py",
+                        },
+                        "type": "function",
+                    },
+                    {
+                        "id": "call_002",
+                        "function": {
+                            "arguments": '{"location": {"city": "Tokyo", "country": "Japan"}, "unit": "metric"}',
+                            "name": "get_current_weather_py",
+                        },
+                        "type": "function",
+                    },
+                    {
+                        "id": "call_003",
+                        "function": {
+                            "arguments": '{"location": {"city": "Paris", "country": "France"}, "unit": "metric"}',
+                            "name": "get_current_weather_py",
+                        },
+                        "type": "function",
+                    },
+                ],
+            }
+        ]
+        actual_result = parse_chat(chat_str)
+        print(f"yaodebug: actual_result: {actual_result}")
         assert actual_result == expected_result
 
     @pytest.mark.parametrize(
