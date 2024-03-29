@@ -15,7 +15,9 @@ class TestCollectionCosmosDB:
         self.span._content = {
             "attributes": {},
             "resource": {
-                "collection.id": "test_collection_id",
+                "attributes": {
+                    "collection.id": "test_collection_id",
+                }
             },
         }
         self.created_by = {CreatedByFieldName.OBJECT_ID: "test_user_id"}
