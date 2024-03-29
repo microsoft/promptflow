@@ -41,7 +41,7 @@ packages = [
 "Bug Reports" = "https://github.com/microsoft/promptflow/issues"
 
 [tool.poetry.dependencies]
-python = "<4.0,>=3.8"
+python = ">=3.8,<3.9.7 || >3.9.7,<3.13"
 promptflow-core = "<2.0.0"
 psutil = "*"  # get process information when bulk run
 httpx = ">=0.25.1"  # used to send http requests asynchronously
@@ -70,13 +70,6 @@ streamlit-quill = "<0.1.0"
 bs4 = "*"
 
 [tool.poetry.extras]
-all = [
-  "pyarrow",
-  "pyinstaller",
-  "streamlit",
-  "streamlit-quill",
-  "bs4",
-]
 executable = [
   "pyarrow",
   "pyinstaller",
@@ -91,7 +84,6 @@ pyarrow = [
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 import-linter = "*"
-promptflow-core = { path = "../promptflow-core" }
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -145,5 +137,14 @@ include_external_packages = "True"
 [[tool.importlinter.contracts]]
 name = "Contract forbidden modules"
 type = "forbidden"
-source_modules = ["promptflow.devkit"]
+source_modules = [
+  "promptflow._cli",
+  "promptflow._internal",
+  "promptflow._proxy",
+  "promptflow._sdk",
+  "promptflow.batch",
+  "promptflow.client",
+  "promptflow.entities",
+  "promptflow.operations"
+]
 forbidden_modules = ["promptflow.azure"]
