@@ -29,7 +29,7 @@ from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
-from promptflow.executor._errors import LineExecutionTimeoutError
+from promptflow.executor._errors import AggregationNodeExecutionTimeoutError, LineExecutionTimeoutError
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -402,13 +402,30 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        # call aggregation api to get aggregation result
-        async with httpx.AsyncClient() as client:
+        response = None
+        try:
+            # Call aggregation api to get aggregation result
             url = self.api_endpoint + "/aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
-            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        result = self._process_http_response(response)
-        return AggregationResult.deserialize(result)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
+            # This will raise an HTTPError for 4xx/5xx responses
+            response.raise_for_status()
+            return AggregationResult.deserialize(response.json())
+        except httpx.ReadTimeout:
+            raise AggregationNodeExecutionTimeoutError(timeout=LINE_TIMEOUT_SEC)
+        except Exception as e:
+            ex_msg = f"({e.__class__.__name__}) {e}"
+            if isinstance(e, httpx.HTTPStatusError):
+                error_dict = self._process_error_response(e.response)
+                ex_msg = error_dict["message"]
+            raise UnexpectedError(
+                target=ErrorTarget.BATCH,
+                message_format=(
+                    "Unexpected error occurred while executing aggregation nodes in the batch run. Error: {ex_msg}"
+                ),
+                ex_msg=ex_msg,
+            )
 
     async def ensure_executor_startup(self, error_file):
         """Ensure the executor service is initialized before calling the API to get the results"""
