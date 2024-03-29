@@ -110,7 +110,6 @@ jobs:
 
       - name: Install wheel
         shell: pwsh
-        working-directory: artifacts
         run: |
           Set-PSDebug -Trace 1
           pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
