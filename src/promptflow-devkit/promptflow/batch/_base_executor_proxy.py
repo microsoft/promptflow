@@ -328,7 +328,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             with httpx.Client() as client:
                 with client.stream("POST", url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers) as response:
                     if response.status_code != 200:
-                        result = self._process_http_response(response)
+                        result = self._process_error_response(response)
                         run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
                         yield LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
                     for line in response.iter_lines():

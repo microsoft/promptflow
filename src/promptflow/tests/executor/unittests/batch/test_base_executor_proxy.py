@@ -142,10 +142,6 @@ class TestAPIBasedExecutorProxy:
         "response, expected_result",
         [
             (
-                httpx.Response(200, json={"result": "test"}),
-                {"result": "test"},
-            ),
-            (
                 httpx.Response(500, json={"error": "test error"}),
                 "test error",
             ),
@@ -189,9 +185,9 @@ class TestAPIBasedExecutorProxy:
             ),
         ],
     )
-    async def test_process_http_response(self, response, expected_result):
+    async def test_process_error_response(self, response, expected_result):
         mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
-        assert mock_executor_proxy._process_http_response(response) == expected_result
+        assert mock_executor_proxy._process_error_response(response) == expected_result
 
 
 class MockAPIBasedExecutorProxy(APIBasedExecutorProxy):
