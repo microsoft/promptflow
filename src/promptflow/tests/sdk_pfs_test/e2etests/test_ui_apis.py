@@ -20,12 +20,11 @@ EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 EXPERIMENT_ROOT = TEST_ROOT / "test_configs/experiments"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.e2etest
-class TestFlowAPIs:
+class TestUIAPIs:
     def test_get_flow_yaml(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=FLOW_PATH).data.decode("utf-8")
+            flow_yaml_from_pfs = pfs_op.get_flow_yaml(flow_path=FLOW_PATH).data.decode("utf-8")
         assert flow_yaml_from_pfs == (
             "inputs:\n  key:\n    type: string\noutputs:\n  output:\n    type: string\n    "
             "reference: ${print_env.output.value}\nnodes:\n- name: print_env\n  "
@@ -35,7 +34,9 @@ class TestFlowAPIs:
 
     def test_get_eager_flow_yaml(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(expected_activities=[]):
-            flow_yaml_from_pfs = pfs_op.get_flow(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).data.decode("utf-8")
+            flow_yaml_from_pfs = pfs_op.get_flow_yaml(flow_path=str(EAGER_FLOW_ROOT / "builtin_llm")).data.decode(
+                "utf-8"
+            )
         assert flow_yaml_from_pfs == "entry: builtin_call:flow_entry\n"
 
     def test_get_experiment_yaml(self, pfs_op: PFSOperations) -> None:

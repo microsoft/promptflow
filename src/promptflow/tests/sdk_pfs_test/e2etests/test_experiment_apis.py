@@ -12,6 +12,7 @@ EXPERIMENT_ROOT = TEST_ROOT / "test_configs/experiments"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 
 
+@pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.e2etest
 class TestExperimentAPIs:
     def test_experiment_test(self, pfs_op: PFSOperations) -> None:

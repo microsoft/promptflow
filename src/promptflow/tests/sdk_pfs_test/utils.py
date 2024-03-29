@@ -258,7 +258,7 @@ class PFSOperations:
         )
         return response
 
-    def get_flow(self, flow_path: str, status_code=None):
+    def get_flow_yaml(self, flow_path: str, status_code=None):
         flow_path = encrypt_flow_path(flow_path)
         query_string = {"flow": flow_path}
         response = self._client.get(f"{self.UI_URL_PREFIX}/yaml", query_string=query_string)
