@@ -133,15 +133,15 @@ class ChatEvaluator:
 
     def _evaluate_turn(self, turn_num, questions, answers, contexts, evaluator):
         try:
-            if evaluator in self._non_rag_evaluators:
-                score = evaluator(
-                    question=questions[turn_num],
-                    answer=answers[turn_num])
-            elif evaluator in self._rag_evaluators:
-                score = evaluator(
-                    question=questions[turn_num],
-                    answer=answers[turn_num],
-                    context=contexts[turn_num])
+            question = questions[turn_num] if turn_num < len(questions) else ""
+            answer = answers[turn_num] if turn_num < len(answers) else ""
+            context = contexts[turn_num] if turn_num < len(contexts) else ""
+
+            score = evaluator(
+                question=question,
+                answer=answer,
+                context=context)
+
             return score
         except Exception as e:
             logger.warning(f"Evaluator {evaluator.__class__.__name__} failed for turn {turn_num + 1} with exception: {e}")
