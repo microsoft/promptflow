@@ -29,7 +29,6 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ...batch import APIBasedExecutorProxy, CSharpExecutorProxy
 from .._configuration import Configuration
 from ..entities._flow import FlexFlow
 from .utils import (
@@ -86,11 +85,11 @@ class TestSubmitter:
         self._target_node = None
         self._storage = None
         self._enable_stream_output = None
-        self._executor_proxy: Optional[APIBasedExecutorProxy] = None
+        self._executor_proxy = None
         self._within_init_context = False
 
     @property
-    def executor_proxy(self) -> APIBasedExecutorProxy:
+    def executor_proxy(self):
         self._raise_if_not_within_init_context()
         return self._executor_proxy
 
@@ -268,23 +267,21 @@ class TestSubmitter:
                     sub_dir=output_sub / "intermediate",
                 )
 
-                # TODO: set up executor proxy for all languages
-                if getattr(self.flow, "language", FlowLanguage.Python) == FlowLanguage.CSharp:
-                    self._executor_proxy = async_run_allowing_running_loop(
-                        CSharpExecutorProxy.create,
-                        self.flow.path,
-                        self.flow.code,
-                        connections=self._connections,
-                        storage=self._storage,
-                        log_path=log_path,
-                        enable_stream_output=stream_output,
-                    )
+                self._executor_proxy = ProxyFactory().create_executor_proxy(
+                    self.flow.path,
+                    self.flow.code,
+                    connections=self._connections,
+                    storage=self._storage,
+                    log_path=log_path,
+                    enable_stream_output=stream_output,
+                    language=self.flow.language,
+                )
 
                 try:
                     yield self
                 finally:
                     if self.executor_proxy:
-                        async_run_allowing_running_loop(self.executor_proxy.destroy_if_all_generators_exhausted)
+                        async_run_allowing_running_loop(self.executor_proxy.destroy)
 
             self._within_init_context = False
 

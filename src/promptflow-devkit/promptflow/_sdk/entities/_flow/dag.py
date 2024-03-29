@@ -115,7 +115,7 @@ class Flow(FlowBase):
 
     # region overrides:
     def _init_executable(self, tuning_node=None, variant=None):
-        from promptflow._sdk._submitter import variant_overwrite_context
+        from promptflow._sdk._orchestrator import variant_overwrite_context
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
         if not tuning_node and not variant:
@@ -151,9 +151,12 @@ class Flow(FlowBase):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter import TestSubmitter
+        from promptflow._sdk._orchestrator import TestSubmitter
 
         if self.language == FlowLanguage.CSharp:
+            # TODO 3033484: we shouldn't use context manager here for stream_output, as resource need to be released
+            #  after the returned generator is fully consumed. If we use context manager here, the resource must be
+            #  released before the generator is consumed.
             with TestSubmitter(flow=self, flow_context=self.context).init(
                 stream_output=self.context.streaming
             ) as submitter:
