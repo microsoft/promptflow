@@ -22,6 +22,8 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 
 REQUIRES = [
     "promptflow-tracing>=1.0.0",  # tracing capabilities
+    "promptflow-core",  # core capabilities
+    "promptflow-devkit",  # devkit capabilities
 ]
 
 setup(
@@ -48,12 +50,10 @@ setup(
     python_requires="<4.0,>=3.8",
     install_requires=REQUIRES,
     extras_require={
-        "*": [
-            "promptflow-core",
-            "promptflow-devkit",  # devkit capabilities
-        ],
-        "executor-service": [
+        "all": [
             "promptflow-core[executor-service]",
+            "promptflow-devkit[all]",
+            "promptflow-azure",
         ],
         "azure": ["promptflow-azure"],
         "executable": ["promptflow-devkit[executable]"],
@@ -63,6 +63,9 @@ setup(
             "azure-ai-ml>=1.14.0,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
+        ],
+        "executor-service": [
+            "promptflow-core[executor-service]",  # used to build web executor server
         ],
     },
     packages=find_packages(),
