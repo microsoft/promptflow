@@ -301,3 +301,13 @@ class FailedToParseAssistantTool(UserErrorException):
             message_format="Failed to get assistant tool by parsing the docstring of function '{func_name}'.",
             func_name=func_name,
         )
+
+
+class FlowEntryInitializationError(UserErrorException):
+    """Exception raised when failed to initialize flow entry."""
+
+    def __init__(self, init_kwargs):
+        super().__init__(
+            message_format="Failed to initialize flow entry with '{init_kwargs}'.",
+            init_kwargs=init_kwargs,
+        )

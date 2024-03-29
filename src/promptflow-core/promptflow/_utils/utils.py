@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING, PF_LONG_RUNNING_LOGGING_INTERVAL
+from promptflow._utils.logger_utils import bulk_logger
 from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.types import AssistantDefinition
 
@@ -150,33 +151,35 @@ def count_and_log_progress(
 
 def log_progress(
     run_start_time: datetime,
-    logger: logging.Logger,
-    count: int,
     total_count: int,
+    current_count: int,
+    last_log_count: int,
+    logger: logging.Logger = bulk_logger,
     formatter="Finished {count} / {total_count} lines.",
-    *,
-    last_log_count: Optional[int] = None,
 ):
+    """Log progress of the current execution. Return the last_log_count for the next iteration."""
+
     # Calculate log_interval to determine when to log progress.
     # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
     log_interval = min(10, max(int(total_count / 10), 1))
 
-    # If last_log_count is not None, determine whether to log based on whether the difference
-    # between the current count and the previous count exceeds log_interval.
-    # Otherwise, decide based on whether the current count is evenly divisible by log_interval.
-    if last_log_count:
-        log_flag = (count - last_log_count) >= log_interval
-    else:
-        log_flag = count % log_interval == 0
+    # There are two situations that we will print the progress log:
+    # 1. The difference between current_count and last_log_count exceeds log_interval.
+    # 2. The current_count is evenly divisible by log_interval.
+    log_flag = (current_count - last_log_count) >= log_interval or (
+        current_count > last_log_count and current_count % log_interval == 0
+    )
 
-    if count > 0 and (log_flag or count == total_count):
-        average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / count, 2)
-        estimated_execution_time = round(average_execution_time * (total_count - count), 2)
-        logger.info(formatter.format(count=count, total_count=total_count))
+    if current_count > 0 and (log_flag or current_count == total_count):
+        average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / current_count, 2)
+        estimated_execution_time = round(average_execution_time * (total_count - current_count), 2)
+        logger.info(formatter.format(count=current_count, total_count=total_count))
         logger.info(
             f"Average execution time for completed lines: {average_execution_time} seconds. "
             f"Estimated time for incomplete lines: {estimated_execution_time} seconds."
         )
+        return current_count
+    return last_log_count
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):

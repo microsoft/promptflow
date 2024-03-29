@@ -7,7 +7,7 @@ import pytest
 
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._utils.multimedia_utils import create_image
+from promptflow._utils.multimedia_utils import BasicMultimediaProcessor
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 
@@ -39,8 +39,8 @@ def node_run_info():
         flow_run_id="flow_run_id",
         run_id="run_id",
         status=Status.Completed,
-        inputs={"image1": create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
-        output={"output1": create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
+        inputs={"image1": BasicMultimediaProcessor().create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
+        output={"output1": BasicMultimediaProcessor().create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
         metrics={},
         error={},
         parent_run_id="parent_run_id",
@@ -56,8 +56,8 @@ def flow_run_info():
         run_id="run_id",
         status=Status.Completed,
         error=None,
-        inputs={"image1": create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
-        output={"output1": create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
+        inputs={"image1": BasicMultimediaProcessor().create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
+        output={"output1": BasicMultimediaProcessor().create_image({"data:image/png;base64": "R0lGODlhAQABAAAAACw="})},
         metrics={},
         request="request",
         parent_run_id="parent_run_id",

@@ -43,6 +43,7 @@ if (-not $SkipInstall){
     pip install myst-parser==0.18.1
     pip install matplotlib==3.4.3
     pip install jinja2==3.0.1
+    pip install sqlalchemy>=2.0.0
     Write-Host "===============Finished install requirements==============="
 }
 
