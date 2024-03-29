@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Chat</title>
+    <base href="/" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="{{ url_for('static', filename='assets/favicon.ico') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/style.css') }}" />
+    <style>
+      html,body,#root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="{{ url_for('static', filename='assets/index.mjs') }}"></script>
+  </body>
+</html>

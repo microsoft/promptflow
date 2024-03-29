@@ -189,3 +189,5 @@ config.json
 
 # Poetry
 poetry.lock
+# promptflow subpackages __init__
+src/promptflow-*/promptflow/__init__.py

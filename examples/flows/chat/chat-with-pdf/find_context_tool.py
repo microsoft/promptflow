@@ -1,4 +1,4 @@
-from promptflow import tool
+from promptflow.core import tool
 from chat_with_pdf.find_context import find_context
 
 

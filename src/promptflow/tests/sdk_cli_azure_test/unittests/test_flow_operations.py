@@ -12,6 +12,7 @@ from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
 tests_root_dir = Path(__file__).parent.parent.parent
+eager_flow_test_dir = tests_root_dir / "test_configs/eager_flows"
 flow_test_dir = tests_root_dir / "test_configs/flows"
 data_dir = tests_root_dir / "test_configs/datas"
 
@@ -87,3 +88,11 @@ class TestFlowOperations:
                 user_object_id, user_tenant_id = service_caller._get_user_identity_info()
                 assert user_object_id == mock_oid
                 assert user_tenant_id == mock_tid
+
+    def test_eager_flow_creation(self, pf):
+        flow_source = eager_flow_test_dir / "simple_with_yaml"
+        with pytest.raises(UserErrorException) as e:
+            pf.flows.create_or_update(
+                flow=flow_source,
+            )
+        assert "Creating it to cloud is not supported" in str(e.value)
