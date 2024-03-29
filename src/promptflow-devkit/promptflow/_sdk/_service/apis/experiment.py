@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import os
-import shutil
 import uuid
 from pathlib import Path
 
@@ -83,7 +82,6 @@ class ExperimentTest(Resource):
             flow_path_dir, flow_path_file = resolve_flow_path(override_flow_path)
             override_flow_path = (flow_path_dir / flow_path_file).as_posix()
             context = {"inputs": inputs, "node": override_flow_path}
-        remove_dir = False
         if output_path is None:
             filename = str(uuid.uuid4())
             if os.path.isdir(experiment_template):
@@ -91,20 +89,16 @@ class ExperimentTest(Resource):
             else:
                 output_path = Path(os.path.dirname(experiment_template)) / filename
             os.makedirs(output_path, exist_ok=True)
-            remove_dir = True
         output_path = Path(output_path).resolve()
 
-        try:
-            result = client._experiments._test_with_ui(
-                experiment=experiment_template,
-                output_path=output_path,
-                environment_variables=environment_variables,
-                session=session,
-                context=context,
-            )
-        finally:
-            if remove_dir:
-                shutil.rmtree(output_path)
+        result = client._experiments._test_with_ui(
+            experiment=experiment_template,
+            output_path=output_path,
+            environment_variables=environment_variables,
+            session=session,
+            context=context,
+        )
+        # Todo : remove output_path when exit executor which is registered in pfs
         return result
 
 
