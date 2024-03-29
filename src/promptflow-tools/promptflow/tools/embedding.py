@@ -37,6 +37,7 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection, Serverl
         client = init_openai_client(connection)
         return client.embeddings.create(
             input=[input],
+            model=model,
             encoding_format="float"
         ).data[0].embedding
     else:
