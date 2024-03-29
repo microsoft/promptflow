@@ -1,5 +1,5 @@
 from jinja2 import Template
-from promptflow import tool
+from promptflow.core import tool
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
 

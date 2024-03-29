@@ -17,7 +17,7 @@ We'll build out an example tool to show how cascading inputs work. The `student_
 ```python
 from enum import Enum
 
-from promptflow import tool
+from promptflow.core import tool
 
 
 class UserType(str, Enum):

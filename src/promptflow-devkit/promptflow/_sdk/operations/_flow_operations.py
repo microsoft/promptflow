@@ -22,8 +22,8 @@ from promptflow._sdk._constants import (
     LOCAL_MGMT_DB_PATH,
 )
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._submitter import TestSubmitter
-from promptflow._sdk._submitter.utils import SubmitterHelper
+from promptflow._sdk._orchestrator import TestSubmitter
+from promptflow._sdk._orchestrator.utils import SubmitterHelper
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import (
     _get_additional_includes,
@@ -278,6 +278,9 @@ class FlowOperations(TelemetryMixin):
         :return: The result of flow or node
         :rtype: dict
         """
+        # TODO : it's not clear why we need this method, please help verify:
+        #  1. why we can't use test method directly
+        #  2. is _chat_with_ui still necessary
         experiment = kwargs.pop("experiment", None)
         if Configuration.get_instance().is_internal_features_enabled() and experiment:
             result = self.test(
@@ -286,6 +289,8 @@ class FlowOperations(TelemetryMixin):
                 environment_variables=environment_variables,
                 variant=variant,
                 node=node,
+                allow_generator_output=kwargs.pop("allow_generator_output", False),
+                stream_output=kwargs.pop("stream_output", False),
                 experiment=experiment,
                 output_path=output_path,
             )
@@ -487,7 +492,7 @@ class FlowOperations(TelemetryMixin):
         update_flow_tools_json: bool = True,
     ):
         # TODO: confirm if we need to import this
-        from promptflow._sdk._submitter import variant_overwrite_context
+        from promptflow._sdk._orchestrator import variant_overwrite_context
 
         flow_copy_target = Path(output)
         flow_copy_target.mkdir(parents=True, exist_ok=True)
@@ -708,7 +713,7 @@ class FlowOperations(TelemetryMixin):
     @contextlib.contextmanager
     def _resolve_additional_includes(cls, flow_dag_path: Path) -> Iterable[Path]:
         # TODO: confirm if we need to import this
-        from promptflow._sdk._submitter import remove_additional_includes
+        from promptflow._sdk._orchestrator import remove_additional_includes
 
         # Eager flow may not contain a yaml file, skip resolving additional includes
         def is_yaml_file(file_path):
